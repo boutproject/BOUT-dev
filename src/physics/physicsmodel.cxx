@@ -32,46 +32,55 @@
 #include <bout/physicsmodel.hxx>
 #undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
+#include "bout/version.hxx"
 #include <bout/mesh.hxx>
+#include <bout/options.hxx>
 #include <bout/sys/timer.hxx>
+#include <bout/vector2d.hxx>
+#include <bout/vector3d.hxx>
 
 #include <fmt/core.h>
 
+#include <cstddef>
 #include <string>
+using namespace std::literals;
 
 namespace bout {
 void DataFileFacade::add(ValueType value, const std::string& name, bool save_repeat) {
   data.emplace_back(name, value, save_repeat);
 }
-
-bool DataFileFacade::write() {
-  for (const auto& item : data) {
-    bout::utils::visit(bout::OptionsConversionVisitor{Options::root(), item.name},
-                       item.value);
-    if (item.repeat) {
-      Options::root()[item.name].attributes["time_dimension"] = "t";
-    }
-  }
-  writeDefaultOutputFile();
-  return true;
+void DataFileFacade::add(Vector2D* value, const std::string& name, bool save_repeat) {
+  auto name_prefix = value->covariant ? name + "_" : name;
+  add(value->x, name_prefix + "x"s, save_repeat);
+  add(value->y, name_prefix + "y"s, save_repeat);
+  add(value->z, name_prefix + "z"s, save_repeat);
+}
+void DataFileFacade::add(Vector3D* value, const std::string& name, bool save_repeat) {
+  auto name_prefix = value->covariant ? name + "_" : name;
+  add(value->x, name_prefix + "x"s, save_repeat);
+  add(value->y, name_prefix + "y"s, save_repeat);
+  add(value->z, name_prefix + "z"s, save_repeat);
 }
 } // namespace bout
 
 PhysicsModel::PhysicsModel()
-    : mesh(bout::globals::mesh),
-      output_file(bout::getOutputFilename(Options::root()),
-                  Options::root()["append"]
-                          .doc("Add output data to existing (dump) files?")
-                          .withDefault(false)
-                      ? bout::OptionsNetCDF::FileMode::append
-                      : bout::OptionsNetCDF::FileMode::replace),
-      output_enabled(Options::root()["output"]["enabled"]
-                         .doc("Write output files")
-                         .withDefault(true)),
-      restart_file(bout::getRestartFilename(Options::root())),
+    : mesh(bout::globals::mesh), output_enabled(Options::root()["output"]["enabled"]
+                                                    .doc("Write output files")
+                                                    .withDefault(true)),
       restart_enabled(Options::root()["restart_files"]["enabled"]
                           .doc("Write restart files")
-                          .withDefault(true)) {}
+                          .withDefault(true)),
+      flush_frequency(Options::root()["output"]["flush_frequency"]
+                          .doc("How often to flush to disk")
+                          .withDefault<std::size_t>(1)) {
+  if (output_enabled) {
+    output_file = bout::OptionsIOFactory::getInstance().createOutput();
+  }
+
+  if (restart_enabled) {
+    restart_file = bout::OptionsIOFactory::getInstance().createRestart();
+  }
+}
 
 void PhysicsModel::initialise(Solver* s) {
   if (initialised) {
@@ -84,19 +93,20 @@ void PhysicsModel::initialise(Solver* s) {
   solver = s;
 
   bout::experimental::addBuildFlagsToOptions(output_options);
-  mesh->outputVars(output_options);
 
   // Restart option
   const bool restarting = Options::root()["restart"].withDefault(false);
 
   if (restarting) {
-    restart_options = restart_file.read();
+    restart_options = restart_file->read(false);
   }
 
   // Call user init code to specify evolving variables
   if (init(restarting) != 0) {
     throw BoutException("Couldn't initialise physics model");
   }
+
+  mesh->outputVars(output_options);
 
   // Post-initialise, which reads restart files
   // This function can be overridden by the user
@@ -105,13 +115,9 @@ void PhysicsModel::initialise(Solver* s) {
   }
 }
 
-int PhysicsModel::runRHS(BoutReal time, bool linear) {
-  return rhs(time, linear);
-}
+int PhysicsModel::runRHS(BoutReal time, bool linear) { return rhs(time, linear); }
 
-bool PhysicsModel::splitOperator() {
-  return splitop;
-}
+bool PhysicsModel::splitOperator() { return splitop; }
 
 int PhysicsModel::runConvective(BoutReal time, bool linear) {
   return convective(time, linear);
@@ -124,42 +130,43 @@ int PhysicsModel::runDiffusive(BoutReal time, bool linear) {
 bool PhysicsModel::hasPrecon() { return (userprecon != nullptr); }
 
 int PhysicsModel::runPrecon(BoutReal t, BoutReal gamma, BoutReal delta) {
-  if(!userprecon)
+  if (!userprecon) {
     return 1;
+  }
   return (*this.*userprecon)(t, gamma, delta);
 }
 
 bool PhysicsModel::hasJacobian() { return (userjacobian != nullptr); }
 
 int PhysicsModel::runJacobian(BoutReal t) {
-  if (!userjacobian)
+  if (!userjacobian) {
     return 1;
+  }
   return (*this.*userjacobian)(t);
 }
 
-void PhysicsModel::bout_solve(Field2D &var, const char *name,
+void PhysicsModel::bout_solve(Field2D& var, const char* name,
                               const std::string& description) {
   // Add to solver
   solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Field3D &var, const char *name,
+void PhysicsModel::bout_solve(Field3D& var, const char* name,
                               const std::string& description) {
   solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Vector2D &var, const char *name,
+void PhysicsModel::bout_solve(Vector2D& var, const char* name,
                               const std::string& description) {
   solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Vector3D &var, const char *name,
+void PhysicsModel::bout_solve(Vector3D& var, const char* name,
                               const std::string& description) {
   solver->add(var, name, description);
 }
 
 int PhysicsModel::postInit(bool restarting) {
-  TRACE("PhysicsModel::postInit");
 
   if (restarting) {
     solver->readEvolvingVariablesFromOptions(restart_options);
@@ -173,7 +180,7 @@ int PhysicsModel::postInit(bool restarting) {
     restart_options["BOUT_VERSION"].force(bout::version::as_double, "PhysicsModel");
 
     // Write _everything_ to restart file
-    restart_file.write(restart_options);
+    restart_file->write(restart_options);
   }
 
   // Add monitor to the solver which calls restart.write() and
@@ -184,7 +191,7 @@ int PhysicsModel::postInit(bool restarting) {
 }
 
 void PhysicsModel::outputVars(Options& options) {
-  Timer time("io");
+  const Timer time("io");
   for (const auto& item : dump.getData()) {
     bout::utils::visit(bout::OptionsConversionVisitor{options, item.name}, item.value);
     if (item.repeat) {
@@ -194,7 +201,7 @@ void PhysicsModel::outputVars(Options& options) {
 }
 
 void PhysicsModel::restartVars(Options& options) {
-  Timer time("io");
+  const Timer time("io");
   for (const auto& item : restart.getData()) {
     bout::utils::visit(bout::OptionsConversionVisitor{options, item.name}, item.value);
     if (item.repeat) {
@@ -205,33 +212,37 @@ void PhysicsModel::restartVars(Options& options) {
 
 void PhysicsModel::writeRestartFile() {
   if (restart_enabled) {
-    restart_file.write(restart_options);
+    restart_file->write(restart_options);
   }
 }
 
 void PhysicsModel::writeOutputFile() { writeOutputFile(output_options); }
 
 void PhysicsModel::writeOutputFile(const Options& options) {
-  if (output_enabled) {
-    output_file.write(options, "t");
-  }
+  writeOutputFile(options, "t");
 }
 
 void PhysicsModel::writeOutputFile(const Options& options,
                                    const std::string& time_dimension) {
   if (output_enabled) {
-    output_file.write(options, time_dimension);
+    output_file->write(options, time_dimension);
   }
 }
 
 void PhysicsModel::finishOutputTimestep() const {
-  if (output_enabled) {
-    output_file.verifyTimesteps();
+  const Timer timer("io");
+
+  if (output_enabled and (flush_counter % flush_frequency == 0)) {
+    output_file->flush();
+    output_file->verifyTimesteps();
   }
 }
 
 int PhysicsModel::PhysicsModelMonitor::call(Solver* solver, BoutReal simtime,
                                             int iteration, int nout) {
+
+  model->setFlushCounter(static_cast<std::size_t>(iteration));
+
   // Restart file variables
   solver->outputVars(model->restart_options, false);
   model->restartVars(model->restart_options);
@@ -242,10 +253,16 @@ int PhysicsModel::PhysicsModelMonitor::call(Solver* solver, BoutReal simtime,
   model->output_options["t_array"].assignRepeat(simtime);
   model->output_options["iteration"].assignRepeat(iteration);
 
+  // Call user output monitor
+  // Note: This may allocate fields that are written to output
+  auto monitor_result = model->outputMonitor(simtime, iteration, nout);
+
   solver->outputVars(model->output_options, true);
   model->outputVars(model->output_options);
   model->writeOutputFile();
 
-  // Call user output monitor
-  return model->outputMonitor(simtime, iteration, nout);
+  // Reset output options, this avoids rewriting time-independent data
+  model->output_options = Options{};
+
+  return monitor_result;
 }

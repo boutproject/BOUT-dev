@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 QSUB=mpich2sub # Common values are qsub, mpisub  
 NP=32

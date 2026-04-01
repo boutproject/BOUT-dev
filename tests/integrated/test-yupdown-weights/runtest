@@ -10,7 +10,6 @@ build_and_log("parallel slices and weights test")
 
 failed = False
 for shifttype in ["shiftedinterp"]:
-
     s, out = launch_safe(
         "./test_yupdown_weights mesh:paralleltransform:type=" + shifttype,
         nproc=1,

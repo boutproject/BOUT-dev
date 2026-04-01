@@ -28,24 +28,23 @@ namespace inversion {
 template <typename T>
 class InvertableOperator;
 };
-};
+}; // namespace bout
 
-#ifndef __INVERTABLE_OPERATOR_H__
-#define __INVERTABLE_OPERATOR_H__
+#ifndef BOUT_INVERTABLE_OPERATOR_H
+#define BOUT_INVERTABLE_OPERATOR_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_PETSC
 
 #include "bout/traits.hxx"
+#include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/globals.hxx>
 #include <bout/mesh.hxx>
+#include <bout/options.hxx>
+#include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
-#include <boutcomm.hxx>
-#include <boutexception.hxx>
-#include <globals.hxx>
-#include <msg_stack.hxx>
-#include <options.hxx>
-#include <output.hxx>
 
 #include <petscksp.h>
 
@@ -61,14 +60,14 @@ namespace inversion {
 /// No-op function to use as a default -- may wish to remove once testing phase complete
 template <typename T>
 T identity(const T& in) {
-  AUTO_TRACE();
+
   return in;
 };
 
 /// Pack a PetscVec from a Field<T>
 template <typename T>
 PetscErrorCode fieldToPetscVec(const T& in, Vec out) {
-  TRACE("fieldToPetscVec<T>");
+
   Timer timer("invertable_operator_packing");
 
   PetscScalar* vecData;
@@ -93,7 +92,7 @@ PetscErrorCode fieldToPetscVec(const T& in, Vec out) {
 /// Pack a Field<T> from a PetscVec
 template <typename T>
 PetscErrorCode petscVecToField(Vec in, T& out) {
-  TRACE("petscVecToField<T>");
+
   Timer timer("invertable_operator_packing");
 
   const PetscScalar* vecData;
@@ -120,7 +119,7 @@ PetscErrorCode petscVecToField(Vec in, T& out) {
 template <typename T>
 class InvertableOperator {
   static_assert(
-      bout::utils::is_Field<T>::value,
+      bout::utils::is_Field_v<T>,
       "InvertableOperator must be templated with one of FieldPerp, Field2D or Field3D");
 
 public:
@@ -136,14 +135,12 @@ public:
       : operatorFunction(func), preconditionerFunction(func),
         opt(optIn == nullptr ? Options::getRoot()->getSection("invertableOperator")
                              : optIn),
-        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn),
-        lib(opt) {
-    AUTO_TRACE();
-  };
+        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn), lib(opt){
+
+                                                                               };
 
   /// Destructor just has to cleanup the PETSc owned objects.
   ~InvertableOperator() {
-    TRACE("InvertableOperator<T>::destructor");
 
     KSPDestroy(&ksp);
     MatDestroy(&matOperator);
@@ -158,7 +155,7 @@ public:
   /// do this they can set alsoSetPreconditioner to false.
   void setOperatorFunction(const function_signature& func,
                            bool alsoSetPreconditioner = true) {
-    TRACE("InvertableOperator<T>::setOperatorFunction");
+
     operatorFunction = func;
     if (alsoSetPreconditioner) {
       preconditionerFunction = func;
@@ -167,28 +164,21 @@ public:
 
   /// Allow the user to override the existing preconditioner function
   void setPreconditionerFunction(const function_signature& func) {
-    TRACE("InvertableOperator<T>::setPreconditionerFunction");
+
     preconditionerFunction = func;
   }
 
   /// Provide a way to apply the operator to a Field
-  T operator()(const T& input) {
-    TRACE("InvertableOperator<T>::operator()");
-    return operatorFunction(input);
-  }
+  T operator()(const T& input) { return operatorFunction(input); }
 
   /// Provide a synonym for applying the operator to a Field
-  T apply(const T& input) {
-    AUTO_TRACE();
-    return operator()(input);
-  }
+  T apply(const T& input) { return operator()(input); }
 
   /// Sets up the PETSc objects required for inverting the operator
   /// Currently also takes the functor that applies the operator this class
   /// represents. Not actually required by any of the setup so this should
   /// probably be moved to a separate place (maybe the constructor).
   PetscErrorCode setup() {
-    TRACE("InvertableOperator<T>::setup");
 
     Timer timer("invertable_operator_setup");
     if (doneSetup) {
@@ -198,7 +188,7 @@ public:
     }
 
     // Add the RGN_WITHBNDRIES region to the mesh. Requires RGN_NOBNDRY to be defined.
-    if (std::is_same<Field3D, T>::value) {
+    if constexpr (std::is_same_v<Field3D, T>) {
       if (not localmesh->hasRegion3D("RGN_WITHBNDRIES")) {
         // This avoids all guard cells and corners but includes boundaries
         // Note we probably don't want to include periodic boundaries as these
@@ -207,30 +197,31 @@ public:
         // to only include unique points
         Region<Ind3D> nocorner3D = localmesh->getRegion3D("RGN_NOBNDRY");
         if (!localmesh->periodicX) {
-          if (localmesh->firstX())
+          if (localmesh->firstX()) {
             nocorner3D += Region<Ind3D>(0, localmesh->xstart - 1, localmesh->ystart,
                                         localmesh->yend, 0, localmesh->LocalNz - 1,
                                         localmesh->LocalNy, localmesh->LocalNz,
                                         localmesh->maxregionblocksize);
-          if (localmesh->lastX())
+          }
+          if (localmesh->lastX()) {
             nocorner3D += Region<Ind3D>(
                 localmesh->LocalNx - localmesh->xstart, localmesh->LocalNx - 1,
                 localmesh->ystart, localmesh->yend, 0, localmesh->LocalNz - 1,
                 localmesh->LocalNy, localmesh->LocalNz, localmesh->maxregionblocksize);
+          }
         }
-        if (localmesh->firstY() or localmesh->lastY()) {
-          for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
-            if (not localmesh->periodicY(ix)) {
-              if (localmesh->firstY())
-                nocorner3D +=
-                    Region<Ind3D>(ix, ix, 0, localmesh->ystart - 1, 0,
-                                  localmesh->LocalNz - 1, localmesh->LocalNy,
-                                  localmesh->LocalNz, localmesh->maxregionblocksize);
-              if (localmesh->lastY())
-                nocorner3D += Region<Ind3D>(
-                    ix, ix, localmesh->LocalNy - localmesh->ystart,
-                    localmesh->LocalNy - 1, 0, localmesh->LocalNz - 1, localmesh->LocalNy,
-                    localmesh->LocalNz, localmesh->maxregionblocksize);
+        for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
+          if (not localmesh->periodicY(ix)) {
+            if (localmesh->firstY(ix)) {
+              nocorner3D += Region<Ind3D>(
+                  ix, ix, 0, localmesh->ystart - 1, 0, localmesh->LocalNz - 1,
+                  localmesh->LocalNy, localmesh->LocalNz, localmesh->maxregionblocksize);
+            }
+            if (localmesh->lastY(ix)) {
+              nocorner3D += Region<Ind3D>(
+                  ix, ix, localmesh->LocalNy - localmesh->ystart, localmesh->LocalNy - 1,
+                  0, localmesh->LocalNz - 1, localmesh->LocalNy, localmesh->LocalNz,
+                  localmesh->maxregionblocksize);
             }
           }
         }
@@ -239,33 +230,34 @@ public:
         localmesh->addRegion3D("RGN_WITHBNDRIES", nocorner3D);
       }
 
-    } else if (std::is_same<Field2D, T>::value) {
+    } else if constexpr (std::is_same_v<Field2D, T>) {
       if (not localmesh->hasRegion2D("RGN_WITHBNDRIES")) {
         // This avoids all guard cells and corners but includes boundaries
         Region<Ind2D> nocorner2D = localmesh->getRegion2D("RGN_NOBNDRY");
         if (!localmesh->periodicX) {
-          if (localmesh->firstX())
+          if (localmesh->firstX()) {
             nocorner2D += Region<Ind2D>(0, localmesh->xstart - 1, localmesh->ystart,
                                         localmesh->yend, 0, 0, localmesh->LocalNy, 1,
                                         localmesh->maxregionblocksize);
-          if (localmesh->lastX())
+          }
+          if (localmesh->lastX()) {
             nocorner2D +=
                 Region<Ind2D>(localmesh->LocalNx - localmesh->xstart,
                               localmesh->LocalNx - 1, localmesh->ystart, localmesh->yend,
                               0, 0, localmesh->LocalNy, 1, localmesh->maxregionblocksize);
+          }
         }
-        if (localmesh->firstY() or localmesh->lastY()) {
-          for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
-            if (not localmesh->periodicY(ix)) {
-              if (localmesh->firstY())
-                nocorner2D +=
-                    Region<Ind2D>(ix, ix, 0, localmesh->ystart - 1, 0, 0,
-                                  localmesh->LocalNy, 1, localmesh->maxregionblocksize);
-              if (localmesh->lastY())
-                nocorner2D +=
-                    Region<Ind2D>(ix, ix, localmesh->LocalNy - localmesh->ystart,
-                                  localmesh->LocalNy - 1, 0, 0, localmesh->LocalNy, 1,
-                                  localmesh->maxregionblocksize);
+        for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
+          if (not localmesh->periodicY(ix)) {
+            if (localmesh->firstY(ix)) {
+              nocorner2D +=
+                  Region<Ind2D>(ix, ix, 0, localmesh->ystart - 1, 0, 0,
+                                localmesh->LocalNy, 1, localmesh->maxregionblocksize);
+            }
+            if (localmesh->lastY(ix)) {
+              nocorner2D += Region<Ind2D>(
+                  ix, ix, localmesh->LocalNy - localmesh->ystart, localmesh->LocalNy - 1,
+                  0, 0, localmesh->LocalNy, 1, localmesh->maxregionblocksize);
             }
           }
         }
@@ -273,20 +265,22 @@ public:
         localmesh->addRegion2D("RGN_WITHBNDRIES", nocorner2D);
       }
 
-    } else if (std::is_same<FieldPerp, T>::value) {
+    } else if constexpr (std::is_same_v<FieldPerp, T>) {
       if (not localmesh->hasRegionPerp("RGN_WITHBNDRIES")) {
         // This avoids all guard cells and corners but includes boundaries
         Region<IndPerp> nocornerPerp = localmesh->getRegionPerp("RGN_NOBNDRY");
         if (!localmesh->periodicX) {
-          if (localmesh->firstX())
+          if (localmesh->firstX()) {
             nocornerPerp +=
                 Region<IndPerp>(0, localmesh->xstart - 1, 0, 0, 0, localmesh->LocalNz - 1,
                                 1, localmesh->LocalNz, localmesh->maxregionblocksize);
-          if (localmesh->lastX())
+          }
+          if (localmesh->lastX()) {
             nocornerPerp +=
                 Region<IndPerp>(localmesh->LocalNx - localmesh->xstart,
                                 localmesh->LocalNx - 1, 0, 0, 0, localmesh->LocalNz - 1,
                                 1, localmesh->LocalNz, localmesh->maxregionblocksize);
+          }
         }
         nocornerPerp.unique();
         localmesh->addRegionPerp("RGN_WITHBNDRIES", nocornerPerp);
@@ -383,7 +377,7 @@ public:
   // but suspect it's not as there are KSPGuess objects
   // to deal with.
   T invert(const T& rhsField, const T& guess) {
-    AUTO_TRACE();
+
     auto ierr = fieldToPetscVec(guess, lhs);
     CHKERRQ(ierr);
     return invert(rhsField);
@@ -394,7 +388,7 @@ public:
   /// of the operator we represent. Should probably provide an overload or similar as a
   /// way of setting the initial guess.
   T invert(const T& rhsField) {
-    TRACE("InvertableOperator<T>::invert");
+
     Timer timer("invertable_operator_invert");
 
     if (!doneSetup) {
@@ -421,7 +415,8 @@ public:
     KSPConvergedReason reason;
     ierr = KSPGetConvergedReason(ksp, &reason);
     if (reason <= 0) {
-      throw BoutException("KSPSolve failed with reason {:d}.", reason);
+      throw BoutException("KSPSolve failed. Reason {} ({:d})",
+                          KSPConvergedReasons[reason], static_cast<int>(reason));
     }
 
     // Probably want to remove the following in the long run
@@ -440,7 +435,6 @@ public:
   /// applying the registered function on the calculated inverse gives
   /// back the initial values.
   bool verify(const T& rhsIn, BoutReal tol = 1.0e-5) {
-    TRACE("InvertableOperator<T>::verify");
 
     T result = invert(rhsIn);
     localmesh->communicate(result);
@@ -459,7 +453,7 @@ public:
   /// that as the Timer "labels" are not unique to an instance the time
   /// reported is summed across all different instances.
   static void reportTime() {
-    TRACE("InvertableOperator<T>::reportTime");
+
     BoutReal time_setup = Timer::resetTime("invertable_operator_setup");
     BoutReal time_invert = Timer::resetTime("invertable_operator_invert");
     BoutReal time_packing = Timer::resetTime("invertable_operator_packing");
@@ -499,7 +493,7 @@ private:
   /// Copies data from v1 into a field of type T, calls the function on this and then
   /// copies the result into the v2 argument.
   static PetscErrorCode functionWrapper(Mat m, Vec v1, Vec v2) {
-    TRACE("InvertableOperator<T>::functionWrapper");
+
     InvertableOperator<T>* ctx;
     auto ierr = MatShellGetContext(m, &ctx);
     T tmpField(ctx->localmesh);
@@ -530,7 +524,7 @@ private:
   /// Copies data from v1 into a field of type T, calls the function on this and then
   /// copies the result into the v2 argument.
   static PetscErrorCode preconditionerWrapper(Mat m, Vec v1, Vec v2) {
-    TRACE("InvertableOperator<T>::functionWrapper");
+
     InvertableOperator<T>* ctx;
     auto ierr = MatShellGetContext(m, &ctx);
     T tmpField(ctx->localmesh);
@@ -565,7 +559,7 @@ public:
 };
 
 #endif // PETSC
-};
-};
+}; // namespace inversion
+}; // namespace bout
 
 #endif // HEADER GUARD

@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
 #include <bout/assert.hxx>
-#include <boutexception.hxx>
+#include <bout/boutexception.hxx>
 
 TEST(AssertTest, Assert0) {
   EXPECT_NO_THROW(ASSERT0(true));

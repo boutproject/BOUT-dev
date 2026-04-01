@@ -1,10 +1,9 @@
-#ifndef __BOUT_SCOREP_H__
-#define __BOUT_SCOREP_H__
+#ifndef BOUT_SCOREP_H
+#define BOUT_SCOREP_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
-#include <bout_types.hxx>
-#include "msg_stack.hxx"
+#include <bout/bout_types.hxx>
 
 #if BOUT_HAS_SCOREP
 #include <scorep/SCOREP_User.h>
@@ -14,13 +13,25 @@
 #define SCOREPLVL 0
 #endif
 
+/// The __PRETTY_FUNCTION__ variable is defined by GCC (and some other families) but is
+/// not a part of the standard. The __func__ variable *is* a part of the c++11 standard so
+/// we'd like to fall back to this if possible. However as these are variables/constants
+/// and not macros we can't just check if __PRETTY_FUNCITON__ is defined or not. Instead
+/// we need to say if we support this or not by defining BOUT_HAS_PRETTY_FUNCTION (to be
+/// implemented in configure)
+#if BOUT_HAS_PRETTY_FUNCTION
+#define _thefunc_ __PRETTY_FUNCTION__
+#else
+#define _thefunc_ __func__
+#endif
+
 /// Instrument a function with scorep
 ///
 /// The scorep call is identical for all levels, so just define it here.
 /// If we don't have scorep support then just define a null function
 #if BOUT_HAS_SCOREP
-#define SCOREP_BASE_CALL(...)						\
-  SCOREP_USER_REGION(__thefunc__, SCOREP_USER_REGION_TYPE_FUNCTION)
+#define SCOREP_BASE_CALL(...) \
+  SCOREP_USER_REGION(_thefunc_, SCOREP_USER_REGION_TYPE_FUNCTION)
 #else
 #define SCOREP_BASE_CALL(...)
 #endif
@@ -52,7 +63,7 @@
 
 /// Instrument a region with scorep
 #if BOUT_HAS_SCOREP
-#define BOUT_SCOREP_REGION(...)						\
+#define BOUT_SCOREP_REGION(...) \
   SCOREP_USER_REGION(__VA_ARGS__, SCOREP_USER_REGION_TYPE_COMMON)
 #else
 #define BOUT_SCOREP_REGION(...)

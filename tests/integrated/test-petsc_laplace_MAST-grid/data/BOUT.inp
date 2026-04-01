@@ -1,6 +1,8 @@
 mz = 129
+
+[mesh]
 #MYG = 0
-grid = "grids/grid_MAST_SOL_jyis65.nc"
+file = "grids/grid_MAST_SOL_jyis65.nc"
 
 [mesh:ddx]
 first = C4
@@ -21,6 +23,7 @@ nonuniform = true
 rtol = 1e-10
 include_yguards = false
 maxits = 1000
+pctype = sor
 
 [petsc4th]
 type = petsc
@@ -29,6 +32,7 @@ nonuniform = true
 rtol = 1e-10
 include_yguards = false
 maxits = 1000
+pctype = sor
 fourth_order = true
 gmres_max_steps = 32
 

@@ -6,9 +6,9 @@
  *        NR Walkden, B Dudson  20 January 2012
  *******************************************************************/
 
-#include <bout/physicsmodel.hxx> // Commonly used BOUT++ components
-#include <derivs.hxx>            // To use DDZ()
-#include <invert_laplace.hxx>    // Laplacian inversion
+#include <bout/derivs.hxx>         // To use DDZ()
+#include <bout/invert_laplace.hxx> // Laplacian inversion
+#include <bout/physicsmodel.hxx>   // Commonly used BOUT++ components
 
 #include "bout/single_index_ops.hxx" // Operators at a single index
 

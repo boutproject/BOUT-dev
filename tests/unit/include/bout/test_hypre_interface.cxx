@@ -1,22 +1,19 @@
-#include "test_extras.hxx"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-#include <cmath>
-
-#include "field3d.hxx"
-#include "bout/hypre_interface.hxx"
-
 #if BOUT_HAS_HYPRE
 
 #include "HYPRE.h"
 #include "HYPRE_IJ_mv.h"
 #include "HYPRE_parcsr_ls.h"
 
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include <cmath>
+
+#include "fake_mesh_fixture.hxx"
+#include "test_extras.hxx"
+
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+
+#include "bout/field3d.hxx"
+#include "bout/hypre_interface.hxx"
 
 using bout::HypreMatrix;
 using bout::HypreVector;
@@ -96,7 +93,7 @@ TYPED_TEST(HypreVectorTest, Assemble) {
 
   // HYPRE_IJVectorGetValues when using CUDA requires indices and values use device
   // compatible memory
-#if BOUT_USE_CUDA && defined(__CUDACC__)
+#if BOUT_HAS_CUDA && defined(__CUDACC__)
   HYPRE_BigInt* um_i;
   HYPRE_Complex* um_actual;
   cudaMallocManaged(&um_i, sizeof(HYPRE_BigInt));
@@ -185,7 +182,7 @@ public:
 
     indexA =
         ind_type((1 + field.getNy()) * field.getNz() + 1, field.getNy(), field.getNz());
-    if (std::is_same<T, FieldPerp>::value) {
+    if constexpr (std::is_same_v<T, FieldPerp>) {
       indexB = indexA.zp();
 
       iWD0 = indexB.zm();
@@ -309,9 +306,8 @@ TYPED_TEST(HypreMatrixTest, SetElements) {
       auto j_index = static_cast<HYPRE_BigInt>(this->indexer->getGlobal(j));
       HYPRE_Int ncolumns{1};
       HYPRE_Complex value;
-      BOUT_OMP(critical) {
-        HYPRE_IJMatrixGetValues(raw_matrix, 1, &ncolumns, &i_index, &j_index, &value);
-      }
+      BOUT_OMP_SAFE(critical)
+      { HYPRE_IJMatrixGetValues(raw_matrix, 1, &ncolumns, &i_index, &j_index, &value); }
       if (i == j) {
         EXPECT_EQ(static_cast<BoutReal>(value),
                   static_cast<BoutReal>(this->indexer->getGlobal(i)));
@@ -390,7 +386,7 @@ TYPED_TEST(HypreMatrixTest, YUp) {
 
   HypreMatrix<TypeParam> matrix(this->indexer);
 
-  if (std::is_same<TypeParam, FieldPerp>::value) {
+  if constexpr (std::is_same_v<TypeParam, FieldPerp>) {
     EXPECT_THROW(matrix.yup(), BoutException);
     return;
   }
@@ -399,7 +395,7 @@ TYPED_TEST(HypreMatrixTest, YUp) {
   MockTransform* transform = this->pt;
   const BoutReal value = 42.0;
 
-  if (std::is_same<TypeParam, Field2D>::value) {
+  if constexpr (std::is_same_v<TypeParam, Field2D>) {
     expected(this->indexA, this->indexB) = value;
   } else {
     EXPECT_CALL(*transform, getWeightsForYUpApproximation(
@@ -423,7 +419,7 @@ TYPED_TEST(HypreMatrixTest, YDown) {
 
   HypreMatrix<TypeParam> matrix(this->indexer);
 
-  if (std::is_same<TypeParam, FieldPerp>::value) {
+  if constexpr (std::is_same_v<TypeParam, FieldPerp>) {
     EXPECT_THROW(matrix.yup(), BoutException);
     return;
   }
@@ -432,7 +428,7 @@ TYPED_TEST(HypreMatrixTest, YDown) {
   MockTransform* transform = this->pt;
   const BoutReal value = 42.0;
 
-  if (std::is_same<TypeParam, Field2D>::value) {
+  if constexpr (std::is_same_v<TypeParam, Field2D>) {
     expected(this->indexB, this->indexA) = value;
   } else {
     EXPECT_CALL(*transform, getWeightsForYDownApproximation(

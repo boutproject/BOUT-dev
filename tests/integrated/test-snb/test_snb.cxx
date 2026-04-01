@@ -1,8 +1,9 @@
+#include <bout/bout.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/constants.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/output.hxx>
 #include <bout/snb.hxx>
-#include <bout.hxx>
-#include <boutexception.hxx>
-#include <field_factory.hxx>
-#include <output.hxx>
 
 // Convert __LINE__ to string S__LINE__
 #define S(x) #x
@@ -10,7 +11,7 @@
 #define S__LINE__ S_(__LINE__)
 
 #define EXPECT_TRUE(expr)                                                       \
-  if (!expr) {                                                                  \
+  if (!(expr)) {                                                                \
     throw BoutException("Line " S__LINE__ " Expected true, got false: " #expr); \
   }
 
@@ -19,14 +20,24 @@
     throw BoutException("Line " S__LINE__ " Expected false, got true: " #expr); \
   }
 
+#define EXPECT_LT(expr1, expr2)                                                         \
+  {                                                                                     \
+    auto val1 = expr1;                                                                  \
+    auto val2 = expr2;                                                                  \
+    if (val1 >= val2) {                                                                 \
+      throw BoutException(                                                              \
+          "Line " S__LINE__ " Expected " #expr1 " ({}) < " #expr2 " ({})", val1, val2); \
+    }                                                                                   \
+  }
+
 /// Is \p field equal to \p reference, with a tolerance of \p tolerance?
 template <class T, class U>
 bool IsFieldEqual(const T& field, const U& reference,
                   const std::string& region = "RGN_ALL", BoutReal tolerance = 1e-10) {
   for (auto i : field.getRegion(region)) {
     if (fabs(field[i] - reference[i]) > tolerance) {
-      output.write("Field: {:e}, reference: {:e}, tolerance: {:e}\n", field[i], reference[i],
-                   tolerance);
+      output.write("Field: {:e}, reference: {:e}, tolerance: {:e}\n", field[i],
+                   reference[i], tolerance);
       return false;
     }
   }
@@ -55,8 +66,8 @@ bool IsFieldClose(const T& field, const U& reference,
   for (auto i : field.getRegion(region)) {
     if (fabs(field[i] - reference[i])
         > tolerance * (fabs(reference[i]) + fabs(field[i]))) {
-      output.write("Field: {:e}, reference: {:e}, tolerance: {:e}\n", field[i], reference[i],
-                   tolerance * (fabs(reference[i]) + fabs(field[i])));
+      output.write("Field: {:e}, reference: {:e}, tolerance: {:e}\n", field[i],
+                   reference[i], tolerance * (fabs(reference[i]) + fabs(field[i])));
       return false;
     }
   }
@@ -180,6 +191,58 @@ int main(int argc, char** argv) {
                             Div_q_1(0, mesh->yend - y + mesh->ystart, 0));
       }
     }
+  }
+
+  ///////////////////////////////////////////////////////////
+  // The integral of the flux divergences over the domain
+  // (i.e. the boundary fluxes) should be the same
+  // even if the grid is non-uniform
+
+  {
+    FieldFactory factory;
+    auto Te = factory.create3D("1e3 + 0.01*sin(y)");
+    auto Ne = factory.create3D("1e19 * (1 + 0.5*sin(y))");
+    mesh->communicate(Te, Ne);
+
+    // Change the mesh spacing and cell volume (Jdy)
+    Coordinates* coord = Te.getCoordinates();
+
+    for (int x = mesh->xstart; x <= mesh->xend; x++) {
+      for (int y = mesh->ystart; y <= mesh->yend; y++) {
+        double yn = (double(y) + 0.5) / double(mesh->yend + 1);
+
+        coord->dy(x, y) = 1. - 0.9 * yn;
+        coord->J(x, y) = (1. + yn * yn);
+      }
+    }
+
+    HeatFluxSNB snb;
+
+    Field3D Div_q_SH;
+    Field3D Div_q = snb.divHeatFlux(Te, Ne, &Div_q_SH);
+
+    // Normalise to W/m^3
+    Div_q_SH *= SI::qe;
+    Div_q *= SI::qe;
+
+    // Check that fluxes are not equal
+    EXPECT_FALSE(IsFieldClose(Div_q, Div_q_SH, "RGN_NOBNDRY"));
+
+    const Field2D dy = coord->dy;
+    const Field2D J = coord->J;
+
+    // Integrate Div(q) over domain
+    BoutReal q_sh = 0.0;
+    BoutReal q_snb = 0.0;
+    BoutReal q_maxabs = 0.0; // Maximum heat flux as a reference scale
+    for (int y = mesh->ystart; y <= mesh->yend; y++) {
+      q_sh += Div_q_SH(mesh->xstart, y, 0) * J(mesh->xstart, y) * dy(mesh->xstart, y);
+      q_snb += Div_q(mesh->xstart, y, 0) * J(mesh->xstart, y) * dy(mesh->xstart, y);
+
+      q_maxabs = BOUTMAX(q_maxabs, fabs(q_sh), fabs(q_snb));
+    }
+    // Expect integrals to be the same
+    EXPECT_LT(fabs(q_sh - q_snb), 1e-8 * q_maxabs);
   }
 
   bout::checkForUnusedOptions();

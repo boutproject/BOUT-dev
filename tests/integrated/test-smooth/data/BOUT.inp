@@ -6,8 +6,8 @@
 
 MZ = 8    # Z size
 
-grid = "test_smooth.nc"
-
 [mesh]
 symmetricGlobalX = false
 symmetricGlobalY = false
+
+file = "test_smooth.nc"

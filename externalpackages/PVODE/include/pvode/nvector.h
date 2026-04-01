@@ -88,11 +88,12 @@ namespace pvode {
 
 
 /* Set types real and integer for MPI calls. */
-
+#ifndef PVEC_REAL_MPI_TYPE
 #if (LLNL_DOUBLE == 1)
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 #else
 #define PVEC_REAL_MPI_TYPE MPI_FLOAT
+#endif
 #endif
 
 // Ugh, potentionanlly bad but need to do this for now when compiling with both SUNDIALS and PVODE

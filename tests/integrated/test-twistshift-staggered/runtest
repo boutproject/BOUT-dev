@@ -24,6 +24,7 @@ check = collect("check", path=datapath, yguards=True, info=False)
 
 success = True
 
+
 # Check test_aligned is *not* periodic in y
 def test1(ylower, yupper):
     global success

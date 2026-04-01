@@ -82,11 +82,10 @@ percent of runtime.
 Configure and build
 ~~~~~~~~~~~~~~~~~~~
 
-Configure with ``--with-scorep`` to enable Scorep instrumentation, then build
-as normal.  This option can be combined with other options, but it is usually
-desirable to profile the optimized code, configuring with the flags
-``--enable-optimize=3 --enable-checks=0``. Build the code with ``make`` as
-normal.
+Configure with ``-BOUT_USE_SCOREP`` to enable Scorep instrumentation,
+then build as normal.  This option can be combined with other options,
+but it is usually desirable to profile the optimized code, configuring
+with the flags ````. Build the code with ``make`` as normal.
 
 With CMake:
 
@@ -95,6 +94,7 @@ With CMake:
     $ SCOREP_WRAPPER=off cmake \
       -DCMAKE_C_COMPILER=scorep-mpicc \
       -DCMAKE_CXX_COMPILER=scorep-mpicxx \
+      -DCMAKE_CXX_FLAGS=-O3 -DCHECK=0 \
       <other CMake options>
 
 This will turn off the instrumentation during the configure

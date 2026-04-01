@@ -23,18 +23,23 @@
  *
  **************************************************************************/
 
-#include <bout/constants.hxx>
-#include <bout/invert/laplacexy2_hypre.hxx>
-#include <bout.hxx>
-#include <derivs.hxx>
-#include <initialprofiles.hxx>
-#include <options.hxx>
+#include <bout/bout.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/difops.hxx>
+#include <bout/field2d.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/invert/laplacexy.hxx>
+#include <bout/options.hxx>
+#include <bout/options_io.hxx>
+#include <bout/output.hxx>
+
+#include <cstdlib>
 
 int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
 
-  LaplaceXY2Hypre laplacexy;
+  auto laplacexy = LaplaceXYFactory::getInstance().create("hypre", nullptr);
 
   // Solving equations of the form
   // Div(A Grad_perp(f)) + B*f = rhs
@@ -54,34 +59,31 @@ int main(int argc, char** argv) {
 
   Field2D rhs = Laplace_perpXY(a, f) + b * f;
 
-  laplacexy.setCoefs(a, b);
+  laplacexy->setCoefs(a, b);
 
   Field2D guess = 0.0;
-  Field2D sol = laplacexy.solve(rhs, guess);
+  Field2D sol = laplacexy->solve(rhs, guess);
   Field2D error = (f - sol) / f;
-  Field2D absolute_error =
-      abs(f - sol); // Absolute value of relative error: abs((f - sol)/f)
+  // Absolute value of relative error: abs((f - sol)/f)
+  Field2D absolute_error = abs(f - sol);
   BoutReal max_error = max(absolute_error, true);
 
-  output << "Magnitude of maximum absolute error is " << max_error << endl;
+  output.write("Magnitude of maximum absolute error is {}\n", max_error);
 
   sol.getMesh()->communicate(sol);
   Field2D rhs_check = Laplace_perpXY(a, sol);
 
-  using bout::globals::dump;
-
-  dump.add(a, "a");
-  dump.add(b, "b");
-  dump.add(f, "f");
-  dump.add(sol, "sol");
-  dump.add(error, "error");
-  dump.add(absolute_error, "absolute_error");
-  dump.add(max_error, "max_error");
-  dump.add(rhs, "rhs");
-  dump.add(rhs_check, "rhs_check");
-
-  dump.write();
-  dump.close();
+  Options dump;
+  dump["a"] = a;
+  dump["b"] = b;
+  dump["f"] = f;
+  dump["sol"] = sol;
+  dump["error"] = error;
+  dump["absolute_error"] = absolute_error;
+  dump["max_error"] = max_error;
+  dump["rhs"] = rhs;
+  dump["rhs_check"] = rhs_check;
+  bout::writeDefaultOutputFile(dump);
 
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
 

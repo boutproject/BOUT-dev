@@ -32,10 +32,10 @@
  *
  **************************************************************************/
 
-#ifndef __IMEXBDF2_SOLVER_H__
-#define __IMEXBDF2_SOLVER_H__
+#ifndef BOUT_IMEXBDF2_SOLVER_H
+#define BOUT_IMEXBDF2_SOLVER_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/solver.hxx"
 
 #if not BOUT_HAS_PETSC
@@ -51,13 +51,11 @@ class IMEXBDF2;
 
 #include "mpi.h"
 
+#include <bout/bout_types.hxx>
 #include <bout/petsclib.hxx>
-#include <bout_types.hxx>
 
 #include <petsc.h>
 #include <petscsnes.h>
-// PETSc creates macros for MPI calls, which interfere with the MpiWrapper class
-#undef MPI_Allreduce
 
 namespace {
 RegisterSolver<IMEXBDF2> registersolverimexbdf2("imexbdf2");
@@ -105,14 +103,15 @@ public:
   /// @param[in] x  The vector to be operated on
   /// @param[out] f  The result of the operation
   PetscErrorCode precon(Vec x, Vec f);
+
 private:
   static constexpr int MAX_SUPPORTED_ORDER = 4; // Should this be #defined instead?
 
   int maxOrder; ///< Specify the maximum order of the scheme to use (1/2/3)
 
-  BoutReal timestep;     ///< The internal timestep
-  int ninternal;         ///< Number of internal steps per output
-  int mxstep;            ///< Maximum number of internal steps between outputs
+  BoutReal timestep; ///< The internal timestep
+  int ninternal;     ///< Number of internal steps per output
+  int mxstep;        ///< Maximum number of internal steps between outputs
 
   // Adaptivity
 
@@ -222,6 +221,6 @@ private:
   void saveDerivs(BoutReal* u);
 };
 
-#endif // __IMEXBDF2_SOLVER_H__
+#endif // BOUT_IMEXBDF2_SOLVER_H
 
 #endif // BOUT_HAS_PETSC

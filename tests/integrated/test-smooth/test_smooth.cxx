@@ -3,9 +3,9 @@
  * 
  */
 
-#include <bout.hxx>
-#include <smoothing.hxx>
-#include <field_factory.hxx>
+#include <bout/bout.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/smoothing.hxx>
 
 int main(int argc, char** argv) {
 

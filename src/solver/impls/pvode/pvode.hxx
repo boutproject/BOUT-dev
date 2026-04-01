@@ -24,21 +24,21 @@
  * 
  **************************************************************************/
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_PVODE
 
 class PvodeSolver;
 
-#ifndef __PVODE_SOLVER_H__
-#define __PVODE_SOLVER_H__
+#ifndef BOUT_PVODE_SOLVER_H
+#define BOUT_PVODE_SOLVER_H
 
+#include <bout/bout_types.hxx>
 #include <bout/solver.hxx>
-#include <bout_types.hxx>
 
+#include <pvode/cvode.h> // main CVODE header file
 #include <pvode/nvector.h>
-#include <pvode/cvode.h>     // main CVODE header file
-#include <pvode/pvbbdpre.h>  // band preconditioner function prototypes
+#include <pvode/pvbbdpre.h> // band preconditioner function prototypes
 
 namespace {
 RegisterSolver<PvodeSolver> registersolverpvode("pvode");
@@ -75,12 +75,17 @@ private:
   pvode::machEnvType machEnv{nullptr};
   void* cvode_mem{nullptr};
 
-  BoutReal abstol, reltol; // addresses passed in init must be preserved
+  BoutReal abstol, reltol;
+  // addresses passed in init must be preserved
   pvode::PVBBDData pdata{nullptr};
 
-  bool pvode_initialised = false;
+  /// is pvode already initialised?
+  bool pvode_initialised{false};
+
+  /// Add debugging data if solver fails
+  bool debug_on_failure{false};
 };
 
-#endif // __PVODE_SOLVER_H__
+#endif // BOUT_PVODE_SOLVER_H
 
 #endif

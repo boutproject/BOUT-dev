@@ -1,5 +1,5 @@
-#include "gtest/gtest.h"
 #include "bout/sys/range.hxx"
+#include "gtest/gtest.h"
 
 #include <vector>
 

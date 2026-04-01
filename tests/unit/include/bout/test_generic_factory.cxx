@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "boutexception.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/generic_factory.hxx"
 
 #include <exception>
@@ -37,15 +37,12 @@ public:
   static constexpr auto option_name = "type";
   static constexpr auto default_type = "base";
 };
-constexpr decltype(BaseFactory::type_name) BaseFactory::type_name;
-constexpr decltype(BaseFactory::section_name) BaseFactory::section_name;
-constexpr decltype(BaseFactory::option_name) BaseFactory::option_name;
-constexpr decltype(BaseFactory::default_type) BaseFactory::default_type;
 
 BaseFactory::RegisterInFactory<Base> registerme("base");
 BaseFactory::RegisterInFactory<Derived1> registerme1("derived1");
 BaseFactory::RegisterInFactory<Derived2> registerme2("derived2");
-BaseFactory::RegisterUnavailableInFactory dontregisterme("not here", "this is only a test");
+BaseFactory::RegisterUnavailableInFactory dontregisterme("not here",
+                                                         "this is only a test");
 } // namespace
 
 class BaseComplicated {
@@ -74,11 +71,6 @@ public:
   static constexpr auto option_name = "type";
   static constexpr auto default_type = "basecomplicated";
 };
-
-constexpr decltype(ComplicatedFactory::type_name) ComplicatedFactory::type_name;
-constexpr decltype(ComplicatedFactory::section_name) ComplicatedFactory::section_name;
-constexpr decltype(ComplicatedFactory::option_name) ComplicatedFactory::option_name;
-constexpr decltype(ComplicatedFactory::default_type) ComplicatedFactory::default_type;
 
 namespace {
 ComplicatedFactory::RegisterInFactory<BaseComplicated> registerme3("basecomplicated");

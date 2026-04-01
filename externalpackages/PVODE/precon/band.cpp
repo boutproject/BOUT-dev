@@ -185,8 +185,8 @@ integer gbfa(real **a, integer n, integer mu, integer ml, integer smu,
     if (col_k[storage_l] == ZERO) return(k+1);
     
     /* swap a(l,k) and a(k,k) if necessary */
-    
-    if (swap = (l != k)) {
+    swap = (l != k);
+    if (swap) {
       temp = col_k[storage_l];
       col_k[storage_l] = *diag_k;
       *diag_k = temp;

@@ -18,7 +18,6 @@ from boututils.run_wrapper import shell, build_and_log, launch_safe
 from boutdata.collect import collect
 from sys import exit
 
-
 build_and_log("Multigrid Laplacian inversion test")
 
 print("Running multigrid Laplacian inversion test")
@@ -26,7 +25,6 @@ success = True
 
 for nproc in [1, 2, 4]:
     for inputfile in ["BOUT_jy4.inp", "BOUT_jy63.inp", "BOUT_jy127.inp"]:
-
         # set nxpe on the command line as we only use solution from one point in y, so splitting in y-direction is redundant (and also doesn't help test the multigrid solver)
         cmd = "./test_multigrid_laplace -f " + inputfile + " NXPE=" + str(nproc)
 

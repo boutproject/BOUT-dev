@@ -1,8 +1,3 @@
-# Drift wave test
-# All variables in normalised units
-
-timestep = 100
-nout = 100
 
 [mesh]
 
@@ -22,6 +17,11 @@ Ne0 = 1 + 0.1*(0.5 - x)
 
 [solver]
 type = imexbdf2
+# Drift wave test
+# All variables in normalised units
+
+output_step = 100
+nout = 100
 
 [drift]
 nu = 0.1

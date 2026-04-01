@@ -3,9 +3,9 @@
  * and tridiagonal solver.
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2025 BOUT++ developers
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -24,28 +24,33 @@
  *
  **************************************************************************/
 
-#include "globals.hxx"
+#include "bout/build_defines.hxx"
+
+#if not BOUT_USE_METRIC_3D
+
 #include "serial_tri.hxx"
+#include "bout/globals.hxx"
 
-#include <bout/mesh.hxx>
-#include <boutexception.hxx>
-#include <utils.hxx>
-#include <fft.hxx>
-#include <lapack_routines.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
+#include <bout/fft.hxx>
+#include <bout/lapack_routines.hxx>
+#include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
-#include <cmath>
-
-#include <output.hxx>
+#include <bout/output.hxx>
+#include <bout/utils.hxx>
 
 LaplaceSerialTri::LaplaceSerialTri(Options* opt, CELL_LOC loc, Mesh* mesh_in,
-                                   Solver* UNUSED(solver), Datafile* UNUSED(dump))
+                                   Solver* UNUSED(solver))
     : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0) {
+
+  bout::fft::assertZSerial(*localmesh, "`tri` inversion");
+
   A.setLocation(location);
   C.setLocation(location);
   D.setLocation(location);
 
-  if(!localmesh->firstX() || !localmesh->lastX()) {
+  if (!localmesh->firstX() || !localmesh->lastX()) {
     throw BoutException("LaplaceSerialTri only works for localmesh->NXPE = 1");
   }
 }
@@ -88,16 +93,18 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells
-  int inbndry = localmesh->xstart, outbndry=localmesh->xstart;
+  int inbndry = localmesh->xstart, outbndry = localmesh->xstart;
 
   // If the flags to assign that only one guard cell should be used is set
-  if((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2))  {
+  if (isGlobalFlagSet(INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
     inbndry = outbndry = 1;
   }
-  if (inner_boundary_flags & INVERT_BNDRY_ONE)
+  if (isInnerBoundaryFlagSet(INVERT_BNDRY_ONE)) {
     inbndry = 1;
-  if (outer_boundary_flags & INVERT_BNDRY_ONE)
+  }
+  if (isOuterBoundaryFlagSet(INVERT_BNDRY_ONE)) {
     outbndry = 1;
+  }
 
   /* Allocation fo
    * bk   = The fourier transformed of b, where b is one of the inputs in
@@ -131,15 +138,15 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto bvec = Array<dcomplex>(ncx);
   auto cvec = Array<dcomplex>(ncx);
 
-  BOUT_OMP(parallel for)
+  BOUT_OMP_PERF(parallel for)
   for (int ix = 0; ix < ncx; ix++) {
     /* This for loop will set the bk (initialized by the constructor)
      * bk is the z fourier modes of b in z
      * If the INVERT_SET flag is set (meaning that x0 will be used to set the
      * bounadry values),
      */
-    if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET)) ||
-        ((ncx - 1 - ix < outbndry) && (outer_boundary_flags & INVERT_SET))) {
+    if (((ix < inbndry) && isInnerBoundaryFlagSet(INVERT_SET))
+        || ((ncx - 1 - ix < outbndry) && (isOuterBoundaryFlagSet(INVERT_SET)))) {
       // Use the values in x0 in the boundary
 
       // x0 is the input
@@ -183,8 +190,7 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
                  kz,
                  // wave number (different from kz only if we are taking a part
                  // of the z-domain [and not from 0 to 2*pi])
-                 kz * kwaveFactor, global_flags, inner_boundary_flags,
-                 outer_boundary_flags, &A, &C, &D);
+                 kz * kwaveFactor, &A, &C, &D);
 
     ///////// PERFORM INVERSION /////////
     if (!localmesh->periodicX) {
@@ -206,7 +212,7 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
 
     // If the global flag is set to INVERT_KX_ZERO
-    if ((global_flags & INVERT_KX_ZERO) && (kz == 0)) {
+    if (isGlobalFlagSet(INVERT_KX_ZERO) && (kz == 0)) {
       dcomplex offset(0.0);
       for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
         offset += xk1d[ix];
@@ -226,15 +232,18 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   // Done inversion, transform back
   for (int ix = 0; ix < ncx; ix++) {
 
-    if(global_flags & INVERT_ZERO_DC)
+    if (isGlobalFlagSet(INVERT_ZERO_DC)) {
       xk(ix, 0) = 0.0;
+    }
 
     irfft(&xk(ix, 0), ncz, x[ix]);
 
 #if CHECK > 2
-    for(int kz=0;kz<ncz;kz++)
-      if(!finite(x(ix,kz)))
+    for (int kz = 0; kz < ncz; kz++) {
+      if (!std::isfinite(x(ix, kz))) {
         throw BoutException("Non-finite at {:d}, {:d}, {:d}", ix, jy, kz);
+      }
+    }
 #endif
   }
 
@@ -242,3 +251,5 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   return x; // Result of the inversion
 }
+
+#endif // BOUT_USE_METRIC_3D

@@ -27,19 +27,18 @@
 #include <bout/mesh.hxx>
 #include <bout/scorepwrapper.hxx>
 
-#include <globals.hxx>
-#include <vecops.hxx>
-#include <derivs.hxx>
-#include <msg_stack.hxx>
-#include <unused.hxx>
-#include <utils.hxx>
+#include <bout/derivs.hxx>
+#include <bout/globals.hxx>
+#include <bout/unused.hxx>
+#include <bout/utils.hxx>
+#include <bout/vecops.hxx>
 
 /**************************************************************************
  * Gradient operators
  **************************************************************************/
 
 Vector2D Grad(const Field2D& f, CELL_LOC outloc, const std::string& method) {
-  TRACE("Grad( Field2D )");
+
   SCOREP0();
   CELL_LOC outloc_x, outloc_y, outloc_z;
   if (outloc == CELL_VSHIFT) {
@@ -68,7 +67,7 @@ Vector2D Grad(const Field2D& f, CELL_LOC outloc, const std::string& method) {
 }
 
 Vector3D Grad(const Field3D& f, CELL_LOC outloc, const std::string& method) {
-  TRACE("Grad( Field3D )");
+
   SCOREP0();
   CELL_LOC outloc_x, outloc_y, outloc_z;
   if (outloc == CELL_VSHIFT) {
@@ -97,11 +96,11 @@ Vector3D Grad(const Field3D& f, CELL_LOC outloc, const std::string& method) {
 }
 
 Vector3D Grad_perp(const Field3D& f, CELL_LOC outloc, const std::string& method) {
-  TRACE("Grad_perp( Field3D )");
+
   SCOREP0();
   ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
 
-  Coordinates *metric = f.getCoordinates(outloc);
+  Coordinates* metric = f.getCoordinates(outloc);
 
   Vector3D result(f.getMesh());
 
@@ -119,18 +118,18 @@ Vector3D Grad_perp(const Field3D& f, CELL_LOC outloc, const std::string& method)
 }
 
 Vector2D Grad_perp(const Field2D& f, CELL_LOC outloc, const std::string& method) {
-  AUTO_TRACE();
+
   SCOREP0();
   ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
 
-  Coordinates *metric = f.getCoordinates(outloc);
+  Coordinates* metric = f.getCoordinates(outloc);
 
   Vector2D result(f.getMesh());
 
   result.x = DDX(f, outloc, method)
              - metric->g_12 * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
   result.y = 0.0;
-  result.z = - metric->g_23 * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
+  result.z = -metric->g_23 * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
 
   result.setLocation(result.x.getLocation());
 
@@ -145,7 +144,7 @@ Vector2D Grad_perp(const Field2D& f, CELL_LOC outloc, const std::string& method)
 
 Coordinates::FieldMetric Div(const Vector2D& v, CELL_LOC outloc,
                              const std::string& method) {
-  TRACE("Div( Vector2D )");
+
   SCOREP0();
   if (outloc == CELL_DEFAULT) {
     outloc = v.getLocation();
@@ -155,22 +154,22 @@ Coordinates::FieldMetric Div(const Vector2D& v, CELL_LOC outloc,
 
   Mesh* localmesh = v.getMesh();
 
-  Coordinates *metric = localmesh->getCoordinates(outloc);
+  Coordinates* metric = localmesh->getCoordinates(outloc);
 
   // get contravariant components of v
   Vector2D vcn = v;
   vcn.toContravariant();
 
   Coordinates::FieldMetric result = DDX(metric->J * vcn.x, outloc, method);
-  result += DDY(metric->J*vcn.y, outloc, method);
-  result += DDZ(metric->J*vcn.z, outloc, method);
+  result += DDY(metric->J * vcn.y, outloc, method);
+  result += DDZ(metric->J * vcn.z, outloc, method);
   result /= metric->J;
 
   return result;
 }
 
 Field3D Div(const Vector3D& v, CELL_LOC outloc, const std::string& method) {
-  TRACE("Div( Vector3D )");
+
   SCOREP0();
   if (outloc == CELL_DEFAULT) {
     outloc = v.getLocation();
@@ -181,7 +180,7 @@ Field3D Div(const Vector3D& v, CELL_LOC outloc, const std::string& method) {
 
   Mesh* localmesh = v.getMesh();
 
-  Coordinates *metric = localmesh->getCoordinates(outloc);
+  Coordinates* metric = localmesh->getCoordinates(outloc);
 
   // get contravariant components of v
   Vector3D vcn = v;
@@ -209,7 +208,7 @@ Field3D Div(const Vector3D& v, CELL_LOC outloc, const std::string& method) {
 
 Coordinates::FieldMetric Div(const Vector2D& v, const Field2D& f, CELL_LOC outloc,
                              const std::string& method) {
-  TRACE("Div( Vector2D, Field2D )");
+
   SCOREP0();
   if (outloc == CELL_DEFAULT) {
     outloc = v.getLocation();
@@ -217,9 +216,9 @@ Coordinates::FieldMetric Div(const Vector2D& v, const Field2D& f, CELL_LOC outlo
 
   ASSERT1(outloc != CELL_VSHIFT);
 
-  Mesh *localmesh = f.getMesh();
+  Mesh* localmesh = f.getMesh();
 
-  Coordinates *metric = localmesh->getCoordinates(outloc);
+  Coordinates* metric = localmesh->getCoordinates(outloc);
 
   // get contravariant components of v
   Vector2D vcn = v;
@@ -236,16 +235,15 @@ Coordinates::FieldMetric Div(const Vector2D& v, const Field2D& f, CELL_LOC outlo
 
 Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc,
             const std::string& method) {
-  TRACE("Div( Vector3D, Field3D )");
 
   if (outloc == CELL_DEFAULT) {
     outloc = v.getLocation();
   }
   ASSERT1(outloc != CELL_VSHIFT);
 
-  Mesh *localmesh = f.getMesh();
+  Mesh* localmesh = f.getMesh();
 
-  Coordinates *metric = localmesh->getCoordinates(outloc);
+  Coordinates* metric = localmesh->getCoordinates(outloc);
 
   // get contravariant components of v
   Vector3D vcn = v;
@@ -264,8 +262,6 @@ Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc,
  **************************************************************************/
 
 Vector2D Curl(const Vector2D& v) {
-
-  TRACE("Curl( Vector2D )");
 
   ASSERT1(v.getLocation() != CELL_VSHIFT);
   Mesh* localmesh = v.getMesh();
@@ -292,7 +288,7 @@ Vector2D Curl(const Vector2D& v) {
 }
 
 Vector3D Curl(const Vector3D& v) {
-  TRACE("Curl( Vector3D )");
+
   SCOREP0();
   ASSERT1(v.getLocation() != CELL_VSHIFT);
 
@@ -323,54 +319,54 @@ Vector3D Curl(const Vector3D& v) {
  * Upwinding operators
  **************************************************************************/
 Coordinates::FieldMetric V_dot_Grad(const Vector2D& v, const Field2D& f) {
-  TRACE("V_dot_Grad( Vector2D , Field2D )");
+
   SCOREP0();
 
   // Get contravariant components of v
   auto vcn = v;
   vcn.toContravariant();
-  
+
   return VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 }
 
 Field3D V_dot_Grad(const Vector2D& v, const Field3D& f) {
-  TRACE("V_dot_Grad( Vector2D , Field3D )");
+
   SCOREP0();
 
   // Get contravariant components of v
   auto vcn = v;
   vcn.toContravariant();
-  
+
   return VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 }
 
 Field3D V_dot_Grad(const Vector3D& v, const Field2D& f) {
-  TRACE("V_dot_Grad( Vector3D , Field2D )");
+
   SCOREP0();
 
   // Get contravariant components of v
   auto vcn = v;
   vcn.toContravariant();
-  
+
   return VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 }
 
 Field3D V_dot_Grad(const Vector3D& v, const Field3D& f) {
-  TRACE("V_dot_Grad( Vector3D , Field3D )");
+
   SCOREP0();
 
   // Get contravariant components of v
   auto vcn = v;
   vcn.toContravariant();
-  
+
   return VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 }
 
 // Here R is the deduced return type based on a promoting
 // operation (addition) between the two input types.
-template<typename T, typename F, typename R = decltype(T{}+F{})>
-R V_dot_Grad(const T &v, const F &a) {
-  AUTO_TRACE();
+template <typename T, typename F, typename R = decltype(T{} + F{})>
+R V_dot_Grad(const T& v, const F& a) {
+
   SCOREP0();
   ASSERT1(v.getLocation() == a.getLocation());
   ASSERT1(v.getLocation() != CELL_VSHIFT);
@@ -386,57 +382,92 @@ R V_dot_Grad(const T &v, const F &a) {
   auto vcn = v;
   vcn.toContravariant();
 
-   if (a.covariant) {
+  if (a.covariant) {
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
     BOUT_FOR(i, result.x.getRegion("RGN_ALL")) {
-      result.x[i] -= vcn.x[i] * (metric->G1_11[i] * a.x[i] + metric->G2_11[i] * a.y[i] + metric->G3_11[i] * a.z[i]);
-      result.x[i] -= vcn.y[i] * (metric->G1_12[i] * a.x[i] + metric->G2_12[i] * a.y[i] + metric->G3_12[i] * a.z[i]);
-      result.x[i] -= vcn.z[i] * (metric->G1_13[i] * a.x[i] + metric->G2_13[i] * a.y[i] + metric->G3_13[i] * a.z[i]);
+      result.x[i] -= vcn.x[i]
+                     * (metric->G1_11[i] * a.x[i] + metric->G2_11[i] * a.y[i]
+                        + metric->G3_11[i] * a.z[i]);
+      result.x[i] -= vcn.y[i]
+                     * (metric->G1_12[i] * a.x[i] + metric->G2_12[i] * a.y[i]
+                        + metric->G3_12[i] * a.z[i]);
+      result.x[i] -= vcn.z[i]
+                     * (metric->G1_13[i] * a.x[i] + metric->G2_13[i] * a.y[i]
+                        + metric->G3_13[i] * a.z[i]);
     }
-    
+
     result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
     BOUT_FOR(i, result.y.getRegion("RGN_ALL")) {
-      result.y[i] -= vcn.x[i] * (metric->G1_12[i] * a.x[i] + metric->G2_12[i] * a.y[i] + metric->G3_12[i] * a.z[i]);
-      result.y[i] -= vcn.y[i] * (metric->G1_22[i] * a.x[i] + metric->G2_22[i] * a.y[i] + metric->G3_22[i] * a.z[i]);
-      result.y[i] -= vcn.z[i] * (metric->G1_23[i] * a.x[i] + metric->G2_23[i] * a.y[i] + metric->G3_23[i] * a.z[i]);
+      result.y[i] -= vcn.x[i]
+                     * (metric->G1_12[i] * a.x[i] + metric->G2_12[i] * a.y[i]
+                        + metric->G3_12[i] * a.z[i]);
+      result.y[i] -= vcn.y[i]
+                     * (metric->G1_22[i] * a.x[i] + metric->G2_22[i] * a.y[i]
+                        + metric->G3_22[i] * a.z[i]);
+      result.y[i] -= vcn.z[i]
+                     * (metric->G1_23[i] * a.x[i] + metric->G2_23[i] * a.y[i]
+                        + metric->G3_23[i] * a.z[i]);
     }
-    
+
     result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
     BOUT_FOR(i, result.z.getRegion("RGN_ALL")) {
-      result.z[i] -= vcn.x[i] * (metric->G1_13[i] * a.x[i] + metric->G2_13[i] * a.y[i] + metric->G3_13[i] * a.z[i]);
-      result.z[i] -= vcn.y[i] * (metric->G1_23[i] * a.x[i] + metric->G2_23[i] * a.y[i] + metric->G3_23[i] * a.z[i]);
-      result.z[i] -= vcn.z[i] * (metric->G1_33[i] * a.x[i] + metric->G2_33[i] * a.y[i] + metric->G3_33[i] * a.z[i]);
+      result.z[i] -= vcn.x[i]
+                     * (metric->G1_13[i] * a.x[i] + metric->G2_13[i] * a.y[i]
+                        + metric->G3_13[i] * a.z[i]);
+      result.z[i] -= vcn.y[i]
+                     * (metric->G1_23[i] * a.x[i] + metric->G2_23[i] * a.y[i]
+                        + metric->G3_23[i] * a.z[i]);
+      result.z[i] -= vcn.z[i]
+                     * (metric->G1_33[i] * a.x[i] + metric->G2_33[i] * a.y[i]
+                        + metric->G3_33[i] * a.z[i]);
     }
     result.covariant = true;
   } else {
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
-    BOUT_FOR(i, result.x.getRegion("RGN_ALL")) {    
-      result.x[i] += vcn.x[i] * (metric->G1_11[i] * a.x[i] + metric->G1_12[i] * a.y[i] + metric->G1_13[i] * a.z[i]);
-      result.x[i] += vcn.y[i] * (metric->G1_12[i] * a.x[i] + metric->G1_22[i] * a.y[i] + metric->G1_23[i] * a.z[i]);
-      result.x[i] += vcn.z[i] * (metric->G1_13[i] * a.x[i] + metric->G1_23[i] * a.y[i] + metric->G1_33[i] * a.z[i]);
+    BOUT_FOR(i, result.x.getRegion("RGN_ALL")) {
+      result.x[i] += vcn.x[i]
+                     * (metric->G1_11[i] * a.x[i] + metric->G1_12[i] * a.y[i]
+                        + metric->G1_13[i] * a.z[i]);
+      result.x[i] += vcn.y[i]
+                     * (metric->G1_12[i] * a.x[i] + metric->G1_22[i] * a.y[i]
+                        + metric->G1_23[i] * a.z[i]);
+      result.x[i] += vcn.z[i]
+                     * (metric->G1_13[i] * a.x[i] + metric->G1_23[i] * a.y[i]
+                        + metric->G1_33[i] * a.z[i]);
     }
-    
+
     result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
-    BOUT_FOR(i, result.y.getRegion("RGN_ALL")) {    
-      result.y[i] += vcn.x[i] * (metric->G2_11[i] * a.x[i] + metric->G2_12[i] * a.y[i] + metric->G2_13[i] * a.z[i]);
-      result.y[i] += vcn.y[i] * (metric->G2_12[i] * a.x[i] + metric->G2_22[i] * a.y[i] + metric->G2_23[i] * a.z[i]);
-      result.y[i] += vcn.z[i] * (metric->G2_13[i] * a.x[i] + metric->G2_23[i] * a.y[i] + metric->G2_33[i] * a.z[i]);
+    BOUT_FOR(i, result.y.getRegion("RGN_ALL")) {
+      result.y[i] += vcn.x[i]
+                     * (metric->G2_11[i] * a.x[i] + metric->G2_12[i] * a.y[i]
+                        + metric->G2_13[i] * a.z[i]);
+      result.y[i] += vcn.y[i]
+                     * (metric->G2_12[i] * a.x[i] + metric->G2_22[i] * a.y[i]
+                        + metric->G2_23[i] * a.z[i]);
+      result.y[i] += vcn.z[i]
+                     * (metric->G2_13[i] * a.x[i] + metric->G2_23[i] * a.y[i]
+                        + metric->G2_33[i] * a.z[i]);
     }
-    
+
     result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
     BOUT_FOR(i, result.z.getRegion("RGN_ALL")) {
-      result.z[i] += vcn.x[i] * (metric->G3_11[i] * a.x[i] + metric->G3_12[i] * a.y[i] + metric->G3_13[i] * a.z[i]);
-      result.z[i] += vcn.y[i] * (metric->G3_12[i] * a.x[i] + metric->G3_22[i] * a.y[i] + metric->G3_23[i] * a.z[i]);
-      result.z[i] += vcn.z[i] * (metric->G3_13[i] * a.x[i] + metric->G3_23[i] * a.y[i] + metric->G3_33[i] * a.z[i]);
+      result.z[i] += vcn.x[i]
+                     * (metric->G3_11[i] * a.x[i] + metric->G3_12[i] * a.y[i]
+                        + metric->G3_13[i] * a.z[i]);
+      result.z[i] += vcn.y[i]
+                     * (metric->G3_12[i] * a.x[i] + metric->G3_22[i] * a.y[i]
+                        + metric->G3_23[i] * a.z[i]);
+      result.z[i] += vcn.z[i]
+                     * (metric->G3_13[i] * a.x[i] + metric->G3_23[i] * a.y[i]
+                        + metric->G3_33[i] * a.z[i]);
     }
-    
+
     result.covariant = false;
   }
 
   result.setLocation(v.getLocation());
 
   return result;
-  
 }
 
 // Implement vector-vector operation in terms of templated routine above

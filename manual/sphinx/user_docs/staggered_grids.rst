@@ -46,7 +46,7 @@ locations of the evolving variables are::
 which makes the velocity ``v`` staggered to the lower side of the cell
 in Y, whilst the density :math:`n` remains cell centred.
 
-.. note:: If BOUT++ was configued ``--with-checks``,
+.. note:: If BOUT++ was not configued with ``-DCHECK=0``,
           `Field3D::setLocation` will throw an exception if you don't
           have staggered grids turned on and try to set the location
           to something other than `CELL_CENTRE`. If you want to be

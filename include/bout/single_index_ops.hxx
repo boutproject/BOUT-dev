@@ -9,14 +9,14 @@
 
 #if BOUT_HAS_RAJA
 //--  RAJA CUDA settings--------------------------------------------------------start
-#if BOUT_USE_CUDA
+#if BOUT_HAS_CUDA
 const int CUDA_BLOCK_SIZE = 256; // TODO: Make configurable
 using EXEC_POL = RAJA::cuda_exec<CUDA_BLOCK_SIZE>;
-#else  // BOUT_ENABLE_CUDA not defined
+#else  // not BOUT_USE_CUDA
 using EXEC_POL = RAJA::loop_exec;
-#endif // defined(BOUT_ENABLE_CUDA)
+#endif // end BOUT_USE_CUDA
 ////-----------CUDA settings------------------------------------------------------end
-#endif
+#endif // end BOUT_HAS_RAJA
 
 // Ind3D: i.zp():
 BOUT_HOST_DEVICE inline int i_zp(const int id, const int nz) {

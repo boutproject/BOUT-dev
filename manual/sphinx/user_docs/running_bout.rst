@@ -232,26 +232,25 @@ when you need a way to debug your code too.
   which shows which functions were being run (most recent first). This
   should give a good indication of where an error occurred. If this
   stack isn’t printed, make sure checking is set to level 2 or higher
-  (``./configure –-enable-checks=2``).
+  (``cmake -DCHECK=2``).
 
 - If the error is due to non-finite numbers, increase the checking
-  level (``./configure –-enable-checks=3``) to perform more checking of
+  level (``cmake -DCHECK=3``) to perform more checking of
   values and (hopefully) find an error as soon as possible after it
   occurs.
 
 - If the error is a segmentation fault, you can try a debugger such as
   gdb or totalview. You will likely need to compile with some
-  debugging flags (``./configure --enable-debug``).
+  debugging flags (``cmake -DCMAKE_CXX_FLAGS=" -g "``).
 
 - You can also enable exceptions on floating point errors
-  (``./configure --enable-sigfpe``), though the majority of these
+  (``cmake -DBOUT_ENABLE_SIGFPE``), though the majority of these
   types of errors should be caught with checking level set to 3.
 
 - Expert users can try AddressSanitizer, which is a tool that comes
   with recent versions of GCC and Clang. To enable AddressSanitizer,
   include ``-fsanitize=leak -fsanitize=address -fsanitize=undefined``
-  in ``CXXFLAGS`` when configuring BOUT++, or add them to
-  ``BOUT_FLAGS``.
+  in ``-DCMAKE_CXX_FLAGS`` when configuring BOUT++.
 
 Startup output
 --------------

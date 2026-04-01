@@ -1,31 +1,26 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include <math.h>
 #include <tuple>
 
 #include "../../../../src/invert/laplace/impls/hypre3d/hypre3d_laplace.hxx"
-#include "invert_laplace.hxx"
-#include "test_extras.hxx"
+
+#include "bout/invert_laplace.hxx"
 #include "gtest/gtest.h"
 
-#include "derivs.hxx"
-#include "difops.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "options.hxx"
-#include "vecops.hxx"
+#include "bout/derivs.hxx"
+#include "bout/difops.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 #include "bout/griddata.hxx"
 #include "bout/hypre_interface.hxx"
 #include "bout/mesh.hxx"
+#include "bout/options.hxx"
+#include "bout/vecops.hxx"
 
 #if BOUT_HAS_HYPRE
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;

@@ -3,11 +3,11 @@
  * 
  */
 
-#include <bout.hxx>
-#include <field_factory.hxx>
-#include <gyro_average.hxx>
+#include <bout/bout.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/gyro_average.hxx>
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
 
   // Initialise BOUT++, setting up mesh
   BoutInitialise(argc, argv);
@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
   output.write("\nFinished running test.\n\n");
 
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
-  
+
   bout::checkForUnusedOptions();
   BoutFinalise();
   return 0;

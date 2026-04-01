@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
-#include "test_extras.hxx"
 
 #include "bout/bout_enum_class.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/options.hxx"
+#include "bout/output.hxx"
 
 BOUT_ENUM_CLASS(TestEnum, foo, bar);
 

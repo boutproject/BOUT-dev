@@ -1,25 +1,22 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_PETSC
 
 #include "imex-bdf2.hxx"
 
 #include <bout/assert.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/mesh.hxx>
-#include <boutcomm.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
-#include <utils.hxx>
+#include <bout/petsc_interface.hxx>
+#include <bout/utils.hxx>
 
 #include <cmath>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 #include "petscmat.h"
 #include "petscsnes.h"
-
-// Redundent definition because < C++17
-constexpr int IMEXBDF2::MAX_SUPPORTED_ORDER;
 
 IMEXBDF2::IMEXBDF2(Options* opt)
     : Solver(opt), maxOrder((*options)["maxOrder"]
@@ -116,7 +113,7 @@ static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
  *
  * This can be a linearised and simplified form of FormFunction
  */
-static PetscErrorCode FormFunctionForColoring(SNES UNUSED(snes), Vec x, Vec f,
+static PetscErrorCode FormFunctionForColoring(void* UNUSED(snes), Vec x, Vec f,
                                               void* ctx) {
   return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f, true);
 }
@@ -137,8 +134,6 @@ static PetscErrorCode imexbdf2PCapply(PC pc, Vec x, Vec y) {
  *
  */
 int IMEXBDF2::init() {
-
-  TRACE("Initialising IMEX-BDF2 solver");
 
   Solver::init();
   output << "\n\tIMEX-BDF2 time-integration solver\n";
@@ -333,24 +328,26 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
       if (mesh->firstX()) {
         // Lower X boundary
         for (int y = mesh->ystart; y <= mesh->yend; y++) {
-          for (int z = 0; z < mesh->LocalNz; z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
             int localIndex = ROUND(index(mesh->xstart, y, z));
             ASSERT2((localIndex >= 0) && (localIndex < localN));
             if (z == 0) {
               // All 2D and 3D fields
-              for (int i = 0; i < n2d + n3d; i++)
+              for (int i = 0; i < n2d + n3d; i++) {
                 d_nnz[localIndex + i] -= (n3d + n2d);
+              }
             } else {
               // Only 3D fields
-              for (int i = 0; i < n3d; i++)
+              for (int i = 0; i < n3d; i++) {
                 d_nnz[localIndex + i] -= (n3d + n2d);
+              }
             }
           }
         }
       } else {
         // On another processor
         for (int y = mesh->ystart; y <= mesh->yend; y++) {
-          for (int z = 0; z < mesh->LocalNz; z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
             int localIndex = ROUND(index(mesh->xstart, y, z));
             ASSERT2((localIndex >= 0) && (localIndex < localN));
             if (z == 0) {
@@ -373,24 +370,26 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
       if (mesh->lastX()) {
         // Upper X boundary
         for (int y = mesh->ystart; y <= mesh->yend; y++) {
-          for (int z = 0; z < mesh->LocalNz; z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
             int localIndex = ROUND(index(mesh->xend, y, z));
             ASSERT2((localIndex >= 0) && (localIndex < localN));
             if (z == 0) {
               // All 2D and 3D fields
-              for (int i = 0; i < n2d + n3d; i++)
+              for (int i = 0; i < n2d + n3d; i++) {
                 d_nnz[localIndex + i] -= (n3d + n2d);
+              }
             } else {
               // Only 3D fields
-              for (int i = 0; i < n3d; i++)
+              for (int i = 0; i < n3d; i++) {
                 d_nnz[localIndex + i] -= (n3d + n2d);
+              }
             }
           }
         }
       } else {
         // On another processor
         for (int y = mesh->ystart; y <= mesh->yend; y++) {
-          for (int z = 0; z < mesh->LocalNz; z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
             int localIndex = ROUND(index(mesh->xend, y, z));
             ASSERT2((localIndex >= 0) && (localIndex < localN));
             if (z == 0) {
@@ -535,15 +534,16 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
               int xi = x + xoffset[c];
               int yi = y + yoffset[c];
 
-              if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx) || (yi >= mesh->LocalNy)) {
+              if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
+                  || (yi >= mesh->LocalNy)) {
                 continue;
-	      }
+              }
 
               int ind2 = ROUND(index(xi, yi, 0));
 
               if (ind2 < 0) {
                 continue; // A boundary point
-	      }
+              }
 
               // Depends on all variables on this cell
               for (int j = 0; j < n2d; j++) {
@@ -556,7 +556,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
           }
 
           // 3D fields
-          for (int z = 0; z < mesh->LocalNz; z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
 
             int ind = ROUND(index(x, y, z));
 
@@ -564,7 +564,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
               PetscInt row = ind + i;
               if (z == 0) {
                 row += n2d;
-	      }
+              }
 
               // Depends on 2D fields
               for (int j = 0; j < n2d; j++) {
@@ -581,16 +581,16 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
                 if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
                     || (yi >= mesh->LocalNy)) {
                   continue;
-		}
+                }
 
                 int ind2 = ROUND(index(xi, yi, z));
                 if (ind2 < 0) {
                   continue; // Boundary point
-		}
+                }
 
                 if (z == 0) {
                   ind2 += n2d;
-		}
+                }
 
                 // 3D fields on this cell
                 for (int j = 0; j < n3d; j++) {
@@ -609,7 +609,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
                 int ind2 = ROUND(index(x, y, zp));
                 if (zp == 0) {
                   ind2 += n2d;
-		}
+                }
                 for (int j = 0; j < n3d; j++) {
                   PetscInt col = ind2 + j;
                   // output.write("SETTING 4: {:d}, {:d}\n", row, col);
@@ -620,7 +620,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
                 ind2 = ROUND(index(x, y, zm));
                 if (zm == 0) {
                   ind2 += n2d;
-		}
+                }
                 for (int j = 0; j < n3d; j++) {
                   PetscInt col = ind2 + j;
                   // output.write("SETTING 5: {:d}, {:d}\n", row, col);
@@ -649,9 +649,8 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
       // Create data structure for SNESComputeJacobianDefaultColor
       MatFDColoringCreate(Jmf, iscoloring, &fdcoloring);
       // Set the function to difference
-      MatFDColoringSetFunction(
-          fdcoloring, reinterpret_cast<PetscErrorCode (*)()>(FormFunctionForColoring),
-          this);
+      MatFDColoringSetFunction(fdcoloring,
+                               bout::cast_MatFDColoringFn(FormFunctionForColoring), this);
       MatFDColoringSetFromOptions(fdcoloring);
       MatFDColoringSetUp(Jmf, iscoloring, fdcoloring);
       ISColoringDestroy(&iscoloring);
@@ -671,16 +670,11 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
           BoutComm::get(), nlocal, nlocal,  // Local sizes
           PETSC_DETERMINE, PETSC_DETERMINE, // Global sizes
           3, // Number of nonzero entries in diagonal portion of local submatrix
-          PETSC_NULL,
+          nullptr,
           0, // Number of nonzeros per row in off-diagonal portion of local submatrix
-          PETSC_NULL, &Jmf);
+          nullptr, &Jmf);
 
-#if PETSC_VERSION_GE(3, 4, 0)
       SNESSetJacobian(*snesIn, Jmf, Jmf, SNESComputeJacobianDefault, this);
-#else
-      // Before 3.4
-      SNESSetJacobian(*snesIn, Jmf, Jmf, SNESDefaultComputeJacobian, this);
-#endif
 
       MatSetOption(Jmf, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
     }
@@ -744,7 +738,6 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
 }
 
 int IMEXBDF2::run() {
-  TRACE("IMEXBDF2::run()");
 
   // Multi-step scheme, so first steps are different
   int order = 1;
@@ -790,11 +783,11 @@ int IMEXBDF2::run() {
 
         // Validate our desired next timestep
         if (dtNext < dtMinFatal) {
-	  // Don't allow the timestep to go below requested fatal min
+          // Don't allow the timestep to go below requested fatal min
           throw BoutException(
               "Aborting: Timestep ({:f}) tried to go below minimum allowed", dtNext);
         }
-	if (dtNext < dtMin) { // Don't allow timestep below requested min
+        if (dtNext < dtMin) { // Don't allow timestep below requested min
           dtNext = dtMin;
         } else if (dtNext > dtMax) { // Don't allow timestep above request max
           dtNext = dtMax;
@@ -837,7 +830,7 @@ int IMEXBDF2::run() {
             // An error occurred. If adaptive, reduce timestep
             if (!adaptive) {
               throw;
-	    }
+            }
 
             failCounter++;
             if (failCounter > 10) {
@@ -872,7 +865,7 @@ int IMEXBDF2::run() {
           // An error occurred. If adaptive, reduce timestep
           if (!adaptive) {
             throw;
-	  }
+          }
 
           failCounter++;
           if (failCounter > 10) {
@@ -997,8 +990,6 @@ int IMEXBDF2::run() {
 
     loadVars(std::begin(u)); // Put result into variables
     run_rhs(simtime);        // Run RHS to calculate auxilliary variables
-
-    iteration++; // Advance iteration number
 
     /// Call the monitor function
 
@@ -1225,19 +1216,21 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
     KSPGetConvergedReason(ksp, &kreason);
     if (kreason < 0) {
       if (verbose) {
-        output << "KSP Failed to converge with reason " << kreason << endl;
+        output << "KSP Failed to converge with reason " << static_cast<int>(kreason)
+               << endl;
       }
       linear_fails++;
     } else {
       nonlinear_fails++;
       if (verbose) {
-        output << "KSP Succeeded with reason " << kreason << endl;
+        output << "KSP Succeeded with reason " << static_cast<int>(kreason) << endl;
       }
     };
     if (verbose) {
-      output << "SNES failed to converge with reason " << reason << endl;
+      output << "SNES failed to converge with reason " << static_cast<int>(reason)
+             << endl;
     }
-    throw BoutException("SNES failed to converge. Reason: {:d}\n", reason);
+    throw PetscLib::SNESFailure(snesUse);
   }
 
   int its;
@@ -1251,8 +1244,9 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
   ierr = VecGetArray(snes_x, &xdata);
   CHKERRQ(ierr);
 
-  for (int i = 0; i < nlocal; i++)
+  for (int i = 0; i < nlocal; i++) {
     u[i] = xdata[i];
+  }
   ierr = VecRestoreArray(snes_x, &xdata);
   CHKERRQ(ierr);
 
@@ -1369,20 +1363,22 @@ void IMEXBDF2::loopVars(BoutReal* u) {
 
       // Inner X
       if (mesh->firstX() && !mesh->periodicX) {
-        for (int jx = 0; jx < mesh->xstart; ++jx)
+        for (int jx = 0; jx < mesh->xstart; ++jx) {
           for (int jy = mesh->ystart; jy <= mesh->yend; ++jy) {
             op.run(jx, jy, u);
             ++u;
           }
+        }
       }
 
       // Outer X
       if (mesh->lastX() && !mesh->periodicX) {
-        for (int jx = mesh->xend + 1; jx < mesh->LocalNx; ++jx)
+        for (int jx = mesh->xend + 1; jx < mesh->LocalNx; ++jx) {
           for (int jy = mesh->ystart; jy <= mesh->yend; ++jy) {
             op.run(jx, jy, u);
             ++u;
           }
+        }
       }
       // Lower Y
       for (RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); ++xi) {
@@ -1402,11 +1398,12 @@ void IMEXBDF2::loopVars(BoutReal* u) {
     }
 
     // Bulk of points
-    for (int jx = mesh->xstart; jx <= mesh->xend; ++jx)
+    for (int jx = mesh->xstart; jx <= mesh->xend; ++jx) {
       for (int jy = mesh->ystart; jy <= mesh->yend; ++jy) {
         op.run(jx, jy, u);
         ++u;
       }
+    }
   }
 
   // Loop over 3D variables
@@ -1419,7 +1416,7 @@ void IMEXBDF2::loopVars(BoutReal* u) {
       if (mesh->firstX() && !mesh->periodicX) {
         for (int jx = 0; jx < mesh->xstart; ++jx) {
           for (int jy = mesh->ystart; jy <= mesh->yend; ++jy) {
-            for (int jz = 0; jz < mesh->LocalNz; ++jz) {
+            for (int jz = mesh->zstart; jz <= mesh->zend; ++jz) {
               op.run(jx, jy, jz, u);
               ++u;
             }
@@ -1431,7 +1428,7 @@ void IMEXBDF2::loopVars(BoutReal* u) {
       if (mesh->lastX() && !mesh->periodicX) {
         for (int jx = mesh->xend + 1; jx < mesh->LocalNx; ++jx) {
           for (int jy = mesh->ystart; jy <= mesh->yend; ++jy) {
-            for (int jz = 0; jz < mesh->LocalNz; ++jz) {
+            for (int jz = mesh->zstart; jz <= mesh->zend; ++jz) {
               op.run(jx, jy, jz, u);
               ++u;
             }
@@ -1441,7 +1438,7 @@ void IMEXBDF2::loopVars(BoutReal* u) {
       // Lower Y
       for (RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); ++xi) {
         for (int jy = 0; jy < mesh->ystart; ++jy) {
-          for (int jz = 0; jz < mesh->LocalNz; ++jz) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; ++jz) {
             op.run(*xi, jy, jz, u);
             ++u;
           }
@@ -1451,7 +1448,7 @@ void IMEXBDF2::loopVars(BoutReal* u) {
       // Upper Y
       for (RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); ++xi) {
         for (int jy = mesh->yend + 1; jy < mesh->LocalNy; ++jy) {
-          for (int jz = 0; jz < mesh->LocalNz; ++jz) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; ++jz) {
             op.run(*xi, jy, jz, u);
             ++u;
           }
@@ -1462,7 +1459,7 @@ void IMEXBDF2::loopVars(BoutReal* u) {
     // Bulk of points
     for (int jx = mesh->xstart; jx <= mesh->xend; ++jx) {
       for (int jy = mesh->ystart; jy <= mesh->yend; ++jy) {
-        for (int jz = 0; jz < mesh->LocalNz; ++jz) {
+        for (int jz = mesh->zstart; jz <= mesh->zend; ++jz) {
           op.run(jx, jy, jz, u);
           ++u;
         }

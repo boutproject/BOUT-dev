@@ -1,16 +1,19 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_NETCDF && !BOUT_HAS_LEGACY_NETCDF
 
 #include "options_netcdf.hxx"
 
-#include "bout.hxx"
-#include "globals.hxx"
+#include "bout/bout.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/mesh.hxx"
 #include "bout/sys/timer.hxx"
+#include "bout/traits.hxx"
 
+#include <fmt/format.h>
+
+#include <climits>
 #include <exception>
-#include <iostream>
 #include <netcdf>
 #include <vector>
 
@@ -56,7 +59,8 @@ T readAttribute(const NcAtt& attribute) {
   return value;
 }
 
-void readGroup(const std::string& filename, const NcGroup& group, Options& result) {
+void readGroup(const std::string& filename, const NcGroup& group, Options& result,
+               const std::shared_ptr<netCDF::NcFile>& file) {
 
   // Iterate over all variables
   for (const auto& varpair : group.getVars()) {
@@ -88,6 +92,10 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
         Array<double> value(static_cast<int>(dims[0].getSize()));
         var.getVar(value.begin());
         result[var_name] = value;
+      } else if (var_type == ncInt or var_type == ncShort) {
+        Array<int> value(static_cast<int>(dims[0].getSize()));
+        var.getVar(value.begin());
+        result[var_name] = value;
       } else if ((var_type == ncString) or (var_type == ncChar)) {
         std::string value;
         value.resize(dims[0].getSize());
@@ -102,14 +110,58 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
                              static_cast<int>(dims[1].getSize()));
         var.getVar(value.begin());
         result[var_name] = value;
+      } else if (var_type == ncInt) {
+        Matrix<int> value(static_cast<int>(dims[0].getSize()),
+                          static_cast<int>(dims[1].getSize()));
+        var.getVar(value.begin());
+        result[var_name] = value;
       }
       break;
     }
     case 3: {
       if (var_type == ncDouble or var_type == ncFloat) {
-        Tensor<double> value(static_cast<int>(dims[0].getSize()),
-                             static_cast<int>(dims[1].getSize()),
-                             static_cast<int>(dims[2].getSize()));
+        if (file) {
+          result[var_name] = Tensor<double>(0, 0, 0);
+          const auto s2i = [](size_t s) {
+            if (s > INT_MAX) {
+              throw BoutException("BadCast {} > {}", s, INT_MAX);
+            }
+            return static_cast<int>(s);
+          };
+          result[var_name].setLazyShape(
+              {s2i(dims[0].getSize()), s2i(dims[1].getSize()), s2i(dims[2].getSize())});
+          // We need to explicitly copy file, so that there is a pointer to the file, and
+          // the file does not get closed, which would prevent us from reading.
+          result[var_name].setLazyLoad(std::make_unique<std::function<Tensor<double>(
+                                           int, int, int, int, int, int)>>(
+              [file, var](int xstart, int xend, int ystart, int yend, int zstart,
+                          int zend) {
+                const auto i2s = [](int i) {
+                  if (i < 0) {
+                    throw BoutException("BadCast {} < 0", i);
+                  }
+                  return static_cast<size_t>(i);
+                };
+                Tensor<double> value(xend - xstart + 1, yend - ystart + 1,
+                                     zend - zstart + 1);
+                const std::vector<size_t> index{i2s(xstart), i2s(ystart), i2s(zstart)};
+                const std::vector<size_t> count{i2s(xend - xstart + 1),
+                                                i2s(yend - ystart + 1),
+                                                i2s(zend - zstart + 1)};
+                var.getVar(index, count, value.begin());
+                return value;
+              }));
+        } else {
+          Tensor<double> value(static_cast<int>(dims[0].getSize()),
+                               static_cast<int>(dims[1].getSize()),
+                               static_cast<int>(dims[2].getSize()));
+          var.getVar(value.begin());
+          result[var_name] = value;
+        }
+      } else if (var_type == ncInt) {
+        Tensor<int> value(static_cast<int>(dims[0].getSize()),
+                          static_cast<int>(dims[1].getSize()),
+                          static_cast<int>(dims[2].getSize()));
         var.getVar(value.begin());
         result[var_name] = value;
       }
@@ -144,25 +196,25 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
     const auto& name = grouppair.first;
     const auto& subgroup = grouppair.second;
 
-    readGroup(filename, subgroup, result[name]);
+    readGroup(filename, subgroup, result[name], file);
   }
 }
 } // namespace
 
 namespace bout {
 
-Options OptionsNetCDF::read() {
+Options OptionsNetCDF::read(bool lazy) {
   Timer timer("io");
 
   // Open file
-  const NcFile read_file(filename, NcFile::read);
+  auto read_file = std::make_shared<netCDF::NcFile>(filename, NcFile::read);
 
-  if (read_file.isNull()) {
+  if (read_file->isNull()) {
     throw BoutException("Could not open NetCDF file '{:s}' for reading", filename);
   }
 
   Options result;
-  readGroup(filename, read_file, result);
+  readGroup(filename, *read_file, result, lazy ? read_file : nullptr);
 
   return result;
 }
@@ -178,6 +230,13 @@ struct NcTypeVisitor {
   NcType operator()(const T& UNUSED(t)) {
     return {}; // Null object by default
   }
+
+  NcType operator()([[maybe_unused]] const Array<int>& t) { return ncInt; }
+  NcType operator()([[maybe_unused]] const Array<BoutReal>& t) { return ncDouble; }
+  NcType operator()([[maybe_unused]] const Matrix<int>& t) { return ncInt; }
+  NcType operator()([[maybe_unused]] const Matrix<BoutReal>& t) { return ncDouble; }
+  NcType operator()([[maybe_unused]] const Tensor<int>& t) { return ncInt; }
+  NcType operator()([[maybe_unused]] const Tensor<BoutReal>& t) { return ncDouble; }
 };
 
 template <>
@@ -196,8 +255,7 @@ NcType NcTypeVisitor::operator()<double>(const double& UNUSED(t)) {
 }
 
 template <>
-MAYBE_UNUSED()
-NcType NcTypeVisitor::operator()<float>(const float& UNUSED(t)) {
+[[maybe_unused]] NcType NcTypeVisitor::operator()<float>(const float& UNUSED(t)) {
   return ncFloat;
 }
 
@@ -221,20 +279,9 @@ NcType NcTypeVisitor::operator()<FieldPerp>(const FieldPerp& UNUSED(t)) {
   return operator()<BoutReal>(0.0);
 }
 
-/// Visit a variant type, returning dimensions
-struct NcDimVisitor {
-  NcDimVisitor(NcGroup& group) : group(group) {}
-  template <typename T>
-  std::vector<NcDim> operator()(const T& UNUSED(value)) {
-    return {};
-  }
-
-private:
-  NcGroup& group;
-};
-
+namespace {
+// Find dimension with name and size in group, creating it if it doesn't exist
 NcDim findDimension(NcGroup& group, const std::string& name, unsigned int size) {
-  // Get the dimension
   try {
     auto dim = group.getDim(name, NcGroup::ParentsAndCurrent);
     if (dim.isNull()) {
@@ -258,6 +305,40 @@ NcDim findDimension(NcGroup& group, const std::string& name, unsigned int size) 
     throw BoutException("Error in findDimension('{:s}'): {:s}", name, e.what());
   }
 }
+
+using bout::utils::tuple_index_sequence;
+
+template <class Tuple, std::size_t... I>
+auto make_dims_impl(NcGroup& group, Tuple&& t, std::index_sequence<I...> /* index */) {
+  return std::vector{findDimension(group, fmt::format("dim_{}", I),
+                                   std::get<I>(std::forward<Tuple>(t)))...};
+}
+// Help get the dimensions for `Array`, `Matrix`, `Tensor` (amt)
+template <class T>
+auto make_amt_dims(NcGroup& group, const T& value) {
+  const auto shape = value.shape();
+  return make_dims_impl(group, shape, tuple_index_sequence<decltype(shape)>{});
+}
+} // namespace
+
+/// Visit a variant type, returning dimensions
+struct NcDimVisitor {
+  NcDimVisitor(NcGroup& group) : group(group) {}
+  template <typename T>
+  std::vector<NcDim> operator()(const T& UNUSED(value)) {
+    return {};
+  }
+
+  auto operator()(const Array<int>& value) { return make_amt_dims(group, value); }
+  auto operator()(const Array<BoutReal>& value) { return make_amt_dims(group, value); }
+  auto operator()(const Matrix<int>& value) { return make_amt_dims(group, value); }
+  auto operator()(const Matrix<BoutReal>& value) { return make_amt_dims(group, value); }
+  auto operator()(const Tensor<int>& value) { return make_amt_dims(group, value); }
+  auto operator()(const Tensor<BoutReal>& value) { return make_amt_dims(group, value); }
+
+private:
+  NcGroup& group;
+};
 
 template <>
 std::vector<NcDim> NcDimVisitor::operator()<Field2D>(const Field2D& value) {
@@ -303,6 +384,13 @@ struct NcPutVarVisitor {
     var.putVar(&value);
   }
 
+  void operator()(const Array<int>& value) { var.putVar(value.begin()); }
+  void operator()(const Array<BoutReal>& value) { var.putVar(value.begin()); }
+  void operator()(const Matrix<int>& value) { var.putVar(value.begin()); }
+  void operator()(const Matrix<BoutReal>& value) { var.putVar(value.begin()); }
+  void operator()(const Tensor<int>& value) { var.putVar(value.begin()); }
+  void operator()(const Tensor<BoutReal>& value) { var.putVar(value.begin()); }
+
 private:
   NcVar& var;
 };
@@ -347,6 +435,19 @@ struct NcPutVarCountVisitor {
   template <typename T>
   void operator()(const T& value) {
     var.putVar(start, &value);
+  }
+
+  void operator()(const Array<int>& value) { var.putVar(start, count, value.begin()); }
+  void operator()(const Array<BoutReal>& value) {
+    var.putVar(start, count, value.begin());
+  }
+  void operator()(const Matrix<int>& value) { var.putVar(start, count, value.begin()); }
+  void operator()(const Matrix<BoutReal>& value) {
+    var.putVar(start, count, value.begin());
+  }
+  void operator()(const Tensor<int>& value) { var.putVar(start, count, value.begin()); }
+  void operator()(const Tensor<BoutReal>& value) {
+    var.putVar(start, count, value.begin());
   }
 
 private:
@@ -403,8 +504,7 @@ void NcPutAttVisitor::operator()(const double& value) {
   var.putAtt(name, ncDouble, value);
 }
 template <>
-MAYBE_UNUSED()
-void NcPutAttVisitor::operator()(const float& value) {
+[[maybe_unused]] void NcPutAttVisitor::operator()(const float& value) {
   var.putAtt(name, ncFloat, value);
 }
 template <>
@@ -415,10 +515,7 @@ void NcPutAttVisitor::operator()(const std::string& value) {
 void writeGroup(const Options& options, NcGroup group,
                 const std::string& time_dimension) {
 
-  for (const auto& childpair : options.getChildren()) {
-    const auto& name = childpair.first;
-    const auto& child = childpair.second;
-
+  for (const auto& [name, child] : options) {
     if (child.isValue()) {
       try {
         auto nctype = bout::utils::visit(NcTypeVisitor(), child.value);
@@ -643,14 +740,19 @@ std::vector<TimeDimensionError> verifyTimesteps(const NcGroup& group) {
 
 namespace bout {
 
-OptionsNetCDF::OptionsNetCDF() : data_file(nullptr) {}
+OptionsNetCDF::OptionsNetCDF(Options& options) : OptionsIO(options) {
+  if (options["file"].doc("File name. Defaults to <path>/<prefix>.<rank>.nc").isSet()) {
+    filename = options["file"].as<std::string>();
+  } else {
+    // Both path and prefix must be set
+    filename = fmt::format("{}/{}.{}.nc", options["path"].as<std::string>(),
+                           options["prefix"].as<std::string>(), BoutComm::rank());
+  }
 
-OptionsNetCDF::OptionsNetCDF(std::string filename, FileMode mode)
-    : filename(std::move(filename)), file_mode(mode), data_file(nullptr) {}
-
-OptionsNetCDF::~OptionsNetCDF() = default;
-OptionsNetCDF::OptionsNetCDF(OptionsNetCDF&&) noexcept = default;
-OptionsNetCDF& OptionsNetCDF::operator=(OptionsNetCDF&&) noexcept = default;
+  file_mode = (options["append"].doc("Append to existing file?").withDefault<bool>(false))
+                  ? FileMode::append
+                  : FileMode::replace;
+}
 
 void OptionsNetCDF::verifyTimesteps() const {
   NcFile dataFile(filename, NcFile::read);
@@ -695,44 +797,9 @@ void OptionsNetCDF::write(const Options& options, const std::string& time_dim) {
   }
 
   writeGroup(options, *data_file, time_dim);
-
-  data_file->sync();
 }
 
-std::string getRestartDirectoryName(Options& options) {
-  if (options["restartdir"].isSet()) {
-    // Solver-specific restart directory
-    return options["restartdir"].withDefault<std::string>("data");
-  }
-  // Use the root data directory
-  return options["datadir"].withDefault<std::string>("data");
-}
-
-std::string getRestartFilename(Options& options) {
-  return getRestartFilename(options, BoutComm::rank());
-}
-
-std::string getRestartFilename(Options& options, int rank) {
-  return fmt::format("{}/BOUT.restart.{}.nc", bout::getRestartDirectoryName(options),
-                     rank);
-}
-
-std::string getOutputFilename(Options& options) {
-  return getOutputFilename(options, BoutComm::rank());
-}
-
-std::string getOutputFilename(Options& options, int rank) {
-  return fmt::format("{}/BOUT.dmp.{}.nc",
-                     options["datadir"].withDefault<std::string>("data"), rank);
-}
-
-void writeDefaultOutputFile() { writeDefaultOutputFile(Options::root()); }
-
-void writeDefaultOutputFile(Options& options) {
-  bout::experimental::addBuildFlagsToOptions(options);
-  bout::globals::mesh->outputVars(options);
-  OptionsNetCDF(getOutputFilename(Options::root())).write(options);
-}
+void OptionsNetCDF::flush() { data_file->sync(); }
 
 } // namespace bout
 

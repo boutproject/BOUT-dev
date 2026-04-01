@@ -3,12 +3,12 @@
  * Same as Maxim's version of BOUT - simplified 2-fluid for benchmarking
  *******************************************************************************/
 
-#include <bout.hxx>
+#include <bout/bout.hxx>
 
-#include <derivs.hxx>
-#include <initialprofiles.hxx>
-#include <invert_laplace.hxx>
-#include <unused.hxx>
+#include <bout/derivs.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/unused.hxx>
 
 #include <cmath>
 #include <cstdio>
@@ -35,7 +35,8 @@ class Interchange : public PhysicsModel {
   // Laplacian inversion
   std::unique_ptr<Laplacian> phi_solver;
 
-  Coordinates *coord;
+  Coordinates* coord;
+
 protected:
   int init(bool UNUSED(restarting)) override {
     Field2D I; // Shear factor
@@ -78,8 +79,8 @@ protected:
     /*************** READ OPTIONS *************************/
 
     // Read some parameters
-    Options *globalOptions = Options::getRoot();
-    Options *options = globalOptions->getSection("2fluid");
+    Options* globalOptions = Options::getRoot();
+    Options* options = globalOptions->getSection("2fluid");
     OPTION(options, AA, 2.0);
     OPTION(options, ZZ, 1.0);
 
@@ -100,14 +101,15 @@ protected:
     /************** CALCULATE PARAMETERS *****************/
 
     rho_s = 1.02 * sqrt(AA * Te_x) / ZZ / bmag;
-    wci       = 9.58e3*ZZ*bmag/AA;
-    
+    wci = 9.58e3 * ZZ * bmag / AA;
+
     /************** PRINT Z INFORMATION ******************/
 
     BoutReal hthe0;
     if (mesh->get(hthe0, "hthe0") == 0) {
-      output.write("    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n",
-                   hthe0 / rho_s);
+      output.write(
+          "    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n",
+          hthe0 / rho_s);
     }
 
     /************** NORMALISE QUANTITIES *****************/
@@ -176,9 +178,9 @@ protected:
     // Communicate variables
     mesh->communicate(rho, Ni, phi);
     Field3D pei = (Te0 + Ti0) * Ni;
-    
+
     // DENSITY EQUATION
-    ddt(Ni) = - b0xGrad_dot_Grad(phi, Ni0) / coord->Bxy;
+    ddt(Ni) = -b0xGrad_dot_Grad(phi, Ni0) / coord->Bxy;
 
     // VORTICITY
     ddt(rho) = 2.0 * coord->Bxy * b0xcv * Grad(pei);

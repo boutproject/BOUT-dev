@@ -1,19 +1,14 @@
-# Settings for split operator test case
-
-##################################################
-# settings used by the core code
-
-nout = 100     # number of time-steps
-timestep = 0.01   # time between outputs
 
 MZ = 65     # number of points in z direction (2^n + 1)
 
 ZMIN = 0
 ZMAX = 1
 
-grid = "simple_xz.nc"
-
 NXPE = 1
+
+[mesh]
+
+file = "simple_xz.nc"
 
 ##################################################
 # derivative methods
@@ -60,6 +55,13 @@ mxstep = 50000
 #type=splitrk
 #timestep=1e-4
 use_precon = true
+output_step = 0.01   # time between outputs
+# Settings for split operator test case
+
+##################################################
+# settings used by the core code
+
+nout = 100     # number of time-steps
 
 ##################################################
 # settings for split operator model

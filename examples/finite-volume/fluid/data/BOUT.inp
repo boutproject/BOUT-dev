@@ -1,7 +1,4 @@
 
-nout = 100
-timestep = 0.1
-
 MXG = 0
 
 [mesh]
@@ -30,3 +27,8 @@ function = 1  # Constant density
 
 # A region of high pressure, sharp jump
 function = 1 + 0.1*H(y-3)*H(4-y)
+
+[solver]
+output_step = 0.1
+
+nout = 100

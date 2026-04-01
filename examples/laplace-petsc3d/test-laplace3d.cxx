@@ -23,10 +23,10 @@
  *
  **************************************************************************/
 
-#include "bout.hxx"
-#include "derivs.hxx"
-#include "initialprofiles.hxx"
-#include "invert_laplace.hxx"
+#include "bout/bout.hxx"
+#include "bout/derivs.hxx"
+#include "bout/initialprofiles.hxx"
+#include "bout/invert_laplace.hxx"
 
 // The discretisation used in the solver is subtly different from that
 // in Laplace_perp, which can introduce error with some grids
@@ -36,13 +36,13 @@ Field3D this_Laplace_perp(const Field3D& f) {
   // dfdy not divided by dy yet
   auto dfdy = bout::derivatives::index::DDY(f, CELL_DEFAULT, "DEFAULT", "RGN_NOY");
 
-  return coords->G1*DDX(f)
-         + (coords->G2 - DDY(coords->J/coords->g_22)/coords->J)*DDY(f)
-         + coords->G3*DDZ(f)
-         + coords->g11*D2DX2(f) + (coords->g22 - 1./coords->g_22)*D2DY2(f)
-         + coords->g33*D2DZ2(f)
-         + 2.*(coords->g12*DDX(dfdy)/coords->dy + coords->g13*D2DXDZ(f)
-               + coords->g23*D2DYDZ(f));
+  return coords->G1 * DDX(f)
+         + (coords->G2 - DDY(coords->J / coords->g_22) / coords->J) * DDY(f)
+         + coords->G3 * DDZ(f) + coords->g11 * D2DX2(f)
+         + (coords->g22 - 1. / coords->g_22) * D2DY2(f) + coords->g33 * D2DZ2(f)
+         + 2.
+               * (coords->g12 * DDX(dfdy) / coords->dy + coords->g13 * D2DXDZ(f)
+                  + coords->g23 * D2DYDZ(f));
 }
 
 int main(int argc, char** argv) {
@@ -65,15 +65,15 @@ int main(int argc, char** argv) {
     int y = mesh->ystart - 1;
     if (x == mesh->xstart) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
-	f(x-1, y, z) = 0.5*(f(x-1, y - 1, z) + f(x-1, y, z));
+        f(x - 1, y, z) = 0.5 * (f(x - 1, y - 1, z) + f(x - 1, y, z));
       }
     }
     for (int z = mesh->zstart; z <= mesh->zend; z++) {
-      f(x, y, z) = 0.5*(f(x, y, z) + f(x, y + 1, z));
+      f(x, y, z) = 0.5 * (f(x, y, z) + f(x, y + 1, z));
     }
     if (x == mesh->xend) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
-	f(x+1, y, z) = 0.5*(f(x+1, y - 1, z) + f(x+1, y, z));
+        f(x + 1, y, z) = 0.5 * (f(x + 1, y - 1, z) + f(x + 1, y, z));
       }
     }
   }
@@ -82,15 +82,15 @@ int main(int argc, char** argv) {
     int y = mesh->yend + 1;
     if (x == mesh->xstart) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
-	f(x-1, y, z) = 0.5*(f(x-1, y - 1, z) + f(x-1, y, z));
+        f(x - 1, y, z) = 0.5 * (f(x - 1, y - 1, z) + f(x - 1, y, z));
       }
     }
     for (int z = mesh->zstart; z <= mesh->zend; z++) {
-      f(x, y, z) = 0.5*(f(x, y - 1, z) + f(x, y, z));
+      f(x, y, z) = 0.5 * (f(x, y - 1, z) + f(x, y, z));
     }
     if (x == mesh->xend) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
-	f(x+1, y, z) = 0.5*(f(x+1, y - 1, z) + f(x+1, y, z));
+        f(x + 1, y, z) = 0.5 * (f(x + 1, y - 1, z) + f(x + 1, y, z));
       }
     }
   }
@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
     int x = mesh->xstart - 1;
     for (int y = mesh->ystart; y <= mesh->yend; y++) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
-        f(x, y, z) = 0.5*(f(x, y, z) + f(x, y + 1, z));
+        f(x, y, z) = 0.5 * (f(x, y, z) + f(x, y + 1, z));
       }
     }
   }
@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
     int x = mesh->xend + 1;
     for (int y = mesh->ystart; y <= mesh->yend; y++) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
-        f(x, y, z) = 0.5*(f(x, y - 1, z) + f(x, y, z));
+        f(x, y, z) = 0.5 * (f(x, y - 1, z) + f(x, y, z));
       }
     }
   }
@@ -137,8 +137,8 @@ int main(int argc, char** argv) {
   // Calculate error
   ///////////////////////////////////////////////////////////////////////////////////////
   auto& g_22 = mesh->getCoordinates()->g_22;
-  Field3D rhs_check = D*this_Laplace_perp(f)
-                    + (Grad(f)*Grad(C2)-DDY(C2)*DDY(f)/g_22)/C1 + A*f;
+  Field3D rhs_check = D * this_Laplace_perp(f)
+                      + (Grad(f) * Grad(C2) - DDY(C2) * DDY(f) / g_22) / C1 + A * f;
   // The usual way to do this would be
   //
   //     Field3D rhs_check = D*Laplace_perp(f) +

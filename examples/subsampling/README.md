@@ -9,11 +9,9 @@ Therefore the fields, which are solved for, and any field that is
 added with `SAVE_REPEAT()` will be written out every second timeunit.
 
 In the code another monitor is added with an output timestep of 0.01.
-This Monitor uses a separate datafile, (via class `SimpleDatafile`) to
-write the data. The options for the simple datafile are read from the
-`[probes]` section in the input. As NetCDF supports several unlimited
-dimensions, it is also possible to extend the netcdf interface, to
-write it to the same output file, as all other data is going.
+This Monitor uses a separate output file to write the data. The
+options for this output file are read from the `[probes]` section
+in the input.
 
 The `Monitor1dDump` just saves a single point of the 3D field.
 As mentioned, it is set to an output timestep of 0.01.

@@ -7,13 +7,13 @@
 #ifndef FIELD_ACCESSOR_H__
 #define FIELD_ACCESSOR_H__
 
-#include "../bout_types.hxx"
-#include "../field.hxx"
-#include "../field2d.hxx"
-#include "../field3d.hxx"
 #include "build_config.hxx"
 #include "coordinates.hxx"
 #include "coordinates_accessor.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/field.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 
 /// Simple wrapper around a BoutReal* 1D array
 ///
@@ -39,9 +39,9 @@ struct BoutRealArray {
 
   /// Cast operators, so can be assigned to a raw pointer
   /// Note: Not explicit, so can be cast implicitly
-  operator BoutReal*() { return data; }
+  BOUT_HOST_DEVICE operator BoutReal*() { return data; }
 
-  operator const BoutReal*() const { return data; }
+  BOUT_HOST_DEVICE operator const BoutReal*() const { return data; }
 };
 
 /// Thin wrapper around field data, for fast but unsafe access

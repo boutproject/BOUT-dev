@@ -1,11 +1,11 @@
 /// Base type for factories
 
 #pragma once
-#ifndef __BOUT_GENERIC_FACTORY_H__
-#define __BOUT_GENERIC_FACTORY_H__
+#ifndef BOUT_GENERIC_FACTORY_H
+#define BOUT_GENERIC_FACTORY_H
 
-#include "boutexception.hxx"
-#include "options.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/options.hxx"
 
 #include <fmt/core.h>
 
@@ -47,14 +47,6 @@
 ///
 ///     RegisterInFactory<Base, Derived, MyFactory, Options*> register("derived_type");
 ///     auto foo = MyFactory::getInstance().create("derived_type");
-///
-///   In a .cxx file the static members should be declared:
-///
-///     constexpr decltype(MyFactory::type_name) MyFactory::type_name;
-///     constexpr decltype(MyFactory::section_name) MyFactory::section_name;
-///     constexpr decltype(MyFactory::option_name) MyFactory::option_name;
-///     constexpr decltype(MyFactory::default_type) MyFactory::default_type;
-///
 ///
 /// @tparam BaseType       The base class that this factory creates
 /// @tparam DerivedFactory The derived factory inheriting from this class
@@ -136,7 +128,9 @@ public:
   ///
   /// @param[in] name  The identifier for the type to be removed
   /// @returns true if the type was successfully removed
-  bool removeUnavailable(const std::string& name) { return unavailable_options.erase(name) == 1; }
+  bool removeUnavailable(const std::string& name) {
+    return unavailable_options.erase(name) == 1;
+  }
 
   /// Get the name of the type to create
   ///
@@ -183,8 +177,8 @@ public:
     if (unavailable_index != std::end(unavailable_options)) {
       throw BoutException("Error when trying to create a {0:s}: '{1:s}' is not available "
                           "because {2:s}\nAvailable {0:s}s are:\n{3:s}",
-                          DerivedFactory::type_name,
-                          unavailable_index->first, unavailable_index->second, available);
+                          DerivedFactory::type_name, unavailable_index->first,
+                          unavailable_index->second, available);
     }
 
     throw BoutException("Error when trying to create a {0:s}: Could not find "
@@ -257,4 +251,4 @@ public:
   };
 };
 
-#endif // __BOUT_GENERIC_FACTORY_H__
+#endif // BOUT_GENERIC_FACTORY_H

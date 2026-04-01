@@ -20,14 +20,20 @@
  *
  **************************************************************************/
 
+#include "fmt/format.h"
+#include "bout/globals.hxx"
+#include "bout/interpolation_xz.hxx"
 #include "bout/mesh.hxx"
-#include "globals.hxx"
-#include "interpolation_xz.hxx"
 
 #include <vector>
 
-XZLagrange4pt::XZLagrange4pt(int y_offset, Mesh *mesh)
+XZLagrange4pt::XZLagrange4pt(int y_offset, Mesh* mesh)
     : XZInterpolation(y_offset, mesh), t_x(localmesh), t_z(localmesh) {
+
+  if (localmesh->getNXPE() > 1) {
+    throw BoutException(
+        "XZLagrange4pt interpolation does not support MPI splitting in X");
+  }
 
   // Index arrays contain guard cells in order to get subscripts right
   i_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
@@ -39,14 +45,11 @@ XZLagrange4pt::XZLagrange4pt(int y_offset, Mesh *mesh)
 
 void XZLagrange4pt::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                                 const std::string& region) {
-
-  BOUT_FOR(i, delta_x.getRegion(region)) {
+  const auto curregion{getRegion(region)};
+  BOUT_FOR(i, curregion) {
     const int x = i.x();
     const int y = i.y();
     const int z = i.z();
-
-    if (skip_mask(x, y, z))
-      continue;
 
     // The integer part of xt_prime, zt_prime are the indices of the cell
     // containing the field line end-point
@@ -80,7 +83,7 @@ void XZLagrange4pt::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
 
 void XZLagrange4pt::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                                 const BoutMask& mask, const std::string& region) {
-  skip_mask = mask;
+  setMask(mask);
   calcWeights(delta_x, delta_z, region);
 }
 
@@ -89,13 +92,11 @@ Field3D XZLagrange4pt::interpolate(const Field3D& f, const std::string& region) 
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
 
-  BOUT_FOR(i, f.getRegion(region)) {
+  const auto curregion{getRegion(region)};
+  BOUT_FOR(i, curregion) {
     const int x = i.x();
     const int y = i.y();
     const int z = i.z();
-
-    if (skip_mask(x, y, z))
-      continue;
 
     const int jx = i_corner(x, y, z);
     const int jx2mnew = (jx == 0) ? 0 : (jx - 1);
@@ -133,7 +134,10 @@ Field3D XZLagrange4pt::interpolate(const Field3D& f, const std::string& region) 
 
     // Then in X
     f_interp(x, y_next, z) = lagrange_4pt(xvals, t_x(x, y, z));
+    ASSERT2(std::isfinite(f_interp(x, y_next, z)));
   }
+  const auto region2 = y_offset != 0 ? fmt::format("RGN_YPAR_{:+d}", y_offset) : region;
+  f_interp.setRegion(region2);
   return f_interp;
 }
 
@@ -155,10 +159,10 @@ Field3D XZLagrange4pt::interpolate(const Field3D& f, const Field3D& delta_x,
 BoutReal XZLagrange4pt::lagrange_4pt(const BoutReal v2m, const BoutReal vm,
                                      const BoutReal vp, const BoutReal v2p,
                                      const BoutReal offset) const {
-  return -offset * (offset - 1.0) * (offset - 2.0) * v2m / 6.0 +
-         0.5 * (offset * offset - 1.0) * (offset - 2.0) * vm -
-         0.5 * offset * (offset + 1.0) * (offset - 2.0) * vp +
-         offset * (offset * offset - 1.0) * v2p / 6.0;
+  return -offset * (offset - 1.0) * (offset - 2.0) * v2m / 6.0
+         + 0.5 * (offset * offset - 1.0) * (offset - 2.0) * vm
+         - 0.5 * offset * (offset + 1.0) * (offset - 2.0) * vp
+         + offset * (offset * offset - 1.0) * v2p / 6.0;
 }
 
 BoutReal XZLagrange4pt::lagrange_4pt(const BoutReal v[], const BoutReal offset) const {

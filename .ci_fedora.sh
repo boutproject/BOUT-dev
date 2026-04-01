@@ -15,50 +15,44 @@ then
   #         3. docker start -a mobydick                       <=> start to run the container (initialized with docker-cp)
     if test $1 = podman ; then
 	cmd=podman
+	# For the use of testing
+	git submodule update --init # --recursive
     else
 	cmd="sudo docker"
     fi
     test . != ".$2" && mpi="$2" || mpi=openmpi
-    test . != ".$3" && version="$3" || version=latest
-    time $cmd pull registry.fedoraproject.org/fedora:$version
+    time $cmd pull ghcr.io/dschwoerer/bout-container-base:ci-fedora
     time $cmd create --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
-         --name mobydick registry.fedoraproject.org/fedora:$version \
+	 --shm-size 256M \
+         --name mobydick ghcr.io/dschwoerer/bout-container-base:ci-fedora \
 	     /tmp/BOUT-dev/.ci_fedora.sh $mpi
-    time $cmd cp ${TRAVIS_BUILD_DIR} mobydick:/tmp
+    time $cmd cp ${TRAVIS_BUILD_DIR:-$(pwd)} mobydick:/tmp/BOUT-dev
     time $cmd start -a mobydick
     exit 0
 fi
 
 test . != ".$1" && mpi="$1" || mpi=openmpi
 
-## If we are called as root, setup everything
-if [ $UID -eq 0 ]
-then
-    cat /etc/os-release
-    # Ignore weak depencies
-    echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
-    time dnf -y install dnf-plugins-core python3-pip cmake
-    # Allow to override packages - see #2073
-    time dnf copr enable -y davidsch/fixes4bout || :
-    time dnf -y upgrade
-    time dnf -y builddep bout++
-    useradd test
-    cp -a /tmp/BOUT-dev /home/test/
-    chown -R test /home/test
-    chmod u+rwX /home/test -R
-    sudo -u test ${0/\/tmp/\/home\/test} $mpi
 ## If we are called as normal user, run test
-else
-    pip install --user zoidberg
+    cp -a /tmp/BOUT-dev /home/test/
     . /etc/profile.d/modules.sh
     module load mpi/${1}-x86_64
     export OMPI_MCA_rmaps_base_oversubscribe=yes
+    export PRTE_MCA_rmaps_default_mapping_policy=:oversubscribe
     export TRAVIS=true
+    # Try limiting openmp threads
     export FLEXIBLAS=NETLIB
+    export MKL_NUM_THREADS=1
+    export NUMEXPR_NUM_THREADS=1
+    export OMP_NUM_THREADS=1
     cd
     cd BOUT-dev
     echo "starting configure"
-    time cmake -DBOUT_USE_PETSC=ON -S . -B build
+    time cmake -S . -B build -DBOUT_USE_PETSC=ON \
+	 -DBOUT_UPDATE_GIT_SUBMODULE=OFF \
+	 -DBOUT_USE_SYSTEM_FMT=ON \
+	 -DBOUT_USE_SYSTEM_MPARK_VARIANT=ON \
+	 -DBOUT_USE_SUNDIALS=ON
+
     time make -C build build-check -j 2
     time make -C build check
-fi

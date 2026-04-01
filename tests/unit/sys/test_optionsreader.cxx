@@ -1,12 +1,12 @@
-#include "gtest/gtest.h"
 #include "test_extras.hxx"
-#include "optionsreader.hxx"
+#include "test_tmpfiles.hxx"
+#include "bout/optionsreader.hxx"
+#include "gtest/gtest.h"
 
-#include "boutexception.hxx"
-#include "output.hxx"
-#include "utils.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/output.hxx"
+#include "bout/utils.hxx"
 
-#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -28,18 +28,16 @@ public:
 
     // Make sure options singleton is clean
     Options::cleanup();
-
-    std::remove(filename.c_str());
   }
 
   // Write cout to buffer instead of stdout
   std::stringstream buffer;
   // Save cout's buffer here
-  std::streambuf *sbuf;
+  std::streambuf* sbuf;
 
   WithQuietOutput quiet{output_info};
   // A temporary filename
-  std::string filename{std::tmpnam(nullptr)};
+  bout::testing::TempFile filename;
 };
 
 TEST_F(OptionsReaderTest, BadFilename) {
@@ -90,8 +88,8 @@ TEST_F(OptionsReaderTest, ParseCommandLine) {
 }
 
 TEST_F(OptionsReaderTest, ParseCommandLineGlobalInstance) {
-  OptionsReader *reader = OptionsReader::getInstance();
-  Options *options = Options::getRoot();
+  OptionsReader* reader = OptionsReader::getInstance();
+  Options* options = Options::getRoot();
 
   std::vector<std::string> argv{"prog", "int_key=42"};
 
@@ -109,7 +107,7 @@ TEST_F(OptionsReaderTest, ParseCommandLineGlobalInstance) {
 
 TEST_F(OptionsReaderTest, ParseCommandLineWithSpaces) {
   OptionsReader reader;
-  Options *options = Options::getRoot();
+  Options* options = Options::getRoot();
 
   std::vector<std::string> argv{"prog", "int_key", "=", "42"};
 
@@ -125,7 +123,7 @@ TEST_F(OptionsReaderTest, ParseCommandLineWithSpaces) {
 
 TEST_F(OptionsReaderTest, ParseCommandLineWithTrailingSpace) {
   OptionsReader reader;
-  Options *options = Options::getRoot();
+  Options* options = Options::getRoot();
 
   std::vector<std::string> argv{"prog", "int_key=", "42"};
 
@@ -141,7 +139,7 @@ TEST_F(OptionsReaderTest, ParseCommandLineWithTrailingSpace) {
 
 TEST_F(OptionsReaderTest, ParseCommandLineFlag) {
   OptionsReader reader;
-  Options *options = Options::getRoot();
+  Options* options = Options::getRoot();
 
   std::vector<std::string> argv{"prog", "-flag", "command"};
 
@@ -162,7 +160,7 @@ TEST_F(OptionsReaderTest, ParseCommandLineFlag) {
 
 TEST_F(OptionsReaderTest, ParseCommandLineWithSection) {
   OptionsReader reader;
-  Options *options = Options::getRoot();
+  Options* options = Options::getRoot();
 
   std::vector<std::string> argv{"prog", "subsection1:int_key=42"};
 
@@ -170,7 +168,7 @@ TEST_F(OptionsReaderTest, ParseCommandLineWithSection) {
 
   EXPECT_FALSE(options->isSet("int_key"));
 
-  Options *section1 = options->getSection("subsection1");
+  Options* section1 = options->getSection("subsection1");
 
   ASSERT_TRUE(section1->isSet("int_key"));
 
@@ -195,8 +193,8 @@ bool_key = false
   test_file.close();
 
   OptionsReader reader;
-  Options *options = Options::getRoot();
-  reader.read(options, filename);
+  Options* options = Options::getRoot();
+  reader.read(options, filename.string());
 
   ASSERT_TRUE(options->isSet("flag"));
 
@@ -207,7 +205,7 @@ bool_key = false
 
   EXPECT_FALSE(options->isSet("int_key"));
 
-  Options *section1 = options->getSection("section1");
+  Options* section1 = options->getSection("section1");
 
   ASSERT_TRUE(section1->isSet("int_key"));
 
@@ -223,7 +221,7 @@ bool_key = false
 
   EXPECT_DOUBLE_EQ(real_value, 42.34e-67);
 
-  Options *subsection2 = section1->getSection("subsection2");
+  Options* subsection2 = section1->getSection("subsection2");
 
   ASSERT_TRUE(subsection2->isSet("bool_key"));
 
@@ -235,8 +233,8 @@ bool_key = false
 
 TEST_F(OptionsReaderTest, ReadBadFile) {
   OptionsReader reader;
-  Options *options = Options::getRoot();
-  EXPECT_THROW(reader.read(options, filename), BoutException);
+  Options* options = Options::getRoot();
+  EXPECT_THROW(reader.read(options, filename.string()), BoutException);
 }
 
 TEST_F(OptionsReaderTest, ReadBadFileSectionIncomplete) {
@@ -250,8 +248,8 @@ int_key = 34
   test_file.close();
 
   OptionsReader reader;
-  Options *options = Options::getRoot();
-  EXPECT_THROW(reader.read(options, filename), BoutException);
+  Options* options = Options::getRoot();
+  EXPECT_THROW(reader.read(options, filename.string()), BoutException);
 };
 
 TEST_F(OptionsReaderTest, ReadBadFileSectionEmptyName) {
@@ -265,22 +263,22 @@ int_key = 34
   test_file.close();
 
   OptionsReader reader;
-  Options *options = Options::getRoot();
-  EXPECT_THROW(reader.read(options, filename), BoutException);
+  Options* options = Options::getRoot();
+  EXPECT_THROW(reader.read(options, filename.string()), BoutException);
 };
 
 TEST_F(OptionsReaderTest, WriteFile) {
   OptionsReader reader;
-  Options *options = Options::getRoot();
+  Options* options = Options::getRoot();
 
   options->set("bool_key", true, "test");
-  Options *section1 = options->getSection("section1");
+  Options* section1 = options->getSection("section1");
   section1->set("int_key", 17, "test");
   section1->set("real_key", 6.17e23, "test");
-  Options *subsection2 = section1->getSection("subsection2");
+  Options* subsection2 = section1->getSection("subsection2");
   subsection2->set("string_key", "BOUT++", "test");
 
-  reader.write(options, filename);
+  reader.write(options, filename.string());
 
   std::ifstream test_file(filename);
   std::stringstream test_buffer;
@@ -291,38 +289,37 @@ TEST_F(OptionsReaderTest, WriteFile) {
                                        "int_key = 17",           "real_key = 6.17e+23",
                                        "[section1:subsection2]", "string_key = BOUT++"};
 
-  for (auto &result : expected) {
+  for (auto& result : expected) {
     EXPECT_TRUE(IsSubString(test_buffer.str(), result));
   }
 }
 
 TEST_F(OptionsReaderTest, WriteBadFile) {
-  std::string filename1 = filename + std::tmpnam(nullptr);
+  std::string file_in_nonexistent_dir =
+      bout::testing::test_directory() / "dir_that_doesnt_exist/some_filename";
   OptionsReader reader;
-  Options *options = Options::getRoot();
+  Options* options = Options::getRoot();
 
   options->set("bool_key", true, "test");
-  Options *section1 = options->getSection("section1");
+  Options* section1 = options->getSection("section1");
   section1->set("int_key", 17, "test");
 
-  EXPECT_THROW(reader.write(options, filename1), BoutException);
-
-  std::remove(filename1.c_str());
+  EXPECT_THROW(reader.write(options, file_in_nonexistent_dir), BoutException);
 }
 
 TEST_F(OptionsReaderTest, ReadEmptyString) {
-const std::string text = R"(
+  const std::string text = R"(
 value =
 )";
 
   std::ofstream test_file(filename, std::ios::out);
   test_file << text;
   test_file.close();
-  
+
   Options opt;
   OptionsReader reader;
 
-  reader.read(&opt, filename);
+  reader.read(&opt, filename.string());
 
   std::string val = opt["value"];
   EXPECT_TRUE(val.empty());
@@ -350,10 +347,10 @@ test6 = h2`+`:on`e-`more             # Escape sequences in the middle
   test_file.close();
 
   OptionsReader reader;
-  reader.read(Options::getRoot(), filename);
+  reader.read(Options::getRoot(), filename.string());
 
-  auto options = Options::root()["tests"];
-  
+  auto& options = Options::root()["tests"];
+
   EXPECT_EQ(options["test1"].as<int>(), 3);
   EXPECT_EQ(options["test2"].as<int>(), 15);
   EXPECT_EQ(options["test3"].as<int>(), 4);
@@ -375,8 +372,8 @@ some:value = 3
   test_file.close();
 
   OptionsReader reader;
-  
-  EXPECT_THROW(reader.read(Options::getRoot(), filename), BoutException);
+
+  EXPECT_THROW(reader.read(Options::getRoot(), filename.string()), BoutException);
 }
 
 TEST_F(OptionsReaderTest, ReadUnicodeNames) {
@@ -396,12 +393,12 @@ twopi = 2 * π   # Unicode symbol defined for pi
   test_file.close();
 
   OptionsReader reader;
-  reader.read(Options::getRoot(), filename);
+  reader.read(Options::getRoot(), filename.string());
 
-  auto options = Options::root()["tests"];
-  
+  auto& options = Options::root()["tests"];
+
   EXPECT_EQ(options["結果"].as<int>(), 8);
-  EXPECT_DOUBLE_EQ(options["value"].as<BoutReal>(), 1.3*(1+3));
+  EXPECT_DOUBLE_EQ(options["value"].as<BoutReal>(), 1.3 * (1 + 3));
   EXPECT_DOUBLE_EQ(options["twopi"].as<BoutReal>(), 2 * 3.141592653589793);
 }
 
@@ -425,7 +422,7 @@ value = [a = 1,
   OptionsReader reader;
   reader.read(Options::getRoot(), filename.c_str());
 
-  auto options = Options::root();
+  auto& options = Options::root();
 
   EXPECT_EQ(options["result"].as<int>(), 6);
   EXPECT_EQ(options["value"].as<int>(), 5);
@@ -452,7 +449,7 @@ value = [a = 1,
   OptionsReader reader;
   reader.read(Options::getRoot(), filename.c_str());
 
-  auto options = Options::root();
+  auto& options = Options::root();
 
   EXPECT_EQ(options["result"].as<int>(), 6);
   EXPECT_EQ(options["value"].as<int>(), 5);

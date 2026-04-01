@@ -1,9 +1,10 @@
-
+#include <bout/field_factory.hxx>
 #include <bout/invert/laplacexy.hxx>
 #include <bout/invert/laplacexz.hxx>
+#include <bout/invert_laplace.hxx>
 #include <bout/physicsmodel.hxx>
-#include <field_factory.hxx>
-#include <invert_laplace.hxx>
+
+#include <memory>
 
 /// Fundamental constants
 const BoutReal PI = 3.14159265;
@@ -32,16 +33,16 @@ private:
 
   bool laplace_perp;    // Use Laplace_perp or Delp2?
   bool split_n0;        // Split solve into n=0 and n~=0?
-  LaplaceXY *laplacexy; // Laplacian solver in X-Y (n=0)
+  std::unique_ptr<LaplaceXY> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
 
   bool newXZsolver;
-  std::unique_ptr<Laplacian> phiSolver; // Old Laplacian in X-Z
+  std::unique_ptr<Laplacian> phiSolver;          // Old Laplacian in X-Z
   std::unique_ptr<LaplaceXZ> newSolver{nullptr}; // New Laplacian in X-Z
 protected:
   int init(bool UNUSED(restarting)) {
 
     // Normalisation
-    auto opt = Options::root()["alfven"];
+    auto& opt = Options::root()["alfven"];
     Tnorm = opt["Tnorm"].withDefault(100);  // Reference temperature [eV]
     Nnorm = opt["Nnorm"].withDefault(1e19); // Reference density [m^-3]
     Bnorm = opt["Bnorm"].withDefault(1.0);  // Reference magnetic field [T]
@@ -80,7 +81,7 @@ protected:
 
     if (split_n0) {
       // Create an XY solver for n=0 component
-      laplacexy = new LaplaceXY(mesh);
+      laplacexy = LaplaceXY::create(mesh);
       phi2D = 0.0; // Starting guess
     }
 
@@ -173,7 +174,7 @@ protected:
     Field2D Rxy, Bpxy, Btxy, hthe, sinty;
     GRID_LOAD5(Rxy, Bpxy, Btxy, hthe, sinty); // Load metrics
 
-    Coordinates *coord = mesh->getCoordinates(); // Metric tensor
+    Coordinates* coord = mesh->getCoordinates(); // Metric tensor
 
     // Checking for dpsi and qinty used in BOUT grids
     Field2D dx;

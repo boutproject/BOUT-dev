@@ -1,18 +1,10 @@
 #include "gtest/gtest.h"
 
-#include "boutexception.hxx"
-#include "field.hxx"
-#include "output.hxx"
-#include "test_extras.hxx"
-#include "bout/constants.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/field.hxx"
 #include "bout/mesh.hxx"
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;
@@ -32,7 +24,8 @@ public:
   FieldSubClass(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
       : Field(localmesh, location_in, directions_in) {}
 
-  bool is3D() const override { return false; }
+  int size() const override { return 42; }
+  FieldType field_type() const override { return FieldType::field2d; }
 };
 } // namespace
 

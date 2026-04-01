@@ -11,7 +11,7 @@ protected:
     solver->add(f3, "f3");
     return 0;
   }
-  
+
   // Calculate time-derivatives
   int rhs(BoutReal UNUSED(t)) {
     ddt(f2) = 1;
@@ -19,8 +19,8 @@ protected:
     f2.applyBoundary();
     f3.applyBoundary();
     return 0;
-  } 
-  
+  }
+
 private:
   Field2D f2;
   Field3D f3;

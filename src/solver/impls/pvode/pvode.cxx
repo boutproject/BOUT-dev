@@ -23,30 +23,65 @@
  * 
  **************************************************************************/
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include "pvode.hxx"
 
 #if BOUT_HAS_PVODE
 
+#include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/field.hxx>
+#include <bout/field3d.hxx>
 #include <bout/mesh.hxx>
-#include <boutcomm.hxx>
-#include <output.hxx>
-#include <msg_stack.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/options.hxx>
+#include <bout/options_io.hxx>
+#include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
-#include <boutexception.hxx>
 
-#include "unused.hxx"
+#include <pvode/cvode.h>
+#include <pvode/cvspgmr.h>  // use CVSPGMR linear solver each internal step
+#include <pvode/iterativ.h> // contains the enum for types of preconditioning
+#include <pvode/pvbbdpre.h> // band preconditioner function prototypes
 
-#include <pvode/iterativ.h>  // contains the enum for types of preconditioning
-#include <pvode/cvspgmr.h>   // use CVSPGMR linear solver each internal step
-#include <pvode/pvbbdpre.h>  // band preconditioner function prototypes
+#include "fmt/format.h"
+
+#include <memory>
+#include <string>
+#include <vector>
 
 using namespace pvode;
 
-void solver_f(integer N, BoutReal t, N_Vector u, N_Vector udot, void *f_data);
-void solver_gloc(integer N, BoutReal t, BoutReal* u, BoutReal* udot, void *f_data);
-void solver_cfn(integer N, BoutReal t, N_Vector u, void *f_data);
+void solver_f(integer N, BoutReal t, N_Vector u, N_Vector udot, void* f_data);
+void solver_gloc(integer N, BoutReal t, BoutReal* u, BoutReal* udot, void* f_data);
+void solver_cfn(integer N, BoutReal t, N_Vector u, void* f_data);
+
+namespace {
+// local only
+void pvode_load_data_f3d(const std::vector<bool>& evolve_bndrys,
+                         std::vector<Field3D>& ffs, const BoutReal* udata) {
+  int p = 0;
+  const Mesh* mesh = ffs[0].getMesh();
+  const int nz = mesh->LocalNz;
+  for (const auto& bndry : {true, false}) {
+    for (const auto& i2d : mesh->getRegion2D(bndry ? "RGN_BNDRY" : "RGN_NOBNDRY")) {
+      for (int jz = 0; jz < nz; jz++) {
+        // Loop over 3D variables
+        auto evolve_bndry = evolve_bndrys.cbegin();
+        for (auto ff = ffs.begin(); ff != ffs.end(); ++ff) {
+          if (bndry && !*evolve_bndry) {
+            continue;
+          }
+          (*ff)[mesh->ind2Dto3D(i2d, jz)] = udata[p];
+          p++;
+        }
+        ++evolve_bndry;
+      }
+    }
+  }
+}
+} // namespace
 
 const BoutReal ZERO = 0.0;
 
@@ -70,9 +105,9 @@ PvodeSolver::PvodeSolver(Options* opts)
 }
 
 PvodeSolver::~PvodeSolver() {
-  if(pvode_initialised) {
+  if (pvode_initialised) {
     // Free CVODE memory
-    
+
     N_VFree(u);
     PVBBDFree(pdata);
     CVodeFree(cvode_mem);
@@ -90,7 +125,6 @@ PvodeSolver::~PvodeSolver() {
  **************************************************************************/
 
 int PvodeSolver::init() {
-  TRACE("Initialising PVODE solver");
 
   int mudq, mldq, mukeep, mlkeep;
   boole optIn;
@@ -104,22 +138,23 @@ int PvodeSolver::init() {
 
   int local_N = getLocalN();
 
-  if(local_N == 0) {
+  if (local_N == 0) {
     throw BoutException("No local evolving variables");
   }
-  
+
   // Get total problem size
   int neq;
   if (bout::globals::mpi->MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM,
                                         BoutComm::get())) {
     throw BoutException("\tERROR: MPI_Allreduce failed!\n");
   }
-  
-  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
-	       n3d, n2d, neq, local_N);
+
+  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n", n3d, n2d,
+               neq, local_N);
 
   // Set machEnv block
-  machEnv = static_cast<machEnvType>(PVecInitMPI(BoutComm::get(), local_N, neq, pargc, pargv));
+  machEnv =
+      static_cast<machEnvType>(PVecInitMPI(BoutComm::get(), local_N, neq, pargc, pargv));
 
   if (machEnv == nullptr) {
     throw BoutException("\tError: PVecInitMPI failed\n");
@@ -147,8 +182,8 @@ int PvodeSolver::init() {
   options->get("mukeep", mukeep, 0);
   options->get("mlkeep", mlkeep, 0);
 
-  pdata = PVBBDAlloc(local_N, mudq, mldq, mukeep, mlkeep, ZERO, 
-                     solver_gloc, solver_cfn, static_cast<void*>(this));
+  pdata = PVBBDAlloc(local_N, mudq, mldq, mukeep, mlkeep, ZERO, solver_gloc, solver_cfn,
+                     static_cast<void*>(this));
 
   if (pdata == nullptr) {
     throw BoutException("\tError: PVBBDAlloc failed.\n");
@@ -157,9 +192,9 @@ int PvodeSolver::init() {
   ////////// SAVE DATA TO CVODE ///////////
 
   // Set pointer to data array in vector u.
-  BoutReal *udata = N_VDATA(u);
+  BoutReal* udata = N_VDATA(u);
   save_vars(udata);
-  
+
   /* Call CVodeMalloc to initialize CVODE: 
      
      neq     is the problem size = number of equations
@@ -184,10 +219,47 @@ int PvodeSolver::init() {
   for (i = 0; i < OPT_SIZE; i++) {
     ropt[i] = ZERO;
   }
+  /* iopt[MXSTEP] : maximum number of internal steps to be taken by *
+   *                the solver in its attempt to reach tout.        *
+   *                Optional input. (Default = 500).                */
   iopt[MXSTEP] = pvode_mxstep;
 
-  cvode_mem = CVodeMalloc(neq, solver_f, simtime, u, BDF, NEWTON, SS, &reltol, &abstol,
-                          this, nullptr, optIn, iopt, ropt, machEnv);
+  {
+    /* ropt[H0]      : initial step size. Optional input.             */
+
+    /* ropt[HMAX]    : maximum absolute value of step size allowed.   *
+     *                 Optional input. (Default is infinity).         */
+    const BoutReal hmax(
+        (*options)["max_timestep"].doc("Maximum internal timestep").withDefault(-1.));
+    if (hmax > 0) {
+      ropt[HMAX] = hmax;
+    }
+    /* ropt[HMIN]    : minimum absolute value of step size allowed.   *
+     *                 Optional input. (Default is 0.0).              */
+    const BoutReal hmin(
+        (*options)["min_timestep"].doc("Minimum internal timestep").withDefault(-1.));
+    if (hmin > 0) {
+      ropt[HMIN] = hmin;
+    }
+    /* iopt[MAXORD] : maximum lmm order to be used by the solver.     *
+     *                Optional input. (Default = 12 for ADAMS, 5 for  *
+     *                BDF).                                           */
+    const int maxOrder((*options)["max_order"].doc("Maximum order").withDefault(-1));
+    if (maxOrder > 0) {
+      iopt[MAXORD] = maxOrder;
+    }
+  }
+  const bool use_adam((*options)["adams_moulton"]
+                          .doc("Use Adams Moulton solver instead of BDF")
+                          .withDefault(false));
+
+  debug_on_failure =
+      (*options)["debug_on_failure"]
+          .doc("Run an aditional rhs if the solver fails with extra tracking")
+          .withDefault(false);
+
+  cvode_mem = CVodeMalloc(neq, solver_f, simtime, u, use_adam ? ADAMS : BDF, NEWTON, SS,
+                          &reltol, &abstol, this, nullptr, optIn, iopt, ropt, machEnv);
 
   if (cvode_mem == nullptr) {
     throw BoutException("\tError: CVodeMalloc failed.\n");
@@ -208,8 +280,8 @@ int PvodeSolver::init() {
 
   // PvodeSolver is now initialised fully
   pvode_initialised = true;
-  
-  return(0);
+
+  return (0);
 }
 
 /**************************************************************************
@@ -217,25 +289,24 @@ int PvodeSolver::init() {
  **************************************************************************/
 
 int PvodeSolver::run() {
-  TRACE("PvodeSolver::run()");
-  
-  if(!pvode_initialised)
+
+  if (!pvode_initialised) {
     throw BoutException("PvodeSolver not initialised\n");
+  }
 
   for (int i = 0; i < getNumberOutputSteps(); i++) {
 
     /// Run the solver for one output timestep
     simtime = run(simtime + getOutputTimestep());
-    iteration++;
 
     /// Check if the run succeeded
-    if(simtime < 0.0) {
+    if (simtime < 0.0) {
       // Step failed
       output.write("Timestep failed. Aborting\n");
-      
+
       throw BoutException("PVODE timestep failed\n");
     }
-    
+
     /// Call the monitor function
 
     if (call_monitors(simtime, i, getNumberOutputSteps())) {
@@ -250,30 +321,31 @@ int PvodeSolver::run() {
 BoutReal PvodeSolver::run(BoutReal tout) {
   TRACE("Running solver: solver::run({})", tout);
 
-  BoutReal *udata;
-  
+  BoutReal* udata;
+
   // Set pointer to data array in vector u.
   udata = N_VDATA(u);
 
   // Run CVODE
   int flag;
-  if(!monitor_timestep) {
+  if (!monitor_timestep) {
     // Run in normal mode
     flag = CVode(cvode_mem, tout, u, &simtime, NORMAL);
-  }else {
+  } else {
     // Run in single step mode, to call timestep monitors
     BoutReal internal_time = static_cast<CVodeMem>(cvode_mem)->cv_tn;
     //CvodeGetCurrentTime(cvode_mem, &internal_time);
-    
-    while(internal_time < tout) {
+
+    while (internal_time < tout) {
       // Run another step
       BoutReal last_time = internal_time;
       flag = CVode(cvode_mem, tout, u, &internal_time, ONE_STEP);
-      if(flag < 0) {
-        output_error.write("ERROR CVODE solve failed at t = {:e}, flag = {:d}\n", internal_time, flag);
+      if (flag < 0) {
+        output_error.write("ERROR CVODE solve failed at t = {:e}, flag = {:d}\n",
+                           internal_time, flag);
         return -1.0;
       }
-      
+
       // Call timestep monitor
       call_timestep_monitors(internal_time, internal_time - last_time);
     }
@@ -284,14 +356,50 @@ BoutReal PvodeSolver::run(BoutReal tout) {
 
   // Copy variables
   load_vars(udata);
-  
+
   // Call rhs function to get extra variables at this time
   run_rhs(simtime);
 
   // Check return flag
-  if(flag != SUCCESS) {
+  if (flag != SUCCESS) {
     output_error.write("ERROR CVODE step failed, flag = {:d}\n", flag);
-    return(-1.0);
+    if (debug_on_failure) {
+      const CVodeMemRec* cv_mem = static_cast<CVodeMem>(cvode_mem);
+      if (!(f2d.empty() and v2d.empty() and v3d.empty())) {
+        output_warn.write("debug_on_failure is currently only supported for Field3Ds");
+        return -1.0;
+      }
+      auto debug_ptr = std::make_shared<Options>();
+      Options& debug = *debug_ptr;
+      using namespace std::string_literals;
+      Mesh* mesh{};
+      for (const auto& prefix : {"pre_"s, "residuum_"s}) {
+        std::vector<Field3D> list_of_fields{};
+        std::vector<bool> evolve_bndrys{};
+        for (const auto& f : f3d) {
+          mesh = f.var->getMesh();
+          Field3D to_load{0., mesh};
+          to_load.setLocation(f.location);
+          debug[fmt::format("{:s}{:s}", prefix, f.name)] = to_load;
+          list_of_fields.push_back(to_load);
+          evolve_bndrys.push_back(f.evolve_bndry);
+        }
+        pvode_load_data_f3d(evolve_bndrys, list_of_fields,
+                            prefix == "pre_"s ? udata : N_VDATA(cv_mem->cv_acor));
+      }
+
+      for (auto& f : f3d) {
+        f.F_var->enableTracking(fmt::format("ddt_{:s}", f.name), debug_ptr);
+      }
+      run_rhs(simtime);
+
+      for (auto& f : f3d) {
+        saveParallel(debug, f.name, *f.var);
+      }
+      bout::OptionsIO::write("BOUT.debug", debug, mesh);
+      MPI_Barrier(BoutComm::get());
+    }
+    return -1.0;
   }
 
   return simtime;
@@ -301,7 +409,8 @@ BoutReal PvodeSolver::run(BoutReal tout) {
  * RHS function
  **************************************************************************/
 
-void PvodeSolver::rhs(int UNUSED(N), BoutReal t, BoutReal *udata, BoutReal *dudata) {
+void PvodeSolver::rhs([[maybe_unused]] int N, BoutReal t, BoutReal* udata,
+                      BoutReal* dudata) {
   TRACE("Running RHS: PvodeSolver::rhs({})", t);
 
   // Get current timestep
@@ -317,7 +426,8 @@ void PvodeSolver::rhs(int UNUSED(N), BoutReal t, BoutReal *udata, BoutReal *duda
   save_derivs(dudata);
 }
 
-void PvodeSolver::gloc(int UNUSED(N), BoutReal t, BoutReal *udata, BoutReal *dudata) {
+void PvodeSolver::gloc([[maybe_unused]] int N, BoutReal t, BoutReal* udata,
+                       BoutReal* dudata) {
   TRACE("Running RHS: PvodeSolver::gloc({})", t);
 
   Timer timer("rhs");
@@ -336,31 +446,31 @@ void PvodeSolver::gloc(int UNUSED(N), BoutReal t, BoutReal *udata, BoutReal *dud
  * CVODE rhs function
  **************************************************************************/
 
-void solver_f(integer N, BoutReal t, N_Vector u, N_Vector udot, void *f_data) {
+void solver_f(integer N, BoutReal t, N_Vector u, N_Vector udot, void* f_data) {
   BoutReal *udata, *dudata;
-  PvodeSolver *s;
+  PvodeSolver* s;
 
   udata = N_VDATA(u);
   dudata = N_VDATA(udot);
 
-  s = static_cast<PvodeSolver *>(f_data);
+  s = static_cast<PvodeSolver*>(f_data);
 
   s->rhs(N, t, udata, dudata);
 }
 
 // Preconditioner RHS
-void solver_gloc(integer N, BoutReal t, BoutReal *u, BoutReal *udot, void *f_data) {
-  PvodeSolver *s;
+void solver_gloc(integer N, BoutReal t, BoutReal* u, BoutReal* udot, void* f_data) {
+  PvodeSolver* s;
 
-  s = static_cast<PvodeSolver *>(f_data);
+  s = static_cast<PvodeSolver*>(f_data);
 
   s->gloc(N, t, u, udot);
 }
 
 // Preconditioner communication function
-void solver_cfn(integer UNUSED(N), BoutReal UNUSED(t), N_Vector UNUSED(u),
-                void *UNUSED(f_data)) {
+void solver_cfn([[maybe_unused]] integer N, [[maybe_unused]] BoutReal t,
+                [[maybe_unused]] N_Vector u, [[maybe_unused]] void* f_data) {
   // doesn't do anything at the moment
 }
 
-#endif 
+#endif

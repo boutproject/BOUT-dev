@@ -1,4 +1,4 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_RAJA
 
@@ -93,7 +93,7 @@ TEST(RajaTest, SimpleForall) {
   EXPECT_TRUE(match);
 }
 
-#if 0 // disable temporarily until reconcile iteration space for parallel_forall  under
+#if 0 // disable temporarily until reconcile iteration space for parallel_forall  under \
       // nvcc
 TEST(RajaTest, ParallelForall) {
 //

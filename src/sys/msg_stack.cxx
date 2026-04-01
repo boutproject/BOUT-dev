@@ -25,9 +25,9 @@
  **************************************************************************/
 
 #include "bout/openmpwrap.hxx"
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <cstdarg>
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
+
 #include <string>
 
 #if BOUT_USE_OPENMP
@@ -58,9 +58,8 @@ void MsgStack::pop() {
   if (position <= 0) {
     return;
   }
-  BOUT_OMP(single) {
-    --position;
-  }
+  BOUT_OMP_SAFE(single)
+  { --position; }
 }
 
 void MsgStack::pop(int id) {
@@ -69,27 +68,30 @@ void MsgStack::pop(int id) {
     return;
   }
 #endif
-  if (id < 0)
+  if (id < 0) {
     id = 0;
+  }
 
   if (id <= static_cast<int>(position)) {
-      position = id;
+    position = id;
   }
 }
 
 void MsgStack::clear() {
-  BOUT_OMP(single) {
+  BOUT_OMP_SAFE(single)
+  {
     stack.clear();
     position = 0;
   }
 }
 
 void MsgStack::dump() {
-  BOUT_OMP(single) { output << this->getDump(); }
+  BOUT_OMP_SAFE(single)
+  { output << this->getDump(); }
 }
 
 std::string MsgStack::getDump() {
-  std::string res = "====== Back trace ======\n";
+  std::string res = "=== Additional information ===\n";
   for (int i = position - 1; i >= 0; i--) {
     if (stack[i] != "") {
       res += " -> ";

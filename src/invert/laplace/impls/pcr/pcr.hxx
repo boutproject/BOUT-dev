@@ -29,19 +29,30 @@ class LaplacePCR;
 #ifndef BOUT_PCR_H
 #define BOUT_PCR_H
 
-#include <dcomplex.hxx>
-#include <invert_laplace.hxx>
-#include <options.hxx>
-#include <utils.hxx>
+#include <bout/build_defines.hxx>
+#include <bout/invert_laplace.hxx>
+
+#if BOUT_USE_METRIC_3D
 
 namespace {
-RegisterLaplace<LaplacePCR> registerlaplacepcr(LAPLACE_PCR);
+const RegisterUnavailableLaplace
+    registerlaplacepcr(LAPLACE_PCR, "BOUT++ was configured with 3D metrics");
+}
+
+#else
+
+#include <bout/dcomplex.hxx>
+#include <bout/options.hxx>
+#include <bout/utils.hxx>
+
+namespace {
+const RegisterLaplace<LaplacePCR> registerlaplacepcr(LAPLACE_PCR);
 }
 
 class LaplacePCR : public Laplacian {
 public:
   LaplacePCR(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
-             Mesh* mesh_in = nullptr, Solver* solver = nullptr, Datafile* dump = nullptr);
+             Mesh* mesh_in = nullptr, Solver* solver = nullptr);
   ~LaplacePCR() = default;
 
   using Laplacian::setCoefA;
@@ -172,15 +183,9 @@ private:
   /// First and last interior points xstart, xend
   int xs, xe;
 
-  bool isGlobalFlagSet(int flag) const { return (global_flags & flag) != 0; }
-  bool isInnerBoundaryFlagSet(int flag) const {
-    return (inner_boundary_flags & flag) != 0;
-  }
-  bool isOuterBoundaryFlagSet(int flag) const {
-    return (outer_boundary_flags & flag) != 0;
-  }
-
   bool dst{false};
 };
+
+#endif // BOUT_USE_METRIC_3D
 
 #endif // BOUT_PCR_H

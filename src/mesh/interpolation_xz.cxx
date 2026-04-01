@@ -23,37 +23,30 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
-#include <interpolation_xz.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <unused.hxx>
+#include "parallel/fci_comm.hxx"
+#include <bout/globals.hxx>
+#include <bout/interpolation_xz.hxx>
+#include <bout/output.hxx>
+#include <bout/unused.hxx>
 
-void printLocation(const Field3D& var) {
-  output << toString(var.getLocation());
-}
-void printLocation(const Field2D& var) {
-  output << toString(var.getLocation());
-}
+void printLocation(const Field3D& var) { output << toString(var.getLocation()); }
+void printLocation(const Field2D& var) { output << toString(var.getLocation()); }
 
 const char* strLocation(CELL_LOC loc) { return toString(loc).c_str(); }
 
-const Field3D interpolate(const Field3D &f, const Field3D &delta_x,
-                          const Field3D &delta_z) {
-  TRACE("Interpolating 3D field");
+const Field3D interpolate(const Field3D& f, const Field3D& delta_x,
+                          const Field3D& delta_z) {
   XZLagrange4pt interpolateMethod{f.getMesh()};
   return interpolateMethod.interpolate(f, delta_x, delta_z);
 }
 
-const Field3D interpolate(const Field2D &f, const Field3D &delta_x,
-                          const Field3D &UNUSED(delta_z)) {
+const Field3D interpolate(const Field2D& f, const Field3D& delta_x,
+                          const Field3D& UNUSED(delta_z)) {
   return interpolate(f, delta_x);
 }
 
-const Field3D interpolate(const Field2D &f, const Field3D &delta_x) {
-  TRACE("interpolate(Field2D, Field3D)");
-
-  Mesh *mesh = f.getMesh();
+const Field3D interpolate(const Field2D& f, const Field3D& delta_x) {
+  Mesh* mesh = f.getMesh();
   ASSERT1(mesh == delta_x.getMesh());
   Field3D result{emptyFrom(delta_x)};
 
@@ -94,11 +87,14 @@ namespace {
 RegisterXZInterpolation<XZHermiteSpline> registerinterphermitespline{"hermitespline"};
 RegisterXZInterpolation<XZMonotonicHermiteSpline> registerinterpmonotonichermitespline{
     "monotonichermitespline"};
+RegisterXZInterpolation<XZHermiteSplineSerial> registerinterphermitesplines{
+    "hermitesplineserial"};
+RegisterXZInterpolation<XZMonotonicHermiteSplineSerial>
+    registerinterpmonotonichermitesplines{"monotonichermitesplineserial"};
+RegisterXZInterpolation<XZHermiteSplineLegacy> registerinterphermitesplinel{
+    "hermitesplinelegacy"};
+RegisterXZInterpolation<XZMonotonicHermiteSplineLegacy>
+    registerinterpmonotonichermitesplinel{"monotonichermitesplinelegacy"};
 RegisterXZInterpolation<XZLagrange4pt> registerinterplagrange4pt{"lagrange4pt"};
 RegisterXZInterpolation<XZBilinear> registerinterpbilinear{"bilinear"};
 } // namespace
-
-constexpr decltype(XZInterpolationFactory::type_name) XZInterpolationFactory::type_name;
-constexpr decltype(XZInterpolationFactory::section_name) XZInterpolationFactory::section_name;
-constexpr decltype(XZInterpolationFactory::option_name) XZInterpolationFactory::option_name;
-constexpr decltype(XZInterpolationFactory::default_type) XZInterpolationFactory::default_type;

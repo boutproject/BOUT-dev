@@ -5,11 +5,11 @@
 
 MZ = 32    # Z size
 
-grid = "test_laplace.grd.nc"
-
 [mesh]
 symmetricGlobalX = false
 symmetricGlobalY = false
+
+file = "test_laplace.grd.nc"
 
 [laplace]
 all_terms = false

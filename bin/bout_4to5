@@ -196,7 +196,6 @@ then
     done
 fi
 
-
 # # clang-format everything - disabled due to issue https://github.com/boutproject/BOUT-dev/issues/1017
 # if test $# -eq 0
 # then

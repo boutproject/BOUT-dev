@@ -1,7 +1,4 @@
 
-nout = 100
-timestep = 0.02
-
 MZ = 1
 
 StaggerGrids = true
@@ -29,3 +26,8 @@ function = 1 + H(y-0.9*pi) * H(1.1*pi - y)
 
 [v]
 function = 0.0
+
+[solver]
+output_step = 0.02
+
+nout = 100

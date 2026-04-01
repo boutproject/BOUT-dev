@@ -5,7 +5,7 @@
  * Can also include the Vpar compressional term
  * This version uses indexed operators
  * which reduce the number of loops over the domain
- * GPU processing is enabled if BOUT_ENABLE_CUDA is defined
+ * GPU processing is enabled if BOUT_HAS_CUDA is defined
  * GPU version Hypre solver is enable if BOUT_HAS_HYPRE is defined
  * Profiling markers and ranges are set if USE_NVTX is defined
  * Based on model code,  Yining Qin update GPU RAJA code since 1117-2020
@@ -28,33 +28,25 @@
 
 /*******************************************************************************/
 
+#include "bout/build_defines.hxx"
+#include "bout/options.hxx"
+#include <bout/bout.hxx>
 #include <bout/constants.hxx>
+#include <bout/derivs.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/interpolation.hxx>
 #include <bout/invert/laplacexy.hxx>
-#include <bout.hxx>
-#include <derivs.hxx>
-#include <initialprofiles.hxx>
-#include <interpolation.hxx>
-#include <invert_laplace.hxx>
-#include <invert_parderiv.hxx>
-#include <msg_stack.hxx>
-#include <sourcex.hxx>
-#include <utils.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/invert_parderiv.hxx>
+#include <bout/physicsmodel.hxx>
+#include <bout/rajalib.hxx> // Defines BOUT_FOR_RAJA
+#include <bout/single_index_ops.hxx>
+#include <bout/smoothing.hxx>
+#include <bout/sourcex.hxx>
+#include <bout/utils.hxx>
 
 #include <math.h>
-
-#include <bout/physicsmodel.hxx>
-#include <bout/single_index_ops.hxx>
-#include <derivs.hxx>
-#include <invert_laplace.hxx>
-#include <smoothing.hxx>
-
-#include <bout/rajalib.hxx> // Defines BOUT_FOR_RAJA
-
-#if BOUT_HAS_HYPRE
-#include <bout/invert/laplacexy2_hypre.hxx>
-#endif
-
-#include <field_factory.hxx>
 
 CELL_LOC loc = CELL_CENTRE;
 
@@ -90,6 +82,10 @@ CELL_LOC loc = CELL_CENTRE;
 BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_target", "neumann");
 BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xin", "none");
 BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xout", "none");
+
+#if BOUT_HAS_HYPRE
+BOUT_OVERRIDE_DEFAULT_OPTION("laplacexy:type", "hypre");
+#endif
 
 /// 3-field ELM simulation
 class ELMpb : public PhysicsModel {
@@ -242,11 +238,7 @@ private:
 
   bool split_n0; // Solve the n=0 component of potential
 
-#if BOUT_HAS_HYPRE
-  std::unique_ptr<LaplaceXY2Hypre> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
-#else
   std::unique_ptr<LaplaceXY> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
-#endif
 
   Field2D phi2D; // Axisymmetric phi
 
@@ -567,13 +559,11 @@ public:
     split_n0 = options["split_n0"]
                    .doc("Solve zonal (n=0) component of potential using LaplaceXY?")
                    .withDefault(false);
+
     if (split_n0) {
       // Create an XY solver for n=0 component
-#if BOUT_HAS_HYPRE
-      laplacexy = bout::utils::make_unique<LaplaceXY2Hypre>(mesh);
-#else
-      laplacexy = bout::utils::make_unique<LaplaceXY>(mesh);
-#endif
+      laplacexy = LaplaceXY::create(mesh);
+
       // Set coefficients for Boussinesq solve
       laplacexy->setCoefs(1.0, 0.0);
       phi2D = 0.0; // Starting guess
@@ -1576,7 +1566,17 @@ public:
     Field3D B0U = B0 * U;
     mesh->communicate(B0U);
     auto B0U_acc = FieldAccessor<>(B0U);
-#endif
+#else
+    Field3D B0phi = B0 * phi;
+    mesh->communicate(B0phi);
+    auto B0phi_acc = FieldAccessor<>(B0phi);
+
+#if EHALL
+    Field3D B0P = B0 * P;
+    mesh->communicate(B0 * P);
+    auto B0P_acc = FieldAccessor<>(B0P);
+#endif // EHALL
+#endif // EVOLVE_JPAR
 
 #if RELAX_J_VAC
     auto vac_mask_acc = FieldAccessor<>(vac_mask);
@@ -1612,23 +1612,24 @@ public:
 
 #else
       // Evolve vector potential ddt(psi)
-      ddt(Psi_acc)[i] =
-          -GRAD_PARP(phi_acc) + eta_acc[i] * Jpar_acc[i]
+      ddt(Psi_acc)[i] = -GRAD_PARP(B0phi_acc) / B0_acc[i2d] + eta_acc[i] * Jpar_acc[i]
 
-          + EVAL_IF(EHALL, // electron parallel pressure
-                    0.25 * delta_i * (GRAD_PARP(P_acc) + bracket(P0_acc, Psi_acc, i)))
+                        + EVAL_IF(EHALL, // electron parallel pressure
+                                  0.25 * delta_i
+                                      * (GRAD_PARP(B0P_acc) / B0_acc[i2d]
+                                         + bracket(P0_acc, Psi_acc, i) * B0_acc[i2d]))
 
-          - EVAL_IF(DIAMAG_PHI0, // Equilibrium flow
-                    bracket(phi0_acc, Psi_acc, i))
+                        - EVAL_IF(DIAMAG_PHI0, // Equilibrium flow
+                                  bracket(phi0_acc, Psi_acc, i) * B0_acc[i2d])
 
-          + EVAL_IF(DIAMAG_GRAD_T, // grad_par(T_e) correction
-                    1.71 * dnorm * 0.5 * GRAD_PARP(P_acc) / B0_acc[i2d])
+                        + EVAL_IF(DIAMAG_GRAD_T, // grad_par(T_e) correction
+                                  1.71 * dnorm * 0.5 * GRAD_PARP(P_acc) / B0_acc[i2d])
 
-          - EVAL_IF(HYPERRESIST, // Hyper-resistivity
-                    eta_acc[i] * hyperresist * Delp2(Jpar_acc, i))
+                        - EVAL_IF(HYPERRESIST, // Hyper-resistivity
+                                  eta_acc[i] * hyperresist * Delp2(Jpar_acc, i))
 
-          - EVAL_IF(EHYPERVISCOS, // electron Hyper-viscosity
-                    eta_acc[i] * ehyperviscos * Delp2(Jpar2_acc, i));
+                        - EVAL_IF(EHYPERVISCOS, // electron Hyper-viscosity
+                                  eta_acc[i] * ehyperviscos * Delp2(Jpar2_acc, i));
 #endif
 
       ////////////////////////////////////////////////////

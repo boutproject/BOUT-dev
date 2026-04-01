@@ -1,7 +1,7 @@
 // From Scott Meyers' "Effective C++, third edition"
 
-#ifndef __UNCOPYABLE_H__
-#define __UNCOPYABLE_H__
+#ifndef BOUT_UNCOPYABLE_H
+#define BOUT_UNCOPYABLE_H
 
 /// Inherit from this class (private) to prevent copying
 class Uncopyable {
@@ -10,8 +10,8 @@ protected:
   ~Uncopyable() = default;
 
 public:
-  Uncopyable(const Uncopyable &) = delete;
-  Uncopyable &operator=(const Uncopyable &) = delete;
+  Uncopyable(const Uncopyable&) = delete;
+  Uncopyable& operator=(const Uncopyable&) = delete;
 };
 
-#endif // __UNCOPYABLE_H__
+#endif // BOUT_UNCOPYABLE_H

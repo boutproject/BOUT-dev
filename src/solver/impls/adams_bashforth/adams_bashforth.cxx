@@ -2,17 +2,13 @@
 
 #include <array>
 
-#include <boutcomm.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
-#include <utils.hxx>
-
-#include <output.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/output.hxx>
 
 namespace {
 BoutReal lagrange_at_position_denominator(const std::deque<BoutReal>& grid,
                                           const int position, const int order) {
-  AUTO_TRACE();
 
   const auto xj = grid[position];
 
@@ -26,7 +22,7 @@ BoutReal lagrange_at_position_denominator(const std::deque<BoutReal>& grid,
 BoutReal lagrange_at_position_numerator(const BoutReal varX,
                                         const std::deque<BoutReal>& grid,
                                         const int position, const int order) {
-  AUTO_TRACE();
+
   BoutReal result = 1.0;
   for (int i = 0; i < order; i++) {
     result *= (i != position) ? (varX - grid[i]) : 1.0;
@@ -53,7 +49,7 @@ BoutReal lagrange_interpolate(BoutReal start, BoutReal end,
 BoutReal integrate_lagrange_curve_nc9(const BoutReal start, const BoutReal end,
                                       const std::deque<BoutReal>& points,
                                       const int position) {
-  AUTO_TRACE();
+
   constexpr std::size_t size = 9;
   constexpr BoutReal fac = 4.0 / 14175.0;
   constexpr std::array<BoutReal, size> facs{989.0 * fac,   5888.0 * fac,  -928.0 * fac,
@@ -66,7 +62,7 @@ BoutReal integrate_lagrange_curve_nc9(const BoutReal start, const BoutReal end,
 BoutReal integrate_lagrange_curve_nc8(const BoutReal start, const BoutReal end,
                                       const std::deque<BoutReal>& points,
                                       const int position) {
-  AUTO_TRACE();
+
   constexpr std::size_t size = 8;
   constexpr BoutReal fac = 7.0 / 17280.0;
   constexpr std::array<BoutReal, size> facs{751.0 * fac,  3577.0 * fac, 1323.0 * fac,
@@ -79,7 +75,7 @@ BoutReal integrate_lagrange_curve_nc8(const BoutReal start, const BoutReal end,
 BoutReal integrate_lagrange_curve_nc7(const BoutReal start, const BoutReal end,
                                       const std::deque<BoutReal>& points,
                                       const int position) {
-  AUTO_TRACE();
+
   constexpr std::size_t size = 7;
   constexpr BoutReal fac = 1.0 / 140.0;
   constexpr std::array<BoutReal, size> facs{41.0 * fac,  216.0 * fac, 27.0 * fac,
@@ -92,7 +88,7 @@ BoutReal integrate_lagrange_curve_nc7(const BoutReal start, const BoutReal end,
 BoutReal integrate_lagrange_curve_nc6(const BoutReal start, const BoutReal end,
                                       const std::deque<BoutReal>& points,
                                       const int position) {
-  AUTO_TRACE();
+
   constexpr std::size_t size = 6;
   constexpr BoutReal fac = 5.0 / 288.0;
   constexpr std::array<BoutReal, size> facs{19.0 * fac, 75.0 * fac, 50.0 * fac,
@@ -104,7 +100,7 @@ BoutReal integrate_lagrange_curve_nc6(const BoutReal start, const BoutReal end,
 BoutReal integrate_lagrange_curve_nc5(const BoutReal start, const BoutReal end,
                                       const std::deque<BoutReal>& points,
                                       const int position) {
-  AUTO_TRACE();
+
   constexpr std::size_t size = 5;
   constexpr BoutReal fac = 2.0 / 45.0;
   constexpr std::array<BoutReal, size> facs{7.0 * fac, 32.0 * fac, 12.0 * fac, 32.0 * fac,
@@ -116,7 +112,7 @@ BoutReal integrate_lagrange_curve_nc5(const BoutReal start, const BoutReal end,
 BoutReal integrate_lagrange_curve_nc4(const BoutReal start, const BoutReal end,
                                       const std::deque<BoutReal>& points,
                                       const int position) {
-  AUTO_TRACE();
+
   constexpr std::size_t size = 4;
   constexpr BoutReal fac = 3.0 / 8.0;
   constexpr std::array<BoutReal, size> facs{1.0 * fac, 3.0 * fac, 3.0 * fac, 1.0 * fac};
@@ -127,7 +123,7 @@ BoutReal integrate_lagrange_curve_nc4(const BoutReal start, const BoutReal end,
 BoutReal integrate_lagrange_curve_nc3(const BoutReal start, const BoutReal end,
                                       const std::deque<BoutReal>& points,
                                       const int position) {
-  AUTO_TRACE();
+
   constexpr std::size_t size = 3;
   constexpr BoutReal fac = 1.0 / 3.0;
   constexpr std::array<BoutReal, size> facs{1.0 * fac, 4.0 * fac, 1.0 * fac};
@@ -138,7 +134,7 @@ BoutReal integrate_lagrange_curve_nc3(const BoutReal start, const BoutReal end,
 BoutReal integrate_lagrange_curve_nc2(const BoutReal start, const BoutReal end,
                                       const std::deque<BoutReal>& points,
                                       const int position) {
-  AUTO_TRACE();
+
   constexpr std::size_t size = 2;
   constexpr BoutReal fac = 1.0 / 2.0;
   constexpr std::array<BoutReal, size> facs{1.0 * fac, 1.0 * fac};
@@ -149,7 +145,6 @@ BoutReal integrate_lagrange_curve_nc2(const BoutReal start, const BoutReal end,
 BoutReal integrate_lagrange_curve(const BoutReal start, const BoutReal end,
                                   const std::deque<BoutReal>& points, const int position,
                                   const int order) {
-  AUTO_TRACE();
 
   switch (order) {
   case 1:
@@ -177,7 +172,7 @@ BoutReal integrate_lagrange_curve(const BoutReal start, const BoutReal end,
 std::vector<BoutReal> get_adams_bashforth_coefficients(const BoutReal nextPoint,
                                                        const std::deque<BoutReal>& points,
                                                        const int order) {
-  AUTO_TRACE();
+
   ASSERT2(static_cast<std::size_t>(order) <= points.size());
 
   std::vector<BoutReal> result;
@@ -199,7 +194,7 @@ void AB_integrate_update(Array<BoutReal>& update, BoutReal timestep,
 
   for (std::size_t j = 0; j < static_cast<std::size_t>(order); ++j) {
     const BoutReal factor = AB_coefficients[j];
-    BOUT_OMP(parallel for)
+    BOUT_OMP_PERF(parallel for)
     for (std::size_t i = 0; i < static_cast<std::size_t>(update.size()); ++i) {
       update[i] += history[j][i] * factor;
     }
@@ -233,7 +228,7 @@ BoutReal get_timestep_limit(const BoutReal error, const BoutReal tolerance,
 /// over all processors.
 BoutReal get_error(const Array<BoutReal>& stateApprox,
                    const Array<BoutReal>& stateAccurate) {
-  AUTO_TRACE();
+
   BoutReal local_result = 0.0;
   BoutReal err = 0.0;
 
@@ -285,12 +280,12 @@ AdamsBashforthSolver::AdamsBashforthSolver(Options* options)
                        .withDefault(getOutputTimestep())),
       timestep(
           (*options)["timestep"].doc("Starting timestep").withDefault(max_timestep)) {
-  AUTO_TRACE();
+
   canReset = true;
 }
 
 void AdamsBashforthSolver::setMaxTimestep(BoutReal dt) {
-  AUTO_TRACE();
+
   if (dt > timestep) {
     return; // Already less than this
   }
@@ -303,8 +298,6 @@ void AdamsBashforthSolver::setMaxTimestep(BoutReal dt) {
 }
 
 int AdamsBashforthSolver::init() {
-
-  TRACE("Initialising AdamsBashforth solver");
 
   Solver::init();
   output << "\n\tAdams-Bashforth (explicit) multistep solver\n";
@@ -343,7 +336,6 @@ int AdamsBashforthSolver::init() {
 }
 
 void AdamsBashforthSolver::resetInternalFields() {
-  AUTO_TRACE();
 
   // History and times
   history.clear();
@@ -358,7 +350,6 @@ void AdamsBashforthSolver::resetInternalFields() {
 }
 
 int AdamsBashforthSolver::run() {
-  AUTO_TRACE();
 
   // Just for developer diagnostics
   int nwasted = 0;
@@ -542,9 +533,6 @@ int AdamsBashforthSolver::run() {
     // avoid any additional unrequired work associated with run_rhs.
     run_rhs(simtime);
 
-    // Advance iteration number
-    iteration++;
-
     // Call the output step monitor function
     if (call_monitors(simtime, s, getNumberOutputSteps()) != 0) {
       break; // Stop simulation
@@ -564,7 +552,6 @@ int AdamsBashforthSolver::run() {
 BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal dt,
                                          const int order, Array<BoutReal>& current,
                                          Array<BoutReal>& result) {
-  AUTO_TRACE();
 
   Array<BoutReal> full_update = AB_integrate(nlocal, timeIn + dt, times, history, order);
 
@@ -577,7 +564,7 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
   // std::transform(std::begin(current), std::end(current), std::begin(full_update),
   //                std::begin(result), std::plus<BoutReal>{});
   if (not(adaptive and followHighOrder)) {
-    BOUT_OMP(parallel for)
+    BOUT_OMP_PERF(parallel for)
     for (int i = 0; i < nlocal; i++) {
       result[i] = current[i] + full_update[i];
     }
@@ -615,7 +602,7 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
     // use this to calculate the derivatives at this point.
     // std::transform(std::begin(current), std::end(current), std::begin(half_update),
     //                std::begin(result2), std::plus<BoutReal>{});
-    BOUT_OMP(parallel for)
+    BOUT_OMP_PERF(parallel for)
     for (int i = 0; i < nlocal; i++) {
       result2[i] = current[i] + half_update[i];
     }
@@ -640,7 +627,7 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
   // "full" two half step half_update. Rather than using result2 we just replace
   // result here as we want to use this smaller step result
   if (followHighOrder) {
-    BOUT_OMP(parallel for)
+    BOUT_OMP_PERF(parallel for)
     for (int i = 0; i < nlocal; i++) {
       result[i] = current[i] + half_update[i];
     }

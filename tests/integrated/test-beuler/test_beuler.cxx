@@ -1,6 +1,6 @@
+#include "bout/petsclib.hxx"
 #include "bout/physicsmodel.hxx"
 #include "bout/solver.hxx"
-#include "bout/petsclib.hxx"
 
 #include <cmath>
 #include <memory>
@@ -41,7 +41,6 @@ public:
 };
 
 int main(int argc, char** argv) {
-
   // Absolute tolerance for difference between the actual value and the
   // expected value
   constexpr BoutReal tolerance = 1.e-5;
@@ -86,8 +85,6 @@ int main(int argc, char** argv) {
   solver->addMonitor(&bout_monitor, Solver::BACK);
 
   solver->solve();
-
-  BoutFinalise(false);
 
   if (model.check_solution(tolerance)) {
     output_test << " PASSED\n";

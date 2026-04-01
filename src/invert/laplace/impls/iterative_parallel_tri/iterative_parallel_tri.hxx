@@ -26,11 +26,11 @@
 
 class LaplaceIPT;
 
-#ifndef __IPT_H__
-#define __IPT_H__
+#ifndef BOUT_IPT_H
+#define BOUT_IPT_H
 
-#include "invert_laplace.hxx"
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
+#include "bout/invert_laplace.hxx"
 
 #if BOUT_USE_METRIC_3D
 
@@ -41,9 +41,9 @@ RegisterUnavailableLaplace registerlaplaceipt(LAPLACE_IPT,
 
 #else
 
-#include <dcomplex.hxx>
-#include <options.hxx>
-#include <utils.hxx>
+#include <bout/dcomplex.hxx>
+#include <bout/options.hxx>
+#include <bout/utils.hxx>
 
 namespace {
 RegisterLaplace<LaplaceIPT> registerlaplaceipt(LAPLACE_IPT);
@@ -52,7 +52,7 @@ RegisterLaplace<LaplaceIPT> registerlaplaceipt(LAPLACE_IPT);
 class LaplaceIPT : public Laplacian {
 public:
   LaplaceIPT(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
-             Mesh* mesh_in = nullptr, Solver* solver = nullptr, Datafile* dump = nullptr);
+             Mesh* mesh_in = nullptr, Solver* solver = nullptr);
   ~LaplaceIPT() = default;
 
   friend class Level;
@@ -234,16 +234,8 @@ private:
 
   /// First and last interior points xstart, xend
   int xs, xe;
-
-  bool isGlobalFlagSet(int flag) const { return (global_flags & flag) != 0; }
-  bool isInnerBoundaryFlagSet(int flag) const {
-    return (inner_boundary_flags & flag) != 0;
-  }
-  bool isOuterBoundaryFlagSet(int flag) const {
-    return (outer_boundary_flags & flag) != 0;
-  }
 };
 
 #endif // BOUT_USE_METRIC_3D
 
-#endif // __IPT_H__
+#endif // BOUT_IPT_H

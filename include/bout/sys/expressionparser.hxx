@@ -3,9 +3,9 @@
  *
  * Parses strings containing expressions, returning a tree of generators
  *
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010-2024 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -24,13 +24,13 @@
  *
  **************************************************************************/
 
-#ifndef __EXPRESSION_PARSER_H__
-#define __EXPRESSION_PARSER_H__
+#ifndef EXPRESSION_PARSER_H
+#define EXPRESSION_PARSER_H
 
-#include "bout/format.hxx"
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
-#include "fmt/core.h"
+#include <fmt/base.h>
+#include <fmt/core.h>
 
 #include <exception>
 #include <list>
@@ -65,12 +65,6 @@ public:
     return nullptr;
   }
 
-  [[deprecated("This will be removed in a future version. Implementations should "
-               "override the Context version of this function.")]] virtual double
-  generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) {
-    return generate(bout::generator::Context().set("x", x, "y", y, "z", z, "t", t));
-  }
-
   /// Generate a value at the given coordinates (x,y,z,t)
   /// This should be deterministic, always returning the same value given the same inputs
   ///
@@ -79,7 +73,7 @@ public:
   /// them or an infinite recursion results.  This is for backward
   /// compatibility for users and implementors.  In a future version
   /// this function will be made pure virtual.
-  virtual double generate(const bout::generator::Context& ctx);
+  virtual double generate(const bout::generator::Context& ctx) = 0;
 
   /// Create a string representation of the generator, for debugging output
   virtual std::string str() const { return std::string("?"); }
@@ -125,7 +119,9 @@ public:
 
 protected:
   /// This will be called to resolve any unknown symbols
-  virtual FieldGeneratorPtr resolve(const std::string& UNUSED(name)) const { return nullptr; }
+  virtual FieldGeneratorPtr resolve(const std::string& UNUSED(name)) const {
+    return nullptr;
+  }
 
   /// A result that's almost what we were looking for. Return type of
   /// `ExpressionParser::fuzzyFind`
@@ -156,7 +152,7 @@ protected:
   /// Characters which cannot be used in symbols without escaping;
   /// all other allowed. In addition, whitespace cannot be used.
   /// Adding a binary operator adds its symbol to this string
-  std::string reserved_chars = "+-*/^[](){},=";
+  std::string reserved_chars = "+-*/^[](){},=!";
 
 private:
   std::map<std::string, FieldGeneratorPtr> gen; ///< Generators, addressed by name
@@ -187,7 +183,7 @@ private:
   /// Matches
   /// [ symbol = expression , symbol = expression ... ] ( expression )
   FieldGeneratorPtr parseContextExpr(LexInfo& lex) const;
-  
+
   /// Parse a primary expression, one of:
   ///   - number
   ///   - identifier
@@ -229,9 +225,7 @@ public:
     return std::make_shared<FieldValue>(value);
   }
 
-  double generate(const bout::generator::Context&) override {
-    return value;
-  }
+  double generate(const bout::generator::Context&) override { return value; }
   std::string str() const override {
     std::stringstream ss;
     ss << value;
@@ -246,11 +240,16 @@ private:
 
 class ParseException : public std::exception {
 public:
+  ParseException(const ParseException&) = default;
+  ParseException(ParseException&&) = delete;
+  ParseException& operator=(const ParseException&) = default;
+  ParseException& operator=(ParseException&&) = delete;
   ParseException(const std::string& message_) : message(message_) {}
 
-  template <class S, class... Args>
-  ParseException(const S& format, const Args&... args)
-      : message(fmt::format(format, args...)) {}
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  ParseException(fmt::format_string<Args...> format, Args&&... args)
+      : message(fmt::vformat(format, fmt::make_format_args(args...))) {}
 
   ~ParseException() override = default;
 
@@ -260,4 +259,4 @@ private:
   std::string message;
 };
 
-#endif // __EXPRESSION_PARSER_H__
+#endif // EXPRESSION_PARSER_H

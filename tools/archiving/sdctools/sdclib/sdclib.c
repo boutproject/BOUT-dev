@@ -34,8 +34,6 @@
 
 #include "sdclib.h"
 
-//#define DEBUG
-
 #define DEFAULT_IFRAME 10
 #define DEFAULT_ORDER 4
 

@@ -24,4 +24,4 @@
  **************************************************************************/
 
 #include <bout/mesh.hxx>
-#include <where.hxx>
+#include <bout/where.hxx>

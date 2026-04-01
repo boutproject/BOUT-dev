@@ -2197,6 +2197,43 @@ done directly from equation
               =& \left(g^{xx} \partial_x^2\right) + G^x\partial_x + \left(g^{zz}
            \partial_z^2\right) + G^z \partial_z + 2\left(g^{xz} \partial_x \partial_z\right)\end{aligned}
 
+The perpendicular Laplacian in divergence form
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The unit vector along the magnetic field is
+
+.. math::
+
+   \begin{aligned}
+   {\boldsymbol{b}} &= \frac{1}{JB}{\boldsymbol{e}}_y\\
+   &= \frac{1}{JB}\left(g_{xy}{\boldsymbol{e}}^x + g_{yy}{\boldsymbol{e}}^y + g_{yz}{\boldsymbol{e}}^z\right)
+   \end{aligned}
+
+The perpendicular gradient is:
+
+.. math::
+
+   \begin{aligned}
+   {\nabla}_{\perp} &= {\nabla} - {\boldsymbol{b}}{\boldsymbol{b}}{\nabla}\\
+   &= {\boldsymbol{e}}^x \frac{\partial}{\partial x} + {\boldsymbol{e}}^y \frac{\partial}{\partial y} + {\boldsymbol{e}}^z \frac{\partial}{\partial z} - \frac{g_{xy}{\boldsymbol{e}}^x}{g_{yy}}\frac{\partial}{\partial x} - {\boldsymbol{e}}^y \frac{\partial}{\partial y} - \frac{g_{yz}{\boldsymbol{e}}^z}{g_{yy}}\frac{\partial}{\partial z}\\
+   &= {\boldsymbol{e}}^x\left(\frac{\partial}{\partial x} -  \frac{g_{xy}}{g_{yy}}\frac{\partial}{\partial y}\right) + {\boldsymbol{e}}^z\left(\frac{\partial}{\partial z} -  \frac{g_{yz}}{g_{yy}}\frac{\partial}{\partial y}\right)
+   \end{aligned}
+
+The perpendicular Laplacian can therefore be written in divergence form as:
+
+.. math::
+
+   \begin{aligned}
+   {\nabla}\cdot\left({\nabla}_\perp f\right) =& \frac{1}{J}\frac{\partial}{\partial x}\left[Jg^{xx}\left(\frac{\partial}{\partial x} - \frac{g_{xy}}{g_{yy}}\frac{\partial}{\partial y}\right) + Jg^{xz}\left(\frac{\partial}{\partial z} - \frac{g_{yz}}{g_{yy}}\frac{\partial}{\partial y}\right)\right]\\
+   +& \frac{1}{J}\frac{\partial}{\partial y}\left[Jg^{xy}\left(\frac{\partial}{\partial x} - \frac{g_{xy}}{g_{yy}}\frac{\partial}{\partial y}\right) + Jg^{yz}\left(\frac{\partial}{\partial z} - \frac{g_{yz}}{g_{yy}}\frac{\partial}{\partial y}\right)\right]\\
+   +& \frac{1}{J}\frac{\partial}{\partial z}\left[Jg^{xz}\left(\frac{\partial}{\partial x} - \frac{g_{xy}}{g_{yy}}\frac{\partial}{\partial y}\right) + Jg^{zz}\left(\frac{\partial}{\partial z} - \frac{g_{yz}}{g_{yy}}\frac{\partial}{\partial y}\right)\right]
+   \end{aligned}
+
+This form is currently implemented in ``FV::Div_a_Grad_perp``
+(``bout/fv_ops.hxx``) but that operator currently assumes that the
+off-diagonal terms `g^{xz}` and `g^{xy}` are zero, which is the case
+for orthogonal grids with shifted metrics but not in general.
+
 The Poisson bracket operator
 ----------------------------
 

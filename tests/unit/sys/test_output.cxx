@@ -1,10 +1,13 @@
+#include "test_tmpfiles.hxx"
+#include "bout/build_defines.hxx"
+#include "bout/output.hxx"
+#include "bout/output_bout_types.hxx" // IWYU pragma: keep
 #include "gtest/gtest.h"
-#include "boutexception.hxx"
-#include "output.hxx"
-#include "bout/output_bout_types.hxx"
 
-#include <cstdio>
+#include <fmt/ranges.h>
+
 #include <string>
+#include <vector>
 
 // stdout redirection code from https://stackoverflow.com/a/4043813/2043465
 class OutputTest : public ::testing::Test {
@@ -19,16 +22,14 @@ public:
     buffer.str("");
     // When done redirect cout to its old self
     std::cout.rdbuf(sbuf);
-
-    std::remove(filename.c_str());
   }
 
   // Write cout to buffer instead of stdout
   std::stringstream buffer;
   // Save cout's buffer here
-  std::streambuf *sbuf;
+  std::streambuf* sbuf;
   // A temporary filename
-  std::string filename{std::tmpnam(nullptr)};
+  bout::testing::TempFile filename;
 };
 
 TEST_F(OutputTest, JustStdOutCpp) {
@@ -56,7 +57,7 @@ TEST_F(OutputTest, OpenFile) {
 
   std::string test_output = "To stdout and file\n";
 
-  local_output.open(filename);
+  local_output.open(filename.string());
   local_output << test_output;
 
   std::ifstream test_file(filename);
@@ -73,7 +74,7 @@ TEST_F(OutputTest, JustPrint) {
 
   std::string test_output = "To stdout only\n";
 
-  local_output.open(filename);
+  local_output.open(filename.string());
   local_output.print(test_output);
 
   std::ifstream test_file(filename);
@@ -88,41 +89,45 @@ TEST_F(OutputTest, JustPrint) {
 TEST_F(OutputTest, DisableEnableStdout) {
   Output local_output;
 
- std::string file_only = "To file only\n";
+  std::string file_only = "To file only\n";
   std::string file_and_stdout = "To stdout and file\n";
 
   // Open temporary file and close stdout
-  local_output.open(filename);
+  local_output.open(filename.string());
   local_output.disable();
 
   local_output << file_only;
 
-  std::ifstream test_file(filename);
-  std::stringstream test_buffer;
-  test_buffer << test_file.rdbuf();
+  {
+    std::ifstream test_file(filename);
+    std::stringstream test_buffer;
+    test_buffer << test_file.rdbuf();
 
-  EXPECT_EQ(file_only, test_buffer.str());
-  EXPECT_EQ("", buffer.str());
+    EXPECT_EQ(file_only, test_buffer.str());
+    EXPECT_EQ("", buffer.str());
+  }
 
   // Enable stdout again
   local_output.enable();
   local_output << file_and_stdout;
 
-  test_buffer << test_file.rdbuf();
+  {
+    std::ifstream test_file(filename);
+    std::stringstream test_buffer;
+    test_buffer << test_file.rdbuf();
 
-  // File should contain both outputs, stdout only latter
-  EXPECT_EQ(file_only + file_and_stdout, test_buffer.str());
-  EXPECT_EQ(file_and_stdout, buffer.str());
-
-  test_file.close();
+    // File should contain both outputs, stdout only latter
+    EXPECT_EQ(file_only + file_and_stdout, test_buffer.str());
+    EXPECT_EQ(file_and_stdout, buffer.str());
+  }
 }
 
 TEST_F(OutputTest, GetInstance) {
-  Output *local_output = Output::getInstance();
+  Output* local_output = Output::getInstance();
 
   EXPECT_NE(local_output, nullptr);
 
-  Output *new_output = Output::getInstance();
+  Output* new_output = Output::getInstance();
 
   EXPECT_EQ(local_output, new_output);
 }
@@ -215,7 +220,7 @@ TEST_F(OutputTest, ConditionalJustPrint) {
 
   std::string test_output = "To stdout only\n";
 
-  local_output.open(filename);
+  local_output.open(filename.string());
   local_output.print(test_output);
 
   std::ifstream test_file(filename);
@@ -284,7 +289,7 @@ TEST_F(OutputTest, DummyJustPrint) {
 
   std::string test_output = "To stdout only\n";
 
-  dummy.open(filename);
+  dummy.open(filename.string());
   dummy.print(test_output);
 
   std::ifstream test_file(filename);
@@ -327,7 +332,7 @@ TEST_F(OutputTest, FormatInd3DInvalid) {
   Ind3D ind(11, 2, 3);
 
   Output local_output;
-  EXPECT_THROW(local_output.write("{:b}", ind), fmt::format_error);
+  EXPECT_THROW(local_output.write(fmt::runtime("{:b}"), ind), fmt::format_error);
 }
 
 TEST_F(OutputTest, FormatInd2Ddefault) {
@@ -382,4 +387,12 @@ TEST_F(OutputTest, FormatIndPerpi) {
   local_output.write("{:i}", ind);
 
   EXPECT_EQ(buffer.str(), "(15)");
+}
+
+TEST_F(OutputTest, FmtJoin) {
+  const std::vector things = {1, 2, 3, 4};
+  Output local_output;
+  local_output.write("list: {}", fmt::join(things, ", "));
+
+  EXPECT_EQ(buffer.str(), "list: 1, 2, 3, 4");
 }

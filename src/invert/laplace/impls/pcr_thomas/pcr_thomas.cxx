@@ -36,20 +36,28 @@
  *
  **************************************************************************/
 
-#include "pcr_thomas.hxx"
-#include "globals.hxx"
+#include "bout/build_defines.hxx"
 
-#include "boutcomm.hxx"
+#if not BOUT_USE_METRIC_3D
+
+#include "pcr_thomas.hxx"
+
+#include "../../common_transform.hxx"
+
+#include "bout/array.hxx"
+#include "bout/boutcomm.hxx"
+#include "bout/dcomplex.hxx"
+#include "bout/globals.hxx"
+#include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
+#include <bout/fft.hxx>
+#include <bout/lapack_routines.hxx>
 #include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
+#include <bout/output.hxx>
 #include <bout/scorepwrapper.hxx>
 #include <bout/sys/timer.hxx>
-#include <boutexception.hxx>
-#include <fft.hxx>
-#include <lapack_routines.hxx>
-#include <output.hxx>
-#include <utils.hxx>
+#include <bout/utils.hxx>
 
 #include <algorithm>
 #include <cmath>
@@ -59,11 +67,13 @@
 using namespace std;
 
 LaplacePCR_THOMAS::LaplacePCR_THOMAS(Options* opt, CELL_LOC loc, Mesh* mesh_in,
-                                     Solver* UNUSED(solver), Datafile* UNUSED(dump))
+                                     Solver* UNUSED(solver))
     : Laplacian(opt, loc, mesh_in), Acoef(0.0, localmesh), C1coef(1.0, localmesh),
       C2coef(1.0, localmesh), Dcoef(1.0, localmesh), nmode(maxmode + 1),
       ncx(localmesh->LocalNx), ny(localmesh->LocalNy), avec(ny, nmode, ncx),
       bvec(ny, nmode, ncx), cvec(ny, nmode, ncx) {
+
+  bout::fft::assertZSerial(*localmesh, "`pcr_thomas` inversion");
 
   Acoef.setLocation(location);
   C1coef.setLocation(location);
@@ -135,176 +145,49 @@ FieldPerp LaplacePCR_THOMAS::solve(const FieldPerp& rhs, const FieldPerp& x0) {
   ASSERT1(rhs.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
 
-  FieldPerp x{emptyFrom(rhs)}; // Result
-
-  int jy = rhs.getIndex(); // Get the Y index
-  x.setIndex(jy);
-
   // Get the width of the boundary
 
   // If the flags to assign that only one guard cell should be used is set
   int inbndry = localmesh->xstart;
   int outbndry = localmesh->xstart;
-  if (((global_flags & INVERT_BOTH_BNDRY_ONE) != 0) || (localmesh->xstart < 2)) {
+  if (isGlobalFlagSet(INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
     inbndry = outbndry = 1;
   }
-  if ((inner_boundary_flags & INVERT_BNDRY_ONE) != 0) {
+  if (isInnerBoundaryFlagSet(INVERT_BNDRY_ONE)) {
     inbndry = 1;
   }
-  if ((outer_boundary_flags & INVERT_BNDRY_ONE) != 0) {
+  if (isOuterBoundaryFlagSet(INVERT_BNDRY_ONE)) {
     outbndry = 1;
   }
 
   if (dst) {
-    const BoutReal zlength = getUniform(coords->dz) * (localmesh->LocalNz - 3);
-    BOUT_OMP(parallel) {
-      /// Create a local thread-scope working array
-      auto k1d = Array<dcomplex>(
-          localmesh->LocalNz); // ZFFT routine expects input of this length
+    const DSTTransform transform(
+        *localmesh, nmode, xs, xe, 0, 0, localmesh->zstart, localmesh->zend, inbndry,
+        outbndry, isInnerBoundaryFlagSetOnFirstX(INVERT_SET),
+        isOuterBoundaryFlagSetOnLastX(INVERT_SET), isGlobalFlagSet(INVERT_ZERO_DC));
 
-      // Loop over X indices, including boundaries but not guard cells. (unless periodic
-      // in x)
-      BOUT_OMP(for)
-      for (int ix = xs; ix <= xe; ix++) {
-        // Take DST in Z direction and put result in k1d
-
-        if (((ix < inbndry) && ((inner_boundary_flags & INVERT_SET) != 0)
-             && localmesh->firstX())
-            || ((localmesh->LocalNx - ix - 1 < outbndry)
-                && ((outer_boundary_flags & INVERT_SET) != 0) && localmesh->lastX())) {
-          // Use the values in x0 in the boundary
-          DST(x0[ix] + 1, localmesh->LocalNz - 2, std::begin(k1d));
-        } else {
-          DST(rhs[ix] + 1, localmesh->LocalNz - 2, std::begin(k1d));
-        }
-
-        // Copy into array, transposing so kz is first index
-        for (int kz = 0; kz < nmode; kz++) {
-          bcmplx(kz, ix - xs) = k1d[kz];
-        }
-      }
-
-      // Get elements of the tridiagonal matrix
-      // including boundary conditions
-      BOUT_OMP(for nowait)
-      for (int kz = 0; kz < nmode; kz++) {
-        // wave number is 1/[rad]; DST has extra 2.
-        const BoutReal kwave = kz * 2.0 * PI / (2. * zlength);
-
-        tridagMatrix(&a(kz, 0), &b(kz, 0), &c(kz, 0), &bcmplx(kz, 0), jy,
-                     kz,    // wave number index
-                     kwave, // kwave (inverse wave length)
-                     global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
-                     &C1coef, &C2coef, &Dcoef,
-                     false); // Don't include guard cells in arrays
-      }
-    }
+    auto matrices = transform.forward(*this, rhs, x0, Acoef, C1coef, C2coef, Dcoef);
 
     // Solve tridiagonal systems
-    pcr_thomas_solver(a, b, c, bcmplx, xcmplx);
+    pcr_thomas_solver(matrices.a, matrices.b, matrices.c, matrices.bcmplx, xcmplx);
 
-    // FFT back to real space
-    BOUT_OMP(parallel) {
-      /// Create a local thread-scope working array
-      auto k1d = Array<dcomplex>(
-          localmesh->LocalNz); // ZFFT routine expects input of this length
-
-      BOUT_OMP(for nowait)
-      for (int ix = xs; ix <= xe; ix++) {
-        for (int kz = 0; kz < nmode; kz++) {
-          k1d[kz] = xcmplx(kz, ix - xs);
-        }
-
-        for (int kz = nmode; kz < (localmesh->LocalNz); kz++) {
-          k1d[kz] = 0.0; // Filtering out all higher harmonics
-        }
-
-        DST_rev(std::begin(k1d), localmesh->LocalNz - 2, x[ix] + 1);
-
-        x(ix, 0) = -x(ix, 2);
-        x(ix, localmesh->LocalNz - 1) = -x(ix, localmesh->LocalNz - 3);
-      }
-    }
-  } else {
-    const BoutReal zlength = getUniform(coords->zlength());
-    BOUT_OMP(parallel) {
-      /// Create a local thread-scope working array
-      auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2
-                                 + 1); // ZFFT routine expects input of this length
-
-      // Loop over X indices, including boundaries but not guard cells (unless periodic in
-      // x)
-      BOUT_OMP(for)
-      for (int ix = xs; ix <= xe; ix++) {
-        // Take FFT in Z direction, apply shift, and put result in k1d
-
-        if (((ix < inbndry) && ((inner_boundary_flags & INVERT_SET) != 0)
-             && localmesh->firstX())
-            || ((localmesh->LocalNx - ix - 1 < outbndry)
-                && ((outer_boundary_flags & INVERT_SET) != 0) && localmesh->lastX())) {
-          // Use the values in x0 in the boundary
-          rfft(x0[ix], localmesh->LocalNz, std::begin(k1d));
-        } else {
-          rfft(rhs[ix], localmesh->LocalNz, std::begin(k1d));
-        }
-
-        // Copy into array, transposing so kz is first index
-        for (int kz = 0; kz < nmode; kz++) {
-          bcmplx(kz, ix - xs) = k1d[kz];
-        }
-      }
-
-      // Get elements of the tridiagonal matrix
-      // including boundary conditions
-      BOUT_OMP(for nowait)
-      for (int kz = 0; kz < nmode; kz++) {
-        const BoutReal kwave = kz * 2.0 * PI / zlength; // wave number is 1/[rad]
-        tridagMatrix(&a(kz, 0), &b(kz, 0), &c(kz, 0), &bcmplx(kz, 0), jy,
-                     kz,    // True for the component constant (DC) in Z
-                     kwave, // Z wave number
-                     global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
-                     &C1coef, &C2coef, &Dcoef,
-                     false); // Don't include guard cells in arrays
-      }
-    }
-
-    // Solve tridiagonal systems
-    pcr_thomas_solver(a, b, c, bcmplx, xcmplx);
-
-    // FFT back to real space
-    BOUT_OMP(parallel) {
-      /// Create a local thread-scope working array
-      auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2
-                                 + 1); // ZFFT routine expects input of this length
-
-      const bool zero_DC = (global_flags & INVERT_ZERO_DC) != 0;
-
-      BOUT_OMP(for nowait)
-      for (int ix = xs; ix <= xe; ix++) {
-        if (zero_DC) {
-          k1d[0] = 0.;
-        }
-
-        for (int kz = static_cast<int>(zero_DC); kz < nmode; kz++) {
-          k1d[kz] = xcmplx(kz, ix - xs);
-        }
-
-        for (int kz = nmode; kz < (localmesh->LocalNz) / 2 + 1; kz++) {
-          k1d[kz] = 0.0; // Filtering out all higher harmonics
-        }
-
-        irfft(std::begin(k1d), localmesh->LocalNz, x[ix]);
-      }
-    }
+    return transform.backward(rhs, xcmplx);
   }
 
-  checkData(x);
+  const FFTTransform transform(
+      *localmesh, nmode, xs, xe, 0, 0, localmesh->zstart, localmesh->zend, inbndry,
+      outbndry, isInnerBoundaryFlagSetOnFirstX(INVERT_SET),
+      isOuterBoundaryFlagSetOnLastX(INVERT_SET), isGlobalFlagSet(INVERT_ZERO_DC));
 
-  return x;
+  auto matrices = transform.forward(*this, rhs, x0, Acoef, C1coef, C2coef, Dcoef);
+
+  // Solve tridiagonal systems
+  pcr_thomas_solver(matrices.a, matrices.b, matrices.c, matrices.bcmplx, xcmplx);
+
+  return transform.backward(rhs, xcmplx);
 }
 
 Field3D LaplacePCR_THOMAS::solve(const Field3D& rhs, const Field3D& x0) {
-  TRACE("LaplacePCR_THOMAS::solve(Field3D, Field3D)");
 
   ASSERT1(rhs.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
@@ -312,24 +195,22 @@ Field3D LaplacePCR_THOMAS::solve(const Field3D& rhs, const Field3D& x0) {
 
   Timer timer("invert");
 
-  Field3D x{emptyFrom(rhs)}; // Result
-
   // Get the width of the boundary
 
   // If the flags to assign that only one guard cell should be used is set
   int inbndry = localmesh->xstart;
   int outbndry = localmesh->xstart;
-  if (((global_flags & INVERT_BOTH_BNDRY_ONE) != 0) || (localmesh->xstart < 2)) {
+  if (isGlobalFlagSet(INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
     inbndry = outbndry = 1;
   }
-  if ((inner_boundary_flags & INVERT_BNDRY_ONE) != 0) {
+  if (isInnerBoundaryFlagSet(INVERT_BNDRY_ONE)) {
     inbndry = 1;
   }
-  if ((outer_boundary_flags & INVERT_BNDRY_ONE) != 0) {
+  if (isOuterBoundaryFlagSet(INVERT_BNDRY_ONE)) {
     outbndry = 1;
   }
 
-  int nx = xe - xs + 1; // Number of X points on this processor
+  const int nx = xe - xs + 1; // Number of X points on this processor
 
   // Get range of Y indices
   int ys = localmesh->ystart;
@@ -352,186 +233,33 @@ Field3D LaplacePCR_THOMAS::solve(const Field3D& rhs, const Field3D& x0) {
 
   const int ny = (ye - ys + 1); // Number of Y points
   nsys = nmode * ny;            // Number of systems of equations to solve
-  const int nxny = nx * ny;     // Number of points in X-Y
-
-  auto a3D = Matrix<dcomplex>(nsys, nx);
-  auto b3D = Matrix<dcomplex>(nsys, nx);
-  auto c3D = Matrix<dcomplex>(nsys, nx);
-
   auto xcmplx3D = Matrix<dcomplex>(nsys, nx);
-  auto bcmplx3D = Matrix<dcomplex>(nsys, nx);
 
   if (dst) {
-    const BoutReal zlength = getUniform(coords->dz) * (localmesh->LocalNz - 3);
-    BOUT_OMP(parallel) {
-      /// Create a local thread-scope working array
-      auto k1d = Array<dcomplex>(
-          localmesh->LocalNz); // ZFFT routine expects input of this length
+    const DSTTransform transform(
+        *localmesh, nmode, xs, xe, ys, ye, localmesh->zstart, localmesh->zend, inbndry,
+        outbndry, isInnerBoundaryFlagSetOnFirstX(INVERT_SET),
+        isOuterBoundaryFlagSetOnLastX(INVERT_SET), isGlobalFlagSet(INVERT_ZERO_DC));
 
-      // Loop over X and Y indices, including boundaries but not guard cells.
-      // (unless periodic in x)
-      BOUT_OMP(for)
-      for (int ind = 0; ind < nxny; ++ind) {
-        // ind = (ix - xs)*(ye - ys + 1) + (iy - ys)
-        int ix = xs + ind / ny;
-        int iy = ys + ind % ny;
-
-        // Take DST in Z direction and put result in k1d
-
-        if (((ix < inbndry) && ((inner_boundary_flags & INVERT_SET) != 0)
-             && localmesh->firstX())
-            || ((localmesh->LocalNx - ix - 1 < outbndry)
-                && ((outer_boundary_flags & INVERT_SET) != 0) && localmesh->lastX())) {
-          // Use the values in x0 in the boundary
-          DST(x0(ix, iy) + 1, localmesh->LocalNz - 2, std::begin(k1d));
-        } else {
-          DST(rhs(ix, iy) + 1, localmesh->LocalNz - 2, std::begin(k1d));
-        }
-
-        // Copy into array, transposing so kz is first index
-        for (int kz = 0; kz < nmode; kz++) {
-          bcmplx3D((iy - ys) * nmode + kz, ix - xs) = k1d[kz];
-        }
-      }
-
-      // Get elements of the tridiagonal matrix
-      // including boundary conditions
-      BOUT_OMP(for nowait)
-      for (int ind = 0; ind < nsys; ind++) {
-        // ind = (iy - ys) * nmode + kz
-        int iy = ys + ind / nmode;
-        int kz = ind % nmode;
-
-        // wave number is 1/[rad]; DST has extra 2.
-        BoutReal kwave = kz * 2.0 * PI / (2. * zlength);
-
-        tridagMatrix(&a3D(ind, 0), &b3D(ind, 0), &c3D(ind, 0), &bcmplx3D(ind, 0), iy,
-                     kz,    // wave number index
-                     kwave, // kwave (inverse wave length)
-                     global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
-                     &C1coef, &C2coef, &Dcoef,
-                     false); // Don't include guard cells in arrays
-      }
-    }
+    auto matrices = transform.forward(*this, rhs, x0, Acoef, C1coef, C2coef, Dcoef);
 
     // Solve tridiagonal systems
-    pcr_thomas_solver(a3D, b3D, c3D, bcmplx3D, xcmplx3D);
+    pcr_thomas_solver(matrices.a, matrices.b, matrices.c, matrices.bcmplx, xcmplx3D);
 
-    // FFT back to real space
-    BOUT_OMP(parallel) {
-      /// Create a local thread-scope working array
-      auto k1d = Array<dcomplex>(
-          localmesh->LocalNz); // ZFFT routine expects input of this length
-
-      BOUT_OMP(for nowait)
-      for (int ind = 0; ind < nxny; ++ind) { // Loop over X and Y
-        // ind = (ix - xs)*(ye - ys + 1) + (iy - ys)
-        int ix = xs + ind / ny;
-        int iy = ys + ind % ny;
-
-        for (int kz = 0; kz < nmode; kz++) {
-          k1d[kz] = xcmplx3D((iy - ys) * nmode + kz, ix - xs);
-        }
-
-        for (int kz = nmode; kz < localmesh->LocalNz; kz++) {
-          k1d[kz] = 0.0; // Filtering out all higher harmonics
-        }
-
-        DST_rev(std::begin(k1d), localmesh->LocalNz - 2, &x(ix, iy, 1));
-
-        x(ix, iy, 0) = -x(ix, iy, 2);
-        x(ix, iy, localmesh->LocalNz - 1) = -x(ix, iy, localmesh->LocalNz - 3);
-      }
-    }
-  } else {
-    const BoutReal zlength = getUniform(coords->zlength());
-    BOUT_OMP(parallel) {
-      /// Create a local thread-scope working array
-      auto k1d = Array<dcomplex>(localmesh->LocalNz / 2
-                                 + 1); // ZFFT routine expects input of this length
-
-      // Loop over X and Y indices, including boundaries but not guard cells
-      // (unless periodic in x)
-
-      BOUT_OMP(for)
-      for (int ind = 0; ind < nxny; ++ind) {
-        // ind = (ix - xs)*(ye - ys + 1) + (iy - ys)
-        int ix = xs + ind / ny;
-        int iy = ys + ind % ny;
-
-        // Take FFT in Z direction, apply shift, and put result in k1d
-
-        if (((ix < inbndry) && ((inner_boundary_flags & INVERT_SET) != 0)
-             && localmesh->firstX())
-            || ((localmesh->LocalNx - ix - 1 < outbndry)
-                && ((outer_boundary_flags & INVERT_SET) != 0) && localmesh->lastX())) {
-          // Use the values in x0 in the boundary
-          rfft(x0(ix, iy), localmesh->LocalNz, std::begin(k1d));
-        } else {
-          rfft(rhs(ix, iy), localmesh->LocalNz, std::begin(k1d));
-        }
-
-        // Copy into array, transposing so kz is first index
-        for (int kz = 0; kz < nmode; kz++) {
-          bcmplx3D((iy - ys) * nmode + kz, ix - xs) = k1d[kz];
-        }
-      }
-
-      // Get elements of the tridiagonal matrix
-      // including boundary conditions
-      BOUT_OMP(for nowait)
-      for (int ind = 0; ind < nsys; ind++) {
-        // ind = (iy - ys) * nmode + kz
-        int iy = ys + ind / nmode;
-        int kz = ind % nmode;
-
-        // wave number is 1/[rad]
-        BoutReal kwave = kz * 2.0 * PI / zlength;
-        tridagMatrix(&a3D(ind, 0), &b3D(ind, 0), &c3D(ind, 0), &bcmplx3D(ind, 0), iy,
-                     kz,    // True for the component constant (DC) in Z
-                     kwave, // Z wave number
-                     global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
-                     &C1coef, &C2coef, &Dcoef,
-                     false); // Don't include guard cells in arrays
-      }
-    }
-
-    // Solve tridiagonal systems
-    pcr_thomas_solver(a3D, b3D, c3D, bcmplx3D, xcmplx3D);
-
-    // FFT back to real space
-    BOUT_OMP(parallel) {
-      /// Create a local thread-scope working array
-      auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2
-                                 + 1); // ZFFT routine expects input of this length
-
-      const bool zero_DC = (global_flags & INVERT_ZERO_DC) != 0;
-
-      BOUT_OMP(for nowait)
-      for (int ind = 0; ind < nxny; ++ind) { // Loop over X and Y
-        int ix = xs + ind / ny;
-        int iy = ys + ind % ny;
-
-        if (zero_DC) {
-          k1d[0] = 0.;
-        }
-
-        for (int kz = static_cast<int>(zero_DC); kz < nmode; kz++) {
-          k1d[kz] = xcmplx3D((iy - ys) * nmode + kz, ix - xs);
-        }
-
-        for (int kz = nmode; kz < localmesh->LocalNz / 2 + 1; kz++) {
-          k1d[kz] = 0.0; // Filtering out all higher harmonics
-        }
-
-        irfft(std::begin(k1d), localmesh->LocalNz, x(ix, iy));
-      }
-    }
+    return transform.backward(rhs, xcmplx3D);
   }
 
-  checkData(x);
+  const FFTTransform transform(
+      *localmesh, nmode, xs, xe, ys, ye, localmesh->zstart, localmesh->zend, inbndry,
+      outbndry, isInnerBoundaryFlagSetOnFirstX(INVERT_SET),
+      isOuterBoundaryFlagSetOnLastX(INVERT_SET), isGlobalFlagSet(INVERT_ZERO_DC));
 
-  return x;
+  auto matrices = transform.forward(*this, rhs, x0, Acoef, C1coef, C2coef, Dcoef);
+
+  // Solve tridiagonal systems
+  pcr_thomas_solver(matrices.a, matrices.b, matrices.c, matrices.bcmplx, xcmplx3D);
+
+  return transform.backward(rhs, xcmplx3D);
 }
 
 /**
@@ -554,6 +282,8 @@ void LaplacePCR_THOMAS ::pcr_thomas_solver(Matrix<dcomplex>& a_mpi,
   const int xstart = localmesh->xstart;
   const int xend = localmesh->xend;
   const int nx = xend - xstart + 1; // number of interior points
+
+  const int nsys = std::get<0>(a_mpi.shape());
 
   // Handle boundary points so that the PCR algorithm works with arrays of
   // the same size on each rank.
@@ -621,6 +351,8 @@ void LaplacePCR_THOMAS ::eliminate_boundary_rows(const Matrix<dcomplex>& a,
                                                  const Matrix<dcomplex>& c,
                                                  Matrix<dcomplex>& r) {
 
+  const int nsys = std::get<0>(a.shape());
+
   if (localmesh->firstX()) {
     // x index is first interior row
     const int xstart = localmesh->xstart;
@@ -655,6 +387,8 @@ void LaplacePCR_THOMAS ::apply_boundary_conditions(const Matrix<dcomplex>& a,
                                                    const Matrix<dcomplex>& r,
                                                    Matrix<dcomplex>& x) {
 
+  const int nsys = std::get<0>(a.shape());
+
   if (localmesh->firstX()) {
     for (int kz = 0; kz < nsys; kz++) {
       for (int ix = localmesh->xstart - 1; ix >= 0; ix--) {
@@ -680,6 +414,8 @@ void LaplacePCR_THOMAS ::apply_boundary_conditions(const Matrix<dcomplex>& a,
 void LaplacePCR_THOMAS ::cr_forward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
                                                  Matrix<dcomplex>& c,
                                                  Matrix<dcomplex>& r) const {
+  const int nsys = std::get<0>(a.shape());
+
   MPI_Comm comm = BoutComm::get();
   Array<dcomplex> alpha(nsys);
   Array<dcomplex> gamma(nsys);
@@ -755,6 +491,8 @@ void LaplacePCR_THOMAS ::cr_backward_multiple_row(Matrix<dcomplex>& a,
                                                   Matrix<dcomplex>& c,
                                                   Matrix<dcomplex>& r,
                                                   Matrix<dcomplex>& x) const {
+  const int nsys = std::get<0>(a.shape());
+
   MPI_Comm comm = BoutComm::get();
 
   MPI_Status status;
@@ -805,6 +543,8 @@ void LaplacePCR_THOMAS ::cr_backward_multiple_row(Matrix<dcomplex>& a,
 void LaplacePCR_THOMAS ::pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
                                                 Matrix<dcomplex>& c, Matrix<dcomplex>& r,
                                                 Matrix<dcomplex>& x) const {
+
+  const int nsys = std::get<0>(a.shape());
 
   Array<dcomplex> alpha(nsys);
   Array<dcomplex> gamma(nsys);
@@ -983,6 +723,8 @@ void LaplacePCR_THOMAS ::pThomas_forward_multiple_row(Matrix<dcomplex>& a,
                                                       Matrix<dcomplex>& b,
                                                       Matrix<dcomplex>& c,
                                                       Matrix<dcomplex>& r) const {
+  const int nsys = std::get<0>(a.shape());
+
   for (int kz = 0; kz < nsys; kz++) {
     for (int i = 3; i <= n_mpi; i++) {
       const dcomplex alpha = -a(kz, i) / b(kz, i - 1);
@@ -1014,6 +756,8 @@ void LaplacePCR_THOMAS ::pcr_double_row_substitution(Matrix<dcomplex>& a,
                                                      Matrix<dcomplex>& c,
                                                      Matrix<dcomplex>& r,
                                                      Matrix<dcomplex>& x) {
+  const int nsys = std::get<0>(a.shape());
+
   Array<dcomplex> alpha(nsys);
   Array<dcomplex> gamma(nsys);
   Array<dcomplex> sbuf(4 * nsys);
@@ -1140,21 +884,21 @@ void LaplacePCR_THOMAS ::verify_solution(const Matrix<dcomplex>& a_ver,
   }
 
   if (xproc > 0) {
-    MPI_Irecv(&rbufdown[0], nsys, MPI_DOUBLE_COMPLEX, myrank - 1, 901, MPI_COMM_WORLD,
+    MPI_Irecv(&rbufdown[0], nsys, MPI_DOUBLE_COMPLEX, myrank - 1, 901, BoutComm::get(),
               &request[1]);
     for (int kz = 0; kz < nsys; kz++) {
       sbufdown[kz] = x_ver(kz, 1);
     }
-    MPI_Isend(&sbufdown[0], nsys, MPI_DOUBLE_COMPLEX, myrank - 1, 900, MPI_COMM_WORLD,
+    MPI_Isend(&sbufdown[0], nsys, MPI_DOUBLE_COMPLEX, myrank - 1, 900, BoutComm::get(),
               &request[0]);
   }
   if (xproc < nprocs - 1) {
-    MPI_Irecv(&rbufup[0], nsys, MPI_DOUBLE_COMPLEX, myrank + 1, 900, MPI_COMM_WORLD,
+    MPI_Irecv(&rbufup[0], nsys, MPI_DOUBLE_COMPLEX, myrank + 1, 900, BoutComm::get(),
               &request[3]);
     for (int kz = 0; kz < nsys; kz++) {
       sbufup[kz] = x_ver(kz, nx);
     }
-    MPI_Isend(&sbufup[0], nsys, MPI_DOUBLE_COMPLEX, myrank + 1, 901, MPI_COMM_WORLD,
+    MPI_Isend(&sbufup[0], nsys, MPI_DOUBLE_COMPLEX, myrank + 1, 901, BoutComm::get(),
               &request[2]);
   }
 
@@ -1189,3 +933,5 @@ void LaplacePCR_THOMAS ::verify_solution(const Matrix<dcomplex>& a_ver,
   }
   output.write("max abs error {}\n", max_error);
 }
+
+#endif // BOUT_USE_METRIC_3D

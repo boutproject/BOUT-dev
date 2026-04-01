@@ -23,27 +23,29 @@
  *
  **************************************************************************/
 
-//#include <globals.hxx>
-
+#include <bout/boutexception.hxx>
 #include <bout/coordinates.hxx>
+#include <bout/field.hxx>
 #include <bout/mesh.hxx>
-#include <boutexception.hxx>
-#include <field.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <utils.hxx>
+#include <bout/output.hxx>
+#include <bout/utils.hxx>
 
 Field::Field(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
     : FieldData(localmesh, location_in), directions(directions_in) {}
 
-int Field::getNx() const{
-  return getMesh()->LocalNx;
-}
+int Field::getNx() const { return getMesh()->LocalNx; }
 
-int Field::getNy() const{
-  return getMesh()->LocalNy;
-}
+int Field::getNy() const { return getMesh()->LocalNy; }
 
-int Field::getNz() const{
-  return getMesh()->LocalNz;
+int Field::getNz() const { return getMesh()->LocalNz; }
+
+bool Field::isFci() const {
+  const auto* coords = this->getCoordinates();
+  if (coords == nullptr) {
+    return false;
+  }
+  if (not coords->hasParallelTransform()) {
+    return false;
+  }
+  return not coords->getParallelTransform().canToFromFieldAligned();
 }

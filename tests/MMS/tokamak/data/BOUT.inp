@@ -1,5 +1,3 @@
-nout = 1
-timestep = 0.1
 
 MZ = 16
 
@@ -8,13 +6,13 @@ MYG = 2
 
 ZMAX = 1
 
-grid = "grid.nc"
-
 twistshift = true
 ShiftXderivs = true
 
 [mesh]
 symmetricGlobalX = true
+
+file = "grid.nc"
 
 [mesh:paralleltransform]
 type = shifted
@@ -29,6 +27,8 @@ rtol = 1e-08   # relative tolerance
 mxstep = 10000  # Maximum internal steps per output
 
 mms = true  # -> Enable MMS testing
+output_step = 0.1
+nout = 1
 
 [laplace]
 all_terms = true

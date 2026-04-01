@@ -3,13 +3,14 @@
  * values along Y
  */
 
-#ifndef __PARALLELTRANSFORM_H__
-#define __PARALLELTRANSFORM_H__
+#ifndef BOUT_PARALLELTRANSFORM_H
+#define BOUT_PARALLELTRANSFORM_H
 
-#include "bout_types.hxx"
-#include "field3d.hxx"
-#include "options.hxx"
-#include "unused.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/dcomplex.hxx"
+#include "bout/field3d.hxx"
+#include "bout/options.hxx"
+#include "bout/unused.hxx"
 
 class Mesh;
 
@@ -24,18 +25,16 @@ class Mesh;
 class ParallelTransform {
 public:
   ParallelTransform(Mesh& mesh_in, Options* opt = nullptr)
-    : mesh(mesh_in),
-      options(opt == nullptr ? Options::root()["mesh:paralleltransform"] : *opt) {}
+      : mesh(mesh_in),
+        options(opt == nullptr ? Options::root()["mesh:paralleltransform"] : *opt) {}
   virtual ~ParallelTransform() = default;
 
   /// Given a 3D field, calculate and set the Y up down fields
-  virtual void calcParallelSlices(Field3D &f) = 0;
+  virtual void calcParallelSlices(Field3D& f) = 0;
 
   /// Calculate Yup and Ydown fields by integrating over mapped points
   /// This should be used for parallel divergence operators
-  virtual void integrateParallelSlices(Field3D &f) {
-    return calcParallelSlices(f);
-  }
+  virtual void integrateParallelSlices(Field3D& f) { return calcParallelSlices(f); }
 
   /// Convert a field into field-aligned coordinates
   /// so that the y index is along the magnetic field
@@ -62,7 +61,7 @@ public:
     return f;
   }
 
-  virtual bool canToFromFieldAligned() = 0;
+  virtual bool canToFromFieldAligned() const = 0;
 
   struct PositionsAndWeights {
     int i, j, k;
@@ -85,7 +84,7 @@ public:
   }
 
   /// Output variables used by a ParallelTransform instance to \p output_options
-  virtual void outputVars(MAYBE_UNUSED(Options& output_options)) {}
+  virtual void outputVars([[maybe_unused]] Options& output_options) {}
 
   /// If \p twist_shift_enabled is true, does a `Field3D` with Y direction \p ytype
   /// require a twist-shift at branch cuts on closed field lines?
@@ -96,8 +95,8 @@ protected:
   /// has a 'parallel_transform' variable, it has the correct value
   virtual void checkInputGrid() = 0;
 
-  Mesh &mesh; ///< The mesh this paralleltransform is part of
-  Options &options; ///< Options for this ParallelTransform
+  Mesh& mesh;       ///< The mesh this paralleltransform is part of
+  Options& options; ///< Options for this ParallelTransform
 };
 
 /*!
@@ -154,15 +153,15 @@ public:
     return result.setDirectionY(YDirectionType::Standard);
   }
 
-  virtual std::vector<PositionsAndWeights> getWeightsForYApproximation(int i,
-      int j, int k, int yoffset) override {
+  virtual std::vector<PositionsAndWeights>
+  getWeightsForYApproximation(int i, int j, int k, int yoffset) override {
     return {{i, j + yoffset, k, 1.0}};
   }
 
+  bool canToFromFieldAligned() const override { return true; }
 
-  bool canToFromFieldAligned() override { return true; }
-
-  bool requiresTwistShift(bool twist_shift_enabled, YDirectionType UNUSED(ytype)) override {
+  bool requiresTwistShift(bool twist_shift_enabled,
+                          YDirectionType UNUSED(ytype)) override {
     // All Field3Ds require twist-shift, because all are effectively field-aligned, but
     // allow twist-shift to be turned off by twist_shift_enabled
     return twist_shift_enabled;
@@ -217,11 +216,11 @@ public:
   std::vector<PositionsAndWeights>
   getWeightsForYApproximation(int UNUSED(i), int UNUSED(j), int UNUSED(k),
                               int UNUSED(yoffset)) override {
-    throw BoutException("ParallelTransform::getWeightsForYApproximation not implemented"
+    throw BoutException("ParallelTransform::getWeightsForYApproximation not implemented "
                         "for `type = shifted`. Try `type = shiftedinterp`");
   }
 
-  bool canToFromFieldAligned() override { return true; }
+  bool canToFromFieldAligned() const override { return true; }
 
   /// Save zShift to the output
   void outputVars(Options& output_options) override;
@@ -230,7 +229,7 @@ public:
     // Twist-shift only if field-aligned
     if (ytype == YDirectionType::Aligned and not twist_shift_enabled) {
       throw BoutException("'twistshift = true' is required to communicate field-aligned "
-          "Field3Ds when using ShiftedMetric.");
+                          "Field3Ds when using ShiftedMetric.");
     }
     return ytype == YDirectionType::Aligned;
   }
@@ -319,4 +318,4 @@ private:
                               const std::vector<ParallelSlicePhase>& phases) const;
 };
 
-#endif // __PARALLELTRANSFORM_H__
+#endif // BOUT_PARALLELTRANSFORM_H

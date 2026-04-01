@@ -13,6 +13,7 @@
 #cmakedefine01 BOUT_HAS_IDA
 #cmakedefine01 BOUT_HAS_LAPACK
 #cmakedefine01 BOUT_HAS_NETCDF
+#cmakedefine01 BOUT_HAS_ADIOS2
 #cmakedefine01 BOUT_HAS_PETSC
 #cmakedefine01 BOUT_HAS_PRETTY_FUNCTION
 #cmakedefine01 BOUT_HAS_PVODE
@@ -20,7 +21,6 @@
 #cmakedefine01 BOUT_HAS_SLEPC
 #cmakedefine01 BOUT_HAS_SUNDIALS
 #cmakedefine01 BOUT_HAS_UUID_SYSTEM_GENERATOR
-#cmakedefine01 BOUT_USE_BACKTRACE
 #cmakedefine01 BOUT_USE_COLOR
 #cmakedefine01 BOUT_USE_OPENMP
 #cmakedefine01 BOUT_USE_OUTPUT_DEBUG
@@ -30,12 +30,15 @@
 #cmakedefine01 BOUT_HAS_UMPIRE
 #cmakedefine01 BOUT_HAS_CALIPER
 #cmakedefine01 BOUT_HAS_RAJA
-#cmakedefine01 BOUT_USE_CUDA
+#cmakedefine01 BOUT_HAS_CUDA
 #cmakedefine BOUT_METRIC_TYPE @BOUT_METRIC_TYPE@
 #cmakedefine01 BOUT_USE_METRIC_3D
 #cmakedefine01 BOUT_USE_MSGSTACK
 
 // CMake build does not support legacy interface
 #define BOUT_HAS_LEGACY_NETCDF 0
+
+// We now always turn this on
+#define BOUT_USE_BACKTRACE 1
 
 #endif // BOUT_BUILD_CONFIG_HXX

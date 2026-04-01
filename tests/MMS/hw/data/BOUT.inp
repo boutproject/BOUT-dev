@@ -1,5 +1,3 @@
-timestep = 0.1
-nout = 10
 
 MZ = 33
 ZMIN = 0
@@ -31,6 +29,8 @@ mms = true
 
 atol = 1e-15
 rtol = 1e-07
+output_step = 0.1
+nout = 10
 
 [hw]
 

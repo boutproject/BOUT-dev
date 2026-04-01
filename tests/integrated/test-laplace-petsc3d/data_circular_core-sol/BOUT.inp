@@ -17,7 +17,7 @@ function = 1. + .1*mixmode(x, 10.)*mixmode(y, 11.)*mixmode(z, 12.)
 [C2]
 #function = 0.
 function = .1*mixmode(x, 13.)*mixmode(y, 14.)*mixmode(z, 15.)
-bndry_par_all = parallel_neumann
+bndry_par_all = parallel_neumann_o2
 
 [A]
 function = 0.0
@@ -77,7 +77,7 @@ rtol = 1e-10
 atol = 1e-13
 
 [laplace:petsc]
-mg_levels_ksp_max_it = 3
+mg_levels_ksp_max_it = 5
 
 [input]
 transform_from_field_aligned = false

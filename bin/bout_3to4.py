@@ -195,7 +195,6 @@ def throw_warnings(line_text, filename, line_num):
 
 
 if __name__ == "__main__":
-
     epilog = """
     Currently bout_3to4 can detect the following transformations are needed:
         - Triple square brackets instead of round brackets for subscripts

@@ -27,15 +27,15 @@
 
 class EulerSolver;
 
-#ifndef __EULER_SOLVER_H__
-#define __EULER_SOLVER_H__
+#ifndef BOUT_EULER_SOLVER_H
+#define BOUT_EULER_SOLVER_H
 
 #include "mpi.h"
 
-#include <bout_types.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/solver.hxx>
 
-namespace{
+namespace {
 RegisterSolver<EulerSolver> registersolvereuler("euler");
 }
 
@@ -64,7 +64,9 @@ private:
   /// Take a single step to calculate f1
   void take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start,
                  Array<BoutReal>& result);
+
+  BoutReal dump_at_time{-1.};
+  int debug_counter{0};
 };
 
-#endif // __KARNIADAKIS_SOLVER_H__
-
+#endif // BOUT_KARNIADAKIS_SOLVER_H

@@ -2,41 +2,38 @@
 
 #include "power.hxx"
 
+#include <bout/boutcomm.hxx>
+#include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
-#include <boutcomm.hxx>
-#include <msg_stack.hxx>
 
 #include <cmath>
-
-#include <output.hxx>
 
 PowerSolver::PowerSolver(Options* opts)
     : Solver(opts),
       curtime((*options)["curtime"].doc("Simulation time (fixed)").withDefault(0.0)) {}
 
 int PowerSolver::init() {
-  TRACE("Initialising Power solver");
 
   Solver::init();
   output << "\n\tPower eigenvalue solver\n";
 
   // Calculate number of variables
   nlocal = getLocalN();
-  
+
   // Get total problem size
   if (bout::globals::mpi->MPI_Allreduce(&nlocal, &nglobal, 1, MPI_INT, MPI_SUM,
                                         BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed in EulerSolver::init");
   }
-  
-  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
-	       n3Dvars(), n2Dvars(), nglobal, nlocal);
-  
+
+  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n", n3Dvars(),
+               n2Dvars(), nglobal, nlocal);
+
   // Allocate memory
   f0.reallocate(nlocal);
 
   eigenvalue = 0.0;
-  
+
   // Put starting values into f0
   save_vars(std::begin(f0));
 
@@ -44,7 +41,6 @@ int PowerSolver::init() {
 }
 
 int PowerSolver::run() {
-  TRACE("PowerSolver::run()");
 
   // Make sure that f0 has a norm of 1
   divide(f0, norm(f0));
@@ -84,11 +80,12 @@ void PowerSolver::outputVars(Options& output_options, bool save_repeat) {
   output_options["eigenvalue"].assignRepeat(eigenvalue, "t", save_repeat, "Solver");
 }
 
-BoutReal PowerSolver::norm(Array<BoutReal> &state) {
+BoutReal PowerSolver::norm(Array<BoutReal>& state) {
   BoutReal total = 0.0, result;
-  
-  for(int i=0;i<nlocal;i++)
-    total += state[i]*state[i];
+
+  for (int i = 0; i < nlocal; i++) {
+    total += state[i] * state[i];
+  }
 
   total /= static_cast<BoutReal>(nglobal);
 
@@ -98,7 +95,8 @@ BoutReal PowerSolver::norm(Array<BoutReal> &state) {
   return sqrt(result);
 }
 
-void PowerSolver::divide(Array<BoutReal> &in, BoutReal value) {
-  for(int i=0;i<nlocal;i++)
+void PowerSolver::divide(Array<BoutReal>& in, BoutReal value) {
+  for (int i = 0; i < nlocal; i++) {
     in[i] /= value;
+  }
 }

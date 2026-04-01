@@ -5,7 +5,7 @@
  **************************************************************************
  * Copyright 2020 Joseph Parker
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -25,30 +25,29 @@
  **************************************************************************/
 
 #include "iterative_parallel_tri.hxx"
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if not BOUT_USE_METRIC_3D
 
-#include "globals.hxx"
+#include "bout/globals.hxx"
 
+#include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
+#include <bout/fft.hxx>
+#include <bout/lapack_routines.hxx>
 #include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
 #include <bout/solver.hxx>
 #include <bout/sys/timer.hxx>
-#include <boutexception.hxx>
+#include <bout/utils.hxx>
 #include <cmath>
-#include <fft.hxx>
-#include <lapack_routines.hxx>
-#include <utils.hxx>
 
-#include "boutcomm.hxx"
-#include <output.hxx>
+#include "bout/boutcomm.hxx"
+#include <bout/output.hxx>
 
 #include <bout/scorepwrapper.hxx>
 
-LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in, Solver* UNUSED(solver),
-                       Datafile* UNUSED(dump))
+LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in, Solver* UNUSED(solver))
     : Laplacian(opt, loc, mesh_in),
       rtol((*opt)["rtol"].doc("Relative tolerance").withDefault(1.e-7)),
       atol((*opt)["atol"].doc("Absolute tolerance").withDefault(1.e-20)),
@@ -68,12 +67,14 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in, Solver* UNUSED
       au(ny, nmode), bu(ny, nmode), rl(nmode), ru(nmode), r1(ny, nmode), r2(ny, nmode),
       first_call(ny), x0saved(ny, 4, nmode), converged(nmode), fine_error(4, nmode) {
 
+  bout::fft::assertZSerial(*localmesh, "`ipt` inversion");
+
   A.setLocation(location);
   C.setLocation(location);
   D.setLocation(location);
 
   // Number of procs must be a factor of 2
-  const int n = localmesh->NXPE;
+  const int n = localmesh->getNXPE();
   if (!is_pow2(n)) {
     throw BoutException("LaplaceIPT error: NXPE must be a power of 2");
   }
@@ -84,7 +85,8 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in, Solver* UNUSED
   }
   // Cannot use multigrid on 1 core
   if (n == 1 and max_level != 0) {
-    throw BoutException("LaplaceIPT error: must have max_level=0 if using one processor. ");
+    throw BoutException(
+        "LaplaceIPT error: must have max_level=0 if using one processor. ");
   }
 
   static int ipt_solver_count = 1;
@@ -234,7 +236,6 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
   ASSERT1(b.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
-  TRACE("LaplaceIPT::solve(const, const)");
 
   FieldPerp x{emptyFrom(b)};
 
@@ -293,12 +294,10 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
    */
   auto bcmplx = Matrix<dcomplex>(nmode, ncx);
 
-  const bool invert_inner_boundary =
-      isInnerBoundaryFlagSet(INVERT_SET) and localmesh->firstX();
-  const bool invert_outer_boundary =
-      isOuterBoundaryFlagSet(INVERT_SET) and localmesh->lastX();
+  const bool invert_inner_boundary = isInnerBoundaryFlagSetOnFirstX(INVERT_SET);
+  const bool invert_outer_boundary = isOuterBoundaryFlagSetOnLastX(INVERT_SET);
 
-  BOUT_OMP(parallel for)
+  BOUT_OMP_PERF(parallel for)
   for (int ix = 0; ix < ncx; ix++) {
     /* This for loop will set the bk (initialized by the constructor)
      * bk is the z fourier modes of b in z
@@ -345,8 +344,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
                  kz,
                  // wave number (different from kz only if we are taking a part
                  // of the z-domain [and not from 0 to 2*pi])
-                 kz * kwaveFactor, global_flags, inner_boundary_flags,
-                 outer_boundary_flags, &A, &C, &D);
+                 kz * kwaveFactor, &A, &C, &D);
 
     // Patch up internal boundaries
     if (not localmesh->lastX()) {
@@ -492,10 +490,8 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
           cycle_eta = 0;
           for (int kz = 0; kz < nmode; kz++) {
             const BoutReal ratio = errornorm[kz] / errornorm_old[kz];
-            const int eta =
-                std::ceil(std::log(1.0 / errornorm[kz]) / std::log(ratio));
+            const int eta = std::ceil(std::log(1.0 / errornorm[kz]) / std::log(ratio));
             cycle_eta = (cycle_eta > eta) ? cycle_eta : eta;
-
           }
         }
       }
@@ -580,9 +576,10 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 #if CHECK > 2
   for (int ix = 0; ix < 4; ix++) {
     for (int kz = 0; kz < nmode; kz++) {
-      if (!finite(levels[0].xloc(ix, kz).real())
-          or !finite(levels[0].xloc(ix, kz).imag()))
+      if (!std::isfinite(levels[0].xloc(ix, kz).real())
+          or !std::isfinite(levels[0].xloc(ix, kz).imag())) {
         throw BoutException("Non-finite xloc at {:d}, {:d}, {:d}", ix, jy, kz);
+      }
     }
   }
 #endif
@@ -599,8 +596,9 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 #if CHECK > 2
   for (int ix = 0; ix < ncx; ix++) {
     for (int kz = 0; kz < nmode; kz++) {
-      if (!finite(xk1d(kz, ix).real()) or !finite(xk1d(kz, ix).imag()))
+      if (!std::isfinite(xk1d(kz, ix).real()) or !std::isfinite(xk1d(kz, ix).imag())) {
         throw BoutException("Non-finite xloc at {:d}, {:d}, {:d}", ix, jy, kz);
+      }
     }
   }
 #endif
@@ -638,9 +636,11 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     irfft(&xk(ix, 0), ncz, x[ix]);
 
 #if CHECK > 2
-    for (int kz = 0; kz < ncz; kz++)
-      if (!finite(x(ix, kz)))
+    for (int kz = 0; kz < ncz; kz++) {
+      if (!std::isfinite(x(ix, kz))) {
         throw BoutException("Non-finite at {:d}, {:d}, {:d}", ix, jy, kz);
+      }
+    }
 #endif
   }
 
@@ -1225,12 +1225,17 @@ void LaplaceIPT::Level::calculate_total_residual(const LaplaceIPT& l,
     if (!converged[kz]) {
       errornorm[kz] = 0.0;
 
-      BoutReal w = pow( l.rtol*sqrt(pow(xloc(1, kz).real(), 2) + pow(xloc(1, kz).imag(), 2)) + l.atol , 2);
-      subtotal[kz] = ( pow(residual(1, kz).real(), 2) + pow(residual(1, kz).imag(), 2) ) / w;
+      BoutReal w = pow(
+          l.rtol * sqrt(pow(xloc(1, kz).real(), 2) + pow(xloc(1, kz).imag(), 2)) + l.atol,
+          2);
+      subtotal[kz] =
+          (pow(residual(1, kz).real(), 2) + pow(residual(1, kz).imag(), 2)) / w;
       if (l.localmesh->lastX()) {
-        w = pow( l.rtol*sqrt(pow(xloc(2, kz).real(), 2) + pow(xloc(2, kz).imag(), 2)) + l.atol , 2);
+        w = pow(l.rtol * sqrt(pow(xloc(2, kz).real(), 2) + pow(xloc(2, kz).imag(), 2))
+                    + l.atol,
+                2);
         subtotal[kz] +=
-            ( pow(residual(2, kz).real(), 2) + pow(residual(2, kz).imag(), 2) ) / w;
+            (pow(residual(2, kz).real(), 2) + pow(residual(2, kz).imag(), 2)) / w;
       }
     }
   }
@@ -1241,7 +1246,7 @@ void LaplaceIPT::Level::calculate_total_residual(const LaplaceIPT& l,
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (!converged[kz]) {
-      errornorm[kz] = sqrt(errornorm[kz]/BoutReal(l.ncx));
+      errornorm[kz] = sqrt(errornorm[kz] / BoutReal(l.ncx));
       if (errornorm[kz] < 1.0) {
         converged[kz] = true;
       }

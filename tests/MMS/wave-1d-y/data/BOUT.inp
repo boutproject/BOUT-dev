@@ -1,9 +1,3 @@
-#
-# Input file for 1D wave MMS test
-#
-
-nout = 20      # Number of output timesteps
-timestep = 0.1  #Time between outputs
 
 
 MZ = 1 # Number of points in z
@@ -56,6 +50,12 @@ mms = true
 atol = 1e-15 # absolute tolerance
 rtol = 1e-10  # relative tolerance
 mxstep = 10000000
+output_step = 0.1  #Time between outputs
+#
+# Input file for 1D wave MMS test
+#
+
+nout = 20      # Number of output timesteps
 
 [f]
 solution = y - sin(t)*cos(0.5*y) + cos(y)

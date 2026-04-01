@@ -2,14 +2,7 @@
 
 #include "bout/field_accessor.hxx"
 
-#include "test_extras.hxx"
-
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;

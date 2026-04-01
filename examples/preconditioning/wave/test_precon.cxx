@@ -6,9 +6,9 @@
  * solver:type=petsc -ts_type theta -ts_theta_theta 0.5 -{ksp,snes,ts}_monitor
  */
 
+#include <bout/bout.hxx>
+#include <bout/invert_parderiv.hxx>
 #include <bout/physicsmodel.hxx>
-#include <bout.hxx>
-#include <invert_parderiv.hxx>
 
 class Test_precon : public PhysicsModel {
   Field3D u, v; // Evolving variables

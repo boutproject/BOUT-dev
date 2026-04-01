@@ -1,30 +1,21 @@
 #include "gtest/gtest.h"
 
-#include "boutexception.hxx"
-#include "field.hxx"
-#include "initialprofiles.hxx"
-#include "output.hxx"
 #include "test_extras.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/constants.hxx"
+#include "bout/field.hxx"
+#include "bout/initialprofiles.hxx"
 #include "bout/mesh.hxx"
+#include "bout/output.hxx"
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;
 
 class InitialProfileTest : public FakeMeshFixture {
 public:
-  InitialProfileTest() : FakeMeshFixture() {
-    // We need Coordinates so a parallel transform is available as
-    // FieldFactory::create3D wants to un-field-align the result
-    static_cast<FakeMesh*>(mesh)->setCoordinates(test_coords);
-
+  InitialProfileTest() {
     mesh->getCoordinates()->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*mesh));
   }

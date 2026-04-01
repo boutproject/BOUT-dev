@@ -1,37 +1,81 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_PETSC
 
-#include "boutcomm.hxx"
-#include "options.hxx"
+#include "bout/boutcomm.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/openmpwrap.hxx"
-#include <bout/petsclib.hxx>
+#include "bout/options.hxx"
+#include "bout/output.hxx"
+#include "bout/petsclib.hxx"
 
-#include <output.hxx>
+#include <petscerror.h>
+#include <petscksp.h>
+#include <petsclog.h>
+#include <petscoptions.h>
+#include <petscsnes.h>
+#include <petscsys.h>
+#include <petscts.h>
+#include <petscversion.h>
 
-// Define all the static member variables
-int PetscLib::count = 0;
-char PetscLib::help[] = "BOUT++: Uses finite difference methods to solve plasma fluid problems in curvilinear coordinates";
-int *PetscLib::pargc = nullptr;
-char ***PetscLib::pargv = nullptr;
-PetscLogEvent PetscLib::USER_EVENT = 0;
+#include <string>
+
+namespace {
+constexpr const char* PetscLibHelp =
+    "BOUT++: Uses finite difference methods to solve plasma fluid "
+    "problems in curvilinear coordinates";
+
+void setPetscOptions(Options& options, const std::string& prefix) {
+  // Pass all options in the section to PETSc
+  for (const auto& child : options.getChildren()) {
+    if (not child.second.isValue()) {
+      throw BoutException("Found subsection {} in {} when reading PETSc options - only "
+                          "values are allowed in the PETSc options, not subsections",
+                          child.first, options.str());
+    }
+
+    // Note, option names in the input file don't start with "-", but need to be passed
+    // to PETSc with "-" prepended
+    auto petsc_option_name = "-" + prefix + child.first;
+
+    auto str_value = child.second.as<std::string>();
+    // "true" is the value given to an option with no value, when read from BOUT.inp. Also
+    // when nullptr is passed to PetscOptionsSetValue for a boolean option, it defaults to
+    // true so we should always be OK passing nullptr for null or "true".
+    const char* value = str_value == "true" ? nullptr : str_value.c_str();
+
+#if PETSC_VERSION_GE(3, 7, 0)
+    const auto ierr = PetscOptionsSetValue(nullptr, petsc_option_name.c_str(), value);
+#else
+    // no PetscOptions as first argument
+    const auto ierr = PetscOptionsSetValue(petsc_option_name.c_str(), value);
+#endif
+    if (ierr != 0) {
+      throw BoutException("PetscOptionsSetValue returned error code {} when setting {}",
+                          ierr, petsc_option_name);
+    }
+  }
+}
+} // namespace
 
 PetscLib::PetscLib(Options* opt) {
-  BOUT_OMP(critical(PetscLib))
+  BOUT_OMP_SAFE(critical(PetscLib))
   {
-    if(count == 0) {
+    if (count == 0) {
       // Initialise PETSc
+
+      // Load global PETSc options from the [petsc] section of the input
+      // Note: This should be before PetscInitialize so that some options
+      //       can modify initialization e.g. -log_view.
+      setPetscOptions(Options::root()["petsc"], "");
 
       output << "Initialising PETSc\n";
       PETSC_COMM_WORLD = BoutComm::getInstance()->getComm();
-      PetscInitialize(pargc,pargv,PETSC_NULL,help);
+      PetscInitialize(pargc, pargv, nullptr, PetscLibHelp);
       PetscPopSignalHandler();
 
-      PetscLogEventRegister("Total BOUT++",0,&USER_EVENT);
-      PetscLogEventBegin(USER_EVENT,0,0,0,0);
-
-      // Load global PETSc options from the [petsc] section of the input
-      setPetscOptions(Options::root()["petsc"], "");
+      PetscLogEventRegister("Total BOUT++", 0, &USER_EVENT);
+      PetscLogEventBegin(USER_EVENT, 0, 0, 0, 0);
     }
 
     if (opt != nullptr and opt->isSection()) {
@@ -52,48 +96,42 @@ PetscLib::PetscLib(Options* opt) {
 }
 
 PetscLib::~PetscLib() {
-  BOUT_OMP(critical(PetscLib))
+  BOUT_OMP_SAFE(critical(PetscLib))
   {
     count--;
-    if(count == 0) {
+    if (count == 0) {
       // Finalise PETSc
       output << "Finalising PETSc\n";
-      PetscLogEventEnd(USER_EVENT,0,0,0,0);
+      PetscLogEventEnd(USER_EVENT, 0, 0, 0, 0);
       PetscFinalize();
     }
   }
 }
 
 void PetscLib::setOptionsFromInputFile(KSP& ksp) {
-  auto ierr = KSPSetOptionsPrefix(ksp, options_prefix.c_str());
-  if (ierr) {
-    throw BoutException("KSPSetOptionsPrefix failed with error {}", ierr);
-  }
+  assertIerr(KSPSetOptionsPrefix(ksp, options_prefix.c_str()), "KSPSetOptionsPrefix");
 
-  ierr = KSPSetFromOptions(ksp);
-  if (ierr) {
-    throw BoutException("KSPSetFromOptions failed with error {}", ierr);
-  }
+  assertIerr(KSPSetFromOptions(ksp), "KSPSetFromOptions");
 }
 
 void PetscLib::setOptionsFromInputFile(SNES& snes) {
-  auto ierr = SNESSetOptionsPrefix(snes, options_prefix.c_str());
-  if (ierr) {
-    throw BoutException("SNESSetOptionsPrefix failed with error %i", ierr);
-  }
+  BOUT_DO_PETSC(SNESSetOptionsPrefix(snes, options_prefix.c_str()));
 
-  ierr = SNESSetFromOptions(snes);
-  if (ierr) {
-    throw BoutException("SNESSetFromOptions failed with error %i", ierr);
-  }
+  BOUT_DO_PETSC(SNESSetFromOptions(snes));
+}
+
+void PetscLib::setOptionsFromInputFile(TS& ts) {
+  BOUT_DO_PETSC(TSSetOptionsPrefix(ts, options_prefix.c_str()));
+
+  BOUT_DO_PETSC(TSSetFromOptions(ts));
 }
 
 void PetscLib::cleanup() {
-  BOUT_OMP(critical(PetscLib))
+  BOUT_OMP_SAFE(critical(PetscLib))
   {
-    if(count > 0) {
+    if (count > 0) {
       output << "Finalising PETSc. Warning: Instances of PetscLib still exist.\n";
-      PetscLogEventEnd(USER_EVENT,0,0,0,0);
+      PetscLogEventEnd(USER_EVENT, 0, 0, 0, 0);
       PetscFinalize();
 
       count = 0; // ensure that finalise is not called again later
@@ -101,34 +139,16 @@ void PetscLib::cleanup() {
   }
 }
 
-void PetscLib::setPetscOptions(Options& options, const std::string& prefix) {
-  // Pass all options in the section to PETSc
-  for (auto& i : options.getChildren()) {
-    if (not i.second.isValue()) {
-      throw BoutException("Found subsection {} in {} when reading PETSc options - only "
-          "values are allowed in the PETSc options, not subsections", i.first, options.str());
-    }
-
-    // Note, option names in the input file don't start with "-", but need to be passed
-    // to PETSc with "-" prepended
-    auto petsc_option_name = "-"+prefix+i.first;
-
-    auto str_value = i.second.as<std::string>();
-    // "true" is the value given to an option with no value, when read from BOUT.inp. Also
-    // when nullptr is passed to PetscOptionsSetValue for a boolean option, it defaults to
-    // true so we should always be OK passing nullptr for null or "true".
-    const char* value =
-      str_value == "true" ? nullptr : str_value.c_str();
-
-#if PETSC_VERSION_GE(3, 7, 0)
-    const auto ierr = PetscOptionsSetValue(nullptr, petsc_option_name.c_str(), value);
+BoutException PetscLib::SNESFailure(SNES& snes) {
+  SNESConvergedReason reason = SNES_CONVERGED_ITERATING;
+  BOUT_DO_PETSC(SNESGetConvergedReason(snes, &reason));
+#if PETSC_VERSION_GE(3, 15, 0)
+  const char* message{nullptr};
+  BOUT_DO_PETSC(SNESGetConvergedReasonString(snes, &message));
 #else
-// no PetscOptions as first argument
-    const auto ierr = PetscOptionsSetValue(petsc_option_name.c_str(), value);
+  const char* message{""};
 #endif
-    if (ierr) {
-      throw BoutException("PetscOptionsSetValue returned error code {} when setting {}", ierr, petsc_option_name);
-    }
-  }
+  return BoutException("SNES failed to converge. Reason: {} ({:d})", message,
+                       static_cast<int>(reason));
 }
 #endif // BOUT_HAS_PETSC

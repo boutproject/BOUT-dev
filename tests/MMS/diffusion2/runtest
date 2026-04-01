@@ -20,14 +20,13 @@ from numpy import sqrt, max, abs, mean, array, log
 
 from os.path import join
 
-
 build_and_log("MMS diffusion test")
 
 # List of input directories
 inputs = [
     ("X", ["mesh:nx"]),
     ("Y", ["mesh:ny"]),
-    ("Z", ["MZ"])  # ,
+    ("Z", ["MZ"]),
     # ("XYZ", ["mesh:nx", "mesh:ny", "MZ"])
 ]
 

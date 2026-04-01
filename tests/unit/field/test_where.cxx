@@ -1,15 +1,10 @@
 #include "gtest/gtest.h"
 
-#include "field.hxx"
 #include "test_extras.hxx"
-#include "where.hxx"
+#include "bout/field.hxx"
+#include "bout/where.hxx"
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;

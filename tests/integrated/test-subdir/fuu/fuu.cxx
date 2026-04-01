@@ -1,5 +1,3 @@
 #include "fuu.hxx"
 
-void fuu(){
-  output.write("\tFuu!\n");
-}
+void fuu() { output.write("\tFuu!\n"); }

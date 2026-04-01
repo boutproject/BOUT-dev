@@ -13,16 +13,4 @@ Module contents
 
 .. automodule:: boutpp
     :members:
-
-Undocumented functions
-----------------------
-
-.. automodule:: boutpp
-   :undoc-members:
-
-Special and inherited functions
--------------------------------
-
-.. automodule:: boutpp
-   :special-members:
-   :inherited-members:
+    :imported-members:

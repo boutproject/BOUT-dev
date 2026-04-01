@@ -255,9 +255,9 @@ parallelise and vectorise. Some tuning of this is possible, see below
 for details. It replaces the C-style triple-nested loop::
 
    Field3D f(0.0);
-   for (int i = mesh->xstart; i < mesh->xend; ++i) {
-     for (int j = mesh->ystart; j < mesh->yend; ++j) {
-       for (int k = 0; k < mesh->LocalNz; ++k) {
+   for (int i = mesh->xstart; i <= mesh->xend; ++i) {
+     for (int j = mesh->ystart; j <= mesh->yend; ++j) {
+       for (int k = mesh->zstart; k <= mesh->zend; ++k) {
          f(i,j,k) = a(i,j,k) + b(i,j,k)
        }
      }
@@ -300,7 +300,7 @@ verion of the macro::
 For loops inside parallel regions, there is ``BOUT_FOR_INNER``::
 
     Field3D f(0.0);
-    BOUT_OMP(parallel) {
+    BOUT_OMP_PERF(parallel) {
       BOUT_FOR_INNER(i, f.getMesh()->getRegion3D("RGN_ALL")) {
          f[i] = a[i] + b[i];
       }
@@ -347,7 +347,7 @@ offsets there is a function ``offset(x,y,z)`` so that
 Note that by default no bounds checking is performed. If the checking
 level is increased to 3 or above then bounds checks will be
 performed. This will have a significant (bad) impact on performance, so is
-just for debugging purposes. Configure with ``--enable-checks=3``
+just for debugging purposes. Configure with ``-DCHECK=3``
 option to do this.
 
 
@@ -357,7 +357,7 @@ Tuning BOUT_FOR loops
 The ``BOUT_FOR`` macros use two nested loops: The outer loop is OpenMP
 parallelised, and iterates over contiguous blocks::
 
-  BOUT_OMP(parallel for schedule(guided))
+  BOUT_OMP_PERF(parallel for schedule(guided))
   for (auto block = region.getBlocks().cbegin();
        block < region.getBlocks().cend();
        ++block)

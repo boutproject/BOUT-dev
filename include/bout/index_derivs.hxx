@@ -40,12 +40,11 @@
 #include <bout/scorepwrapper.hxx>
 #include <bout/template_combinations.hxx>
 
-#include <bout_types.hxx>
-#include <fft.hxx>
-#include <interpolation.hxx>
-#include <msg_stack.hxx>
-#include <stencils.hxx>
-#include <unused.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/fft.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/stencils.hxx>
+#include <bout/unused.hxx>
 
 class Field3D;
 class Field2D;
@@ -84,7 +83,7 @@ class DerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void standard(const T& var, T& result, const std::string& region) const {
-    AUTO_TRACE();
+
     ASSERT2(meta.derivType == DERIV::Standard || meta.derivType == DERIV::StandardSecond
             || meta.derivType == DERIV::StandardFourth)
     ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
@@ -96,8 +95,9 @@ public:
   }
 
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void upwindOrFlux(const T& vel, const T& var, T& result, const std::string& region) const {
-    AUTO_TRACE();
+  void upwindOrFlux(const T& vel, const T& var, T& result,
+                    const std::string& region) const {
+
     ASSERT2(meta.derivType == DERIV::Upwind || meta.derivType == DERIV::Flux)
     ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
 
@@ -123,13 +123,6 @@ public:
   BoutReal apply(const stencil& v, const stencil& f) const { return func(v, f); }
 };
 
-// Redundant definitions because C++
-// Not necessary in C++17
-template <class FF>
-constexpr FF DerivativeType<FF>::func;
-template <class FF>
-constexpr metaData DerivativeType<FF>::meta;
-
 /////////////////////////////////////////////////////////////////////////////////
 /// Following code is for dealing with registering a method/methods for all
 /// template combinations, in conjunction with the template_combinations code.
@@ -139,7 +132,7 @@ struct registerMethod {
   template <typename Direction, typename Stagger, typename FieldTypeContainer,
             typename Method>
   void operator()(Direction, Stagger, FieldTypeContainer, Method) {
-    AUTO_TRACE();
+
     using namespace std::placeholders;
 
     // Now we want to get the actual field type out of the TypeContainer
@@ -186,23 +179,23 @@ struct registerMethod {
         const std::function<void(const FieldType&, const FieldType&, FieldType&,
                                  const std::string&)>
             theFunc = std::bind(
-            // Method to store in function
-            &Method::template upwindOrFlux<Direction::value, Stagger::value, 1,
-                                           FieldType>,
-            // Arguments -- first is hidden this of type-bound, others are placeholders
-            // for input field, output field, region
-            method, _1, _2, _3, _4);
+                // Method to store in function
+                &Method::template upwindOrFlux<Direction::value, Stagger::value, 1,
+                                               FieldType>,
+                // Arguments -- first is hidden this of type-bound, others are placeholders
+                // for input field, output field, region
+                method, _1, _2, _3, _4);
         derivativeRegister.registerDerivative(theFunc, Direction{}, Stagger{}, method);
       } else {
         const std::function<void(const FieldType&, const FieldType&, FieldType&,
                                  const std::string&)>
             theFunc = std::bind(
-            // Method to store in function
-            &Method::template upwindOrFlux<Direction::value, Stagger::value, 2,
-                                           FieldType>,
-            // Arguments -- first is hidden this of type-bound, others are placeholders
-            // for input field, output field, region
-            method, _1, _2, _3, _4);
+                // Method to store in function
+                &Method::template upwindOrFlux<Direction::value, Stagger::value, 2,
+                                               FieldType>,
+                // Arguments -- first is hidden this of type-bound, others are placeholders
+                // for input field, output field, region
+                method, _1, _2, _3, _4);
         derivativeRegister.registerDerivative(theFunc, Direction{}, Stagger{}, method);
       }
       break;

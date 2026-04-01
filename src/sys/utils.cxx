@@ -23,16 +23,16 @@
  *
  **************************************************************************/
 
-#include <utils.hxx>
-#include <cstring>
-#include <cstdlib>
-#include <cctype>
-#include <vector>
+#include <bout/utils.hxx>
 #include <algorithm>
-#include <sstream>
+#include <cctype>
 #include <cmath>
+#include <cstdlib>
+#include <cstring>
 #include <ctime>
 #include <iomanip>
+#include <sstream>
+#include <vector>
 
 #include "fmt/chrono.h"
 
@@ -43,8 +43,9 @@
 // Allocate memory for a copy of given string
 char* copy_string(const char* s) {
 
-  if (s == nullptr)
+  if (s == nullptr) {
     return nullptr;
+  }
 
   const auto n = strlen(s);
   auto s2 = static_cast<char*>(malloc(n + 1));
@@ -53,7 +54,7 @@ char* copy_string(const char* s) {
 }
 
 // Convert a string to lower case
-const std::string lowercase(const std::string &str) {
+const std::string lowercase(const std::string& str) {
   std::string strlow(str);
 
   std::transform(strlow.begin(), strlow.end(), strlow.begin(), ::tolower);
@@ -69,11 +70,11 @@ const std::string uppercase(const std::string& str) {
 }
 
 // Convert to lowercase, except for inside strings
-const std::string lowercasequote(const std::string &str) {
+const std::string lowercasequote(const std::string& str) {
   std::string strlow(str);
 
   bool quote = false, dquote = false;
-  for (char &i : strlow) {
+  for (char& i : strlow) {
     if (i == '\'') {
       quote ^= true;
     } else if (i == '"') {
@@ -85,56 +86,57 @@ const std::string lowercasequote(const std::string &str) {
   return strlow;
 }
 
-BoutReal stringToReal(const std::string &s) {
+BoutReal stringToReal(const std::string& s) {
   std::stringstream ss(s);
   BoutReal val;
-  if(!(ss >> val)) {
+  if (!(ss >> val)) {
     throw BoutException("Could not convert string '{:s}' to BoutReal\n", s);
   }
   return val;
 }
 
-int stringToInt(const std::string &s) {
+int stringToInt(const std::string& s) {
   std::stringstream ss(s);
   int val;
-  if(!(ss >> val)) {
+  if (!(ss >> val)) {
     throw BoutException("Could not convert string '{:s}' to int\n", s);
   }
   return val;
 }
 
-std::list<std::string> &strsplit(const std::string &s, char delim, std::list<std::string> &elems) {
-    std::stringstream ss(s);
-    std::string item;
-    while(std::getline(ss, item, delim)) {
-        elems.push_back(item);
-    }
-    return elems;
+std::list<std::string>& strsplit(const std::string& s, char delim,
+                                 std::list<std::string>& elems) {
+  std::stringstream ss(s);
+  std::string item;
+  while (std::getline(ss, item, delim)) {
+    elems.push_back(item);
+  }
+  return elems;
 }
 
-std::list<std::string> strsplit(const std::string &s, char delim) {
-    std::list<std::string> elems;
-    return strsplit(s, delim, elems);
+std::list<std::string> strsplit(const std::string& s, char delim) {
+  std::list<std::string> elems;
+  return strsplit(s, delim, elems);
 }
 
 // Strips leading and trailing spaces from a string
-std::string trim(const std::string &s, const std::string &c) {
+std::string trim(const std::string& s, const std::string& c) {
   return trimLeft(trimRight(s, c), c);
 }
 
-std::string trimRight(const std::string &s, const std::string &c) {
+std::string trimRight(const std::string& s, const std::string& c) {
   std::string str(s);
-  return str.erase(s.find_last_not_of(c)+1);
+  return str.erase(s.find_last_not_of(c) + 1);
 }
 
-std::string trimLeft(const std::string &s, const std::string &c) {
+std::string trimLeft(const std::string& s, const std::string& c) {
   std::string str(s);
   return str.erase(0, s.find_first_not_of(c));
 }
 
 // Strips the comments from a string
 // This is the compliment of trimLeft
-std::string trimComments(const std::string &s, const std::string &c) {
+std::string trimComments(const std::string& s, const std::string& c) {
   return s.substr(0, s.find_first_of(c));
 }
 

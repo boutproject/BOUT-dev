@@ -1,14 +1,38 @@
-#include <globals.hxx>
-#include <bout/mesh.hxx>
+#include <bout/array.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/build_defines.hxx>
 #include <bout/coordinates.hxx>
-#include <utils.hxx>
-#include <derivs.hxx>
-#include <msg_stack.hxx>
+#include <bout/derivs.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
+#include <bout/field_data.hxx>
+#include <bout/fieldgroup.hxx>
+#include <bout/generic_factory.hxx>
+#include <bout/globals.hxx>
+#include <bout/griddata.hxx>
+#include <bout/mesh.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/openmpwrap.hxx>
+#include <bout/options.hxx>
+#include <bout/output.hxx>
+#include <bout/region.hxx>
+#include <bout/sys/gettext.hxx>
+#include <bout/sys/range.hxx>
+#include <bout/unused.hxx>
+#include <bout/utils.hxx>
+#include <bout/vector2d.hxx>
+#include <bout/vector3d.hxx>
 
-#include <cmath>
-
-#include <boutcomm.hxx>
-#include <output.hxx>
+#include <algorithm>
+#include <cstddef>
+#include <iterator>
+#include <memory>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "impls/bout/boutmesh.hxx"
 
@@ -29,8 +53,19 @@ MeshFactory::ReturnType MeshFactory::create(const std::string& type, Options* op
 
   if (options->isSet("file") or Options::root().isSet("grid")) {
     // Specified mesh file
-    const auto grid_name =
-        (*options)["file"].withDefault(Options::root()["grid"].withDefault(""));
+    if (Options::root().isSet("grid")) {
+      output_warn.write("Setting `grid` is deprecated. Please set `mesh:file` instead.");
+    }
+    const auto grid_name1 = Options::root()["grid"].withDefault("");
+    const auto grid_name = (*options)["file"].withDefault(grid_name1);
+    if (options->isSet("file") and Options::root().isSet("grid")) {
+      if (grid_name1 != grid_name) {
+        throw BoutException(
+            "Mismatch in grid names - specified `{:s}` in grid and `{:s} in "
+            "mesh:file!\nPlease specify only one name or ensure they are the same!",
+            grid_name1, grid_name);
+      }
+    }
     output << "\nGetting grid data from file " << grid_name << "\n";
 
     // Create a grid file, using specified format if given
@@ -47,11 +82,11 @@ MeshFactory::ReturnType MeshFactory::create(const std::string& type, Options* op
   return Factory::create(type, source, options);
 }
 
-Mesh* Mesh::create(GridDataSource *s, Options *opt) {
+Mesh* Mesh::create(GridDataSource* s, Options* opt) {
   return MeshFactory::getInstance().create(opt, s).release();
 }
 
-Mesh *Mesh::create(Options *opt) { return create(nullptr, opt); }
+Mesh* Mesh::create(Options* opt) { return create(nullptr, opt); }
 
 Mesh::Mesh(GridDataSource* s, Options* opt)
     : source(s), options(opt == nullptr ? Options::getRoot()->getSection("mesh") : opt),
@@ -114,7 +149,7 @@ int Mesh::get(std::string& sval, const std::string& name, const std::string& def
   return !source->get(this, sval, name, def);
 }
 
-int Mesh::get(int &ival, const std::string &name, int def) {
+int Mesh::get(int& ival, const std::string& name, int def) {
   TRACE("Mesh::get(ival, {:s})", name);
 
   if (source == nullptr) {
@@ -138,7 +173,7 @@ int Mesh::get(BoutReal& rval, const std::string& name, BoutReal def) {
   return !source->get(this, rval, name, def);
 }
 
-int Mesh::get(bool &bval, const std::string &name, bool def) {
+int Mesh::get(bool& bval, const std::string& name, bool def) {
   TRACE("Mesh::get(bval, {:s})", name);
 
   if (source == nullptr) {
@@ -175,8 +210,8 @@ int Mesh::get(Field2D& var, const std::string& name, BoutReal def, bool communic
   return 0;
 }
 
-int Mesh::get(Field3D &var, const std::string &name, BoutReal def,
-              bool communicate, CELL_LOC location) {
+int Mesh::get(Field3D& var, const std::string& name, BoutReal def, bool communicate,
+              CELL_LOC location) {
   TRACE("Loading 3D field: Mesh::get(Field3D, {:s})", name);
 
   if (source == nullptr or !source->get(this, var, name, def, location)) {
@@ -187,7 +222,7 @@ int Mesh::get(Field3D &var, const std::string &name, BoutReal def,
   }
 
   // Communicate to get guard cell data
-  if(communicate) {
+  if (communicate) {
     Mesh::communicate(var);
   }
 
@@ -197,8 +232,8 @@ int Mesh::get(Field3D &var, const std::string &name, BoutReal def,
   return 0;
 }
 
-int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
-    bool UNUSED(communicate), CELL_LOC location) {
+int Mesh::get(FieldPerp& var, const std::string& name, BoutReal def,
+              bool UNUSED(communicate), CELL_LOC location) {
   TRACE("Loading FieldPerp: Mesh::get(FieldPerp, {:s})", name);
 
   if (source == nullptr or !source->get(this, var, name, def, location)) {
@@ -227,14 +262,14 @@ int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
 int Mesh::get(Vector2D& var, const std::string& name, BoutReal def, bool communicate) {
   TRACE("Loading 2D vector: Mesh::get(Vector2D, {:s})", name);
 
-  if(var.covariant) {
+  if (var.covariant) {
     output << _("\tReading covariant vector ") << name << endl;
 
     get(var.x, name + "_x", def, communicate);
     get(var.y, name + "_y", def, communicate);
     get(var.z, name + "_z", def, communicate);
 
-  }else {
+  } else {
     output << _("\tReading contravariant vector ") << name << endl;
 
     get(var.x, name + "x", def, communicate);
@@ -248,14 +283,14 @@ int Mesh::get(Vector2D& var, const std::string& name, BoutReal def, bool communi
 int Mesh::get(Vector3D& var, const std::string& name, BoutReal def, bool communicate) {
   TRACE("Loading 3D vector: Mesh::get(Vector3D, {:s})", name);
 
-  if(var.covariant) {
+  if (var.covariant) {
     output << _("\tReading covariant vector ") << name << endl;
 
     get(var.x, name + "_x", def, communicate);
     get(var.y, name + "_y", def, communicate);
     get(var.z, name + "_z", def, communicate);
 
-  }else {
+  } else {
     output << ("\tReading contravariant vector ") << name << endl;
 
     get(var.x, name + "x", def, communicate);
@@ -266,33 +301,27 @@ int Mesh::get(Vector3D& var, const std::string& name, BoutReal def, bool communi
   return 0;
 }
 
-bool Mesh::isDataSourceGridFile() const {
-  return source != nullptr and source->is_file;
-}
+bool Mesh::isDataSourceGridFile() const { return source != nullptr and source->is_file; }
 
-bool Mesh::sourceHasVar(const std::string &name) {
+bool Mesh::sourceHasVar(const std::string& name) {
   TRACE("Mesh::sourceHasVar({:s})", name);
-  if (source == nullptr)
+  if (source == nullptr) {
     return false;
+  }
   return source->hasVar(name);
 }
 
 /// Wrapper for GridDataSource::hasXBoundaryGuards
-bool Mesh::sourceHasXBoundaryGuards() {
-  return source->hasXBoundaryGuards(this);
-}
+bool Mesh::sourceHasXBoundaryGuards() { return source->hasXBoundaryGuards(this); }
 
 /// Wrapper for GridDataSource::hasYBoundaryGuards
-bool Mesh::sourceHasYBoundaryGuards() {
-  return source->hasYBoundaryGuards();
-}
+bool Mesh::sourceHasYBoundaryGuards() { return source->hasYBoundaryGuards(); }
 
 /**************************************************************************
  * Communications
  **************************************************************************/
 
-void Mesh::communicateXZ(FieldGroup &g) {
-  TRACE("Mesh::communicate(FieldGroup&)");
+void Mesh::communicateXZ(FieldGroup& g) {
 
   // Send data
   comm_handle h = sendX(g);
@@ -301,8 +330,7 @@ void Mesh::communicateXZ(FieldGroup &g) {
   wait(h);
 }
 
-void Mesh::communicateYZ(FieldGroup &g) {
-  TRACE("Mesh::communicate(FieldGroup&)");
+void Mesh::communicateYZ(FieldGroup& g) {
 
   // Send data
   comm_handle h = sendY(g);
@@ -312,14 +340,13 @@ void Mesh::communicateYZ(FieldGroup &g) {
 
   // Calculate yup and ydown fields for 3D fields
   if (calcParallelSlices_on_communicate) {
-    for(const auto& fptr : g.field3d()) {
+    for (const auto& fptr : g.field3d()) {
       fptr->calcParallelSlices();
     }
   }
 }
 
-void Mesh::communicate(FieldGroup &g) {
-  TRACE("Mesh::communicate(FieldGroup&)");
+void Mesh::communicate(FieldGroup& g) {
 
   if (include_corner_cells) {
     // Send data in y-direction
@@ -343,43 +370,34 @@ void Mesh::communicate(FieldGroup &g) {
 
   // Calculate yup and ydown fields for 3D fields
   if (calcParallelSlices_on_communicate) {
-    for(const auto& fptr : g.field3d()) {
+    for (const auto& fptr : g.field3d()) {
       fptr->calcParallelSlices();
     }
   }
 }
 
-/// This is a bit of a hack for now to get FieldPerp communications
-/// The FieldData class needs to be changed to accomodate FieldPerp objects
-void Mesh::communicate(FieldPerp &f) {
-  comm_handle recv[2];
-  
-  int nin = xstart; // Number of x points in inner guard cell
-  int nout = LocalNx-xend-1; // Number of x points in outer guard cell
-
-  // Post receives for guard cell regions
-
-  recv[0] = irecvXIn(f[0],       nin*LocalNz, 0);
-  recv[1] = irecvXOut(f[xend+1], nout*LocalNz, 1);
-  
-  // Send data
-  sendXIn(f[xstart], nin*LocalNz, 1);
-  sendXOut(f[xend-nout+1], nout*LocalNz, 0);
- 
-  // Wait for receive
-  wait(recv[0]);
-  wait(recv[1]);
-}
-
-int Mesh::msg_len(const std::vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt) {
+int Mesh::msg_len(const std::vector<Field*>& var_list, int xge, int xlt, int yge,
+                  int ylt) const {
   int len = 0;
 
+  using enum Field::FieldType;
+
+  const auto x_length = xlt - xge;
+  const auto y_length = ylt - yge;
+  const auto z_length = LocalNz;
+
   /// Loop over variables
-  for(const auto& var : var_list) {
-    if(var->is3D()) {
-      len += (xlt - xge) * (ylt - yge) * LocalNz * var->elementSize();
-    } else {
-      len += (xlt - xge) * (ylt - yge) * var->elementSize();
+  for (const auto& var : var_list) {
+    switch (var->field_type()) {
+    case field3d:
+      len += x_length * y_length * z_length * var->elementSize();
+      break;
+    case field2d:
+      len += x_length * y_length * var->elementSize();
+      break;
+    case fieldperp:
+      len += x_length * z_length * var->elementSize();
+      break;
     }
   }
 
@@ -387,7 +405,8 @@ int Mesh::msg_len(const std::vector<FieldData*> &var_list, int xge, int xlt, int
 }
 
 bool Mesh::periodicY(int jx) const {
-  BoutReal ts; return periodicY(jx, ts);
+  BoutReal ts;
+  return periodicY(jx, ts);
 }
 
 int Mesh::ySize(int jx) const {
@@ -398,34 +417,6 @@ int Mesh::ySize(int jx) const {
   int all;
   mpi->MPI_Allreduce(&local, &all, 1, MPI_INT, MPI_SUM, comm);
   return all;
-}
-
-bool Mesh::hasBndryLowerY() {
-  static bool calc = false, answer;
-  if (calc) {
-    return answer; // Already calculated
-  }
-
-  int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
-  int allbndry;
-  mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
-  answer = static_cast<bool>(allbndry);
-  calc = true;
-  return answer;
-}
-
-bool Mesh::hasBndryUpperY() {
-  static bool calc = false, answer;
-  if (calc) {
-    return answer; // Already calculated
-  }
-
-  int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
-  int allbndry;
-  mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
-  answer = static_cast<bool>(allbndry);
-  calc = true;
-  return answer;
 }
 
 int Mesh::localSize3D() {
@@ -515,11 +506,11 @@ int Mesh::globalStartIndex2D() {
 int Mesh::globalStartIndexPerp() {
   int localSize = localSizePerp();
   int cumulativeSize = 0;
-  mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, getXcomm());
+  mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, getXZcomm());
   return cumulativeSize - localSize;
 }
 
-const std::vector<int> Mesh::readInts(const std::string &name, int n) {
+const std::vector<int> Mesh::readInts(const std::string& name, int n) {
   TRACE("Mesh::readInts({:s})", name);
 
   if (source == nullptr) {
@@ -529,21 +520,22 @@ const std::vector<int> Mesh::readInts(const std::string &name, int n) {
 
   std::vector<int> result;
 
-  if(source->hasVar(name)) {
-    if(!source->get(this, result, name, n, 0)) {
+  if (source->hasVar(name)) {
+    if (!source->get(this, result, name, n, 0)) {
       // Error reading
-      throw BoutException(_("Could not read integer array '{:s}'\n"), name.c_str());
+      throw BoutException(_f("Could not read integer array '{:s}'\n"), name.c_str());
     }
-  }else {
+  } else {
     // Not found
-    throw BoutException(_("Missing integer array {:s}\n"), name.c_str());
+    throw BoutException(_f("Missing integer array {:s}\n"), name.c_str());
   }
 
   return result;
 }
 
-std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC location,
-    bool force_interpolate_from_centre) {
+std::shared_ptr<Coordinates>
+Mesh::createDefaultCoordinates(const CELL_LOC location,
+                               bool force_interpolate_from_centre) {
 
   if (location == CELL_CENTRE || location == CELL_DEFAULT) {
     // Initialize coordinates from input
@@ -551,14 +543,23 @@ std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC locat
   } else {
     // Interpolate coordinates from CELL_CENTRE version
     return std::make_shared<Coordinates>(this, options, location,
-        getCoordinates(CELL_CENTRE), force_interpolate_from_centre);
+                                         getCoordinates(CELL_CENTRE),
+                                         force_interpolate_from_centre);
   }
 }
 
 const Region<>& Mesh::getRegion3D(const std::string& region_name) const {
   const auto found = regionMap3D.find(region_name);
   if (found == end(regionMap3D)) {
-    throw BoutException(_("Couldn't find region {:s} in regionMap3D"), region_name);
+    throw BoutException(_f("Couldn't find region {:s} in regionMap3D"), region_name);
+  }
+  return region3D[found->second];
+}
+
+size_t Mesh::getRegionID(const std::string& region_name) const {
+  const auto found = regionMap3D.find(region_name);
+  if (found == end(regionMap3D)) {
+    throw BoutException(_f("Couldn't find region {:s} in regionMap3D"), region_name);
   }
   return found->second;
 }
@@ -566,7 +567,7 @@ const Region<>& Mesh::getRegion3D(const std::string& region_name) const {
 const Region<Ind2D>& Mesh::getRegion2D(const std::string& region_name) const {
   const auto found = regionMap2D.find(region_name);
   if (found == end(regionMap2D)) {
-    throw BoutException(_("Couldn't find region {:s} in regionMap2D"), region_name);
+    throw BoutException(_f("Couldn't find region {:s} in regionMap2D"), region_name);
   }
   return found->second;
 }
@@ -574,7 +575,7 @@ const Region<Ind2D>& Mesh::getRegion2D(const std::string& region_name) const {
 const Region<IndPerp>& Mesh::getRegionPerp(const std::string& region_name) const {
   const auto found = regionMapPerp.find(region_name);
   if (found == end(regionMapPerp)) {
-    throw BoutException(_("Couldn't find region {:s} in regionMapPerp"), region_name);
+    throw BoutException(_f("Couldn't find region {:s} in regionMapPerp"), region_name);
   }
   return found->second;
 }
@@ -591,37 +592,52 @@ bool Mesh::hasRegionPerp(const std::string& region_name) const {
   return regionMapPerp.find(region_name) != std::end(regionMapPerp);
 }
 
-void Mesh::addRegion3D(const std::string &region_name, const Region<> &region) {
+void Mesh::addRegion3D(const std::string& region_name, const Region<>& region) {
   if (regionMap3D.count(region_name)) {
-    throw BoutException(_("Trying to add an already existing region {:s} to regionMap3D"),
-                        region_name);
+    throw BoutException(
+        _f("Trying to add an already existing region {:s} to regionMap3D"), region_name);
   }
-  regionMap3D[region_name] = region;
-  output_verbose.write(_("Registered region 3D {:s}"),region_name);
+
+  std::optional<size_t> id;
+  for (size_t i = 0; i < region3D.size(); ++i) {
+    if (region3D[i] == region) {
+      id = i;
+      break;
+    }
+  }
+  if (!id.has_value()) {
+    id = region3D.size();
+    region3D.push_back(region);
+  }
+
+  regionMap3D[region_name] = id.value();
+
+  output_verbose.write(_f("Registered region 3D {:s}"), region_name);
   output_verbose << "\n:\t" << region.getStats() << "\n";
 }
 
-void Mesh::addRegion2D(const std::string &region_name, const Region<Ind2D> &region) {
+void Mesh::addRegion2D(const std::string& region_name, const Region<Ind2D>& region) {
   if (regionMap2D.count(region_name)) {
-    throw BoutException(_("Trying to add an already existing region {:s} to regionMap2D"),
-                        region_name);
+    throw BoutException(
+        _f("Trying to add an already existing region {:s} to regionMap2D"), region_name);
   }
   regionMap2D[region_name] = region;
-  output_verbose.write(_("Registered region 2D {:s}"),region_name);
+  output_verbose.write(_f("Registered region 2D {:s}"), region_name);
   output_verbose << "\n:\t" << region.getStats() << "\n";
 }
 
-void Mesh::addRegionPerp(const std::string &region_name, const Region<IndPerp> &region) {
+void Mesh::addRegionPerp(const std::string& region_name, const Region<IndPerp>& region) {
   if (regionMapPerp.count(region_name)) {
     throw BoutException(
-        _("Trying to add an already existing region {:s} to regionMapPerp"), region_name);
+        _f("Trying to add an already existing region {:s} to regionMapPerp"),
+        region_name);
   }
   regionMapPerp[region_name] = region;
-  output_verbose.write(_("Registered region Perp {:s}"),region_name);
+  output_verbose.write(_f("Registered region Perp {:s}"), region_name);
   output_verbose << "\n:\t" << region.getStats() << "\n";
 }
 
-void Mesh::createDefaultRegions(){
+void Mesh::createDefaultRegions() {
   //3D regions
   addRegion3D("RGN_ALL", Region<Ind3D>(0, LocalNx - 1, 0, LocalNy - 1, 0, LocalNz - 1,
                                        LocalNy, LocalNz, maxregionblocksize));
@@ -634,21 +650,30 @@ void Mesh::createDefaultRegions(){
   addRegion3D("RGN_NOZ", Region<Ind3D>(0, LocalNx - 1, 0, LocalNy - 1, zstart, zend,
                                        LocalNy, LocalNz, maxregionblocksize));
   addRegion3D("RGN_GUARDS", mask(getRegion3D("RGN_ALL"), getRegion3D("RGN_NOBNDRY")));
-  addRegion3D("RGN_XGUARDS", Region<Ind3D>(0, xstart - 1, ystart, yend, zstart, zend,
-          LocalNy, LocalNz, maxregionblocksize)
-      + Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, zstart, zend,
-          LocalNy, LocalNz, maxregionblocksize));
-  addRegion3D("RGN_YGUARDS", Region<Ind3D>(xstart, xend, 0, ystart - 1, zstart, zend,
-          LocalNy, LocalNz, maxregionblocksize)
-      + Region<Ind3D>(xstart, xend, yend + 1, LocalNy - 1, zstart, zend,
-          LocalNy, LocalNz, maxregionblocksize));
-  addRegion3D("RGN_ZGUARDS", Region<Ind3D>(xstart, xend, ystart, yend, 0, zstart - 1,
-          LocalNy, LocalNz, maxregionblocksize)
-      + Region<Ind3D>(xstart, xend, ystart, yend, zend + 1, LocalNz - 1,
-          LocalNy, LocalNz, maxregionblocksize));
-  addRegion3D("RGN_NOCORNERS",
-      (getRegion3D("RGN_NOBNDRY") + getRegion3D("RGN_XGUARDS") +
-        getRegion3D("RGN_YGUARDS") + getRegion3D("RGN_ZGUARDS")).unique());
+  addRegion3D("RGN_XGUARDS",
+              Region<Ind3D>(0, xstart - 1, ystart, yend, zstart, zend, LocalNy, LocalNz,
+                            maxregionblocksize)
+                  + Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, zstart, zend,
+                                  LocalNy, LocalNz, maxregionblocksize));
+  addRegion3D("RGN_YGUARDS",
+              Region<Ind3D>(xstart, xend, 0, ystart - 1, zstart, zend, LocalNy, LocalNz,
+                            maxregionblocksize)
+                  + Region<Ind3D>(xstart, xend, yend + 1, LocalNy - 1, zstart, zend,
+                                  LocalNy, LocalNz, maxregionblocksize));
+  addRegion3D("RGN_ZGUARDS",
+              Region<Ind3D>(xstart, xend, ystart, yend, 0, zstart - 1, LocalNy, LocalNz,
+                            maxregionblocksize)
+                  + Region<Ind3D>(xstart, xend, ystart, yend, zend + 1, LocalNz - 1,
+                                  LocalNy, LocalNz, maxregionblocksize));
+  addRegion3D("RGN_NOCORNERS", (getRegion3D("RGN_NOBNDRY") + getRegion3D("RGN_XGUARDS")
+                                + getRegion3D("RGN_YGUARDS") + getRegion3D("RGN_ZGUARDS"))
+                                   .unique());
+
+  for (int offset_ = -ystart; offset_ <= ystart; ++offset_) {
+    const auto region = fmt::format("RGN_YPAR_{:+d}", offset_);
+    addRegion3D(region, Region<Ind3D>(xstart, xend, ystart + offset_, yend + offset_, 0,
+                                      LocalNz - 1, LocalNy, LocalNz));
+  }
 
   //2D regions
   addRegion2D("RGN_ALL", Region<Ind2D>(0, LocalNx - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1,
@@ -663,20 +688,20 @@ void Mesh::createDefaultRegions(){
                                        maxregionblocksize));
   addRegion2D("RGN_GUARDS", mask(getRegion2D("RGN_ALL"), getRegion2D("RGN_NOBNDRY")));
   addRegion2D("RGN_XGUARDS", Region<Ind2D>(0, xstart - 1, ystart, yend, 0, 0, LocalNy, 1,
-          maxregionblocksize)
-      + Region<Ind2D>(xend + 1, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1,
-          maxregionblocksize));
+                                           maxregionblocksize)
+                                 + Region<Ind2D>(xend + 1, LocalNx - 1, ystart, yend, 0,
+                                                 0, LocalNy, 1, maxregionblocksize));
   addRegion2D("RGN_YGUARDS", Region<Ind2D>(xstart, xend, 0, ystart - 1, 0, 0, LocalNy, 1,
-          maxregionblocksize)
-      + Region<Ind2D>(xstart, xend, yend + 1, LocalNy - 1, 0, 0, LocalNy, 1,
-          maxregionblocksize));
+                                           maxregionblocksize)
+                                 + Region<Ind2D>(xstart, xend, yend + 1, LocalNy - 1, 0,
+                                                 0, LocalNy, 1, maxregionblocksize));
   addRegion2D("RGN_ZGUARDS", Region<Ind2D>(xstart, xend, ystart, yend, 0, -1, LocalNy, 1,
-          maxregionblocksize)
-      + Region<Ind2D>(xstart, xend, ystart, yend, 0, -1, LocalNy, 1,
-          maxregionblocksize));
-  addRegion2D("RGN_NOCORNERS",
-      (getRegion2D("RGN_NOBNDRY") + getRegion2D("RGN_XGUARDS") +
-        getRegion2D("RGN_YGUARDS") + getRegion2D("RGN_ZGUARDS")).unique());
+                                           maxregionblocksize)
+                                 + Region<Ind2D>(xstart, xend, ystart, yend, 0, -1,
+                                                 LocalNy, 1, maxregionblocksize));
+  addRegion2D("RGN_NOCORNERS", (getRegion2D("RGN_NOBNDRY") + getRegion2D("RGN_XGUARDS")
+                                + getRegion2D("RGN_YGUARDS") + getRegion2D("RGN_ZGUARDS"))
+                                   .unique());
 
   // Perp regions
   addRegionPerp("RGN_ALL", Region<IndPerp>(0, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1,
@@ -690,32 +715,36 @@ void Mesh::createDefaultRegions(){
 
   addRegionPerp("RGN_NOZ", Region<IndPerp>(0, LocalNx - 1, 0, 0, zstart, zend, 1, LocalNz,
                                            maxregionblocksize));
-  addRegionPerp("RGN_GUARDS", mask(getRegionPerp("RGN_ALL"), getRegionPerp("RGN_NOBNDRY")));
-  addRegionPerp("RGN_XGUARDS", Region<IndPerp>(0, xstart - 1, 0, 0, zstart, zend, 1,
-          LocalNz, maxregionblocksize)
-      + Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, zstart, zend, 1,
-          LocalNz, maxregionblocksize));
+  addRegionPerp("RGN_GUARDS",
+                mask(getRegionPerp("RGN_ALL"), getRegionPerp("RGN_NOBNDRY")));
+  addRegionPerp(
+      "RGN_XGUARDS",
+      Region<IndPerp>(0, xstart - 1, 0, 0, zstart, zend, 1, LocalNz, maxregionblocksize)
+          + Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, zstart, zend, 1, LocalNz,
+                            maxregionblocksize));
   addRegionPerp("RGN_YGUARDS", Region<IndPerp>(xstart, xend, 0, -1, zstart, zend, 1,
-          LocalNz, maxregionblocksize)
-      + Region<IndPerp>(xstart, xend, 0, -1, zstart, zend, 1,
-          LocalNz, maxregionblocksize));
-  addRegionPerp("RGN_ZGUARDS", Region<IndPerp>(xstart, xend, 0, 0, 0, zstart - 1, 1,
-          LocalNz, maxregionblocksize)
-      + Region<IndPerp>(xstart, xend, 0, 0, zend + 1, LocalNz - 1, 1,
-          LocalNz, maxregionblocksize));
+                                               LocalNz, maxregionblocksize)
+                                   + Region<IndPerp>(xstart, xend, 0, -1, zstart, zend, 1,
+                                                     LocalNz, maxregionblocksize));
+  addRegionPerp(
+      "RGN_ZGUARDS",
+      Region<IndPerp>(xstart, xend, 0, 0, 0, zstart - 1, 1, LocalNz, maxregionblocksize)
+          + Region<IndPerp>(xstart, xend, 0, 0, zend + 1, LocalNz - 1, 1, LocalNz,
+                            maxregionblocksize));
   addRegionPerp("RGN_NOCORNERS",
-      (getRegionPerp("RGN_NOBNDRY") + getRegionPerp("RGN_XGUARDS") +
-        getRegionPerp("RGN_YGUARDS") + getRegionPerp("RGN_ZGUARDS")).unique());
+                (getRegionPerp("RGN_NOBNDRY") + getRegionPerp("RGN_XGUARDS")
+                 + getRegionPerp("RGN_YGUARDS") + getRegionPerp("RGN_ZGUARDS"))
+                    .unique());
 
   // Construct index lookup for 3D-->2D
-  indexLookup3Dto2D = Array<int>(LocalNx*LocalNy*LocalNz);
+  indexLookup3Dto2D = Array<int>(LocalNx * LocalNy * LocalNz);
   BOUT_FOR(ind3D, getRegion3D("RGN_ALL")) {
     indexLookup3Dto2D[ind3D.ind] = ind3Dto2D(ind3D).ind;
   }
 }
 
 void Mesh::recalculateStaggeredCoordinates() {
-  for (auto &i : coords_map) {
+  for (auto& i : coords_map) {
     CELL_LOC location = i.first;
 
     if (location == CELL_CENTRE) {
@@ -728,7 +757,89 @@ void Mesh::recalculateStaggeredCoordinates() {
   }
 }
 
-constexpr decltype(MeshFactory::type_name) MeshFactory::type_name;
-constexpr decltype(MeshFactory::section_name) MeshFactory::section_name;
-constexpr decltype(MeshFactory::option_name) MeshFactory::option_name;
-constexpr decltype(MeshFactory::default_type) MeshFactory::default_type;
+std::optional<size_t> Mesh::getCommonRegion(std::optional<size_t> lhs,
+                                            std::optional<size_t> rhs) {
+  if (!lhs.has_value()) {
+    return rhs;
+  }
+  if (!rhs.has_value()) {
+    return lhs;
+  }
+  if (lhs.value() == rhs.value()) {
+    return lhs;
+  }
+  const size_t low = std::min(lhs.value(), rhs.value());
+  const size_t high = std::max(lhs.value(), rhs.value());
+
+  /* This function finds the ID of the region corresponding to the
+     intersection of two regions, and caches the result. The cache is a
+     vector, indexed by some function of the two input IDs. Because the
+     intersection of two regions doesn't depend on the order, and the
+     intersection of a region with itself is the identity operation, we can
+     order the IDs numerically and use a generalised triangle number:
+     $[n (n - 1) / 2] + m$ to construct the cache index. This diagram shows
+     the result for the first few numbers:
+       |  0  1  2  3
+     ----------------
+     0 |
+     1 |  0
+     2 |  1  2
+     3 |  3  4  5
+     4 |  6  7  8  9
+
+     These indices might be sparse, but presumably we don't expect to store
+     very many intersections so this shouldn't give much overhead.
+
+     After calculating the cache index, we look it up in the cache (possibly
+     reallocating to ensure it's large enough). If the index is in the cache,
+     we can just return it as-is, otherwise we need to do a bit more work.
+
+     First, we need to fully compute the intersection of the two regions. We
+     then check if this corresponds to an existing region. If so, we cache the
+     ID of that region and return it. Otherwise, we need to store this new
+     region in `region3D` -- the index in this vector is the ID we need to
+     cache and return here.
+   */
+  const size_t pos = (high * (high - 1)) / 2 + low;
+  if (region3Dintersect.size() <= pos) {
+    BOUT_OMP_SAFE(critical(mesh_intersection_realloc))
+    // By default this function does not need the mutex, however, if we are
+    // going to allocate global memory, we need to use a mutex.
+    // Now that we have the mutex, we need to check again whether a
+    // different thread was faster and already allocated.
+    // BOUT_OMP_SAFE(single) would work in most cases, but it would fail if the
+    // function is called in parallel with different arguments. While BOUT++
+    // is not currently doing it, other openmp parallised projects might be
+    // calling BOUT++ in this way.
+#if BOUT_USE_OPENMP
+    if (region3Dintersect.size() <= pos)
+#endif
+    {
+      region3Dintersect.resize(pos + 1, std::nullopt);
+    }
+  }
+  if (region3Dintersect[pos].has_value()) {
+    return region3Dintersect[pos];
+  }
+  {
+    BOUT_OMP_SAFE(critical(mesh_intersection))
+    // See comment above why we need to check again in case of OpenMP
+#if BOUT_USE_OPENMP
+    if (!region3Dintersect[pos].has_value())
+#endif
+    {
+      auto common = intersection(region3D[low], region3D[high]);
+      for (size_t i = 0; i < region3D.size(); ++i) {
+        if (common == region3D[i]) {
+          region3Dintersect[pos] = i;
+          break;
+        }
+      }
+      if (!region3Dintersect[pos].has_value()) {
+        region3Dintersect[pos] = region3D.size();
+        region3D.push_back(common);
+      }
+    }
+  }
+  return region3Dintersect[pos];
+}

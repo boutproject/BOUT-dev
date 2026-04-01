@@ -3,7 +3,7 @@
 # requires: petsc
 
 from boutdata import collect
-from boututils.run_wrapper import launch_safe, build_and_log
+from boututils.run_wrapper import launch, build_and_log
 from sys import exit
 
 test_directories = [
@@ -18,21 +18,30 @@ tolerance = 1.0e-6
 build_and_log("Laplace 3D with PETSc")
 
 success = True
+errors = {}
+
 for directory, nproc in test_directories:
-    command = "./test-laplace3d -d " + directory
+    command = f"./test-laplace3d -d {directory}"
     print("running on", nproc, "processors:", command)
-    launch_safe(command, nproc=nproc)
+    status, output = launch(command, nproc=nproc, pipe=True)
+
+    if status:
+        print("FAILED")
+        print(output)
+        errors[directory] = "<bad exit>"
+        continue
 
     error_max = collect("error_max", path=directory, info=False)
-
     if error_max > tolerance:
-        print(directory + " failed with maximum error {}".format(error_max))
-        success = False
-    else:
-        print(directory + " passed with maximum error {}".format(error_max))
+        errors[directory] = error_max
 
-if success:
-    print("All passed")
-    exit(0)
-else:
+print("**********")
+
+if errors:
+    print("Some failures:")
+    for name, error in errors.items():
+        print(f"{name}, max error: {error}")
     exit(1)
+
+print("All passed")
+exit(0)

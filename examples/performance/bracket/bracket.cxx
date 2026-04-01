@@ -3,7 +3,7 @@
  *
  */
 
-#include <bout.hxx>
+#include <bout/bout.hxx>
 
 #include <chrono>
 #include <iomanip>
@@ -12,8 +12,8 @@
 #include <time.h>
 #include <vector>
 
-#include <field_factory.hxx>
-#include <initialprofiles.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/initialprofiles.hxx>
 
 #include "bout/openmpwrap.hxx"
 #include "bout/region.hxx"
@@ -23,25 +23,25 @@ using Duration = std::chrono::duration<double>;
 using namespace std::chrono;
 using bout::globals::mesh;
 
-#define ITERATOR_TEST_BLOCK(NAME, ...)                                                   \
-  {                                                                                      \
-    __VA_ARGS__                                                                          \
-    names.push_back(NAME);                                                               \
-    SteadyClock start = steady_clock::now();                                             \
-    for (int repetitionIndex = 0; repetitionIndex < NUM_LOOPS; repetitionIndex++) {      \
-      __VA_ARGS__;                                                                       \
-    }                                                                                    \
-    times.push_back(steady_clock::now() - start);                                        \
+#define ITERATOR_TEST_BLOCK(NAME, ...)                                              \
+  {                                                                                 \
+    __VA_ARGS__                                                                     \
+    names.push_back(NAME);                                                          \
+    SteadyClock start = steady_clock::now();                                        \
+    for (int repetitionIndex = 0; repetitionIndex < NUM_LOOPS; repetitionIndex++) { \
+      __VA_ARGS__;                                                                  \
+    }                                                                               \
+    times.push_back(steady_clock::now() - start);                                   \
   }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
   std::vector<std::string> names;
   std::vector<Duration> times;
 
   // Get options root
-  auto globalOptions = Options::root();
-  auto modelOpts = globalOptions["performance"];
+  auto& globalOptions = Options::root();
+  auto& modelOpts = globalOptions["performance"];
   int NUM_LOOPS;
   NUM_LOOPS = modelOpts["NUM_LOOPS"].withDefault(100);
   bool profileMode, includeHeader, do2D3D, do3D3D;
@@ -68,35 +68,21 @@ int main(int argc, char **argv) {
     ITERATOR_TEST_BLOCK("Bracket [2D,3D] ARAKAWA",
                         result = bracket(a, c, BRACKET_ARAKAWA););
 
-    ITERATOR_TEST_BLOCK("Bracket [2D,3D] ARAKAWA_OLD",
-                        result = bracket(a, c, BRACKET_ARAKAWA_OLD););
-
     ITERATOR_TEST_BLOCK("Bracket [2D,3D] SIMPLE",
                         result = bracket(a, c, BRACKET_SIMPLE););
 
-    ITERATOR_TEST_BLOCK("Bracket [2D,3D] DEFAULT",
-                        result = bracket(a, c, BRACKET_STD););
+    ITERATOR_TEST_BLOCK("Bracket [2D,3D] DEFAULT", result = bracket(a, c, BRACKET_STD););
   }
 
   if (do3D3D) {
     ITERATOR_TEST_BLOCK("Bracket [3D,3D] ARAKAWA",
                         result = bracket(a, b, BRACKET_ARAKAWA););
 
-    ITERATOR_TEST_BLOCK("Bracket [3D,3D] ARAKAWA_OLD",
-                        result = bracket(a, b, BRACKET_ARAKAWA_OLD););
-
     ITERATOR_TEST_BLOCK("Bracket [3D,3D] SIMPLE",
                         result = bracket(a, b, BRACKET_SIMPLE););
 
-    ITERATOR_TEST_BLOCK("Bracket [3D,3D] DEFAULT",
-                        result = bracket(a, b, BRACKET_STD););
+    ITERATOR_TEST_BLOCK("Bracket [3D,3D] DEFAULT", result = bracket(a, b, BRACKET_STD););
   }
-
-  // Uncomment below for a "correctness" check
-  // Field3D resNew = bracket(a, b, BRACKET_ARAKAWA); mesh->communicate(resNew);
-  // Field3D resOld = bracket(a, b, BRACKET_ARAKAWA_OLD); mesh->communicate(resOld);
-  // time_output << "Max abs diff is
-  // "<<max(abs(resNew-resOld),true)/max(abs(resOld),true)<<std::endl;
 
   if (profileMode) {
     int nthreads = 0;

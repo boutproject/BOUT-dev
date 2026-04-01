@@ -1,15 +1,17 @@
 #include "gtest/gtest.h"
 
-#include "options.hxx"
-#include "output.hxx"
 #include "test_extras.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/constants.hxx"
 #include "bout/griddata.hxx"
 #include "bout/mesh.hxx"
+#include "bout/options.hxx"
+#include "bout/output.hxx"
 
-#include <numeric>
 #include <string>
 #include <vector>
+
+#include "fake_mesh.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;
@@ -33,6 +35,8 @@ public:
     output_progress.disable();
     output_warn.disable();
     options["f"] = expected_string;
+    options["n"] = 12;
+    options["r"] = 3.14;
 
     // modify mesh section in global options
     options["dx"] = "1.";
@@ -53,13 +57,13 @@ public:
 
     expected_2d = makeField<Field2D>(
         [](Field2D::ind_type& index) {
-          return index.x() + (TWOPI * index.y()) + (TWOPI * index.z() / nz) + 3;
+          return index.x() + (TWOPI * index.y()) + (TWOPI * index.z()) + 3;
         },
         &mesh_from_options);
 
     expected_3d = makeField<Field3D>(
         [](Field3D::ind_type& index) {
-          return index.x() + (TWOPI * index.y()) + (TWOPI * index.z() / nz) + 3;
+          return index.x() + (TWOPI * index.y()) + (TWOPI * index.z()) + 3;
         },
         &mesh_from_options);
     expected_metric =
@@ -116,10 +120,11 @@ TEST_F(GridFromOptionsTest, GetStringNone) {
 
 TEST_F(GridFromOptionsTest, GetInt) {
   int result{-1};
-  int expected{3};
 
-  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f"));
-  EXPECT_EQ(result, expected);
+  // The expression must not depend on x,y,z or t
+  EXPECT_THROW(griddata->get(&mesh_from_options, result, "f"), BoutException);
+  griddata->get(&mesh_from_options, result, "n");
+  EXPECT_EQ(result, 12);
 }
 
 TEST_F(GridFromOptionsTest, GetIntNone) {
@@ -132,9 +137,9 @@ TEST_F(GridFromOptionsTest, GetIntNone) {
 
 TEST_F(GridFromOptionsTest, GetBoutReal) {
   BoutReal result{-1.};
-  BoutReal expected{3.};
+  BoutReal expected{3.14};
 
-  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f"));
+  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "r"));
   EXPECT_EQ(result, expected);
 }
 
@@ -228,7 +233,8 @@ TEST_F(GridFromOptionsTest, GetVectorBoutRealXOffset) {
   std::vector<BoutReal> result{};
   std::vector<BoutReal> expected{4., 5., 6., 7., 8., 9., 10., 11., 12.};
 
-  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", nx, 1, GridDataSource::Direction::X));
+  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", nx, 1,
+                            GridDataSource::Direction::X));
   EXPECT_EQ(result, expected);
 }
 
@@ -240,7 +246,8 @@ TEST_F(GridFromOptionsTest, GetVectorBoutRealXMeshOffset) {
   mesh_from_options.OffsetY = 100;
   mesh_from_options.OffsetZ = 100;
 
-  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", nx, 0, GridDataSource::Direction::X));
+  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", nx, 0,
+                            GridDataSource::Direction::X));
   EXPECT_EQ(result, expected);
 }
 
@@ -253,38 +260,50 @@ TEST_F(GridFromOptionsTest, GetVectorBoutRealXNone) {
 
 TEST_F(GridFromOptionsTest, GetVectorBoutRealY) {
   std::vector<BoutReal> result{};
-  std::vector<BoutReal> expected{3., 3. + TWOPI, 3. + (2. * TWOPI), 3. + (3. * TWOPI),
-                                 3. + (4. * TWOPI), 3. + (5. * TWOPI), 3. + (6. * TWOPI),
-                                 3. + (7. * TWOPI), 3. + (8. * TWOPI), 3. + (9. * TWOPI),
+  std::vector<BoutReal> expected{3.,
+                                 3. + TWOPI,
+                                 3. + (2. * TWOPI),
+                                 3. + (3. * TWOPI),
+                                 3. + (4. * TWOPI),
+                                 3. + (5. * TWOPI),
+                                 3. + (6. * TWOPI),
+                                 3. + (7. * TWOPI),
+                                 3. + (8. * TWOPI),
+                                 3. + (9. * TWOPI),
                                  3. + (10. * TWOPI)};
 
-  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", ny, 0, GridDataSource::Direction::Y));
+  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", ny, 0,
+                            GridDataSource::Direction::Y));
   EXPECT_EQ(result, expected);
 }
 
 TEST_F(GridFromOptionsTest, GetVectorBoutRealYOffset) {
   std::vector<BoutReal> result{};
-  std::vector<BoutReal> expected{3. + TWOPI, 3. + (2. * TWOPI), 3. + (3. * TWOPI),
-                                 3. + (4. * TWOPI), 3. + (5. * TWOPI), 3. + (6. * TWOPI),
-                                 3. + (7. * TWOPI), 3. + (8. * TWOPI), 3. + (9. * TWOPI),
+  std::vector<BoutReal> expected{3. + TWOPI,         3. + (2. * TWOPI), 3. + (3. * TWOPI),
+                                 3. + (4. * TWOPI),  3. + (5. * TWOPI), 3. + (6. * TWOPI),
+                                 3. + (7. * TWOPI),  3. + (8. * TWOPI), 3. + (9. * TWOPI),
                                  3. + (10. * TWOPI), 3. + (11. * TWOPI)};
 
-  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", ny, 1, GridDataSource::Direction::Y));
+  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", ny, 1,
+                            GridDataSource::Direction::Y));
   EXPECT_EQ(result, expected);
 }
 
 TEST_F(GridFromOptionsTest, GetVectorBoutRealYMeshOffset) {
   std::vector<BoutReal> result{};
-  std::vector<BoutReal> expected{3. - TWOPI, 3., 3. + TWOPI, 3. + (2. * TWOPI),
-                                 3. + (3. * TWOPI), 3. + (4. * TWOPI), 3. + (5. * TWOPI),
-                                 3. + (6. * TWOPI), 3. + (7. * TWOPI), 3. + (8. * TWOPI),
+  std::vector<BoutReal> expected{3. - TWOPI,        3.,
+                                 3. + TWOPI,        3. + (2. * TWOPI),
+                                 3. + (3. * TWOPI), 3. + (4. * TWOPI),
+                                 3. + (5. * TWOPI), 3. + (6. * TWOPI),
+                                 3. + (7. * TWOPI), 3. + (8. * TWOPI),
                                  3. + (9. * TWOPI)};
 
   mesh_from_options.OffsetX = 100;
   mesh_from_options.OffsetY = 1;
   mesh_from_options.OffsetZ = 100;
 
-  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", ny, 0, GridDataSource::Direction::Y));
+  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", ny, 0,
+                            GridDataSource::Direction::Y));
   EXPECT_EQ(result, expected);
 }
 
@@ -297,37 +316,35 @@ TEST_F(GridFromOptionsTest, GetVectorBoutRealYNone) {
 
 TEST_F(GridFromOptionsTest, GetVectorBoutRealZ) {
   std::vector<BoutReal> result{};
-  std::vector<BoutReal> expected{3.,
-                                 3. + (1. * TWOPI / nz),
-                                 3. + (2. * TWOPI / nz),
-                                 3. + (3. * TWOPI / nz),
-                                 3. + (4. * TWOPI / nz)};
+  std::vector<BoutReal> expected{3., 3. + (1. * TWOPI), 3. + (2. * TWOPI),
+                                 3. + (3. * TWOPI), 3. + (4. * TWOPI)};
 
-  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", nz, 0, GridDataSource::Direction::Z));
+  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", nz, 0,
+                            GridDataSource::Direction::Z));
   EXPECT_EQ(result, expected);
 }
 
 TEST_F(GridFromOptionsTest, GetVectorBoutRealZOffset) {
   std::vector<BoutReal> result{};
-  std::vector<BoutReal> expected{3. + (1. * TWOPI / nz), 3. + (2. * TWOPI / nz),
-                                 3. + (3. * TWOPI / nz), 3. + (4. * TWOPI / nz),
-                                 3. + (5. * TWOPI / nz)};
+  std::vector<BoutReal> expected{3. + (1. * TWOPI), 3. + (2. * TWOPI), 3. + (3. * TWOPI),
+                                 3. + (4. * TWOPI), 3. + (5. * TWOPI)};
 
-  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", nz, 1, GridDataSource::Direction::Z));
+  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", nz, 1,
+                            GridDataSource::Direction::Z));
   EXPECT_EQ(result, expected);
 }
 
 TEST_F(GridFromOptionsTest, GetVectorBoutRealZMeshOffset) {
   std::vector<BoutReal> result{};
-  std::vector<BoutReal> expected{3. + (-1. * TWOPI / nz), 3.,
-                                 3. + (1. * TWOPI / nz),  3. + (2. * TWOPI / nz),
-                                 3. + (3. * TWOPI / nz)};
+  std::vector<BoutReal> expected{3. + (-1. * TWOPI), 3., 3. + (1. * TWOPI),
+                                 3. + (2. * TWOPI), 3. + (3. * TWOPI)};
 
   mesh_from_options.OffsetX = 100;
   mesh_from_options.OffsetY = 100;
   mesh_from_options.OffsetZ = 1;
 
-  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", nz, 0, GridDataSource::Direction::Z));
+  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", nz, 0,
+                            GridDataSource::Direction::Z));
   EXPECT_EQ(result, expected);
 }
 
@@ -379,17 +396,22 @@ TEST_F(GridFromOptionsTest, CoordinatesXlowInterp) {
 
   Coordinates::FieldMetric expected_xlow = makeField<Coordinates::FieldMetric>(
       [](Coordinates::FieldMetric::ind_type& index) {
-        return index.x() - 0.5 + (TWOPI * index.y()) + (TWOPI * index.z() / nz) + 3;
+        return index.x() - 0.5 + (TWOPI * index.y()) + (TWOPI * index.z()) + 3;
       },
       &mesh_from_options);
 
   mesh_from_options.communicate(expected_xlow);
 
-  EXPECT_TRUE(IsFieldEqual(coords->g11, expected_xlow + 5., "RGN_NOBNDRY", this_tolerance));
-  EXPECT_TRUE(IsFieldEqual(coords->g22, expected_xlow + 4., "RGN_NOBNDRY", this_tolerance));
-  EXPECT_TRUE(IsFieldEqual(coords->g33, expected_xlow + 3., "RGN_NOBNDRY", this_tolerance));
-  EXPECT_TRUE(IsFieldEqual(coords->g12, expected_xlow + 2., "RGN_NOBNDRY", this_tolerance));
-  EXPECT_TRUE(IsFieldEqual(coords->g13, expected_xlow + 1., "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(
+      IsFieldEqual(coords->g11, expected_xlow + 5., "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(
+      IsFieldEqual(coords->g22, expected_xlow + 4., "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(
+      IsFieldEqual(coords->g33, expected_xlow + 3., "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(
+      IsFieldEqual(coords->g12, expected_xlow + 2., "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(
+      IsFieldEqual(coords->g13, expected_xlow + 1., "RGN_NOBNDRY", this_tolerance));
   EXPECT_TRUE(IsFieldEqual(coords->g23, expected_xlow, "RGN_NOBNDRY", this_tolerance));
 }
 
@@ -415,7 +437,7 @@ TEST_F(GridFromOptionsTest, CoordinatesXlowRead) {
 
   Field2D expected_xlow = makeField<Field2D>(
       [](Field2D::ind_type& index) {
-        return (nx - index.x() + 0.5) + (TWOPI * index.y()) + (TWOPI * index.z() / nz) + 3;
+        return (nx - index.x() + 0.5) + (TWOPI * index.y()) + (TWOPI * index.z()) + 3;
       },
       &mesh_from_options);
 
@@ -443,25 +465,30 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowInterp) {
   // make the mesh have boundaries to avoid NaNs in guard cells after interpolating
   mesh_from_options.createBoundaries();
 
-  auto *coords = mesh_from_options.getCoordinates(CELL_YLOW);
+  auto* coords = mesh_from_options.getCoordinates(CELL_YLOW);
 
   Field2D expected_ylow = makeField<Field2D>(
       [](Field2D::ind_type& index) {
-        return index.x() + (TWOPI * (index.y() - 0.5)) + (TWOPI * index.z() / nz) + 3;
+        return index.x() + (TWOPI * (index.y() - 0.5)) + (TWOPI * index.z()) + 3;
       },
       &mesh_from_options);
 
   mesh_from_options.communicate(expected_ylow);
 
-  EXPECT_TRUE(IsFieldEqual(coords->g11, expected_ylow + 5., "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(
+      IsFieldEqual(coords->g11, expected_ylow + 5., "RGN_NOBNDRY", this_tolerance));
   EXPECT_TRUE(coords->g11.getLocation() == CELL_YLOW);
-  EXPECT_TRUE(IsFieldEqual(coords->g22, expected_ylow + 4., "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(
+      IsFieldEqual(coords->g22, expected_ylow + 4., "RGN_NOBNDRY", this_tolerance));
   EXPECT_TRUE(coords->g22.getLocation() == CELL_YLOW);
-  EXPECT_TRUE(IsFieldEqual(coords->g33, expected_ylow + 3., "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(
+      IsFieldEqual(coords->g33, expected_ylow + 3., "RGN_NOBNDRY", this_tolerance));
   EXPECT_TRUE(coords->g33.getLocation() == CELL_YLOW);
-  EXPECT_TRUE(IsFieldEqual(coords->g12, expected_ylow + 2., "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(
+      IsFieldEqual(coords->g12, expected_ylow + 2., "RGN_NOBNDRY", this_tolerance));
   EXPECT_TRUE(coords->g12.getLocation() == CELL_YLOW);
-  EXPECT_TRUE(IsFieldEqual(coords->g13, expected_ylow + 1., "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(
+      IsFieldEqual(coords->g13, expected_ylow + 1., "RGN_NOBNDRY", this_tolerance));
   EXPECT_TRUE(coords->g13.getLocation() == CELL_YLOW);
   EXPECT_TRUE(IsFieldEqual(coords->g23, expected_ylow, "RGN_NOBNDRY", this_tolerance));
   EXPECT_TRUE(coords->g23.getLocation() == CELL_YLOW);
@@ -492,7 +519,7 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowRead) {
 
   Field2D expected_ylow = makeField<Field2D>(
       [](Field2D::ind_type& index) {
-        return index.x() + (TWOPI * (ny - index.y() + 0.5)) + (TWOPI * index.z() / nz) + 3;
+        return index.x() + (TWOPI * (ny - index.y() + 0.5)) + (TWOPI * index.z()) + 3;
       },
       &mesh_from_options);
 

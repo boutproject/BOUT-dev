@@ -23,19 +23,20 @@
  *     o Added Umpire support, in multiple iterations/variations
  */
 
-#ifndef __ARRAY_H__
-#define __ARRAY_H__
+#ifndef BOUT_ARRAY_H
+#define BOUT_ARRAY_H
 
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <tuple>
 #include <vector>
 
-#ifdef _OPENMP
+#if BOUT_USE_OPENMP
 #include <omp.h>
 #endif
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_UMPIRE
 #include "umpire/Allocator.hpp"
@@ -50,7 +51,7 @@ template <typename T>
 using iterator = T*;
 template <typename T>
 using const_iterator = const T*;
-}
+} // namespace
 
 /*!
  * ArrayData holds the actual data
@@ -65,7 +66,7 @@ struct ArrayData {
     //       even though the Array object itself can't.
 #if BOUT_HAS_UMPIRE
     auto& rm = umpire::ResourceManager::getInstance();
-#if BOUT_USE_CUDA
+#if BOUT_HAS_CUDA
     auto allocator = rm.getAllocator(umpire::resource::Pinned);
 #else
     auto allocator = rm.getAllocator("HOST");
@@ -169,7 +170,7 @@ private:
  *  - Arrays can't be used in GPU code. To access Array data
  *    inside a RAJA loop, first extract the raw pointer
  */
-template<typename T, typename Backing = ArrayData<T>>
+template <typename T, typename Backing = ArrayData<T>>
 class Array {
 public:
   using data_type = T;
@@ -193,9 +194,7 @@ public:
   /*!
    * Destructor. Releases the underlying dataBlock
    */
-  ~Array() noexcept {
-    release(ptr);
-  }
+  ~Array() noexcept { release(ptr); }
 
   /*!
    * Copy constructor
@@ -216,9 +215,7 @@ public:
   /*!
    * Move constructor
    */
-  Array(Array&& other) noexcept {
-    swap(*this, other);
-  }
+  Array(Array&& other) noexcept { swap(*this, other); }
 
   /*!
    * Reallocate the array with size = \p new_size
@@ -229,6 +226,12 @@ public:
     release(ptr);
     ptr = get(new_size);
   }
+
+  /*!
+   * Change shape of the container.
+   * Invalidates contents.
+   */
+  void reshape(std::tuple<size_type> new_shape) { reallocate(std::get<0>(new_shape)); }
 
   /*!
    * Holds a static variable which controls whether
@@ -271,9 +274,7 @@ public:
   /*!
    * Returns true if the Array is empty
    */
-  bool empty() const noexcept {
-    return ptr == nullptr;
-  }
+  bool empty() const noexcept { return ptr == nullptr; }
 
   /*!
    * Return size of the array. Zero if the array is empty.
@@ -288,6 +289,9 @@ public:
     // practice, it is so this shouldn't matter
     return ptr->size();
   }
+
+  /// Return shape of the array (the `size()` in a length-1 tuple)
+  std::tuple<size_type> shape() const { return std::make_tuple(size()); };
 
   /*!
    * Returns true if the data is unique to this Array.
@@ -381,22 +385,15 @@ private:
    * @param[in] cleanup   If set to true, deletes all dataBlock and clears the store
    */
   static storeType& store(bool cleanup = false) {
-#ifdef _OPENMP
     static arenaType arena(omp_get_max_threads());
-#else
-    static arenaType arena(1);
-#endif
     if (!cleanup) {
-#ifdef _OPENMP
       return arena[omp_get_thread_num()];
-#else
-      return arena[0];
-#endif
     }
 
     // Clean by deleting all data -- possible that just stores.clear() is
     // sufficient rather than looping over each entry.
-    BOUT_OMP(single) {
+    BOUT_OMP_SAFE(single)
+    {
       for (auto& stores : arena) {
         for (auto& p : stores) {
           auto& v = p.second;
@@ -491,5 +488,4 @@ bool operator==(const Array<T, B1>& lhs, const Array<T, B2>& rhs) {
   return std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
-#endif // __ARRAY_H__
-
+#endif // BOUT_ARRAY_H

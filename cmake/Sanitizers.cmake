@@ -4,48 +4,55 @@
 
 function(enable_sanitizers target_name)
 
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES
+                                             ".*Clang"
+  )
     option(ENABLE_COVERAGE "Enable coverage reporting for gcc/clang" FALSE)
     message(STATUS "Enable coverage: ${ENABLE_COVERAGE}")
 
     if(ENABLE_COVERAGE)
       target_compile_options(${target_name} PUBLIC --coverage -O0 -g)
-      target_link_libraries(${target_name} PUBLIC --coverage)
+      target_link_libraries(${target_name} PUBLIC --coverage -lgcov)
 
-      find_program(fastcov_FOUND fastcov)
-      message(STATUS "Looking for fastcov: ${fastcov_FOUND}")
+      find_program(lcov_FOUND lcov)
+      message(STATUS "Looking for lcov: ${lcov_FOUND}")
       find_program(genhtml_FOUND genhtml)
-      message(STATUS "Looking for genhtml: ${fastcov_FOUND}")
+      message(STATUS "Looking for genhtml: ${genhtml_FOUND}")
 
-      if (fastcov_FOUND AND genhtml_FOUND)
-        set(COVERAGE_NAME coverage CACHE STRING "Name of coverage output file")
+      if(lcov_FOUND AND genhtml_FOUND)
+        set(COVERAGE_NAME
+            coverage
+            CACHE STRING "Name of coverage output file"
+        )
         set(COVERAGE_FILE "${COVERAGE_NAME}.info")
-        set(COVERAGE_MSG "Open file://${PROJECT_SOURCE_DIR}/${COVERAGE_NAME}/index.html in your browser to view coverage HTML output")
+        set(COVERAGE_MSG
+            "Open file://${PROJECT_SOURCE_DIR}/${COVERAGE_NAME}/index.html in your browser to view coverage HTML output"
+        )
 
-        add_custom_target(code-coverage-capture
+        add_custom_target(
+          code-coverage-capture
           COMMAND
-            fastcov --include "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/include"
-            --exclude "${CMAKE_CURRENT_SOURCE_DIR}/externalpackages"
-            --lcov --process-gcno
-            --output "${COVERAGE_FILE}"
-          COMMAND
-            genhtml --output-directory "${COVERAGE_NAME}" --demangle-cpp --legend --show-details "${COVERAGE_FILE}"
-          COMMAND
-            "${CMAKE_COMMAND}" -E echo ${COVERAGE_MSG}
+            lcov -c --directory
+            "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/bout++.dir/src"
+            --output-file "${COVERAGE_FILE}"
+          COMMAND genhtml --output-directory "${COVERAGE_NAME}" --demangle-cpp
+                  --legend --show-details "${COVERAGE_FILE}"
+          COMMAND "${CMAKE_COMMAND}" -E echo ${COVERAGE_MSG}
           WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
           COMMENT "Capturing coverage information"
-          BYPRODUCTS
-            "${COVERAGE_FILE}"
-            "${COVERAGE_NAME}/index.html"
-          )
+          BYPRODUCTS "${COVERAGE_FILE}" "${COVERAGE_NAME}/index.html"
+        )
 
-        add_custom_target(code-coverage-clean
-          COMMAND
-          fastcov --zerocounters
+        add_custom_target(
+          code-coverage-clean
+          COMMAND lcov --zerocounters
           COMMENT "Cleaning coverage information"
-          )
+        )
       else()
-        message(STATUS "Coverage enabled, but coverage-capture not available. Please install fastcov and lcov")
+        message(
+          FATAL_ERROR
+            "Coverage enabled, but coverage-capture not available. Please install lcov"
+        )
       endif()
 
     endif()
@@ -62,7 +69,9 @@ function(enable_sanitizers target_name)
       list(APPEND SANITIZERS "leak")
     endif()
 
-    option(ENABLE_SANITIZER_UNDEFINED_BEHAVIOR "Enable undefined behavior sanitizer" FALSE)
+    option(ENABLE_SANITIZER_UNDEFINED_BEHAVIOR
+           "Enable undefined behavior sanitizer" FALSE
+    )
     if(ENABLE_SANITIZER_UNDEFINED_BEHAVIOR)
       list(APPEND SANITIZERS "undefined")
     endif()
@@ -70,7 +79,10 @@ function(enable_sanitizers target_name)
     option(ENABLE_SANITIZER_THREAD "Enable thread sanitizer" FALSE)
     if(ENABLE_SANITIZER_THREAD)
       if("address" IN_LIST SANITIZERS OR "leak" IN_LIST SANITIZERS)
-        message(WARNING "Thread sanitizer does not work with Address and Leak sanitizer enabled")
+        message(
+          WARNING
+            "Thread sanitizer does not work with Address and Leak sanitizer enabled"
+        )
       else()
         list(APPEND SANITIZERS "thread")
       endif()
@@ -80,32 +92,40 @@ function(enable_sanitizers target_name)
     if(ENABLE_SANITIZER_MEMORY AND CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
       if("address" IN_LIST SANITIZERS
          OR "thread" IN_LIST SANITIZERS
-         OR "leak" IN_LIST SANITIZERS)
-        message(WARNING "Memory sanitizer does not work with Address, Thread and Leak sanitizer enabled")
+         OR "leak" IN_LIST SANITIZERS
+      )
+        message(
+          WARNING
+            "Memory sanitizer does not work with Address, Thread and Leak sanitizer enabled"
+        )
       else()
         list(APPEND SANITIZERS "memory")
       endif()
     endif()
 
-    list(
-      JOIN
-      SANITIZERS
-      ","
-      LIST_OF_SANITIZERS)
+    list(JOIN SANITIZERS "," LIST_OF_SANITIZERS)
 
   endif()
 
   # Default value gets overridden below
-  set(BOUT_USE_SANITIZERS "None" PARENT_SCOPE)
+  set(BOUT_USE_SANITIZERS
+      "None"
+      PARENT_SCOPE
+  )
 
   if(LIST_OF_SANITIZERS)
-    if(NOT
-       "${LIST_OF_SANITIZERS}"
-       STREQUAL
-       "")
-      set(BOUT_USE_SANITIZERS ${LIST_OF_SANITIZERS} PARENT_SCOPE)
-      target_compile_options(${target_name} PUBLIC -fsanitize=${LIST_OF_SANITIZERS} -fno-omit-frame-pointer)
-      target_link_options(${target_name} PUBLIC -fsanitize=${LIST_OF_SANITIZERS})
+    if(NOT "${LIST_OF_SANITIZERS}" STREQUAL "")
+      set(BOUT_USE_SANITIZERS
+          ${LIST_OF_SANITIZERS}
+          PARENT_SCOPE
+      )
+      target_compile_options(
+        ${target_name} PUBLIC -fsanitize=${LIST_OF_SANITIZERS}
+                              -fno-omit-frame-pointer
+      )
+      target_link_options(
+        ${target_name} PUBLIC -fsanitize=${LIST_OF_SANITIZERS}
+      )
     endif()
   endif()
 

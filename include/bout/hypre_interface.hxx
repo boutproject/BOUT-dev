@@ -1,17 +1,17 @@
 #ifndef BOUT_HYPRE_INTERFACE_H
 #define BOUT_HYPRE_INTERFACE_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_HYPRE
 
-#include "boutcomm.hxx"
-#include "field.hxx"
-#include "utils.hxx"
 #include "bout/bout_enum_class.hxx"
+#include "bout/boutcomm.hxx"
 #include "bout/caliper_wrapper.hxx"
+#include "bout/field.hxx"
 #include "bout/globalindexer.hxx"
 #include "bout/hyprelib.hxx"
+#include "bout/utils.hxx"
 
 #include "HYPRE.h"
 #include "HYPRE_IJ_mv.h"
@@ -26,7 +26,7 @@
 BOUT_ENUM_CLASS(HYPRE_SOLVER_TYPE, gmres, bicgstab, pcg);
 
 namespace bout {
-#if BOUT_USE_CUDA && defined(__CUDACC__) // HYPRE with Cuda enabled
+#if BOUT_HAS_CUDA && defined(__CUDACC__) // HYPRE with Cuda enabled
 #define HypreMalloc(P, SIZE) cudaMallocManaged(&P, SIZE)
 #define HypreFree(P) cudaFree(P)
 #else
@@ -42,10 +42,10 @@ int checkHypreError(int error) {
     // warning, or otherwise investigate further.
     char error_cstr[2048];
     HYPRE_DescribeError(error, &error_cstr[0]);
-    if (error > 1)
+    if (error > 1) {
       throw BoutException("A Hypre call failed with error code {:d}: {:s}", error,
                           &error_cstr[0]);
-    else if (error == 1) {
+    } else if (error == 1) {
       output_error.write("Hypre returns {} {}\n", error, error_cstr);
       HYPRE_ClearAllErrors();
     }
@@ -73,7 +73,7 @@ class HypreVector {
   HypreLib hyprelib{};
 
 public:
-  static_assert(bout::utils::is_Field<T>::value, "HypreVector only works with Fields");
+  static_assert(bout::utils::is_Field_v<T>, "HypreVector only works with Fields");
   using ind_type = typename T::ind_type;
 
   HypreVector() = default;
@@ -138,7 +138,7 @@ public:
       : indexConverter(indConverter) {
     ASSERT1(indConverter->getMesh() == f.getMesh());
     const MPI_Comm comm =
-        std::is_same<T, FieldPerp>::value ? f.getMesh()->getXcomm() : BoutComm::get();
+        std::is_same_v<T, FieldPerp> ? f.getMesh()->getXcomm() : BoutComm::get();
 
     HYPRE_BigInt jlower = indConverter->getGlobalStart();
     HYPRE_BigInt jupper = jlower + indConverter->size() - 1; // inclusive end
@@ -159,7 +159,7 @@ public:
   explicit HypreVector(IndexerPtr<T> indConverter) : indexConverter(indConverter) {
     Mesh& mesh = *indConverter->getMesh();
     const MPI_Comm comm =
-        std::is_same<T, FieldPerp>::value ? mesh.getXcomm() : BoutComm::get();
+        std::is_same_v<T, FieldPerp> ? mesh.getXZcomm() : BoutComm::get();
 
     HYPRE_BigInt jlower = indConverter->getGlobalStart();
     HYPRE_BigInt jupper = jlower + indConverter->size() - 1; // inclusive end
@@ -256,9 +256,10 @@ public:
           break;
         }
       }
-      if (vec_i < 0)
+      if (vec_i < 0) {
         throw BoutException("Error cannot find global index in HypreVector, index = {}",
                             index);
+      }
 
       value = vector->V[vec_i];
     }
@@ -337,7 +338,7 @@ class HypreMatrix {
   };
 
 public:
-  static_assert(bout::utils::is_Field<T>::value, "HypreMatrix only works with Fields");
+  static_assert(bout::utils::is_Field_v<T>, "HypreMatrix only works with Fields");
   using ind_type = typename T::ind_type;
 
   HypreMatrix() = default;
@@ -379,7 +380,7 @@ public:
       : hypre_matrix(new HYPRE_IJMatrix, MatrixDeleter{}), index_converter(indConverter) {
     Mesh* mesh = indConverter->getMesh();
     const MPI_Comm comm =
-        std::is_same<T, FieldPerp>::value ? mesh->getXcomm() : BoutComm::get();
+        std::is_same_v<T, FieldPerp> ? mesh->getXZcomm() : BoutComm::get();
     parallel_transform = &mesh->getCoordinates()->getParallelTransform();
 
     ilower = indConverter->getGlobalStart();
@@ -443,19 +444,19 @@ public:
       value = matrix->getVal(row, column);
     }
     Element& operator=(const Element& other) {
-      AUTO_TRACE();
+
       ASSERT3(finite(static_cast<BoutReal>(other)));
       return *this = static_cast<BoutReal>(other);
     }
     Element& operator=(BoutReal value_) {
-      AUTO_TRACE();
+
       ASSERT3(finite(value_));
       value = value_;
       setValues(value);
       return *this;
     }
     Element& operator+=(BoutReal value_) {
-      AUTO_TRACE();
+
       ASSERT3(finite(value_));
       auto column_position = std::find(cbegin(positions), cend(positions), column);
       if (column_position != cend(positions)) {
@@ -479,7 +480,7 @@ public:
           weights.begin(), weights.end(), std::back_inserter(values),
           [&value_](BoutReal weight) -> HYPRE_Complex { return weight * value_; });
       const HYPRE_BigInt ncolumns = static_cast<HYPRE_BigInt>(positions.size());
-      // BOUT_OMP(critical)
+      // BOUT_OMP_SAFE(critical)
       for (HYPRE_BigInt i = 0; i < ncolumns; ++i) {
         matrix->setVal(row, positions[i], values[i]);
       }
@@ -494,7 +495,7 @@ public:
           weights.begin(), weights.end(), std::back_inserter(values),
           [&value_](BoutReal weight) -> HYPRE_Complex { return weight * value_; });
       const HYPRE_BigInt ncolumns = static_cast<HYPRE_BigInt>(positions.size());
-      // BOUT_OMP(critical)
+      // BOUT_OMP_SAFE(critical)
       for (HYPRE_BigInt i = 0; i < ncolumns; ++i) {
         matrix->addVal(row, positions[i], values[i]);
       }
@@ -650,9 +651,8 @@ public:
       }();
 
       const int ny =
-          std::is_same<T, FieldPerp>::value ? 1 : index_converter->getMesh()->LocalNy;
-      const int nz =
-          std::is_same<T, Field2D>::value ? 1 : index_converter->getMesh()->LocalNz;
+          std::is_same_v<T, FieldPerp> ? 1 : index_converter->getMesh()->LocalNy;
+      const int nz = std::is_same_v<T, Field2D> ? 1 : index_converter->getMesh()->LocalNz;
       std::transform(
           pw.begin(), pw.end(), std::back_inserter(positions),
           [this, ny, nz](ParallelTransform::PositionsAndWeights p) -> HYPRE_Int {
@@ -710,10 +710,19 @@ public:
 
   bool isAssembled() const { return assembled; }
 
+  /// Call HYPRE_IJMatrixPrint
+  void print() const {
+    if (!assembled) {
+      output_warn.write("<HypreMatrix not assembled>");
+      return;
+    }
+    HYPRE_IJMatrixPrint(*hypre_matrix, "hypreIJ.matrix");
+  }
+
   HypreMatrix<T> yup(int index = 0) { return ynext(index + 1); }
   HypreMatrix<T> ydown(int index = 0) { return ynext(-index - 1); }
   HypreMatrix<T> ynext(int dir) {
-    if (std::is_same<T, FieldPerp>::value and ((yoffset + dir) != 0)) {
+    if (std::is_same_v<T, FieldPerp> and ((yoffset + dir) != 0)) {
       throw BoutException("Can not get ynext for FieldPerp");
     }
     HypreMatrix<T> result;
@@ -725,7 +734,7 @@ public:
     result.index_converter = index_converter;
     result.location = location;
     result.initialised = initialised;
-    result.yoffset = std::is_same<T, Field2D>::value ? 0 : yoffset + dir;
+    result.yoffset = std::is_same_v<T, Field2D> ? 0 : yoffset + dir;
     result.parallel_transform = parallel_transform;
     result.assembled = assembled;
     result.num_rows = num_rows;
@@ -789,9 +798,8 @@ private:
   decltype(HYPRE_ParCSRGMRESSetTol)* solverSetTol{nullptr};
   decltype(HYPRE_ParCSRGMRESSetAbsoluteTol)* solverSetAbsoluteTol{nullptr};
   decltype(HYPRE_ParCSRGMRESSetMaxIter)* solverSetMaxIter{nullptr};
-  decltype(
-      HYPRE_ParCSRGMRESGetFinalRelativeResidualNorm)* solverGetFinalRelativeResidualNorm{
-      nullptr};
+  decltype(HYPRE_ParCSRGMRESGetFinalRelativeResidualNorm)*
+      solverGetFinalRelativeResidualNorm{nullptr};
   decltype(HYPRE_ParCSRGMRESGetNumIterations)* solverGetNumIterations{nullptr};
   decltype(HYPRE_ParCSRGMRESSetPrecond)* solverSetPrecond{nullptr};
   decltype(HYPRE_ParCSRGMRESSetup)* solverSetup{nullptr};
@@ -804,7 +812,7 @@ public:
                            "values are: gmres, bicgstab, pcg")
                       .withDefault(HYPRE_SOLVER_TYPE::bicgstab);
 
-    comm = std::is_same<T, FieldPerp>::value ? mesh.getXcomm() : BoutComm::get();
+    comm = std::is_same_v<T, FieldPerp> ? mesh.getXZcomm() : BoutComm::get();
 
     auto print_level =
         options["hypre_print_level"]
@@ -870,7 +878,7 @@ public:
 
     HYPRE_BoomerAMGCreate(&precon);
     HYPRE_BoomerAMGSetOldDefault(precon);
-#if BOUT_USE_CUDA
+#if BOUT_HAS_CUDA
     // 18 or 7 for GPU implementation, 7 is slower to converge
     HYPRE_BoomerAMGSetRelaxType(precon, 18);
     HYPRE_BoomerAMGSetRelaxOrder(precon, false); // must be false for GPU
@@ -895,20 +903,30 @@ public:
 
   void setMaxIter(int max_iter) { checkHypreError(solverSetMaxIter(solver, max_iter)); }
 
-  double getFinalRelResNorm() {
+  double getFinalRelResNorm() const {
     HYPRE_Real resnorm{};
     checkHypreError(solverGetFinalRelativeResidualNorm(solver, &resnorm));
     return resnorm;
   }
 
-  int getNumItersTaken() {
+  /// Return the number of solver iterations taken
+  int getNumItersTaken() const {
     HYPRE_Int iters{};
     checkHypreError(solverGetNumIterations(solver, &iters));
     return iters;
   }
 
+  /// Return the number of BoomerAMG preconditioner iterations taken
+  int getNumItersTakenAMG() const {
+    HYPRE_Int iters{};
+    checkHypreError(HYPRE_BoomerAMGGetNumIterations(precon, &iters));
+    return iters;
+  }
+
+  /// Set the HypreMatrix to be used in the solver
   void setMatrix(HypreMatrix<T>* A_) { A = A_; }
 
+  /// Enable BoomerAMG preconditioner with the given HypreMatrix
   int setupAMG(HypreMatrix<T>* P_) {
     CALI_CXX_MARK_FUNCTION;
 
