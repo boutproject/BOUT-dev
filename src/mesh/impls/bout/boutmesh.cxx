@@ -1001,10 +1001,9 @@ void BoutMesh::createCommunicators() {
     TRACE("Creating Outer SOL communicators for Snowflake operation");
 
       for (int i = 0; i < NXPE; i++) {
-        // Outer SOL in Snowflake
+        // Outer SOL in Snowflake (y = 0 .. ny_inner-1, above east target)
         proc[0] = PROC_NUM(i, 0);
         proc[1] = PROC_NUM(i, YPROC(ny_inner - 1));
-        //proc[2] = NXPE;
 
         output_debug << "SF outer SOL " << proc[0] << ", " << proc[1] << endl;
 
@@ -1016,6 +1015,22 @@ void BoutMesh::createCommunicators() {
           comm_outer = comm_tmp;
         }
         MPI_Group_free(&group);
+
+        // South PFR in Snowflake (y = ny_inner .. ny-1, below east target)
+        // These processors also need a valid comm_outer.
+        if (YPROC(ny_inner) <= NYPE - 1) {
+          proc[0] = PROC_NUM(i, YPROC(ny_inner));
+          proc[1] = PROC_NUM(i, NYPE - 1);
+
+          output_debug << "SF south PFR " << proc[0] << ", " << proc[1] << endl;
+
+          MPI_Group_range_incl(group_world, 1, &proc, &group);
+          MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+          if (comm_tmp != MPI_COMM_NULL) {
+            comm_outer = comm_tmp;
+          }
+          MPI_Group_free(&group);
+        }
       }
     } 
   else{
@@ -1172,14 +1187,19 @@ void BoutMesh::createCommunicators() {
             }
           };
 
-          // PF_W Y ranges
+          // PF_W Y ranges: bottom target + middle segment + top target
+          // Use jyseps2_1+1 (not jyseps2_1) so the last core cell is excluded.
+          // Use jyseps2_2+1 (not jyseps2_2) so the last E_PFR cell is excluded.
           add_pf_range(0, jyseps1_1);
-          add_pf_range(jyseps2_1, jyseps1_2);
-          add_pf_range(jyseps2_2, ny - 1);
+          add_pf_range(jyseps2_1 + 1, jyseps1_2);
+          add_pf_range(jyseps2_2 + 1, ny - 1);
 
           MPI_Comm_create(BoutComm::get(), pf_group, &comm_tmp);
           if (comm_tmp != MPI_COMM_NULL) {
             comm_pf_w = comm_tmp;
+            // Assign W_PFR processors to comm_inner (core section below will
+            // overwrite for YPROC covering core y-range, which is correct).
+            comm_inner = comm_pf_w;
           }
 
           if (pf_group != MPI_GROUP_EMPTY) {
@@ -1215,13 +1235,19 @@ void BoutMesh::createCommunicators() {
             }
           };
 
-          // PF_E Y ranges
-          add_pf_range(jyseps1_2, ny_inner - 1);
+          // PF_E Y ranges: west half + east half of the E_PFR closed loop.
+          // Use jyseps1_2+1 (not jyseps1_2) so the last W_PFR cell is excluded.
+          add_pf_range(jyseps1_2 + 1, ny_inner - 1);
           add_pf_range(ny_inner + 1, jyseps2_2);
 
           MPI_Comm_create(BoutComm::get(), pf_group, &comm_tmp);
           if (comm_tmp != MPI_COMM_NULL) {
             comm_pf_e = comm_tmp;
+            // Assign E_PFR processors to comm_inner only if not already assigned
+            // by comm_pf_w (W_PFR and E_PFR are disjoint after the off-by-one fix).
+            if (comm_inner == MPI_COMM_NULL) {
+              comm_inner = comm_pf_e;
+            }
           }
 
           if (pf_group != MPI_GROUP_EMPTY) {
@@ -1419,6 +1445,45 @@ void BoutMesh::createCommunicators() {
       }
     }
   }
+  // For SF topology the "unbalanced lower" communicator above spans
+  // union(YPROC 0..YPROC(jyseps2_1), YPROC(jyseps1_2+1)..NYPE-1), which
+  // skips the YPROC range covering y = jyseps2_1+1..jyseps1_2 (the W_PFR
+  // middle segment / upper half of the C_PFR).  Create a dedicated C_PFR
+  // communicator that covers exactly the C_PFR field line:
+  //   { y=0..jyseps1_1 } union { y=jyseps2_1+1..ny_inner-1 }
+  // and assign it so that every processor on the C_PFR has a valid
+  // comm_middle.  For processors already covered by the unbalanced loop
+  // (YPROC 0 and YPROC 6) this overwrites with a more physically correct
+  // communicator; for YPROC 5 it fills the gap that caused the crash.
+  if (mesh_topology == MeshTopology::SF) {
+    TRACE("Creating SF C_PFR comm_middle communicators");
+    for (int i = 0; i < NXPE; i++) {
+      // Lower C_PFR: y = 0..jyseps1_1  (bottom target, YPROC 0)
+      proc[0] = PROC_NUM(i, 0);
+      proc[1] = PROC_NUM(i, YPROC(jyseps1_1));
+      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+
+      // Upper C_PFR: y = jyseps2_1+1..ny_inner-1  (middle + east-target, YPROC 5..6)
+      proc[0] = PROC_NUM(i, YPROC(jyseps2_1 + 1));
+      proc[1] = PROC_NUM(i, YPROC(ny_inner - 1));
+      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+
+      MPI_Group_union(group_tmp1, group_tmp2, &group);
+      MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+      if (comm_tmp != MPI_COMM_NULL) {
+        comm_middle = comm_tmp;
+      }
+
+      if (group_tmp1 != MPI_GROUP_EMPTY) {
+        MPI_Group_free(&group_tmp1);
+      }
+      if (group_tmp2 != MPI_GROUP_EMPTY) {
+        MPI_Group_free(&group_tmp2);
+      }
+      MPI_Group_free(&group);
+    }
+  }
+
   MPI_Group_free(&group_world);
   // Now have communicators for all regions.
 }
@@ -2113,33 +2178,50 @@ bool BoutMesh::lastY() const { return PE_YIND == NYPE - 1; }
 
 bool BoutMesh::firstY(int xpos) const {
   int xglobal = getGlobalXIndex(xpos);
-  int rank;
 
+  MPI_Comm comm;
   if (xglobal < ixseps_inner) {
-    MPI_Comm_rank(comm_inner, &rank);
+    comm = comm_inner;
   } else if (xglobal < ixseps_outer) {
-    MPI_Comm_rank(comm_middle, &rank);
+    comm = comm_middle;
   } else {
-    MPI_Comm_rank(comm_outer, &rank);
+    comm = comm_outer;
   }
+
+  // Communicator may be MPI_COMM_NULL for some processors in SF topology
+  // where createCommunicators() does not yet assign all regions.
+  // Fall back to the global Y-position so we at least don't crash.
+  if (comm == MPI_COMM_NULL) {
+    return PE_YIND == 0;
+  }
+
+  int rank;
+  MPI_Comm_rank(comm, &rank);
   return rank == 0;
 }
 
 bool BoutMesh::lastY(int xpos) const {
   int xglobal = getGlobalXIndex(xpos);
-  int rank;
-  int size;
 
+  MPI_Comm comm;
   if (xglobal < ixseps_inner) {
-    MPI_Comm_size(comm_inner, &size);
-    MPI_Comm_rank(comm_inner, &rank);
+    comm = comm_inner;
   } else if (xglobal < ixseps_outer) {
-    MPI_Comm_size(comm_middle, &size);
-    MPI_Comm_rank(comm_middle, &rank);
+    comm = comm_middle;
   } else {
-    MPI_Comm_size(comm_outer, &size);
-    MPI_Comm_rank(comm_outer, &rank);
+    comm = comm_outer;
   }
+
+  // Communicator may be MPI_COMM_NULL for some processors in SF topology
+  // where createCommunicators() does not yet assign all regions.
+  // Fall back to the global Y-position so we at least don't crash.
+  if (comm == MPI_COMM_NULL) {
+    return PE_YIND == NYPE - 1;
+  }
+
+  int rank, size;
+  MPI_Comm_size(comm, &size);
+  MPI_Comm_rank(comm, &rank);
   return rank == size - 1;
 }
 
