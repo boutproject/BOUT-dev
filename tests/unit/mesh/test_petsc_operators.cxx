@@ -22,7 +22,7 @@ using PetscMappingTest = FakeMeshFixture;
 TEST_F(PetscMappingTest, create_region_empty) {
   const Field3D cell_number{-1.0}; // No cells >= 0
 
-  auto rgn = PetscMapping::create_region(cell_number);
+  auto rgn = PetscCellMapping::create_region(cell_number);
 
   ASSERT_EQ(0, rgn.size());
 }
@@ -35,7 +35,7 @@ TEST_F(PetscMappingTest, create_region) {
   cell_number(1, 1, 0) = 1; // In domain
   cell_number(0, 1, 1) = 2; // Xin boundary
 
-  auto rgn = PetscMapping::create_region(cell_number);
+  auto rgn = PetscCellMapping::create_region(cell_number);
   ASSERT_EQ(1, rgn.size());
 
   const Ind3D expected_ind = cell_number.indexAt(1, 1, 0);
@@ -50,7 +50,7 @@ TEST_F(PetscMappingTest, create_region_xin) {
   cell_number(1, 1, 0) = 1; // In domain
   cell_number(0, 1, 1) = 2; // Xin boundary
 
-  auto rgn = PetscMapping::create_region_xin(cell_number);
+  auto rgn = PetscCellMapping::create_region_xin(cell_number);
   ASSERT_EQ(1, rgn.size());
 
   const Ind3D expected_ind = cell_number.indexAt(0, 1, 1);
@@ -69,10 +69,12 @@ TEST_F(PetscMappingTest, mapping) {
   const Field3D forward_cell_number{-1.0};
   const Field3D backward_cell_number{-1.0};
 
-  const PetscMapping mapping(cell_number, forward_cell_number, backward_cell_number);
+  const PetscCellMapping mapping(cell_number, forward_cell_number, backward_cell_number,
+                                 2);
 
   // Two cells: one evolving and one in xin
   ASSERT_EQ(2, mapping.localSize());
+  ASSERT_EQ(2, mapping.globalSize());
 }
 
 using PetscOperatorTest = FakeMeshFixture;
@@ -87,15 +89,15 @@ TEST_F(PetscOperatorTest, identity) {
   cell_number(1, 2, 0) = 1;
   cell_number(1, 2, 1) = 2;
 
-  auto mapping = std::make_shared<const PetscMapping>(cell_number, forward_cell_number,
-                                                      backward_cell_number);
+  auto mapping = std::make_shared<const PetscCellMapping>(
+      cell_number, forward_cell_number, backward_cell_number, 3);
   ASSERT_EQ(3, mapping->localSize());
 
-  const auto rows = Array<int>::fromValues({0, 1, 2});
+  const auto rows = Array<int>::fromValues({0, 1, 2, 3});
   const auto cols = Array<int>::fromValues({0, 1, 2});
   const auto weights = Array<BoutReal>::fromValues({1.0, 1.0, 1.0});
 
-  const PetscOperator identity(mapping, rows, cols, weights);
+  const PetscCellOperator identity(mapping, mapping, rows, cols, weights);
 
   Field3D value{0.0};
   value(1, 1, 0) = 10;
@@ -105,7 +107,7 @@ TEST_F(PetscOperatorTest, identity) {
   value.yup() = -1.0;
   value.ydown() = -1.0;
 
-  const Field3D result = identity(value);
+  const Field3D result = identity(value, value);
 
   EXPECT_EQ(10, result(1, 1, 0));
   EXPECT_EQ(21, result(1, 2, 0));
@@ -125,15 +127,15 @@ TEST_F(PetscOperatorTest, identity_yupdown) {
   forward_cell_number(1, 2, 0) = 3;
   backward_cell_number(1, 1, 2) = 4;
 
-  auto mapping = std::make_shared<const PetscMapping>(cell_number, forward_cell_number,
-                                                      backward_cell_number);
+  auto mapping = std::make_shared<const PetscCellMapping>(
+      cell_number, forward_cell_number, backward_cell_number, 5);
   ASSERT_EQ(5, mapping->localSize());
 
-  const auto rows = Array<int>::fromValues({0, 1, 2});
+  const auto rows = Array<int>::fromValues({0, 1, 2, 3});
   const auto cols = Array<int>::fromValues({0, 1, 2});
   const auto weights = Array<BoutReal>::fromValues({1.0, 1.0, 1.0});
 
-  const PetscOperator identity(mapping, rows, cols, weights);
+  const PetscCellOperator identity(mapping, mapping, rows, cols, weights);
 
   Field3D value{0.0};
   value(1, 1, 0) = 10;
@@ -143,7 +145,7 @@ TEST_F(PetscOperatorTest, identity_yupdown) {
   value.yup() = -1.0;
   value.ydown() = -1.0;
 
-  const Field3D result = identity(value);
+  const Field3D result = identity(value, value);
 
   EXPECT_EQ(10, result(1, 1, 0));
   EXPECT_EQ(21, result(1, 2, 0));

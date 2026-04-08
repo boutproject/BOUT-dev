@@ -28,17 +28,28 @@ int main(int argc, char** argv) {
   dump["f"] = f;
   dump["dV"] = parallel.dV;
 
-  dump["grad_par_op"] = parallel.Grad_par(f);
+  // Test1 : (parallel.Restrict_minus * parallel.Inject_plus) is the identity in the interior (not X boundaries)
+
+  dump["grad_par_op"] = parallel.Grad_par(f, f);
+  Field3D forward{0.0};
+  BOUT_FOR(i, forward.getRegion("RGN_NOBNDRY")) { forward[i] = f.yup()[i.yp()]; }
+
+  dump["forward"] = forward;
+
+  dump["forward_op"] = (parallel.Restrict_minus * parallel.Forward)(f, f);
+
   dump["grad_par_yud"] = Grad_par(f);
 
-  dump["div_par_op"] = parallel.Div_par(f);
+  // Test2 : Sum of dV * Div_par over domain is zero
+
+  dump["div_par_op"] = parallel.Div_par(f, f);
 
   auto* coords = bout::globals::mesh->getCoordinates();
   bout::globals::mesh->communicate(coords->Bxy);
   coords->Bxy.applyParallelBoundary("parallel_neumann_o1");
   dump["div_par_yud"] = Div_par(f);
 
-  dump["div_par_grad_par_op"] = parallel.Div_par_Grad_par(f_neumann);
+  dump["div_par_grad_par_op"] = parallel.Div_par_Grad_par(f_neumann, f);
   dump["div_par_grad_par_yud"] = Div_par_K_Grad_par(1.0, f_neumann);
 
   bout::writeDefaultOutputFile(dump);

@@ -8,6 +8,8 @@
 #include "bout/boutexception.hxx"
 #include "bout/field3d.hxx"
 #include "bout/mesh.hxx"
+#include "bout/output.hxx"
+#include "bout/output_bout_types.hxx"
 #include "bout/petsc_interface.hxx"
 #include "bout/petsclib.hxx"
 #include "bout/region.hxx"
@@ -189,6 +191,7 @@ public:
     return PetscSpaceVector(this->mapping, std::move(out));
   }
 
+  /// Multiply by a scalar, returning a new PetscSpaceVector
   PetscSpaceVector operator*(BoutReal scalar) const {
     auto out = this->copy();
     BOUT_DO_PETSC(VecScale(out.raw(), scalar));
@@ -449,6 +452,9 @@ public:
     PetscForwardOperator Grad_plus;
     PetscForwardToCellOperator Div_minus;
     PetscBackwardToCellOperator Div_plus;
+
+    PetscBackwardOperator Backward;
+    PetscForwardOperator Forward;
 
     PetscBackwardOperator Inject_minus;
     PetscForwardOperator Inject_plus;

@@ -4,6 +4,9 @@ import numpy as np
 
 path = "data"
 
+forward_op = collect("forward_op", path=path)
+forward = collect("forward", path=path)
+
 grad_par_op = collect("grad_par_op", path=path)
 grad_par_yud = collect("grad_par_yud", path=path)
 
@@ -46,6 +49,12 @@ def plot_comparison(a, alabel, b, blabel):
 
     return fig
 
+
+fig = plot_comparison(
+    forward_op[2:-2, 2, :], "Operator", forward[2:-2, 2, :], "Yup/down"
+)
+fig.suptitle("Forward")
+fig.tight_layout()
 
 fig = plot_comparison(
     grad_par_op[2:-2, 2, :], "Operator", grad_par_yud[2:-2, 2, :], "Yup/down"

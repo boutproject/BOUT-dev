@@ -397,7 +397,8 @@ PetscOperators::Parallel PetscOperators::getParallel() const {
                   std::move(Grad_minus), std::move(Grad_plus), std::move(Div_minus),
                   std::move(Div_plus),
 
-                  std::move(Inject_minus), std::move(Inject_plus),
+                  std::move(Backward), std::move(Forward), std::move(Inject_minus),
+                  std::move(Inject_plus),
 
                   std::move(Interp_minus), std::move(Interp_plus),
 
