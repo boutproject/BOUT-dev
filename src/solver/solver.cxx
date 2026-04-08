@@ -1057,9 +1057,8 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
         }
 
         const auto ind = f.var->getMesh()->ind2Dto3D(i2d, jz);
-        //IMM_BNDRY_TODO: Only annoyance is cant check imm_bdry to ignore validity check.
-        if (!f.var->getMesh()->isValidIndex(ind)) {continue;}
-        (*f.var)[ind] = udata[p];
+        //IMM_BNDRY_TODO: Only annoyance is cant check imm_bdry to ignore validity check. Move IB to mesh instead of H3.
+        (*f.var)[ind] = f.var->getMesh()->isValidIndex(ind) ? udata[p] : 0;
         p++;
       }
     }
@@ -1086,8 +1085,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
           continue;
         }
         const auto ind = f.F_var->getMesh()->ind2Dto3D(i2d, jz);
-        if (!f.F_var->getMesh()->isValidIndex(ind)) {continue;}
-        (*f.F_var)[ind] = udata[p];
+        (*f.F_var)[ind] = f.F_var->getMesh()->isValidIndex(ind) ? udata[p] : 0;
         p++;
       }
     }
@@ -1149,8 +1147,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
         }
 
         const auto ind = f.var->getMesh()->ind2Dto3D(i2d, jz);
-        if (!f.var->getMesh()->isValidIndex(ind)) {continue;}
-        udata[p] = (*f.var)[ind];
+        udata[p] = f.var->getMesh()->isValidIndex(ind) ? (*f.var)[ind] : 0;
         p++;
       }
     }
@@ -1177,8 +1174,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
         }
 
         const auto ind = f.F_var->getMesh()->ind2Dto3D(i2d, jz);
-        if (!f.F_var->getMesh()->isValidIndex(ind)) {continue;}
-        udata[p] = (*f.F_var)[ind];
+        udata[p] = f.F_var->getMesh()->isValidIndex(ind) ? (*f.F_var)[ind] : 0;
         p++;
       }
     }
