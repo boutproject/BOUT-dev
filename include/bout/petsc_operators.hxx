@@ -107,14 +107,6 @@ public:
   /// PETSc column indices via a post-multiplication.
   Mat getPetscToStored() const { return mat_petsc_to_stored; }
 
-  /// Dummy implementation
-  IS makeEvolvingIS() const {
-    IS is;
-    const int idx[1] = {0};
-    ISCreateGeneral(MPI_COMM_WORLD, 1, &idx[0], PETSC_USE_POINTER, &is);
-    return is;
-  }
-
 protected:
   /// @brief BOUT++ PETSc library handle; ensures PETSc is initialised.
   PetscLib lib;
@@ -281,6 +273,22 @@ public:
       ++row;
     }
   }
+
+  /// @brief Create a PETSc IS containing the global PETSc indices of all
+  ///        locally owned evolving interior cells, in the order that
+  ///        mapOwnedInteriorCells visits them.
+  ///
+  /// The returned IS selects the evolving subset of the full cell space C,
+  /// excluding inner/outer X-boundary cells and forward/backward parallel
+  /// boundary virtual cells.  It is the correct IS to pass to
+  /// MatCreateSubMatrix when restricting a PetscCellOperator to the degrees
+  /// of freedom that the SNES solver actually integrates.
+  ///
+  /// The caller owns the returned IS and must call ISDestroy when finished.
+  ///
+  /// @returns A PETSc IS of local size equal to the number of locally owned
+  ///          evolving cells, holding global PETSc row indices.
+  IS makeEvolvingIS() const;
 
 private:
   Field3D cell_number; ///< Stored cell numbers for interior/X-boundary cells.

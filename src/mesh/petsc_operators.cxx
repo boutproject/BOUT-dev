@@ -127,6 +127,21 @@ PetscCellMapping::PetscCellMapping(const Field3D& cell_number,
                    local_indices);
 }
 
+IS PetscCellMapping::makeEvolvingIS() const {
+  // Collect global PETSc indices in mapOwnedInteriorCells order.
+  // Reserve the known count up front to avoid reallocation.
+  std::vector<PetscInt> indices;
+  indices.reserve(static_cast<std::size_t>(evolving_region.size()));
+
+  mapOwnedInteriorCells(
+      [&](PetscInt row, const Ind3D& /*i*/, int /*stored*/) { indices.push_back(row); });
+
+  IS is;
+  BOUT_DO_PETSC(ISCreateGeneral(BoutComm::get(), static_cast<PetscInt>(indices.size()),
+                                indices.data(), PETSC_COPY_VALUES, &is));
+  return is;
+}
+
 PetscLegMapping::PetscLegMapping(int total_legs, std::vector<int> local_leg_indices) {
   std::sort(local_leg_indices.begin(), local_leg_indices.end());
   local_leg_indices.erase(std::unique(local_leg_indices.begin(), local_leg_indices.end()),
