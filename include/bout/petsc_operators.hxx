@@ -8,7 +8,6 @@
 #include "bout/boutexception.hxx"
 #include "bout/field3d.hxx"
 #include "bout/mesh.hxx"
-#include "bout/output.hxx"
 #include "bout/output_bout_types.hxx"
 #include "bout/petsc_interface.hxx"
 #include "bout/petsclib.hxx"
@@ -865,8 +864,8 @@ public:
   ///
   /// Naming convention: the subscript on Grad/Div/Restrict refers to which side of
   /// the cell face the operator acts on, not the leg space it lives in.
-  ///   - @c Grad_plus / @c Div_plus: forward-side half-step operators (in L-).
-  ///   - @c Grad_minus / @c Div_minus: backward-side half-step operators (in L+).
+  ///   - @c Grad_plus / @c Div_plus: forward-side half-step operators (C to L+).
+  ///   - @c Grad_minus / @c Div_minus: backward-side half-step operators (C to L-).
   ///   - @c Restrict_minus = I+^T * W+: weighted restriction from L+ back to C,
   ///     paired with the minus-side gradient.
   ///   - @c Restrict_plus  = I-^T * W-: weighted restriction from L- back to C,
@@ -914,7 +913,7 @@ public:
     ///
     /// Evaluates the half-step fluxes separately on each side, multiplies by the
     /// interpolated diffusion coefficient K, and averages the two divergence
-    /// contributions. This is the primary user-facing SOM operator.
+    /// contributions.
     ///
     /// @param K Diffusion coefficient field; must have parallel slices allocated.
     /// @param f Field to differentiate; must have parallel slices allocated.
