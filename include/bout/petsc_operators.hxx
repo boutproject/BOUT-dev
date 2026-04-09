@@ -107,6 +107,14 @@ public:
   /// PETSc column indices via a post-multiplication.
   Mat getPetscToStored() const { return mat_petsc_to_stored; }
 
+  /// Dummy implementation
+  IS makeEvolvingIS() const {
+    IS is;
+    const int idx[1] = {0};
+    ISCreateGeneral(MPI_COMM_WORLD, 1, &idx[0], PETSC_USE_POINTER, &is);
+    return is;
+  }
+
 protected:
   /// @brief BOUT++ PETSc library handle; ensures PETSc is initialised.
   PetscLib lib;
