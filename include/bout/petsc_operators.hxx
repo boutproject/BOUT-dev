@@ -275,6 +275,8 @@ public:
   PetscOperator(PetscOperator&&) noexcept = default;
   PetscOperator& operator=(PetscOperator&&) noexcept = default;
 
+  /// Apply operator to a vector in the input space,
+  /// returning a vector in the output space.
   PetscSpaceVector<OutSpaceTag>
   operator()(const PetscSpaceVector<InSpaceTag>& rhs) const {
     ASSERT0(in_mapping == rhs.getMapping());
@@ -283,27 +285,26 @@ public:
     return result;
   }
 
-  template <typename T = InSpaceTag,
-            typename = std::enable_if_t<std::is_same_v<T, CellSpaceTag>>>
+  /// Apply operator to a Field3D, returning a vector.
+  /// Enable if input is Cell Space and output is not.
+  template <typename T = InSpaceTag, typename U = OutSpaceTag,
+            typename = std::enable_if_t<std::is_same_v<T, CellSpaceTag>
+                                        && !std::is_same_v<U, CellSpaceTag>>>
   PetscSpaceVector<OutSpaceTag> operator()(const Field3D& rhs) const {
     auto in = makePetscCellVector(
         std::static_pointer_cast<const PetscCellMapping>(in_mapping), rhs);
     return (*this)(in);
   }
 
-  template <typename T = OutSpaceTag,
-            typename = std::enable_if_t<std::is_same_v<T, CellSpaceTag>>>
-  Field3D applyToField(const PetscSpaceVector<InSpaceTag>& rhs,
-                       const Field3D& prototype) const {
-    auto out = (*this)(rhs);
-    return toField3D(out, prototype);
-  }
-
+  /// Apply operator to a Field3D, returning a Field3D.
+  /// Enable if both input and output mapppings are in Cell Space
   template <typename T = InSpaceTag, typename U = OutSpaceTag,
             typename = std::enable_if_t<std::is_same_v<T, CellSpaceTag>
                                         && std::is_same_v<U, CellSpaceTag>>>
-  Field3D operator()(const Field3D& rhs, const Field3D& prototype) const {
-    return applyToField((*this)(rhs), prototype);
+  Field3D operator()(const Field3D& rhs) const {
+    auto in = makePetscCellVector(
+        std::static_pointer_cast<const PetscCellMapping>(in_mapping), rhs);
+    return toField3D((*this)(in), rhs);
   }
 
   PetscOperator<InSpaceTag, OutSpaceTag> transpose() const {

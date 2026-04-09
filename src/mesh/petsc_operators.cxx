@@ -52,7 +52,7 @@ void PetscIndexMapping::buildPermutation(PetscInt nlocal, PetscInt nglobal,
   // either the "diagonal" or "off-diagonal" block.
   BOUT_DO_PETSC(MatMPIAIJSetPreallocation(mat_stored_to_petsc, 1, nullptr, 1, nullptr));
 
-  // Get the range of rows owned by this processor
+  // Get the range of global rows owned by this processor
   BOUT_DO_PETSC(MatGetOwnershipRange(mat_stored_to_petsc, &row_start, &row_end));
   ASSERT1(row_end - row_start == nlocal);
 
