@@ -192,24 +192,42 @@ public:
   }
 
   /// Multiply by a scalar, returning a new PetscSpaceVector
-  PetscSpaceVector operator*(BoutReal scalar) const {
+  PetscSpaceVector operator*(BoutReal scalar) const& {
     auto out = this->copy();
     BOUT_DO_PETSC(VecScale(out.raw(), scalar));
     return out;
   }
 
-  PetscSpaceVector operator+(const PetscSpaceVector& rhs) const {
+  /// Multiply by a scalar, modifying a temporary in-place
+  PetscSpaceVector operator*(BoutReal scalar) && {
+    BOUT_DO_PETSC(VecScale(this->raw(), scalar));
+    return std::move(*this);
+  }
+
+  PetscSpaceVector operator+(const PetscSpaceVector& rhs) const& {
     ASSERT0(mapping == rhs.mapping);
     auto out = this->copy();
     BOUT_DO_PETSC(VecAXPY(out.raw(), 1.0, rhs.raw()));
     return out;
   }
 
-  PetscSpaceVector operator-(const PetscSpaceVector& rhs) const {
+  PetscSpaceVector operator+(const PetscSpaceVector& rhs) && {
+    ASSERT0(mapping == rhs.mapping);
+    BOUT_DO_PETSC(VecAXPY(this->raw(), 1.0, rhs.raw()));
+    return std::move(*this);
+  }
+
+  PetscSpaceVector operator-(const PetscSpaceVector& rhs) const& {
     ASSERT0(mapping == rhs.mapping);
     auto out = this->copy();
     BOUT_DO_PETSC(VecAXPY(out.raw(), -1.0, rhs.raw()));
     return out;
+  }
+
+  PetscSpaceVector operator-(const PetscSpaceVector& rhs) && {
+    ASSERT0(mapping == rhs.mapping);
+    BOUT_DO_PETSC(VecAXPY(this->raw(), -1.0, rhs.raw()));
+    return std::move(*this);
   }
 
   static PetscSpaceVector pointwiseMultiply(const PetscSpaceVector& lhs,
@@ -355,6 +373,7 @@ public:
     BOUT_DO_PETSC(MatSetType(*out, MATMPIAIJ));
     BOUT_DO_PETSC(MatSetSizes(*out, mapping->localSize(), mapping->localSize(),
                               mapping->globalSize(), mapping->globalSize()));
+    // Note: Off-diagonal blocks are empty because this is a square matrix
     BOUT_DO_PETSC(MatMPIAIJSetPreallocation(*out, 1, nullptr, 0, nullptr));
     BOUT_DO_PETSC(MatDiagonalSet(*out, diag.raw(), INSERT_VALUES));
     BOUT_DO_PETSC(MatAssemblyBegin(*out, MAT_FINAL_ASSEMBLY));

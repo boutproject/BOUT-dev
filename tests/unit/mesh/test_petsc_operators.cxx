@@ -107,7 +107,7 @@ TEST_F(PetscOperatorTest, identity) {
   value.yup() = -1.0;
   value.ydown() = -1.0;
 
-  const Field3D result = identity(value, value);
+  const Field3D result = identity(value);
 
   EXPECT_EQ(10, result(1, 1, 0));
   EXPECT_EQ(21, result(1, 2, 0));
@@ -145,7 +145,7 @@ TEST_F(PetscOperatorTest, identity_yupdown) {
   value.yup() = -1.0;
   value.ydown() = -1.0;
 
-  const Field3D result = identity(value, value);
+  const Field3D result = identity(value);
 
   EXPECT_EQ(10, result(1, 1, 0));
   EXPECT_EQ(21, result(1, 2, 0));
