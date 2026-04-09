@@ -1187,12 +1187,12 @@ void BoutMesh::createCommunicators() {
             }
           };
 
-          // PF_W Y ranges: bottom target + middle segment + top target
+          // PF_W Y ranges: West target + Central segment + South target in order.
           // Use jyseps2_1+1 (not jyseps2_1) so the last core cell is excluded.
           // Use jyseps2_2+1 (not jyseps2_2) so the last E_PFR cell is excluded.
-          add_pf_range(0, jyseps1_1);
-          add_pf_range(jyseps2_1 + 1, jyseps1_2);
-          add_pf_range(jyseps2_2 + 1, ny - 1);
+          add_pf_range(0, jyseps1_1); //West target
+          add_pf_range(jyseps2_1 + 1, jyseps1_2); //Central segment
+          add_pf_range(jyseps2_2 + 1, ny - 1); //South target
 
           MPI_Comm_create(BoutComm::get(), pf_group, &comm_tmp);
           if (comm_tmp != MPI_COMM_NULL) {
@@ -1235,19 +1235,37 @@ void BoutMesh::createCommunicators() {
             }
           };
 
-          // PF_E Y ranges: west half + east half of the E_PFR closed loop.
-          // Use jyseps1_2+1 (not jyseps1_2) so the last W_PFR cell is excluded.
-          add_pf_range(jyseps1_2 + 1, ny_inner - 1);
-          add_pf_range(ny_inner + 1, jyseps2_2);
+          // PF_E Y ranges: the two E_PFR segments.
+          // IMPORTANT: add the H1 segment (ny_inner+1..jyseps2_2) FIRST so it
+          // becomes rank 0 in comm_pf_e → firstY=true.  Then add the G1 segment
+          // (jyseps1_2+1..ny_inner-1) so it becomes rank 1 → lastY=true.
+          //
+          // Region naming (INGRID convention):
+          //   G1: y = jyseps1_2+1 .. ny_inner-1  (YPROC 6, lower Y-index)
+          //       Physical target at UPPER face (y=ny_inner-1); branch cut at lower face.
+          //   H1: y = ny_inner+1  .. jyseps2_2   (YPROC 7, higher Y-index)
+          //       Physical target at LOWER face (y=ny_inner);   branch cut at upper face.
+          //   (I1 is the third segment of the W_PFR, not part of E_PFR.)
+          //
+          // This ordering is the INVERSE of the W_PFR ordering because the E_PFR
+          // topology is inverted: G1 (lower Y-index) has its target at the TOP,
+          // while H1 (higher Y-index) has its target at the BOTTOM.  The branch
+          // cut connects G1 lower face ↔ H1 upper face.
+          //
+          // With rank 0 = H1 (firstY=true → ys=ystart, no lower extension) and
+          // rank 1 = G1 (lastY=true → ye=yend, no upper extension), FV parallel
+          // operators stop at the physical target face instead of extending into
+          // guard cells and double-counting the sheath flux.
+          add_pf_range(ny_inner + 1, jyseps2_2);       // H1 first  → rank 0 → firstY=true
+          add_pf_range(jyseps1_2 + 1, ny_inner - 1);  // G1 second → rank 1 → lastY=true
 
           MPI_Comm_create(BoutComm::get(), pf_group, &comm_tmp);
           if (comm_tmp != MPI_COMM_NULL) {
             comm_pf_e = comm_tmp;
-            // Assign E_PFR processors to comm_inner only if not already assigned
-            // by comm_pf_w (W_PFR and E_PFR are disjoint after the off-by-one fix).
-            if (comm_inner == MPI_COMM_NULL) {
-              comm_inner = comm_pf_e;
-            }
+            // Assign to comm_inner so firstY/lastY return the correct values:
+            //   rank 0 = H1 → firstY=true at south target (lower face)
+            //   rank 1 = G1 → lastY=true  at east  target (upper face)
+            comm_inner = comm_pf_e;
           }
 
           if (pf_group != MPI_GROUP_EMPTY) {
@@ -1458,14 +1476,57 @@ void BoutMesh::createCommunicators() {
   if (mesh_topology == MeshTopology::SF) {
     TRACE("Creating SF C_PFR comm_middle communicators");
     for (int i = 0; i < NXPE; i++) {
-      // Lower C_PFR: y = 0..jyseps1_1  (bottom target, YPROC 0)
+      // Lower C_PFR: y = 0..jyseps1_1  (West target, YPROC 0)
       proc[0] = PROC_NUM(i, 0);
       proc[1] = PROC_NUM(i, YPROC(jyseps1_1));
       MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
 
-      // Upper C_PFR: y = jyseps2_1+1..ny_inner-1  (middle + east-target, YPROC 5..6)
+      // Upper C_PFR: y = jyseps2_1+1..ny_inner-1  (central middle region + east-target, YPROC 5..6)
       proc[0] = PROC_NUM(i, YPROC(jyseps2_1 + 1));
       proc[1] = PROC_NUM(i, YPROC(ny_inner - 1));
+      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+
+      MPI_Group_union(group_tmp1, group_tmp2, &group);
+      MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+      if (comm_tmp != MPI_COMM_NULL) {
+        comm_middle = comm_tmp;
+      }
+
+      if (group_tmp1 != MPI_GROUP_EMPTY) {
+        MPI_Group_free(&group_tmp1);
+      }
+      if (group_tmp2 != MPI_GROUP_EMPTY) {
+        MPI_Group_free(&group_tmp2);
+      }
+      MPI_Group_free(&group);
+    }
+  }
+
+  // For SF topology, create a dedicated "South PFR" comm_middle for the
+  // south strip (H1 = YPROC covering ny_inner..jyseps2_2, South East target
+  // at its lower face; I1 = YPROC covering jyseps2_2+1..ny-1, South West
+  // target at its upper face).
+  //
+  // The "unbalanced lower" communicator above put both H1 and I1 in the
+  // middle ranks of a large group (ranks 6 and 7 out of 8), so neither gets
+  // firstY=true nor lastY=true — exactly the double-counting problem that
+  // was fixed for G1 by the C_PFR section above.  This section overwrites
+  // comm_middle for H1 and I1 with a two-processor communicator where:
+  //   rank 0 = H1  →  firstY=true  (ys=ystart, no lower extension at SE target)
+  //   rank 1 = I1  →  lastY=true   (ye=yend,   no upper extension at SW target) 
+  if (mesh_topology == MeshTopology::SF) {
+    TRACE("Creating SF S_PFR comm_middle communicators");
+    for (int i = 0; i < NXPE; i++) {
+      // H1: y = ny_inner .. jyseps2_2  (SE target at lower face)
+      proc[0] = PROC_NUM(i, YPROC(ny_inner));
+      proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
+      proc[2] = NXPE;
+      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+
+      // I1: y = jyseps2_2+1 .. ny-1  (SW target at upper face)
+      proc[0] = PROC_NUM(i, YPROC(jyseps2_2 + 1));
+      proc[1] = PROC_NUM(i, NYPE - 1);
+      proc[2] = NXPE;
       MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
 
       MPI_Group_union(group_tmp1, group_tmp2, &group);
@@ -1502,16 +1563,35 @@ void BoutMesh::createXBoundaries() {
   const int yg = getGlobalYIndexNoBoundaries(MYG);
 
   if (PE_XIND == 0) {
-    // Inner either core or PF
+    // Inner x face: either core or PF boundary.
+    //
+    // For CDN/UDN the y-range (jyseps1_2, jyseps2_2] is the outer core leg,
+    // so it gets a "core" boundary.  For SF topology that same y-range is the
+    // East PFR (G1 = jyseps1_2+1..ny_inner-1, H1 = ny_inner..jyseps2_2),
+    // which lies south of the inner separatrix and must get a "pf" boundary
+    // just like the West PFR.
+    if ((mesh_topology == MeshTopology::CDN) or (mesh_topology == MeshTopology::UDN)
+        or (mesh_topology == MeshTopology::CFL)){
+      // CDN/UDN have two core legs; CFL is all core (no X-points).
+      // All three need both y-ranges checked.
+      const bool in_core = ((yg > jyseps1_1) and (yg <= jyseps2_1))
+          or ((yg > jyseps1_2) and (yg <= jyseps2_2));
 
-    if (((yg > jyseps1_1) and (yg <= jyseps2_1))
-        or ((yg > jyseps1_2) and (yg <= jyseps2_2))) { 
-      //Unchanged for new SF topology
-      // Core
-      boundary.push_back(new BoundaryRegionXIn("core", ystart, yend, this));
-    } else {
-      // PF region
-      boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend, this));
+      if (in_core) {
+        boundary.push_back(new BoundaryRegionXIn("core", ystart, yend, this));
+      } else {
+        boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend, this));
+      }
+    }
+    else{ // SN and SF have one core region at (jyseps1_1, jyseps2_1].
+
+      const bool in_core = ((yg > jyseps1_1) and (yg <= jyseps2_1));
+
+      if (in_core) {
+        boundary.push_back(new BoundaryRegionXIn("core", ystart, yend, this));
+      } else {
+        boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend, this));
+      }
     }
   }
 
@@ -2188,10 +2268,19 @@ bool BoutMesh::firstY(int xpos) const {
     comm = comm_outer;
   }
 
-  // Communicator may be MPI_COMM_NULL for some processors in SF topology
-  // where createCommunicators() does not yet assign all regions.
-  // Fall back to the global Y-position so we at least don't crash.
+  // Communicator may be MPI_COMM_NULL for some processors in SF topology.
+  // E_PFR processors (G1/H1) now have comm_inner = comm_pf_e so this
+  // fallback should not be reached in normal operation.  As a defence,
+  // check whether a physical target exists at the lower Y face
+  // (DDATA_INDEST < 0 means no processor below); if so return true so that
+  // FV operators do not extend their loop into the lower guard cells and
+  // double-count the sheath flux.
   if (comm == MPI_COMM_NULL) {
+//    const bool lower_target =
+//        (xpos < DDATA_XSPLIT) ? (DDATA_INDEST < 0) : (DDATA_OUTDEST < 0);
+//    if (lower_target) {
+//      return true;
+//    }
     return PE_YIND == 0;
   }
 
@@ -2212,10 +2301,19 @@ bool BoutMesh::lastY(int xpos) const {
     comm = comm_outer;
   }
 
-  // Communicator may be MPI_COMM_NULL for some processors in SF topology
-  // where createCommunicators() does not yet assign all regions.
-  // Fall back to the global Y-position so we at least don't crash.
+  // Communicator may be MPI_COMM_NULL for some processors in SF topology.
+  // E_PFR processors (G1/H1) now have comm_inner = comm_pf_e so this
+  // fallback should not be reached in normal operation.  As a defence,
+  // check whether a physical target exists at the upper Y face
+  // (UDATA_INDEST < 0 means no processor above); if so return true so that
+  // FV operators do not extend their loop into the upper guard cells and
+  // double-count the sheath flux.
   if (comm == MPI_COMM_NULL) {
+//   const bool upper_target =
+//        (xpos < UDATA_XSPLIT) ? (UDATA_INDEST < 0) : (UDATA_OUTDEST < 0);
+//    if (upper_target) {
+//      return true;
+//    }
     return PE_YIND == NYPE - 1;
   }
 
