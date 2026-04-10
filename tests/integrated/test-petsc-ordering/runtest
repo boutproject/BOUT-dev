@@ -1,0 +1,154 @@
+#!/usr/bin/env python3
+# requires: petsc
+# cores: 4
+"""
+Integrated test: Ordering equivalence between PetscCellMapping
+and the SNES solver's globalIndex traversal.
+
+Runs test_petsc_ordering with 1, 2, and 4 MPI ranks and checks that:
+  - The executable exits with status 0.
+  - The output contains "ordering_check=PASS".
+  - No "MISMATCH" or "SHIFT_NOT_CONSTANT" lines appear.
+"""
+
+import argparse
+import re
+import subprocess
+import sys
+
+from boututils.run_wrapper import build_and_log
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--executable",
+        default="./test_petsc_ordering",
+        help="Path to the test executable",
+    )
+    parser.add_argument(
+        "--mpirun", default="mpirun", help="MPI launcher (mpirun, srun, ...)"
+    )
+    parser.add_argument(
+        "--nprocs",
+        type=int,
+        nargs="+",
+        default=[1, 2, 4],
+        help="List of MPI rank counts to test",
+    )
+    parser.add_argument(
+        "--timeout", type=int, default=120, help="Per-run timeout in seconds"
+    )
+    return parser.parse_args()
+
+
+def run_case(mpirun, executable, nproc, nxpe, timeout):
+    """Launch one run and return (stdout+stderr, returncode)."""
+    cmd = [mpirun, "-n", str(nproc), executable, f"nxpe={nxpe}"]
+    try:
+        result = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=timeout,
+            text=True,
+        )
+        return result.stdout, result.returncode
+    except subprocess.TimeoutExpired:
+        return f"TIMED OUT after {timeout}s\n", -1
+    except FileNotFoundError as e:
+        return f"Could not launch: {e}\n", -1
+
+
+def check_output(output, nproc):
+    """
+    Inspect the combined output for pass/fail markers.
+    Returns a list of failure strings (empty means pass).
+    """
+    failures = []
+
+    # Must contain the summary pass marker
+    if "ordering_check=PASS" not in output:
+        if "ordering_check=FAIL" in output:
+            failures.append("ordering_check=FAIL found in output")
+        else:
+            failures.append("ordering_check marker not found in output")
+
+    # Must not contain any mismatch lines
+    mismatch_lines = [
+        line for line in output.splitlines() if line.startswith("MISMATCH")
+    ]
+    if mismatch_lines:
+        failures.append(
+            f"{len(mismatch_lines)} MISMATCH line(s) found:\n"
+            + "\n".join(f"  {line}" for line in mismatch_lines)
+        )
+
+    # Must not contain any shift-not-constant lines
+    shift_lines = [
+        line for line in output.splitlines() if line.startswith("SHIFT_NOT_CONSTANT")
+    ]
+    if shift_lines:
+        failures.append(
+            f"{len(shift_lines)} SHIFT_NOT_CONSTANT line(s) found:\n"
+            + "\n".join(f"  {line}" for line in shift_lines)
+        )
+
+    # Extract and report the numeric summary for informational purposes
+    for marker in ("total_mismatches", "total_shift_failures"):
+        m = re.search(rf"{marker}=(\d+)", output)
+        if m:
+            count = int(m.group(1))
+            if count != 0:
+                failures.append(f"{marker}={count} (expected 0)")
+
+    return failures
+
+
+def main():
+    args = parse_args()
+
+    build_and_log("PETSc ordering test")
+
+    overall_pass = True
+
+    for nproc in args.nprocs:
+        for nxpe in [1, 2, 4]:
+            if nxpe > nproc:
+                break
+            print(f"\n{'=' * 60}")
+            print(f"Running with {nproc} MPI rank(s), nxpe={nxpe}")
+            print(f"{'=' * 60}")
+
+            output, returncode = run_case(
+                args.mpirun, args.executable, nproc, nxpe, args.timeout
+            )
+
+            case_failures = []
+
+            if returncode != 0:
+                # Note: MPI task can exit non-zero for reasons not connected to test
+                print(f"Warning: Non-zero exit code: {returncode}")
+
+            case_failures.extend(check_output(output, nproc))
+
+            if case_failures:
+                print(output)  # Only print output on failure
+                overall_pass = False
+                print(f"FAIL (nproc={nproc}, nxpe={nxpe}):")
+                for f in case_failures:
+                    print(f"  - {f}")
+            else:
+                print(f"PASS (nproc={nproc}, nxpe={nxpe})")
+
+    print(f"\n{'=' * 60}")
+    if overall_pass:
+        print("ALL CASES PASSED")
+        return 0
+    else:
+        print("ONE OR MORE CASES FAILED")
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

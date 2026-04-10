@@ -1,0 +1,14 @@
+# Input file for test_petsc_ordering integrated test.
+# Uses a small grid large enough to exercise MPI decomposition on 4 ranks
+# (nx=10 gives 2 interior x-points per rank when NXPE=4; ny and nz similarly).
+
+[mesh]
+nx = 10     # 8 interior + 2 guard (mxg=1 each side)
+ny = 8
+nz = 4
+
+ixseps1 = nx
+ixseps2 = nx
+
+[output]
+enabled = false   # Suppress data file output; we only need stdout
