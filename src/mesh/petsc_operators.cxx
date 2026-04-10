@@ -142,6 +142,14 @@ IS PetscCellMapping::makeEvolvingIS() const {
   return is;
 }
 
+// Dummy implementation. Note: Result is owned by the caller.
+Mat PetscCellMapping::extractEvolvingSubmatrix(
+    const PetscOperator<CellSpaceTag, CellSpaceTag>& op) const {
+  Mat new_mat;
+  BOUT_DO_PETSC(MatDuplicate(op.raw(), MAT_COPY_VALUES, &new_mat));
+  return new_mat;
+}
+
 PetscLegMapping::PetscLegMapping(int total_legs, std::vector<int> local_leg_indices) {
   std::sort(local_leg_indices.begin(), local_leg_indices.end());
   local_leg_indices.erase(std::unique(local_leg_indices.begin(), local_leg_indices.end()),

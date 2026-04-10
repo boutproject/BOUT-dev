@@ -44,6 +44,10 @@ struct ForwardLegSpaceTag {};
 /// leg space. See @ref ForwardLegSpaceTag and @ref CellSpaceTag.
 struct BackwardLegSpaceTag {};
 
+// Forward declare
+template <typename OutSpaceTag, typename InSpaceTag>
+class PetscOperator;
+
 /// @brief Bidirectional index mapping between mesh-file stored numbering and PETSc
 ///        row ownership.
 ///
@@ -289,6 +293,21 @@ public:
   /// @returns A PETSc IS of local size equal to the number of locally owned
   ///          evolving cells, holding global PETSc row indices.
   IS makeEvolvingIS() const;
+
+  /// @brief Extract the evolving-cell submatrix from a cell-to-cell operator.
+  ///
+  /// Restricts @p op to the rows and columns that correspond to evolving
+  /// interior cells, discarding any rows or columns that belong to inner/outer
+  /// X-boundary cells or forward/backward parallel boundary virtual cells.
+  ///
+  /// The returned Mat is an independent copy (MAT_INITIAL_MATRIX): subsequent
+  /// modifications to @p op do not affect it.  The caller owns the returned
+  /// Mat and must call MatDestroy when finished.
+  ///
+  /// @param op A cell-to-cell operator whose row and column space is the full
+  ///           cell space C managed by this mapping.
+  /// @returns  A square Mat of global size n_evolving × n_evolving.
+  Mat extractEvolvingSubmatrix(const PetscOperator<CellSpaceTag, CellSpaceTag>& op) const;
 
 private:
   Field3D cell_number; ///< Stored cell numbers for interior/X-boundary cells.

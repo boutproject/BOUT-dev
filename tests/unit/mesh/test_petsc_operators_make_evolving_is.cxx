@@ -4,9 +4,6 @@
 
 #include "gtest/gtest.h"
 
-#include "bout/array.hxx"
-#include "bout/bout_types.hxx"
-#include "bout/output.hxx"
 #include "bout/output_bout_types.hxx"
 #include "bout/petsc_operators.hxx"
 #include "bout/region.hxx"
