@@ -6,6 +6,7 @@
 
 #include "bout/array.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/globals.hxx"
 #include "bout/petsc_operators.hxx"
 #include "bout/region.hxx"
 

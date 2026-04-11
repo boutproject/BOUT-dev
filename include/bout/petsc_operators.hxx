@@ -1,3 +1,8 @@
+#pragma once
+
+#ifndef BOUT_PETSC_OPERATORS_H
+#define BOUT_PETSC_OPERATORS_H
+
 #include "bout/build_defines.hxx"
 
 #if BOUT_HAS_PETSC
@@ -1055,4 +1060,6 @@ private:
 
 #warning PETSc not available. No PetscOperators.
 
-#endif
+#endif // BOUT_HAS_PETSC
+
+#endif //BOUT_PETSC_OPERATORS_H
