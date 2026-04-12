@@ -27,6 +27,10 @@
 /// @param in_var  Column variable index in [0, nvars).
 void addOperatorSparsity(Mat Jfd, Mat sub, int out_var, int in_var);
 
+/// @param Jfd     The Jacobian matrix to populate. Must be preallocated.
+/// @param sub     Evolving-cell submatrix providing the nonzero pattern.
+void addOperatorSparsity(Mat Jfd, Mat sub);
+
 #endif // BOUT_HAS_PETSC
 
 #endif // BOUT_PETSC_JACOBIAN_H

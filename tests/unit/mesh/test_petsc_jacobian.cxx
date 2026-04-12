@@ -29,6 +29,7 @@
 #include <petscmat.h>
 
 #include <algorithm>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -444,6 +445,194 @@ TEST_F(PetscAddSparsityTest, first_and_last_variable_blocks_correct) {
   }
 
   MatDestroy(&sub);
+}
+
+// ============================================================================
+// all_pairs_single_variable
+//
+// With nvars=1 the all-pairs overload is identical to addOperatorSparsity
+// with out_var=0, in_var=0.
+// ============================================================================
+TEST_F(PetscAddSparsityTest, all_pairs_single_variable) {
+  const PetscInt n_sub = 3;
+  const PetscInt nlocal_sub = n_sub;
+  const int nvars = 1;
+
+  const std::vector<std::pair<PetscInt, PetscInt>> sub_entries = {{0, 0}, {1, 1}, {2, 2}};
+  Mat sub = buildPatternMat(n_sub, nlocal_sub, 0, sub_entries);
+
+  auto [jfd, jfd_nlocal, jfd_rstart] = buildEmptyJfd(n_sub, nlocal_sub, 0, nvars);
+
+  addOperatorSparsity(jfd, sub);
+  MatAssemblyBegin(jfd, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(jfd, MAT_FINAL_ASSEMBLY);
+
+  const auto nzs = matNonzeroPositions(jfd);
+  ASSERT_EQ(sub_entries.size(), nzs.size());
+
+  MatDestroy(&sub);
+  MatDestroy(&jfd);
+}
+
+// ============================================================================
+// all_pairs_fills_every_variable_block
+//
+// With nvars=3 every one of the 9 variable blocks must contain exactly the
+// same pattern as sub.  The total nonzero count must equal
+// nvars * nvars * nnz(sub).
+// ============================================================================
+TEST_F(PetscAddSparsityTest, all_pairs_fills_every_variable_block) {
+  const PetscInt n_sub = 3;
+  const PetscInt nlocal_sub = n_sub;
+  const int nvars = 3;
+
+  const std::vector<std::pair<PetscInt, PetscInt>> sub_entries = {{0, 0}, {1, 1}, {2, 2}};
+  Mat sub = buildPatternMat(n_sub, nlocal_sub, 0, sub_entries);
+
+  auto [jfd, jfd_nlocal, jfd_rstart] = buildEmptyJfd(n_sub, nlocal_sub, 0, nvars);
+
+  addOperatorSparsity(jfd, sub);
+  MatAssemblyBegin(jfd, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(jfd, MAT_FINAL_ASSEMBLY);
+
+  const auto nzs = matNonzeroPositions(jfd);
+  const std::size_t expected_total =
+      static_cast<std::size_t>(nvars * nvars) * sub_entries.size();
+  ASSERT_EQ(expected_total, nzs.size());
+
+  // Every (out_var, in_var) pair must appear exactly once per sub entry.
+  // Count how many Jfd entries land in each variable block.
+  std::vector<std::vector<int>> block_counts(nvars, std::vector<int>(nvars, 0));
+  for (const auto& [r, c] : nzs) {
+    block_counts[r % nvars][c % nvars]++;
+  }
+  for (int ov = 0; ov < nvars; ++ov) {
+    for (int iv = 0; iv < nvars; ++iv) {
+      EXPECT_EQ(static_cast<int>(sub_entries.size()), block_counts[ov][iv])
+          << "Block (" << ov << "," << iv << ") has wrong entry count";
+    }
+  }
+
+  MatDestroy(&sub);
+  MatDestroy(&jfd);
+}
+
+// ============================================================================
+// all_pairs_entries_match_single_pair_calls
+//
+// The all-pairs overload must produce exactly the same Jfd nonzero positions
+// as calling the single-pair overload for every (out_var, in_var).
+// ============================================================================
+TEST_F(PetscAddSparsityTest, all_pairs_entries_match_single_pair_calls) {
+  const PetscInt n_sub = 3;
+  const PetscInt nlocal_sub = n_sub;
+  const int nvars = 2;
+
+  // Non-trivial pattern so the stride mapping is exercised
+  const std::vector<std::pair<PetscInt, PetscInt>> sub_entries = {
+      {0, 0}, {0, 2}, {1, 1}, {2, 0}, {2, 2}};
+  Mat sub = buildPatternMat(n_sub, nlocal_sub, 0, sub_entries);
+
+  // Build expected positions by calling the single-pair version for each block
+  std::vector<std::pair<PetscInt, PetscInt>> expected;
+  {
+    auto [jfd_ref, nlocal_ref, rstart_ref] = buildEmptyJfd(n_sub, nlocal_sub, 0, nvars);
+    for (int ov = 0; ov < nvars; ++ov) {
+      for (int iv = 0; iv < nvars; ++iv) {
+        addOperatorSparsity(jfd_ref, sub, ov, iv);
+      }
+    }
+    MatAssemblyBegin(jfd_ref, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(jfd_ref, MAT_FINAL_ASSEMBLY);
+    expected = matNonzeroPositions(jfd_ref);
+    MatDestroy(&jfd_ref);
+  }
+
+  // Build actual positions using the all-pairs overload
+  std::vector<std::pair<PetscInt, PetscInt>> actual;
+  {
+    auto [jfd_act, nlocal_act, rstart_act] = buildEmptyJfd(n_sub, nlocal_sub, 0, nvars);
+    addOperatorSparsity(jfd_act, sub);
+    MatAssemblyBegin(jfd_act, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(jfd_act, MAT_FINAL_ASSEMBLY);
+    actual = matNonzeroPositions(jfd_act);
+    MatDestroy(&jfd_act);
+  }
+
+  std::sort(expected.begin(), expected.end());
+  std::sort(actual.begin(), actual.end());
+
+  ASSERT_EQ(expected.size(), actual.size());
+  for (std::size_t k = 0; k < expected.size(); ++k) {
+    EXPECT_EQ(expected[k], actual[k]) << "Mismatch at position " << k;
+  }
+
+  MatDestroy(&sub);
+}
+
+// ============================================================================
+// all_pairs_empty_sub_fills_nothing
+//
+// An empty sub must leave Jfd empty regardless of nvars.
+// ============================================================================
+TEST_F(PetscAddSparsityTest, all_pairs_empty_sub_fills_nothing) {
+  const PetscInt n_sub = 4;
+  const PetscInt nlocal_sub = n_sub;
+  const int nvars = 3;
+
+  Mat sub = buildPatternMat(n_sub, nlocal_sub, 0, {});
+
+  auto [jfd, jfd_nlocal, jfd_rstart] = buildEmptyJfd(n_sub, nlocal_sub, 0, nvars);
+
+  addOperatorSparsity(jfd, sub);
+  MatAssemblyBegin(jfd, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(jfd, MAT_FINAL_ASSEMBLY);
+
+  const auto nzs = matNonzeroPositions(jfd);
+  EXPECT_EQ(0U, nzs.size());
+
+  MatDestroy(&sub);
+  MatDestroy(&jfd);
+}
+
+// ============================================================================
+// all_pairs_no_entries_outside_expected_positions
+//
+// Every entry in Jfd must lie at a position consistent with the stride formula
+// applied to some (out_var, in_var) pair.  Specifically, for each entry
+// (r, c) in Jfd there must exist a (sr, sc) in sub such that
+//   r == sr * nvars + (r % nvars)  and  c == sc * nvars + (c % nvars).
+// ============================================================================
+TEST_F(PetscAddSparsityTest, all_pairs_no_entries_outside_expected_positions) {
+  const PetscInt n_sub = 3;
+  const PetscInt nlocal_sub = n_sub;
+  const int nvars = 2;
+
+  std::vector<std::pair<PetscInt, PetscInt>> sub_entries = {
+      {0, 1}, {1, 0}, {1, 2}, {2, 2}};
+  Mat sub = buildPatternMat(n_sub, nlocal_sub, 0, sub_entries);
+
+  // Pre-compute sub cell pairs for fast lookup
+  const std::set<std::pair<PetscInt, PetscInt>> sub_set(sub_entries.begin(),
+                                                        sub_entries.end());
+
+  auto [jfd, jfd_nlocal, jfd_rstart] = buildEmptyJfd(n_sub, nlocal_sub, 0, nvars);
+
+  addOperatorSparsity(jfd, sub);
+  MatAssemblyBegin(jfd, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(jfd, MAT_FINAL_ASSEMBLY);
+
+  const auto nzs = matNonzeroPositions(jfd);
+  for (const auto& [r, c] : nzs) {
+    const PetscInt sr = r / nvars;
+    const PetscInt sc = c / nvars;
+    EXPECT_TRUE(sub_set.count({sr, sc}) > 0)
+        << "Entry (" << r << "," << c << ") maps to sub cell (" << sr << "," << sc
+        << ") which is not in sub";
+  }
+
+  MatDestroy(&sub);
+  MatDestroy(&jfd);
 }
 
 #endif // BOUT_HAS_PETSC

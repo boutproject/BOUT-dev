@@ -45,4 +45,6 @@ void addOperatorSparsity(Mat Jfd, Mat sub, int out_var, int in_var) {
   }
 }
 
+void addOperatorSparsity(Mat Jfd, Mat sub) {}
+
 #endif // BOUT_HAS_PETSC
