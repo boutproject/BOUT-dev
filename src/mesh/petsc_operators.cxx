@@ -6,7 +6,6 @@
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field3d.hxx"
-#include "bout/output.hxx"
 #include "bout/output_bout_types.hxx"
 #include "bout/petsc_operators.hxx"
 #include "bout/region.hxx"
