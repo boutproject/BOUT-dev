@@ -7,7 +7,7 @@ backend-path = ["tools/pylib/_boutpp_build/"]
 
 [dependency-groups]
 dev = [
-     "cmake~=4.2",
+     "cmake~=4.3",
      "clang-format~=22.0",
      "clang-tidy~=22.0",
      "clangd~=22.0",
