@@ -27,6 +27,13 @@
 /// @param in_var  Column variable index in [0, nvars).
 void addOperatorSparsity(Mat Jfd, Mat sub, int out_var, int in_var);
 
+/// @brief Insert the nonzero pattern of @p sub into every variable block of
+///        @p Jfd.
+///
+/// Equivalent to calling addOperatorSparsity(Jfd, sub, out_var, in_var) for
+/// every combination of @p out_var and @p in_var in [0, nvars), where
+/// @c nvars is inferred as @c Jfd_global / @c sub_global.
+///
 /// @param Jfd     The Jacobian matrix to populate. Must be preallocated.
 /// @param sub     Evolving-cell submatrix providing the nonzero pattern.
 void addOperatorSparsity(Mat Jfd, Mat sub);

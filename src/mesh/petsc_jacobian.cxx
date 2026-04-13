@@ -45,6 +45,21 @@ void addOperatorSparsity(Mat Jfd, Mat sub, int out_var, int in_var) {
   }
 }
 
-void addOperatorSparsity(Mat Jfd, Mat sub) {}
+void addOperatorSparsity(Mat Jfd, Mat sub) {
+  PetscInt jfd_global{0}, sub_global{0};
+  MatGetSize(Jfd, &jfd_global, nullptr);
+  MatGetSize(sub, &sub_global, nullptr);
+
+  ASSERT1(sub_global > 0);
+  ASSERT1(jfd_global % sub_global == 0);
+
+  const int nvars = static_cast<int>(jfd_global / sub_global);
+
+  for (int out_var = 0; out_var < nvars; ++out_var) {
+    for (int in_var = 0; in_var < nvars; ++in_var) {
+      addOperatorSparsity(Jfd, sub, out_var, in_var);
+    }
+  }
+}
 
 #endif // BOUT_HAS_PETSC
