@@ -45,13 +45,13 @@ int main(int argc, char** argv) {
 
   {
     Options dummy;
-    YBoundary ybndry(dummy, mesh);
+    auto ybndry = mesh->getCoordinates()->getYBoundary();
 
     std::vector<Field3D> fields((mesh->ystart * 2) + 1, Field3D{0.0});
     for (auto& field : fields) {
       field.allocate();
     }
-    ybndry.iter_pnts(
+    ybndry->iter_pnts(
         [&](const auto& pnt) { fields[pnt.dir + mesh->ystart][pnt.ind()] += 1; });
 
     for (int i = -mesh->ystart; i <= mesh->ystart; ++i) {

@@ -496,17 +496,16 @@ geometries, as flux coordinate independent (FCI) method::
     class yboundary_example {
     public:
       yboundary_example(Options* opt, const Field3D& N, const Field3D& V) :
-      N(N), V(V), yboundary(opt) {}
+      N(N), V(V) {}
 
       void rhs() {
         BoutReal totalFlux = 0;
-        yboundary.iter_pnts([&](auto& pnt) {
+        mesh->getCoordinates()->getYBoundary()->iter_pnts([&](auto& pnt) {
           BoutReal flux = pnt.interpolate_sheath_o2(N) * pnt.interpolate_sheath_o2(V);
         });
       }
 
     private:
-      YBoundary ybounday;
       const Field3D& N;
       const Field3D& V;
     };

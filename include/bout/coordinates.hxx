@@ -3,16 +3,16 @@
  *
  * ChangeLog
  * =========
- * 
+ *
  * 2014-11-10 Ben Dudson <bd512@york.ac.uk>
  *    * Created by separating metric from Mesh
  *
- * 
+ *
  **************************************************************************
  * Copyright 2014-2025 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -40,6 +40,7 @@
 #include <bout/paralleltransform.hxx>
 
 class Mesh;
+class YBoundary;
 
 /*!
  * Represents a coordinate system, and associated operators
@@ -221,6 +222,8 @@ public:
   // solver
   Field2D Laplace_perpXY(const Field2D& A, const Field2D& f);
 
+  std::shared_ptr<YBoundary> getYBoundary() const { return ybndry; }
+
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;
@@ -249,6 +252,8 @@ private:
   void checkCovariant();
   // check that contravariant tensors are positive (if expected) and finite (always)
   void checkContravariant();
+
+  std::shared_ptr<YBoundary> ybndry;
 };
 
 /*
@@ -256,10 +261,10 @@ private:
 class TokamakCoordinates : public Coordinates {
 public:
   TokamakCoordinates(Mesh *mesh) : Coordinates(mesh) {
-    
+
   }
 private:
-  
+
 };
 */
 

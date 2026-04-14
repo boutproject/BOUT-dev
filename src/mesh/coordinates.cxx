@@ -18,6 +18,7 @@
 #include <bout/output_bout_types.hxx>
 
 #include <bout/globals.hxx>
+#include <bout/yboundary_regions.hxx>
 
 #include "invert3x3.hxx"
 #include "parallel/fci.hxx"
@@ -369,7 +370,7 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
       g_22(std::move(g_22)), g_33(std::move(g_33)), g_12(std::move(g_12)),
       g_13(std::move(g_13)), g_23(std::move(g_23)), ShiftTorsion(std::move(ShiftTorsion)),
       IntShiftTorsion(std::move(IntShiftTorsion)), nz(mesh->LocalNz), localmesh(mesh),
-      location(CELL_CENTRE) {}
+      location(CELL_CENTRE), ybndry{std::make_shared<YBoundary>(nullptr, mesh)} {}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options)
     : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
@@ -386,6 +387,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   if (options == nullptr) {
     options = Options::getRoot()->getSection("mesh");
   }
+
+  ybndry = std::make_shared<YBoundary>(options, mesh);
 
   // Note: If boundary cells were not loaded from the grid file, use
   // 'interpolateAndExtrapolate' to set them. Ensures that derivatives are
@@ -607,6 +610,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       IntShiftTorsion(mesh), localmesh(mesh), location(loc) {
 
   std::string suffix = getLocationSuffix(location);
+
+  ybndry = std::make_shared<YBoundary>(options, mesh);
 
   nz = mesh->LocalNz;
 
