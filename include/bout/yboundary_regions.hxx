@@ -44,19 +44,21 @@ public:
     return iter_regions(f);
   }
 
-  YBoundary(Options& options, Mesh* mesh = nullptr) {
+  YBoundary(Options* options_ptr, Mesh* mesh = nullptr) {
     if (mesh == nullptr) {
       mesh = bout::globals::mesh;
     }
-
-    const bool lower_y =
-        options["lower_y"].doc("Boundary on lower y?").withDefault<bool>(true);
-    const bool upper_y =
-        options["upper_y"].doc("Boundary on upper y?").withDefault<bool>(true);
-    const bool outer_x =
-        options["outer_x"].doc("Boundary on outer x?").withDefault<bool>(true);
-    const bool inner_x =
-        options["inner_x"].doc("Boundary on inner x?").withDefault<bool>(false);
+    bool lower_y = true;
+    bool upper_y = true;
+    bool outer_x = true;
+    bool inner_x = true;
+    if (options_ptr != nullptr) {
+      auto& options = *options_ptr;
+      lower_y = options["lower_y"].doc("Boundary on lower y?").withDefault<bool>(lower_y);
+      upper_y = options["upper_y"].doc("Boundary on upper y?").withDefault<bool>(upper_y);
+      outer_x = options["outer_x"].doc("Boundary on outer x?").withDefault<bool>(outer_x);
+      inner_x = options["inner_x"].doc("Boundary on inner x?").withDefault<bool>(inner_x);
+    }
 
     if (mesh->isFci()) {
       if (outer_x) {
