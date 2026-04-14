@@ -44,20 +44,40 @@ public:
     return iter_regions(f);
   }
 
-  YBoundary(Options* options_ptr, Mesh* mesh = nullptr) {
-    if (mesh == nullptr) {
-      mesh = bout::globals::mesh;
-    }
+  YBoundary(YBndryType type, Options* options_ptr, Mesh* mesh) {
+    ASSERT3(mesh != nullptr);
     bool lower_y = true;
     bool upper_y = true;
     bool outer_x = true;
-    bool inner_x = true;
+    bool inner_x = false;
     if (options_ptr != nullptr) {
       auto& options = *options_ptr;
-      lower_y = options["lower_y"].doc("Boundary on lower y?").withDefault<bool>(lower_y);
-      upper_y = options["upper_y"].doc("Boundary on upper y?").withDefault<bool>(upper_y);
-      outer_x = options["outer_x"].doc("Boundary on outer x?").withDefault<bool>(outer_x);
-      inner_x = options["inner_x"].doc("Boundary on inner x?").withDefault<bool>(inner_x);
+      if (!mesh->isFci()) {
+        lower_y =
+            options["lower_y"].doc("Boundary on lower y?").withDefault<bool>(lower_y);
+        upper_y =
+            options["upper_y"].doc("Boundary on upper y?").withDefault<bool>(upper_y);
+      } else {
+        outer_x =
+            options["outer_x"].doc("Boundary on outer x?").withDefault<bool>(outer_x);
+        inner_x =
+            options["inner_x"].doc("Boundary on inner x?").withDefault<bool>(inner_x);
+      }
+    }
+    switch (type) {
+    case YBndryType::sheath:
+      break;
+    case YBndryType::not_sheath:
+      lower_y = !lower_y;
+      upper_y = !upper_y;
+      outer_x = !outer_x;
+      inner_x = !inner_x;
+      break;
+    case YBndryType::all:
+      lower_y = true;
+      upper_y = true;
+      outer_x = true;
+      inner_x = true;
     }
 
     if (mesh->isFci()) {

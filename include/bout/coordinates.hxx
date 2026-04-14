@@ -222,7 +222,9 @@ public:
   // solver
   Field2D Laplace_perpXY(const Field2D& A, const Field2D& f);
 
-  std::shared_ptr<YBoundary> getYBoundary() const { return ybndry; }
+  std::shared_ptr<YBoundary> getYBoundary(YBndryType type = YBndryType::sheath) const {
+    return ybndrys[static_cast<int>(type)];
+  }
 
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
@@ -253,7 +255,8 @@ private:
   // check that contravariant tensors are positive (if expected) and finite (always)
   void checkContravariant();
 
-  std::shared_ptr<YBoundary> ybndry;
+  std::array<std::shared_ptr<YBoundary>, 3> ybndrys;
+  void setupybndry(Options*, Mesh*);
 };
 
 /*

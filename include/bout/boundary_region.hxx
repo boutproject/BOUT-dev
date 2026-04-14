@@ -36,6 +36,8 @@ constexpr BndryLoc BNDRY_PAR_BKWD_XIN = BndryLoc::par_bkwd_xin;
 constexpr BndryLoc BNDRY_PAR_FWD_XOUT = BndryLoc::par_fwd_xout;
 constexpr BndryLoc BNDRY_PAR_BKWD_XOUT = BndryLoc::par_bkwd_xout;
 
+enum class YBndryType { sheath, not_sheath, all };
+
 class BoundaryRegionBase {
 public:
   BoundaryRegionBase() = delete;

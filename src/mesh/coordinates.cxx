@@ -370,7 +370,9 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
       g_22(std::move(g_22)), g_33(std::move(g_33)), g_12(std::move(g_12)),
       g_13(std::move(g_13)), g_23(std::move(g_23)), ShiftTorsion(std::move(ShiftTorsion)),
       IntShiftTorsion(std::move(IntShiftTorsion)), nz(mesh->LocalNz), localmesh(mesh),
-      location(CELL_CENTRE), ybndry{std::make_shared<YBoundary>(nullptr, mesh)} {}
+      location(CELL_CENTRE) {
+  setupybndry(nullptr, mesh);
+}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options)
     : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
@@ -388,7 +390,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     options = Options::getRoot()->getSection("mesh");
   }
 
-  ybndry = std::make_shared<YBoundary>(options, mesh);
+  setupybndry(options, mesh);
 
   // Note: If boundary cells were not loaded from the grid file, use
   // 'interpolateAndExtrapolate' to set them. Ensures that derivatives are
@@ -611,7 +613,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
   std::string suffix = getLocationSuffix(location);
 
-  ybndry = std::make_shared<YBoundary>(options, mesh);
+  setupybndry(options, mesh);
 
   nz = mesh->LocalNz;
 
@@ -2011,4 +2013,10 @@ void Coordinates::checkContravariant() {
       }
     }
   }
+}
+
+void Coordinates::setupybndry(Options* options, Mesh* mesh) {
+  ybndrys = {std::make_shared<YBoundary>(YBndryType::sheath, options, mesh),
+             std::make_shared<YBoundary>(YBndryType::not_sheath, options, mesh),
+             std::make_shared<YBoundary>(YBndryType::all, options, mesh)};
 }
