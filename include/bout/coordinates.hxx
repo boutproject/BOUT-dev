@@ -223,12 +223,18 @@ public:
   Field2D Laplace_perpXY(const Field2D& A, const Field2D& f);
 
   std::shared_ptr<YBoundary> getYBoundary(YBndryType type = YBndryType::sheath) const {
-    return ybndrys[static_cast<int>(type)];
+    auto itype = static_cast<int>(type);
+    if (ybndrys[itype] == nullptr) {
+      ybndrys[itype] = makeYBoundary(type);
+    }
+    return ybndrys[itype];
   }
+  std::shared_ptr<YBoundary> makeYBoundary(YBndryType type) const;
 
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;
+  Options* localoptions;
   CELL_LOC location;
 
   /// Handles calculation of yup and ydown
@@ -255,8 +261,7 @@ private:
   // check that contravariant tensors are positive (if expected) and finite (always)
   void checkContravariant();
 
-  std::array<std::shared_ptr<YBoundary>, 3> ybndrys;
-  void setupybndry(Options*, Mesh*);
+  mutable std::array<std::shared_ptr<YBoundary>, 3> ybndrys;
 };
 
 /*

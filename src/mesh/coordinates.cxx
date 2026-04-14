@@ -370,9 +370,7 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
       g_22(std::move(g_22)), g_33(std::move(g_33)), g_12(std::move(g_12)),
       g_13(std::move(g_13)), g_23(std::move(g_23)), ShiftTorsion(std::move(ShiftTorsion)),
       IntShiftTorsion(std::move(IntShiftTorsion)), nz(mesh->LocalNz), localmesh(mesh),
-      location(CELL_CENTRE) {
-  setupybndry(nullptr, mesh);
-}
+      localoptions(nullptr), location(CELL_CENTRE) {}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options)
     : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
@@ -384,13 +382,12 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
       G1_13(mesh), G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh),
       G2_13(mesh), G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh),
       G3_13(mesh), G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
-      IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE) {
+      IntShiftTorsion(mesh), localmesh(mesh), localoptions(options),
+      location(CELL_CENTRE) {
 
   if (options == nullptr) {
     options = Options::getRoot()->getSection("mesh");
   }
-
-  setupybndry(options, mesh);
 
   // Note: If boundary cells were not loaded from the grid file, use
   // 'interpolateAndExtrapolate' to set them. Ensures that derivatives are
@@ -609,11 +606,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       G1_13(mesh), G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh),
       G2_13(mesh), G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh),
       G3_13(mesh), G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
-      IntShiftTorsion(mesh), localmesh(mesh), location(loc) {
+      IntShiftTorsion(mesh), localmesh(mesh), localoptions(options), location(loc) {
 
   std::string suffix = getLocationSuffix(location);
-
-  setupybndry(options, mesh);
 
   nz = mesh->LocalNz;
 
@@ -2015,8 +2010,6 @@ void Coordinates::checkContravariant() {
   }
 }
 
-void Coordinates::setupybndry(Options* options, Mesh* mesh) {
-  ybndrys = {std::make_shared<YBoundary>(YBndryType::sheath, options, mesh),
-             std::make_shared<YBoundary>(YBndryType::not_sheath, options, mesh),
-             std::make_shared<YBoundary>(YBndryType::all, options, mesh)};
+std::shared_ptr<YBoundary> Coordinates::makeYBoundary(YBndryType type) const {
+  return std::make_shared<YBoundary>(type, localoptions, localmesh);
 }
