@@ -20,7 +20,7 @@ dev = [
      "sync-with-uv~=0.5.0",
 ]
 maint = [
-      "pygithub~=2.8",
+      "pygithub~=2.9",
       "ruamel-yaml~=0.19",
       "Unidecode~=1.3",
 ]
