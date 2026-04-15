@@ -530,7 +530,7 @@ Here is a short summary of some members of ``pnt``, where ``f`` is a :
    * - ``pnt.ythis(f)``
      - Returns the value at the last point in the domain
    * - ``pnt.ynext(f)``
-     - Returns the value at the first point in the domain
+     - Returns the value at the first point in the boundary, i.e. one beyond the domain.
    * - ``pnt.yprev(f)``
      - Returns the value at the second to last point in the domain, if it is
        valid. NB: this point may not be valid.
