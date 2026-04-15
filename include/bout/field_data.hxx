@@ -6,7 +6,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -45,7 +45,7 @@ class Mesh;
 
 #include "bout/boundary_region.hxx"
 class BoundaryRegionPar;
-enum class BndryLoc;
+enum class BndryLoc : std::int8_t;
 
 #include "bout/sys/expressionparser.hxx"
 
@@ -77,7 +77,7 @@ public:
   /// Number of BoutReals in one element
   virtual int elementSize() const { return 1; }
 
-  virtual void doneComms(){}; // Notifies that communications done
+  virtual void doneComms() {}; // Notifies that communications done
 
   // Boundary conditions
   void setBoundary(const std::string& name); ///< Set the boundary conditions
@@ -86,13 +86,13 @@ public:
   copyBoundary(const FieldData& f); ///< Copy the boundary conditions from another field
 
   virtual void applyBoundary(bool UNUSED(init) = false) {}
-  virtual void applyTDerivBoundary(){};
+  virtual void applyTDerivBoundary() {};
 
-  virtual void applyParallelBoundary(){};
-  virtual void applyParallelBoundary(BoutReal UNUSED(t)){};
-  virtual void applyParallelBoundary(const std::string& UNUSED(condition)){};
+  virtual void applyParallelBoundary() {};
+  virtual void applyParallelBoundary(BoutReal UNUSED(t)) {};
+  virtual void applyParallelBoundary(const std::string& UNUSED(condition)) {};
   virtual void applyParallelBoundary(const std::string& UNUSED(region),
-                                     const std::string& UNUSED(condition)){};
+                                     const std::string& UNUSED(condition)) {};
   // JMAD
   void addBndryFunction(FuncPtr userfunc, BndryLoc location);
   void addBndryGenerator(FieldGeneratorPtr gen, BndryLoc location);
