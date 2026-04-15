@@ -26,9 +26,9 @@
 #include "bout/macro_for_each.hxx"
 #include "bout/options.hxx" // IWYU pragma: keep
 
-#include <cstdint>
-#include <map>    // IWYU pragma: keep
-#include <string> // IWYU pragma: keep
+#include <cstdint> // IWYU pragma: keep
+#include <map>     // IWYU pragma: keep
+#include <string>  // IWYU pragma: keep
 
 /// Create some macro magic similar to bout/macro_for_each.hxx, but allowing for the enum
 /// class name to be passed through to each _call
