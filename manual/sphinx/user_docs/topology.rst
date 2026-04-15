@@ -45,7 +45,7 @@ The "common" topologies:
 
 And all advanced/complex topologies with up to two X-points:
 
-- **"snowflake"**: The SF topologies feature a second order null point created by two X-points close to each other. The ideal SF has a single separatrix and 4 legs, but more realistic configurations can have an extra PFR between the legs. 
+- **"snowflake"**: The SF topologies feature a second order null point created by two X-points close to each other. The ideal SF has a single separatrix and 4 legs, but more realistic configurations can have an extra PFR between the legs.
   The **"snowflake+"** and **"snowflake-"** unlike the perfect **SF**, feature an extra central PFR and the secondary X-point is located either above or below the primary one, respectively (along the y-direction).
 - **"X-Point Target"**: The X-Point Target configuration has the main separatrix extended a longer distance and no PFR between the East and South East targets.
 
@@ -96,7 +96,7 @@ PFRs (private flux regions), and the core of the tokamak. If
 otherwise it can be any of the more advanced configurations.
 
 .. _fig-topology-cross-section:
-.. figure:: ../figs/topology_cross_section2.*
+.. figure:: ../figs/topology_cross_section.*
    :alt: Cross-section of the tokamak topology used in BOUT++
 
    Deconstruction of a poloidal tokamak cross-section into logical
