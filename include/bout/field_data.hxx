@@ -33,6 +33,7 @@ class FieldData;
 #include "bout/bout_types.hxx"
 #include "bout/unused.hxx"
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <string>

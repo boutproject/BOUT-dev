@@ -4,7 +4,7 @@ class BoundaryRegion;
 #ifndef BOUT_BNDRY_REGION_H
 #define BOUT_BNDRY_REGION_H
 
-#include <cstddef>
+#include <cstdint>
 #include <string>
 #include <utility>
 
@@ -37,6 +37,7 @@ constexpr BndryLoc BNDRY_PAR_BKWD_XIN = BndryLoc::par_bkwd_xin;
 constexpr BndryLoc BNDRY_PAR_FWD_XOUT = BndryLoc::par_fwd_xout;
 constexpr BndryLoc BNDRY_PAR_BKWD_XOUT = BndryLoc::par_bkwd_xout;
 
+// Physical type of y boundary
 enum class YBndryType : std::int8_t { sheath, not_sheath, all };
 
 class BoundaryRegionBase {

@@ -26,7 +26,7 @@
 #include "bout/macro_for_each.hxx"
 #include "bout/options.hxx" // IWYU pragma: keep
 
-#include <cstddef>
+#include <cstdint>
 #include <map>    // IWYU pragma: keep
 #include <string> // IWYU pragma: keep
 
