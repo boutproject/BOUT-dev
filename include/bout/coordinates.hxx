@@ -41,6 +41,7 @@
 #include <bout/paralleltransform.hxx>
 
 #include <array>
+#include <memory>
 
 class Mesh;
 class YBoundary;

@@ -9,17 +9,17 @@
 #include <bout/build_defines.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
-#include <bout/output.hxx>
-#include <bout/sys/timer.hxx>
-#include <bout/utils.hxx>
-
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
-#include <bout/interpolation.hxx>
-#include <bout/output_bout_types.hxx>
-
 #include <bout/globals.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/output.hxx>
+#include <bout/output_bout_types.hxx>
+#include <bout/sys/timer.hxx>
+#include <bout/utils.hxx>
 #include <bout/yboundary_regions.hxx>
+
+#include <memory>
 
 #include "invert3x3.hxx"
 #include "parallel/fci.hxx"
