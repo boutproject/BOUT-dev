@@ -3,6 +3,7 @@
 #include "./boundary_iterator.hxx"
 #include "bout/assert.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/field_data.hxx"
 #include "bout/globals.hxx"
 #include "bout/mask.hxx"
 #include "bout/options.hxx"

@@ -7,8 +7,6 @@
 #include "bout/output.hxx"
 #include "bout/parallel_boundary_region.hxx"
 
-#include "bout/yboundary_regions.hxx"
-
 #include <fmt/format.h>
 
 #include <vector>
@@ -44,7 +42,7 @@ int main(int argc, char** argv) {
   }
 
   {
-    Options dummy;
+    const Options dummy;
     auto ybndry = mesh->getCoordinates()->getYBoundary();
 
     std::vector<Field3D> fields((mesh->ystart * 2) + 1, Field3D{0.0});

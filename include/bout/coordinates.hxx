@@ -33,11 +33,14 @@
 #ifndef BOUT_COORDINATES_H
 #define BOUT_COORDINATES_H
 
+#include "bout/field_data.hxx"
 #include <bout/bout_types.hxx>
 #include <bout/build_defines.hxx>
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
 #include <bout/paralleltransform.hxx>
+
+#include <array>
 
 class Mesh;
 class YBoundary;
