@@ -37,7 +37,11 @@ test . != ".$1" && mpi="$1" || mpi=openmpi
     cp -a /tmp/BOUT-dev /home/test/
     . /etc/profile.d/modules.sh
     module load mpi/${1}-x86_64
-    export OMPI_MCA_rmaps_base_oversubscribe=yes
+    # OpenMPI Oversubscription Overrides
+    export OMPI_MCA_rmaps_base_oversubscribe=1
+    export OMPI_MCA_hwloc_base_binding_policy=none
+    export OMPI_MCA_rmaps_base_mapping_policy=core:OVERSUBSCRIBE
+    export PRTE_MCA_rmaps_default_mapping_policy=core:OVERSUBSCRIBE
     export PRTE_MCA_rmaps_default_mapping_policy=:oversubscribe
     export TRAVIS=true
     # Try limiting openmp threads
