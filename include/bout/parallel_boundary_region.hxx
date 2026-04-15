@@ -50,9 +50,9 @@ struct Indices {
   signed char valid;
   signed char offset;
   unsigned char abs_offset;
-  Indices(Ind3D index, RealPoint&& intersection, BoutReal length, signed char valid,
+  Indices(Ind3D index, RealPoint intersection, BoutReal length, signed char valid,
           signed char offset, unsigned char abs_offset)
-      : index(index), intersection(std::move(intersection)), length(length), valid(valid),
+      : index(index), intersection(intersection), length(length), valid(valid),
         offset(offset), abs_offset(abs_offset) {};
 };
 
