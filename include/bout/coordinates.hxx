@@ -226,16 +226,10 @@ public:
   // solver
   Field2D Laplace_perpXY(const Field2D& A, const Field2D& f);
 
-  std::shared_ptr<YBoundary> getYBoundary(YBndryType type = YBndryType::sheath) const {
-    auto itype = static_cast<int>(type);
-    if (ybndrys[itype] == nullptr) {
-      ybndrys[itype] = makeYBoundary(type);
-    }
-    return ybndrys[itype];
-  }
-  std::shared_ptr<YBoundary> makeYBoundary(YBndryType type) const;
+  friend std::shared_ptr<YBoundary> getYBoundary(Coordinates* coords, YBndryType type);
 
 private:
+  std::shared_ptr<YBoundary> makeYBoundary(YBndryType type) const;
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;
   Options* localoptions;

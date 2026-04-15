@@ -6,6 +6,7 @@
 #include "bout/options_io.hxx"
 #include "bout/output.hxx"
 #include "bout/parallel_boundary_region.hxx"
+#include "bout/yboundary_regions.hxx"
 
 #include <fmt/format.h>
 
@@ -43,7 +44,7 @@ int main(int argc, char** argv) {
 
   {
     const Options dummy;
-    auto ybndry = mesh->getCoordinates()->getYBoundary();
+    auto ybndry = getYBoundary(mesh->getCoordinates());
 
     std::vector<Field3D> fields((mesh->ystart * 2) + 1, Field3D{0.0});
     for (auto& field : fields) {
