@@ -143,8 +143,8 @@ private:
   std::vector<BoutMask> _contains;
 };
 
-std::shared_ptr<YBoundary> getYBoundary(Coordinates* coords,
-                                        YBndryType type = YBndryType::sheath) {
+inline std::shared_ptr<YBoundary> getYBoundary(Coordinates* coords,
+                                               YBndryType type = YBndryType::sheath) {
   auto itype = static_cast<int>(type);
   if (coords->ybndrys[itype] == nullptr) {
     coords->ybndrys[itype] = coords->makeYBoundary(type);
