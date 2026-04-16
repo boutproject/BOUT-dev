@@ -17,22 +17,26 @@ class BoundaryRegionIter {
 public:
   virtual ~BoundaryRegionIter() = default;
   BoundaryRegionIter(int x, int y, int bx, int by, const Mesh& mesh)
-      : _dir(bx + by), x(x), y(y), bx(bx), by(by), localmesh(mesh) {
-    ASSERT3(bx * by == 0);
+      : _dir(bx + by), _x(x), _y(y), _bx(bx), _by(by), localmesh(&mesh) {
+    ASSERT3(_bx * _by == 0);
   }
   bool operator!=(const BoundaryRegionIter& rhs) const { return ind() != rhs.ind(); }
 
-  Ind3D ind() const { return xyz2ind(x, y, z); }
+  Ind3D ind() const { return xyz2ind(_x, _y, _z); }
   BoundaryRegionIter& operator++() {
-    ASSERT3(z < nz());
-    z++;
-    if (z == nz()) {
-      z = 0;
+    ASSERT3(_z < nz());
+    _z++;
+    if (_z == nz()) {
+      _z = 0;
       _next();
     }
     return *this;
   }
+
+protected:
   virtual void _next() = 0;
+
+public:
   BoundaryRegionIter& operator*() { return *this; }
 
   void dirichlet_o2(Field3D& f, BoutReal value) const {
@@ -51,7 +55,7 @@ public:
 
   BoutReal
   extrapolate_next_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
-    return (2 * f(0, ind())) - f(0, ind().yp(-by).xp(-bx));
+    return (2 * f(0, ind())) - f(0, ind().yp(-_by).xp(-_bx));
   }
 
   BoutReal interpolate_sheath_o2(const Field3D& f) const {
@@ -60,12 +64,12 @@ public:
 
   BoutReal
   interpolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
-    return (f(0, ind()) + f(0, ind().yp(-by).xp(-bx))) * 0.5;
+    return (f(0, ind()) + f(0, ind().yp(-_by).xp(-_bx))) * 0.5;
   }
 
   BoutReal
   extrapolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
-    return 0.5 * (3 * f(0, ind()) - f(0, ind().yp(-by).xp(-bx)));
+    return 0.5 * (3 * f(0, ind()) - f(0, ind().yp(-_by).xp(-_bx)));
   }
 
   BoutReal extrapolate_sheath_free(const Field3D& f, SheathLimitMode mode) const {
@@ -81,14 +85,14 @@ public:
         bout::parallel_boundary_region::limitFreeScale(yprev(f), ythis(f), mode);
     BoutReal val = ythis(f);
     if (mode == SheathLimitMode::linear_free) {
-      for (int i = 1; i <= localmesh.ystart; ++i) {
+      for (int i = 1; i <= localmesh->ystart; ++i) {
         val += fac;
-        f[ind().yp(by * i).xp(bx * i)] = val;
+        f[ind().yp(_by * i).xp(_bx * i)] = val;
       }
     } else {
-      for (int i = 1; i <= localmesh.ystart; ++i) {
+      for (int i = 1; i <= localmesh->ystart; ++i) {
         val *= fac;
-        f[ind().yp(by * i).xp(bx * i)] = val;
+        f[ind().yp(_by * i).xp(_bx * i)] = val;
       }
     }
   }
@@ -97,30 +101,30 @@ public:
     const BoutReal fac =
         bout::parallel_boundary_region::limitFreeScale(yprev(f), ythis(f));
     BoutReal val = ythis(f);
-    for (int i = 1; i <= localmesh.ystart; ++i) {
+    for (int i = 1; i <= localmesh->ystart; ++i) {
       val *= fac;
-      f[ind().yp(by * i).xp(bx * i)] = val;
+      f[ind().yp(_by * i).xp(_bx * i)] = val;
     }
   }
 
   bool is_lower() const {
-    ASSERT2(bx == 0);
-    return by == -1;
+    ASSERT2(_bx == 0);
+    return _by == -1;
   }
 
   void neumann_o1(Field3D& f, BoutReal grad) const {
     BoutReal val = ythis(f);
-    for (int i = 1; i <= localmesh.ystart; ++i) {
+    for (int i = 1; i <= localmesh->ystart; ++i) {
       val += grad;
-      f[ind().yp(by * i).xp(bx * i)] = val;
+      f[ind().yp(_by * i).xp(_bx * i)] = val;
     }
   }
 
   void neumann_o2(Field3D& f, BoutReal grad) const {
     BoutReal val = yprev(f) + grad;
-    for (int i = 1; i <= localmesh.ystart; ++i) {
+    for (int i = 1; i <= localmesh->ystart; ++i) {
       val += grad;
-      f[ind().yp(by * i).xp(bx * i)] = val;
+      f[ind().yp(_by * i).xp(_bx * i)] = val;
     }
   }
 
@@ -128,44 +132,51 @@ public:
     ynext(f) = std::max(ynext(f), value);
   }
 
-  BoutReal& ynext(Field3D& f) const { return f[ind().yp(by).xp(bx)]; }
-  const BoutReal& ynext(const Field3D& f) const { return f[ind().yp(by).xp(bx)]; }
-  BoutReal& yprev(Field3D& f) const { return f[ind().yp(-by).xp(-bx)]; }
-  const BoutReal& yprev(const Field3D& f) const { return f[ind().yp(-by).xp(-bx)]; }
+  BoutReal& ynext(Field3D& f) const { return f[ind().yp(_by).xp(_bx)]; }
+  const BoutReal& ynext(const Field3D& f) const { return f[ind().yp(_by).xp(_bx)]; }
+  BoutReal& yprev(Field3D& f) const { return f[ind().yp(-_by).xp(-_bx)]; }
+  const BoutReal& yprev(const Field3D& f) const { return f[ind().yp(-_by).xp(-_bx)]; }
   BoutReal& ythis(Field3D& f) const { return f[ind()]; }
   const BoutReal& ythis(const Field3D& f) const { return f[ind()]; }
 
   void setYPrevIfValid(Field3D& f, BoutReal val) const { yprev(f) = val; }
   void setAll(Field3D& f, const BoutReal val) const {
-    for (int i = -localmesh.ystart; i <= localmesh.ystart; ++i) {
-      f[ind().yp(by * i).xp(bx * i)] = val;
+    for (int i = -localmesh->ystart; i <= localmesh->ystart; ++i) {
+      f[ind().yp(_by * i).xp(_bx * i)] = val;
     }
   }
 
   static int abs_offset() { return 1; }
 
-  BoutReal& ynext(Field2D& f) const { return f[ind().yp(by).xp(bx)]; }
-  const BoutReal& ynext(const Field2D& f) const { return f[ind().yp(by).xp(bx)]; }
-  BoutReal& yprev(Field2D& f) const { return f[ind().yp(-by).xp(-bx)]; }
-  const BoutReal& yprev(const Field2D& f) const { return f[ind().yp(-by).xp(-bx)]; }
+  BoutReal& ynext(Field2D& f) const { return f[ind().yp(_by).xp(_bx)]; }
+  const BoutReal& ynext(const Field2D& f) const { return f[ind().yp(_by).xp(_bx)]; }
+  BoutReal& yprev(Field2D& f) const { return f[ind().yp(-_by).xp(-_bx)]; }
+  const BoutReal& yprev(const Field2D& f) const { return f[ind().yp(-_by).xp(-_bx)]; }
 
   int dir() const { return _dir; }
+
+protected:
+  int x() const { return _x; }
+  int y() const { return _y; }
+  int z() const { return _z; }
+
+protected:
+  void setx(int x) { _x = x; }
+  void sety(int y) { _y = y; }
 
 private:
   int _dir;
 
-protected:
-  int z{0};
-  int x;
-  int y;
-  int bx;
-  int by;
+  int _z{0};
+  int _x;
+  int _y;
+  int _bx;
+  int _by;
 
-private:
-  const Mesh& localmesh;
-  int nx() const { return localmesh.LocalNx; }
-  int ny() const { return localmesh.LocalNy; }
-  int nz() const { return localmesh.LocalNz; }
+  const Mesh* localmesh;
+  int nx() const { return localmesh->LocalNx; }
+  int ny() const { return localmesh->LocalNy; }
+  int nz() const { return localmesh->LocalNz; }
 
   Ind3D xyz2ind(int x, int y, int z) const {
     return Ind3D{((x * ny() + y) * nz()) + z, ny(), nz()};
@@ -180,7 +191,7 @@ public:
       : BoundaryRegionIter(r.ind, y, 0, dir, mesh), r(r), is_end(is_end) {}
 
   bool operator!=(const BoundaryRegionIterY& rhs) {
-    ASSERT2(y == rhs.y);
+    ASSERT2(y() == rhs.y());
     if (is_end) {
       if (rhs.is_end) {
         return false;
@@ -190,12 +201,12 @@ public:
     if (rhs.is_end) {
       return !r.isDone();
     }
-    return x != rhs.x;
+    return x() != rhs.x();
   }
 
   void _next() override {
     ++r;
-    x = r.ind;
+    setx(r.ind);
   }
 
 private:
@@ -206,15 +217,15 @@ private:
 class NewBoundaryRegionY {
 public:
   NewBoundaryRegionY(const Mesh& mesh, bool lower, const RangeIterator& r)
-      : mesh(mesh), lower(lower), r(r) {}
+      : mesh(&mesh), lower(lower), r(r) {}
   BoundaryRegionIterY begin(bool begin = true) {
-    return BoundaryRegionIterY(r, lower ? mesh.ystart : mesh.yend, lower ? -1 : +1,
-                               !begin, mesh);
+    return BoundaryRegionIterY(r, lower ? mesh->ystart : mesh->yend, lower ? -1 : +1,
+                               !begin, *mesh);
   }
   BoundaryRegionIterY end() { return begin(false); }
 
 private:
-  const Mesh& mesh;
+  const Mesh* mesh;
   bool lower;
   RangeIterator r;
 };
