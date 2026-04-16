@@ -22,27 +22,27 @@
 
 class YBoundary {
 public:
-  template <class F>
-  void iter_regions(const F& f) {
+  template <class Func>
+  void iter_regions(const Func& func) {
     for (auto& region : boundary_regions) {
-      f(*region);
+      func(*region);
     }
     for (auto& region : boundary_regions_par) {
-      f(*region);
+      func(*region);
     }
   }
-  template <class F>
-  void iter_pnts(const F& f) {
+  template <class Func>
+  void iter_points(const Func& func) {
     iter_regions([&](auto& region) {
-      for (auto& pnt : region) {
-        f(pnt);
+      for (auto& point : region) {
+        func(point);
       }
     });
   }
 
-  template <class F>
-  void iter(const F& f) {
-    return iter_regions(f);
+  template <class Func>
+  void iter(const Func& func) {
+    return iter_points(func);
   }
 
   YBoundary(YBndryType type, Options* options_ptr, Mesh* mesh) {
@@ -105,11 +105,11 @@ public:
     // Cache boundary regions
     _contains.emplace_back(mesh, false);
     _contains.emplace_back(mesh, false);
-    iter_pnts([&](const auto& pnt) {
-      if (pnt.dir == 1) {
-        _contains[1][pnt.ind()] = true;
-      } else if (pnt.dir == -1) {
-        _contains[0][pnt.ind()] = true;
+    iter_points([&](const auto& point) {
+      if (point.dir == 1) {
+        _contains[1][point.ind()] = true;
+      } else if (point.dir == -1) {
+        _contains[0][point.ind()] = true;
       }
     });
   }
