@@ -62,13 +62,6 @@
 #include <string>
 #include <string_view>
 
-namespace {
-template <typename T>
-int sgn(T val) {
-  return (T(0) < val) - (val < T(0));
-}
-} // namespace
-
 using namespace std::string_view_literals;
 
 FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
@@ -262,7 +255,7 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
     ASSERT2(map_mesh->xend - map_mesh->xstart >= 2);
     auto boundary = (xt_prime[i] < map_mesh->xstart) ? inner_boundary : outer_boundary;
     if (!boundary->contains(x, y, z)) {
-      boundary->add_point(x, y, z, x + dx, y + offset - (sgn(offset) * 0.5),
+      boundary->add_point(x, y, z, x + dx, y + offset - (std::copysign(0.5, offset)),
                           z + dz, // Intersection point in local index space
                           std::abs(offset) - 0.5, // Distance to intersection
                           defValid, offset);
