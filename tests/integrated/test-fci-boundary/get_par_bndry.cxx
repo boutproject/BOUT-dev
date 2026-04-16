@@ -50,8 +50,8 @@ int main(int argc, char** argv) {
     for (auto& field : fields) {
       field.allocate();
     }
-    ybndry->iter_pnts(
-        [&](const auto& pnt) { fields[pnt.dir + mesh->ystart][pnt.ind()] += 1; });
+    ybndry->iter(
+        [&](const auto& pnt) { fields[pnt.dir() + mesh->ystart][pnt.ind()] += 1; });
 
     for (int i = -mesh->ystart; i <= mesh->ystart; ++i) {
       dump[fmt::format("ybndry_{}", i)] = fields[i + mesh->ystart];
