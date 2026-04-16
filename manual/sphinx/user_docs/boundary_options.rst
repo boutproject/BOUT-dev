@@ -500,8 +500,9 @@ geometries, as flux coordinate independent (FCI) method::
 
       void rhs() {
         BoutReal totalFlux = 0;
-        mesh->getCoordinates()->getYBoundary()->iter_pnts([&](auto& pnt) {
-          BoutReal flux = pnt.interpolate_sheath_o2(N) * pnt.interpolate_sheath_o2(V);
+        mesh->getCoordinates()->getYBoundary()->iter_points([&](auto& point) {
+          BoutReal flux = point.interpolate_sheath_o2(N) * point.interpolate_sheath_o2(V);
+          totalFlux += flux;
         });
       }
 
@@ -512,14 +513,14 @@ geometries, as flux coordinate independent (FCI) method::
 
 
 
-There are several member functions of ``pnt``. ``pnt`` is of type
+There are several member functions of ``point``. ``point`` is of type
 `BoundaryRegionParIterBase` and `BoundaryRegionIter`, and both should provide
 the same interface. If they don't that is a bug, as the above code is a
 template, that gets instantiated for both types, and thus requires both
 classes to provide the same interface, one for FCI-like boundaries and one for
 field aligned boundaries.
 
-Here is a short summary of some members of ``pnt``, where ``f`` is a :
+Here is a short summary of some members of ``point``, where ``f`` is a :
 
 .. list-table:: Members for boundary operation
    :widths: 15 70
@@ -527,31 +528,31 @@ Here is a short summary of some members of ``pnt``, where ``f`` is a :
 
    * - Function
      - Description
-   * - ``pnt.ythis(f)``
+   * - ``point.ythis(f)``
      - Returns the value at the last point in the domain
-   * - ``pnt.ynext(f)``
+   * - ``point.ynext(f)``
      - Returns the value at the first point in the boundary, i.e. one beyond the domain.
-   * - ``pnt.yprev(f)``
+   * - ``point.yprev(f)``
      - Returns the value at the second to last point in the domain, if it is
        valid. NB: this point may not be valid.
-   * - ``pnt.interpolate_sheath_o2(f)``
+   * - ``point.interpolate_sheath_o2(f)``
      - Returns the value at the boundary, assuming the bounday value has been set
-   * - ``pnt.extrapolate_sheath_o1(f)``
+   * - ``point.extrapolate_sheath_o1(f)``
      - Returns the value at the boundary, extrapolating from the bulk, first order
-   * - ``pnt.extrapolate_sheath_o2(f)``
+   * - ``point.extrapolate_sheath_o2(f)``
      - Returns the value at the boundary, extrapolating from the bulk, second order
-   * - ``pnt.extrapolate_next_o{1,2}(f)``
+   * - ``point.extrapolate_next_o{1,2}(f)``
      - Extrapolate into the boundary from the bulk, first or second order
-   * - ``pnt.extrapolate_grad_o{1,2}(f)``
+   * - ``point.extrapolate_grad_o{1,2}(f)``
      - Extrapolate the gradient into the boundary, first or second order
-   * - ``pnt.dirichlet_o{1,2,3}(f, v)``
+   * - ``point.dirichlet_o{1,2,3}(f, v)``
      - Apply dirichlet boundary conditions with value ``v`` and given order
-   * - ``pnt.neumann_o{1,2,3}(f, v)``
+   * - ``point.neumann_o{1,2,3}(f, v)``
      - Applies a gradient of ``v / dy`` boundary condition.
-   * - ``pnt.limitFree(f)``
+   * - ``point.limitFree(f)``
      - Extrapolate into the boundary using only monotonic decreasing values.
        ``f`` needs to be positive.
-   * - ``pnt.dir``
+   * - ``point.dir``
      - The direction of the boundary.
 
 

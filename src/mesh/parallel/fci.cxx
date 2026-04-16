@@ -361,12 +361,14 @@ FCITransform::FCITransform(Mesh& mesh, const Coordinates::FieldMetric& dy, bool 
       if (bndry->dir == bndry2->dir) {
         continue;
       }
-      for (auto pnt : *bndry) {
-        for (auto pnt2 : *bndry2) {
-#warning this could likely be done faster
-          if (pnt.ind() == pnt2.ind()) {
-            pnt.setValid(
-                static_cast<signed char>(std::abs((pnt2.offset() - pnt.offset())) - 2));
+      for (auto point : *bndry) {
+        for (auto point2 : *bndry2) {
+          if (point.ind() == point2.ind()) {
+            // This point has a boundary in both directions.  Calculate the
+            // distance between two points, to check how many non-boundary
+            // points exist.
+            point.setValid(static_cast<signed char>(
+                std::abs((point2.offset() - point.offset())) - 2));
           }
         }
       }
