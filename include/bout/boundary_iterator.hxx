@@ -16,8 +16,8 @@
 class BoundaryRegionIter {
 public:
   virtual ~BoundaryRegionIter() = default;
-  BoundaryRegionIter(int x, int y, int bx, int by, Mesh* mesh)
-      : dir(bx + by), x(x), y(y), bx(bx), by(by), localmesh(mesh) {
+  BoundaryRegionIter(int x, int y, int bx, int by, const Mesh& mesh)
+      : _dir(bx + by), x(x), y(y), bx(bx), by(by), localmesh(mesh) {
     ASSERT3(bx * by == 0);
   }
   bool operator!=(const BoundaryRegionIter& rhs) const { return ind() != rhs.ind(); }
@@ -81,12 +81,12 @@ public:
         bout::parallel_boundary_region::limitFreeScale(yprev(f), ythis(f), mode);
     BoutReal val = ythis(f);
     if (mode == SheathLimitMode::linear_free) {
-      for (int i = 1; i <= localmesh->ystart; ++i) {
+      for (int i = 1; i <= localmesh.ystart; ++i) {
         val += fac;
         f[ind().yp(by * i).xp(bx * i)] = val;
       }
     } else {
-      for (int i = 1; i <= localmesh->ystart; ++i) {
+      for (int i = 1; i <= localmesh.ystart; ++i) {
         val *= fac;
         f[ind().yp(by * i).xp(bx * i)] = val;
       }
@@ -97,7 +97,7 @@ public:
     const BoutReal fac =
         bout::parallel_boundary_region::limitFreeScale(yprev(f), ythis(f));
     BoutReal val = ythis(f);
-    for (int i = 1; i <= localmesh->ystart; ++i) {
+    for (int i = 1; i <= localmesh.ystart; ++i) {
       val *= fac;
       f[ind().yp(by * i).xp(bx * i)] = val;
     }
@@ -110,7 +110,7 @@ public:
 
   void neumann_o1(Field3D& f, BoutReal grad) const {
     BoutReal val = ythis(f);
-    for (int i = 1; i <= localmesh->ystart; ++i) {
+    for (int i = 1; i <= localmesh.ystart; ++i) {
       val += grad;
       f[ind().yp(by * i).xp(bx * i)] = val;
     }
@@ -118,7 +118,7 @@ public:
 
   void neumann_o2(Field3D& f, BoutReal grad) const {
     BoutReal val = yprev(f) + grad;
-    for (int i = 1; i <= localmesh->ystart; ++i) {
+    for (int i = 1; i <= localmesh.ystart; ++i) {
       val += grad;
       f[ind().yp(by * i).xp(bx * i)] = val;
     }
@@ -137,34 +137,35 @@ public:
 
   void setYPrevIfValid(Field3D& f, BoutReal val) const { yprev(f) = val; }
   void setAll(Field3D& f, const BoutReal val) const {
-    for (int i = -localmesh->ystart; i <= localmesh->ystart; ++i) {
+    for (int i = -localmesh.ystart; i <= localmesh.ystart; ++i) {
       f[ind().yp(by * i).xp(bx * i)] = val;
     }
   }
 
   static int abs_offset() { return 1; }
 
-#if BOUT_USE_METRIC_3D == 0
   BoutReal& ynext(Field2D& f) const { return f[ind().yp(by).xp(bx)]; }
   const BoutReal& ynext(const Field2D& f) const { return f[ind().yp(by).xp(bx)]; }
   BoutReal& yprev(Field2D& f) const { return f[ind().yp(-by).xp(-bx)]; }
   const BoutReal& yprev(const Field2D& f) const { return f[ind().yp(-by).xp(-bx)]; }
-#endif
 
-  const int dir;
+  int dir() const { return _dir; }
+
+private:
+  int _dir;
 
 protected:
   int z{0};
   int x;
   int y;
-  const int bx;
-  const int by;
+  int bx;
+  int by;
 
 private:
-  Mesh* localmesh;
-  int nx() const { return localmesh->LocalNx; }
-  int ny() const { return localmesh->LocalNy; }
-  int nz() const { return localmesh->LocalNz; }
+  const Mesh& localmesh;
+  int nx() const { return localmesh.LocalNx; }
+  int ny() const { return localmesh.LocalNy; }
+  int nz() const { return localmesh.LocalNz; }
 
   Ind3D xyz2ind(int x, int y, int z) const {
     return Ind3D{((x * ny() + y) * nz()) + z, ny(), nz()};
@@ -174,7 +175,8 @@ private:
 class BoundaryRegionIterY : public BoundaryRegionIter {
 public:
   ~BoundaryRegionIterY() override = default;
-  BoundaryRegionIterY(const RangeIterator& r, int y, int dir, bool is_end, Mesh* mesh)
+  BoundaryRegionIterY(const RangeIterator& r, int y, int dir, bool is_end,
+                      const Mesh& mesh)
       : BoundaryRegionIter(r.ind, y, 0, dir, mesh), r(r), is_end(is_end) {}
 
   bool operator!=(const BoundaryRegionIterY& rhs) {
@@ -203,16 +205,16 @@ private:
 
 class NewBoundaryRegionY {
 public:
-  NewBoundaryRegionY(Mesh* mesh, bool lower, const RangeIterator& r)
+  NewBoundaryRegionY(const Mesh& mesh, bool lower, const RangeIterator& r)
       : mesh(mesh), lower(lower), r(r) {}
   BoundaryRegionIterY begin(bool begin = true) {
-    return BoundaryRegionIterY(r, lower ? mesh->ystart : mesh->yend, lower ? -1 : +1,
+    return BoundaryRegionIterY(r, lower ? mesh.ystart : mesh.yend, lower ? -1 : +1,
                                !begin, mesh);
   }
   BoundaryRegionIterY end() { return begin(false); }
 
 private:
-  Mesh* mesh;
+  const Mesh& mesh;
   bool lower;
   RangeIterator r;
 };

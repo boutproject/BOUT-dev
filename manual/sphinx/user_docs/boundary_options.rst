@@ -552,7 +552,7 @@ Here is a short summary of some members of ``point``, where ``f`` is a :
    * - ``point.limitFree(f)``
      - Extrapolate into the boundary using only monotonic decreasing values.
        ``f`` needs to be positive.
-   * - ``point.dir``
+   * - ``point.dir()``
      - The direction of the boundary.
 
 

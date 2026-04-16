@@ -91,7 +91,7 @@ public:
   void apply(Field3D& f) override { return apply(f, 0); }
 
   void apply(Field3D& f, BoutReal t) override {
-    f.ynext(bndry->dir).allocate(); // Ensure unique before modifying
+    f.ynext(bndry->dir()).allocate(); // Ensure unique before modifying
 
     auto dy = f.getCoordinates()->dy;
 

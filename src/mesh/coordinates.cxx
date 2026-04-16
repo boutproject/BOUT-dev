@@ -2012,5 +2012,5 @@ void Coordinates::checkContravariant() {
 }
 
 std::shared_ptr<YBoundary> Coordinates::makeYBoundary(YBndryType type) const {
-  return std::make_shared<YBoundary>(type, localoptions, localmesh);
+  return std::make_shared<YBoundary>(type, localoptions, *localmesh);
 }

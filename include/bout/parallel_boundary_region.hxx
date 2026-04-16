@@ -118,7 +118,7 @@ class BoundaryRegionParIterBase {
 public:
   BoundaryRegionParIterBase(IndicesVec& bndry_points, IndicesIter bndry_position, int dir,
                             Mesh* localmesh)
-      : bndry_points(bndry_points), bndry_position(bndry_position), dir(dir),
+      : bndry_points(bndry_points), bndry_position(bndry_position), _dir(dir),
         localmesh(localmesh) {};
 
   // getter
@@ -249,7 +249,7 @@ public:
     }
   }
 
-  bool is_lower() const { return dir == -1; }
+  bool is_lower() const { return _dir == -1; }
 
   // NB: value needs to be scaled by dy
   // neumann_o1 is actually o2 if we would use an appropriate one-sided stencil.
@@ -327,7 +327,7 @@ public:
     if constexpr (check) {
       ASSERT3(valid() > -off - 2);
     }
-    auto _off = offset() + off * dir;
+    auto _off = offset() + off * _dir;
     return f.ynext(_off)[ind().yp(_off)];
   }
   template <bool check = true>
@@ -336,7 +336,7 @@ public:
     if constexpr (check) {
       ASSERT3(valid() > -off - 2);
     }
-    auto _off = offset() + off * dir;
+    auto _off = offset() + off * _dir;
     return f.ynext(_off)[ind().yp(_off)];
   }
 
@@ -353,7 +353,7 @@ public:
     if constexpr (check) {
       ASSERT3(valid() > -off - 2);
     }
-    auto _off = offset() + off * dir;
+    auto _off = offset() + off * _dir;
     return f(_off, ind().yp(_off));
   }
   BoutReal ynext(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
@@ -391,9 +391,10 @@ private:
   IndicesIter bndry_position;
 
   constexpr static BoutReal small_value = 1e-2;
+  int _dir;
 
 public:
-  const int dir;
+  int dir() const { return _dir; }
   Mesh* localmesh;
 };
 } // namespace parallel_boundary_region
@@ -409,12 +410,12 @@ using BoundaryRegionParIterConst =
 class BoundaryRegionPar : public BoundaryRegionBase {
 public:
   BoundaryRegionPar(const std::string& name, int dir, Mesh* passmesh)
-      : BoundaryRegionBase(name, passmesh), dir(dir) {
+      : BoundaryRegionBase(name, passmesh), _dir(dir) {
     ASSERT0(std::abs(dir) == 1);
     BoundaryRegionBase::isParallel = true;
   }
   BoundaryRegionPar(const std::string& name, BndryLoc loc, int dir, Mesh* passmesh)
-      : BoundaryRegionBase(name, loc, passmesh), dir(dir) {
+      : BoundaryRegionBase(name, loc, passmesh), _dir(dir) {
     BoundaryRegionBase::isParallel = true;
     ASSERT0(std::abs(dir) == 1);
   }
@@ -465,15 +466,16 @@ public:
   //   return BoundaryRegionParIterConst(bndry_points, bndry_points.begin(), dir);
   // }
   BoundaryRegionParIter begin() {
-    return BoundaryRegionParIter(bndry_points, bndry_points.begin(), dir, localmesh);
+    return BoundaryRegionParIter(bndry_points, bndry_points.begin(), _dir, localmesh);
   }
   BoundaryRegionParIter end() {
-    return BoundaryRegionParIter(bndry_points, bndry_points.end(), dir, localmesh);
+    return BoundaryRegionParIter(bndry_points, bndry_points.end(), _dir, localmesh);
   }
 
-  const int dir;
+  int dir() const { return _dir; }
 
 private:
+  int _dir;
   /// Vector of points in the boundary
   bout::parallel_boundary_region::IndicesVec bndry_points;
   /// Current position in the boundary points

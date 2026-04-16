@@ -45,15 +45,14 @@ public:
     return iter_points(func);
   }
 
-  YBoundary(YBndryType type, Options* options_ptr, Mesh* mesh) {
-    ASSERT3(mesh != nullptr);
+  YBoundary(YBndryType type, Options* options_ptr, const Mesh& mesh) {
     bool lower_y = true;
     bool upper_y = true;
     bool outer_x = true;
     bool inner_x = false;
     if (options_ptr != nullptr) {
       auto& options = *options_ptr;
-      if (!mesh->isFci()) {
+      if (!mesh.isFci()) {
         lower_y =
             options["lower_y"].doc("Boundary on lower y?").withDefault<bool>(lower_y);
         upper_y =
@@ -81,34 +80,34 @@ public:
       inner_x = true;
     }
 
-    if (mesh->isFci()) {
+    if (mesh.isFci()) {
       if (outer_x) {
-        for (auto& bndry : mesh->getBoundariesPar(BoundaryParType::xout)) {
+        for (auto& bndry : mesh.getBoundariesPar(BoundaryParType::xout)) {
           boundary_regions_par.push_back(bndry);
         }
       }
       if (inner_x) {
-        for (auto& bndry : mesh->getBoundariesPar(BoundaryParType::xin)) {
+        for (auto& bndry : mesh.getBoundariesPar(BoundaryParType::xin)) {
           boundary_regions_par.push_back(bndry);
         }
       }
     } else {
       if (lower_y) {
         boundary_regions.push_back(
-            std::make_shared<NewBoundaryRegionY>(mesh, true, mesh->iterateBndryLowerY()));
+            std::make_shared<NewBoundaryRegionY>(mesh, true, mesh.iterateBndryLowerY()));
       }
       if (upper_y) {
-        boundary_regions.push_back(std::make_shared<NewBoundaryRegionY>(
-            mesh, false, mesh->iterateBndryUpperY()));
+        boundary_regions.push_back(
+            std::make_shared<NewBoundaryRegionY>(mesh, false, mesh.iterateBndryUpperY()));
       }
     }
     // Cache boundary regions
-    _contains.emplace_back(mesh, false);
-    _contains.emplace_back(mesh, false);
+    _contains.emplace_back(&mesh, false);
+    _contains.emplace_back(&mesh, false);
     iter_points([&](const auto& point) {
-      if (point.dir == 1) {
+      if (point.dir() == 1) {
         _contains[1][point.ind()] = true;
-      } else if (point.dir == -1) {
+      } else if (point.dir() == -1) {
         _contains[0][point.ind()] = true;
       }
     });

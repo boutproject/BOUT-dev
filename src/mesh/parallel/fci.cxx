@@ -358,7 +358,7 @@ FCITransform::FCITransform(Mesh& mesh, const Coordinates::FieldMetric& dy, bool 
                               backward_boundary_xin, backward_boundary_xout};
   for (const auto& bndry : bndries) {
     for (const auto& bndry2 : bndries) {
-      if (bndry->dir == bndry2->dir) {
+      if (bndry->dir() == bndry2->dir()) {
         continue;
       }
       for (auto point : *bndry) {
