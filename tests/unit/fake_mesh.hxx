@@ -173,7 +173,7 @@ public:
   void addBoundary(BoundaryRegion* region) override { boundaries.push_back(region); }
   std::vector<BoundaryRegion*> getBoundaries() override { return boundaries; }
   std::vector<std::shared_ptr<BoundaryRegionPar>>
-  getBoundariesPar(BoundaryParType UNUSED(type)) override {
+  getBoundariesPar(BoundaryParType UNUSED(type)) const override {
     return std::vector<std::shared_ptr<BoundaryRegionPar>>();
   }
   BoutReal GlobalX(int jx) const override { return jx; }

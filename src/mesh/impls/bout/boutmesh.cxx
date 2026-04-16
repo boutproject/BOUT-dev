@@ -3164,7 +3164,7 @@ RangeIterator BoutMesh::iterateBndryUpperY() const {
 std::vector<BoundaryRegion*> BoutMesh::getBoundaries() { return boundary; }
 
 std::vector<std::shared_ptr<BoundaryRegionPar>>
-BoutMesh::getBoundariesPar(BoundaryParType type) {
+BoutMesh::getBoundariesPar(BoundaryParType type) const {
   return par_boundary[static_cast<int>(type)];
 }
 

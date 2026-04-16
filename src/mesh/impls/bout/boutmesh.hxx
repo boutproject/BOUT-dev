@@ -164,7 +164,7 @@ public:
   // Boundary regions
   std::vector<BoundaryRegion*> getBoundaries() override;
   std::vector<std::shared_ptr<BoundaryRegionPar>>
-  getBoundariesPar(BoundaryParType type) override;
+  getBoundariesPar(BoundaryParType type) const override;
   void addBoundaryPar(std::shared_ptr<BoundaryRegionPar> bndry,
                       BoundaryParType type) override;
   std::set<std::string> getPossibleBoundaries() const override;

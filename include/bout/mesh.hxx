@@ -3,7 +3,7 @@
  *
  * Interface for mesh classes. Contains standard variables and useful
  * routines.
- * 
+ *
  * Changelog
  * =========
  *
@@ -11,7 +11,7 @@
  *     * Removing coordinate system into separate
  *       Coordinates class
  *     * Adding index derivative functions from derivs.cxx
- * 
+ *
  * 2010-06 Ben Dudson, Sean Farley
  *     * Initial version, adapted from GridData class
  *     * Incorporates code from topology.cpp and Communicator
@@ -20,7 +20,7 @@
  * Copyright 2010-2025 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -501,7 +501,7 @@ public:
   /// get only xout:
   /// mesh->getBoundariesPar(Mesh::BoundaryParType::xout)
   virtual std::vector<std::shared_ptr<BoundaryRegionPar>>
-  getBoundariesPar(BoundaryParType type = BoundaryParType::all) = 0;
+  getBoundariesPar(BoundaryParType type = BoundaryParType::all) const = 0;
 
   /// Add a parallel(Y) boundary to this processor
   virtual void addBoundaryPar(std::shared_ptr<BoundaryRegionPar> UNUSED(bndry),
