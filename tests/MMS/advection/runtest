@@ -9,7 +9,7 @@
 # requires: make
 # cores: 8
 
-from boututils.run_wrapper import shell, launch_safe, build_and_log
+from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log, pi
@@ -21,11 +21,11 @@ import pickle
 import time
 
 if __name__ == "__main__":
-    build_and_log("MMS advection")
+    pass
 
 
 def make_parent():
-    build_and_log("MMS advection")
+    pass
 
 
 # List of NX values to use

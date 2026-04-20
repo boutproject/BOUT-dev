@@ -6,7 +6,7 @@
 
 # Requires: not metric_3d
 
-from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe
 from boututils.calculus import deriv
 from boututils.datafile import DataFile
 from boututils.linear_regression import linear_regression
@@ -212,7 +212,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    build_and_log("resistive drift instability test")
+    pass
 
     return_code = 0
     for zeff in args.Zeff_list:

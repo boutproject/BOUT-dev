@@ -8,12 +8,12 @@ try:
 except:
     pass
 
-from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
-build_and_log("griddata test")
+pass
 
 for nproc in [1]:
     stdout.write("Checking %d processors ... " % (nproc))

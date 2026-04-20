@@ -6,11 +6,11 @@
 # cores: 2
 
 from boutdata.collect import collect
-from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe
 import numpy
 from sys import exit
 
-build_and_log("DataFileFacade test")
+pass
 
 
 success = True

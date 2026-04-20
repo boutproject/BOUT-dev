@@ -13,14 +13,14 @@ from __future__ import division
 from __future__ import print_function
 from builtins import str
 
-from boututils.run_wrapper import shell, build_and_log, launch_safe
+from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log
 
 from os.path import join
 
-build_and_log("MMS diffusion test")
+pass
 
 # List of input directories
 inputs = [

@@ -36,12 +36,12 @@ vars = [
 ]
 tol = 1e-6  # Absolute tolerance
 
-from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
-build_and_log("Laplacian inversion test")
+pass
 
 # Read benchmark values
 print("Reading benchmark data")

@@ -4,7 +4,7 @@ import numpy as np
 from sys import exit
 
 from boututils.datafile import DataFile
-from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe
 
 # Cores: 18
 # Requires: netcdf
@@ -25,7 +25,7 @@ nype = 6  # need at least 6 to include all regions
 nxpe = 3
 command = "./test-communications NXPE=" + str(nxpe)
 
-build_and_log("Communications Test")
+pass
 
 # remove old outputs
 shell("rm data/BOUT.dmp.*")

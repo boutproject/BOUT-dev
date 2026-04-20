@@ -8,11 +8,11 @@
 # Requires: netcdf
 # Cores: 4
 
-from boututils.run_wrapper import build_and_log, shell, launch
+from boututils.run_wrapper import shell, launch
 from boutdata.collect import collect
 from sys import stdout, exit
 
-build_and_log("parallel inversion test")
+pass
 
 flags_src = [
     dict(acoef=1, bcoef=0, ccoef=0, dcoef=0, ecoef=0),

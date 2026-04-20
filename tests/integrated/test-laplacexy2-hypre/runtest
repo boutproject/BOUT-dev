@@ -10,7 +10,7 @@
 from sys import exit
 
 from boutdata.collect import collect
-from boututils.run_wrapper import build_and_log, launch_safe, shell
+from boututils.run_wrapper import launch_safe, shell
 
 tol = 5.0e-8
 
@@ -37,7 +37,7 @@ argslist = [
     "f:bndry_xin=neumann f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann b:function=.1",
 ]
 
-build_and_log("LaplaceXY inversion test")
+pass
 
 print("Running LaplaceXY inversion test")
 success = True

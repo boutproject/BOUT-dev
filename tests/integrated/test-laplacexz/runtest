@@ -7,7 +7,7 @@
 # Run the test, compare results against the benchmark
 #
 
-from boututils.run_wrapper import shell, launch_safe, getmpirun, build_and_log
+from boututils.run_wrapper import shell, launch_safe, getmpirun
 from boutdata.collect import collect
 import numpy as np
 from sys import exit
@@ -16,7 +16,7 @@ tol = 1e-10  # Absolute tolerance
 
 MPIRUN = getmpirun()
 
-build_and_log("LaplaceXZ test")
+pass
 
 print("Running LaplaceXZ test")
 success = True

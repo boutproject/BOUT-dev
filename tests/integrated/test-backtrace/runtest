@@ -4,10 +4,10 @@
 
 # requires all_tests
 
-from boututils.run_wrapper import build_and_log, shell
+from boututils.run_wrapper import shell
 import os
 
-build_and_log("backtrace environment variable test")
+pass
 
 try:
     del os.environ["BOUT_SHOW_BACKTRACE"]
