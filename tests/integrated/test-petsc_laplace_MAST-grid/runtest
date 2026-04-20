@@ -28,10 +28,6 @@ from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 from sys import stdout, exit
 
-pass
-    "PETSc Laplacian inversion test with non-identity metric (taken from grid for MAST SOL)"
-)
-
 print(
     "Running PETSc Laplacian inversion test with non-identity metric (taken from grid for MAST SOL)"
 )
