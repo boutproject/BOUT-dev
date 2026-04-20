@@ -1,25 +1,30 @@
-
 #ifndef BOUT_METRIC_TENSOR_HXX
 #define BOUT_METRIC_TENSOR_HXX
 
-#include "bout/build_defines.hxx"
-#include "bout/field2d.hxx"
-#include "bout/field3d.hxx"
 #include <bout/bout_types.hxx>
+#include <bout/build_defines.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
 
 #include <string>
 #include <utility>
 
-class MetricTensor {
+namespace bout {
+#if BOUT_USE_METRIC_3D
+using FieldMetric = Field3D;
+#else
+using FieldMetric = Field2D;
+#endif
+} // namespace bout
 
+class MetricTensor {
 public:
 #if BOUT_USE_METRIC_3D
-  using FieldMetric = Field3D;
   using Metric2DSlice = const BoutReal*;
 #else
-  using FieldMetric = Field2D;
   using Metric2DSlice = const BoutReal&;
 #endif
+  using FieldMetric = bout::FieldMetric;
 
   MetricTensor(FieldMetric g11, FieldMetric g22, FieldMetric g33, FieldMetric g12,
                FieldMetric g13, FieldMetric g23);

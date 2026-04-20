@@ -894,9 +894,7 @@ void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_cent
   localmesh->communicate(d1_dx_, d1_dy_, d1_dz_);
 }
 
-MetricTensor::FieldMetric Coordinates::recalculateJacobian() const {
-
-  TRACE("Coordinates::jacobian");
+FieldMetric Coordinates::recalculateJacobian() const {
   try {
     // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
     auto g_matrix = g11() * g22() * g33() + 2.0 * g12() * g13() * g23()
@@ -912,9 +910,7 @@ MetricTensor::FieldMetric Coordinates::recalculateJacobian() const {
   }
 }
 
-MetricTensor::FieldMetric Coordinates::recalculateBxy() const {
-  return sqrt(g_22()) / J();
-}
+FieldMetric Coordinates::recalculateBxy() const { return sqrt(g_22()) / J(); }
 
 void Coordinates::setParallelTransform(Options* mesh_options) {
 

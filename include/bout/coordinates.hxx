@@ -51,11 +51,7 @@ class Mesh;
  */
 class Coordinates {
 public:
-#if BOUT_USE_METRIC_3D
-  using FieldMetric = Field3D;
-#else
-  using FieldMetric = Field2D;
-#endif
+  using FieldMetric = bout::FieldMetric;
 
   /// Constructor interpolating from another Coordinates object
   /// By default attempts to read staggered Coordinates from grid data source,
@@ -147,20 +143,20 @@ public:
 #endif
 
   /// Covariant metric tensor
-  const MetricTensor::FieldMetric& g_11() const { return covariantMetricTensor.g11(); }
-  const MetricTensor::FieldMetric& g_22() const { return covariantMetricTensor.g22(); }
-  const MetricTensor::FieldMetric& g_33() const { return covariantMetricTensor.g33(); }
-  const MetricTensor::FieldMetric& g_12() const { return covariantMetricTensor.g12(); }
-  const MetricTensor::FieldMetric& g_13() const { return covariantMetricTensor.g13(); }
-  const MetricTensor::FieldMetric& g_23() const { return covariantMetricTensor.g23(); }
+  const FieldMetric& g_11() const { return covariantMetricTensor.g11(); }
+  const FieldMetric& g_22() const { return covariantMetricTensor.g22(); }
+  const FieldMetric& g_33() const { return covariantMetricTensor.g33(); }
+  const FieldMetric& g_12() const { return covariantMetricTensor.g12(); }
+  const FieldMetric& g_13() const { return covariantMetricTensor.g13(); }
+  const FieldMetric& g_23() const { return covariantMetricTensor.g23(); }
 
   /// Contravariant metric tensor (g^{ij})
-  const MetricTensor::FieldMetric& g11() const { return contravariantMetricTensor.g11(); }
-  const MetricTensor::FieldMetric& g22() const { return contravariantMetricTensor.g22(); }
-  const MetricTensor::FieldMetric& g33() const { return contravariantMetricTensor.g33(); }
-  const MetricTensor::FieldMetric& g12() const { return contravariantMetricTensor.g12(); }
-  const MetricTensor::FieldMetric& g13() const { return contravariantMetricTensor.g13(); }
-  const MetricTensor::FieldMetric& g23() const { return contravariantMetricTensor.g23(); }
+  const FieldMetric& g11() const { return contravariantMetricTensor.g11(); }
+  const FieldMetric& g22() const { return contravariantMetricTensor.g22(); }
+  const FieldMetric& g33() const { return contravariantMetricTensor.g33(); }
+  const FieldMetric& g12() const { return contravariantMetricTensor.g12(); }
+  const FieldMetric& g13() const { return contravariantMetricTensor.g13(); }
+  const FieldMetric& g23() const { return contravariantMetricTensor.g23(); }
 
   /// Covariant metric tensor
   const BoutReal& g_11(int x, int y, int z) const {
