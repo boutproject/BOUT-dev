@@ -1,5 +1,4 @@
 #include "bout/metric_tensor.hxx"
-#include "fmt/core.h"
 #include "invert3x3.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
@@ -9,7 +8,10 @@
 #include "bout/region.hxx"
 #include "bout/utils.hxx"
 
+#include <fmt/format.h>
+
 #include <cstdlib>
+#include <string>
 #include <utility>
 
 MetricTensor::MetricTensor(FieldMetric g11, FieldMetric g22, FieldMetric g33,
@@ -74,9 +76,6 @@ void MetricTensor::check(int ystart) {
 }
 
 MetricTensor MetricTensor::inverse(const std::string& region, const bool communicate) {
-
-  TRACE("MetricTensor::inverse");
-
   // Perform inversion of g{ij} to get g^{ij}, or vice versa
   auto matrix = Matrix<BoutReal>(3, 3);
 
@@ -97,11 +96,8 @@ MetricTensor MetricTensor::inverse(const std::string& region, const bool communi
     matrix(0, 2) = matrix(2, 0) = g13_m[i];
 
     if (const auto det = bout::invert3x3(matrix); det.has_value()) {
-      const auto error_message = fmt::format(
-          "\tERROR: metric tensor is singular at ({:d}, {:d}), determinant: {:d}\n",
-          i.x(), i.y(), det.value());
-      output_error.write(error_message);
-      throw BoutException(error_message);
+      throw BoutException("ERROR: metric tensor is singular at ({}, {}), determinant: {}",
+                          i.x(), i.y(), det.value());
     }
 
     g_11[i] = matrix(0, 0);

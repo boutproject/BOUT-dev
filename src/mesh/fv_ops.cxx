@@ -1,6 +1,5 @@
 #include <bout/fv_ops.hxx>
 #include <bout/globals.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
 #include <bout/utils.hxx>
 
@@ -34,8 +33,8 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
 
   // Flux in x
 
-  int const xs = mesh->xstart - 1;
-  int const xe = mesh->xend;
+  const int xs = mesh->xstart - 1;
+  const int xe = mesh->xend;
 
   /*
     if(mesh->firstX())
@@ -48,10 +47,10 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
 
   for (int i = xs; i <= xe; i++) {
     for (int j = mesh->ystart; j <= mesh->yend; j++) {
-      for (int k = 0; k < mesh->LocalNz; k++) {
+      for (int k = mesh->zstart; k <= mesh->zend; k++) {
         // Calculate flux from i to i+1
 
-        BoutReal const fout = 0.5 * (a(i, j, k) + a(i + 1, j, k))
+        const BoutReal fout = 0.5 * (a(i, j, k) + a(i + 1, j, k))
                               * (coord->J(i, j, k) * coord->g11(i, j, k)
                                  + coord->J(i + 1, j, k) * coord->g11(i + 1, j, k))
                               * (f(i + 1, j, k) - f(i, j, k))
@@ -181,13 +180,12 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
 
 const Field3D Div_par_K_Grad_par(const Field3D& Kin, const Field3D& fin,
                                  bool bndry_flux) {
-  TRACE("FV::Div_par_K_Grad_par");
 
   ASSERT2(Kin.getLocation() == fin.getLocation());
 
   Mesh* mesh = Kin.getMesh();
 
-  bool const use_parallel_slices = (Kin.hasParallelSlices() && fin.hasParallelSlices());
+  const bool use_parallel_slices = (Kin.hasParallelSlices() && fin.hasParallelSlices());
 
   const auto& K = use_parallel_slices ? Kin : toFieldAligned(Kin, "RGN_NOX");
   const auto& f = use_parallel_slices ? fin : toFieldAligned(fin, "RGN_NOX");
@@ -211,14 +209,14 @@ const Field3D Div_par_K_Grad_par(const Field3D& Kin, const Field3D& fin,
     if (bndry_flux || mesh->periodicY(i.x()) || !mesh->lastY(i.x())
         || (i.y() != mesh->yend)) {
 
-      BoutReal const c = 0.5 * (K[i] + Kup[iyp]); // K at the upper boundary
-      BoutReal const J = 0.5 * (coord->J()[i] + coord->J()[iyp]); // Jacobian at boundary
-      BoutReal const g_22 = 0.5 * (coord->g_22()[i] + coord->g_22()[iyp]);
+      const BoutReal c = 0.5 * (K[i] + Kup[iyp]); // K at the upper boundary
+      const BoutReal J = 0.5 * (coord->J()[i] + coord->J()[iyp]); // Jacobian at boundary
+      const BoutReal g_22 = 0.5 * (coord->g_22()[i] + coord->g_22()[iyp]);
 
-      BoutReal const gradient =
+      const BoutReal gradient =
           2. * (fup[iyp] - f[i]) / (coord->dy()[i] + coord->dy()[iyp]);
 
-      BoutReal const flux = c * J * gradient / g_22;
+      const BoutReal flux = c * J * gradient / g_22;
 
       result[i] += flux / (coord->dy()[i] * coord->J()[i]);
     }
@@ -226,15 +224,15 @@ const Field3D Div_par_K_Grad_par(const Field3D& Kin, const Field3D& fin,
     // Calculate flux at lower surface
     if (bndry_flux || mesh->periodicY(i.x()) || !mesh->firstY(i.x())
         || (i.y() != mesh->ystart)) {
-      BoutReal const c = 0.5 * (K[i] + Kdown[iym]); // K at the lower boundary
-      BoutReal const J = 0.5 * (coord->J()[i] + coord->J()[iym]); // Jacobian at boundary
+      const BoutReal c = 0.5 * (K[i] + Kdown[iym]); // K at the lower boundary
+      const BoutReal J = 0.5 * (coord->J()[i] + coord->J()[iym]); // Jacobian at boundary
 
-      BoutReal const g_22 = 0.5 * (coord->g_22()[i] + coord->g_22()[iym]);
+      const BoutReal g_22 = 0.5 * (coord->g_22()[i] + coord->g_22()[iym]);
 
-      BoutReal const gradient =
+      const BoutReal gradient =
           2. * (f[i] - fdown[iym]) / (coord->dy()[i] + coord->dy()[iym]);
 
-      BoutReal const flux = c * J * gradient / g_22;
+      const BoutReal flux = c * J * gradient / g_22;
 
       result[i] -= flux / (coord->dy()[i] * coord->J()[i]);
     }
@@ -267,9 +265,9 @@ const Field3D D4DY4(const Field3D& d_in, const Field3D& f_in) {
 
   for (int i = mesh->xstart; i <= mesh->xend; i++) {
     // Check for boundaries
-    bool const yperiodic = mesh->periodicY(i);
-    bool const has_upper_boundary = !yperiodic && mesh->lastY(i);
-    bool const has_lower_boundary = !yperiodic && mesh->firstY(i);
+    const bool yperiodic = mesh->periodicY(i);
+    const bool has_upper_boundary = !yperiodic && mesh->lastY(i);
+    const bool has_lower_boundary = !yperiodic && mesh->firstY(i);
 
     // Always calculate fluxes at upper Y cell boundary
     const int ystart =
@@ -284,15 +282,15 @@ const Field3D D4DY4(const Field3D& d_in, const Field3D& f_in) {
                          mesh->yend;
 
     for (int j = ystart; j <= yend; j++) {
-      for (int k = 0; k < mesh->LocalNz; k++) {
-        BoutReal const dy3 = SQ(coord->dz(i, j, k)) * coord->dz(i, j, k);
+      for (int k = mesh->zstart; k <= mesh->zend; k++) {
+        BoutReal dy3 = SQ(coord->dy(i, j, k)) * coord->dy(i, j, k);
         // 3rd derivative at upper boundary
 
-        BoutReal const d3fdy3 =
+        const BoutReal d3fdy3 =
             (f(i, j + 2, k) - 3. * f(i, j + 1, k) + 3. * f(i, j, k) - f(i, j - 1, k))
             / dy3;
 
-        BoutReal const flux = 0.5 * (d(i, j, k) + d(i, j + 1, k))
+        const BoutReal flux = 0.5 * (d(i, j, k) + d(i, j + 1, k))
                               * (coord->J(i, j, k) + coord->J(i, j + 1, k)) * d3fdy3;
 
         result(i, j, k) += flux / (coord->J(i, j, k) * coord->dz(i, j, k));
@@ -317,10 +315,10 @@ const Field3D D4DY4_Index(const Field3D& f_in, bool bndry_flux) {
   Coordinates* coord = f_in.getCoordinates();
 
   for (int i = mesh->xstart; i <= mesh->xend; i++) {
-    bool const yperiodic = mesh->periodicY(i);
+    const bool yperiodic = mesh->periodicY(i);
 
-    bool const has_upper_boundary = !yperiodic && mesh->lastY(i);
-    bool const has_lower_boundary = !yperiodic && mesh->firstY(i);
+    const bool has_upper_boundary = !yperiodic && mesh->lastY(i);
+    const bool has_lower_boundary = !yperiodic && mesh->firstY(i);
 
     for (int j = mesh->ystart; j <= mesh->yend; j++) {
 
@@ -331,7 +329,7 @@ const Field3D D4DY4_Index(const Field3D& f_in, bool bndry_flux) {
 
         if (j != mesh->yend || !has_upper_boundary) {
 
-          for (int k = 0; k < mesh->LocalNz; k++) {
+          for (int k = mesh->zstart; k <= mesh->zend; k++) {
             // Right boundary common factors
             const BoutReal common_factor = 0.25
                                            * (coord->dz(i, j, k) + coord->dz(i, j + 1, k))
@@ -355,7 +353,7 @@ const Field3D D4DY4_Index(const Field3D& f_in, bool bndry_flux) {
           // At a domain boundary
           // Use a one-sided difference formula
 
-          for (int k = 0; k < mesh->LocalNz; k++) {
+          for (int k = mesh->zstart; k <= mesh->zend; k++) {
             // Right boundary common factors
             const BoutReal common_factor = 0.25
                                            * (coord->dz(i, j, k) + coord->dz(i, j + 1, k))
@@ -385,7 +383,7 @@ const Field3D D4DY4_Index(const Field3D& f_in, bool bndry_flux) {
         // Calculate the fluxes
 
         if (j != mesh->ystart || !has_lower_boundary) {
-          for (int k = 0; k < mesh->LocalNz; k++) {
+          for (int k = mesh->zstart; k <= mesh->zend; k++) {
             const BoutReal common_factor = 0.25
                                            * (coord->dz(i, j, k) + coord->dz(i, j + 1, k))
                                            * (coord->J(i, j, k) + coord->J(i, j - 1, k));
@@ -404,7 +402,7 @@ const Field3D D4DY4_Index(const Field3D& f_in, bool bndry_flux) {
           }
         } else {
           // On a domain (Y) boundary
-          for (int k = 0; k < mesh->LocalNz; k++) {
+          for (int k = mesh->zstart; k <= mesh->zend; k++) {
             const BoutReal common_factor = 0.25
                                            * (coord->dz(i, j, k) + coord->dz(i, j + 1, k))
                                            * (coord->J(i, j, k) + coord->J(i, j - 1, k));
@@ -440,12 +438,13 @@ void communicateFluxes(Field3D& f) {
     throw BoutException("communicateFluxes: Sorry!");
   }
 
-  int const size = mesh->LocalNy * mesh->LocalNz;
+  const int size = mesh->LocalNy * mesh->LocalNz;
   comm_handle xin, xout;
   // Cache results to silence spurious compiler warning about xin,
   // xout possibly being uninitialised when used
-  bool const not_first = !mesh->firstX();
-  bool const not_last = !mesh->lastX();
+  const bool not_first = mesh->periodicX || !mesh->firstX();
+  const bool not_last = mesh->periodicX || !mesh->lastX();
+
   if (not_first) {
     xin = mesh->irecvXIn(f(0, 0), size, 0);
   }
@@ -464,7 +463,7 @@ void communicateFluxes(Field3D& f) {
     mesh->wait(xin);
     // Add to cells
     for (int y = mesh->ystart; y <= mesh->yend; y++) {
-      for (int z = 0; z < mesh->LocalNz; z++) {
+      for (int z = mesh->zstart; z <= mesh->zend; z++) {
         f(2, y, z) += f(0, y, z);
       }
     }
@@ -473,7 +472,7 @@ void communicateFluxes(Field3D& f) {
     mesh->wait(xout);
     // Add to cells
     for (int y = mesh->ystart; y <= mesh->yend; y++) {
-      for (int z = 0; z < mesh->LocalNz; z++) {
+      for (int z = mesh->zstart; z <= mesh->zend; z++) {
         f(mesh->LocalNx - 3, y, z) += f(mesh->LocalNx - 1, y, z);
       }
     }
@@ -506,12 +505,12 @@ Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc) {
       for (int k = 0; k < mesh->LocalNz; k++) {
 
         // wrap k-index around as Z is (currently) periodic.
-        int const kp = (k + 1) % (mesh->LocalNz);
-        int const km = (k - 1 + mesh->LocalNz) % (mesh->LocalNz);
+        const int kp = (k + 1) % (mesh->LocalNz);
+        const int km = (k - 1 + mesh->LocalNz) % (mesh->LocalNz);
 
         // Calculate gradients on cell faces -- assumes constant grid spacing
 
-        BoutReal const gR =
+        const BoutReal gR =
             (coords->g11(i, j, k) + coords->g11(i + 1, j, k))
                 * (f(i + 1, j, k) - f(i, j, k))
                 / (coords->dx(i + 1, j, k) + coords->dx(i, j, k))
@@ -519,7 +518,7 @@ Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc) {
                   * (f(i + 1, j, kp) - f(i + 1, j, km) + f(i, j, kp) - f(i, j, km))
                   / (4. * coords->dz(i, j, k));
 
-        BoutReal const gL =
+        const BoutReal gL =
             (coords->g11(i - 1, j, k) + coords->g11(i, j, k))
                 * (f(i, j, k) - f(i - 1, j, k))
                 / (coords->dx(i - 1, j, k) + coords->dx(i, j, k))
@@ -527,13 +526,13 @@ Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc) {
                   * (f(i - 1, j, kp) - f(i - 1, j, km) + f(i, j, kp) - f(i, j, km))
                   / (4 * coords->dz(i, j, k));
 
-        BoutReal const gD =
+        const BoutReal gD =
             coords->g13(i, j, k)
                 * (f(i + 1, j, km) - f(i - 1, j, km) + f(i + 1, j, k) - f(i - 1, j, k))
                 / (4. * coords->dx(i, j, k))
             + coords->g33(i, j, k) * (f(i, j, k) - f(i, j, km)) / coords->dz(i, j, k);
 
-        BoutReal const gU =
+        const BoutReal gU =
             coords->g13(i, j, k)
                 * (f(i + 1, j, kp) - f(i - 1, j, kp) + f(i + 1, j, k) - f(i - 1, j, k))
                 / (4. * coords->dx(i, j, k))

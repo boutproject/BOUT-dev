@@ -273,8 +273,6 @@ class Elm_6f : public PhysicsModel {
      * This function implements d2/dy2 where y is the poloidal coordinate theta
      */
 
-    TRACE("Grad2_par2new( Field3D )");
-
     Field3D result = D2DY2(f);
 
 #if BOUT_USE_TRACK
@@ -342,8 +340,6 @@ class Elm_6f : public PhysicsModel {
 
   // Parallel gradient along perturbed field-line
   Field3D Grad_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) {
-    TRACE("Grad_parP");
-
     Field3D result;
 
     if (parallel_lagrange || parallel_project) {

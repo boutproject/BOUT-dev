@@ -25,11 +25,16 @@
 /// alias to make a new test:
 ///
 ///     using MyTest = FakeMeshFixture;
-class FakeMeshFixture : public ::testing::Test {
+///
+/// Type alias `FakeMeshFixture = FakeMeshFixture_tmpl<3, 5, 7>`
+/// is used as a shim to allow FakeMeshFixture to be used with default values for nx, ny, nz.
+/// Use this template class directly to use different sized grid:
+///
+///     using MyTest = FakeMeshFixture_tmpl<7, 9, 11>;
+template <int NX, int NY, int NZ>
+class FakeMeshFixture_tmpl : public ::testing::Test {
 public:
-  FakeMeshFixture() {
-    WithQuietOutput quiet_info{output_info};
-    WithQuietOutput quiet_warn{output_warn};
+  FakeMeshFixture_tmpl() : mesh_m(NX, NY, NZ, mpi), mesh_staggered_m(NX, NY, NZ, mpi) {
 
     delete bout::globals::mesh;
     bout::globals::mpi = new MpiWrapper();
@@ -123,8 +128,12 @@ public:
         ->setCoordinates(test_coords_staggered, CELL_ZLOW);
   }
 
-  ~FakeMeshFixture() override {
-    delete bout::globals::mesh;
+  FakeMeshFixture_tmpl(const FakeMeshFixture_tmpl&) = delete;
+  FakeMeshFixture_tmpl& operator=(const FakeMeshFixture_tmpl&) = delete;
+  FakeMeshFixture_tmpl(FakeMeshFixture_tmpl&&) = delete;
+  FakeMeshFixture_tmpl& operator=(FakeMeshFixture_tmpl&&) = delete;
+
+  ~FakeMeshFixture_tmpl() override {
     bout::globals::mesh = nullptr;
     delete mesh_staggered;
     mesh_staggered = nullptr;
@@ -134,12 +143,24 @@ public:
     Options::cleanup();
   }
 
-  static constexpr int nx = 3;
-  static constexpr int ny = 5;
-  static constexpr int nz = 7;
+  static constexpr int nx = NX;
+  static constexpr int ny = NY;
+  static constexpr int nz = NZ;
 
-  Mesh* mesh_staggered = nullptr;
-
+private:
   std::shared_ptr<Coordinates> test_coords{nullptr};
   std::shared_ptr<Coordinates> test_coords_staggered{nullptr};
+
+  WithQuietOutput quiet_info{output_info};
+  WithQuietOutput quiet_warn{output_warn};
+  MpiWrapper mpi;
+
+  FakeMesh mesh_m;
+  FakeMesh mesh_staggered_m;
+
+public:
+  // Public pointer to our staggered mesh
+  Mesh* mesh_staggered; // NOLINT
 };
+
+using FakeMeshFixture = FakeMeshFixture_tmpl<3, 5, 7>;

@@ -8,7 +8,7 @@
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/mesh.hxx>
-#include <bout/msg_stack.hxx>
+#include <bout/petsc_interface.hxx>
 #include <bout/utils.hxx>
 
 #include <cmath>
@@ -113,7 +113,7 @@ static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
  *
  * This can be a linearised and simplified form of FormFunction
  */
-static PetscErrorCode FormFunctionForColoring(SNES UNUSED(snes), Vec x, Vec f,
+static PetscErrorCode FormFunctionForColoring(void* UNUSED(snes), Vec x, Vec f,
                                               void* ctx) {
   return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f, true);
 }
@@ -134,8 +134,6 @@ static PetscErrorCode imexbdf2PCapply(PC pc, Vec x, Vec y) {
  *
  */
 int IMEXBDF2::init() {
-
-  TRACE("Initialising IMEX-BDF2 solver");
 
   Solver::init();
   output << "\n\tIMEX-BDF2 time-integration solver\n";
@@ -330,7 +328,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
       if (mesh->firstX()) {
         // Lower X boundary
         for (int y = mesh->ystart; y <= mesh->yend; y++) {
-          for (int z = 0; z < mesh->LocalNz; z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
             int localIndex = ROUND(index(mesh->xstart, y, z));
             ASSERT2((localIndex >= 0) && (localIndex < localN));
             if (z == 0) {
@@ -349,7 +347,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
       } else {
         // On another processor
         for (int y = mesh->ystart; y <= mesh->yend; y++) {
-          for (int z = 0; z < mesh->LocalNz; z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
             int localIndex = ROUND(index(mesh->xstart, y, z));
             ASSERT2((localIndex >= 0) && (localIndex < localN));
             if (z == 0) {
@@ -372,7 +370,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
       if (mesh->lastX()) {
         // Upper X boundary
         for (int y = mesh->ystart; y <= mesh->yend; y++) {
-          for (int z = 0; z < mesh->LocalNz; z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
             int localIndex = ROUND(index(mesh->xend, y, z));
             ASSERT2((localIndex >= 0) && (localIndex < localN));
             if (z == 0) {
@@ -391,7 +389,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
       } else {
         // On another processor
         for (int y = mesh->ystart; y <= mesh->yend; y++) {
-          for (int z = 0; z < mesh->LocalNz; z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
             int localIndex = ROUND(index(mesh->xend, y, z));
             ASSERT2((localIndex >= 0) && (localIndex < localN));
             if (z == 0) {
@@ -558,7 +556,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
           }
 
           // 3D fields
-          for (int z = 0; z < mesh->LocalNz; z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
 
             int ind = ROUND(index(x, y, z));
 
@@ -651,9 +649,8 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
       // Create data structure for SNESComputeJacobianDefaultColor
       MatFDColoringCreate(Jmf, iscoloring, &fdcoloring);
       // Set the function to difference
-      MatFDColoringSetFunction(
-          fdcoloring, reinterpret_cast<PetscErrorCode (*)()>(FormFunctionForColoring),
-          this);
+      MatFDColoringSetFunction(fdcoloring,
+                               bout::cast_MatFDColoringFn(FormFunctionForColoring), this);
       MatFDColoringSetFromOptions(fdcoloring);
       MatFDColoringSetUp(Jmf, iscoloring, fdcoloring);
       ISColoringDestroy(&iscoloring);
@@ -677,12 +674,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
           0, // Number of nonzeros per row in off-diagonal portion of local submatrix
           nullptr, &Jmf);
 
-#if PETSC_VERSION_GE(3, 4, 0)
       SNESSetJacobian(*snesIn, Jmf, Jmf, SNESComputeJacobianDefault, this);
-#else
-      // Before 3.4
-      SNESSetJacobian(*snesIn, Jmf, Jmf, SNESDefaultComputeJacobian, this);
-#endif
 
       MatSetOption(Jmf, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
     }
@@ -746,7 +738,6 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
 }
 
 int IMEXBDF2::run() {
-  TRACE("IMEXBDF2::run()");
 
   // Multi-step scheme, so first steps are different
   int order = 1;
@@ -1425,7 +1416,7 @@ void IMEXBDF2::loopVars(BoutReal* u) {
       if (mesh->firstX() && !mesh->periodicX) {
         for (int jx = 0; jx < mesh->xstart; ++jx) {
           for (int jy = mesh->ystart; jy <= mesh->yend; ++jy) {
-            for (int jz = 0; jz < mesh->LocalNz; ++jz) {
+            for (int jz = mesh->zstart; jz <= mesh->zend; ++jz) {
               op.run(jx, jy, jz, u);
               ++u;
             }
@@ -1437,7 +1428,7 @@ void IMEXBDF2::loopVars(BoutReal* u) {
       if (mesh->lastX() && !mesh->periodicX) {
         for (int jx = mesh->xend + 1; jx < mesh->LocalNx; ++jx) {
           for (int jy = mesh->ystart; jy <= mesh->yend; ++jy) {
-            for (int jz = 0; jz < mesh->LocalNz; ++jz) {
+            for (int jz = mesh->zstart; jz <= mesh->zend; ++jz) {
               op.run(jx, jy, jz, u);
               ++u;
             }
@@ -1447,7 +1438,7 @@ void IMEXBDF2::loopVars(BoutReal* u) {
       // Lower Y
       for (RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); ++xi) {
         for (int jy = 0; jy < mesh->ystart; ++jy) {
-          for (int jz = 0; jz < mesh->LocalNz; ++jz) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; ++jz) {
             op.run(*xi, jy, jz, u);
             ++u;
           }
@@ -1457,7 +1448,7 @@ void IMEXBDF2::loopVars(BoutReal* u) {
       // Upper Y
       for (RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); ++xi) {
         for (int jy = mesh->yend + 1; jy < mesh->LocalNy; ++jy) {
-          for (int jz = 0; jz < mesh->LocalNz; ++jz) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; ++jz) {
             op.run(*xi, jy, jz, u);
             ++u;
           }
@@ -1468,7 +1459,7 @@ void IMEXBDF2::loopVars(BoutReal* u) {
     // Bulk of points
     for (int jx = mesh->xstart; jx <= mesh->xend; ++jx) {
       for (int jy = mesh->ystart; jy <= mesh->yend; ++jy) {
-        for (int jz = 0; jz < mesh->LocalNz; ++jz) {
+        for (int jz = mesh->zstart; jz <= mesh->zend; ++jz) {
           op.run(jx, jy, jz, u);
           ++u;
         }

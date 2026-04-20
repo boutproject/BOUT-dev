@@ -3,10 +3,8 @@
 
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
 #include <bout/utils.hxx>
-#include <cmath>
 
 #include <bout/output.hxx>
 
@@ -28,7 +26,6 @@ void RK3SSP::setMaxTimestep(BoutReal dt) {
 }
 
 int RK3SSP::init() {
-  TRACE("Initialising RK3 SSP solver");
 
   Solver::init();
   output << "\n\tRunge-Kutta 3rd-order SSP solver\n";
@@ -63,7 +60,6 @@ int RK3SSP::init() {
 }
 
 int RK3SSP::run() {
-  TRACE("RK3SSP::run()");
 
   for (int s = 0; s < getNumberOutputSteps(); s++) {
     BoutReal target = simtime + getOutputTimestep();

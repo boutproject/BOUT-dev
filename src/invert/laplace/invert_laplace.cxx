@@ -33,17 +33,18 @@
 
 #include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/build_defines.hxx>
 #include <bout/constants.hxx>
 #include <bout/globals.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/mesh.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>
 #include <bout/solver.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
+#include <algorithm>
 #include <cmath>
 
 // Implementations:
@@ -90,19 +91,12 @@ Laplacian::Laplacian(Options* options, const CELL_LOC loc, Mesh* mesh_in,
   const BoutReal filter = (*options)["filter"]
                               .doc("Fraction of Z modes to filter out. Between 0 and 1")
                               .withDefault(0.0);
-  const int ncz = localmesh->LocalNz;
+  const int ncz = localmesh->zend - localmesh->zstart + 1;
   // convert filtering into an integer number of modes
   maxmode = (*options)["maxmode"]
                 .doc("The maximum Z mode to solve for")
-                .withDefault(ROUND((1.0 - filter) * static_cast<BoutReal>(ncz / 2)));
-
-  // Clamp maxmode between 0 and nz/2
-  if (maxmode < 0) {
-    maxmode = 0;
-  }
-  if (maxmode > ncz / 2) {
-    maxmode = ncz / 2;
-  }
+                .withDefault(ROUND((1.0 - filter) * static_cast<BoutReal>(ncz) / 2.0));
+  maxmode = std::clamp(maxmode, 0, ncz / 2);
 
   low_mem = (*options)["low_mem"]
                 .doc("If true, reduce the amount of memory used")
@@ -155,7 +149,6 @@ void Laplacian::cleanup() { instance.reset(); }
  **********************************************************************************/
 
 Field3D Laplacian::solve(const Field3D& b) {
-  TRACE("Laplacian::solve(Field3D)");
 
   ASSERT1(b.getLocation() == location);
   ASSERT1(localmesh == b.getMesh());
@@ -216,7 +209,6 @@ Field2D Laplacian::solve(const Field2D& b) {
  * \returns x All the y-slices of x_slice in the equation A*x_slice = b_slice
  */
 Field3D Laplacian::solve(const Field3D& b, const Field3D& x0) {
-  TRACE("Laplacian::solve(Field3D, Field3D)");
 
   ASSERT1(b.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
@@ -261,7 +253,7 @@ Field2D Laplacian::solve(const Field2D& b, const Field2D& x0) {
  **********************************************************************************/
 
 void Laplacian::tridagCoefs(int jx, int jy, int jz, dcomplex& a, dcomplex& b, dcomplex& c,
-                            const Field2D* ccoef, const Field2D* d, CELL_LOC loc) {
+                            const Field2D* ccoef, const Field2D* d, CELL_LOC loc) const {
 
   if (loc == CELL_DEFAULT) {
     loc = location;
@@ -278,13 +270,13 @@ void Laplacian::tridagCoefs(int jx, int jy, int jz, dcomplex& a, dcomplex& b, dc
 void Laplacian::tridagCoefs(int /* jx */, int /* jy */, BoutReal /* kwave */,
                             dcomplex& /* a */, dcomplex& /* b */, dcomplex& /* c */,
                             const Field2D* /* c1coef */, const Field2D* /* c2coef */,
-                            const Field2D* /* d */, CELL_LOC /* loc */) {
+                            const Field2D* /* d */, CELL_LOC /* loc */) const {
   throw BoutException("Laplacian::tridagCoefs() does not support 3d metrics.");
 }
 #else
 void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomplex& b,
                             dcomplex& c, const Field2D* c1coef, const Field2D* c2coef,
-                            const Field2D* d, CELL_LOC loc) {
+                            const Field2D* d, CELL_LOC loc) const {
   /* Function: Laplacian::tridagCoef
    * Purpose:  - Set the matrix components of A in Ax=b, solving
    *
@@ -426,14 +418,14 @@ void Laplacian::tridagMatrix(dcomplex* /*avec*/, dcomplex* /*bvec*/, dcomplex* /
                              dcomplex* /*bk*/, int /*jy*/, int /*kz*/, BoutReal /*kwave*/,
                              const Field2D* /*a*/, const Field2D* /*c1coef*/,
                              const Field2D* /*c2coef*/, const Field2D* /*d*/,
-                             bool /*includeguards*/, bool /*zperiodic*/) {
+                             bool /*includeguards*/, bool /*zperiodic*/) const {
   throw BoutException("Error: tridagMatrix does not yet work with 3D metric.");
 }
 #else
 void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dcomplex* bk,
                              int jy, int kz, BoutReal kwave, const Field2D* a,
                              const Field2D* c1coef, const Field2D* c2coef,
-                             const Field2D* d, bool includeguards, bool zperiodic) {
+                             const Field2D* d, bool includeguards, bool zperiodic) const {
   ASSERT1(a->getLocation() == location);
   ASSERT1(c1coef->getLocation() == location);
   ASSERT1(c2coef->getLocation() == location);
@@ -462,7 +454,8 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
 
   // Setting the width of the boundary.
   // NOTE: The default is a width of (localmesh->xstart) guard cells
-  int inbndry = localmesh->xstart, outbndry = localmesh->xstart;
+  int inbndry = localmesh->xstart;
+  int outbndry = localmesh->xstart;
 
   // If the flags to assign that only one guard cell should be used is set
   if (isGlobalFlagSet(INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {

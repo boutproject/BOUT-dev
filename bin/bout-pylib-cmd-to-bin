@@ -126,8 +126,7 @@ def createwrapper(mod, func_name, func, name):
             out += end
             f.write(out)
 
-        fprint(
-            """#!/usr/bin/env python3
+        fprint("""#!/usr/bin/env python3
 # PYTHON_ARGCOMPLETE_OK
 
 import argparse
@@ -136,8 +135,7 @@ try:
 except ImportError:
     argcomplete=None
 
-"""
-        )
+""")
         doc = True
         para = False
         ret = False
@@ -183,19 +181,16 @@ except ImportError:
                         arg_help[curarg].append(esc(blas))
         # Print functions that are needed
         if "str_to_slice" in arg_type.values():
-            fprint(
-                """
+            fprint("""
 def str_to_slice(sstr):
     args=[]
     for s in sstr.split(','):
         args.append(int(s))
     print(args)
     return slice(*args)
-"""
-            )
+""")
         if "str_to_bool" in arg_type.values():
-            fprint(
-                """
+            fprint("""
 def str_to_bool(sstr):
     low=sstr.lower()
     # no or false
@@ -206,8 +201,7 @@ def str_to_bool(sstr):
         return True
     else:
         raise ArgumentTypeError("Cannot parse %s to bool type"%sstr)
-"""
-            )
+""")
         # Create the parser
         fprint("parser = argparse.ArgumentParser(%s)" % (esc(docs)))
         spec = inspect.signature(func)
@@ -247,24 +241,19 @@ def str_to_bool(sstr):
                     pre = "\n    "
             fprint(")")
 
-        fprint(
-            """
+        fprint("""
 if argcomplete:
     argcomplete.autocomplete(parser)
 
-# late import for faster auto-complete"""
-        )
+# late import for faster auto-complete""")
         fprint("from %s import %s" % (mod, func_name))
-        fprint(
-            """
+        fprint("""
 args = parser.parse_args()
 
 # Call the function %s, using command line arguments
 %s(**args.__dict__)
 
-"""
-            % (func_name, func_name)
-        )
+""" % (func_name, func_name))
     # alternative, but I think 0o755 is easier to read
     # import stat
     # os.chmod(filename,stat.S_IRWXU|stat.S_IRGRP|stat.S_IXGRP|stat.S_IROTH|stat.S_IXOTH)

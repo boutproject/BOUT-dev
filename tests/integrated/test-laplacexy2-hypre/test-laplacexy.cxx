@@ -24,17 +24,22 @@
  **************************************************************************/
 
 #include <bout/bout.hxx>
-#include <bout/constants.hxx>
-#include <bout/derivs.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/difops.hxx>
+#include <bout/field2d.hxx>
 #include <bout/initialprofiles.hxx>
-#include <bout/invert/laplacexy2_hypre.hxx>
+#include <bout/invert/laplacexy.hxx>
 #include <bout/options.hxx>
+#include <bout/options_io.hxx>
+#include <bout/output.hxx>
+
+#include <cstdlib>
 
 int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
 
-  LaplaceXY2Hypre laplacexy;
+  auto laplacexy = LaplaceXYFactory::getInstance().create("hypre", nullptr);
 
   // Solving equations of the form
   // Div(A Grad_perp(f)) + B*f = rhs
@@ -54,10 +59,10 @@ int main(int argc, char** argv) {
 
   Field2D rhs = Laplace_perpXY(a, f) + b * f;
 
-  laplacexy.setCoefs(a, b);
+  laplacexy->setCoefs(a, b);
 
   Field2D guess = 0.0;
-  Field2D sol = laplacexy.solve(rhs, guess);
+  Field2D sol = laplacexy->solve(rhs, guess);
   Field2D error = (f - sol) / f;
   // Absolute value of relative error: abs((f - sol)/f)
   Field2D absolute_error = abs(f - sol);

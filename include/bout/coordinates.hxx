@@ -3,16 +3,16 @@
  *
  * ChangeLog
  * =========
- * 
+ *
  * 2014-11-10 Ben Dudson <bd512@york.ac.uk>
  *    * Created by separating metric from Mesh
  *
- * 
- **************************************************************************
- * Copyright 2014 B.D.Dudson
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ **************************************************************************
+ * Copyright 2014-2025 BOUT++ contributors
+ *
+ * Contact: Ben Dudson, dudson2@llnl.gov
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -33,10 +33,16 @@
 #ifndef BOUT_COORDINATES_H
 #define BOUT_COORDINATES_H
 
-#include "christoffel_symbols.hxx"
-#include "g_values.hxx"
-#include "bout/metric_tensor.hxx"
-#include "bout/paralleltransform.hxx"
+#include <bout/bout_types.hxx>
+#include <bout/build_defines.hxx>
+#include <bout/christoffel_symbols.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
+#include <bout/g_values.hxx>
+#include <bout/metric_tensor.hxx>
+#include <bout/paralleltransform.hxx>
+
+#include <utility>
 
 class Mesh;
 
@@ -108,9 +114,9 @@ public:
   const BoutReal& J(int x, int y) const { return J()(x, y); }
 #endif
 
-  void setDx(FieldMetric dx, const bool communicate = true);
-  void setDy(FieldMetric dy, const bool communicate = true);
-  void setDz(FieldMetric dz, const bool communicate = true);
+  void setDx(FieldMetric dx, bool communicate = true);
+  void setDy(FieldMetric dy, bool communicate = true);
+  void setDz(FieldMetric dz, bool communicate = true);
 
   void setD1_dx(FieldMetric d1_dx) { d1_dx_ = std::move(d1_dx); }
   void setD1_dy(FieldMetric d1_dy) { d1_dy_ = std::move(d1_dy); }
@@ -269,9 +275,10 @@ public:
     transform = std::move(pt);
   }
 
+  bool hasParallelTransform() const { return transform != nullptr; }
   /// Return the parallel transform
-  ParallelTransform& getParallelTransform() {
-    ASSERT1(transform != nullptr);
+  ParallelTransform& getParallelTransform() const {
+    ASSERT1(hasParallelTransform());
     return *transform;
   }
 
@@ -503,10 +510,10 @@ private:
 class TokamakCoordinates : public Coordinates {
 public:
   TokamakCoordinates(Mesh *mesh) : Coordinates(mesh) {
-    
+
   }
 private:
-  
+
 };
 */
 

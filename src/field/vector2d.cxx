@@ -2,7 +2,7 @@
  * Class for 2D vectors. Built on the Field2D class,
  * all operators relating to vectors are here (none in Field classes)
  *
- * As with Field2D, Vector2D are constant in z (toroidal angle) 
+ * As with Field2D, Vector2D are constant in z (toroidal angle)
  *
  * B.Dudson, October 2007
  *
@@ -10,7 +10,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -204,7 +204,7 @@ Vector2D* Vector2D::timeDeriv() {
 }
 
 /***************************************************************
- *                         OPERATORS 
+ *                         OPERATORS
  ***************************************************************/
 
 /////////////////// ASSIGNMENT ////////////////////
@@ -310,7 +310,7 @@ Vector2D& Vector2D::operator/=(const Field2D& rhs) {
 }
 
 /***************************************************************
- *                      BINARY OPERATORS 
+ *                      BINARY OPERATORS
  ***************************************************************/
 
 ////////////////// ADDITION //////////////////////
@@ -437,7 +437,7 @@ CELL_LOC Vector2D::getLocation() const {
 
 Vector2D& Vector2D::setLocation(CELL_LOC loc) {
   SCOREP0();
-  TRACE("Vector2D::setLocation");
+
   if (loc == CELL_DEFAULT) {
     loc = CELL_CENTRE;
   }

@@ -5,7 +5,6 @@ import copy
 import difflib
 import re
 
-
 format_replacements = {
     "c": "c",
     "d": "d",

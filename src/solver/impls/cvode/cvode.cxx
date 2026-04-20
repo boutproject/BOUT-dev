@@ -51,6 +51,10 @@
 #include <cvode/cvode_bbdpre.h>
 #include <cvode/cvode_ls.h>
 
+#include <sunlinsol/sunlinsol_spbcgs.h>
+#include <sunlinsol/sunlinsol_spfgmr.h>
+#include <sunlinsol/sunlinsol_sptfqmr.h>
+
 #include <algorithm>
 #include <iterator>
 #include <numeric>
@@ -58,6 +62,8 @@
 
 BOUT_ENUM_CLASS(positivity_constraint, none, positive, non_negative, negative,
                 non_positive);
+
+BOUT_ENUM_CLASS(linear_solver, gmres, fgmres, tfqmr, bcgs);
 
 // NOLINTBEGIN(readability-identifier-length)
 namespace {
@@ -171,7 +177,6 @@ CvodeSolver::~CvodeSolver() {
  **************************************************************************/
 
 int CvodeSolver::init() {
-  TRACE("Initialising CVODE solver");
 
   Solver::init();
 
@@ -340,11 +345,27 @@ int CvodeSolver::init() {
     }
   } else {
     output_info.write("\tUsing Newton iteration\n");
-    TRACE("Setting preconditioner");
 
     const auto prectype =
         use_precon ? (rightprec ? SUN_PREC_RIGHT : SUN_PREC_LEFT) : SUN_PREC_NONE;
-    sun_solver = callWithSUNContext(SUNLinSol_SPGMR, suncontext, uvec, prectype, maxl);
+
+    switch ((*options)["linear_solver"]
+                .doc("Set linear solver type. Default is gmres.")
+                .withDefault(linear_solver::gmres)) {
+    case linear_solver::gmres:
+      sun_solver = callWithSUNContext(SUNLinSol_SPGMR, suncontext, uvec, prectype, maxl);
+      break;
+    case linear_solver::fgmres:
+      sun_solver = callWithSUNContext(SUNLinSol_SPFGMR, suncontext, uvec, prectype, maxl);
+      break;
+    case linear_solver::tfqmr:
+      sun_solver =
+          callWithSUNContext(SUNLinSol_SPTFQMR, suncontext, uvec, prectype, maxl);
+      break;
+    case linear_solver::bcgs:
+      sun_solver = callWithSUNContext(SUNLinSol_SPBCGS, suncontext, uvec, prectype, maxl);
+      break;
+    };
     if (sun_solver == nullptr) {
       throw BoutException("Creating SUNDIALS linear solver failed\n");
     }
@@ -463,7 +484,6 @@ CvodeSolver::create_constraints(const std::vector<VarStr<FieldType>>& fields) {
  **************************************************************************/
 
 int CvodeSolver::run() {
-  TRACE("CvodeSolver::run()");
 
   if (!cvode_initialised) {
     throw BoutException("CvodeSolver not initialised\n");
@@ -791,7 +811,7 @@ void CvodeSolver::loop_vector_option_values_op(Ind2D UNUSED(i2d), BoutReal* opti
 }
 
 void CvodeSolver::resetInternalFields() {
-  TRACE("CvodeSolver::resetInternalFields");
+
   save_vars(N_VGetArrayPointer(uvec));
 
   if (CVodeReInit(cvode_mem, simtime, uvec) != CV_SUCCESS) {

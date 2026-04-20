@@ -5,11 +5,11 @@
 #ifndef BOUT_FV_OPS_H
 #define BOUT_FV_OPS_H
 
+#include "bout/build_defines.hxx"
 #include "bout/field3d.hxx"
 #include "bout/globals.hxx"
-#include "bout/vector2d.hxx"
-
 #include "bout/utils.hxx"
+#include "bout/vector2d.hxx"
 #include <bout/mesh.hxx>
 
 namespace FV {
@@ -100,7 +100,7 @@ struct Fromm {
 
 /*!
    * Second order slope limiter method
-   * 
+   *
    * Limits slope to minimum absolute value
    * of left and right gradients. If at a maximum
    * or minimum slope set to zero, i.e. reverts
@@ -137,8 +137,8 @@ private:
 
 /*!
    * Monotonised Central (MC) second order slope limiter (Van Leer)
-   * 
-   * Limits the slope based on taking the slope with 
+   *
+   * Limits the slope based on taking the slope with
    * the minimum absolute value from central, 2*left and
    * 2*right. If any of these slopes have different signs
    * then the slope reverts to zero (i.e. 1st-order upwinding).
@@ -258,7 +258,7 @@ const Field3D Div_par(const Field3D& f_in, const Field3D& v_in,
       BoutReal flux_factor_lm =
           common_factor / (coord->dy(i, j - 1) * coord->J(i, j - 1));
 #endif
-      for (int k = 0; k < mesh->LocalNz; k++) {
+      for (int k = mesh->zstart; k <= mesh->zend; k++) {
 #if BOUT_USE_METRIC_3D
         // For right cell boundaries
         BoutReal common_factor =
@@ -374,9 +374,9 @@ const Field3D Div_par(const Field3D& f_in, const Field3D& v_in,
    * Div ( n * v )  -- Magnetic drifts
    *
    * This uses the expression
-   * 
+   *
    * Div( A ) = 1/J * d/di ( J * A^i )
-   * 
+   *
    * Hence the input vector should be contravariant
    *
    * Note: Uses to/from FieldAligned

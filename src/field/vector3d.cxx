@@ -10,7 +10,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -204,7 +204,7 @@ Vector3D* Vector3D::timeDeriv() {
 }
 
 /***************************************************************
- *                         OPERATORS 
+ *                         OPERATORS
  ***************************************************************/
 
 /////////////////// ASSIGNMENT ////////////////////
@@ -398,7 +398,7 @@ CROSS(Vector3D, Vector2D, Vector3D)
 CROSS(Vector2D, Vector2D, Vector2D)
 
 /***************************************************************
- *                      BINARY OPERATORS 
+ *                      BINARY OPERATORS
  ***************************************************************/
 
 ////////////////// ADDITION //////////////////////
@@ -556,7 +556,7 @@ CELL_LOC Vector3D::getLocation() const {
 
 Vector3D& Vector3D::setLocation(CELL_LOC loc) {
   SCOREP0();
-  TRACE("Vector3D::setLocation");
+
   if (loc == CELL_DEFAULT) {
     loc = CELL_CENTRE;
   }

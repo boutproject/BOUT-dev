@@ -27,11 +27,11 @@ if("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
   endif()
 endif()
 
-# CMake currently doesn't support proper semver Set the version here, strip any
-# extra tags to use in `project` We try to use git to get a full description,
-# inspired by setuptools_scm
-set(_bout_previous_version "5.1.1")
-set(_bout_next_version "5.2.0")
+# CMake currently doesn't support proper semver
+# Set the version here, strip any extra tags to use in `project`
+# We try to use git to get a full description, inspired by setuptools_scm
+set(_bout_previous_version "5.2.0")
+set(_bout_next_version "5.2.1")
 execute_process(
   COMMAND "git" describe --tags --match=v${_bout_previous_version}
   COMMAND sed -e s/${_bout_previous_version}-/${_bout_next_version}.dev/ -e
@@ -81,8 +81,7 @@ include(BOUT++functions)
 option(BOUT_UPDATE_GIT_SUBMODULE "Check submodules are up-to-date during build"
        ON
 )
-# Adapted from
-# https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html
+# Adapted from https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html
 # Update submodules as needed
 function(bout_update_submodules)
   if(NOT BOUT_UPDATE_GIT_SUBMODULE)
@@ -232,6 +231,8 @@ set(BOUT_SOURCES
     ./src/field/where.cxx
     ./src/invert/fft_fftw.cxx
     ./src/invert/lapack_routines.cxx
+    ./src/invert/laplace/common_transform.cxx
+    ./src/invert/laplace/common_transform.hxx
     ./src/invert/laplace/impls/cyclic/cyclic_laplace.cxx
     ./src/invert/laplace/impls/cyclic/cyclic_laplace.hxx
     ./src/invert/laplace/impls/iterative_parallel_tri/iterative_parallel_tri.cxx
@@ -259,11 +260,13 @@ set(BOUT_SOURCES
     ./src/invert/laplace/impls/hypre3d/hypre3d_laplace.cxx
     ./src/invert/laplace/impls/hypre3d/hypre3d_laplace.hxx
     ./src/invert/laplace/invert_laplace.cxx
+    ./src/invert/laplacexy/impls/hypre/laplacexy-hypre.cxx
+    ./src/invert/laplacexy/impls/hypre/laplacexy-hypre.hxx
+    ./src/invert/laplacexy/impls/petsc/laplacexy-petsc.cxx
+    ./src/invert/laplacexy/impls/petsc/laplacexy-petsc.hxx
+    ./src/invert/laplacexy/impls/petsc2/laplacexy-petsc2.cxx
+    ./src/invert/laplacexy/impls/petsc2/laplacexy-petsc2.hxx
     ./src/invert/laplacexy/laplacexy.cxx
-    ./include/bout/invert/laplacexy2.hxx
-    ./src/invert/laplacexy2/laplacexy2.cxx
-    ./include/bout/invert/laplacexy2_hypre.hxx
-    ./src/invert/laplacexy2/laplacexy2_hypre.cxx
     ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.cxx
     ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.hxx
     ./src/invert/laplacexz/impls/petsc/laplacexz-petsc.cxx
@@ -293,11 +296,12 @@ set(BOUT_SOURCES
     ./src/mesh/interpolation/hermite_spline_z.cxx
     ./src/mesh/interpolation/interpolation_z.cxx
     ./src/mesh/interpolation/lagrange_4pt_xz.cxx
-    ./src/mesh/interpolation/monotonic_hermite_spline_xz.cxx
     ./src/mesh/invert3x3.hxx
     ./src/mesh/mesh.cxx
     ./src/mesh/parallel/fci.cxx
     ./src/mesh/parallel/fci.hxx
+    ./src/mesh/parallel/fci_comm.cxx
+    ./src/mesh/parallel/fci_comm.hxx
     ./src/mesh/parallel/identity.cxx
     ./src/mesh/parallel/shiftedmetric.cxx
     ./src/mesh/parallel/shiftedmetricinterp.cxx
@@ -371,6 +375,7 @@ set(BOUT_SOURCES
     ./src/sys/options/options_adios.hxx
     ./src/sys/optionsreader.cxx
     ./src/sys/output.cxx
+    ./src/sys/output_bout_types.cxx
     ./src/sys/petsclib.cxx
     ./src/sys/range.cxx
     ./src/sys/slepclib.cxx
@@ -407,6 +412,7 @@ if(zoidberg_FOUND EQUAL 0)
 else()
   set(zoidberg_FOUND OFF)
 endif()
+message(STATUS "Found Zoidberg for FCI tests: ${zoidberg_FOUND}")
 
 option(
   BOUT_GENERATE_FIELDOPS
@@ -459,13 +465,13 @@ include(GNUInstallDirs)
 # use, i.e. don't skip the full RPATH for the build tree
 set(CMAKE_SKIP_BUILD_RPATH FALSE)
 
-# when building, don't use the install RPATH already (but later on when
-# installing)
+# when building, don't use the install RPATH already
+# (but later on when installing)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 
-# add the automatically determined parts of the RPATH which point to directories
-# outside the build tree to the install RPATH
+# add the automatically determined parts of the RPATH
+# which point to directories outside the build tree to the install RPATH
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 execute_process(
@@ -520,17 +526,17 @@ set_target_properties(
   bout++
   PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}"
              ARCHIVE_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}"
-             SOVERSION 5.1.0
+             SOVERSION 5.2.0
 )
 
 # Set some variables for the bout-config script
 set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -L\$BOUT_LIB_PATH -lbout++")
 set(BOUT_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(CONFIG_CFLAGS
-    "${CONFIG_CFLAGS} -I\${BOUT_INCLUDE_PATH} -I${CMAKE_CURRENT_BINARY_DIR}/include ${CMAKE_CXX_FLAGS} -std=c++17"
+    "${CONFIG_CFLAGS} -I\${BOUT_INCLUDE_PATH} -I${CMAKE_CURRENT_BINARY_DIR}/include ${CMAKE_CXX_FLAGS} -std=c++20"
 )
 
-target_compile_features(bout++ PUBLIC cxx_std_17)
+target_compile_features(bout++ PUBLIC cxx_std_20)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 
 # Optional compiler features
@@ -543,9 +549,9 @@ include(cmake/SetupBOUTThirdParty.cmake)
 include(cmake/Sanitizers.cmake)
 enable_sanitizers(bout++)
 
-# ##############################################################################
-# Components of the version number Pre-release identifier (BOUT_VERSION_TAG) set
-# above
+##################################################
+# Components of the version number
+# Pre-release identifier (BOUT_VERSION_TAG) set above
 set(BOUT_VERSION ${BOUT_FULL_VERSION})
 set(BOUT_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(BOUT_VERSION_MINOR ${PROJECT_VERSION_MINOR})
@@ -564,14 +570,14 @@ configure_file(
   "${PROJECT_SOURCE_DIR}/include/bout/version.hxx.in"
   "${PROJECT_BINARY_DIR}/include/bout/version.hxx"
 )
-# Build the file containing just the commit hash This will be rebuilt on every
-# commit!
+# Build the file containing just the commit hash
+# This will be rebuilt on every commit!
 configure_file(
   "${PROJECT_SOURCE_DIR}/include/bout/revision.hxx.in"
   "${PROJECT_BINARY_DIR}/include/bout/revision.hxx"
 )
 
-# ##############################################################################
+##################################################
 
 option(BOUT_ENABLE_WARNINGS "Enable compiler warnings" ON)
 if(BOUT_ENABLE_WARNINGS)
@@ -593,8 +599,8 @@ if(BOUT_ENABLE_WARNINGS)
   )
 
   include(EnableCXXWarningIfSupport)
-  # Note we explicitly turn off -Wcast-function-type as PETSc *requires* we cast
-  # a function to the wrong type in MatFDColoringSetFunction
+  # Note we explicitly turn off -Wcast-function-type as PETSc *requires*
+  # we cast a function to the wrong type in MatFDColoringSetFunction
   target_enable_cxx_warning_if_supported(
     bout++ FLAGS -Wnull-dereference -Wno-cast-function-type
   )
@@ -654,21 +660,6 @@ message(
 )
 set(BOUT_USE_SIGFPE ${BOUT_ENABLE_SIGFPE})
 
-option(BOUT_ENABLE_BACKTRACE "Enable backtrace" ON)
-if(BOUT_ENABLE_BACKTRACE)
-  find_program(ADDR2LINE_FOUND addr2line)
-  if(NOT ADDR2LINE_FOUND)
-    message(
-      FATAL_ERROR
-        "addr2line not found. Disable backtrace by setting BOUT_ENABLE_BACKTRACE=Off"
-    )
-  endif()
-  target_link_libraries(bout++ PUBLIC ${CMAKE_DL_LIBS})
-  set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -l${CMAKE_DL_LIBS}")
-endif()
-message(STATUS "Enable backtrace: BOUT_USE_BACKTRACE=${BOUT_ENABLE_BACKTRACE}")
-set(BOUT_USE_BACKTRACE ${BOUT_ENABLE_BACKTRACE})
-
 option(BOUT_ENABLE_METRIC_3D "Enable 3D metric support" OFF)
 if(BOUT_ENABLE_METRIC_3D)
   set(BOUT_METRIC_TYPE "3D")
@@ -683,21 +674,22 @@ check_cxx_source_compiles(
 )
 set(BOUT_HAS_PRETTY_FUNCTION ${HAS_PRETTY_FUNCTION})
 
-# Locations of the various Python modules, including the generated boutconfig
-# module
+# Locations of the various Python modules, including the generated boutconfig module
 set(BOUT_PYTHONPATH
     "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib:${CMAKE_CURRENT_SOURCE_DIR}/tools/pylib"
 )
-# Variables for boutconfig module -- note that these will contain generator
-# expressions and CMake targets, and not generally be very useful
+# Variables for boutconfig module -- note that these will contain
+# generator expressions and CMake targets, and not generally be very
+# useful
 get_target_property(BOUT_LIBS bout++ INTERFACE_LINK_LIBRARIES)
 get_target_property(BOUT_CFLAGS bout++ INTERFACE_INCLUDE_DIRECTORIES)
 
-# We want to compile the actual flags used into the library so we can see them
-# at runtime. This needs a few steps:
+# We want to compile the actual flags used into the library so we can
+# see them at runtime. This needs a few steps:
 
-# 1. Get the macro definitions. They come as a ;-separated list and without the
-#   -D. We also need to also stick a -D on the front of the first item
+# 1. Get the macro definitions. They come as a ;-separated list and
+#    without the -D. We also need to also stick a -D on the front of
+#    the first item
 get_property(
   BOUT_COMPILE_DEFINITIONS
   TARGET bout++
@@ -706,9 +698,9 @@ get_property(
 string(REPLACE ";" " -D" BOUT_COMPILE_DEFINITIONS "${BOUT_COMPILE_DEFINITIONS}")
 string(CONCAT BOUT_COMPILE_DEFINITIONS " -D" "${BOUT_COMPILE_DEFINITIONS}")
 
-# 1. Get the compiler options. Again, they come as a ;-separated list. Note that
-#   they don't include optimisation or debug flags: they're in the
-#   CMAKE_CXX_FLAGS* variables
+# 2. Get the compiler options. Again, they come as a ;-separated
+#    list. Note that they don't include optimisation or debug flags:
+#    they're in the CMAKE_CXX_FLAGS* variables
 get_property(
   BOUT_COMPILE_OPTIONS
   TARGET bout++
@@ -716,10 +708,11 @@ get_property(
 )
 string(REPLACE ";" " " BOUT_COMPILE_OPTIONS "${BOUT_COMPILE_OPTIONS}")
 
-# 1. The optimisation and/or debug flags are in the CMAKE_CXX_FLAGS* variables.
-#   We need both the common flags as well as those for the build type actually
-#   being used. Note: this might behave weirdly on Windows. Might need to expand
-#   CMAKE_CONFIGURATION_TYPES instead?
+# 3. The optimisation and/or debug flags are in the CMAKE_CXX_FLAGS*
+#    variables. We need both the common flags as well as those for the
+#    build type actually being used. Note: this might behave weirdly
+#    on Windows. Might need to expand CMAKE_CONFIGURATION_TYPES
+#    instead?
 
 include(BuildType)
 # Here CMAKE_BUILD_TYPE is always set
@@ -728,17 +721,17 @@ string(CONCAT BOUT_COMPILE_BUILD_FLAGS " " "${CMAKE_CXX_FLAGS}"
               "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE_UPPER}}"
 )
 
-# 1. Now we join all the flags from the first three steps together
+# 4. Now we join all the flags from the first three steps together
 string(CONCAT BOUT_FLAGS_STRING "${BOUT_COMPILE_OPTIONS}"
               "${BOUT_COMPILE_DEFINITIONS}" "${BOUT_COMPILE_BUILD_FLAGS}"
 )
 
-# 1. Finally actually add the flags as a define
+# 5. Finally actually add the flags as a define
 target_compile_definitions(
   bout++ PRIVATE BOUT_FLAGS_STRING=${BOUT_FLAGS_STRING}
 )
 
-# ##############################################################################
+##################################################
 # Tests
 
 # Are we building BOUT++ directly, or as part of another project
@@ -753,8 +746,8 @@ option(
 )
 if(BOUT_TESTS)
   enable_testing()
-  # Targets for just building the tests Tests need to add themselves as
-  # dependencies to these targets
+  # Targets for just building the tests
+  # Tests need to add themselves as dependencies to these targets
   add_custom_target(build-check-unit-tests)
   add_custom_target(build-check-integrated-tests)
   add_custom_target(build-check-mms-tests)
@@ -801,13 +794,13 @@ if(BOUT_BUILD_EXAMPLES)
   add_subdirectory(examples EXCLUDE_FROM_ALL)
 endif()
 
-# ##############################################################################
+##################################################
 # L10N: localisation - include translations
 
 find_package(Gettext)
 
 if(GETTEXT_FOUND)
-  # add_custom_target(mofiles ALL)
+  #add_custom_target(mofiles ALL)
   set(bout_langs es de fr zh_CN zh_TW)
 
   foreach(_lang IN LISTS bout_langs)
@@ -833,24 +826,23 @@ if(GETTEXT_FOUND)
   add_custom_target(mofiles ALL DEPENDS ${_gmoFiles})
 endif()
 
-# ##############################################################################
+##################################################
 # Documentation
 
 option(BOUT_BUILD_DOCS "Build the documentation" OFF)
 if(BOUT_BUILD_DOCS)
-  add_subdirectory(manual EXCLUDE_FROM_ALL)
+  add_subdirectory(manual)
 endif()
 
 add_custom_target(
   dist
   COMMAND ${Python3_EXECUTABLE}
           ${CMAKE_SOURCE_DIR}/tools/pylib/_boutpp_build/backend.py dist
-  # there is no cmake equivalent to `mv` - so only works on systems that are not
-  # inentionally non-POSIX complient
+  # there is no cmake equivalent to `mv` - so only works on systems that are not inentionally non-POSIX complient
   COMMAND mv BOUT++-v${BOUT_FULL_VERSION}.tar.gz ${CMAKE_CURRENT_BINARY_DIR}/
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
-# ##############################################################################
+##################################################
 # Generate the build config header
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include/bout/build_defines.hxx")
@@ -865,7 +857,7 @@ endif()
 
 configure_file(cmake_build_defines.hxx.in include/bout/build_defines.hxx)
 
-# ##############################################################################
+##################################################
 # Generate the bout-config script
 
 # Set some variables to match autotools so we can use the same input file
@@ -874,8 +866,8 @@ set(PYTHONCONFIGPATH "${BOUT_PYTHONPATH}")
 set(BOUT_HAS_LEGACY_NETCDF OFF)
 set(BOUT_HAS_PNETCDF OFF)
 
-# For shared libraries we only need to know how to link against BOUT++, while
-# for static builds we need the dependencies too
+# For shared libraries we only need to know how to link against BOUT++,
+# while for static builds we need the dependencies too
 if(BUILD_SHARED_LIBS)
   # Include rpath linker flag so user doesn't need to set LD_LIBRARY_PATH
   set(CONFIG_LDFLAGS
@@ -922,9 +914,9 @@ configure_file(
 )
 configure_file(bout++Config.cmake.in bout++Config.cmake @ONLY)
 
-# We need to generate a separate version for installation, with the correct
-# install paths. So first we need to replace the build directory library path
-# with the installation path
+# We need to generate a separate version for installation, with the
+# correct install paths. So first we need to replace the build
+# directory library path with the installation path
 string(REPLACE "${CMAKE_BINARY_DIR}/lib"
                "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" CONFIG_LDFLAGS
                "${CONFIG_LDFLAGS}"
@@ -938,6 +930,11 @@ if(NOT BOUT_USE_SYSTEM_MPARK_VARIANT)
 endif()
 if(NOT BOUT_USE_SYSTEM_FMT)
   set(FMT_INCLUDE_PATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
+endif()
+if(NOT BOUT_USE_SYSTEM_CPPTRACE)
+  set(CPPTRACE_INCLUDE_PATH
+      "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}"
+  )
 endif()
 set(BOUT_INCLUDE_PATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
 # We don't need the build include path any more
@@ -956,7 +953,7 @@ configure_file(
 )
 configure_file(bout++Config.cmake.in bout++Config.cmake-install @ONLY)
 
-# ##############################################################################
+##################################################
 # Installation
 
 install(
@@ -989,9 +986,10 @@ install(
   REGEX "bout-pylib-cmd-to-bin" EXCLUDE
 )
 
-# The installed version of bout-config needs renaming when we install it. Note
-# this MUST be done after the installation of bin/, to make sure we clobber any
-# versions of bout-config hanging around from an autotools build
+# The installed version of bout-config needs renaming when we install
+# it. Note this MUST be done after the installation of bin/, to make
+# sure we clobber any versions of bout-config hanging around from an
+# autotools build
 install(
   PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/bin/bout-config-install"
   DESTINATION "${CMAKE_INSTALL_BINDIR}"
@@ -1052,7 +1050,7 @@ export(
 
 export(PACKAGE bout)
 
-# ##############################################################################
+##################################################
 # Configure summary
 
 message(
@@ -1080,7 +1078,6 @@ message(
    Output coloring          : ${BOUT_USE_COLOR}
    Field name tracking      : ${BOUT_USE_TRACK}
    Floating point exceptions: ${BOUT_USE_SIGFPE}
-   Backtrace enabled        : ${BOUT_USE_BACKTRACE}
    RAJA enabled             : ${BOUT_HAS_RAJA}
    Umpire enabled           : ${BOUT_HAS_UMPIRE}
    Caliper enabled          : ${BOUT_HAS_CALIPER}
