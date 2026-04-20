@@ -1,3 +1,4 @@
+#include "bout/metric_tensor.hxx"
 #include <bout/array.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
@@ -210,11 +211,11 @@ int Mesh::get(Field2D& var, const std::string& name, BoutReal def, bool communic
   return 0;
 }
 
-FieldMetric Mesh::get(const std::string& name, BoutReal def, bool communicate,
-                      CELL_LOC location) {
+bout::FieldMetric Mesh::get(const std::string& name, BoutReal def, bool communicate,
+                            CELL_LOC location) {
   TRACE("Loading field: Mesh::get(FieldMetric, {:s})", name);
 
-  auto var = FieldMetric(this, location);
+  auto var = bout::FieldMetric(this, location);
 
   const bool failed_to_get_from_GridDataSource =
       !source->get(this, var, name, def, location);

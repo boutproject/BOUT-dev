@@ -22,6 +22,7 @@
 #include <bout/output_bout_types.hxx>
 
 #include <bout/bout_types.hxx>
+#include <cmath>
 
 namespace {
 
@@ -705,8 +706,8 @@ void Coordinates::readFromMesh(Options* mesh_options, const std::string& suffix)
                                                extrapolate_y, false, transform.get()));
 }
 
-FieldMetric Coordinates::getDzFromOptionsFile(Mesh* mesh,
-                                              const std::string& suffix) const {
+Coordinates::FieldMetric
+Coordinates::getDzFromOptionsFile(Mesh* mesh, const std::string& suffix) const {
 
   auto& options_root = Options::root();
   const bool has_zperiod = options_root.isSet("zperiod");
@@ -715,8 +716,7 @@ FieldMetric Coordinates::getDzFromOptionsFile(Mesh* mesh,
                                 : options_root["ZMAX"].withDefault(1.0);
 
   const auto default_dz = (zmax - zmin) * TWOPI / nz;
-  FieldMetric dz = getAtLoc(mesh, "dz", suffix, location, default_dz);
-  return dz;
+  return getAtLoc(mesh, "dz", suffix, location, default_dz);
 }
 
 void Coordinates::outputVars(Options& output_options) {
@@ -894,25 +894,17 @@ void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_cent
   localmesh->communicate(d1_dx_, d1_dy_, d1_dz_);
 }
 
-MetricTensor::FieldMetric Coordinates::recalculateJacobian() const {
+Coordinates::FieldMetric Coordinates::recalculateJacobian() const {
+  // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
+  auto g_matrix = g11() * g22() * g33() + 2.0 * g12() * g13() * g23()
+                  - g11() * g23() * g23() - g22() * g13() * g13() - g33() * g12() * g12();
 
-  TRACE("Coordinates::jacobian");
-  try {
-    // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
-    auto g_matrix = g11() * g22() * g33() + 2.0 * g12() * g13() * g23()
-                    - g11() * g23() * g23() - g22() * g13() * g13()
-                    - g33() * g12() * g12();
+  bout::checkPositive(g_matrix, "The determinant of g^ij", "RGN_NOBNDRY");
 
-    bout::checkPositive(g_matrix, "The determinant of g^ij", "RGN_NOBNDRY");
-
-    return 1. / sqrt(g_matrix);
-  } catch (const BoutException& e) {
-    output_error.write("\tError in jacobian call\n");
-    throw e;
-  }
+  return 1. / sqrt(g_matrix);
 }
 
-MetricTensor::FieldMetric Coordinates::recalculateBxy() const {
+Coordinates::FieldMetric Coordinates::recalculateBxy() const {
   return sqrt(g_22()) / J();
 }
 
@@ -1067,8 +1059,9 @@ Field3D Coordinates::DDZ(const Field3D& f, CELL_LOC outloc, const std::string& m
 /////////////////////////////////////////////////////////
 // Parallel gradient
 
-FieldMetric Coordinates::Grad_par(const Field2D& var, [[maybe_unused]] CELL_LOC outloc,
-                                  const std::string& UNUSED(method)) {
+Coordinates::FieldMetric Coordinates::Grad_par(const Field2D& var,
+                                               [[maybe_unused]] CELL_LOC outloc,
+                                               const std::string& UNUSED(method)) {
   ASSERT1(location == outloc
           || (outloc == CELL_DEFAULT && location == var.getLocation()));
 
@@ -1087,9 +1080,9 @@ Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
 // Vpar_Grad_par
 // vparallel times the parallel derivative along unperturbed B-field
 
-FieldMetric Coordinates::Vpar_Grad_par(const Field2D& v, const Field2D& f,
-                                       [[maybe_unused]] CELL_LOC outloc,
-                                       const std::string& UNUSED(method)) {
+Coordinates::FieldMetric Coordinates::Vpar_Grad_par(const Field2D& v, const Field2D& f,
+                                                    [[maybe_unused]] CELL_LOC outloc,
+                                                    const std::string& UNUSED(method)) {
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
   return VDDY(v, f) * invSg();
@@ -1488,7 +1481,7 @@ void Coordinates::checkContravariant() {
   contravariantMetricTensor.check(localmesh->ystart);
 }
 
-FieldMetric& Coordinates::J() const {
+Coordinates::FieldMetric& Coordinates::J() const {
   if (jacobian_cache == nullptr) {
     jacobian_cache = std::make_unique<FieldMetric>(recalculateJacobian());
   }
