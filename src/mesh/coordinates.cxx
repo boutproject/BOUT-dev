@@ -13,12 +13,12 @@
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
-#include <bout/fft.hxx>
-#include <bout/interpolation.hxx>
-#include <bout/output_bout_types.hxx>
 #include "parallel/fci.hxx"
 #include "parallel/shiftedmetricinterp.hxx"
 #include "bout/derivs.hxx"
+#include <bout/fft.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/output_bout_types.hxx>
 
 #include <bout/bout_types.hxx>
 

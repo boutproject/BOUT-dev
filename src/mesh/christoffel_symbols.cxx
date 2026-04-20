@@ -96,10 +96,15 @@ ChristoffelSymbols::ChristoffelSymbols(Coordinates& coordinates) {
       + 0.5 * g23 * coordinates.DDX(g_22)
       //+ 0.5 *g33*(coordinates.DDY(covariantMetricTensor.Getg31()) + coordinates.DDX(covariantMetricTensor.Getg32()) - coordinates.DDZ(g_12));
       // which equals to
-      + 0.5 * g33 * (coordinates.DDY(g_13)) + coordinates.DDX(g_23) - coordinates.DDZ(g_12);
-  G3_13_m = 0.5 * g13 * coordinates.DDZ(g_11) + 0.5 * g23 * (coordinates.DDZ(g_12) + coordinates.DDX(g_23) - coordinates.DDY(g_13))
-            + 0.5 * g33 * coordinates.DDX(g_33);
-  G3_23_m = 0.5 * g13 * (coordinates.DDZ(g_12) + coordinates.DDY(g_13)) - coordinates.DDX(g_23) + 0.5 * g23 * coordinates.DDZ(g_22)
+      + 0.5 * g33 * (coordinates.DDY(g_13)) + coordinates.DDX(g_23)
+      - coordinates.DDZ(g_12);
+  G3_13_m =
+      0.5 * g13 * coordinates.DDZ(g_11)
+      + 0.5 * g23
+            * (coordinates.DDZ(g_12) + coordinates.DDX(g_23) - coordinates.DDY(g_13))
+      + 0.5 * g33 * coordinates.DDX(g_33);
+  G3_23_m = 0.5 * g13 * (coordinates.DDZ(g_12) + coordinates.DDY(g_13))
+            - coordinates.DDX(g_23) + 0.5 * g23 * coordinates.DDZ(g_22)
             + 0.5 * g33 * coordinates.DDY(g_33);
 
   output_progress.write("\tCommunicating connection terms\n");

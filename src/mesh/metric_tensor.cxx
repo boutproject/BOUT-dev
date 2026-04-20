@@ -1,7 +1,7 @@
 #include "bout/metric_tensor.hxx"
 #include "fmt/core.h"
-#include "bout/bout_types.hxx"
 #include "invert3x3.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field2d.hxx"
 #include "bout/mesh.hxx"

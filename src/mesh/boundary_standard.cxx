@@ -2171,9 +2171,9 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
           BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, zk)
                            + bndry->by * metric->dy(bndry->x, bndry->y, zk);
 #else
-        BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y)
-                         + bndry->by * metric->dy(bndry->x, bndry->y);
-        for (int zk = 0; zk < mesh->LocalNz; zk++) {
+      BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y)
+                       + bndry->by * metric->dy(bndry->x, bndry->y);
+      for (int zk = 0; zk < mesh->LocalNz; zk++) {
 #endif
           if (fg) {
             val = fg->generate(Context(bndry, zk, loc, t, mesh));
@@ -2670,8 +2670,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
             -1.0 * sqrt(metric->g33(x, y) / metric->g11(x, y)) * metric->dx(x, y);
         for (int jz = 1; jz <= ncz / 2; jz++) {
           BoutReal kwave =
-              jz * 2.0 * PI / metric->zlength(x, y);   // wavenumber in [rad^-1]
-          c0[jz] *= exp(coef * kwave);                 // The decaying solution only
+              jz * 2.0 * PI / metric->zlength(x, y); // wavenumber in [rad^-1]
+          c0[jz] *= exp(coef * kwave);               // The decaying solution only
         }
         // Reverse FFT
         irfft(c0.begin(), mesh->LocalNz, f(x, y));
