@@ -1,8 +1,7 @@
 /**************************************************************************
- * Copyright 2010-2020 B.D.Dudson, S.Farley, P. Hill, J.T. Omotani, J.T. Parker,
- * M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -24,18 +23,23 @@
 #ifndef BOUT_INTERP_XZ_H
 #define BOUT_INTERP_XZ_H
 
-#include "bout/mask.hxx"
+#include <bout/bout_types.hxx>
+#include <bout/generic_factory.hxx>
+#include <bout/mask.hxx>
+#include <array>
 
-#define USE_NEW_WEIGHTS 1
 #if BOUT_HAS_PETSC
-#define HS_USE_PETSC 1
-#endif
-
-#ifdef HS_USE_PETSC
 #include "bout/petsclib.hxx"
 #endif
 
+namespace bout {
+namespace details {
+enum class implementation_type { new_weights, petsc, legacy };
+}
+} // namespace bout
+
 class Options;
+class GlobalField3DAccess;
 
 /// Interpolate a field onto a perturbed set of points
 const Field3D interpolate(const Field3D& f, const Field3D& delta_x,
@@ -133,13 +137,25 @@ public:
   }
 };
 
-class XZHermiteSpline : public XZInterpolation {
+/// Monotonic Hermite spline interpolator
+///
+/// Similar to XZHermiteSpline, so uses most of the same code.
+/// Forces the interpolated result to be in the range of the
+/// neighbouring cell values. This prevents unphysical overshoots,
+/// but also degrades accuracy near maxima and minima.
+/// Perhaps should only impose near boundaries, since that is where
+/// problems most obviously occur.
+template <bool monotonic, bout::details::implementation_type imp_type>
+class XZHermiteSplineBase : public XZInterpolation {
 protected:
   /// This is protected rather than private so that it can be
   /// extended and used by HermiteSplineMonotonic
 
   Tensor<SpecificInd<IND_TYPE::IND_3D>> i_corner; // index of bottom-left grid point
   Tensor<int> k_corner;                           // z-index of bottom-left grid point
+
+  std::unique_ptr<GlobalField3DAccess> gf3daccess;
+  Tensor<std::array<int, 4>> g3dinds;
 
   // Basis functions for cubic Hermite spline interpolation
   //    see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
@@ -158,22 +174,28 @@ protected:
 
   std::vector<Field3D> newWeights;
 
-#if HS_USE_PETSC
+#if BOUT_HAS_PETSC
   PetscLib* petsclib;
   bool isInit{false};
-  Mat petscWeights;
-  Vec rhs, result;
+  Mat petscWeights{};
+  Vec rhs{}, result{};
 #endif
 
+  /// Factors to allow for some wiggleroom
+  BoutReal abs_fac_monotonic{1e-2};
+  BoutReal rel_fac_monotonic{1e-1};
+
 public:
-  XZHermiteSpline(Mesh* mesh = nullptr) : XZHermiteSpline(0, mesh) {}
-  XZHermiteSpline(int y_offset = 0, Mesh* mesh = nullptr);
-  XZHermiteSpline(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
-      : XZHermiteSpline(y_offset, mesh) {
+  XZHermiteSplineBase(Mesh* mesh = nullptr, [[maybe_unused]] Options* options = nullptr)
+      : XZHermiteSplineBase(0, mesh, options) {}
+  XZHermiteSplineBase(int y_offset = 0, Mesh* mesh = nullptr, Options* options = nullptr);
+  XZHermiteSplineBase(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr,
+                      Options* options = nullptr)
+      : XZHermiteSplineBase(y_offset, mesh, options) {
     setRegion(regionFromMask(mask, localmesh));
   }
-  ~XZHermiteSpline() {
-#if HS_USE_PETSC
+  ~XZHermiteSplineBase() override {
+#if BOUT_HAS_PETSC
     if (isInit) {
       MatDestroy(&petscWeights);
       VecDestroy(&rhs);
@@ -202,41 +224,25 @@ public:
   getWeightsForYApproximation(int i, int j, int k, int yoffset) override;
 };
 
-/// Monotonic Hermite spline interpolator
-///
-/// Similar to XZHermiteSpline, so uses most of the same code.
-/// Forces the interpolated result to be in the range of the
-/// neighbouring cell values. This prevents unphysical overshoots,
-/// but also degrades accuracy near maxima and minima.
-/// Perhaps should only impose near boundaries, since that is where
-/// problems most obviously occur.
-class XZMonotonicHermiteSpline : public XZHermiteSpline {
-public:
-  XZMonotonicHermiteSpline(Mesh* mesh = nullptr) : XZHermiteSpline(0, mesh) {
-    if (localmesh->getNXPE() > 1) {
-      throw BoutException("Do not support MPI splitting in X");
-    }
-  }
-  XZMonotonicHermiteSpline(int y_offset = 0, Mesh* mesh = nullptr)
-      : XZHermiteSpline(y_offset, mesh) {
-    if (localmesh->getNXPE() > 1) {
-      throw BoutException("Do not support MPI splitting in X");
-    }
-  }
-  XZMonotonicHermiteSpline(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
-      : XZHermiteSpline(mask, y_offset, mesh) {
-    if (localmesh->getNXPE() > 1) {
-      throw BoutException("Do not support MPI splitting in X");
-    }
-  }
-
-  using XZHermiteSpline::interpolate;
-  /// Interpolate using precalculated weights.
-  /// This function is called by the other interpolate functions
-  /// in the base class XZHermiteSpline.
-  Field3D interpolate(const Field3D& f,
-                      const std::string& region = "RGN_NOBNDRY") const override;
-};
+using XZMonotonicHermiteSplineSerial =
+    XZHermiteSplineBase<true, bout::details::implementation_type::new_weights>;
+using XZHermiteSplineSerial =
+    XZHermiteSplineBase<false, bout::details::implementation_type::new_weights>;
+using XZMonotonicHermiteSplineLegacy =
+    XZHermiteSplineBase<true, bout::details::implementation_type::legacy>;
+using XZHermiteSplineLegacy =
+    XZHermiteSplineBase<false, bout::details::implementation_type::legacy>;
+#if BOUT_HAS_PETSC
+using XZMonotonicHermiteSpline =
+    XZHermiteSplineBase<true, bout::details::implementation_type::petsc>;
+using XZHermiteSpline =
+    XZHermiteSplineBase<false, bout::details::implementation_type::petsc>;
+#else
+using XZMonotonicHermiteSpline =
+    XZHermiteSplineBase<true, bout::details::implementation_type::new_weights>;
+using XZHermiteSpline =
+    XZHermiteSplineBase<false, bout::details::implementation_type::new_weights>;
+#endif
 
 /// XZLagrange4pt interpolation class
 ///
@@ -248,7 +254,8 @@ class XZLagrange4pt : public XZInterpolation {
   Field3D t_x, t_z;
 
 public:
-  XZLagrange4pt(Mesh* mesh = nullptr) : XZLagrange4pt(0, mesh) {}
+  XZLagrange4pt(Mesh* mesh = nullptr, [[maybe_unused]] Options* options = nullptr)
+      : XZLagrange4pt(0, mesh) {}
   XZLagrange4pt(int y_offset = 0, Mesh* mesh = nullptr);
   XZLagrange4pt(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
       : XZLagrange4pt(y_offset, mesh) {
@@ -284,7 +291,8 @@ class XZBilinear : public XZInterpolation {
   Field3D w0, w1, w2, w3;
 
 public:
-  XZBilinear(Mesh* mesh = nullptr) : XZBilinear(0, mesh) {}
+  XZBilinear(Mesh* mesh = nullptr, [[maybe_unused]] Options* options = nullptr)
+      : XZBilinear(0, mesh) {}
   XZBilinear(int y_offset = 0, Mesh* mesh = nullptr);
   XZBilinear(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
       : XZBilinear(y_offset, mesh) {
@@ -308,7 +316,7 @@ public:
 };
 
 class XZInterpolationFactory
-    : public Factory<XZInterpolation, XZInterpolationFactory, Mesh*> {
+    : public Factory<XZInterpolation, XZInterpolationFactory, Mesh*, Options*> {
 public:
   static constexpr auto type_name = "XZInterpolation";
   static constexpr auto section_name = "xzinterpolation";
@@ -316,10 +324,10 @@ public:
   static constexpr auto default_type = "hermitespline";
 
   ReturnType create(Options* options = nullptr, Mesh* mesh = nullptr) const {
-    return Factory::create(getType(options), mesh);
+    return Factory::create(getType(options), mesh, options);
   }
-  ReturnType create(const std::string& type, [[maybe_unused]] Options* options) const {
-    return Factory::create(type, nullptr);
+  ReturnType create(const std::string& type, Options* options) const {
+    return Factory::create(type, nullptr, options);
   }
 
   static void ensureRegistered();

@@ -3,7 +3,7 @@
  *
  * Interface for mesh classes. Contains standard variables and useful
  * routines.
- * 
+ *
  * Changelog
  * =========
  *
@@ -11,7 +11,7 @@
  *     * Removing coordinate system into separate
  *       Coordinates class
  *     * Adding index derivative functions from derivs.cxx
- * 
+ *
  * 2010-06 Ben Dudson, Sean Farley
  *     * Initial version, adapted from GridData class
  *     * Incorporates code from topology.cpp and Communicator
@@ -20,7 +20,7 @@
  * Copyright 2010-2025 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -58,13 +58,12 @@ class Mesh;
 #include "bout/sys/range.hxx" // RangeIterator
 #include "bout/unused.hxx"
 
-#include "mpi.h"
-
 #include <map>
 #include <memory>
 #include <optional>
 #include <set>
 #include <string>
+#include <vector>
 
 class BoundaryRegion;
 class BoundaryRegionPar;
@@ -302,11 +301,6 @@ public:
   void communicateYZ(FieldGroup& g);
 
   /*!
-   * Communicate an X-Z field
-   */
-  virtual void communicate(FieldPerp& f);
-
-  /*!
    * Send a list of FieldData objects
    * Packs arguments into a FieldGroup and passes
    * to send(FieldGroup&).
@@ -354,10 +348,14 @@ public:
 
   // non-local communications
 
-  virtual int getNXPE() = 0;       ///< The number of processors in the X direction
-  virtual int getNYPE() = 0;       ///< The number of processors in the Y direction
-  virtual int getXProcIndex() = 0; ///< This processor's index in X direction
-  virtual int getYProcIndex() = 0; ///< This processor's index in Y direction
+  virtual int getNXPE() const = 0;       ///< The number of processors in the X direction
+  virtual int getNYPE() const = 0;       ///< The number of processors in the Y direction
+  virtual int getNZPE() const = 0;       ///< The number of processors in the Z direction
+  virtual int getXProcIndex() const = 0; ///< This processor's index in X direction
+  virtual int getYProcIndex() const = 0; ///< This processor's index in Y direction
+  virtual int getZProcIndex() const = 0; ///< This processor's index in Z direction
+  /// The index of a processor with given X, Y, and Z index
+  virtual int getProcIndex(int X, int Y, int Z) const = 0;
 
   // X communications
   virtual bool firstX()
@@ -367,8 +365,6 @@ public:
 
   /// Domain is periodic in X?
   bool periodicX{false};
-
-  int NXPE, PE_XIND; ///< Number of processors in X, and X processor index
 
   /// Send a buffer of data to processor at X index +1
   ///
@@ -403,6 +399,7 @@ public:
   } ///< Return communicator containing all processors in X
   virtual MPI_Comm getXcomm(int jy) const = 0; ///< Return X communicator
   virtual MPI_Comm getYcomm(int jx) const = 0; ///< Return Y communicator
+  virtual MPI_Comm getXZcomm() const = 0;      ///< Communicator in X-Z
 
   /// Return pointer to the mesh's MPI Wrapper object
   MpiWrapper& getMpi() { return *mpi; }
@@ -505,13 +502,12 @@ public:
   virtual void addBoundaryPar(std::shared_ptr<BoundaryRegionPar> UNUSED(bndry),
                               BoundaryParType UNUSED(type)) {}
 
-  /// Branch-cut special handling (experimental)
-  virtual Field3D smoothSeparatrix(const Field3D& f) { return f; }
-
   virtual BoutReal GlobalX(int jx) const = 0;      ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(int jy) const = 0;      ///< Continuous Y index (0 -> 1)
+  virtual BoutReal GlobalZ(int jz) const = 0;      ///< Continuous Z index (0 -> 1)
   virtual BoutReal GlobalX(BoutReal jx) const = 0; ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(BoutReal jy) const = 0; ///< Continuous Y index (0 -> 1)
+  virtual BoutReal GlobalZ(BoutReal jz) const = 0; ///< Continuous Z index (0 -> 1)
 
   //////////////////////////////////////////////////////////
 
@@ -652,7 +648,7 @@ public:
   /// Returns the non-CELL_CENTRE location
   /// allowed as a staggered location
   static CELL_LOC getAllowedStaggerLoc(DIRECTION direction) {
-    AUTO_TRACE();
+
     switch (direction) {
     case (DIRECTION::X):
       return CELL_XLOW;
@@ -670,7 +666,7 @@ public:
   /// Returns the number of grid points in the
   /// particular direction
   int getNpoints(DIRECTION direction) const {
-    AUTO_TRACE();
+
     switch (direction) {
     case (DIRECTION::X):
       return LocalNx;
@@ -688,7 +684,7 @@ public:
   /// Returns the number of guard points in the
   /// particular direction
   int getNguard(DIRECTION direction) const {
-    AUTO_TRACE();
+
     switch (direction) {
     case (DIRECTION::X):
       return xstart;
@@ -767,7 +763,7 @@ public:
   void addRegionPerp(const std::string& region_name, const Region<IndPerp>& region);
 
   /// Converts an Ind2D to an Ind3D using calculation
-  Ind3D ind2Dto3D(const Ind2D& ind2D, int jz = 0) {
+  Ind3D ind2Dto3D(const Ind2D& ind2D, int jz = 0) const {
     return {ind2D.ind * LocalNz + jz, LocalNy, LocalNz};
   }
 
@@ -814,8 +810,8 @@ protected:
   const std::vector<int> readInts(const std::string& name, int n);
 
   /// Calculates the size of a message for a given x and y range
-  int msg_len(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-              int ylt);
+  int msg_len(const std::vector<Field*>& var_list, int xge, int xlt, int yge,
+              int ylt) const;
 
   /// Initialise derivatives
   void derivs_init(Options* options);

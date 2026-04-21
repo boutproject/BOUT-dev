@@ -7,7 +7,6 @@
 #include <type_traits>
 
 #include "bout/msg_stack.hxx"
-#include "bout/output.hxx"
 
 /*!
  * Timing class for performance benchmarking and diagnosis
@@ -133,5 +132,4 @@ public:
   static void printTimeReport();
 };
 
-#define AUTO_TIME() Timer CONCATENATE(time_, __LINE__)(__thefunc__)
 #endif // BOUT_TIMER_H

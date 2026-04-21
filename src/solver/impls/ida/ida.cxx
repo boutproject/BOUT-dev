@@ -100,8 +100,6 @@ IdaSolver::~IdaSolver() {
 
 int IdaSolver::init() {
 
-  TRACE("Initialising IDA solver");
-
   Solver::init();
 
   output.write("Initialising IDA solver\n");
@@ -233,7 +231,6 @@ int IdaSolver::init() {
  **************************************************************************/
 
 int IdaSolver::run() {
-  TRACE("IDA IdaSolver::run()");
 
   if (!initialised) {
     throw BoutException("IdaSolver not initialised\n");
