@@ -3433,8 +3433,8 @@ protected:
       // Jpar_sh.setBoundary("neumann_input");
 
       Jpar_sh0 = Ne0 * Nbar * density * ee;
-      Jpar_sh0 *= c_se0 - vth_e0 / (2.0 * sqrt(PI)) * exp(- ee * (phi0 * Va * Lbar * Bbar) / (KB * Te0 * Tebar * eV_K));
-      // Jpar_sh0 *= c_se0 - vth_e0 / (2.0 * sqrt(PI)) * (1. - ee * (phi0 * Va * Lbar * Bbar) / (KB * Te0 * Tebar * eV_K)); // Linearized 
+      // Jpar_sh0 *= c_se0 - vth_e0 / (2.0 * sqrt(PI)) * exp(- ee * (phi0 * Va * Lbar * Bbar) / (KB * Te0 * Tebar * eV_K));
+      Jpar_sh0 *= c_se0 - vth_e0 / (2.0 * sqrt(PI)) * (1. - ee * (phi0 * Va * Lbar * Bbar) / (KB * Te0 * Tebar * eV_K)); // Linearized 
       dump.add(phi_sh, "phi_sh", 1);
       phi_sh.setBoundary("phi");
       // phi_sh0 = -Te0 * Tebar;
@@ -3980,14 +3980,14 @@ protected:
       phi_sh.applyBoundary();
       mesh->communicate(phi_sh);
       // SBC_Gradpar(phi, phi_sh, PF_limit, PF_limit_range);
-      SBC_Gradpar(phi, zero, PF_limit, PF_limit_range);
+      // SBC_Gradpar(phi, zero, PF_limit, PF_limit_range);
       // SBC_Dirichlet(phi, zero, PF_limit, PF_limit_range);
-      // SBC_FreeBoundary(phi, PF_limit, PF_limit_range);
+      SBC_FreeBoundary(phi, PF_limit, PF_limit_range);
 
       if (nonlinear) {
         Jpar_sh = Ne_tmp * Nbar * density * ee;
-        Jpar_sh *= c_set - vth_et / (2.0 * sqrt(PI)) * exp(- ee * ((phi + phi0) * Va * Lbar * Bbar) / (KB * Te_tmp * Tebar * eV_K));
-        // Jpar_sh *= c_set - vth_et / (2.0 * sqrt(PI)) * (1. - ee * ((phi + phi0) * Va * Lbar * Bbar) / (KB * Te_tmp * Tebar * eV_K)); // Linearized. This is to avoid large currents when phi+phi0<0.
+        // Jpar_sh *= c_set - vth_et / (2.0 * sqrt(PI)) * exp(- ee * ((phi + phi0) * Va * Lbar * Bbar) / (KB * Te_tmp * Tebar * eV_K));
+        Jpar_sh *= c_set - vth_et / (2.0 * sqrt(PI)) * (1. - ee * ((phi + phi0) * Va * Lbar * Bbar) / (KB * Te_tmp * Tebar * eV_K)); // Linearized. This is to avoid large currents when phi+phi0<0.
 
         Jpar_sh -= Jpar_sh0;
         Jpar_sh *= MU0 * Lbar / Bbar;
@@ -4390,7 +4390,7 @@ protected:
       Jpar *= mask_jx1d;
     }
 
-    Jpar.applyBoundary();   // This will apply a different scheath BC to Jpar. I kept it because that's how it was in previous versions. 
+    // Jpar.applyBoundary();   // This will apply a different scheath BC to Jpar. I kept it because that's how it was in previous versions. 
     mesh->communicate(Jpar);
 
     if (compress0) {
