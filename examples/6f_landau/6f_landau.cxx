@@ -272,7 +272,7 @@ private:
   BoutReal vac_resist, core_resist;              // The resistivities (just 1 / S)
   Field3D eta;                                   // Resistivity profile (1 / S)
   BoutReal FZ;                                   // correction coefficient in Spitzer model
-  BoutReal Zeff;  
+  Field2D Zeff;                                  // Electric resistivity multiplier
 
   BoutReal vacuum_pressure;
   BoutReal vacuum_trans;                         // Transition width
@@ -350,9 +350,21 @@ private:
   /// These were not part of the original model but were added for numerical 
   /// stabilization purposes of turbulence simulations.
   bool perpendicular_diffusion;   // Include perpendicular diffusion?
-  Field3D diff_perp_Ni, diff_perp_Ti, diff_perp_Te;
-  Field3D diff_perp_U, diff_perp_Vipar;       
+  Field2D diff_perp_Ni, diff_perp_Ti, diff_perp_Te;
+  Field2D diff_perp_U, diff_perp_Vipar;       
 
+  /// Enhance dissipation in radial buffer regions (adapted from STORM)
+  // increase the perpendicular dissipation for this many grid points beside the inner and
+  // outer boundaries
+  int increased_dissipation_xbndries;
+  // factor to increase the perpendicular dissipation by in the region given by
+  // xbndry_dissipation_factor
+  BoutReal xbndry_dissipation_factor;
+  // Increase the resistivity beside the inner and outer boundaries by the same amount as
+  // the perpendicular dissipation. Note - this does not enhance the resistive heating (to
+  // avoid possible numerical instabilities), so energy may not be conserved in the radial
+  // buffers.
+  bool increased_resistivity_xbndries;
 
   /// position filter
   bool pos_filter, pos_filter2, keep_zonalPF;
@@ -1041,6 +1053,48 @@ private:
     return result;
   }
 
+  // Apply an enhancement to a dissipation coefficient in radial buffer regions.
+  // Enhancement is ramped linearly over a width `buffer_size` from the nominal value up to
+  // peak_enhancement*(nominal value) at the radial boundaries
+  void enhance_in_radial_buffers(Field2D& coefficient,
+                                        const int buffer_size,
+                                        const BoutReal peak_enhancement) {
+    // Inner radial boundary
+    for (int xglobal = mesh->getGlobalXIndex(0);
+        xglobal < std::min(buffer_size + mesh->xstart,
+                            mesh->getGlobalXIndex(mesh->LocalNx));
+        xglobal++) {
+
+      int xlocal = mesh->getLocalXIndex(xglobal);
+      if (mesh->periodicY(xlocal)) {
+        continue; // Skip periodic boundaries
+      }
+
+      for (int y = 0; y < mesh->LocalNy; y++) {
+        coefficient(xlocal, y) +=
+            BoutReal(buffer_size + mesh->xstart - xglobal)
+            / BoutReal(buffer_size)
+            * (peak_enhancement - 1.0) * coefficient(xlocal, y);
+      }
+    }
+
+    // Outer radial boundary
+    for (int xglobal = std::max(mesh->GlobalNx-1-buffer_size-mesh->xstart,
+                                mesh->getGlobalXIndex(0));
+        xglobal < mesh->getGlobalXIndex(mesh->LocalNx); xglobal++) {
+
+      int xlocal = mesh->getLocalXIndex(xglobal);
+      for (int y = 0; y < mesh->LocalNy; y++) {
+        coefficient(xlocal, y) +=
+            BoutReal(buffer_size + xglobal - (mesh->GlobalNx - 1 - mesh->xstart))
+            / BoutReal(buffer_size)
+            * (peak_enhancement - 1.0) * coefficient(xlocal, y);
+      }
+    }
+  }
+
+
+
 protected:
 
   int init(bool restarting) override {
@@ -1577,8 +1631,14 @@ protected:
     diff_perp_U = options["diff_perp_U"]
                  .doc("2nd order perpendicular diffusion for U in [m^2/s]").withDefault(0.0);       
     diff_perp_Vipar = options["diff_perp_Vipar"]
-                 .doc("2nd order perpendicular diffusion for Vipar in [m^2/s]").withDefault(0.0);  
-  
+                 .doc("2nd order perpendicular diffusion for Vipar in [m^2/s]").withDefault(0.0);   
+
+    increased_dissipation_xbndries = options["increased_dissipation_xbndries"]
+                 .doc("increase the perpendicular dissipation for this many grid points beside the inner and outer boundaries").withDefault(-1);  
+    xbndry_dissipation_factor = options["xbndry_dissipation_factor"]
+                 .doc("factor to increase the perpendicular dissipation at the radial boundaries").withDefault(10);  
+    increased_resistivity_xbndries = options["increased_resistivity_xbndries"]
+                 .doc("increase the resistivity at the radial boundaries").withDefault(false);  
 
     // output terms
     output_Teterms  = options["output_Teterms"].withDefault(false);
@@ -1938,12 +1998,32 @@ protected:
       // STORM var: SAVE_ONCE(mu_n0, mu_vort0, nu_parallel0, kappa0_perp, diff_perp_U, diff_perp_V);
 
       diff_perp_Ni /= Lbar * Va;
+      diff_perp_U /= Lbar * Va;
       diff_perp_Ti /= Lbar * Va;
       diff_perp_Te /= Lbar * Va;      
-      diff_perp_U /= Lbar * Va;
       diff_perp_Vipar /= Lbar * Va;
 
+      // Increase dissipation near boundaries
+      if (increased_dissipation_xbndries > 0) {
+        enhance_in_radial_buffers(diff_perp_Ni, increased_dissipation_xbndries,
+                                  xbndry_dissipation_factor);
+        enhance_in_radial_buffers(diff_perp_U, increased_dissipation_xbndries,
+                                  xbndry_dissipation_factor);
+        enhance_in_radial_buffers(diff_perp_Ti, increased_dissipation_xbndries,
+                                  xbndry_dissipation_factor);
+        enhance_in_radial_buffers(diff_perp_Te, increased_dissipation_xbndries,
+                                  xbndry_dissipation_factor);
+        enhance_in_radial_buffers(diff_perp_Vipar, increased_dissipation_xbndries,
+                                  xbndry_dissipation_factor);
+
+        if (increased_resistivity_xbndries) {
+          enhance_in_radial_buffers(Zeff, increased_dissipation_xbndries,
+                                    xbndry_dissipation_factor);
+        }
+      }
+
       SAVE_ONCE(diff_perp_Ni, diff_perp_Ti, diff_perp_Te, diff_perp_U, diff_perp_Vipar);
+      SAVE_ONCE1(Zeff);
     }
 
 
@@ -2428,6 +2508,8 @@ protected:
 
     // Transitions from 0 in core to 1 in vacuum
     vac_mask = (1.0 - tanh((P0 - vacuum_pressure) / vacuum_trans)) / 2.0;
+    dump.add(vac_mask, "vac_mask", 0);
+
     LnLambda = 24.0 - log(pow(Zi * Nbar * density * Ne0 / 1.e6, 0.5) / (Tebar * Te0));
     output.write("\tlog Lambda: {:e} -> {:e} \n", min(LnLambda), max(LnLambda));
 
