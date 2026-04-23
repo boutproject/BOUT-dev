@@ -1,5 +1,7 @@
 #pragma once
 
+#include <bout/boundary_region_iter.hxx>
+
 #include "./boundary_iterator.hxx"
 #include "bout/assert.hxx"
 #include "bout/boutexception.hxx"
@@ -113,8 +115,8 @@ public:
     });
   }
 
-  bool contains_ylow(Ind3D ind) const { return _contains[0][ind]; }
-  bool contains_yhigh(Ind3D ind) const { return _contains[1][ind]; }
+  bool contains_low(Ind3D ind) const { return _contains[0][ind]; }
+  bool contains_high(Ind3D ind) const { return _contains[1][ind]; }
   template <int dir>
   bool contains(Ind3D ind) const {
     static_assert(dir == 1 || dir == -1);

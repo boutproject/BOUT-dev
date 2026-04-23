@@ -37,7 +37,7 @@ constexpr BndryLoc BNDRY_PAR_BKWD_XIN = BndryLoc::par_bkwd_xin;
 constexpr BndryLoc BNDRY_PAR_FWD_XOUT = BndryLoc::par_fwd_xout;
 constexpr BndryLoc BNDRY_PAR_BKWD_XOUT = BndryLoc::par_bkwd_xout;
 
-// Physical type of y boundary
+/// Physical type of y boundary
 enum class YBndryType : std::int8_t { sheath, not_sheath, all };
 
 class BoundaryRegionBase {
