@@ -27,6 +27,7 @@
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field_factory.hxx"
+#include "bout/immersed_boundary.hxx"
 #include "bout/initialprofiles.hxx"
 #include "bout/interpolation.hxx"
 #include "bout/msg_stack.hxx"
@@ -249,7 +250,17 @@ void Solver::add(Field3D& v, const std::string& name, const std::string& descrip
   d.evolve_bndry = Options::root()["all"]["evolve_bndry"].withDefault(false);
   d.evolve_bndry = Options::root()[name]["evolve_bndry"].withDefault(d.evolve_bndry);
 
-  v.applyBoundary(true);     // Make sure initial profile obeys boundary conditions
+  if (immBndry) {
+    v.name = name;
+    //IB_TODO: Complex setup logic in case field not yet setup. Maybe theres a cleaner way?
+    if (!immBndry->CheckFieldSetUp(v.name)) {
+      immBndry->FieldSetup(v);
+    }
+    //IB_TODO: Does applyBoundary below also handle parallel BCs? If so its getting missed here.
+    immBndry->SetBoundary(v);
+  } else {
+    v.applyBoundary(true);     // Make sure initial profile obeys boundary conditions
+  }
   v.setLocation(d.location); // Restore location if changed
 
   f3d.emplace_back(std::move(d));
@@ -1057,8 +1068,8 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
         }
 
         const auto ind = f.var->getMesh()->ind2Dto3D(i2d, jz);
-        //IMM_BNDRY_TODO: Only annoyance is cant check imm_bdry to ignore validity check. Move IB to mesh instead of H3.
-        (*f.var)[ind] = f.var->getMesh()->isValidIndex(ind) ? udata[p] : 0;
+        //IB_TODO: Only annoyance is cant check imm_bdry to ignore validity check. Move IB to mesh instead of H3.
+        (*f.var)[ind] = (!immBndry || immBndry->IsInside(ind)) ? udata[p] : 0;
         p++;
       }
     }
@@ -1085,7 +1096,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
           continue;
         }
         const auto ind = f.F_var->getMesh()->ind2Dto3D(i2d, jz);
-        (*f.F_var)[ind] = f.F_var->getMesh()->isValidIndex(ind) ? udata[p] : 0;
+        (*f.F_var)[ind] = (!immBndry || immBndry->IsInside(ind)) ? udata[p] : 0;
         p++;
       }
     }
@@ -1147,7 +1158,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
         }
 
         const auto ind = f.var->getMesh()->ind2Dto3D(i2d, jz);
-        udata[p] = f.var->getMesh()->isValidIndex(ind) ? (*f.var)[ind] : 0;
+        udata[p] = (!immBndry || immBndry->IsInside(ind)) ? (*f.var)[ind] : 0;
         p++;
       }
     }
@@ -1174,7 +1185,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
         }
 
         const auto ind = f.F_var->getMesh()->ind2Dto3D(i2d, jz);
-        udata[p] = f.F_var->getMesh()->isValidIndex(ind) ? (*f.F_var)[ind] : 0;
+        udata[p] = (!immBndry || immBndry->IsInside(ind)) ? (*f.F_var)[ind] : 0;
         p++;
       }
     }
@@ -1494,7 +1505,11 @@ void Solver::pre_rhs(BoutReal t) {
 
   for (const auto& f : f3d) {
     if (!f.constraint) {
-      f.var->applyBoundary(t);
+      if (immBndry) {
+        immBndry->SetBoundary(*(f.var));
+      } else {
+        f.var->applyBoundary(t);
+      }
     }
   }
 }

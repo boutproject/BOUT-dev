@@ -4,6 +4,8 @@
  * given the contravariant metric tensor terms
  **************************************************************************/
 
+#include <memory>
+
 #include <bout/assert.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
@@ -1548,7 +1550,9 @@ Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
   TRACE("Coordinates::Grad_par( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  return setName(::DDY(var, outloc, method) * invSg(), "Grad_par({:s})", var.name);
+  ///IB_TODO: How to do this w/ default option?
+  return setName(::DDY(var, outloc, method, "RGN_NO_IMM_BNDRY")
+                         * invSg(), "Grad_par({:s})", var.name);
 }
 
 /////////////////////////////////////////////////////////

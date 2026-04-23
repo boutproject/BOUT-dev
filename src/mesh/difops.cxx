@@ -30,6 +30,7 @@
 #include <bout/difops.hxx>
 #include <bout/fft.hxx>
 #include <bout/globals.hxx>
+#include <bout/immersed_boundary.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/solver.hxx>
 #include <bout/utils.hxx>
@@ -261,30 +262,29 @@ Field3D Div_par(const Field3D& f_in, const Field3D& v_in) {
 
   Coordinates* coord = f.getCoordinates();
 
-  for (int i = mesh->xstart; i <= mesh->xend; i++) {
-    for (int j = mesh->ystart; j <= mesh->yend; j++) {
-      for (int k = mesh->zstart; k <= mesh->zend; k++) {
-        // Value of f and v at left cell face
-        BoutReal fL = 0.5 * (f(i, j, k) + f.ydown()(i, j - 1, k));
-        BoutReal vL = 0.5 * (v(i, j, k) + v.ydown()(i, j - 1, k));
+  BOUT_FOR(i, f.getValidRegionWithDefault("RGN_NOBNDRY")) {
+    //IB_TODO: Double check new logic here ok.
+    if (immBndry && !immBndry->IsInside(i)) {continue;}
 
-        BoutReal fR = 0.5 * (f(i, j, k) + f.yup()(i, j + 1, k));
-        BoutReal vR = 0.5 * (v(i, j, k) + v.yup()(i, j + 1, k));
-
-        // Calculate flux at right boundary (y+1/2)
-        BoutReal fluxRight =
-            fR * vR * (coord->J(i, j, k) + coord->J(i, j + 1, k))
-            / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j + 1, k)));
-
+    // Value of f and v at left cell face
+    BoutReal fL = 0.5 * (f[i] + f.ydown()[i.ym()]);
+    BoutReal vL = 0.5 * (v[i] + v.ydown()[i.ym()]);
+    
+    BoutReal fR = 0.5 * (f[i] + f.yup()[i.yp()]);
+    BoutReal vR = 0.5 * (v[i] + v.yup()[i.yp()]);
+    
+    // Calculate flux at right boundary (y+1/2)
+    BoutReal fluxRight =
+        fR * vR * (coord->J[i] + coord->J[i.yp()])
+        / (sqrt(coord->g_22[i]) + sqrt(coord->g_22[i.yp()]));
+    
         // Calculate at left boundary (y-1/2)
-        BoutReal fluxLeft =
-            fL * vL * (coord->J(i, j, k) + coord->J(i, j - 1, k))
-            / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j - 1, k)));
+    BoutReal fluxLeft =
+        fL * vL * (coord->J[i] + coord->J[i.ym()])
+        / (sqrt(coord->g_22[i]) + sqrt(coord->g_22[i.ym()]));
 
-        result(i, j, k) =
-            (fluxRight - fluxLeft) / (coord->dy(i, j, k) * coord->J(i, j, k));
-      }
-    }
+    result[i] =
+        (fluxRight - fluxLeft) / (coord->dy[i] * coord->J[i]);
   }
 
   return result;

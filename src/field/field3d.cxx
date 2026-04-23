@@ -42,6 +42,7 @@
 #include <bout/dcomplex.hxx>
 #include <bout/fft.hxx>
 #include <bout/field3d.hxx>
+#include <bout/immersed_boundary.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
@@ -520,6 +521,12 @@ void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices) {
         }
       }
     }
+  }
+
+  //IB_TODO: Can just override non-fci code like this with immersed boundary BCs?
+  if (immBndry) {
+    immBndry->SetBoundary(*this);
+    return;
   }
 
   // Non-FCI.
