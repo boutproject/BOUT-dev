@@ -238,12 +238,12 @@ namespace bout {
     // Check size of Y mesh if we've got multiple processors in Y
     if (num_local_y_points < num_y_guards and num_y_processors != 1) {
       return {false,
-              fmt::format(_("\t -> ny/NYPE ({:d}/{:d} = {:d}) must be >= MYG ({:d})\n"), ny,
+              fmt::format(_f("\t -> ny/NYPE ({:d}/{:d} = {:d}) must be >= MYG ({:d})\n"), ny,
                           num_y_processors, num_local_y_points, num_y_guards)};
     }
     // Check branch cuts
     if ((jyseps1_1 + 1) % num_local_y_points != 0) {
-      return {false, fmt::format(_("\t -> Leg region jyseps1_1+1 ({:d}) must be a "
+      return {false, fmt::format(_f("\t -> Leg region jyseps1_1+1 ({:d}) must be a "
                                   "multiple of MYSUB ({:d})\n"),
                                 jyseps1_1 + 1, num_local_y_points)};
     }
@@ -252,7 +252,7 @@ namespace bout {
       if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
         return {
             false,
-            fmt::format(_("\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
+            fmt::format(_f("\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
                           "be a multiple of MYSUB ({:d})\n"),
                         jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, num_local_y_points)};
       }
@@ -260,7 +260,7 @@ namespace bout {
       if ((jyseps2_2 - jyseps1_2) % num_local_y_points != 0) {
         return {
             false,
-            fmt::format(_("\t -> Core region jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) must "
+            fmt::format(_f("\t -> Core region jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) must "
                           "be a multiple of MYSUB ({:d})\n"),
                         jyseps2_2, jyseps1_2, jyseps2_2 - jyseps1_2, num_local_y_points)};
       }
@@ -269,14 +269,14 @@ namespace bout {
       if ((ny_inner - jyseps2_1 - 1) % num_local_y_points != 0) {
         return {
             false,
-            fmt::format(_("\t -> leg region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must "
+            fmt::format(_f("\t -> leg region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must "
                           "be a multiple of MYSUB ({:d})\n"),
                         ny_inner, jyseps2_1, ny_inner - jyseps2_1 - 1, num_local_y_points)};
       }
       if ((jyseps1_2 - ny_inner + 1) % num_local_y_points != 0) {
         return {
             false,
-            fmt::format(_("\t -> leg region jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) must "
+            fmt::format(_f("\t -> leg region jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) must "
                           "be a multiple of MYSUB ({:d})\n"),
                         jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, num_local_y_points)};
       }
@@ -287,7 +287,7 @@ namespace bout {
       if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
       return {
           false,
-          fmt::format(_("\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
+          fmt::format(_f("\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
                           "be a multiple of MYSUB ({:d})\n"),
                       jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, num_local_y_points)};
       }
@@ -296,7 +296,7 @@ namespace bout {
       if ((jyseps2_2 - ny_inner + 1) % num_local_y_points != 0) {
       return {
           false,
-          fmt::format(_("\t -> leg region jyseps2_2-ny_inner ({:d}-{:d} + 1 = {:d}) must "
+          fmt::format(_f("\t -> leg region jyseps2_2-ny_inner ({:d}-{:d} + 1 = {:d}) must "
                           "be a multiple of MYSUB ({:d})\n"),
                       jyseps2_2, ny_inner, jyseps2_2 - ny_inner + 1, num_local_y_points)};
       }
@@ -304,7 +304,7 @@ namespace bout {
       if ((ny_inner - 1 - jyseps1_2) % num_local_y_points != 0) {
       return {
           false,
-          fmt::format(_("\t -> leg region ny_inner - 1 - jyseps1_2({:d}-{:d} = {:d}) must "
+          fmt::format(_f("\t -> leg region ny_inner - 1 - jyseps1_2({:d}-{:d} = {:d}) must "
                           "be a multiple of MYSUB ({:d})\n"),
                       ny_inner, jyseps1_2, ny_inner - 1 - jyseps1_2, num_local_y_points)};
       }
@@ -312,7 +312,7 @@ namespace bout {
       if ((jyseps1_2 - jyseps2_1) % num_local_y_points != 0) {
       return {
           false,
-          fmt::format(_("\t -> leg region jyseps1_2-jyseps2_1 ({:d}-{:d} = {:d}) must "
+          fmt::format(_f("\t -> leg region jyseps1_2-jyseps2_1 ({:d}-{:d} = {:d}) must "
                           "be a multiple of MYSUB ({:d})\n"),
                       jyseps1_2, jyseps2_1, jyseps1_2 - jyseps2_1, num_local_y_points)};
       }
@@ -323,7 +323,7 @@ namespace bout {
       if ((ny - 1 - jyseps2_2) % num_local_y_points != 0) {
       return {
         false, 
-        fmt::format(_("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
+        fmt::format(_f("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
                           "multiple of MYSUB ({:d})\n"),
                         ny, jyseps2_2, ny - 1 - jyseps2_2, num_local_y_points)};
       }
@@ -332,7 +332,7 @@ namespace bout {
       if ((ny_inner - 1 - jyseps2_1) % num_local_y_points != 0) {
       return {
           false,
-          fmt::format(_("\t -> central region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must "
+          fmt::format(_f("\t -> central region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must "
                           "be a multiple of MYSUB ({:d})\n"),
                       ny_inner - 1, jyseps2_1, ny_inner - 1 - jyseps2_1, num_local_y_points)};
       }
@@ -341,7 +341,7 @@ namespace bout {
       if ((ny - ny_inner) % num_local_y_points != 0) {
       return {
           false,
-          fmt::format(_("\t -> leg region ny - 1 - ny_inner + 1 ({:d}-{:d} = {:d}) must "
+          fmt::format(_f("\t -> leg region ny - 1 - ny_inner + 1 ({:d}-{:d} = {:d}) must "
                           "be a multiple of MYSUB ({:d})\n"),
                       ny, ny_inner, ny - ny_inner, num_local_y_points)};
       }
@@ -358,7 +358,7 @@ namespace bout {
 
   if ((ny - 1 - jyseps2_2) % num_local_y_points != 0) {
     return {false, fmt::format(
-                        _("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
+                        _f("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
                           "multiple of MYSUB ({:d})\n"),
                         ny, jyseps2_2, ny - 1 - jyseps2_2, num_local_y_points)};
   }
@@ -500,7 +500,7 @@ void BoutMesh::chooseProcessorSplit(Options& options) {
 
     if (nx % NXPE != 0) {
       throw BoutException(
-          _("Number of x points ({:d}) not divisible by NPs in x direction ({:d})\n"), nx,
+          _f("Number of x points ({:d}) not divisible by NPs in x direction ({:d})\n"), nx,
           NXPE);
     }
 
@@ -519,7 +519,7 @@ void BoutMesh::chooseProcessorSplit(Options& options) {
 
     if (ny % NYPE != 0) {
       throw BoutException(
-          _("Number of y points ({:d}) not divisible by NPs in y direction ({:d})\n"), nx,
+          _f("Number of y points ({:d}) not divisible by NPs in y direction ({:d})\n"), nx,
           NXPE);
     }
 
@@ -573,7 +573,7 @@ void BoutMesh::findProcessorSplit() {
   }
 
   if (NXPE < 1) {
-    throw BoutException(_("Could not find a valid value for NXPE. Try a different "
+    throw BoutException(_f("Could not find a valid value for NXPE. Try a different "
                           "number of processors."));
   }
 
@@ -614,7 +614,7 @@ void BoutMesh::setDerivedGridSizes() {
   if ((MX % NXPE) != 0) {
     auto valid_process_num = bout::findValidProcessorNum(ny, nx, NPES, NXPE);
     output_info.write(valid_process_num.reason);
-    throw BoutException(_("Cannot split {:d} X points equally between {:d} processors\n"),
+    throw BoutException(_f("Cannot split {:d} X points equally between {:d} processors\n"),
                         MX, NXPE);
   }
 
@@ -1107,7 +1107,7 @@ void BoutMesh::createCommunicators() {
     } 
   else{
     std::string mesh_top = toString(mesh_topology);
-    throw BoutException(_("Unsupported mesh topology {:s} for communicator creation\n"), mesh_top);
+    throw BoutException(_f("Unsupported mesh topology {:s} for communicator creation\n"), mesh_top);
     }
 
   for (int i = 0; i < NXPE; i++) {
@@ -1668,8 +1668,13 @@ void BoutMesh::createXBoundaries() {
   }
 
   if (PE_XIND == (NXPE - 1)) {
-    // Outer SOL
-    boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend, this));
+    // In SF topology the region above ny_inner at the outer X face is the South PFR,
+    // not the outer SOL.
+    if (mesh_topology == MeshTopology::SF and yg > ny_inner) {
+      boundary.push_back(new BoundaryRegionXOut("south_pf_outer", ystart, yend, this));
+    } else {
+      boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend, this));
+    }
   }
 }
 
@@ -2204,6 +2209,13 @@ int BoutMesh::getXProcIndex() const { return PE_XIND; }
 int BoutMesh::getYProcIndex() const { return PE_YIND; }
 
 int BoutMesh::getZProcIndex() const { return PE_ZIND; }
+
+int BoutMesh::getProcIndex(int X, int Y, int Z) const {
+  if (X < 0 || X >= NXPE || Y < 0 || Y >= NYPE || Z < 0 || Z >= NZPE) {
+    return -1;
+  }
+  return Y * NXPE * NZPE + X * NZPE + Z;
+}
 
 /****************************************************************
  *                 X COMMUNICATIONS
@@ -4130,28 +4142,6 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
 
     return yglo / static_cast<BoutReal>(nycore);
   }
-}
-
-BoutReal BoutMesh::GlobalZ(int jz) const {
-  if (symmetricGlobalZ) {
-    // With this definition the boundary sits dz/2 away form the first/last inner points
-    return (0.5 + getGlobalZIndexNoBoundaries(jz) - (nz - MZ) * 0.5)
-           / static_cast<BoutReal>(MZ);
-  }
-  return static_cast<BoutReal>(getGlobalZIndexNoBoundaries(jz))
-         / static_cast<BoutReal>(MZ);
-}
-
-BoutReal BoutMesh::GlobalZ(BoutReal jz) const {
-
-  // Get global Z index as a BoutReal
-  const BoutReal zglo = getGlobalZIndex(jz);
-
-  if (symmetricGlobalZ) {
-    // With this definition the boundary sits dz/2 away form the first/last inner points
-    return (0.5 + zglo - (nz - MZ) * 0.5) / static_cast<BoutReal>(MZ);
-  }
-  return zglo / static_cast<BoutReal>(MZ);
 }
 
 BoutReal BoutMesh::GlobalZ(int jz) const {

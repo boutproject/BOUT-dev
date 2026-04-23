@@ -369,7 +369,7 @@ public:
 
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() != 0) {
-      throw ParseException("Variable '{}' takes no arguments but got {:d}", args.size());
+      throw ParseException("Variable '{}' takes no arguments but got {:d}", name, args.size());
     }
     return std::make_shared<GridVariable<T>>(variable, name);
   }
@@ -379,6 +379,8 @@ public:
 private:
   T variable;
   std::string name;
+};
+
 /// Function that evaluates to 1 when Y is periodic (i.e. in the core), 0 otherwise
 /// Note: Assumes symmetricGlobalX
 

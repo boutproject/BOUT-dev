@@ -986,6 +986,7 @@ TEST_F(FieldFactoryFieldVariableTest, CreateField3D) {
     const auto theta = factory.create3D("atan(y, x)");
     Options grid{{"rho", rho},
                  {"theta", theta},
+                 {"y_boundary_guards", mesh->ystart},
                  {"nx", mesh->LocalNx},
                  {"ny", mesh->LocalNy},
                  {"nz", mesh->LocalNz}};
@@ -1002,7 +1003,9 @@ TEST_F(FieldFactoryFieldVariableTest, CreateField3D) {
 
     const auto output = factory.create3D("rho * cos(theta)");
     const auto x = factory.create3D("x");
-    EXPECT_TRUE(IsFieldEqual(output, x));
+    // Tolerance > 1e-15 because cos(pi/2) is not exactly 0 in floating-point,
+    // causing ~1.15e-15 error at ix=0 where x=0 and theta=pi/2.
+    EXPECT_TRUE(IsFieldEqual(output, x, "RGN_ALL", 1e-14));
   }
 }
 
@@ -1016,6 +1019,7 @@ TEST_F(FieldFactoryFieldVariableTest, CreateField2D) {
     const auto theta = factory.create2D("atan(y, x)");
     Options grid{{"rho", rho},
                  {"theta", theta},
+                 {"y_boundary_guards", mesh->ystart},
                  {"nx", mesh->LocalNx},
                  {"ny", mesh->LocalNy},
                  {"nz", mesh->LocalNz}};
@@ -1032,7 +1036,7 @@ TEST_F(FieldFactoryFieldVariableTest, CreateField2D) {
 
     const auto output = factory.create2D("rho * cos(theta)");
     const auto x = factory.create2D("x");
-    EXPECT_TRUE(IsFieldEqual(output, x));
+    EXPECT_TRUE(IsFieldEqual(output, x, "RGN_ALL", 1e-14));
   }
 }
 
