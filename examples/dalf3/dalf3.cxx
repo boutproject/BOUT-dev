@@ -18,16 +18,17 @@
  *
  ****************************************************************/
 
-#include <bout/physicsmodel.hxx>
-
+#include <bout/constants.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/invert/laplacexy.hxx>
 #include <bout/invert_laplace.hxx>
+#include <bout/physicsmodel.hxx>
+#include <bout/tokamak_coordinates.hxx>
 #include <bout/utils.hxx>
+
+#include <algorithm>
 #include <math.h>
 #include <memory>
-
-#include <bout/constants.hxx>
 
 // Constants
 const BoutReal MU0 = 4.0e-7 * PI;
@@ -97,22 +98,9 @@ protected:
     b0xcv.covariant = false;  // Read contravariant components
     mesh->get(b0xcv, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
 
-    // Metric coefficients
-    Field2D Rxy, Bpxy, Btxy, hthe;
-    Field2D I; // Shear factor
-
-    if (mesh->get(Rxy, "Rxy")) { // m
-      output_error.write("Error: Cannot read Rxy from grid\n");
-      return 1;
-    }
-    if (mesh->get(Bpxy, "Bpxy")) { // T
-      output_error.write("Error: Cannot read Bpxy from grid\n");
-      return 1;
-    }
-    mesh->get(Btxy, "Btxy"); // T
-    mesh->get(B0, "Bxy");    // T
-    mesh->get(hthe, "hthe"); // m
-    mesh->get(I, "sinty");   // m^-2 T^-1
+    // We need to load this in, despite using `set_tokamak_coordinates`, because
+    // the both length and B normalisation depend on it
+    mesh->get(B0, "Bxy"); // T
 
     //////////////////////////////////////////////////////////////
     // Options
@@ -163,20 +151,6 @@ protected:
       return 1;
     }
 
-    Coordinates* coord = mesh->getCoordinates();
-
-    // SHIFTED RADIAL COORDINATES
-
-    // Check type of parallel transform
-    std::string ptstr =
-        Options::root()["mesh"]["paralleltransform"]["type"].withDefault("identity");
-
-    if (lowercase(ptstr) == "shifted") {
-      // Dimits style, using local coordinate system
-      b0xcv.z += I * b0xcv.x;
-      I = 0.0; // I disappears from metric
-    }
-
     ///////////////////////////////////////////////////
     // Normalisation
 
@@ -212,9 +186,7 @@ protected:
     } else {
       eta = 0.51 * 1.03e-4 * 20. * pow(Te0, -1.5);
     }
-    if (mul_resist < 0.0) {
-      mul_resist = 0.0;
-    }
+    mul_resist = std::max(mul_resist, 0.0);
     eta *= mul_resist;
 
     // Plasma quantities
@@ -228,41 +200,31 @@ protected:
     hyper_viscosity /= wci * SQ(SQ(rho_s));
     viscosity_par /= wci * SQ(rho_s);
 
-    b0xcv.x /= Bnorm;
-    b0xcv.y *= rho_s * rho_s;
-    b0xcv.z *= rho_s * rho_s;
-
-    // Metrics
-    Rxy /= rho_s;
-    hthe /= rho_s;
-    I *= rho_s * rho_s * Bnorm;
-    Bpxy /= Bnorm;
-    Btxy /= Bnorm;
-    B0 /= Bnorm;
-
-    coord->dx /= rho_s * rho_s * Bnorm;
-
     ///////////////////////////////////////////////////
     // CALCULATE METRICS
 
-    coord->g11 = SQ(Rxy * Bpxy);
-    coord->g22 = 1.0 / SQ(hthe);
-    coord->g33 = SQ(I) * coord->g11 + SQ(B0) / coord->g11;
-    coord->g12 = 0.0;
-    coord->g13 = -I * coord->g11;
-    coord->g23 = -Btxy / (hthe * Bpxy * Rxy);
+    // Check type of parallel transform
+    const auto ptstr =
+        Options::root()["mesh"]["paralleltransform"]["type"].withDefault("identity");
 
-    coord->J = hthe / Bpxy;
-    coord->Bxy = B0;
+    // I disappears from metric
+    const bool noshear = (lowercase(ptstr) == "shifted");
 
-    coord->g_11 = 1.0 / coord->g11 + SQ(I * Rxy);
-    coord->g_22 = SQ(B0 * hthe / Bpxy);
-    coord->g_33 = Rxy * Rxy;
-    coord->g_12 = Btxy * hthe * I * Rxy / Bpxy;
-    coord->g_13 = I * Rxy * Rxy;
-    coord->g_23 = Btxy * hthe * Rxy / Bpxy;
+    // Read, normalise, and set coordinates
+    const auto tokamak_coords =
+        bout::set_tokamak_coordinates(*mesh, rho_s, Bnorm, noshear);
+    // Use normalised B0
+    B0 = tokamak_coords.Bxy;
 
-    coord->geometry(); // Calculate quantities from metric tensor
+    // SHIFTED RADIAL COORDINATES
+    if (noshear) {
+      // Dimits style, using local coordinate system
+      b0xcv.z += tokamak_coords.I_unnormalised * b0xcv.x;
+    }
+
+    b0xcv.x /= Bnorm;
+    b0xcv.y *= rho_s * rho_s;
+    b0xcv.z *= rho_s * rho_s;
 
     SOLVE_FOR3(Vort, Pe, Vpar);
     comms.add(Vort, Pe, Vpar);

@@ -3,6 +3,7 @@
 #include <bout/invert/laplacexz.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/physicsmodel.hxx>
+#include <bout/tokamak_coordinates.hxx>
 
 #include <memory>
 
@@ -70,7 +71,7 @@ protected:
     resistivity = opt["resistivity"].withDefault(1e-7);
 
     // Load metric tensor from the mesh, passing length and B field normalisations
-    LoadMetric(rho_s0, Bnorm);
+    bout::set_tokamak_coordinates(*mesh, rho_s0, Bnorm, true);
 
     // Specify evolving variables
     SOLVE_FOR2(Vort, Apar);
@@ -167,59 +168,6 @@ protected:
     }
 
     return 0;
-  }
-
-  void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
-    // Load metric coefficients from the mesh
-    Field2D Rxy, Bpxy, Btxy, hthe, sinty;
-    GRID_LOAD5(Rxy, Bpxy, Btxy, hthe, sinty); // Load metrics
-
-    Coordinates* coord = mesh->getCoordinates(); // Metric tensor
-
-    // Checking for dpsi and qinty used in BOUT grids
-    Field2D dx;
-    if (!mesh->get(dx, "dpsi")) {
-      output << "\tUsing dpsi as the x grid spacing\n";
-      coord->dx = dx; // Only use dpsi if found
-    } else {
-      // dx will have been read already from the grid
-      output << "\tUsing dx as the x grid spacing\n";
-    }
-
-    Rxy /= Lnorm;
-    hthe /= Lnorm;
-    sinty *= SQ(Lnorm) * Bnorm;
-    coord->dx /= SQ(Lnorm) * Bnorm;
-
-    Bpxy /= Bnorm;
-    Btxy /= Bnorm;
-    coord->Bxy /= Bnorm;
-
-    // Calculate metric components
-    sinty = 0.0; // I disappears from metric for shifted coordinates
-
-    BoutReal sbp = 1.0; // Sign of Bp
-    if (min(Bpxy, true) < 0.0) {
-      sbp = -1.0;
-    }
-
-    coord->g11 = SQ(Rxy * Bpxy);
-    coord->g22 = 1.0 / SQ(hthe);
-    coord->g33 = SQ(sinty) * coord->g11 + SQ(coord->Bxy) / coord->g11;
-    coord->g12 = 0.0;
-    coord->g13 = -sinty * coord->g11;
-    coord->g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
-
-    coord->J = hthe / Bpxy;
-
-    coord->g_11 = 1.0 / coord->g11 + SQ(sinty * Rxy);
-    coord->g_22 = SQ(coord->Bxy * hthe / Bpxy);
-    coord->g_33 = Rxy * Rxy;
-    coord->g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
-    coord->g_13 = sinty * Rxy * Rxy;
-    coord->g_23 = sbp * Btxy * hthe * Rxy / Bpxy;
-
-    coord->geometry();
   }
 };
 
