@@ -8,6 +8,7 @@
 #include <bout/bout_enum_class.hxx>
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
+#include <bout/parallel_boundary_region.hxx>
 #include <bout/region.hxx>
 #include <bout/sys/parallel_stencils.hxx>
 
@@ -388,6 +389,59 @@ inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc, BoundaryFreeExtrapolati
   return fp;
 }
 } // namespace
+
+class BoundaryRegionFCI {
+public:
+  BoundaryRegionFCI(int dir, Mesh* mesh) : _dir(dir), localmesh(mesh) {};
+  /// Add a point to the boundary
+  void add_point(Ind3D ind, BoutReal x, BoutReal y, BoutReal z, BoutReal length,
+                 char valid, signed char offset) {
+    if (!bndry_points->empty() && bndry_points->back().index > ind) {
+      is_sorted = false;
+    }
+    bndry_points->emplace_back(ind, bout::parallel_boundary_region::RealPoint{x, y, z},
+                               length, valid, offset,
+                               static_cast<unsigned char>(std::abs(offset)));
+  }
+  void add_point(int ix, int iy, int iz, BoutReal x, BoutReal y, BoutReal z,
+                 BoutReal length, char valid, signed char offset) {
+    add_point(xyz2ind(ix, iy, iz), x, y, z, length, valid, offset);
+  }
+
+private:
+  int _dir;
+  // Vector of points in the boundary
+  std::shared_ptr<bout::parallel_boundary_region::IndicesVec> bndry_points;
+  Ind3D xyz2ind(int x, int y, int z) const {
+    const int ny = localmesh->LocalNy;
+    const int nz = localmesh->LocalNz;
+    return Ind3D{(x * ny + y) * nz + z, ny, nz};
+  }
+  bool is_sorted{true};
+  Mesh* localmesh;
+};
+
+class BoundaryRegionIterFCI : public BoundaryRegionIterBase<BoundaryRegionIterFCI> {
+private:
+  std::shared_ptr<bout::parallel_boundary_region::IndicesVec> bndry_pnts;
+  size_t pos{0};
+  int _dir;
+
+public:
+  template <bool check = true>
+  BoutReal& _getAt(Field3D& f, int off) const {
+    ASSERT3(f.hasParallelSlices());
+    if constexpr (check) {
+      ASSERT3(_valid() > -off - 2);
+    }
+    auto _off = _offset() + off * _dir;
+    return f.ynext(_off)[ind().yp(_off)];
+  }
+  signed char _offset() const { return (*bndry_pnts)[pos].offset; }
+  signed char _valid() const { return (*bndry_pnts)[pos].valid; }
+
+  Ind3D& _ind() const { return (*bndry_pnts)[pos].index; }
+};
 
 } // namespace boundary
 } // namespace bout
