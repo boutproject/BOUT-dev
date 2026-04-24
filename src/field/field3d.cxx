@@ -401,7 +401,7 @@ void Field3D::applyBoundary(const std::string& condition) {
 
   // Create a boundary for a dummy region.
   // This ensures that options are parsed/used on all processors
-  BoundaryRegionXIn dummy_region{"dummy_region", 0, 1, fieldmesh};
+  BoundaryRegionXIn dummy_region{"dummy_region", 0, 0, fieldmesh};
   auto* bndry = bfact->create(condition, &dummy_region);
   delete bndry;
 

@@ -150,7 +150,7 @@ void FieldData::setBoundary(const std::string& name) {
 
   // Create a boundary for a dummy region.
   // This ensures that options are parsed/used on all processors
-  BoundaryRegionXIn dummy_region{"dummy_region", 0, 1, mesh};
+  BoundaryRegionXIn dummy_region{"dummy_region", 0, 0, mesh};
   auto* bndry = bfact->createFromOptions(name, &dummy_region);
   delete bndry;
 
