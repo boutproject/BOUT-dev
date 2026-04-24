@@ -501,16 +501,4 @@ private:
 #endif // BOUT_USE_METRIC_3D
 };
 
-/*
-/// Standard coordinate system for tokamak simulations
-class TokamakCoordinates : public Coordinates {
-public:
-  TokamakCoordinates(Mesh *mesh) : Coordinates(mesh) {
-
-  }
-private:
-
-};
-*/
-
 #endif // BOUT_COORDINATES_H

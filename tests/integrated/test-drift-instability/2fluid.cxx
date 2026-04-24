@@ -4,16 +4,14 @@
  *******************************************************************************/
 
 #include <bout/bout.hxx>
-#include <bout/physicsmodel.hxx>
-
 #include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/invert_laplace.hxx>
+#include <bout/physicsmodel.hxx>
+#include <bout/tokamak_coordinates.hxx>
 
 #include <cmath>
-#include <cstdio>
-#include <cstdlib>
 
 // just define a macro for V_E dot Grad
 #define vE_Grad(f, p) (b0xGrad_dot_Grad(p, f) / coord->Bxy())
@@ -41,9 +39,6 @@ class TwoFluid : public PhysicsModel {
   Field3D pei, pe;
   Field2D pei0, pe0;
 
-  // Metric coefficients
-  Field2D Rxy, Bpxy, Btxy, hthe;
-
   // parameters
   BoutReal Te_x, Ti_x, Ni_x, Vi_x, bmag, rho_s, fmei, AA, ZZ;
   BoutReal lambda_ei, lambda_ii;
@@ -68,8 +63,6 @@ class TwoFluid : public PhysicsModel {
 
 protected:
   int init(bool UNUSED(restarting)) override {
-    Field2D I; // Shear factor
-
     output.write("Solving 6-variable 2-fluid equations\n");
 
     /************* LOAD DATA FROM GRID FILE ****************/
@@ -87,17 +80,6 @@ protected:
     // Load magnetic curvature term
     b0xcv.covariant = false;  // Read contravariant components
     mesh->get(b0xcv, "bxcv"); // b0xkappa terms
-
-    // Coordinate system
-    coord = mesh->getCoordinates();
-
-    // Load metrics
-    GRID_LOAD(Rxy);
-    GRID_LOAD(Bpxy);
-    GRID_LOAD(Btxy);
-    GRID_LOAD(hthe);
-    coord->setDx(mesh->get("dpsi"));
-    mesh->get(I, "sinty");
 
     // Load normalisation values
     GRID_LOAD(Te_x);
@@ -141,14 +123,6 @@ protected:
       (*globalOptions)["aparsolver"].setConditionallyUsed();
     }
 
-    /************* SHIFTED RADIAL COORDINATES ************/
-
-    const bool ShiftXderivs = (*globalOptions)["ShiftXderivs"].withDefault(false);
-    if (ShiftXderivs) {
-      ShearFactor = 0.0; // I disappears from metric
-      b0xcv.z += I * b0xcv.x;
-    }
-
     /************** CALCULATE PARAMETERS *****************/
 
     rho_s = 1.02 * sqrt(AA * Te_x) / ZZ / bmag;
@@ -184,6 +158,20 @@ protected:
           hthe0 / rho_s);
     }
 
+    /**************** CALCULATE METRICS ******************/
+
+    const bool ShiftXderivs = (*globalOptions)["ShiftXderivs"].withDefault(false);
+    const auto tokamak_coords = bout::set_tokamak_coordinates(*mesh, rho_s, bmag / 1e4,
+                                                              ShiftXderivs, ShearFactor);
+    const auto& I = tokamak_coords.I_unnormalised;
+    coord = mesh->getCoordinates();
+
+    /************* SHIFTED RADIAL COORDINATES ************/
+
+    if (ShiftXderivs) {
+      b0xcv.z += I * b0xcv.x;
+    }
+
     /************** NORMALISE QUANTITIES *****************/
 
     output.write("\tNormalising to rho_s = {:e}\n", rho_s);
@@ -200,41 +188,9 @@ protected:
     b0xcv.y *= rho_s * rho_s;
     b0xcv.z *= rho_s * rho_s;
 
-    // Normalise geometry
-    Rxy /= rho_s;
-    hthe /= rho_s;
-    I *= rho_s * rho_s * (bmag / 1e4) * ShearFactor;
-    coord->setDx(coord->dx() / (rho_s * rho_s * (bmag / 1e4)));
-
-    // Normalise magnetic field
-    Bpxy /= (bmag / 1.e4);
-    Btxy /= (bmag / 1.e4);
-    coord->setBxy(coord->Bxy() / (bmag / 1.e4));
-
     // calculate pressures
     pei0 = (Ti0 + Te0) * Ni0;
     pe0 = Te0 * Ni0;
-
-    /**************** CALCULATE METRICS ******************/
-
-    const auto g11 = SQ(Rxy * Bpxy);
-    const auto g22 = 1.0 / SQ(hthe);
-    const auto g33 = SQ(I) * g11 + SQ(coord->Bxy()) / g11;
-    const auto g12 = 0.0;
-    const auto g13 = -I * g11;
-    const auto g23 = -Btxy / (hthe * Bpxy * Rxy);
-
-    const auto g_11 = 1.0 / g11 + SQ(I * Rxy);
-    const auto g_22 = SQ(coord->Bxy() * hthe / Bpxy);
-    const auto g_33 = Rxy * Rxy;
-    const auto g_12 = Btxy * hthe * I * Rxy / Bpxy;
-    const auto g_13 = I * Rxy * Rxy;
-    const auto g_23 = Btxy * hthe * Rxy / Bpxy;
-
-    coord->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
-                           CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
-
-    coord->setJ(hthe / Bpxy);
 
     /**************** SET EVOLVING VARIABLES *************/
 

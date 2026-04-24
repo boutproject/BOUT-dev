@@ -1,0 +1,49 @@
+#ifndef BOUT_TOKAMAK_COORDINATES_HXX
+#define BOUT_TOKAMAK_COORDINATES_HXX
+
+#include <bout/bout_types.hxx>
+#include <bout/field2d.hxx>
+#include <bout/metric_tensor.hxx>
+
+class Mesh;
+
+namespace bout {
+/// Variables used in the BOUT++ tokamak coordinate system.
+///
+/// When created by `set_tokamak_coordinates`, all variables except
+/// `I_unnormalised` are normalised.
+struct TokamakCoordinates {
+  /// Major radius
+  Field2D Rxy;
+  /// Vertical height
+  Field2D Zxy;
+  /// Poloidal magnetic field
+  Field2D Bpxy;
+  /// Toroidal magnetic field
+  Field2D Btxy;
+  /// Total magnetic field
+  Field2D Bxy;
+  /// Poloidal arc length
+  Field2D hthe;
+  /// Integrated shear (normalised)
+  bout::FieldMetric I;
+  /// Unnormalised integrated shear
+  bout::FieldMetric I_unnormalised;
+};
+
+/// Read, normalise, calculate, and set the metric components for a BOUT++
+/// tokamak coordinate system.
+///
+/// Sets the cell-centre `Coordinates` on \p mesh
+///
+/// @param Lbar         Spatial normalisation
+/// @param Bbar         Magnetic normalisation
+/// @param no_shear     Don't use integrated shear in coordinate system
+/// @param shear_factor Integrated shear normalisation
+TokamakCoordinates set_tokamak_coordinates(Mesh& mesh, BoutReal Lbar = 1.0,
+                                           BoutReal Bbar = 1.0, bool no_shear = false,
+                                           BoutReal shear_factor = 1.0);
+
+} // namespace bout
+
+#endif //BOUT_TOKAMAK_COORDINATES_HXX

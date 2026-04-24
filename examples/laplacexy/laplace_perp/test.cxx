@@ -1,9 +1,9 @@
 #include <bout/bout.hxx>
-#include <bout/field2d.hxx>
-
 #include <bout/derivs.hxx>
+#include <bout/field2d.hxx>
 #include <bout/field_factory.hxx>
 #include <bout/invert/laplacexy.hxx>
+#include <bout/tokamak_coordinates.hxx>
 
 using bout::globals::mesh;
 
@@ -13,42 +13,7 @@ int main(int argc, char** argv) {
   ///////////////////////////////////////
   const bool calc_metric = Options::root()["calc_metric"].withDefault(false);
   if (calc_metric) {
-    // Read metric tensor
-    Field2D Rxy;
-    Field2D Btxy;
-    Field2D Bpxy;
-    Field2D B0;
-    Field2D hthe;
-    Field2D I;
-    mesh->get(Rxy, "Rxy");   // m
-    mesh->get(Btxy, "Btxy"); // T
-    mesh->get(Bpxy, "Bpxy"); // T
-    mesh->get(B0, "Bxy");    // T
-    mesh->get(hthe, "hthe"); // m
-    mesh->get(I, "sinty");   // m^-2 T^-1
-
-    Coordinates* coord = mesh->getCoordinates();
-
-    // Calculate metrics
-    const auto g11 = SQ(Rxy * Bpxy);
-    const auto g22 = 1.0 / SQ(hthe);
-    const auto g33 = SQ(I) * g11 + SQ(B0) / g11;
-    const auto g12 = 0.0;
-    const auto g13 = -I * g11;
-    const auto g23 = -Btxy / (hthe * Bpxy * Rxy);
-
-    const auto g_11 = 1.0 / g11 + SQ(I * Rxy);
-    const auto g_22 = SQ(B0 * hthe / Bpxy);
-    const auto g_33 = Rxy * Rxy;
-    const auto g_12 = Btxy * hthe * I * Rxy / Bpxy;
-    const auto g_13 = I * Rxy * Rxy;
-    const auto g_23 = Btxy * hthe * Rxy / Bpxy;
-
-    coord->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
-                           CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
-
-    coord->setJ(hthe / Bpxy);
-    coord->setBxy(B0);
+    bout::set_tokamak_coordinates(*mesh);
   }
   ///////////////////////////////////////
 

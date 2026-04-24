@@ -12,6 +12,7 @@
 #include <bout/bout.hxx>
 #include <bout/constants.hxx>
 #include <bout/derivs.hxx>
+#include <bout/field_factory.hxx>
 #include <bout/initialprofiles.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/invert_laplace.hxx>
@@ -19,9 +20,8 @@
 #include <bout/msg_stack.hxx>
 #include <bout/physicsmodel.hxx>
 #include <bout/sourcex.hxx>
+#include <bout/tokamak_coordinates.hxx>
 #include <bout/utils.hxx>
-
-#include <bout/field_factory.hxx>
 
 #include <math.h>
 
@@ -114,9 +114,7 @@ private:
   BoutReal hyperresist;  // Hyper-resistivity coefficient (in core only)
   BoutReal ehyperviscos; // electron Hyper-viscosity coefficient
 
-  // Metric coefficients
-  Field2D Rxy, Bpxy, Btxy, B0, hthe;
-  Field2D I; // Shear factor
+  Field2D B0; // Magnetic field
 
   bool mms; // True if testing with Method of Manufactured Solutions
 
@@ -149,28 +147,7 @@ public:
     // Load data from the grid
 
     // Load 2D profiles
-    mesh->get(J0, "Jpar0");    // A / m^2
     mesh->get(P0, "pressure"); // Pascals
-
-    // Load curvature term
-    b0xcv.covariant = false;  // Read contravariant components
-    mesh->get(b0xcv, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
-
-    // Load metrics
-    if (mesh->get(Rxy, "Rxy")) { // m
-      output_error.write("Error: Cannot read Rxy from grid\n");
-      return 1;
-    }
-    if (mesh->get(Bpxy, "Bpxy")) { // T
-      output_error.write("Error: Cannot read Bpxy from grid\n");
-      return 1;
-    }
-    mesh->get(Btxy, "Btxy"); // T
-    mesh->get(B0, "Bxy");    // T
-    mesh->get(hthe, "hthe"); // m
-    mesh->get(I, "sinty");   // m^-2 T^-1
-
-    Coordinates* coords = mesh->getCoordinates();
 
     //////////////////////////////////////////////////////////////
     // Read parameters from the options file
@@ -293,47 +270,62 @@ public:
 
     OPTION(globalOptions->getSection("solver"), mms, false);
 
-    if (!include_curvature) {
-      b0xcv = 0.0;
-    }
-
-    if (!include_jpar0) {
-      J0 = 0.0;
-    }
-
     //////////////////////////////////////////////////////////////
     // INITIALIZE LAPLACIAN SOLVER
 
     phi_solver = Laplacian::create();
 
     //////////////////////////////////////////////////////////////
+    // Read, normalise, and set coordinates
+
+    // Typical magnetic field
+    mesh->get(Bbar, "bmag", 1.0);
+    // Typical length scale
+    mesh->get(Lbar, "rmag", 1.0);
+
+    // Read, normalise, and set coordinates
+    const auto tokamak_coords =
+        bout::set_tokamak_coordinates(*mesh, Lbar, Bbar, mesh->IncIntShear);
+    const auto& Rxy = tokamak_coords.Rxy;
+    const auto& Bpxy = tokamak_coords.Bpxy;
+    const auto& Btxy = tokamak_coords.Btxy;
+    const auto& hthe = tokamak_coords.hthe;
+    const auto& I = tokamak_coords.I_unnormalised;
+
+    B0 = tokamak_coords.Bxy;
+
+    if (include_curvature) {
+      // Load curvature term
+      b0xcv.covariant = false;  // Read contravariant components
+      mesh->get(b0xcv, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
+    } else {
+      b0xcv = 0.0;
+    }
+
+    if (include_jpar0) {
+      mesh->get(J0, "Jpar0"); // A / m^2
+    } else {
+      J0 = 0.0;
+    }
+
+    //////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES
 
-    bool ShiftXderivs;
-    globalOptions->get("shiftXderivs", ShiftXderivs, false); // Read global flag
+    const bool ShiftXderivs = (*globalOptions)["shiftXderivs"].withDefault(false);
     if (ShiftXderivs) {
       if (mesh->IncIntShear) {
         // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-        coords->setIntShiftTorsion(I);
-
+        mesh->getCoordinates()->setIntShiftTorsion(I);
       } else {
         // Dimits style, using local coordinate system
         if (include_curvature) {
           b0xcv.z += I * b0xcv.x;
         }
-        I = 0.0; // I disappears from metric
       }
     }
 
     //////////////////////////////////////////////////////////////
     // NORMALISE QUANTITIES
-
-    if (mesh->get(Bbar, "bmag")) { // Typical magnetic field
-      Bbar = 1.0;
-    }
-    if (mesh->get(Lbar, "rmag")) { // Typical length scale
-      Lbar = 1.0;
-    }
 
     Va = sqrt(Bbar * Bbar / (MU0 * density * Mi));
 
@@ -374,8 +366,7 @@ public:
       output.write("    electron Hyper-viscosity coefficient: {:e}\n", ehyperviscos);
     }
 
-    Field2D Te;
-    Te = P0 / (2.0 * density * 1.602e-19); // Temperature in eV
+    const Field2D Te = P0 / (2.0 * density * 1.602e-19); // Temperature in eV
 
     J0 = -MU0 * Lbar * J0 / B0;
     P0 = 2.0 * MU0 * P0 / (Bbar * Bbar);
@@ -383,14 +374,6 @@ public:
     b0xcv.x /= Bbar;
     b0xcv.y *= Lbar * Lbar;
     b0xcv.z *= Lbar * Lbar;
-
-    Rxy /= Lbar;
-    Bpxy /= Bbar;
-    Btxy /= Bbar;
-    B0 /= Bbar;
-    hthe /= Lbar;
-    coords->setDx(coords->dx() / (Lbar * Lbar * Bbar));
-    I *= Lbar * Lbar * Bbar;
 
     BoutReal pnorm = max(P0, true); // Maximum over all processors
 
@@ -414,28 +397,6 @@ public:
     }
 
     dump.add(eta, "eta", 0);
-
-    /**************** CALCULATE METRICS ******************/
-
-    const auto g11 = SQ(Rxy * Bpxy);
-    const auto g22 = 1.0 / SQ(hthe);
-    const auto g33 = SQ(I) * g11 + SQ(B0) / g11;
-    const auto g12 = 0.0;
-    const auto g13 = -I * g11;
-    const auto g23 = -Btxy / (hthe * Bpxy * Rxy);
-
-    const auto g_11 = 1.0 / g11 + (SQ(I * Rxy));
-    const auto g_22 = SQ(B0 * hthe / Bpxy);
-    const auto g_33 = Rxy * Rxy;
-    const auto g_12 = Btxy * hthe * I * Rxy / Bpxy;
-    const auto g_13 = I * Rxy * Rxy;
-    const auto g_23 = Btxy * hthe * Rxy / Bpxy;
-
-    coords->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
-                            CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
-
-    coords->setJ(hthe / Bpxy);
-    coords->setBxy(B0);
 
     // Set B field vector
 
