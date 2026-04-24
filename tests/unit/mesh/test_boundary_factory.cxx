@@ -3,12 +3,20 @@
 #include "bout/boundary_factory.hxx"
 #include "bout/boundary_op.hxx"
 #include "bout/boundary_region.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/sys/expressionparser.hxx"
 
 #include "fake_mesh.hxx"
+
+#include <list>
+#include <map>
+#include <string>
 
 // The unit tests use the global mesh
 using namespace bout::globals;
 
+namespace {
 class TestBoundary : public BoundaryOp {
 public:
   BoundaryOp* clone(BoundaryRegion* UNUSED(region), const std::list<std::string>& args,
@@ -50,10 +58,11 @@ public:
   BoundaryRegionXIn* region{nullptr};
   BoundaryOpBase* boundary{nullptr};
 };
+} // namespace
 
 TEST_F(BoundaryFactoryTest, IsSingleton) {
-  BoundaryFactory* fac1 = BoundaryFactory::getInstance();
-  BoundaryFactory* fac2 = BoundaryFactory::getInstance();
+  const BoundaryFactory* fac1 = BoundaryFactory::getInstance();
+  const BoundaryFactory* fac2 = BoundaryFactory::getInstance();
 
   EXPECT_EQ(fac1, fac2);
 }
@@ -97,11 +106,27 @@ TEST_F(BoundaryFactoryTest, CreateTestBoundaryPositionalArgumentsAndKeywords) {
 
   auto* tb = dynamic_cast<TestBoundary*>(boundary);
 
-  std::list<std::string> args_expected = {"0.23", "something()", "a + sin(1.2)"};
+  const std::list<std::string> args_expected = {"0.23", "something()", "a + sin(1.2)"};
 
   EXPECT_EQ(tb->args, args_expected);
 
   EXPECT_EQ(tb->keywords.size(), 2);
   EXPECT_EQ(tb->keywords.at("key"), "1+2");
   EXPECT_EQ(tb->keywords.at("b"), "value");
+}
+
+TEST_F(BoundaryFactoryTest, DirichletMissingValue) {
+  Options::root() = {};
+
+  EXPECT_THROW(fac->create("dirichlet(value)", region), ParseException);
+}
+
+TEST_F(BoundaryFactoryTest, DirichletUsesValue) {
+  Options::root() = {{"value", 1.0}};
+
+  EXPECT_FALSE(Options::root()["value"].valueUsed());
+
+  auto* boundary = fac->create("dirichlet(value)", region);
+
+  ASSERT_TRUE(Options::root()["value"].valueUsed());
 }

@@ -4,7 +4,7 @@
  * Class for 3D X-Y-Z scalar fields
  *
  **************************************************************************
- * Copyright 2010 - 2025 BOUT++ developers
+ * Copyright 2010 - 2026 BOUT++ developers
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -36,6 +36,7 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
+#include <string>
 #include <utility>
 
 #include "bout/parallel_boundary_op.hxx"
@@ -397,6 +398,12 @@ void Field3D::applyBoundary(const std::string& condition) {
 
   /// Get the boundary factory (singleton)
   BoundaryFactory* bfact = BoundaryFactory::getInstance();
+
+  // Create a boundary for a dummy region.
+  // This ensures that options are parsed/used on all processors
+  BoundaryRegionXIn dummy_region{"dummy_region", 0, 1, fieldmesh};
+  auto* bndry = bfact->create(condition, &dummy_region);
+  delete bndry;
 
   /// Loop over the mesh boundary regions
   for (const auto& reg : fieldmesh->getBoundaries()) {

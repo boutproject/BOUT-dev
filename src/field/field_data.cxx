@@ -1,13 +1,18 @@
 
 #include "bout/parallel_boundary_op.hxx"
 #include "bout/parallel_boundary_region.hxx"
-#include "bout/unused.hxx"
 #include <bout/boundary_factory.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/field_data.hxx>
 #include <bout/field_factory.hxx>
 #include <bout/globals.hxx>
 #include <bout/mesh.hxx>
+#include <bout/options.hxx>
 #include <bout/output.hxx>
+
+#include <string>
+#include <utility>
 
 namespace bout {
 /// Make sure \p location is a sensible value for \p mesh
@@ -142,7 +147,14 @@ void FieldData::setBoundary(const std::string& name) {
   markBoundariesAsConditionallyUsed(mesh, Options::root()["all"]);
 
   output_info << "Setting boundary for variable " << name << endl;
-  /// Loop over the mesh boundary regions
+
+  // Create a boundary for a dummy region.
+  // This ensures that options are parsed/used on all processors
+  BoundaryRegionXIn dummy_region{"dummy_region", 0, 1, mesh};
+  auto* bndry = bfact->createFromOptions(name, &dummy_region);
+  delete bndry;
+
+  // Loop over the mesh boundary regions
   for (const auto& reg : mesh->getBoundaries()) {
     auto* op = dynamic_cast<BoundaryOp*>(bfact->createFromOptions(name, reg));
     if (op != nullptr) {

@@ -7,11 +7,14 @@
 #include "gtest/gtest.h"
 
 #include "test_extras.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/constants.hxx"
 #include "bout/field3d.hxx"
+#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
 #include "bout/output.hxx"
+#include "bout/sys/expressionparser.hxx"
 #include "bout/unused.hxx"
 #include "bout/utils.hxx"
 
@@ -28,13 +31,13 @@ using namespace bout::globals;
 using Field3DTest = FakeMeshFixture;
 
 TEST_F(Field3DTest, Is3D) {
-  Field3D field;
+  const Field3D field;
 
   EXPECT_TRUE(field.is3D());
 }
 
 TEST_F(Field3DTest, BoutRealSize) {
-  Field3D field;
+  const Field3D field;
 
   EXPECT_EQ(field.elementSize(), 1);
 }
@@ -74,14 +77,14 @@ TEST_F(Field3DTest, GetGridSizes) {
 }
 
 TEST_F(Field3DTest, CreateOnGivenMesh) {
-  int test_nx = Field3DTest::nx + 2;
-  int test_ny = Field3DTest::ny + 2;
-  int test_nz = Field3DTest::nz + 2;
+  const int test_nx = Field3DTest::nx + 2;
+  const int test_ny = Field3DTest::ny + 2;
+  const int test_nz = Field3DTest::nz + 2;
 
   FakeMesh fieldmesh{test_nx, test_ny, test_nz};
   fieldmesh.setCoordinates(nullptr);
 
-  Field3D field{&fieldmesh};
+  const Field3D field{&fieldmesh};
 
   EXPECT_EQ(field.getNx(), test_nx);
   EXPECT_EQ(field.getNy(), test_ny);
@@ -99,9 +102,9 @@ TEST_F(Field3DTest, CopyCheckFieldmesh) {
   fieldmesh.setCoordinates(nullptr);
   fieldmesh.createDefaultRegions();
 
-  Field3D field{0.0, &fieldmesh};
+  const Field3D field{0.0, &fieldmesh};
 
-  Field3D field2{field};
+  const Field3D field2{field};
 
   EXPECT_EQ(field2.getNx(), test_nx);
   EXPECT_EQ(field2.getNy(), test_ny);
@@ -166,10 +169,10 @@ TEST_F(Field3DTest, CreateCopyOnNullMesh) {
 TEST_F(Field3DTest, TimeDeriv) {
   Field3D field;
 
-  auto deriv = field.timeDeriv();
+  auto* deriv = field.timeDeriv();
   EXPECT_NE(&field, deriv);
 
-  auto deriv2 = field.timeDeriv();
+  auto* deriv2 = field.timeDeriv();
   EXPECT_EQ(deriv, deriv2);
 
   EXPECT_EQ(&(ddt(field)), deriv);
@@ -305,9 +308,9 @@ TEST_F(Field3DTest, ConstYnext) {
 }
 
 TEST_F(Field3DTest, GetGlobalMesh) {
-  Field3D field;
+  const Field3D field;
 
-  auto localmesh = field.getMesh();
+  auto* localmesh = field.getMesh();
 
   EXPECT_EQ(localmesh, mesh);
 }
@@ -316,9 +319,9 @@ TEST_F(Field3DTest, GetLocalMesh) {
   FakeMesh myMesh{nx + 1, ny + 2, nz + 3};
   myMesh.setCoordinates(nullptr);
 
-  Field3D field(&myMesh);
+  const Field3D field(&myMesh);
 
-  auto localmesh = field.getMesh();
+  auto* localmesh = field.getMesh();
 
   EXPECT_EQ(localmesh, &myMesh);
 }
@@ -1027,7 +1030,7 @@ TEST_F(Field3DTest, IndexingToZPointer) {
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
-      auto tmp = field(i, j);
+      auto* tmp = field(i, j);
       for (int k = 0; k < nz; ++k) {
         EXPECT_EQ(tmp[k], i + j + k);
         tmp[k] = -1.0;
@@ -1056,7 +1059,7 @@ TEST_F(Field3DTest, ConstIndexingToZPointer) {
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
-      auto tmp = field(i, j);
+      const auto* tmp = field(i, j);
       for (int k = 0; k < nz; ++k) {
         EXPECT_EQ(tmp[k], 1.0);
         field2(i, j, k) = tmp[k];
@@ -2404,7 +2407,7 @@ TEST_F(Field3DTest, OperatorEqualsField3D) {
   // to 'field'.
   // Note that Average z-direction type is not really allowed for Field3D, but
   // we don't check anywhere at the moment.
-  Field3D field2{
+  const Field3D field2{
       mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
 
   field = field2;
@@ -2425,7 +2428,7 @@ TEST_F(Field3DTest, EmptyFrom) {
       mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
   field = 5.;
 
-  Field3D field2{emptyFrom(field)};
+  const Field3D field2{emptyFrom(field)};
   EXPECT_EQ(field2.getMesh(), mesh_staggered);
   EXPECT_EQ(field2.getLocation(), CELL_XLOW);
   EXPECT_EQ(field2.getDirectionY(), YDirectionType::Aligned);
@@ -2442,7 +2445,7 @@ TEST_F(Field3DTest, ZeroFrom) {
       mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
   field = 5.;
 
-  Field3D field2{zeroFrom(field)};
+  const Field3D field2{zeroFrom(field)};
   EXPECT_EQ(field2.getMesh(), mesh_staggered);
   EXPECT_EQ(field2.getLocation(), CELL_XLOW);
   EXPECT_EQ(field2.getDirectionY(), YDirectionType::Aligned);
@@ -2450,5 +2453,24 @@ TEST_F(Field3DTest, ZeroFrom) {
   EXPECT_TRUE(field2.isAllocated());
   EXPECT_TRUE(IsFieldEqual(field2, 0.));
 }
+
+TEST_F(Field3DTest, ApplyBoundaryMissingOptions) {
+  Options::root() = {};
+
+  Field3D f{1.0};
+  // No boundaries but should still parse value
+  EXPECT_THROW(f.applyBoundary("dirichlet(some_boundary_value)"), ParseException);
+}
+
+TEST_F(Field3DTest, SetBoundaryUsesOption) {
+  Options::root() = {{"toplevel_value", 1.0},
+                     {"var", {{"bndry_all", "dirichlet(toplevel_value)"}}}};
+
+  Field3D f{1.0};
+  f.setBoundary("var");
+
+  ASSERT_TRUE(Options::root()["toplevel_value"].valueUsed());
+}
+
 // Restore compiler warnings
 #pragma GCC diagnostic pop

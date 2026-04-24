@@ -1,5 +1,5 @@
 /**************************************************************************
- * Copyright 2010-2025 BOUT++ contributors
+ * Copyright 2010-2026 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -25,13 +25,20 @@
 
 #include <cmath>
 
-#include <bout/constants.hxx>
-#include <bout/output.hxx>
-#include <bout/utils.hxx>
-
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/constants.hxx"
+#include "bout/options.hxx"
+#include "bout/output.hxx"
+#include "bout/sys/expressionparser.hxx"
+#include "bout/sys/generator_context.hxx"
 
 #include "fieldgenerators.hxx"
+
+#include <exception>
+#include <memory>
+#include <string>
+#include <utility>
 
 using bout::generator::Context;
 
@@ -52,7 +59,7 @@ class FieldIndirect : public FieldGenerator {
 public:
   /// depth_limit sets the maximum iteration depth. Set to < 0 for no limit
   FieldIndirect(std::string name, int depth_limit = 0)
-      : name(name), depth_limit(depth_limit) {}
+      : name(std::move(name)), depth_limit(depth_limit) {}
 
   /// Set the target, to be called when generator is called
   void setTarget(FieldGeneratorPtr fieldgen) { target = fieldgen; }
@@ -63,7 +70,7 @@ public:
                           name, depth_counter, depth_limit);
     }
     ++depth_counter;
-    BoutReal result = target->generate(ctx);
+    const BoutReal result = target->generate(ctx);
     --depth_counter;
     return result;
   }
