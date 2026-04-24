@@ -1,6 +1,6 @@
 /****************************************************************
  * DALF3 model
- * 
+ *
  * Four-field model for electron pressure, vorticity, A|| and
  * parallel velocity
  *

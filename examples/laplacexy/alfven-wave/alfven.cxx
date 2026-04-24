@@ -32,8 +32,8 @@ private:
   BoutReal mu_epar; // Electron parallel viscosity
   BoutReal resistivity;
 
-  bool laplace_perp;    // Use Laplace_perp or Delp2?
-  bool split_n0;        // Split solve into n=0 and n~=0?
+  bool laplace_perp;                             // Use Laplace_perp or Delp2?
+  bool split_n0;                                 // Split solve into n=0 and n~=0?
   std::unique_ptr<LaplaceXY> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
 
   bool newXZsolver;

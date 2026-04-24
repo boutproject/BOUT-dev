@@ -1317,7 +1317,8 @@ protected:
           // Only update if simulation time has advanced
           // Uses an exponential decay of the weighting of the value in the boundary
           // so that the solution is well behaved for arbitrary steps
-          BoutReal const weight = exp(-(t - phi_boundary_last_update) / phi_boundary_timescale);
+          const BoutReal weight =
+              exp(-(t - phi_boundary_last_update) / phi_boundary_timescale);
           phi_boundary_last_update = t;
 
           if (mesh->firstX()) {
@@ -1346,11 +1347,11 @@ protected:
               }
 
               // Old value of phi at boundary. Note: this is constant in Z
-              BoutReal const oldvalue =
+              const BoutReal oldvalue =
                   0.5 * (phi(mesh->xstart - 1, j, 0) + phi(mesh->xstart, j, 0));
 
               // New value of phi at boundary, relaxing towards phivalue
-              BoutReal const newvalue = weight * oldvalue + (1. - weight) * phivalue;
+              const BoutReal newvalue = weight * oldvalue + (1. - weight) * phivalue;
 
               // Set phi at the boundary to this value
               for (int k = mesh->zstart; k <= mesh->zend; k++) {
@@ -1373,7 +1374,7 @@ protected:
                   0.5 * (phi(mesh->xend + 1, j, 0) + phi(mesh->xend, j, 0));
 
               // New value of phi at boundary, relaxing towards phivalue
-              BoutReal const newvalue = weight * oldvalue + (1. - weight) * phivalue;
+              const BoutReal newvalue = weight * oldvalue + (1. - weight) * phivalue;
 
               // Set phi at the boundary to this value
               for (int k = mesh->zstart; k <= mesh->zend; k++) {
@@ -1586,7 +1587,7 @@ protected:
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
           // Zero-gradient potential
-          BoutReal const phisheath = phi_fa(r.ind, mesh->ystart, jz);
+          const BoutReal phisheath = phi_fa(r.ind, mesh->ystart, jz);
 
           BoutReal jsheath = -(sqrt(mi_me) / (2. * sqrt(PI))) * phisheath;
 
@@ -1607,7 +1608,7 @@ protected:
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
           // Zero-gradient potential
-          BoutReal const phisheath = phi_fa(r.ind, mesh->yend, jz);
+          const BoutReal phisheath = phi_fa(r.ind, mesh->yend, jz);
 
           BoutReal jsheath = (sqrt(mi_me) / (2. * sqrt(PI))) * phisheath;
 
@@ -2029,7 +2030,8 @@ protected:
     ddt(P).applyBoundary("neumann");
 
     Field3D U1 = ddt(U);
-    U1 += (gamma * B0 * B0) * Grad_par(Jrhs, CELL_CENTRE) + (gamma * b0xcv) * Grad(ddt(P));
+    U1 +=
+        (gamma * B0 * B0) * Grad_par(Jrhs, CELL_CENTRE) + (gamma * b0xcv) * Grad(ddt(P));
 
     // Second matrix, solving Alfven wave dynamics
     static std::unique_ptr<InvertPar> invU{nullptr};
