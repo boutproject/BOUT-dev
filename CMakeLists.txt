@@ -739,6 +739,7 @@ option(
   OFF
 )
 if(BOUT_TESTS)
+  set(CMAKE_CTEST_ARGUMENTS "--output-on-failure" "--timeout" "300")
   enable_testing()
   # Targets for just building the tests
   # Tests need to add themselves as dependencies to these targets
