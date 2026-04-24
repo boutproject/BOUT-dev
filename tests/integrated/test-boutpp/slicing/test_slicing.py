@@ -2,6 +2,7 @@
 # requires boutpp
 # requires not make
 import numpy as np
+import numpy.testing as npt
 import boutpp as bc
 import inspect
 
@@ -14,7 +15,7 @@ def test_slicing():
     ndat = np.random.random(field.shape)
     field[:] = ndat
 
-    assert np.all(ndat == field[:])
+    npt.assert_allclose(ndat, field[:])
 
     examples = [
         lambda x: x[2],
@@ -43,13 +44,9 @@ def test_slicing():
     print(field.shape)
     for ex in examples:
         print("testing", inspect.getsource(ex))
-        try:
-            nout = ex(ndat)
-            fout = ex(field)
-            assert (
-                fout.shape == nout.shape
-            ), f"Field3D returned {{ fout.shape }} but numpy {{ nout.shape }}"
-            assert np.all(fout == nout), f"data mismatch, {{ fout == nout }}"
-        except:
-            print("Failed to test", inspect.getsource(ex))
-            raise
+        nout = ex(ndat)
+        fout = ex(field)
+        npt.assert_allclose(
+            fout, nout,
+            err_msg=f"data mismatch, {{ fout == nout }}. Failed to test {inspect.getsource(ex)}"
+        )

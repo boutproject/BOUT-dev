@@ -9,7 +9,7 @@ from boututils.run_wrapper import shell, launch_safe as launch
 from boutdata.data import BoutOptionsFile
 
 import math
-import numpy as np
+import numpy.testing as npt
 
 def test_options_netcdf():
 
@@ -57,9 +57,9 @@ def test_options_netcdf():
         assert f["f2d"].shape == (5, 6)  # Field2D
         assert f["f3d"].shape == (5, 6, 2)  # Field3D
         assert f["fperp"].shape == (5, 2)  # FieldPerp
-        assert np.allclose(f["f2d"], 1.0)
-        assert np.allclose(f["f3d"], 2.0)
-        assert np.allclose(f["fperp"], 3.0)
+        npt.assert_allclose(f["f2d"], 1.0)
+        npt.assert_allclose(f["f3d"], 2.0)
+        npt.assert_allclose(f["fperp"], 3.0)
 
     print("Checking saved fields2.nc")
 
@@ -67,8 +67,8 @@ def test_options_netcdf():
         assert f["f2d"].shape == (5, 6)  # Field2D
         assert f["f3d"].shape == (5, 6, 2)  # Field3D
         assert f["fperp"].shape == (5, 2)  # FieldPerp
-        assert np.allclose(f["f2d"], 1.0)
-        assert np.allclose(f["f3d"], 2.0)
-        assert np.allclose(f["fperp"], 3.0)
+        npt.assert_allclose(f["f2d"], 1.0)
+        npt.assert_allclose(f["f3d"], 2.0)
+        npt.assert_allclose(f["fperp"], 3.0)
 
     print(" => Passed")

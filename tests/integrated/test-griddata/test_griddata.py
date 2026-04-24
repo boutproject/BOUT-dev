@@ -10,7 +10,7 @@ except:
 
 from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
-import numpy as np
+import numpy.testing as npt
 from sys import stdout
 
 
@@ -39,6 +39,6 @@ def test_griddata():
         dr = float(rwidth) / nx
 
         # Test value of dx
-        assert np.allclose(dx, dr * Bpxy * Rxy, atol=1e-7), "Failed: dx does not match"
+        npt.assert_allclose(dx, dr * Bpxy * Rxy, atol=1e-7, err_msg="Failed: dx does not match")
 
         print("Passed")

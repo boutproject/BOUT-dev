@@ -5,7 +5,7 @@
 from boututils.run_wrapper import shell, shell_safe
 
 from boutdata import collect
-import numpy as np
+import numpy.testing as npt
 
 
 def test_collect():
@@ -17,4 +17,4 @@ def test_collect():
     # This should be corrected automatically
     a = collect("A", path="data")
 
-    assert np.allclose(a, 1.23), f"Wrong value => Failed: {a}"
+    npt.assert_allclose(a, 1.23, err_msg=f"Wrong value => Failed: {a}")

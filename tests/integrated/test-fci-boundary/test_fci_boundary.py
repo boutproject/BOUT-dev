@@ -6,6 +6,7 @@
 import os
 import pytest
 import numpy as np
+import numpy.testing as npt
 from boututils.run_wrapper import launch_safe
 from boututils.datafile import DataFile
 from boutdata.collect import collect
@@ -64,9 +65,9 @@ def test_fci_boundary():
                 xguards=False,
                 yguards=False,
             )
-            assert np.allclose(data, v), (
-                f"{k} does not match",
-                np.sum(data),
-                np.sum(v),
-                np.max(data),
-            )
+            npt.assert_allclose(data, v,
+                                err_msg=(f"{k} does not match",
+                                         np.sum(data),
+                                         np.sum(v),
+                                         np.max(data))
+                                )

@@ -4,7 +4,8 @@
 
 from boutdata.collect import collect
 from boututils.run_wrapper import launch_safe
-from numpy import isclose
+import numpy.testing as npt
+
 
 
 def test_slepc_solver():
@@ -19,4 +20,5 @@ def test_slepc_solver():
 
     expected_eigenvalues = [0.0, 1.0]
 
-    assert isclose(expected_eigenvalues, eigenvalues).all(), " => SLEPc test failed\nEigenvalues: {eigenvalues}"
+    npt.assert_allclose(expected_eigenvalues, eigenvalues,
+                        err_msg=" => SLEPc test failed\nEigenvalues: {eigenvalues}")

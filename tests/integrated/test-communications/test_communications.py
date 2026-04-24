@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import numpy as np
+import numpy.testing as npt
 from boututils.datafile import DataFile
 from boututils.run_wrapper import shell, launch_safe
 
@@ -12,10 +13,11 @@ from boututils.run_wrapper import shell, launch_safe
 
 
 def run_test(actual, expected, procnum, region, boundary):
-    assert np.all(np.array(np.rint(actual).astype(int)) == np.array(expected)), (
-        "failed in {} boundary of region {} ({}). Expected: {}  Actual: {}".format(
-            boundary, procnum, region, expected, actual
-            ))
+    npt.assert_allclose(
+        np.array(np.rint(actual).astype(int)), np.array(expected),
+        err_msg=f"failed in {boundary} boundary of region {procnum} ({region}). "
+                f"Expected: {expected}  Actual: {actual}"
+    )
 
 
 def test_communications():
