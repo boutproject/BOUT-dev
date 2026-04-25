@@ -169,7 +169,7 @@ jobs:
       - name: Setup virtual environment with uv
         run: |
           # uv sync automatically creates a .venv and installs the groups
-          uv sync --no-install-project --group pytest --inexact
+          uv sync --no-dev --group pytest --inexact
           
           # "Activate" the venv for all subsequent steps in this GitHub Actions job
           echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
