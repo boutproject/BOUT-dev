@@ -167,8 +167,11 @@ jobs:
           # uv sync automatically creates a .venv and installs the groups
           uv sync --no-dev --group pytest --inexact
           
-          # "Activate" the venv for all subsequent steps in this GitHub Actions job
+          # Put the venv in the PATH
           echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
+          
+          # Force CMake to recognize the virtual environment
+          echo "VIRTUAL_ENV=$GITHUB_WORKSPACE/.venv" >> $GITHUB_ENV
 
       - name: Cache Zenodo test data
         uses: actions/cache@v5
