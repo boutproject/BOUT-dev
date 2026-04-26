@@ -167,6 +167,9 @@ jobs:
           # uv sync automatically creates a .venv and installs the groups
           uv sync --no-dev --group pytest --inexact
           
+          # Install the core requirements into the same venv
+          uv pip install -r requirements.txt
+          
           # Put the venv in the PATH
           echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
           
