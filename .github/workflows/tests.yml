@@ -196,7 +196,9 @@ jobs:
         run: BUILD_ADIOS2=${{ matrix.config.build_adios2 }} ./.build_adios2_for_ci.sh 
 
       - name: Build BOUT++
-        run: UNIT_ONLY=${{ matrix.config.unit_only }} ./.ci_with_cmake.sh ${{ matrix.config.cmake_options }}
+        run: |
+          UNIT_ONLY=${{ matrix.config.unit_only }} ./.ci_with_cmake.sh ${{ matrix.config.cmake_options }} \
+              -DPython3_EXECUTABLE=$GITHUB_WORKSPACE/.venv/bin/python
 
   Fedora:
     # This is its own job as it doesn't use most of the steps of the
