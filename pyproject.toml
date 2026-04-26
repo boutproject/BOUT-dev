@@ -25,6 +25,8 @@ dev = [
 pytest = [
      "pytest~=8.4",
      "pytest-xdist~=3.8",
+     "numpy",
+     "scipy",
 ]
 maint = [
       "pygithub~=2.8",
