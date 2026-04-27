@@ -206,7 +206,7 @@ install the majority of our developer tools at once using `uv
 
 .. code-block:: console
 
-    uv sync --only-dev --inexact
+    uv sync --only-dev --group pytest --inexact
 
 This will install all the developer tools into a virtual environment (creating
 one if necessary, typically under ``.venv``). You can then activate the virtual
