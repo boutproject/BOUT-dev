@@ -24,14 +24,14 @@ repos:
 
 # C++ formatting
 - repo: https://github.com/pre-commit/mirrors-clang-format
-  rev: v22.1.0
+  rev: v22.1.1
   hooks:
   - id: clang-format
     types_or: [c++, c, cuda]
 
 # Python linting and formatting
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.15.5
+  rev: v0.15.6
   hooks:
     # Run the linter.
     - id: ruff-check
