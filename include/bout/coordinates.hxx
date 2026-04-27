@@ -358,19 +358,4 @@ private:
   void checkContravariant();
 };
 
-<<<<<<< cell_area_volume
-/*
-/// Standard coordinate system for tokamak simulations
-class TokamakCoordinates : public Coordinates {
-public:
-  TokamakCoordinates(Mesh *mesh) : Coordinates(mesh) {
-
-  }
-private:
-
-};
-*/
-
-=======
->>>>>>> next
 #endif // BOUT_COORDINATES_H
