@@ -52,11 +52,11 @@ class TestCommandLineArgs(unittest.TestCase):
         self.makeDirAndCopyInput("data")
         launch_safe(self.command, pipe=True, nproc=1, mthread=1)
         self.assertTrue(
-            Path.exists(Path("data/BOUT.settings")),
+            Path("data/BOUT.settings").exists(),
             msg="FAIL: No BOUT.settings file in data directory",
         )
         self.assertTrue(
-            Path.exists(Path("data/BOUT.log.0")),
+            Path("data/BOUT.log.0").exists(),
             msg="FAIL: No BOUT.log.0 file in data directory",
         )
 
@@ -64,11 +64,11 @@ class TestCommandLineArgs(unittest.TestCase):
         self.makeDirAndCopyInput("data")
         launch_safe(self.command + " -l different.log", pipe=True, nproc=1, mthread=1)
         self.assertFalse(
-            Path.exists(Path("data/BOUT.log.0")),
+            Path("data/BOUT.log.0").exists(),
             msg="FAIL: BOUT.log.0 file in data directory",
         )
         self.assertTrue(
-            Path.exists(Path("data/different.log.0")),
+            Path("data/different.log.0").exists(),
             msg="FAIL: no different.log.0 file in data directory",
         )
 
@@ -76,22 +76,22 @@ class TestCommandLineArgs(unittest.TestCase):
         self.makeDirAndCopyInput("data")
         launch_safe(self.command + " --log log", pipe=True, nproc=1, mthread=1)
         self.assertFalse(
-            Path.exists(Path("data/BOUT.log.0")),
+            Path("data/BOUT.log.0").exists(),
             msg="FAIL: BOUT.log.0 file in data directory",
         )
         self.assertTrue(
-            Path.exists(Path("data/log.0")), msg="FAIL: no log.0 file in data directory"
+            Path("data/log.0").exists(), msg="FAIL: no log.0 file in data directory"
         )
 
     def testDirectoryArgument(self):
         self.makeDirAndCopyInput("test")
         launch_safe(self.command + " -d test", pipe=True, nproc=1, mthread=1)
         self.assertTrue(
-            Path.exists(Path("test/BOUT.settings")),
+            Path("test/BOUT.settings").exists(),
             msg="FAIL: No BOUT.settings file in test directory",
         )
         self.assertTrue(
-            Path.exists(Path("test/BOUT.log.0")),
+            Path("test/BOUT.log.0").exists(),
             msg="FAIL: No BOUT.log.0 file in data directory",
         )
 
