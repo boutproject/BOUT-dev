@@ -396,12 +396,12 @@ public:
   /// Add a point to the boundary
   void add_point(Ind3D ind, BoutReal x, BoutReal y, BoutReal z, BoutReal length,
                  char valid, signed char offset) {
-    if (!bndry_points->empty() && bndry_points->back().index > ind) {
+    if (!bndry_points.empty() && bndry_points.back().index > ind) {
       is_sorted = false;
     }
-    bndry_points->emplace_back(ind, bout::parallel_boundary_region::RealPoint{x, y, z},
-                               length, valid, offset,
-                               static_cast<unsigned char>(std::abs(offset)));
+    bndry_points.emplace_back(ind, bout::parallel_boundary_region::RealPoint{x, y, z},
+                              length, valid, offset,
+                              static_cast<unsigned char>(std::abs(offset)));
   }
   void add_point(int ix, int iy, int iz, BoutReal x, BoutReal y, BoutReal z,
                  BoutReal length, char valid, signed char offset) {
@@ -409,9 +409,10 @@ public:
   }
 
 private:
+  friend class BoundaryRegionIterFCI;
   int _dir;
   // Vector of points in the boundary
-  std::shared_ptr<bout::parallel_boundary_region::IndicesVec> bndry_points;
+  bout::parallel_boundary_region::IndicesVec bndry_points;
   Ind3D xyz2ind(int x, int y, int z) const {
     const int ny = localmesh->LocalNy;
     const int nz = localmesh->LocalNz;
@@ -423,9 +424,8 @@ private:
 
 class BoundaryRegionIterFCI : public BoundaryRegionIterBase<BoundaryRegionIterFCI> {
 private:
-  std::shared_ptr<bout::parallel_boundary_region::IndicesVec> bndry_pnts;
+  BoundaryRegionFCI* region;
   size_t pos{0};
-  int _dir;
 
 public:
   template <bool check = true>
@@ -434,14 +434,52 @@ public:
     if constexpr (check) {
       ASSERT3(_valid() > -off - 2);
     }
-    auto _off = _offset() + off * _dir;
+    auto _off = _offset() + off * region->_dir;
     return f.ynext(_off)[ind().yp(_off)];
   }
-  signed char _offset() const { return (*bndry_pnts)[pos].offset; }
-  signed char _valid() const { return (*bndry_pnts)[pos].valid; }
-
-  Ind3D& _ind() const { return (*bndry_pnts)[pos].index; }
+  template <bool check = true>
+  const BoutReal& _getAt(const Field3D& f, int off) const {
+    ASSERT3(f.hasParallelSlices());
+    if constexpr (check) {
+      ASSERT3(_valid() > -off - 2);
+    }
+    auto _off = _offset() + off * region->_dir;
+    return f.ynext(_off)[ind().yp(_off)];
+  }
+  template <bool check = true>
+  BoutReal& _getAt(Field2D& f, int off) const {
+    ASSERT3(f.hasParallelSlices());
+    if constexpr (check) {
+      ASSERT3(_valid() > -off - 2);
+    }
+    auto _off = _offset() + off * region->_dir;
+    return f.ynext(_off)[ind().yp(_off)];
+  }
+  template <bool check = true>
+  const BoutReal& _getAt(const Field2D& f, int off) const {
+    ASSERT3(f.hasParallelSlices());
+    if constexpr (check) {
+      ASSERT3(_valid() > -off - 2);
+    }
+    auto _off = _offset() + off * region->_dir;
+    return f.ynext(_off)[ind().yp(_off)];
+  }
+  template <bool check = true>
+  BoutReal getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
+                 int off) const {
+    if constexpr (check) {
+      ASSERT3(valid() > -off - 2);
+    }
+    auto _off = _offset() + off * region->_dir;
+    return f(_off, ind().yp(_off));
+  }
+  signed char _offset() const { return region->bndry_points[pos].offset; }
+  signed char _valid() const { return region->bndry_points[pos].valid; }
+  Ind3D& _ind() const { return region->bndry_points[pos].index; }
+  signed char _boundary_width() const {
+    return region->localmesh->ystart - region->bndry_points[pos].abs_offset;
+  }
+  const BoutReal& _length() const { return region->bndry_points[pos].length; }
 };
-
 } // namespace boundary
 } // namespace bout
