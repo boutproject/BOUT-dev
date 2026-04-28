@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 PROJECT_ROOT="@PROJECT_BINARY_DIR@"
 
