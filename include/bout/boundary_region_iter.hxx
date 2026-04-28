@@ -172,21 +172,21 @@ public:
   BoutReal extrapolate_boundary_o2(const Field3D& f) const {
     ASSERT3(valid() >= 0);
     if (valid() < 1) {
-      return extrapolate_sheath_o1(f);
+      return extrapolate_boundary_o1(f);
     }
     return current(f) * (1 + length()) - prev(f) * length();
   }
   /// Extrapolate a given function to the boundary
-  BoutReal extrapolate_sheath_o1(
+  BoutReal extrapolate_bounday_o1(
       const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
     return current(func);
   }
   /// Extrapolate a given function to the boundary
-  BoutReal extrapolate_sheath_o2(
+  BoutReal extrapolate_boundary_o2(
       const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
     ASSERT3(valid() >= 0);
     if (valid() < 1) {
-      return extrapolate_sheath_o1(func);
+      return extrapolate_boundary_o1(func);
     }
     return current(func) * (1 + length()) - prev(func) * length();
   }
