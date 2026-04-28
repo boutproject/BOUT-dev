@@ -56,6 +56,11 @@ struct Indices {
         offset(offset), abs_offset(abs_offset) {};
 };
 
+inline bool operator<(const Indices& lhs, const Indices& rhs) {
+  return lhs.index < rhs.index;
+}
+inline bool operator<(const Indices& lhs, const Ind3D& rhs) { return lhs.index < rhs; }
+
 using IndicesVec = std::vector<Indices>;
 using IndicesIter = IndicesVec::iterator;
 using IndicesIterConst = IndicesVec::const_iterator;
