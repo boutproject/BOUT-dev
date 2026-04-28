@@ -41,17 +41,17 @@ enum class BoundaryFreeExtrapolation : std::int8_t { limited, exponential, linea
 template <typename impl>
 class BoundaryRegionIterBase { /// get the index at the last point in domain
 public:
-  Ind3D ind() const { return static_cast<impl*>(this)->_ind(); }
+  Ind3D ind() const { return static_cast<const impl*>(this)->_ind(); }
   /// get the length from the point in the domain to the boundary in index
   /// space. It is in the range [0, 1]
-  BoutReal length() const { return static_cast<impl*>(this)->_length(); }
+  BoutReal length() const { return static_cast<const impl*>(this)->_length(); }
   /// Lower bound of how many points are between the first point in the domain
   /// and the boundary in the other direction.
-  signed char valid() const { return static_cast<impl*>(this)->_valid(); }
+  signed char valid() const { return static_cast<const impl*>(this)->_valid(); }
   /// Get the width of the boundary at the current point
-  int boundary_width() const { return static_cast<impl*>(this)->_boundary_width(); }
+  int boundary_width() const { return static_cast<const impl*>(this)->_boundary_width(); }
   /// Is this the lower boundary?
-  bool is_lower() const { return static_cast<impl*>(this)->_is_lower(); }
+  bool is_lower() const { return static_cast<const impl*>(this)->_is_lower(); }
 
   /*
    *         FIELD3D ACCESSORS
@@ -64,29 +64,33 @@ public:
   /// off = 2 is the second to last point in the domain
   template <bool check = true>
   BoutReal& getAt(Field3D& f, int off) const {
-    return static_cast<impl*>(this)->template _getAt<check>(f, off);
+    return static_cast<const impl*>(this)->template _getAt<check>(f, off);
   }
   /// get the value at a given offset `off` of a field `f`.
   template <bool check = true>
   BoutReal& getAt(const Field3D& f, int off) const {
-    return static_cast<impl*>(this)->template _getAt<check>(f, off);
+    return static_cast<const impl*>(this)->template _getAt<check>(f, off);
   }
 
   /// Get the first point in the boundary
   const BoutReal& next(const Field3D& f) const {
-    return static_cast<impl*>(this)->_getAt(f, 0);
+    return static_cast<const impl*>(this)->_getAt(f, 0);
   }
   /// Get the first point in the boundary
-  BoutReal& next(Field3D& f) const { return static_cast<impl*>(this)->_getAt(f, 0); }
-  /// Get the last point in the domain
-  const BoutReal& current(const Field3D& f) const {
-    return static_cast<impl*>(this)->_getAt(f, 1);
+  BoutReal& next(Field3D& f) const {
+    return static_cast<const impl*>(this)->_getAt(f, 0);
   }
   /// Get the last point in the domain
-  BoutReal& current(Field3D& f) const { return static_cast<impl*>(this)->_getAt(f, 1); }
+  const BoutReal& current(const Field3D& f) const {
+    return static_cast<const impl*>(this)->_getAt(f, 1);
+  }
+  /// Get the last point in the domain
+  BoutReal& current(Field3D& f) const {
+    return static_cast<const impl*>(this)->_getAt(f, 1);
+  }
   /// Get the second to last point in the domain - this may not be valid and thus throw
   const BoutReal& prev(const Field3D& f) const {
-    return static_cast<impl*>(this)->_getAt(f, 2);
+    return static_cast<const impl*>(this)->_getAt(f, 2);
   }
   /*
    *         FIELD2D ACCESSORS
@@ -99,29 +103,33 @@ public:
   /// off = 2 is the second to last point in the domain
   template <bool check = true>
   BoutReal& getAt(Field2D& f, int off) const {
-    return static_cast<impl*>(this)->template _getAt<check>(f, off);
+    return static_cast<const impl*>(this)->template _getAt<check>(f, off);
   }
   /// get the value at a given offset `off` of a field `f`.
   template <bool check = true>
   BoutReal& getAt(const Field2D& f, int off) const {
-    return static_cast<impl*>(this)->template _getAt<check>(f, off);
+    return static_cast<const impl*>(this)->template _getAt<check>(f, off);
   }
 
   /// Get the first point in the boundary
   const BoutReal& next(const Field2D& f) const {
-    return static_cast<impl*>(this)->_getAt(f, 0);
+    return static_cast<const impl*>(this)->_getAt(f, 0);
   }
   /// Get the first point in the boundary
-  BoutReal& next(Field2D& f) const { return static_cast<impl*>(this)->_getAt(f, 0); }
-  /// Get the last point in the domain
-  const BoutReal& current(const Field2D& f) const {
-    return static_cast<impl*>(this)->_getAt(f, 1);
+  BoutReal& next(Field2D& f) const {
+    return static_cast<const impl*>(this)->_getAt(f, 0);
   }
   /// Get the last point in the domain
-  BoutReal& current(Field2D& f) const { return static_cast<impl*>(this)->_getAt(f, 1); }
+  const BoutReal& current(const Field2D& f) const {
+    return static_cast<const impl*>(this)->_getAt(f, 1);
+  }
+  /// Get the last point in the domain
+  BoutReal& current(Field2D& f) const {
+    return static_cast<const impl*>(this)->_getAt(f, 1);
+  }
   /// Get the second to last point in the domain - this may not be valid and thus throw
   const BoutReal& prev(const Field2D& f) const {
-    return static_cast<impl*>(this)->_getAt(f, 2);
+    return static_cast<const impl*>(this)->_getAt(f, 2);
   }
 
   /*
@@ -136,22 +144,22 @@ public:
   template <bool check = true>
   BoutReal& getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& func,
                   int off) const {
-    return static_cast<impl*>(this)->template _getAt<check>(func, off);
+    return static_cast<const impl*>(this)->template _getAt<check>(func, off);
   }
   /// Get the first point in the boundary
   const BoutReal&
   next(const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
-    return static_cast<impl*>(this)->_getAt(func, 0);
+    return static_cast<const impl*>(this)->_getAt(func, 0);
   }
   /// Get the last point in the domain
   const BoutReal&
   current(const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
-    return static_cast<impl*>(this)->_getAt(func, 1);
+    return static_cast<const impl*>(this)->_getAt(func, 1);
   }
   /// Get the second to last point in the domain - this may not be valid and thus throw
   const BoutReal&
   prev(const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
-    return static_cast<impl*>(this)->_getAt(func, 2);
+    return static_cast<const impl*>(this)->_getAt(func, 2);
   }
 
   /*
