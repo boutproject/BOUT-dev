@@ -17,16 +17,6 @@ if not os.path.exists(os.path.join(os.path.dirname(__file__), "grid.fci.nc")):
 
 directory = "data"
 
-def collect(var):
-    return _collect(
-        var,
-        info=False,
-        path=directory,
-        xguards=False,
-        yguards=False,
-    )
-
-
 def test_fci_boundary():
 
     nprocs = [1]
