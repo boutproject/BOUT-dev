@@ -460,6 +460,11 @@ public:
   void setValid(char valid) {
     const_cast<BoundaryRegionFCI*>(region)->bndry_points[pos].valid = valid;
   };
+  BoutReal s_x() const { return region->bndry_points[pos].intersection.s_x; };
+  BoutReal s_y() const { return region->bndry_points[pos].intersection.s_y; };
+  BoutReal s_z() const { return region->bndry_points[pos].intersection.s_z; };
+  Mesh* localmesh() const { return region->localmesh; };
+  int dir() const { return region->_dir; }
   template <bool check = true>
   BoutReal& _getAt(Field3D& f, int off) const {
     ASSERT3(f.hasParallelSlices());
