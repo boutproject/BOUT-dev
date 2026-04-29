@@ -92,6 +92,9 @@ public:
   const BoutReal& prev(const Field3D& f) const {
     return static_cast<const impl*>(this)->_getAt(f, 2);
   }
+  /// Get the offset from the last point in the domain
+  /// For FA this is always ±1, for FCI this can be up to ±MYG, excluding 0
+  int offset() const { return static_cast<const impl*>(this)->_offset(); }
   /*
    *         FIELD2D ACCESSORS
    */
