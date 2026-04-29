@@ -1156,8 +1156,7 @@ namespace {
 /// separator because option keys use ':' as their only structural character.
 std::set<std::string> getGlobalUnusedSet(std::vector<std::string> local_unused_keys) {
   MPI_Comm comm = BoutComm::get();
-  int nprocs{};
-  MPI_Comm_size(comm, &nprocs);
+  const int nprocs = BoutComm::size();
 
   // --- Step 1: share every processor's locally-unused key list ---
 
