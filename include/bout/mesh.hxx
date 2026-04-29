@@ -67,7 +67,9 @@ class Mesh;
 #include <string>
 
 class BoundaryRegion;
-class BoundaryRegionPar;
+namespace bout::boundary {
+class BoundaryRegionFCI;
+}
 class GridDataSource;
 
 class MeshFactory : public Factory<Mesh, MeshFactory, GridDataSource*, Options*> {
@@ -500,12 +502,13 @@ public:
   /// mesh->getBoundariesPar(Mesh::BoundaryParType::all)
   /// get only xout:
   /// mesh->getBoundariesPar(Mesh::BoundaryParType::xout)
-  virtual std::vector<std::shared_ptr<BoundaryRegionPar>>
+  virtual std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>
   getBoundariesPar(BoundaryParType type = BoundaryParType::all) const = 0;
 
   /// Add a parallel(Y) boundary to this processor
-  virtual void addBoundaryPar(std::shared_ptr<BoundaryRegionPar> UNUSED(bndry),
-                              BoundaryParType UNUSED(type)) {}
+  virtual void
+  addBoundaryPar(std::shared_ptr<bout::boundary::BoundaryRegionFCI> UNUSED(bndry),
+                 BoundaryParType UNUSED(type)) {}
 
   virtual BoutReal GlobalX(int jx) const = 0;      ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(int jy) const = 0;      ///< Continuous Y index (0 -> 1)

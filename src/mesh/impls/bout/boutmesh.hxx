@@ -163,9 +163,9 @@ public:
 
   // Boundary regions
   std::vector<BoundaryRegion*> getBoundaries() override;
-  std::vector<std::shared_ptr<BoundaryRegionPar>>
+  std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>
   getBoundariesPar(BoundaryParType type) const override;
-  void addBoundaryPar(std::shared_ptr<BoundaryRegionPar> bndry,
+  void addBoundaryPar(std::shared_ptr<bout::boundary::BoundaryRegionFCI> bndry,
                       BoundaryParType type) override;
   std::set<std::string> getPossibleBoundaries() const override;
 
@@ -410,7 +410,7 @@ protected:
 
 private:
   std::vector<BoundaryRegion*> boundary; // Vector of boundary regions
-  std::array<std::vector<std::shared_ptr<BoundaryRegionPar>>,
+  std::array<std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>,
              static_cast<int>(BoundaryParType::SIZE)>
       par_boundary; // Vector of parallel boundary regions
 

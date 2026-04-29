@@ -43,6 +43,7 @@
 #include <bout/assert.hxx>
 #include <bout/boundary_factory.hxx>
 #include <bout/boundary_op.hxx>
+#include <bout/boundary_region_iter.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/dcomplex.hxx>
@@ -466,7 +467,7 @@ void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices) {
       for (auto& region : fieldmesh->getBoundariesPar()) {
         for (const auto& pnt : *region) {
           // Interpolate midpoint value in f3d
-          const BoutReal val = pnt.interpolate_sheath_o2(f3d);
+          const BoutReal val = pnt.interpolate_boundary_o2(f3d);
           // Set the same boundary value in this field
           pnt.dirichlet_o1(*this, val);
         }

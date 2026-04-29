@@ -41,6 +41,9 @@ class FieldData;
 
 class BoundaryOp;
 class BoundaryOpPar;
+namespace bout::boundary {
+class BoundaryRegionFCI;
+}
 class Coordinates;
 class Mesh;
 

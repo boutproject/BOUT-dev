@@ -39,6 +39,7 @@
 #include "fci.hxx"
 
 #include "bout/assert.hxx"
+#include "bout/boundary_region_iter.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field2d.hxx"
@@ -63,11 +64,12 @@
 #include <string_view>
 
 using namespace std::string_view_literals;
+using bout::boundary::BoundaryRegionFCI;
 
 FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
                Options& options, int offset,
-               const std::shared_ptr<BoundaryRegionPar>& inner_boundary,
-               const std::shared_ptr<BoundaryRegionPar>& outer_boundary, bool zperiodic)
+               const std::shared_ptr<BoundaryRegionFCI>& inner_boundary,
+               const std::shared_ptr<BoundaryRegionFCI>& outer_boundary, bool zperiodic)
     : map_mesh(&mesh), offset_(offset),
       region_no_boundary(map_mesh->getRegion("RGN_NOBNDRY")),
       corner_boundary_mask(map_mesh) {
@@ -185,7 +187,7 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
                    + ((map_mesh->xend - map_mesh->xstart + 1) * map_mesh->getNXPE()) - 1;
   // Default to the maximum number of points
   const int defValid{map_mesh->ystart - 1 + std::abs(offset)};
-  // Serial loop because call to BoundaryRegionPar::addPoint
+  // Serial loop because call to BoundaryRegionFCI::addPoint
   // (probably?) can't be done in parallel
   BOUT_FOR_SERIAL(i, xt_prime.getRegion("RGN_NOBNDRY")) {
     // z is periodic, so make sure the z-index wraps around
@@ -326,13 +328,13 @@ FCITransform::FCITransform(Mesh& mesh, const Coordinates::FieldMetric& dy, bool 
   mesh.get(Z, "Z", 0.0, false);
 
   auto forward_boundary_xin =
-      std::make_shared<BoundaryRegionPar>("FCI_forward", BNDRY_PAR_FWD_XIN, +1, &mesh);
+      std::make_shared<BoundaryRegionFCI>("FCI_forward", BNDRY_PAR_FWD_XIN, +1, &mesh);
   auto backward_boundary_xin =
-      std::make_shared<BoundaryRegionPar>("FCI_backward", BNDRY_PAR_BKWD_XIN, -1, &mesh);
+      std::make_shared<BoundaryRegionFCI>("FCI_backward", BNDRY_PAR_BKWD_XIN, -1, &mesh);
   auto forward_boundary_xout =
-      std::make_shared<BoundaryRegionPar>("FCI_forward", BNDRY_PAR_FWD_XOUT, +1, &mesh);
+      std::make_shared<BoundaryRegionFCI>("FCI_forward", BNDRY_PAR_FWD_XOUT, +1, &mesh);
   auto backward_boundary_xout =
-      std::make_shared<BoundaryRegionPar>("FCI_backward", BNDRY_PAR_BKWD_XOUT, -1, &mesh);
+      std::make_shared<BoundaryRegionFCI>("FCI_backward", BNDRY_PAR_BKWD_XOUT, -1, &mesh);
 
   // Add the boundary region to the mesh's vector of parallel boundaries
   mesh.addBoundaryPar(forward_boundary_xin, BoundaryParType::xin_fwd);

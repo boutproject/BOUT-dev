@@ -28,6 +28,7 @@
 
 #include <bout/assert.hxx>
 #include <bout/boundary_region.hxx>
+#include <bout/boundary_region_iter.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
@@ -3163,12 +3164,12 @@ RangeIterator BoutMesh::iterateBndryUpperY() const {
 
 std::vector<BoundaryRegion*> BoutMesh::getBoundaries() { return boundary; }
 
-std::vector<std::shared_ptr<BoundaryRegionPar>>
+using bout::boundary::BoundaryRegionFCI;
+std::vector<std::shared_ptr<BoundaryRegionFCI>>
 BoutMesh::getBoundariesPar(BoundaryParType type) const {
   return par_boundary[static_cast<int>(type)];
 }
-
-void BoutMesh::addBoundaryPar(std::shared_ptr<BoundaryRegionPar> bndry,
+void BoutMesh::addBoundaryPar(std::shared_ptr<BoundaryRegionFCI> bndry,
                               BoundaryParType type) {
   output_info << "Adding new parallel boundary: " << bndry->label << endl;
   switch (type) {

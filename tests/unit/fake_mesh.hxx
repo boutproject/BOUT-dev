@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bout/boundary_region.hxx>
+#include <bout/boundary_region_iter.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
@@ -172,9 +173,9 @@ public:
   bool hasBndryUpperY() const override { return false; }
   void addBoundary(BoundaryRegion* region) override { boundaries.push_back(region); }
   std::vector<BoundaryRegion*> getBoundaries() override { return boundaries; }
-  std::vector<std::shared_ptr<BoundaryRegionPar>>
+  std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>
   getBoundariesPar(BoundaryParType UNUSED(type)) const override {
-    return std::vector<std::shared_ptr<BoundaryRegionPar>>();
+    return std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>();
   }
   BoutReal GlobalX(int jx) const override { return jx; }
   BoutReal GlobalY(int jy) const override { return jy; }

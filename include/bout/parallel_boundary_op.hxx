@@ -2,6 +2,7 @@
 #define BOUT_PAR_BNDRY_OP_H
 
 #include "bout/boundary_op.hxx"
+#include "bout/boundary_region_iter.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/field_factory.hxx"
 #include "bout/parallel_boundary_region.hxx"
@@ -16,28 +17,46 @@
 class BoundaryOpPar : public BoundaryOpBase {
 public:
   BoundaryOpPar() = default;
-  BoundaryOpPar(BoundaryRegionPar* region, std::shared_ptr<FieldGenerator> value)
+  BoundaryOpPar(bout::boundary::BoundaryRegionFCI* region,
+                std::shared_ptr<FieldGenerator> value)
       : bndry(region), gen_values(std::move(value)), value_type(ValueType::GEN) {}
-  BoundaryOpPar(BoundaryRegionPar* region, Field3D* value)
+  BoundaryOpPar(bout::boundary::BoundaryRegionFCI* region, Field3D* value)
       : bndry(region), field_values(value), value_type(ValueType::FIELD) {}
-  BoundaryOpPar(BoundaryRegionPar* region, BoutReal value)
+  BoundaryOpPar(bout::boundary::BoundaryRegionFCI* region, BoutReal value)
       : bndry(region), real_value(value), value_type(ValueType::REAL) {}
-  BoundaryOpPar(BoundaryRegionPar* region)
+  BoundaryOpPar(bout::boundary::BoundaryRegionFCI* region)
       : bndry(region), real_value(0.), value_type(ValueType::REAL) {}
+  BoundaryOpPar(BoundaryOpPar* region, std::shared_ptr<FieldGenerator> value)
+      : bndry(region->bndry), gen_values(std::move(value)), value_type(ValueType::GEN) {}
+  BoundaryOpPar(BoundaryOpPar* region, Field3D* value)
+      : bndry(region->bndry), field_values(value), value_type(ValueType::FIELD) {}
+  BoundaryOpPar(BoundaryOpPar* region, BoutReal value)
+      : bndry(region->bndry), real_value(value), value_type(ValueType::REAL) {}
+  BoundaryOpPar(BoundaryOpPar* region)
+      : bndry(region->bndry), real_value(0.), value_type(ValueType::REAL) {}
   ~BoundaryOpPar() override = default;
 
   // Note: All methods must implement clone, except for modifiers (see below)
-  virtual BoundaryOpPar* clone(BoundaryRegionPar* region,
+  virtual BoundaryOpPar* clone(bout::boundary::BoundaryRegionFCI* region,
                                const std::list<std::string>& args) = 0;
-  virtual BoundaryOpPar* clone(BoundaryRegionPar* region, Field3D* f) = 0;
+  virtual BoundaryOpPar* clone(BoundaryOpPar* region,
+                               const std::list<std::string>& args) = 0;
+  virtual BoundaryOpPar* clone(bout::boundary::BoundaryRegionFCI* region, Field3D* f) = 0;
+  virtual BoundaryOpPar* clone(BoundaryOpPar* region, Field3D* f) = 0;
   virtual BoundaryOpPar*
-  clone(BoundaryRegionPar* region, const std::list<std::string>& args,
+  clone(bout::boundary::BoundaryRegionFCI* region, const std::list<std::string>& args,
+        const std::map<std::string, std::string>& UNUSED(keywords)) {
+    // If not implemented, call two-argument version
+    return clone(region, args);
+  }
+  virtual BoundaryOpPar*
+  clone(BoundaryOpPar* region, const std::list<std::string>& args,
         const std::map<std::string, std::string>& UNUSED(keywords)) {
     // If not implemented, call two-argument version
     return clone(region, args);
   }
 
-  BoundaryRegionPar* bndry{nullptr};
+  bout::boundary::BoundaryRegionFCI* bndry{nullptr};
 
 protected:
   /// Possible ways to get boundary values
@@ -49,7 +68,7 @@ protected:
   enum class ValueType { GEN, FIELD, REAL };
   const ValueType value_type{ValueType::REAL};
 
-  BoutReal getValue(const BoundaryRegionParIter& bndry, BoutReal t);
+  BoutReal getValue(const bout::boundary::BoundaryRegionIterFCI& bndry, BoutReal t);
 };
 
 template <class T, bool isNeumann = false>
@@ -59,8 +78,23 @@ public:
 
   using BoundaryOpPar::clone;
 
-  // Note: All methods must implement clone, except for modifiers (see below)
-  BoundaryOpPar* clone(BoundaryRegionPar* region,
+  BoundaryOpPar* clone(BoundaryOpPar* region,
+                       const std::list<std::string>& args) override {
+    if (!args.empty()) {
+      try {
+        real_value = stringToReal(args.front());
+        return new T(region, real_value);
+      } catch (const BoutException&) {
+        std::shared_ptr<FieldGenerator> newgen = nullptr;
+        // First argument should be an expression
+        newgen = FieldFactory::get()->parse(args.front());
+        return new T(region, newgen);
+      }
+    }
+
+    return new T(region);
+  }
+  BoundaryOpPar* clone(bout::boundary::BoundaryRegionFCI* region,
                        const std::list<std::string>& args) override {
     if (!args.empty()) {
       try {
@@ -77,7 +111,10 @@ public:
     return new T(region);
   }
 
-  BoundaryOpPar* clone(BoundaryRegionPar* region, Field3D* f) override {
+  BoundaryOpPar* clone(bout::boundary::BoundaryRegionFCI* region, Field3D* f) override {
+    return new T(region, f);
+  }
+  BoundaryOpPar* clone(BoundaryOpPar* region, Field3D* f) override {
     return new T(region, f);
   }
 
@@ -112,7 +149,7 @@ public:
 class BoundaryOpPar_dirichlet_o1 : public BoundaryOpParTemp<BoundaryOpPar_dirichlet_o1> {
 public:
   using BoundaryOpParTemp::BoundaryOpParTemp;
-  static void apply_stencil(Field3D& f, const BoundaryRegionParIter& pnt,
+  static void apply_stencil(Field3D& f, const bout::boundary::BoundaryRegionIterFCI& pnt,
                             BoutReal value) {
     pnt.dirichlet_o1(f, value);
   }
@@ -121,7 +158,7 @@ public:
 class BoundaryOpPar_dirichlet_o2 : public BoundaryOpParTemp<BoundaryOpPar_dirichlet_o2> {
 public:
   using BoundaryOpParTemp::BoundaryOpParTemp;
-  static void apply_stencil(Field3D& f, const BoundaryRegionParIter& pnt,
+  static void apply_stencil(Field3D& f, const bout::boundary::BoundaryRegionIterFCI& pnt,
                             BoutReal value) {
     pnt.dirichlet_o2(f, value);
   }
@@ -130,7 +167,7 @@ public:
 class BoundaryOpPar_dirichlet_o3 : public BoundaryOpParTemp<BoundaryOpPar_dirichlet_o3> {
 public:
   using BoundaryOpParTemp::BoundaryOpParTemp;
-  static void apply_stencil(Field3D& f, const BoundaryRegionParIter& pnt,
+  static void apply_stencil(Field3D& f, const bout::boundary::BoundaryRegionIterFCI& pnt,
                             BoutReal value) {
     pnt.dirichlet_o3(f, value);
   }
@@ -140,7 +177,7 @@ class BoundaryOpPar_neumann_o1
     : public BoundaryOpParTemp<BoundaryOpPar_neumann_o1, true> {
 public:
   using BoundaryOpParTemp::BoundaryOpParTemp;
-  static void apply_stencil(Field3D& f, const BoundaryRegionParIter& pnt,
+  static void apply_stencil(Field3D& f, const bout::boundary::BoundaryRegionIterFCI& pnt,
                             BoutReal value) {
     pnt.neumann_o1(f, value);
   }
@@ -150,7 +187,7 @@ class BoundaryOpPar_neumann_o2
     : public BoundaryOpParTemp<BoundaryOpPar_neumann_o2, true> {
 public:
   using BoundaryOpParTemp::BoundaryOpParTemp;
-  static void apply_stencil(Field3D& f, const BoundaryRegionParIter& pnt,
+  static void apply_stencil(Field3D& f, const bout::boundary::BoundaryRegionIterFCI& pnt,
                             BoutReal value) {
     pnt.neumann_o2(f, value);
   }
@@ -160,7 +197,7 @@ class BoundaryOpPar_neumann_o3
     : public BoundaryOpParTemp<BoundaryOpPar_neumann_o3, true> {
 public:
   using BoundaryOpParTemp::BoundaryOpParTemp;
-  static void apply_stencil(Field3D& f, const BoundaryRegionParIter& pnt,
+  static void apply_stencil(Field3D& f, const bout::boundary::BoundaryRegionIterFCI& pnt,
                             BoutReal value) {
     pnt.neumann_o3(f, value);
   }

@@ -138,7 +138,7 @@ public:
   }
 
 private:
-  std::vector<std::shared_ptr<BoundaryRegionPar>> boundary_regions_par;
+  std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>> boundary_regions_par;
   std::vector<std::shared_ptr<NewBoundaryRegionY>> boundary_regions;
 
   std::vector<BoutMask> _contains;
