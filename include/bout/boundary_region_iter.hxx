@@ -432,13 +432,19 @@ private:
   int _dir;
   // Vector of points in the boundary
   bout::parallel_boundary_region::IndicesVec bndry_points;
+  bool is_sorted{true};
+  Mesh* localmesh;
   Ind3D xyz2ind(int x, int y, int z) const {
     const int ny = localmesh->LocalNy;
     const int nz = localmesh->LocalNz;
     return Ind3D{(x * ny + y) * nz + z, ny, nz};
   }
-  bool is_sorted{true};
-  Mesh* localmesh;
+  void ensureSorted() {
+    if (is_sorted) {
+      return;
+    }
+    std::sort(std::begin(bndry_points), std::end(bndry_points));
+  }
 };
 
 class BoundaryRegionIterFCI : public BoundaryRegionIterBase<BoundaryRegionIterFCI> {
