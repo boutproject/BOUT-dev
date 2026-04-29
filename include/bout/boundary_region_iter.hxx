@@ -418,6 +418,14 @@ public:
                  BoutReal length, char valid, signed char offset) {
     add_point(xyz2ind(ix, iy, iz), x, y, z, length, valid, offset);
   }
+  bool contains(int ix, int iy, int iz) {
+    const auto ind = xyz2ind(ix, iy, iz);
+    ensureSorted();
+    const auto found =
+        std::lower_bound(std::begin(bndry_points), std::end(bndry_points), ind);
+    return found != std::end(bndry_points) and found->index == ind;
+  }
+  int dir() { return _dir; }
 
 private:
   friend class BoundaryRegionIterFCI;
