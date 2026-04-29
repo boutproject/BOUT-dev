@@ -1,0 +1,10 @@
+
+[mesh]
+nx = 12
+ny = 2
+nz = 1
+
+f_xin = 1.0
+
+[f]
+bndry_xin = dirichlet(mesh:f_xin)
