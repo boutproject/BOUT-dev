@@ -184,8 +184,7 @@ int main(int argc, char** argv) {
                 BoutComm::get());
 
   // ── Report ────────────────────────────────────────────────────────────────
-  int my_rank;
-  MPI_Comm_rank(BoutComm::get(), &my_rank);
+  const int my_rank = BoutComm::rank();
 
   // Each rank writes its own diagnostics; rank 0 also writes the summary.
   for (const auto& m : mismatches) {

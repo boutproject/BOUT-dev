@@ -60,6 +60,7 @@ void PetscIndexMapping::buildPermutation(PetscInt nlocal, PetscInt nglobal,
     const PetscInt petsc_row = row_start + i;
     const PetscInt stored_col = stored_indices[i];
     ASSERT1(stored_col >= 0);
+    output.write("{}: {}, {} | {} {}\n", i, petsc_row, stored_col, nlocal, nglobal);
     local_stored_to_petsc[static_cast<int>(stored_col)] = petsc_row;
     BOUT_DO_PETSC(MatSetValues(mat_stored_to_petsc, 1, &petsc_row, 1, &stored_col, &one,
                                INSERT_VALUES));
