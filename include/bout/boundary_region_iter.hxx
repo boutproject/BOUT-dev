@@ -512,7 +512,7 @@ public:
   }
   signed char _offset() const { return region->bndry_points[pos].offset; }
   signed char _valid() const { return region->bndry_points[pos].valid; }
-  Ind3D& _ind() const { return region->bndry_points[pos].index; }
+  Ind3D _ind() const { return region->bndry_points[pos].index; }
   signed char _boundary_width() const {
     return region->localmesh->ystart - region->bndry_points[pos].abs_offset;
   }
