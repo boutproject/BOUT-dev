@@ -449,10 +449,17 @@ private:
 
 class BoundaryRegionIterFCI : public BoundaryRegionIterBase<BoundaryRegionIterFCI> {
 private:
-  BoundaryRegionFCI* region;
+  // TODO(dave) make non-const?
+  const BoundaryRegionFCI* region;
   size_t pos{0};
 
 public:
+  BoundaryRegionIterFCI() = delete;
+  BoundaryRegionIterFCI(const BoundaryRegionFCI* reg, bool isstart)
+      : region(reg), pos(isstart ? 0 : reg->bndry_points.size()) {}
+  void setValid(char valid) {
+    const_cast<BoundaryRegionFCI*>(region)->bndry_points[pos].valid = valid;
+  };
   template <bool check = true>
   BoutReal& _getAt(Field3D& f, int off) const {
     ASSERT3(f.hasParallelSlices());
@@ -505,6 +512,25 @@ public:
     return region->localmesh->ystart - region->bndry_points[pos].abs_offset;
   }
   const BoutReal& _length() const { return region->bndry_points[pos].length; }
+  bool operator!=(BoundaryRegionIterFCI lhs) {
+    ASSERT3(region == lhs.region);
+    return pos != lhs.pos;
+  }
+  BoundaryRegionIterFCI& operator++() {
+    ++pos;
+    return *this;
+  }
+  // No-op for compatibility
+  BoundaryRegionIterFCI& operator*() { return *this; }
 };
 } // namespace boundary
 } // namespace bout
+
+inline bout::boundary::BoundaryRegionIterFCI
+begin(const bout::boundary::BoundaryRegionFCI reg) {
+  return bout::boundary::BoundaryRegionIterFCI(&reg, true);
+}
+inline bout::boundary::BoundaryRegionIterFCI
+end(const bout::boundary::BoundaryRegionFCI reg) {
+  return bout::boundary::BoundaryRegionIterFCI(&reg, false);
+}
