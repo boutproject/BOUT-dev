@@ -10,7 +10,7 @@ def test_boutpp_legacy_model(run_isolated):
 
     run_isolated()
 
-    boutpp.init(sys.argv[1:])
+    boutpp.init([])
 
     dens = boutpp.create3D("0")
 
