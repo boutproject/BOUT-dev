@@ -7,7 +7,8 @@ import boutpp as bc
 
 def test_boutpp_collect_staggered(run_isolated):
 
-    run_isolated()
+    if run_isolated():
+        return
 
     bc.init("-q -q -q")
 

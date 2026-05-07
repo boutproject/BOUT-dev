@@ -9,7 +9,8 @@ from boutdata import collect
 
 def test_boutpp_collect(run_isolated):
 
-    run_isolated()
+    if run_isolated():
+        return
 
     bc.init("-d input".split(" "))
 

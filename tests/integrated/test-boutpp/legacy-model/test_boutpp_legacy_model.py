@@ -8,7 +8,8 @@ import sys
 
 def test_boutpp_legacy_model(run_isolated):
 
-    run_isolated()
+    if run_isolated():
+        return
 
     boutpp.init([])
 

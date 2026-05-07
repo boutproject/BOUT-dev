@@ -13,18 +13,15 @@ def unique_xdist_group(request):
 @pytest.fixture(scope="function")
 def run_isolated(request):
     """
-    Fixture to run a test in a fresh, isolated subprocess.
+    Spawns a fresh, isolated process for tests.
     This prevents C++ singleton/MPI conflicts in xdist workers.
+    Returns a function that evaluates to True in the parent (to abort test execution)
+    and False in the child (to run the actual test).
     """
-
-    def _do_nothing():
-        pass
-
-    # If we are already in the child process, return the dummy function
     if os.environ.get("BOUT_ISOLATED_RUN") == "1":
-        return _do_nothing
+        return lambda: False
 
-    # Get the unique ID of the current test (e.g., path/to/test.py::test_func)
+    # In the parent process, set up and run the child
     nodeid = request.node.nodeid
 
     # Use the absolute path to the test file to avoid directory resolution issues
@@ -56,5 +53,5 @@ def run_isolated(request):
             pytrace=False
         )
 
-    # In the parent xdist worker, stop here
-    pytest.skip("Test successfully completed in isolated subprocess")
+    # Return True so the parent can exit the test cleanly without skipping.
+    return lambda: True

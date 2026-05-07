@@ -8,7 +8,8 @@ import numpy as np
 
 def test_boutpp_mms_ddz(run_isolated):
 
-    run_isolated()
+    if run_isolated():
+        return
 
     errorlist = ""
     boutpp.init("-d data -q -q -q")  # +" -f BOUT.settings")

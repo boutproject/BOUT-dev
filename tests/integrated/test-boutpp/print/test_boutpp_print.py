@@ -3,7 +3,8 @@ import subprocess
 
 def test_boutpp_print(run_isolated):
 
-    run_isolated()
+    if run_isolated():
+        return
 
     msg = 'Can we print to the log from python? 🎉 __does_it_still__work {} {:s}'
     cmd = ["python3", "test.py", msg]

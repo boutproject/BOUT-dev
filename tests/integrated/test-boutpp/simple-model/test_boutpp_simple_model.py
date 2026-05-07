@@ -7,7 +7,8 @@ from boutpp import *
 
 def test_boutpp_simple_model(run_isolated):
 
-    run_isolated()
+    if run_isolated():
+        return
 
     init("-d mini")
 
