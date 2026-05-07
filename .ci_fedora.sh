@@ -23,7 +23,7 @@ then
     test . != ".$2" && mpi="$2" || mpi=openmpi
     time $cmd pull ghcr.io/dschwoerer/bout-container-base:ci-fedora
     time $cmd create --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
-	 --shm-size 256M \
+	 --shm-size 1G \
          --name mobydick ghcr.io/dschwoerer/bout-container-base:ci-fedora \
 	     /tmp/BOUT-dev/.ci_fedora.sh $mpi
     time $cmd cp ${TRAVIS_BUILD_DIR:-$(pwd)} mobydick:/tmp/BOUT-dev
