@@ -23,23 +23,35 @@ def run_isolated(request):
     # Get the unique ID of the current test (e.g., path/to/test.py::test_func)
     nodeid = request.node.nodeid
 
-    # Copy current environment and set the isolation flag
+    # Use the absolute path to the test file to avoid directory resolution issues
+    # fspath is the local path to the test file
+    root_dir = str(request.config.rootpath)
+
     env = os.environ.copy()
     env["BOUT_ISOLATED_RUN"] = "1"
 
-    # Construct the command to run ONLY this specific test
-    # We disable xdist (-p no:xdist) in the subprocess to ensure a clean single-process run
+    # Disable xdist (-p no:xdist) in the subprocess to ensure a clean single-process run
+    # Use -o to disable the cache entirely in the subprocess
+    # Remove -c /dev/null so it stays in the project context
     cmd = [
         sys.executable, "-m", "pytest",
+        nodeid,
+        "--rootdir", root_dir,
         "-p", "no:xdist",
-        "-c", "/dev/null", # Ignore config to prevent recursive loading if necessary
-        nodeid
+        "-o", "cache_dir=/tmp/pytest-cache", # Redirect cache to a writable place
+        "-c", str(request.config.inifile or root_dir) # Point to actual config if it exists
     ]
 
-    result = subprocess.run(cmd, env=env, capture_output=True, text=True)
+    # Run from the same directory as the parent
+    result = subprocess.run(
+        cmd,
+        env=env,
+        cwd=root_dir,
+        capture_output=True,
+        text=True
+    )
 
     if result.returncode != 0:
-        # If the isolated run failed, fail the parent test with the output
         pytest.fail(
             f"Isolated test failed with exit code {result.returncode}\n"
             f"--- STDERR ---\n{result.stderr}\n"
@@ -47,6 +59,6 @@ def run_isolated(request):
             pytrace=False
         )
 
-    # If the subprocess succeeded, we skip the execution of the test body
+    # If the subprocess succeeded, skip the execution of the test body
     # in the parent (original) xdist worker.
     pytest.skip("Test successfully completed in isolated subprocess")
