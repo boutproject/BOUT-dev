@@ -16,9 +16,13 @@ def run_isolated(request):
     Fixture to run a test in a fresh, isolated subprocess.
     This prevents C++ singleton/MPI conflicts in xdist workers.
     """
-    # If this variable is set, we are already inside the isolated subprocess
+
+    def _do_nothing():
+        pass
+
+    # If we are already in the child process, return the dummy function
     if os.environ.get("BOUT_ISOLATED_RUN") == "1":
-        return
+        return _do_nothing
 
     # Get the unique ID of the current test (e.g., path/to/test.py::test_func)
     nodeid = request.node.nodeid
@@ -42,14 +46,7 @@ def run_isolated(request):
         "-c", str(request.config.inifile or root_dir) # Point to actual config if it exists
     ]
 
-    # Run from the same directory as the parent
-    result = subprocess.run(
-        cmd,
-        env=env,
-        cwd=root_dir,
-        capture_output=True,
-        text=True
-    )
+    result = subprocess.run(cmd, env=env, cwd=root_dir, capture_output=True, text=True)
 
     if result.returncode != 0:
         pytest.fail(
@@ -59,6 +56,5 @@ def run_isolated(request):
             pytrace=False
         )
 
-    # If the subprocess succeeded, skip the execution of the test body
-    # in the parent (original) xdist worker.
+    # In the parent xdist worker, stop here
     pytest.skip("Test successfully completed in isolated subprocess")
