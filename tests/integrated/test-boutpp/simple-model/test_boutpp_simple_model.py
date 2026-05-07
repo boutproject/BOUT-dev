@@ -5,8 +5,9 @@
 
 from boutpp import *
 
+def test_boutpp_simple_model(run_isolated):
 
-def test_boutpp_simple_model():
+    run_isolated()
 
     init("-d mini")
 
@@ -17,7 +18,6 @@ def test_boutpp_simple_model():
 
         def rhs(self, time):
             self.n.ddt(DDX(self.n))
-
 
     model = MyModel()
     model.solve()

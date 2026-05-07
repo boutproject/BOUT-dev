@@ -7,7 +7,9 @@ from boutdata import collect
 # requires not make
 
 
-def test_boutpp_collect():
+def test_boutpp_collect(run_isolated):
+
+    run_isolated()
 
     bc.init("-d input".split(" "))
 

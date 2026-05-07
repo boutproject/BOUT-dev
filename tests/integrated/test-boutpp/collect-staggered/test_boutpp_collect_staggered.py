@@ -5,7 +5,9 @@ import boutpp as bc
 # requires boutpp
 # requires not make
 
-def test_boutpp_collect_staggered():
+def test_boutpp_collect_staggered(run_isolated):
+
+    run_isolated()
 
     bc.init("-q -q -q")
 

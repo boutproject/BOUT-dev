@@ -6,7 +6,9 @@ import sys
 # requires not make
 
 
-def test_boutpp_legacy_model():
+def test_boutpp_legacy_model(run_isolated):
+
+    run_isolated()
 
     boutpp.init(sys.argv[1:])
 

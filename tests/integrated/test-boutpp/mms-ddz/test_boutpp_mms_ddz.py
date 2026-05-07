@@ -6,7 +6,10 @@ import numpy as np
 # requires not make
 
 
-def test_boutpp_mms_ddz():
+def test_boutpp_mms_ddz(run_isolated):
+
+    run_isolated()
+
     errorlist = ""
     boutpp.init("-d data -q -q -q")  # +" -f BOUT.settings")
 
