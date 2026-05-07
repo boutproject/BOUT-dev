@@ -55,3 +55,35 @@ def run_isolated(request):
 
     # Return True so the parent can exit the test cleanly without skipping.
     return lambda: True
+
+@pytest.fixture(autouse=True)
+def sanitize_openmpi_env():
+    """
+    OpenMPI leaks state via environment variables (PMIX_*, OPAL_*).
+    This fixture removes them so subprocesses called via `mpirun`
+    don't crash thinking they are already initialized.
+    """
+    # Find all problematic OpenMPI state variables
+    bad_prefixes = ("PMIX_", "OPAL_")
+    bad_exact = (
+        "OMPI_COMM_WORLD_SIZE",
+        "OMPI_COMM_WORLD_RANK",
+        "OMPI_COMM_WORLD_LOCAL_RANK"
+    )
+
+    mpi_vars_to_remove = [
+        k for k in os.environ
+        if k.startswith(bad_prefixes) or k in bad_exact
+    ]
+
+    # Save original variables
+    saved_env = {k: os.environ[k] for k in mpi_vars_to_remove}
+
+    # Delete them from the current environment
+    for k in mpi_vars_to_remove:
+        del os.environ[k]
+
+    yield # Run the test
+
+    # Restore the environment after the test finishes
+    os.environ.update(saved_env)
