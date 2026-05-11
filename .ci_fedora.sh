@@ -45,6 +45,7 @@ test . != ".$1" && mpi="$1" || mpi=openmpi
     export PRTE_MCA_rmaps_default_mapping_policy=core:OVERSUBSCRIBE
     export PRTE_MCA_rmaps_default_mapping_policy=:oversubscribe
     export TRAVIS=true
+    export CI=true
     # Try limiting openmp threads
     export FLEXIBLAS=NETLIB
     export MKL_NUM_THREADS=1
