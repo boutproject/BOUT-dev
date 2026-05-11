@@ -307,67 +307,53 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
           "might require dz!\nPlease provide a dz for the staggered quantity!");
     }
     setParallelTransform(options);
-    dx = interpolateAndExtrapolate(coords_in->dx, location, true, true, false,
-                                   transform.get());
-    dy = interpolateAndExtrapolate(coords_in->dy, location, true, true, false,
-                                   transform.get());
+
+    auto interpField = [&, this](const FieldMetric& f) -> FieldMetric {
+      return interpolateAndExtrapolate(f, location, true, true, false, transform.get());
+    };
+
+    dx = interpField(coords_in->dx);
+    dy = interpField(coords_in->dy);
     // not really needed - we have used dz already ...
-    dz = interpolateAndExtrapolate(coords_in->dz, location, true, true, false,
-                                   transform.get());
+    dz = interpField(coords_in->dz);
 
     // Diagonal components of metric tensor g^{ij}
-    g11 = interpolateAndExtrapolate(coords_in->g11, location, true, true, false,
-                                    transform.get());
-    g22 = interpolateAndExtrapolate(coords_in->g22, location, true, true, false,
-                                    transform.get());
-    g33 = interpolateAndExtrapolate(coords_in->g33, location, true, true, false,
-                                    transform.get());
+    g11 = interpField(coords_in->g11);
+    g22 = interpField(coords_in->g22);
+    g33 = interpField(coords_in->g33);
 
     // Off-diagonal elements.
-    g12 = interpolateAndExtrapolate(coords_in->g12, location, true, true, false,
-                                    transform.get());
-    g13 = interpolateAndExtrapolate(coords_in->g13, location, true, true, false,
-                                    transform.get());
-    g23 = interpolateAndExtrapolate(coords_in->g23, location, true, true, false,
-                                    transform.get());
+    g12 = interpField(coords_in->g12);
+    g13 = interpField(coords_in->g13);
+    g23 = interpField(coords_in->g23);
 
     // 3x3 matrix inversion can exaggerate small interpolation errors, so it is
     // more robust to interpolate and extrapolate derived quantities directly,
     // rather than deriving from interpolated/extrapolated covariant metric
     // components
-    g_11 = interpolateAndExtrapolate(coords_in->g_11, location, true, true, false,
-                                     transform.get());
-    g_22 = interpolateAndExtrapolate(coords_in->g_22, location, true, true, false,
-                                     transform.get());
-    g_33 = interpolateAndExtrapolate(coords_in->g_33, location, true, true, false,
-                                     transform.get());
-    g_12 = interpolateAndExtrapolate(coords_in->g_12, location, true, true, false,
-                                     transform.get());
-    g_13 = interpolateAndExtrapolate(coords_in->g_13, location, true, true, false,
-                                     transform.get());
-    g_23 = interpolateAndExtrapolate(coords_in->g_23, location, true, true, false,
-                                     transform.get());
+    g_11 = interpField(coords_in->g_11);
+    g_22 = interpField(coords_in->g_22);
+    g_33 = interpField(coords_in->g_33);
+    g_12 = interpField(coords_in->g_12);
+    g_13 = interpField(coords_in->g_13);
+    g_23 = interpField(coords_in->g_23);
 
     // Check input metrics
     checkContravariant();
     checkCovariant();
 
-    J = interpolateAndExtrapolate(coords_in->J, location, true, true, false,
-                                  transform.get());
-    Bxy = interpolateAndExtrapolate(coords_in->Bxy, location, true, true, false,
-                                    transform.get());
+    J = interpField(coords_in->J);
+    Bxy = interpField(coords_in->Bxy);
 
     bout::checkFinite(J, "The Jacobian", "RGN_NOCORNERS");
     bout::checkPositive(J, "The Jacobian", "RGN_NOCORNERS");
     bout::checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
     bout::checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
 
-    ShiftTorsion = interpolateAndExtrapolate(coords_in->ShiftTorsion, location, true,
-                                             true, false, transform.get());
+    ShiftTorsion = interpField(coords_in->ShiftTorsion);
 
     if (mesh->IncIntShear) {
-      IntShiftTorsion = interpolateAndExtrapolate(coords_in->IntShiftTorsion, location,
-                                                  true, true, false, transform.get());
+      IntShiftTorsion = interpField(coords_in->IntShiftTorsion);
     }
   }
   // Allow transform to fix things up
