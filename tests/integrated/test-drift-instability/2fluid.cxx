@@ -14,7 +14,7 @@
 #include <cmath>
 
 // just define a macro for V_E dot Grad
-#define vE_Grad(f, p) (b0xGrad_dot_Grad(p, f) / coord->Bxy)
+#define vE_Grad(f, p) (b0xGrad_dot_Grad(p, f) / coord->Bxy())
 
 class TwoFluid : public PhysicsModel {
   // 2D initial profiles
@@ -368,7 +368,7 @@ protected:
     if (evolve_rho) {
       auto divPar_jpar_ylow = Div_par(jpar);
       mesh->communicate(divPar_jpar_ylow);
-      ddt(rho) += SQ(coord->Bxy) * interp_to(divPar_jpar_ylow, CELL_CENTRE);
+      ddt(rho) += SQ(coord->Bxy()) * interp_to(divPar_jpar_ylow, CELL_CENTRE);
     }
 
     // AJPAR

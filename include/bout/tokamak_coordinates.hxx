@@ -4,6 +4,7 @@
 #include <bout/bout_types.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/field2d.hxx>
+#include <bout/metric_tensor.hxx>
 
 class Mesh;
 
@@ -14,21 +15,21 @@ namespace bout {
 /// `I_unnormalised` are normalised.
 struct TokamakCoordinates {
   /// Major radius
-  Field2D Rxy;
+  FieldMetric Rxy;
   /// Vertical height
-  Field2D Zxy;
+  FieldMetric Zxy;
   /// Poloidal magnetic field
-  Field2D Bpxy;
+  FieldMetric Bpxy;
   /// Toroidal magnetic field
-  Field2D Btxy;
+  FieldMetric Btxy;
   /// Total magnetic field
-  Field2D Bxy;
+  FieldMetric Bxy;
   /// Poloidal arc length
-  Field2D hthe;
+  FieldMetric hthe;
   /// Integrated shear (normalised)
-  Coordinates::FieldMetric I;
+  FieldMetric I;
   /// Unnormalised integrated shear
-  Coordinates::FieldMetric I_unnormalised;
+  FieldMetric I_unnormalised;
 };
 
 /// Read, normalise, calculate, and set the metric components for a BOUT++

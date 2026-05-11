@@ -288,11 +288,11 @@ Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc,
                      const std::string& method) {
   Coordinates* metric = f.getCoordinates(outloc);
 
-  auto Bxy_floc = f.getCoordinates()->Bxy;
+  auto Bxy_floc = f.getCoordinates()->Bxy();
 
   if (!f.hasParallelSlices()) {
     Field3D f_B = f / Bxy_floc;
-    return metric->Bxy * FDDY(v, f_B, outloc, method) / sqrt(metric->g_22);
+    return metric->Bxy() * FDDY(v, f_B, outloc, method) / sqrt(metric->g_22());
   }
 
   // Need to modify yup and ydown fields
@@ -301,7 +301,7 @@ Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc,
   f_B.splitParallelSlices();
   f_B.yup() = f.yup() / Bxy_floc;
   f_B.ydown() = f.ydown() / Bxy_floc;
-  return metric->Bxy * FDDY(v, f_B, outloc, method) / sqrt(metric->g_22);
+  return metric->Bxy() * FDDY(v, f_B, outloc, method) / sqrt(metric->g_22());
 }
 
 Field3D Div_par_flux(const Field3D& v, const Field3D& f, const std::string& method,
@@ -405,24 +405,24 @@ Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& 
       // Upper cell edge
       const BoutReal c_up = 0.5 * (Kin[i] + K_up[iyp]); // K at the upper boundary
       const BoutReal J_up =
-          0.5 * (coord->J[i] + coord->J.yup()[iyp]); // Jacobian at boundary
-      const BoutReal g_22_up = 0.5 * (coord->g_22[i] + coord->g_22.yup()[iyp]);
+          0.5 * (coord->J()[i] + coord->J().yup()[iyp]); // Jacobian at boundary
+      const BoutReal g_22_up = 0.5 * (coord->g_22()[i] + coord->g_22().yup()[iyp]);
       const BoutReal gradient_up =
-          2. * (f_up[iyp] - fin[i]) / (coord->dy[i] + coord->dy.yup()[iyp]);
+          2. * (f_up[iyp] - fin[i]) / (coord->dy()[i] + coord->dy().yup()[iyp]);
 
       const BoutReal flux_up = c_up * J_up * gradient_up / g_22_up;
 
       // Lower cell edge
       const BoutReal c_down = 0.5 * (Kin[i] + K_down[iym]); // K at the lower boundary
       const BoutReal J_down =
-          0.5 * (coord->J[i] + coord->J.ydown()[iym]); // Jacobian at boundary
-      const BoutReal g_22_down = 0.5 * (coord->g_22[i] + coord->g_22.ydown()[iym]);
+          0.5 * (coord->J()[i] + coord->J().ydown()[iym]); // Jacobian at boundary
+      const BoutReal g_22_down = 0.5 * (coord->g_22()[i] + coord->g_22().ydown()[iym]);
       const BoutReal gradient_down =
-          2. * (fin[i] - f_down[iym]) / (coord->dy[i] + coord->dy.ydown()[iym]);
+          2. * (fin[i] - f_down[iym]) / (coord->dy()[i] + coord->dy().ydown()[iym]);
 
       const BoutReal flux_down = c_down * J_down * gradient_down / g_22_down;
 
-      result[i] = (flux_up - flux_down) / (coord->dy[i] * coord->J[i]);
+      result[i] = (flux_up - flux_down) / (coord->dy()[i] * coord->J()[i]);
     }
 
     return result;
@@ -446,26 +446,26 @@ Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& 
 
     if (bndry_flux || is_periodic_y || !mesh->lastY(ix) || (iy != mesh->yend)) {
       const BoutReal c = 0.5 * (K[i] + K[iyp]);               // K at the upper boundary
-      const BoutReal J = 0.5 * (coord->J[i] + coord->J[iyp]); // Jacobian at boundary
-      const BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iyp]);
-      const BoutReal gradient = 2. * (f[iyp] - f[i]) / (coord->dy[i] + coord->dy[iyp]);
+      const BoutReal J = 0.5 * (coord->J()[i] + coord->J()[iyp]); // Jacobian at boundary
+      const BoutReal g_22 = 0.5 * (coord->g_22()[i] + coord->g_22()[iyp]);
+      const BoutReal gradient = 2. * (f[iyp] - f[i]) / (coord->dy()[i] + coord->dy()[iyp]);
 
       const BoutReal flux = c * J * gradient / g_22;
 
-      result[i] += flux / (coord->dy[i] * coord->J[i]);
+      result[i] += flux / (coord->dy()[i] * coord->J()[i]);
     }
 
     // Calculate flux at lower surface
     if (bndry_flux || is_periodic_y || !mesh->firstY(ix) || (iy != mesh->ystart)) {
       const BoutReal c = 0.5 * (K[i] + K[iym]);               // K at the lower boundary
-      const BoutReal J = 0.5 * (coord->J[i] + coord->J[iym]); // Jacobian at boundary
-      const BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iym]);
-      const BoutReal gradient = 2. * (f[i] - f[iym]) / (coord->dy[i] + coord->dy[iym]);
+      const BoutReal J = 0.5 * (coord->J()[i] + coord->J()[iym]); // Jacobian at boundary
+      const BoutReal g_22 = 0.5 * (coord->g_22()[i] + coord->g_22()[iym]);
+      const BoutReal gradient = 2. * (f[i] - f[iym]) / (coord->dy()[i] + coord->dy()[iym]);
 
       const BoutReal flux = c * J * gradient / g_22;
 
-      result[i] -= flux / (coord->dy[i] * coord->J[i]);
-      flow_ylow[i] = -flux * coord->dx[i] * coord->dz[i];
+      result[i] -= flux / (coord->dy()[i] * coord->J()[i]);
+      flow_ylow[i] = -flux * coord->dx()[i] * coord->dz()[i];
     }
   }
 
@@ -580,12 +580,12 @@ Coordinates::FieldMetric b0xGrad_dot_Grad(const Field2D& phi, const Field2D& A,
   Coordinates::FieldMetric dpdy = DDY(phi, outloc);
 
   // Calculate advection velocity
-  Coordinates::FieldMetric vx = -metric->g_23 * dpdy;
-  Coordinates::FieldMetric vy = metric->g_23 * dpdx;
+  Coordinates::FieldMetric vx = -metric->g_23() * dpdy;
+  Coordinates::FieldMetric vy = metric->g_23() * dpdx;
 
   // Upwind A using these velocities
   Coordinates::FieldMetric result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc);
-  result /= metric->J * sqrt(metric->g_22);
+  result /= metric->J() * sqrt(metric->g_22());
 
   ASSERT1(result.getLocation() == outloc);
 
@@ -612,20 +612,20 @@ Field3D b0xGrad_dot_Grad(const Field2D& phi, const Field3D& A, CELL_LOC outloc) 
   Coordinates::FieldMetric dpdy = DDY(phi, outloc);
 
   // Calculate advection velocity
-  Coordinates::FieldMetric vx = -metric->g_23 * dpdy;
-  Coordinates::FieldMetric vy = metric->g_23 * dpdx;
-  Coordinates::FieldMetric vz = metric->g_12 * dpdy - metric->g_22 * dpdx;
+  Coordinates::FieldMetric vx = -metric->g_23() * dpdy;
+  Coordinates::FieldMetric vy = metric->g_23() * dpdx;
+  Coordinates::FieldMetric vz = metric->g_12() * dpdy - metric->g_22() * dpdx;
 
   if (mesh->IncIntShear) {
     // BOUT-06 style differencing
-    vz += metric->IntShiftTorsion * vx;
+    vz += metric->IntShiftTorsion() * vx;
   }
 
   // Upwind A using these velocities
 
   Field3D result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc) + VDDZ(vz, A, outloc);
 
-  result /= (metric->J * sqrt(metric->g_22));
+  result /= (metric->J() * sqrt(metric->g_22()));
 
 #if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad(" + phi.name + "," + A.name + ")";
@@ -652,14 +652,14 @@ Field3D b0xGrad_dot_Grad(const Field3D& p, const Field2D& A, CELL_LOC outloc) {
   Field3D dpdz = DDZ(p, outloc);
 
   // Calculate advection velocity
-  Field3D vx = metric->g_22 * dpdz - metric->g_23 * dpdy;
-  Field3D vy = metric->g_23 * dpdx - metric->g_12 * dpdz;
+  Field3D vx = metric->g_22() * dpdz - metric->g_23() * dpdy;
+  Field3D vy = metric->g_23() * dpdx - metric->g_12() * dpdz;
 
   // Upwind A using these velocities
 
   Field3D result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc);
 
-  result /= (metric->J * sqrt(metric->g_22));
+  result /= (metric->J() * sqrt(metric->g_22()));
 
 #if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad(" + p.name + "," + A.name + ")";
@@ -688,18 +688,18 @@ Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field3D& A, CELL_LOC outloc) 
   Field3D dpdz = DDZ(phi, outloc);
 
   // Calculate advection velocity
-  Field3D vx = metric->g_22 * dpdz - metric->g_23 * dpdy;
-  Field3D vy = metric->g_23 * dpdx - metric->g_12 * dpdz;
-  Field3D vz = metric->g_12 * dpdy - metric->g_22 * dpdx;
+  Field3D vx = metric->g_22() * dpdz - metric->g_23() * dpdy;
+  Field3D vy = metric->g_23() * dpdx - metric->g_12() * dpdz;
+  Field3D vz = metric->g_12() * dpdy - metric->g_22() * dpdx;
 
   if (mesh->IncIntShear) {
     // BOUT-06 style differencing
-    vz += metric->IntShiftTorsion * vx;
+    vz += metric->IntShiftTorsion() * vx;
   }
 
   Field3D result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc) + VDDZ(vz, A, outloc);
 
-  result /= (metric->J * sqrt(metric->g_22));
+  result /= (metric->J() * sqrt(metric->g_22()));
 
 #if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad(" + phi.name + "," + A.name + ")";
@@ -733,7 +733,7 @@ Coordinates::FieldMetric bracket(const Field2D& f, const Field2D& g,
     result.setLocation(outloc);
   } else {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(f, g, outloc) / f.getCoordinates(outloc)->Bxy;
+    result = b0xGrad_dot_Grad(f, g, outloc) / f.getCoordinates(outloc)->Bxy();
   }
   return result;
 }
@@ -808,7 +808,7 @@ Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
 
     BOUT_FOR(j2D, result.getRegion2D("RGN_NOBNDRY")) {
       // Get constants for this iteration
-      const BoutReal spacingFactor = 1.0 / (12 * metric->dz[j2D] * metric->dx[j2D]);
+      const BoutReal spacingFactor = 1.0 / (12 * metric->dz()[j2D] * metric->dx()[j2D]);
       const int jy = j2D.y(), jx = j2D.x();
       const int xm = jx - 1, xp = jx + 1;
 
@@ -880,7 +880,7 @@ Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
   }
   default: {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(f, g, outloc) / metric->Bxy;
+    result = b0xGrad_dot_Grad(f, g, outloc) / metric->Bxy();
   }
   }
   return result;
@@ -915,7 +915,7 @@ Field3D bracket(const Field2D& f, const Field3D& g, BRACKET_METHOD method,
   default: {
     // Use full expression with all terms
     Coordinates* metric = f.getCoordinates(outloc);
-    result = b0xGrad_dot_Grad(f, g, outloc) / metric->Bxy;
+    result = b0xGrad_dot_Grad(f, g, outloc) / metric->Bxy();
   }
   }
 
@@ -1058,7 +1058,7 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
 
     BOUT_FOR(j2D, result.getRegion2D("RGN_NOBNDRY")) {
 #if not(BOUT_USE_METRIC_3D)
-      const BoutReal spacingFactor = 1.0 / (12 * metric->dz[j2D] * metric->dx[j2D]);
+      const BoutReal spacingFactor = 1.0 / (12 * metric->dz()[j2D] * metric->dx()[j2D]);
 #endif
       const int jy = j2D.y(), jx = j2D.x();
       const int xm = jx - 1, xp = jx + 1;
@@ -1156,7 +1156,7 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
   }
   default: {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(f, g, outloc) / metric->Bxy;
+    result = b0xGrad_dot_Grad(f, g, outloc) / metric->Bxy();
   }
   }
 

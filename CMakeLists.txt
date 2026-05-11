@@ -116,10 +116,11 @@ set(BOUT_SOURCES
     ./include/bout/bout.hxx
     ./include/bout/bout_enum_class.hxx
     ./include/bout/bout_types.hxx
-    ./include/bout/build_config.hxx
     ./include/bout/boutcomm.hxx
     ./include/bout/boutexception.hxx
+    ./include/bout/build_config.hxx
     ./include/bout/caliper_wrapper.hxx
+    ./include/bout/christoffel_symbols.hxx
     ./include/bout/constants.hxx
     ./include/bout/coordinates.hxx
     ./include/bout/coordinates_accessor.hxx
@@ -136,18 +137,21 @@ set(BOUT_SOURCES
     ./include/bout/field_accessor.hxx
     ./include/bout/field_data.hxx
     ./include/bout/field_factory.hxx
-    ./include/bout/fieldops.hxx
     ./include/bout/fieldgroup.hxx
+    ./include/bout/fieldops.hxx
     ./include/bout/fieldperp.hxx
     ./include/bout/fv_ops.hxx
     ./include/bout/fv_ops_impl.hxx
+    ./include/bout/g_values.hxx
     ./include/bout/generic_factory.hxx
+    ./include/bout/git_metadata.hxx
     ./include/bout/globalfield.hxx
     ./include/bout/globalindexer.hxx
     ./include/bout/globals.hxx
     ./include/bout/griddata.hxx
     ./include/bout/gyro_average.hxx
     ./include/bout/hypre_interface.hxx
+    ./include/bout/hyprelib.hxx
     ./include/bout/index_derivs.hxx
     ./include/bout/index_derivs_interface.hxx
     ./include/bout/initialprofiles.hxx
@@ -164,6 +168,7 @@ set(BOUT_SOURCES
     ./include/bout/macro_for_each.hxx
     ./include/bout/mask.hxx
     ./include/bout/mesh.hxx
+    ./include/bout/metric_tensor.hxx
     ./include/bout/monitor.hxx
     ./include/bout/mpi_wrapper.hxx
     ./include/bout/msg_stack.hxx
@@ -216,8 +221,8 @@ set(BOUT_SOURCES
     ./include/bout/vector2d.hxx
     ./include/bout/vector3d.hxx
     ./include/bout/where.hxx
-    ./src/bout++.cxx
     ./src/bout++-time.hxx
+    ./src/bout++.cxx
     ./src/field/field.cxx
     ./src/field/field2d.cxx
     ./src/field/field3d.cxx
@@ -240,6 +245,8 @@ set(BOUT_SOURCES
     ./src/invert/laplace/common_transform.hxx
     ./src/invert/laplace/impls/cyclic/cyclic_laplace.cxx
     ./src/invert/laplace/impls/cyclic/cyclic_laplace.hxx
+    ./src/invert/laplace/impls/hypre3d/hypre3d_laplace.cxx
+    ./src/invert/laplace/impls/hypre3d/hypre3d_laplace.hxx
     ./src/invert/laplace/impls/iterative_parallel_tri/iterative_parallel_tri.cxx
     ./src/invert/laplace/impls/iterative_parallel_tri/iterative_parallel_tri.hxx
     ./src/invert/laplace/impls/multigrid/multigrid_alg.cxx
@@ -262,8 +269,6 @@ set(BOUT_SOURCES
     ./src/invert/laplace/impls/serial_tri/serial_tri.hxx
     ./src/invert/laplace/impls/spt/spt.cxx
     ./src/invert/laplace/impls/spt/spt.hxx
-    ./src/invert/laplace/impls/hypre3d/hypre3d_laplace.cxx
-    ./src/invert/laplace/impls/hypre3d/hypre3d_laplace.hxx
     ./src/invert/laplace/invert_laplace.cxx
     ./src/invert/laplacexy/impls/hypre/laplacexy-hypre.cxx
     ./src/invert/laplacexy/impls/hypre/laplacexy-hypre.hxx
@@ -286,23 +291,26 @@ set(BOUT_SOURCES
     ./src/mesh/boundary_factory.cxx
     ./src/mesh/boundary_region.cxx
     ./src/mesh/boundary_standard.cxx
+    ./src/mesh/christoffel_symbols.cxx
     ./src/mesh/coordinates.cxx
     ./src/mesh/coordinates_accessor.cxx
     ./src/mesh/data/gridfromfile.cxx
     ./src/mesh/data/gridfromoptions.cxx
     ./src/mesh/difops.cxx
     ./src/mesh/fv_ops.cxx
+    ./src/mesh/g_values.cxx
     ./src/mesh/impls/bout/boutmesh.cxx
     ./src/mesh/impls/bout/boutmesh.hxx
     ./src/mesh/index_derivs.cxx
-    ./src/mesh/interpolation_xz.cxx
     ./src/mesh/interpolation/bilinear_xz.cxx
     ./src/mesh/interpolation/hermite_spline_xz.cxx
     ./src/mesh/interpolation/hermite_spline_z.cxx
     ./src/mesh/interpolation/interpolation_z.cxx
     ./src/mesh/interpolation/lagrange_4pt_xz.cxx
+    ./src/mesh/interpolation_xz.cxx
     ./src/mesh/invert3x3.hxx
     ./src/mesh/mesh.cxx
+    ./src/mesh/metric_tensor.cxx
     ./src/mesh/parallel/fci.cxx
     ./src/mesh/parallel/fci.hxx
     ./src/mesh/parallel/fci_comm.cxx
@@ -369,18 +377,17 @@ set(BOUT_SOURCES
     ./src/sys/derivs.cxx
     ./src/sys/expressionparser.cxx
     ./src/sys/generator_context.cxx
-    ./include/bout/hyprelib.hxx
     ./src/sys/hyprelib.cxx
     ./src/sys/msg_stack.cxx
     ./src/sys/options.cxx
     ./src/sys/options/optionparser.hxx
+    ./src/sys/options/options_adios.cxx
+    ./src/sys/options/options_adios.hxx
     ./src/sys/options/options_ini.cxx
     ./src/sys/options/options_ini.hxx
     ./src/sys/options/options_io.cxx
     ./src/sys/options/options_netcdf.cxx
     ./src/sys/options/options_netcdf.hxx
-    ./src/sys/options/options_adios.cxx
-    ./src/sys/options/options_adios.hxx
     ./src/sys/optionsreader.cxx
     ./src/sys/output.cxx
     ./src/sys/output_bout_types.cxx
@@ -390,7 +397,6 @@ set(BOUT_SOURCES
     ./src/sys/timer.cxx
     ./src/sys/type_name.cxx
     ./src/sys/utils.cxx
-    ./include/bout/git_metadata.hxx
     ${CMAKE_CURRENT_BINARY_DIR}/include/bout/revision.hxx
     ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
 )

@@ -491,10 +491,10 @@ Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
 
   BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
     // Calculate velocities
-    const BoutReal vU = 0.25 * (vz[i.zp()] + vz[i]) * (coord->J[i.zp()] + coord->J[i]);
-    const BoutReal vD = 0.25 * (vz[i.zm()] + vz[i]) * (coord->J[i.zm()] + coord->J[i]);
-    const BoutReal vL = 0.25 * (vx[i.xm()] + vx[i]) * (coord->J[i.xm()] + coord->J[i]);
-    const BoutReal vR = 0.25 * (vx[i.xp()] + vx[i]) * (coord->J[i.xp()] + coord->J[i]);
+    const BoutReal vU = 0.25 * (vz[i.zp()] + vz[i]) * (coord->J()[i.zp()] + coord->J()[i]);
+    const BoutReal vD = 0.25 * (vz[i.zm()] + vz[i]) * (coord->J()[i.zm()] + coord->J()[i]);
+    const BoutReal vL = 0.25 * (vx[i.xm()] + vx[i]) * (coord->J()[i.xm()] + coord->J()[i]);
+    const BoutReal vR = 0.25 * (vx[i.xp()] + vx[i]) * (coord->J()[i.xp()] + coord->J()[i]);
 
     // X direction
     Stencil1D s;
@@ -517,16 +517,16 @@ Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
           // Flux in from boundary
           flux = vR * 0.5 * (n[i.xp()] + n[i]);
         }
-        result[i] += flux / (coord->dx[i] * coord->J[i]);
-        result[i.xp()] -= flux / (coord->dx[i.xp()] * coord->J[i.xp()]);
+        result[i] += flux / (coord->dx()[i] * coord->J()[i]);
+        result[i.xp()] -= flux / (coord->dx()[i.xp()] * coord->J()[i.xp()]);
       }
     } else {
       // Not at a boundary
       if (vR > 0.0) {
         // Flux out into next cell
         const BoutReal flux = vR * s.R;
-        result[i] += flux / (coord->dx[i] * coord->J[i]);
-        result[i.xp()] -= flux / (coord->dx[i.xp()] * coord->J[i.xp()]);
+        result[i] += flux / (coord->dx()[i] * coord->J()[i]);
+        result[i.xp()] -= flux / (coord->dx()[i.xp()] * coord->J()[i.xp()]);
       }
     }
 
@@ -544,15 +544,15 @@ Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
           // Flux in from boundary
           flux = vL * 0.5 * (n[i.xm()] + n[i]);
         }
-        result[i] -= flux / (coord->dx[i] * coord->J[i]);
-        result[i.xm()] += flux / (coord->dx[i.xm()] * coord->J[i.xm()]);
+        result[i] -= flux / (coord->dx()[i] * coord->J()[i]);
+        result[i.xm()] += flux / (coord->dx()[i.xm()] * coord->J()[i.xm()]);
       }
     } else {
       // Not at a boundary
       if (vL < 0.0) {
         const BoutReal flux = vL * s.L;
-        result[i] -= flux / (coord->dx[i] * coord->J[i]);
-        result[i.xm()] += flux / (coord->dx[i.xm()] * coord->J[i.xm()]);
+        result[i] -= flux / (coord->dx()[i] * coord->J()[i]);
+        result[i.xm()] += flux / (coord->dx()[i.xm()] * coord->J()[i.xm()]);
       }
     }
 
@@ -568,13 +568,13 @@ Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
 
     if (vU > 0.0) {
       const BoutReal flux = vU * s.R;
-      result[i] += flux / (coord->J[i] * coord->dz[i]);
-      result[i.zp()] -= flux / (coord->J[i.zp()] * coord->dz[i.zp()]);
+      result[i] += flux / (coord->J()[i] * coord->dz()[i]);
+      result[i.zp()] -= flux / (coord->J()[i.zp()] * coord->dz()[i.zp()]);
     }
     if (vD < 0.0) {
       const BoutReal flux = vD * s.L;
-      result[i] -= flux / (coord->J[i] * coord->dz[i]);
-      result[i.zm()] += flux / (coord->J[i.zm()] * coord->dz[i.zm()]);
+      result[i] -= flux / (coord->J()[i] * coord->dz()[i]);
+      result[i.zm()] += flux / (coord->J()[i.zm()] * coord->dz()[i.zm()]);
     }
   }
 
@@ -592,15 +592,15 @@ Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
 
   BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
     // Y velocities on y boundaries
-    const BoutReal vU = 0.25 * (vy[i] + vy[i.yp()]) * (coord->J[i] + coord->J[i.yp()]);
-    const BoutReal vD = 0.25 * (vy[i] + vy[i.ym()]) * (coord->J[i] + coord->J[i.ym()]);
+    const BoutReal vU = 0.25 * (vy[i] + vy[i.yp()]) * (coord->J()[i] + coord->J()[i.yp()]);
+    const BoutReal vD = 0.25 * (vy[i] + vy[i.ym()]) * (coord->J()[i] + coord->J()[i.ym()]);
 
     // n (advected quantity) on y boundaries
     // Note: Use unshifted n_in variable
     const BoutReal nU = 0.5 * (n[i] + n[i.yp()]);
     const BoutReal nD = 0.5 * (n[i] + n[i.ym()]);
 
-    yresult[i] = (nU * vU - nD * vD) / (coord->J[i] * coord->dy[i]);
+    yresult[i] = (nU * vU - nD * vD) / (coord->J()[i] * coord->dy()[i]);
   }
   return result + fromFieldAligned(yresult, "RGN_NOBNDRY");
 }
@@ -823,9 +823,9 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
     ASSERT1(f_in.hasParallelSlices());
     ASSERT1(v_in.hasParallelSlices());
 
-    const auto& B = coord->Bxy;
-    const auto& B_up = coord->Bxy.yup();
-    const auto& B_down = coord->Bxy.ydown();
+    const auto& B = coord->Bxy();
+    const auto& B_up = coord->Bxy().yup();
+    const auto& B_down = coord->Bxy().ydown();
 
     const auto& f_up = f_in.yup();
     const auto& f_down = f_in.ydown();
@@ -833,8 +833,8 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
     const auto& v_up = v_in.yup();
     const auto& v_down = v_in.ydown();
 
-    const auto& g_22 = coord->g_22;
-    const auto& dy = coord->dy;
+    const auto& g_22 = coord->g_22();
+    const auto& dy = coord->dy();
 
     Field3D result{emptyFrom(f_in)};
     BOUT_FOR(i, f_in.getRegion("RGN_NOBNDRY")) {
@@ -1013,9 +1013,9 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
     ASSERT1(f_in.hasParallelSlices());
     ASSERT1(v_in.hasParallelSlices());
 
-    const auto B = coord->Bxy;
-    const auto B_up = coord->Bxy.yup();
-    const auto B_down = coord->Bxy.ydown();
+    const auto B = coord->Bxy();
+    const auto B_up = coord->Bxy().yup();
+    const auto B_down = coord->Bxy().ydown();
 
     const auto& f_up = f_in.yup();
     const auto& f_down = f_in.ydown();
@@ -1023,8 +1023,8 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
     const auto& v_up = v_in.yup();
     const auto& v_down = v_in.ydown();
 
-    const auto g_22 = coord->g_22;
-    const auto dy = coord->dy;
+    const auto g_22 = coord->g_22();
+    const auto dy = coord->dy();
 
     Field3D result{emptyFrom(f_in)};
     flow_ylow = zeroFrom(f_in);
@@ -1336,10 +1336,10 @@ Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D&
   if (fci) {
     // 3D Metric, need yup/ydown fields.
     // Requires previous communication of metrics.
-    if (!coord->g23.hasParallelSlices() || !coord->g_23.hasParallelSlices()
-        || !coord->dy.hasParallelSlices() || !coord->dz.hasParallelSlices()
-        || !coord->Bxy.hasParallelSlices() || !coord->J.hasParallelSlices()) {
-      throw BoutException("metrics have no yup/down: Maybe communicate in init?");
+    if (!coord->g23().hasParallelSlices() || !coord->g_23().hasParallelSlices()
+        || !coord->dy().hasParallelSlices() || !coord->dz().hasParallelSlices()
+        || !coord->Bxy().hasParallelSlices() || !coord->J().hasParallelSlices()) {
+      throw BoutException("metrics have no yup/down!");
     }
   }
 #endif
@@ -1357,12 +1357,12 @@ Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D&
 #else
   constexpr bool metric_fci = false;
 #endif
-  const auto g23 = makeslices(metric_fci, coord->g23);
-  const auto g_23 = makeslices(metric_fci, coord->g_23);
-  const auto J = makeslices(metric_fci, coord->J);
-  const auto dy = makeslices(metric_fci, coord->dy);
-  const auto dz = makeslices(metric_fci, coord->dz);
-  const auto Bxy = makeslices(metric_fci, coord->Bxy);
+  const auto g23 = makeslices(metric_fci, coord->g23());
+  const auto g_23 = makeslices(metric_fci, coord->g_23());
+  const auto J = makeslices(metric_fci, coord->J());
+  const auto dy = makeslices(metric_fci, coord->dy());
+  const auto dz = makeslices(metric_fci, coord->dz());
+  const auto Bxy = makeslices(metric_fci, coord->Bxy());
 
   // Result of the Y and Z fluxes
   Field3D yzresult(0.0, mesh);

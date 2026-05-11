@@ -403,16 +403,16 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
 LaplacePetsc::CoeffsA LaplacePetsc::Coeffs(Ind3D i) {
   const auto x = i.x();
 
-  BoutReal coef1 = coords->g11[i];      // X 2nd derivative coefficient
-  BoutReal coef2 = coords->g33[i];      // Z 2nd derivative coefficient
-  BoutReal coef3 = 2. * coords->g13[i]; // X-Z mixed derivative coefficient
+  BoutReal coef1 = coords->g11()[i];      // X 2nd derivative coefficient
+  BoutReal coef2 = coords->g33()[i];      // Z 2nd derivative coefficient
+  BoutReal coef3 = 2. * coords->g13()[i]; // X-Z mixed derivative coefficient
 
   BoutReal coef4 = 0.0;
   BoutReal coef5 = 0.0;
   // If global flag all_terms are set (true by default)
   if (all_terms) {
-    coef4 = coords->G1[i]; // X 1st derivative
-    coef5 = coords->G3[i]; // Z 1st derivative
+    coef4 = coords->G1()[i]; // X 1st derivative
+    coef5 = coords->G3()[i]; // Z 1st derivative
 
     ASSERT3(std::isfinite(coef4));
     ASSERT3(std::isfinite(coef5));
@@ -421,14 +421,15 @@ LaplacePetsc::CoeffsA LaplacePetsc::Coeffs(Ind3D i) {
   if (nonuniform) {
     // non-uniform mesh correction
     if ((x != 0) && (x != (localmesh->LocalNx - 1))) {
-      coef4 -= 0.5 * ((coords->dx[i.xp()] - coords->dx[i.xm()]) / SQ(coords->dx[i]))
+      coef4 -= 0.5 * ((coords->dx()[i.xp()] - coords->dx()[i.xm()]) / SQ(coords->dx()[i]))
                * coef1; // BOUT-06 term
     }
   }
 
   if (localmesh->IncIntShear) {
     // d2dz2 term
-    coef2 += coords->g11[i] * coords->IntShiftTorsion[i] * coords->IntShiftTorsion[i];
+    coef2 +=
+        coords->g11()[i] * coords->IntShiftTorsion()[i] * coords->IntShiftTorsion()[i];
     // Mixed derivative
     coef3 = 0.0; // This cancels out
   }
@@ -450,19 +451,19 @@ LaplacePetsc::CoeffsA LaplacePetsc::Coeffs(Ind3D i) {
       if (fourth_order) {
         // Fourth order discretization of C in x
         ddx_C = (-C2[i.xpp()] + (8. * C2[i.xp()]) - (8. * C2[i.xm()]) + C2[i.xmm()])
-                / (12. * coords->dx[i] * (C1[i]));
+                / (12. * coords->dx()[i] * (C1[i]));
         // Fourth order discretization of C in z
         ddz_C = (-C2[i.zpp()] + (8. * C2[i.zp()]) - (8. * C2[i.zm()]) + C2[i.zmm()])
-                / (12. * coords->dz[i] * (C1[i]));
+                / (12. * coords->dz()[i] * (C1[i]));
       } else {
         // Second order discretization of C in x
-        ddx_C = (C2[i.xp()] - C2[i.xm()]) / (2. * coords->dx[i] * (C1[i]));
+        ddx_C = (C2[i.xp()] - C2[i.xm()]) / (2. * coords->dx()[i] * (C1[i]));
         // Second order discretization of C in z
-        ddz_C = (C2[i.zp()] - C2[i.zm()]) / (2. * coords->dz[i] * (C1[i]));
+        ddz_C = (C2[i.zp()] - C2[i.zm()]) / (2. * coords->dz()[i] * (C1[i]));
       }
 
-      coef4 += (coords->g11[i] * ddx_C) + (coords->g13[i] * ddz_C);
-      coef5 += (coords->g13[i] * ddx_C) + (coords->g33[i] * ddz_C);
+      coef4 += (coords->g11()[i] * ddx_C) + (coords->g13()[i] * ddz_C);
+      coef5 += (coords->g13()[i] * ddx_C) + (coords->g33()[i] * ddz_C);
     }
   }
 
@@ -487,8 +488,8 @@ void LaplacePetsc::setSecondOrderMatrix(int y, bool inner_X_neumann,
                                         bool outer_X_neumann) {
   // Set the boundaries
   if (inner_X_neumann) {
-    const auto dx = sliceXZ(coords->dx, y);
-    const auto g11 = sliceXZ(coords->g11, y);
+    const auto dx = sliceXZ(coords->dx(), y);
+    const auto g11 = sliceXZ(coords->g11(), y);
 
     BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
       const auto factor = 1. / dx[i] / std::sqrt(g11[i]);
@@ -502,8 +503,8 @@ void LaplacePetsc::setSecondOrderMatrix(int y, bool inner_X_neumann,
     }
   }
   if (outer_X_neumann) {
-    const auto dx = sliceXZ(coords->dx, y);
-    const auto g11 = sliceXZ(coords->g11, y);
+    const auto dx = sliceXZ(coords->dx(), y);
+    const auto g11 = sliceXZ(coords->g11(), y);
 
     BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
       const auto factor = 1. / dx[i] / std::sqrt(g11[i]);
@@ -535,9 +536,9 @@ void LaplacePetsc::setSecondOrderMatrix(int y, bool inner_X_neumann,
     ASSERT3(std::isfinite(A4));
     ASSERT3(std::isfinite(A5));
 
-    const BoutReal dx = coords->dx[i];
+    const BoutReal dx = coords->dx()[i];
     const BoutReal dx2 = SQ(dx);
-    const BoutReal dz = coords->dz[i];
+    const BoutReal dz = coords->dz()[i];
     const BoutReal dz2 = SQ(dz);
     const BoutReal dxdz = dx * dz;
     operator2D(l, l) = A0 - (2.0 * ((A1 / dx2) + (A2 / dz2)));
@@ -557,8 +558,8 @@ void LaplacePetsc::setFourthOrderMatrix(int y, bool inner_X_neumann,
 
   // Set boundaries
   if (inner_X_neumann) {
-    const auto dx = sliceXZ(coords->dx, y);
-    const auto g11 = sliceXZ(coords->g11, y);
+    const auto dx = sliceXZ(coords->dx(), y);
+    const auto g11 = sliceXZ(coords->g11(), y);
 
     BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
       const auto factor = 1. / dx[i] / std::sqrt(g11[i]);
@@ -579,8 +580,8 @@ void LaplacePetsc::setFourthOrderMatrix(int y, bool inner_X_neumann,
   }
 
   if (outer_X_neumann) {
-    const auto dx = sliceXZ(coords->dx, y);
-    const auto g11 = sliceXZ(coords->g11, y);
+    const auto dx = sliceXZ(coords->dx(), y);
+    const auto g11 = sliceXZ(coords->g11(), y);
 
     BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
       const auto factor = 1. / dx[i] / std::sqrt(g11[i]);
@@ -618,9 +619,9 @@ void LaplacePetsc::setFourthOrderMatrix(int y, bool inner_X_neumann,
     ASSERT3(std::isfinite(A4));
     ASSERT3(std::isfinite(A5));
 
-    const BoutReal dx = coords->dx[i];
+    const BoutReal dx = coords->dx()[i];
     const BoutReal dx2 = SQ(dx);
-    const BoutReal dz = coords->dz[i];
+    const BoutReal dz = coords->dz()[i];
     const BoutReal dz2 = SQ(dz);
     const BoutReal dxdz = dx * dz;
 

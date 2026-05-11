@@ -319,7 +319,7 @@ private:
       result = VDDX(DDZ(p), f);
     } else {
       // Use full expression with all terms
-      result = b0xGrad_dot_Grad(p, f) / coord->Bxy;
+      result = b0xGrad_dot_Grad(p, f) / coord->Bxy();
     }
     return result;
   }
@@ -331,7 +331,7 @@ private:
       result = VDDZ(-DDX(p), f);
     } else {
       // Use full expression with all terms
-      result = b0xGrad_dot_Grad(p, f) / coord->Bxy;
+      result = b0xGrad_dot_Grad(p, f) / coord->Bxy();
     }
     return result;
   }
@@ -343,7 +343,7 @@ private:
       result = VDDX(DDZ(p), f) + VDDZ(-DDX(p), f);
     } else {
       // Use full expression with all terms
-      result = b0xGrad_dot_Grad(p, f) / coord->Bxy;
+      result = b0xGrad_dot_Grad(p, f) / coord->Bxy();
     }
     return result;
   }

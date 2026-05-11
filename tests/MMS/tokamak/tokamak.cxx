@@ -34,8 +34,8 @@ public:
     // Test bracket advection operator
     ddt(advect) = -1e-3 * bracket(drive, advect, BRACKET_ARAKAWA)
                   - 10.
-                        * (SQ(SQ(mesh->getCoordinates()->dx)) * D4DX4(advect)
-                           + SQ(SQ(mesh->getCoordinates()->dz)) * D4DZ4(advect));
+                        * (SQ(SQ(mesh->getCoordinates()->dx())) * D4DX4(advect)
+                           + SQ(SQ(mesh->getCoordinates()->dz())) * D4DZ4(advect));
 
     // Test perpendicular diffusion operator
     ddt(delp2) = 1e-5 * Delp2(delp2);

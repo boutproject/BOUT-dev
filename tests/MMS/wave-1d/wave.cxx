@@ -1,6 +1,7 @@
 #include <bout/constants.hxx>
 #include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>
+#include <bout/metric_tensor.hxx>
 #include <bout/physicsmodel.hxx>
 #include <bout/unused.hxx>
 #include <cmath>
@@ -26,26 +27,14 @@ protected:
 
     // this assumes equidistant grid
     int nguard = mesh->xstart;
-    coord->dx = Lx / (mesh->GlobalNx - 2 * nguard);
-    coord->dy = Ly / (mesh->GlobalNy - 2 * nguard);
+    coord->setDx(Lx / (mesh->GlobalNx - 2 * nguard));
+    coord->setDy(Ly / (mesh->GlobalNy - 2 * nguard));
 
     SAVE_ONCE(Lx, Ly);
 
     //set mesh
-    coord->g11 = 1.0;
-    coord->g22 = 1.0;
-    coord->g33 = 1.0;
-    coord->g12 = 0.0;
-    coord->g13 = 0.0;
-    coord->g23 = 0.0;
-
-    coord->g_11 = 1.0;
-    coord->g_22 = 1.0;
-    coord->g_33 = 1.0;
-    coord->g_12 = 0.0;
-    coord->g_13 = 0.0;
-    coord->g_23 = 0.0;
-    coord->geometry();
+    coord->setMetricTensor(ContravariantMetricTensor(1.0, 1.0, 1.0, 0.0, 0.0, 0.0),
+                           CovariantMetricTensor(1.0, 1.0, 1.0, 0.0, 0.0, 0.0));
 
     g.setLocation(CELL_XLOW); // g staggered to the left of f
 
@@ -63,8 +52,8 @@ protected:
     g.applyBoundary(t);
 
     // Central differencing
-    ddt(f) = DDX(g, CELL_CENTRE); // + 20*SQ(coord->dx)*D2DX2(f);
-    ddt(g) = DDX(f, CELL_XLOW);   // + 20*SQ(coord->dx)*D2DX2(g);
+    ddt(f) = DDX(g, CELL_CENTRE); // + 20*SQ(coord->dx())*D2DX2(f);
+    ddt(g) = DDX(f, CELL_XLOW);   // + 20*SQ(coord->dx())*D2DX2(g);
 
     return 0;
   }

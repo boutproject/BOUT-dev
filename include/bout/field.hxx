@@ -134,12 +134,15 @@ public:
   virtual void setRegion([[maybe_unused]] std::optional<size_t> regionID) {}
   virtual void setRegion([[maybe_unused]] const std::string& region_name) {}
   virtual void resetRegion() {}
+  virtual void resetRegionParallel([[maybe_unused]] bool force) {};
   virtual std::optional<size_t> getRegionID() const { return {}; }
   virtual bool hasParallelSlices() const { return true; }
   virtual void calcParallelSlices() {}
   virtual void splitParallelSlices() {}
   virtual void clearParallelSlices() {}
   virtual size_t numberParallelSlices() const { return 0; }
+  virtual bool areCalcParallelSlicesAllowed() const { return false; }
+  virtual void disallowCalcParallelSlices() {}
 
 private:
   /// Labels for the type of coordinate system this field is defined over

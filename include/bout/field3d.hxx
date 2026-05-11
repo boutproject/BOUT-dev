@@ -355,7 +355,7 @@ public:
   const Region<Ind3D>& getValidRegionWithDefault(const std::string& region_name) const;
   void setRegion(const std::string& region_name) override;
   void resetRegion() override { regionID.reset(); };
-  void resetRegionParallel(bool force = false);
+  void resetRegionParallel(bool force = false) override;
   void setRegion(size_t id) override { regionID = id; };
   void setRegion(std::optional<size_t> id) override { regionID = id; };
   std::optional<size_t> getRegionID() const override { return regionID; };
@@ -601,6 +601,8 @@ public:
   friend class Vector2D;
 
   void calcParallelSlices() override;
+  bool areCalcParallelSlicesAllowed() const override { return _allowCalcParallelSlices; };
+  void disallowCalcParallelSlices() override { _allowCalcParallelSlices = false; };
 
   void applyBoundary(bool init = false) override;
   void applyBoundary(BoutReal t);
@@ -632,9 +634,6 @@ public:
   int size() const override { return nx * ny * nz; };
 
   std::weak_ptr<Options> getTracking() { return tracking; };
-
-  bool areCalcParallelSlicesAllowed() const { return _allowCalcParallelSlices; };
-  void disallowCalcParallelSlices() { _allowCalcParallelSlices = false; };
 
   inline Field3DParallel asField3DParallel();
   inline Field3DParallel asField3DParallel() const;
