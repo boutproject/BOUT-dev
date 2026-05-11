@@ -23,9 +23,7 @@ def run_case(shift_type, variable):
     v, v_check = variable
     print("Testing %s and %s ... " % (v, v_check))
     ddy = collect(v, path="data", xguards=False, yguards=False, info=False)
-    ddy_check = collect(
-        v_check, path="data", xguards=False, yguards=False, info=False
-    )
+    ddy_check = collect(v_check, path="data", xguards=False, yguards=False, info=False)
 
     diff = max(abs(ddy - ddy_check))
 

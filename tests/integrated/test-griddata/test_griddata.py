@@ -39,6 +39,8 @@ def test_griddata():
         dr = float(rwidth) / nx
 
         # Test value of dx
-        npt.assert_allclose(dx, dr * Bpxy * Rxy, atol=1e-7, err_msg="Failed: dx does not match")
+        npt.assert_allclose(
+            dx, dr * Bpxy * Rxy, atol=1e-7, err_msg="Failed: dx does not match"
+        )
 
         print("Passed")

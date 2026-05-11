@@ -5,6 +5,7 @@
 
 from boutpp import *
 
+
 def test_boutpp_simple_model(run_isolated):
 
     if run_isolated():

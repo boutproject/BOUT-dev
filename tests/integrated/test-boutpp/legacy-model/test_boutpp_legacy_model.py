@@ -14,12 +14,10 @@ def test_boutpp_legacy_model(run_isolated):
 
     dens = boutpp.create3D("0")
 
-
     def rhs(time):
         n_ddt = dens.ddt()
         n_ddt[:, :, :] = dens * 0
         n_ddt += 1
-
 
     model = boutpp.PhysicsModelBase()
     model.setRhs(rhs)

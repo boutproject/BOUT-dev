@@ -46,10 +46,8 @@ def test_interpolate_z():
         for nx in nxlist:
             dx = 1.0 / (nx)
 
-            args = (
-                " mesh:nx={nx4} mesh:dx={dx} MZ={nx} zinterpolation:type={method}".format(
-                    nx4=nx + 4, dx=dx, nx=nx, method=method
-                )
+            args = " mesh:nx={nx4} mesh:dx={dx} MZ={nx} zinterpolation:type={method}".format(
+                nx4=nx + 4, dx=dx, nx=nx, method=method
             )
 
             cmd = "./test_interpolate" + args
@@ -62,7 +60,9 @@ def test_interpolate_z():
 
             # Collect output data
             for var in varlist:
-                interp = collect(var + "_interp", path="data", xguards=False, info=False)
+                interp = collect(
+                    var + "_interp", path="data", xguards=False, info=False
+                )
                 solution = collect(
                     var + "_solution", path="data", xguards=False, info=False
                 )

@@ -7,8 +7,11 @@ import subprocess
 @pytest.fixture(autouse=True, scope="function")
 def unique_xdist_group(request):
     # Unique group per test function (nodeid is unique, e.g., test_file.py::test_func)
-    group_name = f"boutpp_isolated_{request.node.nodeid.replace('/', '_').replace('::', '_')}"
+    group_name = (
+        f"boutpp_isolated_{request.node.nodeid.replace('/', '_').replace('::', '_')}"
+    )
     request.node.add_marker(pytest.mark.xdist_group(name=group_name))
+
 
 @pytest.fixture(scope="function")
 def run_isolated(request):
@@ -35,12 +38,18 @@ def run_isolated(request):
     # Use -o to disable the cache entirely in the subprocess
     # Remove -c /dev/null so it stays in the project context
     cmd = [
-        sys.executable, "-m", "pytest",
+        sys.executable,
+        "-m",
+        "pytest",
         nodeid,
-        "--rootdir", root_dir,
-        "-p", "no:xdist",
-        "-o", "cache_dir=/tmp/pytest-cache", # Redirect cache to a writable place
-        "-c", str(request.config.inifile or root_dir) # Point to actual config if it exists
+        "--rootdir",
+        root_dir,
+        "-p",
+        "no:xdist",
+        "-o",
+        "cache_dir=/tmp/pytest-cache",  # Redirect cache to a writable place
+        "-c",
+        str(request.config.inifile or root_dir),  # Point to actual config if it exists
     ]
 
     result = subprocess.run(cmd, env=env, cwd=root_dir, capture_output=True, text=True)
@@ -50,11 +59,12 @@ def run_isolated(request):
             f"Isolated test failed with exit code {result.returncode}\n"
             f"--- STDERR ---\n{result.stderr}\n"
             f"--- STDOUT ---\n{result.stdout}",
-            pytrace=False
+            pytrace=False,
         )
 
     # Return True so the parent can exit the test cleanly without skipping.
     return lambda: True
+
 
 @pytest.fixture(autouse=True)
 def sanitize_openmpi_env():
@@ -68,12 +78,11 @@ def sanitize_openmpi_env():
     bad_exact = (
         "OMPI_COMM_WORLD_SIZE",
         "OMPI_COMM_WORLD_RANK",
-        "OMPI_COMM_WORLD_LOCAL_RANK"
+        "OMPI_COMM_WORLD_LOCAL_RANK",
     )
 
     mpi_vars_to_remove = [
-        k for k in os.environ
-        if k.startswith(bad_prefixes) or k in bad_exact
+        k for k in os.environ if k.startswith(bad_prefixes) or k in bad_exact
     ]
 
     # Save original variables
@@ -83,7 +92,7 @@ def sanitize_openmpi_env():
     for k in mpi_vars_to_remove:
         del os.environ[k]
 
-    yield # Run the test
+    yield  # Run the test
 
     # Restore the environment after the test finishes
     os.environ.update(saved_env)

@@ -36,6 +36,7 @@ argslist = [
     "f:bndry_xin=neumann f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann b:function=.1",
 ]
 
+
 def test_laplacexy_fv():
 
     print("Running LaplaceXY inversion test")

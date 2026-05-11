@@ -5,6 +5,7 @@ import boutpp as bc
 # requires boutpp
 # requires not make
 
+
 def test_boutpp_collect_staggered(run_isolated):
 
     if run_isolated():
@@ -20,7 +21,6 @@ def test_boutpp_collect_staggered(run_isolated):
     dump["f3d_once"] = f
     bc.writeDefaultOutputFile(dump)
 
-
     fc = bc.create3D("sin(y)", outloc="CENTRE")
 
     fe = bc.Field3D.fromCollect("f3d_evolve", path="data", info=False)
@@ -34,12 +34,10 @@ def test_boutpp_collect_staggered(run_isolated):
         print("The loaded field should not be at CELL_CENTRE")
         fail = 1
 
-
     def compare(a, b):
         diff = a - bc.interp_to(b, a.getLocation())
         err = bc.max(bc.sqrt(diff * diff))
         return err
-
 
     if compare(fc, f) > 1e-3:
         print("Something is wrong. Maybe interpolation is broken")

@@ -6,6 +6,7 @@ import numpy.testing as npt
 import boutpp as bc
 import inspect
 
+
 def test_slicing():
 
     bc.init("-d test")
@@ -47,6 +48,7 @@ def test_slicing():
         nout = ex(ndat)
         fout = ex(field)
         npt.assert_allclose(
-            fout, nout,
-            err_msg=f"data mismatch, {{ fout == nout }}. Failed to test {inspect.getsource(ex)}"
+            fout,
+            nout,
+            err_msg=f"data mismatch, {{ fout == nout }}. Failed to test {inspect.getsource(ex)}",
         )

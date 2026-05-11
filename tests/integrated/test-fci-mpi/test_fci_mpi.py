@@ -29,7 +29,6 @@ def test_fci_mpi():
         with open(f"run.log.{nxpe}.{nype}.{nslice}.log", "w") as f:
             f.write(out)
 
-
     def test_case(nxpe: int, nype: int, mthread: int, ref: dict) -> bool:
         run_case(nxpe, nype, mthread)
 
@@ -42,7 +41,6 @@ def test_fci_mpi():
                 failures.append((nxpe, nype, name, e))
 
         return failures
-
 
     failures = []
 
@@ -68,7 +66,6 @@ def test_fci_mpi():
             mthread = MAXCORES // (nxpe * nype)
             failures_ = test_case(nxpe, nype, mthread, ref)
             failures.extend(failures_)
-
 
     success = len(failures) == 0
 

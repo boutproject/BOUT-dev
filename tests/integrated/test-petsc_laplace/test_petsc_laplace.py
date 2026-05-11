@@ -23,8 +23,8 @@ errors = [
 ]
 tol = 2e-4  # Absolute (?) tolerance
 
-def test_petsc_laplace():
 
+def test_petsc_laplace():
 
     print("Running PETSc Laplacian inversion test")
     success = True

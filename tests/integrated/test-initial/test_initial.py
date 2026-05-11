@@ -64,7 +64,7 @@ def gauss(x, width=1.0):
     """
     Normalised gaussian
     """
-    return np.exp(-(x ** 2) / (2 * width ** 2)) / np.sqrt(2 * np.pi)
+    return np.exp(-(x**2) / (2 * width**2)) / np.sqrt(2 * np.pi)
 
 
 def mixmode(x, seed=0.5):
@@ -90,8 +90,8 @@ def tanhhat(x, width, centre, steepness):
     BOUT++ TanhHat function
     """
     return 0.5 * (
-            np.tanh(steepness * (x - (centre - width / 2.0)))
-            + np.tanh(-steepness * (x - (centre + width / 2.0)))
+        np.tanh(steepness * (x - (centre - width / 2.0)))
+        + np.tanh(-steepness * (x - (centre + width / 2.0)))
     )
 
 
@@ -207,7 +207,9 @@ def test_initial():
             except NotImplementedError as err:
                 print("{} not implemented, skipping".format(err.args[0]))
             else:
-                data = collect(var, xguards=True, yguards=True, path=datadir, info=False)
+                data = collect(
+                    var, xguards=True, yguards=True, path=datadir, info=False
+                )
                 E2 = np.sqrt(np.mean((analytic - data) ** 2))
                 if E2 < tolerance:
                     success_string = "PASS"

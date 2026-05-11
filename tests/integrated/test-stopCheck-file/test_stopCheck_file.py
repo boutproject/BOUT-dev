@@ -9,6 +9,7 @@ from boutdata.collect import collect
 
 nproc = 1
 
+
 def test_stopCheck_file():
 
     check_values = [True, False]

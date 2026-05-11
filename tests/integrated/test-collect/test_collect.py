@@ -10,7 +10,6 @@ import numpy.testing as npt
 
 def test_collect():
 
-
     shell_safe("./test-collect")
 
     # Try collecting data using incorrect case

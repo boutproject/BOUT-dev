@@ -28,7 +28,7 @@ def test_twistshift():
     def test1(ylower, yupper):
         global success
         if numpy.any(
-                numpy.abs(test_aligned[:, yupper, :] - test_aligned[:, ylower, :]) < 1.0e-6
+            numpy.abs(test_aligned[:, yupper, :] - test_aligned[:, ylower, :]) < 1.0e-6
         ):
             success = False
             print(
@@ -45,9 +45,10 @@ def test_twistshift():
 
     # Check test and result are the same
     if numpy.any(numpy.abs(result - test) > tol):
-        print("Fail - result has not been communicated correctly - is different from input")
+        print(
+            "Fail - result has not been communicated correctly - is different from input"
+        )
         success = False
-
 
     # Check result is periodic in y
     def test2(ylower, yupper):

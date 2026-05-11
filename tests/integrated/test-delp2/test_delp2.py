@@ -31,7 +31,7 @@ def test_delp2(setting):
     cmd = exefile + " " + setting
 
     s, out = launch_safe(cmd, nproc=1, pipe=True)
-    file_suffix = '.'.join([x.split('=')[-1] for x in setting.split()])
+    file_suffix = ".".join([x.split("=")[-1] for x in setting.split()])
     with open("run.log." + str(file_suffix) + ".1", "w") as f:
         f.write(out)
 

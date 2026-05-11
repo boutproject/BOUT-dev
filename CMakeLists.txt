@@ -766,7 +766,8 @@ if(BOUT_TESTS)
     add_dependencies(check-unit-tests build-check-unit-tests)
   endif()
 
-  add_custom_target(check-integrated-tests
+  add_custom_target(
+    check-integrated-tests
     COMMAND bash "${PROJECT_BINARY_DIR}/tests/run_integrated_tests.sh"
   )
   add_dependencies(check-integrated-tests build-check-integrated-tests)
@@ -784,23 +785,26 @@ if(BOUT_TESTS)
   # Copy the pytest config file
   configure_file(
     "${PROJECT_SOURCE_DIR}/tests/conftest.py"
-    "${PROJECT_BINARY_DIR}/tests/conftest.py")
+    "${PROJECT_BINARY_DIR}/tests/conftest.py"
+  )
 
   # Copy the pyproject.toml file
   configure_file(
     "${PROJECT_SOURCE_DIR}/pyproject.toml"
-    "${PROJECT_BINARY_DIR}/pyproject.toml")
+    "${PROJECT_BINARY_DIR}/pyproject.toml"
+  )
 
   # Copy the pytest config file for the boutpp tests
   configure_file(
     "${PROJECT_SOURCE_DIR}/tests/integrated/test-boutpp/conftest.py"
-    "${PROJECT_BINARY_DIR}/tests/integrated/test-boutpp/conftest.py")
+    "${PROJECT_BINARY_DIR}/tests/integrated/test-boutpp/conftest.py"
+  )
 
   # Copy the pytest shell script
-configure_file(
-  "${PROJECT_SOURCE_DIR}/tests/run_integrated_tests.sh"
-  "${PROJECT_BINARY_DIR}/tests/run_integrated_tests.sh"
-  @ONLY)
+  configure_file(
+    "${PROJECT_SOURCE_DIR}/tests/run_integrated_tests.sh"
+    "${PROJECT_BINARY_DIR}/tests/run_integrated_tests.sh" @ONLY
+  )
 
 endif()
 

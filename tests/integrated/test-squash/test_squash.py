@@ -82,7 +82,10 @@ def verify(f1, f2):
 def test_squash():
     parser = argparse.ArgumentParser(description="Test the bout-squashoutput wrapper")
     parser.add_argument(
-        "executable", help="Path to bout-squashoutput", default="../../../bin", nargs="?"
+        "executable",
+        help="Path to bout-squashoutput",
+        default="../../../bin",
+        nargs="?",
     )
     args = parser.parse_args()
 
@@ -115,7 +118,9 @@ def test_squash():
     timed_shell_safe("rm -f f2.nc")
     timed_launch_safe("./squash -q -q -q", nproc=4, mthread=1)
     timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))
-    timed_launch_safe("./squash -q -q -q restart dump_on_restart=false", nproc=4, mthread=1)
+    timed_launch_safe(
+        "./squash -q -q -q restart dump_on_restart=false", nproc=4, mthread=1
+    )
     timed_shell_safe("{} -qdcal 9 data --outputname ../f2.nc".format(bout_squashoutput))
 
     verify("f1.nc", "f2.nc")

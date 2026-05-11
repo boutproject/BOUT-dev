@@ -16,8 +16,12 @@ def test_backtrace():
 
     _, output = shell(["BOUT_SHOW_BACKTRACE=0 ./boutexcept"], pipe=True)
 
-    assert "troublemaker" not in output, f"Fail: detected offending function name in output when not expected\n{output}"
+    assert "troublemaker" not in output, (
+        f"Fail: detected offending function name in output when not expected\n{output}"
+    )
 
     _, output = shell(["./boutexcept"], pipe=True)
 
-    assert "troublemaker" in output, f"Fail: did not detect offending function name in output when expected\n{output}"
+    assert "troublemaker" in output, (
+        f"Fail: did not detect offending function name in output when expected\n{output}"
+    )

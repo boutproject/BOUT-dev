@@ -34,6 +34,7 @@ vars = [
 ]
 tol = 1e-6  # Absolute tolerance
 
+
 def test_laplace():
 
     # Read benchmark values
@@ -81,7 +82,10 @@ def test_laplace():
                     # Compare benchmark and output
                     try:
                         npt.assert_allclose(
-                            result, bmk[v.replace("_perp", "")][:, 0, :], atol=tol, rtol=tol
+                            result,
+                            bmk[v.replace("_perp", "")][:, 0, :],
+                            atol=tol,
+                            rtol=tol,
                         )
                         print("Pass")
                     except AssertionError as e:

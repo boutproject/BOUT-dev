@@ -20,6 +20,7 @@ nz = 4
 mxg = 2
 myg = 2
 
+
 def test_restart_io():
 
     x = numpy.linspace(0.0, 1.0, nx + 2 * mxg)[:, numpy.newaxis, numpy.newaxis]
@@ -80,7 +81,9 @@ def test_restart_io():
         run_restart_from = numpy.array(
             list("36 character run_restart_from string"), dtype="S1"
         )
-        run_restart_from = BoutArray(run_restart_from, attributes={"bout_type": "string"})
+        run_restart_from = BoutArray(
+            run_restart_from, attributes={"bout_type": "string"}
+        )
         base_restart.write("run_restart_from", run_restart_from)
 
     success = True
@@ -114,7 +117,9 @@ def test_restart_io():
 
             if not numpy.allclose(testvar, result):
                 success = False
-                print(f"{name}_once is different: {numpy.max(numpy.abs(testvar - result))}")
+                print(
+                    f"{name}_once is different: {numpy.max(numpy.abs(testvar - result))}"
+                )
                 # Don't plot anything by default
                 if False:
                     from boututils.showdata import showdata

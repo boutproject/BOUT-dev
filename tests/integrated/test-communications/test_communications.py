@@ -14,9 +14,10 @@ from boututils.run_wrapper import shell, launch_safe
 
 def run_test(actual, expected, procnum, region, boundary):
     npt.assert_allclose(
-        np.array(np.rint(actual).astype(int)), np.array(expected),
+        np.array(np.rint(actual).astype(int)),
+        np.array(expected),
         err_msg=f"failed in {boundary} boundary of region {procnum} ({region}). "
-                f"Expected: {expected}  Actual: {actual}"
+        f"Expected: {expected}  Actual: {actual}",
     )
 
 
@@ -330,7 +331,6 @@ def test_communications():
     run_test(f[-1, 1:-1], [94, 95], 0, region, "outer x")
     run_test(f[:, 0], [73, 1, 13, 33, 45, 57, 69, 93], 0, region, "lower y")
     run_test(f[:, -1], [104, 105, 106, 107, 108, 109, 110, 111], 0, region, "upper y")
-
 
     #################################################
     # Test limiter topology

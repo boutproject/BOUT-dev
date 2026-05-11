@@ -13,9 +13,13 @@ from boutdata.collect import collect
 
 
 if not os.path.exists(os.path.join(os.path.dirname(__file__), "grid.fci.nc")):
-    pytest.skip("grid.fci.nc not found (Zoidberg likely missing), skipping test.", allow_module_level=True)
+    pytest.skip(
+        "grid.fci.nc not found (Zoidberg likely missing), skipping test.",
+        allow_module_level=True,
+    )
 
 directory = "data"
+
 
 def test_fci_boundary():
 
@@ -55,9 +59,8 @@ def test_fci_boundary():
                 xguards=False,
                 yguards=False,
             )
-            npt.assert_allclose(data, v,
-                                err_msg=(f"{k} does not match",
-                                         np.sum(data),
-                                         np.sum(v),
-                                         np.max(data))
-                                )
+            npt.assert_allclose(
+                data,
+                v,
+                err_msg=(f"{k} does not match", np.sum(data), np.sum(v), np.max(data)),
+            )

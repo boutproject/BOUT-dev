@@ -10,6 +10,7 @@ import platform
 
 OUTPUT_FILE = Path("stdout.log") if platform.system() == "FreeBSD" else "stderr.log"
 
+
 class TestCommandLineArgs(unittest.TestCase):
     command = "./command-args >stdout.log 2>stderr.log"
 

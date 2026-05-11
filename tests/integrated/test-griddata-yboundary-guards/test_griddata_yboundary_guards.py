@@ -10,6 +10,7 @@ from sys import stdout
 # Cores: 6
 # Requires: netcdf
 
+
 def test_griddata_yboundary_guards():
 
     nx = 4
@@ -119,7 +120,6 @@ def test_griddata_yboundary_guards():
             gridfile.createVariable("test", float, ("x", "y"))
             gridfile["test"][...] = testdata
 
-
     for nproc in [6]:
         stdout.write("Checking %d processors ... " % (nproc))
 
@@ -131,7 +131,9 @@ def test_griddata_yboundary_guards():
         for n_yguards in [0, 1, 2]:
             datadir = "data-doublenull-" + str(n_yguards)
 
-            s, out = launch_safe("./test_griddata -d " + datadir, nproc=nproc, pipe=True)
+            s, out = launch_safe(
+                "./test_griddata -d " + datadir, nproc=nproc, pipe=True
+            )
 
             with open("run.log.doublenull." + str(nproc), "a") as f:
                 f.write(out)
@@ -167,7 +169,9 @@ def test_griddata_yboundary_guards():
         for n_yguards in [0, 1, 2]:
             datadir = "data-singlenull-" + str(n_yguards)
 
-            s, out = launch_safe("./test_griddata -d " + datadir, nproc=nproc, pipe=True)
+            s, out = launch_safe(
+                "./test_griddata -d " + datadir, nproc=nproc, pipe=True
+            )
 
             with open("run.log.singlenull." + str(nproc), "a") as f:
                 f.write(out)

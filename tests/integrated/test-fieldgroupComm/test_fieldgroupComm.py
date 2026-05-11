@@ -21,6 +21,7 @@ from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 from numpy import abs, seterr
 
+
 def test_fieldgroupcomm():
 
     # Good chance we'll do 0.0/0.0, which generates a warning
@@ -62,7 +63,9 @@ def test_fieldgroupcomm():
 
         for i, e in enumerate(err):
             if e > tol:
-                print("Fail, in {i}th comparison relative error is {re}".format(i=i, re=e))
+                print(
+                    "Fail, in {i}th comparison relative error is {re}".format(i=i, re=e)
+                )
                 success = False
 
     assert success, " => Some failed tests"

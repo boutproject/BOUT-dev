@@ -99,7 +99,7 @@ def run_zeff_case(zeff):
     # Calculate geometric and physical quantities
     lZeta = 1e2 * zmax * 2 * np.pi * grid["R0"]  # toroidal range [cm]
     lbNorm = lZeta * (
-            grid["Bpxy"][0, ny // 2] / grid["Bxy"][0, ny // 2]
+        grid["Bpxy"][0, ny // 2] / grid["Bxy"][0, ny // 2]
     )  # binormal coord range [cm]
 
     vTe = 4.2e7 * np.sqrt(grid["Te_x"])  # electron thermal speed [cm/s]
@@ -122,7 +122,7 @@ def run_zeff_case(zeff):
     # wci=9.58e3*(1./d.AA)*1e4*du.Bmag
 
     lpar = (
-            np.sum(((grid["Bxy"] / grid["Bpxy"])) * grid["dlthe"]) / grid["nx"]
+        np.sum((grid["Bxy"] / grid["Bpxy"]) * grid["dlthe"]) / grid["nx"]
     )  # [m], average over flux surfaces
     kpar = 2 * np.pi / (1e2 * lpar)  # cm-1
     spar = (kpar / kperp) ** 2 * wci * wce / (0.51 * nuei)  # [1/s]
@@ -155,12 +155,12 @@ def run_zeff_case(zeff):
         # Increasing; watch for wrapping around the top
         for i in range(nt - nt0):
             if peak[i] < peak[i - 1]:
-                peak[i: (nt - nt0)] = peak[i: (nt - nt0)] + nz
+                peak[i : (nt - nt0)] = peak[i : (nt - nt0)] + nz
     else:
         # Decreasing; watch for wrapping around the bottom
         for i in range(nt - nt0):
             if peak[i] > peak[i - 1]:
-                peak[i: (nt - nt0)] = peak[i: (nt - nt0)] - nz
+                peak[i : (nt - nt0)] = peak[i : (nt - nt0)] - nz
 
     # Fit y = a + gamma*x
     a, gamma = linear_regression(t_array[nt0:nt] / wci, np.log(maxVal))
@@ -173,7 +173,7 @@ def run_zeff_case(zeff):
     gamma = gamma / wstar
 
     # Calculate analytic result
-    t = 0.5 * (np.sqrt(sparn ** 4 + 16 * sparn ** 2) - sparn ** 2)
+    t = 0.5 * (np.sqrt(sparn**4 + 16 * sparn**2) - sparn**2)
     wr = 0.5 * np.sqrt(t)
     wi = sparn / np.sqrt(t) - 0.5 * sparn
 
@@ -201,4 +201,6 @@ def test_zeff_case(zeff):
     """Pytest wrapper for running a single Zeff case."""
     success, omegadiff, gammadiff = run_zeff_case(zeff)
 
-    assert success, f"Test failed for Zeff={zeff}: omega diff={omegadiff:.2%}, gamma diff={gammadiff:.2%}"
+    assert success, (
+        f"Test failed for Zeff={zeff}: omega diff={omegadiff:.2%}, gamma diff={gammadiff:.2%}"
+    )

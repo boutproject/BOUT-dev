@@ -11,6 +11,7 @@ from boutdata.data import BoutOptionsFile
 import math
 import numpy.testing as npt
 
+
 def test_options_netcdf():
 
     shell(["rm -f test-out.ini"])

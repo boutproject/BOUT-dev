@@ -69,6 +69,8 @@ def test_datafile_facade():
         print("=> All DataFileFacade tests passed")
         # clean up binary files
         shell(
-            ["rm -f data/BOUT.dmp.*.nc data/BOUT.restart.*.nc data/restart/BOUT.restart.0.nc"]
+            [
+                "rm -f data/BOUT.dmp.*.nc data/BOUT.restart.*.nc data/restart/BOUT.restart.0.nc"
+            ]
         )
     assert success, f"=> Some failed tests"

@@ -7,7 +7,6 @@ from boututils.run_wrapper import launch_safe
 import numpy.testing as npt
 
 
-
 def test_slepc_solver():
 
     print("Running SLEPc eigen solver test")
@@ -20,5 +19,8 @@ def test_slepc_solver():
 
     expected_eigenvalues = [0.0, 1.0]
 
-    npt.assert_allclose(expected_eigenvalues, eigenvalues,
-                        err_msg=" => SLEPc test failed\nEigenvalues: {eigenvalues}")
+    npt.assert_allclose(
+        expected_eigenvalues,
+        eigenvalues,
+        err_msg=" => SLEPc test failed\nEigenvalues: {eigenvalues}",
+    )

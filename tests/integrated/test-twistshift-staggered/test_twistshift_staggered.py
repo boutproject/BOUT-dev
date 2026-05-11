@@ -8,6 +8,7 @@ datapath = "data"
 nproc = 1
 tol = 1.0e-13
 
+
 def test_twistshift_staggered():
 
     s, out = launch_safe("./test-twistshift", nproc=nproc, pipe=True)
@@ -23,7 +24,6 @@ def test_twistshift_staggered():
 
     success = True
 
-
     # Check test_aligned is *not* periodic in y
     def test1(ylower, yupper):
         global success
@@ -35,7 +35,6 @@ def test_twistshift_staggered():
                 "Fail - test_aligned should not be periodic jy=%i and jy=%i should be "
                 "different" % (yupper, ylower)
             )
-
 
     test1(0, -4)
     test1(1, -3)

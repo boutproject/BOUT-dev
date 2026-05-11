@@ -4,6 +4,7 @@
 
 from boututils.run_wrapper import launch_safe
 
+
 def test_vec():
 
     status, out = launch_safe("./testVec", nproc=4, pipe=True)

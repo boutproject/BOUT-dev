@@ -6,6 +6,7 @@ from sys import stdout
 
 from numpy import max, abs
 
+
 def test_yupdown_weights():
 
     failed = False

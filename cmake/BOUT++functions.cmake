@@ -172,7 +172,9 @@ endfunction()
 #
 function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
   set(options USE_RUNTEST USE_DATA_BOUT_INP)
-  set(oneValueArgs EXECUTABLE_NAME PROCESSORS DOWNLOAD DOWNLOAD_NAME PYTHON_TEST_FILE)
+  set(oneValueArgs EXECUTABLE_NAME PROCESSORS DOWNLOAD DOWNLOAD_NAME
+                   PYTHON_TEST_FILE
+  )
   set(multiValueArgs SOURCES EXTRA_FILES REQUIRES CONFLICTS TESTARGS
                      EXTRA_DEPENDS
   )
@@ -256,7 +258,10 @@ function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
   if(BOUT_TEST_OPTIONS_USE_RUNTEST)
     if(BOUT_TEST_OPTIONS_PYTHON_TEST_FILE)
       # It's an integrated test with a specific python file
-      add_test(NAME ${TESTNAME} COMMAND pytest ${BOUT_TEST_OPTIONS_PYTHON_TEST_FILE} ${BOUT_TEST_OPTIONS_TESTARGS})
+      add_test(NAME ${TESTNAME}
+               COMMAND pytest ${BOUT_TEST_OPTIONS_PYTHON_TEST_FILE}
+                       ${BOUT_TEST_OPTIONS_TESTARGS}
+      )
     else()
       # It's an MMS test still using the 'runtest' script
       add_test(NAME ${TESTNAME} COMMAND ./runtest ${BOUT_TEST_OPTIONS_TESTARGS})
@@ -270,7 +275,7 @@ function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
     add_test(NAME ${TESTNAME} COMMAND ${TESTNAME} ${BOUT_TEST_OPTIONS_TESTARGS})
   endif()
 
-  if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/runtest)
+  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/runtest)
     bout_copy_file(runtest)
   endif()
 
@@ -295,12 +300,15 @@ endfunction()
 # Add a new integrated test. See `bout_add_integrated_or_mms_test` for arguments
 function(bout_add_integrated_test TESTNAME)
   # Construct the Python test filename
-  string(REGEX REPLACE "^(test-)?(.+)$" "test_\\2.py" TEST_FILENAME "${TESTNAME}")
+  string(REGEX REPLACE "^(test-)?(.+)$" "test_\\2.py" TEST_FILENAME
+                       "${TESTNAME}"
+  )
   string(REPLACE "-" "_" TEST_FILENAME "${TEST_FILENAME}")
   string(REPLACE "test_test_" "test_" TEST_FILENAME "${TEST_FILENAME}")
 
   bout_add_integrated_or_mms_test(
-    build-check-integrated-tests ${TESTNAME} PYTHON_TEST_FILE ${TEST_FILENAME} ${ARGV}
+    build-check-integrated-tests ${TESTNAME} PYTHON_TEST_FILE ${TEST_FILENAME}
+    ${ARGV}
   )
 
   # Only copy the file if the test wasn't skipped due to missing requirements
