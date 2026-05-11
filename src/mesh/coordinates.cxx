@@ -9,25 +9,39 @@
 #include <bout/assert.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/build_config.hxx>
 #include <bout/build_defines.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
+#include <bout/dcomplex.hxx>
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
-#include <bout/field.hxx>
+#include <bout/field2d.hxx>
 #include <bout/globals.hxx>
+#include <bout/index_derivs_interface.hxx>
 #include <bout/interpolation.hxx>
+#include <bout/openmpwrap.hxx>
+#include <bout/options.hxx>
 #include <bout/output.hxx>
 #include <bout/output_bout_types.hxx>
 #include <bout/paralleltransform.hxx>
 #include <bout/region.hxx>
+#include <bout/sys/gettext.hxx>
 #include <bout/sys/timer.hxx>
+#include <bout/traits.hxx>
+#include <bout/unused.hxx>
 #include <bout/utils.hxx>
 #include <bout/yboundary_regions.hxx>
 
+#include <algorithm>
 #include <cmath>
+#include <cstdlib>
+#include <iterator>
 #include <memory>
 #include <string>
+#include <utility>
+
+#include <fmt/format.h>
 
 #include "invert3x3.hxx"
 #include "parallel/fci.hxx"
