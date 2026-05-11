@@ -9,7 +9,6 @@
 # Cores: 4
 
 from boututils.run_wrapper import shell, launch
-from boutdata.collect import collect
 
 
 flags_src = [

@@ -2,7 +2,7 @@
 
 # requires: all_tests
 
-from boututils.run_wrapper import shell, shell_safe
+from boututils.run_wrapper import shell_safe
 
 from boutdata import collect
 import numpy.testing as npt

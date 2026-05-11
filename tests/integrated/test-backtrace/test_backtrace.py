@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import pytest
+
 # Test enabling/disabling exception backtrace from environment variable
 
 # requires all_tests

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import boutpp
-import sys
 
 # requires boutpp
 # requires not make
