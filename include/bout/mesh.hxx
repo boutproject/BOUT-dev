@@ -482,7 +482,7 @@ public:
   // Boundary regions
 
   /// Return a vector containing all the boundary regions on this processor
-  virtual std::vector<BoundaryRegionBase*> getBoundaries() = 0;
+  virtual std::vector<BoundaryRegionBase*> getBoundaries() const = 0;
 
   /// Get the set of all possible boundaries in this configuration
   virtual std::set<std::string> getPossibleBoundaries() const {
