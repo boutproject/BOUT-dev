@@ -44,6 +44,7 @@
 
 #include <array>
 #include <memory>
+#include <string>
 
 class Mesh;
 class YBoundary;
@@ -380,6 +381,8 @@ private:
   void checkContravariant();
 
   mutable std::array<std::shared_ptr<YBoundary>, 3> ybndrys;
+  /// Read quantities with given suffix from `Mesh`
+  void readFromMesh(Options* options, const std::string& suffix);
 };
 
 #endif // BOUT_COORDINATES_H
