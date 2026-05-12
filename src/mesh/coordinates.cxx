@@ -486,13 +486,13 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
       output_warn.write("Not all covariant components of metric tensor found. "
                         "Calculating all from the contravariant tensor\n");
       /// Calculate contravariant metric components if not found
-      if (calcCovariant("RGN_NOCORNERS")) {
+      if (calcCovariant("RGN_NOCORNERS") != 0) {
         throw BoutException("Error in calcCovariant call");
       }
     }
   } else {
     /// Calculate contravariant metric components if not found
-    if (calcCovariant("RGN_NOCORNERS")) {
+    if (calcCovariant("RGN_NOCORNERS") != 0) {
       throw BoutException("Error in calcCovariant call");
     }
   }
@@ -513,7 +513,7 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
 
   // Attempt to read J from the grid file
   auto Jcalc = J;
-  if (localmesh->get(J, "J" + suffix, 0.0, false)) {
+  if (localmesh->get(J, "J" + suffix, 0.0, false) != 0) {
     output_warn.write(
         "\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
     J = Jcalc;
@@ -538,7 +538,7 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
 
   // Attempt to read Bxy from the grid file
   auto Bcalc = Bxy;
-  if (localmesh->get(Bxy, "Bxy" + suffix, 0.0, false)) {
+  if (localmesh->get(Bxy, "Bxy" + suffix, 0.0, false) != 0) {
     output_warn.write("\tWARNING: Magnitude of B field 'Bxy' not found. Calculating from "
                       "metric tensor\n");
     Bxy = Bcalc;
@@ -552,7 +552,7 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
   bout::checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
   bout::checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
 
-  if (localmesh->get(ShiftTorsion, "ShiftTorsion" + suffix, 0.0, false)) {
+  if (localmesh->get(ShiftTorsion, "ShiftTorsion" + suffix, 0.0, false) != 0) {
     output_warn.write(
         "\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
     ShiftTorsion = 0.0;
@@ -562,7 +562,7 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
   //////////////////////////////////////////////////////
 
   if (localmesh->IncIntShear) {
-    if (localmesh->get(IntShiftTorsion, "IntShiftTorsion", 0.0, false)) {
+    if (localmesh->get(IntShiftTorsion, "IntShiftTorsion", 0.0, false) != 0) {
       output_warn.write("\tWARNING: No Integrated torsion specified\n");
     }
     fillGuards(IntShiftTorsion);
@@ -573,7 +573,7 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
 }
 
 void Coordinates::outputVars(Options& output_options) {
-  Timer time("io");
+  const Timer time("io");
   const std::string loc_string =
       (location == CELL_CENTRE) ? "" : "_" + toString(location);
 
