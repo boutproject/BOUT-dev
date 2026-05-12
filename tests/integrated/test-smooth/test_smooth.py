@@ -11,10 +11,10 @@
 vars = ["yavg2d", "yavg3d", "sm3d"]
 tol = 1e-7  # Absolute tolerance, benchmark values are floats
 
-from boututils.run_wrapper import shell, launch_safe
-from boutdata.collect import collect
 import numpy as np
 from sys import stdout
+from boututils.run_wrapper import shell, launch_safe
+from boutdata.collect import collect
 
 
 def test_smooth():
