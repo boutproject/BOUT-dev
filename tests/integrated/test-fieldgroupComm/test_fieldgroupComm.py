@@ -31,10 +31,6 @@ def test_fieldgroupcomm():
     success = True
 
     for nproc in [1, 2, 4]:
-        nxpe = 1
-        if nproc > 2:
-            nxpe = 2
-
         cmd = "./{exe} ".format(exe=exeName)
 
         shell("rm data/BOUT.dmp.*.nc")
