@@ -73,4 +73,4 @@ def test_datafile_facade():
                 "rm -f data/BOUT.dmp.*.nc data/BOUT.restart.*.nc data/restart/BOUT.restart.0.nc"
             ]
         )
-    assert success, f"=> Some failed tests"
+    assert success, "=> Some failed tests"

@@ -14,7 +14,6 @@ def test_boutpp_mms_ddz(run_isolated):
     errorlist = ""
     boutpp.init("-d data -q -q -q")  # +" -f BOUT.settings")
 
-    shapes = []
     errors = []
     mmax = 7
     start = 6

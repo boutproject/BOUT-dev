@@ -151,6 +151,7 @@ sqrt = np.sqrt
 tan = np.tan
 TanhHat = tanhhat
 pi = np.pi
+erf = erf
 
 
 def test_initial():
@@ -184,7 +185,6 @@ def test_initial():
         if status != 0:
             print(status)
             pytest.fail("=> Could not run test")
-            exit(status)
 
         # Collect the coordinate arrays separately
         x = collect("var_x", xguards=True, yguards=True, path=datadir, info=False)
