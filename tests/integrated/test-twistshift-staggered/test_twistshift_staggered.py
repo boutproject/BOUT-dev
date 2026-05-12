@@ -15,7 +15,6 @@ def test_twistshift_staggered():
     with open("run.log." + str(nproc), "w") as f:
         f.write(out)
 
-    test = collect("test", path=datapath, yguards=True, info=False)
     test_aligned = collect("test_aligned", path=datapath, yguards=True, info=False)
     check = collect("check", path=datapath, yguards=True, info=False)
 
