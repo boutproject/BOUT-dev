@@ -6,13 +6,13 @@
 # Run the test, check the error
 #
 
+from boututils.run_wrapper import shell, launch_safe
+from boutdata.collect import collect
+
 # Cores: 3
 
 tol = 2e-7  # Absolute tolerance
 numTests = 4  # We test 4 different boundary conditions (with slightly different inputs for each)
-
-from boututils.run_wrapper import shell, launch_safe
-from boutdata.collect import collect
 
 
 def test_naulin_laplace():

@@ -8,12 +8,12 @@
 # requires: netcdf
 # cores: 2
 
-nproc = 2  # Number of processors to run on
-reltol = 1.0e-3  # Allowed relative tolerance in growth-rate
-
 import numpy as np
 from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
+
+nproc = 2  # Number of processors to run on
+reltol = 1.0e-3  # Allowed relative tolerance in growth-rate
 
 nthreads = 1
 

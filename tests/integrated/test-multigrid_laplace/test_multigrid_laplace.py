@@ -8,11 +8,11 @@
 
 # Cores: 3
 
-tol = 2e-7  # Absolute tolerance
-numTests = 4  # We test 4 different boundary conditions (with slightly different inputs for each)
-
 from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
+
+tol = 2e-7  # Absolute tolerance
+numTests = 4  # We test 4 different boundary conditions (with slightly different inputs for each)
 
 
 def test_multigrid_laplace():

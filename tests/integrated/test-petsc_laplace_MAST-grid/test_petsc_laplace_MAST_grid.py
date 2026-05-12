@@ -8,6 +8,10 @@
 # requires: petsc
 # cores: 4
 
+from boututils.run_wrapper import shell, launch_safe
+from boutdata.collect import collect
+from sys import stdout
+
 # Variables to compare
 vars = [
     ["max_error1", 2.0e-4],
@@ -20,10 +24,6 @@ vars = [
     ["max_error8", 1.0e-4],
 ]
 # tol = 1e-4                  # Absolute (?) tolerance
-
-from boututils.run_wrapper import shell, launch_safe
-from boutdata.collect import collect
-from sys import stdout
 
 
 def test_petsc_laplace_MAST_grid():

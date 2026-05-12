@@ -8,16 +8,15 @@
 # Requires: netcdf
 # Cores: 4
 
-# Variables to compare
-vars = ["pade1", "pade2"]
-
-tol = 1e-7  # Absolute tolerance, benchmark values are floats
-
 import numpy as np
 from sys import stdout
 from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 
+# Variables to compare
+vars = ["pade1", "pade2"]
+
+tol = 1e-7  # Absolute tolerance, benchmark values are floats
 
 def test_gyro():
 
