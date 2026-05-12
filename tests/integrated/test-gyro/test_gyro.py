@@ -9,13 +9,6 @@
 # Cores: 4
 
 # Variables to compare
-from __future__ import print_function
-
-try:
-    from builtins import str
-except:
-    pass
-
 vars = ["pade1", "pade2"]
 
 tol = 1e-7  # Absolute tolerance, benchmark values are floats

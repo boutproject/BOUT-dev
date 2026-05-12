@@ -8,13 +8,6 @@
 
 # Cores: 3
 
-from __future__ import print_function
-
-try:
-    from builtins import str
-except:
-    pass
-
 tol = 2e-7  # Absolute tolerance
 numTests = 4  # We test 4 different boundary conditions (with slightly different inputs for each)
 

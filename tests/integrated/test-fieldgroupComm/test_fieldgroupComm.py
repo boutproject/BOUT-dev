@@ -9,13 +9,6 @@
 # Requires: not metric_3d
 # Cores: 4
 
-# Variables to compare
-from __future__ import print_function
-
-try:
-    from builtins import str
-except:
-    pass
 
 from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect

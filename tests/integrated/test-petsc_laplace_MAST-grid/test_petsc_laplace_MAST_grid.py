@@ -9,9 +9,6 @@
 # cores: 4
 
 # Variables to compare
-from __future__ import print_function
-from builtins import str
-
 vars = [
     ["max_error1", 2.0e-4],
     ["max_error2", 1.0e-4],

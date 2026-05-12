@@ -8,9 +8,6 @@
 # requires: netcdf
 # cores: 2
 
-from __future__ import print_function
-from __future__ import division
-
 nproc = 2  # Number of processors to run on
 reltol = 1.0e-3  # Allowed relative tolerance in growth-rate
 

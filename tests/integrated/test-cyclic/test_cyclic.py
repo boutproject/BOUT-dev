@@ -7,12 +7,6 @@
 # Requires: netcdf
 # Cores: 4
 
-from __future__ import print_function
-
-try:
-    from builtins import str
-except:
-    pass
 from boututils.run_wrapper import shell, launch
 from sys import stdout
 
