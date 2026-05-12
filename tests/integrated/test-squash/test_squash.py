@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-from boututils.datafile import DataFile
 import itertools
 import time
 import numpy as np
-from boututils.run_wrapper import launch_safe, shell_safe
 import argparse
 import re
+from boututils.datafile import DataFile
+from boututils.run_wrapper import launch_safe, shell_safe
 from pathlib import Path
 
 # requires: all_tests

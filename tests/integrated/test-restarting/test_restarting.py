@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
+import numpy as np
 from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
-import numpy as np
 
 
 def test_restarting():

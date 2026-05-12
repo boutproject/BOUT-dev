@@ -3,10 +3,10 @@
 # cores: 4
 
 import pytest
-from boututils.run_wrapper import shell, launch_safe
-from boutdata.collect import collect
 import numpy as np
 from sys import stdout
+from boututils.run_wrapper import shell, launch_safe
+from boutdata.collect import collect
 
 tol = 1e-10  # Absolute tolerance
 

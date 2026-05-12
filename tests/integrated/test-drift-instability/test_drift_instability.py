@@ -7,13 +7,14 @@
 # Requires: not metric_3d
 
 import pytest
+import numpy as np
+
 from boututils.run_wrapper import shell, launch_safe
 from boututils.calculus import deriv
 from boututils.datafile import DataFile
 from boututils.linear_regression import linear_regression
 
 from boutdata.collect import collect
-import numpy as np
 from math import isnan
 
 nthreads = 1

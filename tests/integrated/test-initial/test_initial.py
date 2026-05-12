@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-import pytest
+
 # Test initial conditions
+
+import pytest
+import configparser
+import itertools
+import numpy as np
+from scipy.special import erf
+from pathlib import Path
 
 from boututils.run_wrapper import launch_safe
 from boutdata.collect import collect
-
-import configparser
-import itertools
-from scipy.special import erf
-import numpy as np
-from pathlib import Path
-
 
 # requires not make
 # requires scipy
