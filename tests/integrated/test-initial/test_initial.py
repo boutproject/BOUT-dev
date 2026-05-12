@@ -202,8 +202,10 @@ def test_initial():
                     )
                 )
                 continue
+
+            context = {"x": x, "y": y, "z": z}
             try:
-                analytic = eval(function)
+                analytic = eval(function, globals(), context)
             except NotImplementedError as err:
                 print("{} not implemented, skipping".format(err.args[0]))
             else:
