@@ -18,6 +18,7 @@ vars = ["pade1", "pade2"]
 
 tol = 1e-7  # Absolute tolerance, benchmark values are floats
 
+
 def test_gyro():
 
     # Read benchmark values
