@@ -26,7 +26,7 @@ def test_interchange_instability():
 
     def growth_rate(path, nproc, log=False):
         pipe = False
-        if log != False:
+        if log:
             pipe = True
         s, out = launch_safe(
             "./2fluid -d " + path, nproc=nproc, mthread=nthreads, pipe=pipe
