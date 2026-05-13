@@ -47,6 +47,11 @@ struct BackwardLegSpaceTag {};
 template <typename Out, typename In>
 class PetscOperator;
 
+class PetscCellMapping;
+
+/// @brief Shared-pointer alias for a const PetscCellMapping.
+using PetscCellMappingPtr = std::shared_ptr<const PetscCellMapping>;
+
 /// @brief Bidirectional index mapping between mesh-file stored numbering and PETSc
 ///        row ownership.
 ///
@@ -280,19 +285,8 @@ public:
     }
   }
 
-  /// @brief Build the Neumann boundary operator N : C → C.
-  ///
-  /// For each cell that has a forward or backward boundary virtual cell,
-  /// copies the adjacent interior cell value into the virtual cell row.
-  /// All other rows are identity. Used to ensure Restrict_minus has non-zero
-  /// rows for boundary cells so that boundary conditions propagate into
-  /// Grad_par and Div_par.
-  ///
-  /// Uses shared_from_this so must only be called on a PetscCellMapping
-  /// that is managed in a shared pointer.
-  ///
-  /// @returns A PetscCellOperator representing the Neumann boundary mapping.
-  PetscOperator<CellSpaceTag, CellSpaceTag> makeNeumannOperator() const;
+  friend PetscOperator<CellSpaceTag, CellSpaceTag>
+  makeNeumannOperator(const PetscCellMappingPtr& mapping);
 
 private:
   Field3D cell_number; ///< Stored cell numbers for interior/X-boundary cells.
@@ -325,9 +319,6 @@ public:
   ///                          are removed internally before building the permutation.
   PetscLegMapping(int total_legs, std::vector<int> local_leg_indices);
 };
-
-/// @brief Shared-pointer alias for a const PetscCellMapping.
-using PetscCellMappingPtr = std::shared_ptr<const PetscCellMapping>;
 
 /// @brief Shared-pointer alias for a const PetscLegMapping.
 using PetscLegMappingPtr = std::shared_ptr<const PetscLegMapping>;
@@ -1035,6 +1026,20 @@ private:
   Field3D backward_leg_interior_number;    ///< Stored interior leg numbers for L-.
   Field3D backward_leg_boundary_number;    ///< Stored boundary leg numbers for L-.
 };
+
+/// @brief Build the Neumann boundary operator N : C → C.
+///
+/// For each cell that has a forward or backward boundary virtual cell,
+/// copies the adjacent interior cell value into the virtual cell row.
+/// All other rows are identity. Used to ensure Restrict_minus has non-zero
+/// rows for boundary cells so that boundary conditions propagate into
+/// Grad_par and Div_par.
+///
+/// Uses shared_from_this so must only be called on a PetscCellMapping
+/// that is managed in a shared pointer.
+///
+/// @returns A PetscCellOperator representing the Neumann boundary mapping.
+PetscCellOperator makeNeumannOperator(const PetscCellMappingPtr& mapping);
 
 #else
 
