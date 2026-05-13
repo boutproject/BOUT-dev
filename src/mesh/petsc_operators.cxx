@@ -304,7 +304,10 @@ PetscBackwardLegOperator PetscOperators::diagonal(const PetscBackwardLegVector& 
 
 PetscOperators::Parallel PetscOperators::getParallel() const {
   // Set boundaries
-  const PetscCellOperator& Neumann = makeNeumannOperator(cell_mapping); // C <- C
+  const PetscCellOperator& Neumann_fwd =
+      makeNeumannOperator(cell_mapping, BoundaryDirection::Forward); // C <- C
+  const PetscCellOperator& Neumann_bwd =
+      makeNeumannOperator(cell_mapping, BoundaryDirection::Backward); // C <- C
 
   // Primitive operators from the mesh / metadata
   auto Forward = this->forward();             // L+ <- C
@@ -319,8 +322,9 @@ PetscOperators::Parallel PetscOperators::getParallel() const {
   const auto W_minus = diagonal(w_minus_vec); // L- <- L-
 
   // Weighted adjoints: C <- L+ and C <- L-
-  auto Restrict_minus = Inject_plus.transpose() * W_plus;
-  auto Restrict_plus = Inject_minus.transpose() * W_minus;
+  // The Neumann_f/bwd operators set the boundary cells to which the legs are connected
+  auto Restrict_minus = Neumann_fwd * Inject_plus.transpose() * W_plus;
+  auto Restrict_plus = Neumann_bwd * Inject_minus.transpose() * W_minus;
 
   auto* coords = mesh->getCoordinates();
 
@@ -366,9 +370,10 @@ PetscOperators::Parallel PetscOperators::getParallel() const {
   auto Grad_minus = Inv_dl_minus * (Inject_minus - Backward); // L- <- C
 
   // Cell-centered central gradient
-  // Apply Neumann so that the yup/ydown cells are set
-  auto Grad_par = Neumann * ((Restrict_minus * Grad_plus) + (Restrict_plus * Grad_minus))
-                  * 0.5; // C <- C
+  // Apply Neumann so that the yup/ydown cells are set. This is needed
+  // so that Div_par has the correct dependence on yup/down cells.
+  auto Grad_par =
+      ((Restrict_minus * Grad_plus) + (Restrict_plus * Grad_minus)) * 0.5; // C <- C
 
   // Leg-centered volumes from unweighted interpolation
   const auto dV_plus = Interp_plus(dV);   // L+
@@ -424,7 +429,8 @@ Field3D PetscOperators::Parallel::Div_par_K_Grad_par(const Field3D& K,
   return (toField3D(div_minus, K) + toField3D(div_plus, K)) * 0.5;
 }
 
-PetscCellOperator makeNeumannOperator(const PetscCellMappingPtr& mapping) {
+PetscCellOperator makeNeumannOperator(const PetscCellMappingPtr& mapping,
+                                      BoundaryDirection direction) {
 
   // The operator is built using stored indices for both rows and columns,
   // then post-multiplied by getPetscToStored() to convert columns to PETSc
@@ -474,35 +480,67 @@ PetscCellOperator makeNeumannOperator(const PetscCellMappingPtr& mapping) {
     BOUT_DO_PETSC(MatSetValues(*temp, 1, &petsc_row, 1, &col, &one, INSERT_VALUES));
   });
 
-  mapping->mapLocalYup([&](PetscInt local_row, const Ind3D& i_yp) {
-    const PetscInt petsc_row = mapping->rowStart() + local_row;
-    const Ind3D i_src = i_yp.ym();
-    const int stored_row_check = ROUND(mapping->forward_cell_number[i_src]);
-    if (stored_row_check < 0) {
-      throw BoutException("Check failed: stored_row, mapLocalYup");
-    }
-    const int stored_col = ROUND(mapping->cell_number[i_src]);
-    if (stored_col < 0) {
-      throw BoutException("Check failed: stored_col, mapLocalYup");
-    }
-    const PetscInt col = static_cast<PetscInt>(stored_col);
-    BOUT_DO_PETSC(MatSetValues(*temp, 1, &petsc_row, 1, &col, &one, INSERT_VALUES));
-  });
+  if ((direction == BoundaryDirection::Forward)
+      or (direction == BoundaryDirection::Both)) {
+    // Set forward rows from interior columns
+    mapping->mapLocalYup([&](PetscInt local_row, const Ind3D& i_yp) {
+      const PetscInt petsc_row = mapping->rowStart() + local_row;
+      const Ind3D i_src = i_yp.ym();
+      const int stored_row_check = ROUND(mapping->forward_cell_number[i_src]);
+      if (stored_row_check < 0) {
+        throw BoutException("Check failed: stored_row, mapLocalYup");
+      }
+      const int stored_col = ROUND(mapping->cell_number[i_src]);
+      if (stored_col < 0) {
+        throw BoutException("Check failed: stored_col, mapLocalYup");
+      }
+      const PetscInt col = static_cast<PetscInt>(stored_col);
+      BOUT_DO_PETSC(MatSetValues(*temp, 1, &petsc_row, 1, &col, &one, INSERT_VALUES));
+    });
+  } else {
+    // Identity rows in forward boundary
+    mapping->mapLocalYup([&](PetscInt local_row, const Ind3D& i_yp) {
+      const PetscInt petsc_row = mapping->rowStart() + local_row;
+      const Ind3D i_src = i_yp.ym();
+      const int stored_col = ROUND(mapping->forward_cell_number[i_src]);
+      if (stored_col < 0) {
+        throw BoutException("Check failed: stored_col, mapLocalYup identity");
+      }
+      const PetscInt col = static_cast<PetscInt>(stored_col);
+      BOUT_DO_PETSC(MatSetValues(*temp, 1, &petsc_row, 1, &col, &one, INSERT_VALUES));
+    });
+  }
 
-  mapping->mapLocalYdown([&](PetscInt local_row, const Ind3D& i_ym) {
-    const PetscInt petsc_row = mapping->rowStart() + local_row;
-    const Ind3D i_src = i_ym.yp();
-    const int stored_row_check = ROUND(mapping->backward_cell_number[i_src]);
-    if (stored_row_check < 0) {
-      throw BoutException("Check failed: stored_row, mapLocalYdown");
-    }
-    const int stored_col = ROUND(mapping->cell_number[i_src]);
-    if (stored_col < 0) {
-      throw BoutException("Check failed: stored_col, mapLocalYdown");
-    }
-    const PetscInt col = static_cast<PetscInt>(stored_col);
-    BOUT_DO_PETSC(MatSetValues(*temp, 1, &petsc_row, 1, &col, &one, INSERT_VALUES));
-  });
+  if ((direction == BoundaryDirection::Backward)
+      or (direction == BoundaryDirection::Both)) {
+    // Set backward rows from interior columns
+    mapping->mapLocalYdown([&](PetscInt local_row, const Ind3D& i_ym) {
+      const PetscInt petsc_row = mapping->rowStart() + local_row;
+      const Ind3D i_src = i_ym.yp();
+      const int stored_row_check = ROUND(mapping->backward_cell_number[i_src]);
+      if (stored_row_check < 0) {
+        throw BoutException("Check failed: stored_row, mapLocalYdown");
+      }
+      const int stored_col = ROUND(mapping->cell_number[i_src]);
+      if (stored_col < 0) {
+        throw BoutException("Check failed: stored_col, mapLocalYdown");
+      }
+      const PetscInt col = static_cast<PetscInt>(stored_col);
+      BOUT_DO_PETSC(MatSetValues(*temp, 1, &petsc_row, 1, &col, &one, INSERT_VALUES));
+    });
+  } else {
+    // Identity rows in backward boundary
+    mapping->mapLocalYdown([&](PetscInt local_row, const Ind3D& i_ym) {
+      const PetscInt petsc_row = mapping->rowStart() + local_row;
+      const Ind3D i_src = i_ym.yp();
+      const int stored_col = ROUND(mapping->backward_cell_number[i_src]);
+      if (stored_col < 0) {
+        throw BoutException("Check failed: stored_col, mapLocalYdown identity");
+      }
+      const PetscInt col = static_cast<PetscInt>(stored_col);
+      BOUT_DO_PETSC(MatSetValues(*temp, 1, &petsc_row, 1, &col, &one, INSERT_VALUES));
+    });
+  }
 
   BOUT_DO_PETSC(MatAssemblyBegin(*temp, MAT_FINAL_ASSEMBLY));
   BOUT_DO_PETSC(MatAssemblyEnd(*temp, MAT_FINAL_ASSEMBLY));

@@ -47,6 +47,9 @@ struct BackwardLegSpaceTag {};
 template <typename Out, typename In>
 class PetscOperator;
 
+/// Used to indicate whether forward or backward boundary 'legs' should be used
+enum class BoundaryDirection { Forward, Backward, Both };
+
 class PetscCellMapping;
 
 /// @brief Shared-pointer alias for a const PetscCellMapping.
@@ -158,10 +161,7 @@ protected:
 ///
 /// @c mapOwnedInteriorCells iterates only the evolving interior cells (subset 1) and
 /// provides global PETSc row indices, making it suitable for assembling matrices.
-///
-/// Inherits from std::enable_shared_from_this so that shared_from_this can be used.
-class PetscCellMapping : public PetscIndexMapping,
-                         std::enable_shared_from_this<PetscCellMapping> {
+class PetscCellMapping : public PetscIndexMapping {
 public:
   /// @brief Construct the cell-space mapping from mesh metadata fields.
   ///
@@ -286,7 +286,7 @@ public:
   }
 
   friend PetscOperator<CellSpaceTag, CellSpaceTag>
-  makeNeumannOperator(const PetscCellMappingPtr& mapping);
+  makeNeumannOperator(const PetscCellMappingPtr& mapping, BoundaryDirection direction);
 
 private:
   Field3D cell_number; ///< Stored cell numbers for interior/X-boundary cells.
@@ -1035,11 +1035,11 @@ private:
 /// rows for boundary cells so that boundary conditions propagate into
 /// Grad_par and Div_par.
 ///
-/// Uses shared_from_this so must only be called on a PetscCellMapping
-/// that is managed in a shared pointer.
+/// @param direction   Which Y boundary cells will be set
 ///
 /// @returns A PetscCellOperator representing the Neumann boundary mapping.
-PetscCellOperator makeNeumannOperator(const PetscCellMappingPtr& mapping);
+PetscCellOperator makeNeumannOperator(const PetscCellMappingPtr& mapping,
+                                      BoundaryDirection direction);
 
 #else
 
