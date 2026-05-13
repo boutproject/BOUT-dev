@@ -127,6 +127,108 @@ PetscCellMapping::PetscCellMapping(const Field3D& cell_number,
                    local_indices);
 }
 
+PetscOperator<CellSpaceTag, CellSpaceTag> PetscCellMapping::makeNeumannOperator() const {
+
+  // The operator is built using stored indices for both rows and columns,
+  // then post-multiplied by getPetscToStored() to convert columns to PETSc
+  // ordering — exactly the same pattern as assembleFromCSR.
+
+  const PetscInt n_global = this->globalSize();
+  const PetscInt n_local = this->localSize();
+
+  // Temporary matrix in stored-column ordering.
+  // Each row has at most one nonzero (either diagonal or the interior
+  // neighbour), so d_nz=1, o_nz=1 is the correct preallocation.
+  bout::petsc::UniqueMat temp{new Mat{nullptr}};
+  BOUT_DO_PETSC(MatCreate(BoutComm::get(), temp.get()));
+  BOUT_DO_PETSC(MatSetType(*temp, MATMPIAIJ));
+  BOUT_DO_PETSC(MatSetSizes(*temp, n_local, PETSC_DECIDE, n_global, n_global));
+  BOUT_DO_PETSC(MatMPIAIJSetPreallocation(*temp, 1, nullptr, 1, nullptr));
+
+  const PetscScalar one = 1.0;
+
+  // Iterate over all locally owned cells using mapLocalField (interior +
+  // X-boundary) and mapLocalYup / mapLocalYdown (parallel boundary virtual
+  // cells).  For each cell we insert exactly one entry.
+  //
+  // mapLocalField visits cells whose stored index comes from cell_number.
+  // mapLocalYup visits cells whose stored index comes from forward_cell_number.
+  // mapLocalYdown visits cells whose stored index comes from backward_cell_number.
+  //
+  // For a forward boundary virtual cell at field index i.yp():
+  //   row = stored index from forward_cell_number (the virtual cell)
+  //   col = stored index from cell_number at the source cell i
+  //   => virtual cell copies from the adjacent interior cell (Neumann)
+  //
+  // For a backward boundary virtual cell at field index i.ym():
+  //   row = stored index from backward_cell_number (the virtual cell)
+  //   col = stored index from cell_number at the source cell i
+  //
+  // For all other cells the row is the diagonal (identity).
+
+  // Identity rows: all cells in the interior and X-boundary regions
+  mapLocalField([&](PetscInt local_row, const Ind3D& i) {
+    const PetscInt petsc_row = this->rowStart() + local_row;
+    const int stored_col = ROUND(this->cell_number[i]);
+    if (stored_col < 0) {
+      return; // guard cell with no stored index — skip
+    }
+    // stored_col used directly; column translation applied via post-multiply
+    const PetscInt col = static_cast<PetscInt>(stored_col);
+    BOUT_DO_PETSC(MatSetValues(*temp, 1, &petsc_row, 1, &col, &one, INSERT_VALUES));
+  });
+
+  // Forward boundary virtual cells: copy from adjacent interior cell
+  mapLocalYup([&](PetscInt local_row, const Ind3D& i_yp) {
+    const PetscInt petsc_row = this->rowStart() + local_row;
+    const int stored_row_check = ROUND(this->forward_cell_number[i_yp]);
+    if (stored_row_check < 0) {
+      return;
+    }
+    // The source cell is i_yp.ym() — the interior cell whose forward map
+    // produced this boundary virtual cell.
+    const Ind3D i_src = i_yp.ym();
+    const int stored_col = ROUND(this->cell_number[i_src]);
+    if (stored_col < 0) {
+      return;
+    }
+    const PetscInt col = static_cast<PetscInt>(stored_col);
+    BOUT_DO_PETSC(MatSetValues(*temp, 1, &petsc_row, 1, &col, &one, INSERT_VALUES));
+  });
+
+  // Backward boundary virtual cells: copy from adjacent interior cell
+  mapLocalYdown([&](PetscInt local_row, const Ind3D& i_ym) {
+    const PetscInt petsc_row = this->rowStart() + local_row;
+    const int stored_row_check = ROUND(this->backward_cell_number[i_ym]);
+    if (stored_row_check < 0) {
+      return;
+    }
+    // The source cell is i_ym.yp() — the interior cell whose backward map
+    // produced this boundary virtual cell.
+    const Ind3D i_src = i_ym.yp();
+    const int stored_col = ROUND(this->cell_number[i_src]);
+    if (stored_col < 0) {
+      return;
+    }
+    const PetscInt col = static_cast<PetscInt>(stored_col);
+    BOUT_DO_PETSC(MatSetValues(*temp, 1, &petsc_row, 1, &col, &one, INSERT_VALUES));
+  });
+
+  BOUT_DO_PETSC(MatAssemblyBegin(*temp, MAT_FINAL_ASSEMBLY));
+  BOUT_DO_PETSC(MatAssemblyEnd(*temp, MAT_FINAL_ASSEMBLY));
+
+  // Post-multiply by getPetscToStored() to convert stored column indices to
+  // PETSc column indices — identical to the final step in assembleFromCSR.
+  bout::petsc::UniqueMat out{new Mat{nullptr}};
+  BOUT_DO_PETSC(MatMatMult(*temp, this->getPetscToStored(), MAT_INITIAL_MATRIX,
+                           PETSC_DETERMINE, out.get()));
+
+  // Both row and column space are the full cell space C.
+  const auto self =
+      std::static_pointer_cast<const PetscCellMapping>(this->shared_from_this());
+  return PetscOperator<CellSpaceTag, CellSpaceTag>(self, self, std::move(out));
+}
+
 PetscLegMapping::PetscLegMapping(int total_legs, std::vector<int> local_leg_indices) {
   std::sort(local_leg_indices.begin(), local_leg_indices.end());
   local_leg_indices.erase(std::unique(local_leg_indices.begin(), local_leg_indices.end()),

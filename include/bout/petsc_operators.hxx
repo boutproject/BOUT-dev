@@ -44,6 +44,9 @@ struct ForwardLegSpaceTag {};
 /// leg space. See @ref ForwardLegSpaceTag and @ref CellSpaceTag.
 struct BackwardLegSpaceTag {};
 
+template <typename Out, typename In>
+class PetscOperator;
+
 /// @brief Bidirectional index mapping between mesh-file stored numbering and PETSc
 ///        row ownership.
 ///
@@ -150,7 +153,10 @@ protected:
 ///
 /// @c mapOwnedInteriorCells iterates only the evolving interior cells (subset 1) and
 /// provides global PETSc row indices, making it suitable for assembling matrices.
-class PetscCellMapping : public PetscIndexMapping {
+///
+/// Inherits from std::enable_shared_from_this so that shared_from_this can be used.
+class PetscCellMapping : public PetscIndexMapping,
+                         std::enable_shared_from_this<PetscCellMapping> {
 public:
   /// @brief Construct the cell-space mapping from mesh metadata fields.
   ///
@@ -273,6 +279,20 @@ public:
       ++row;
     }
   }
+
+  /// @brief Build the Neumann boundary operator N : C → C.
+  ///
+  /// For each cell that has a forward or backward boundary virtual cell,
+  /// copies the adjacent interior cell value into the virtual cell row.
+  /// All other rows are identity. Used to ensure Restrict_minus has non-zero
+  /// rows for boundary cells so that boundary conditions propagate into
+  /// Grad_par and Div_par.
+  ///
+  /// Uses shared_from_this so must only be called on a PetscCellMapping
+  /// that is managed in a shared pointer.
+  ///
+  /// @returns A PetscCellOperator representing the Neumann boundary mapping.
+  PetscOperator<CellSpaceTag, CellSpaceTag> makeNeumannOperator() const;
 
 private:
   Field3D cell_number; ///< Stored cell numbers for interior/X-boundary cells.
