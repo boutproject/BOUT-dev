@@ -1137,13 +1137,109 @@ void checkForUnusedOptions() {
                         options["optionfile"].withDefault("BOUT.inp"));
 }
 
+namespace {
+/// Gather the set of unused option keys that are unused on *every* MPI processor.
+///
+/// Each processor may use a different subset of options (e.g. because some
+/// options are only read on processors handling a particular region). An option
+/// should only be considered globally unused — and therefore an error — if it
+/// was not used on any processor.
+///
+/// Strategy:
+///   1. MPI_Allgather the per-processor serialised key lists so every rank
+///      knows the full union of locally-unused keys.
+///   2. For each key in that union, MPI_Allreduce with MPI_PROD over a flag
+///      that is 1 if the key is locally unused and 0 if it was used.  A
+///      product of 1 means every rank left it unused.
+///
+/// Keys are serialised as a newline-separated string.  Newlines are safe as a
+/// separator because option keys use ':' as their only structural character.
+std::set<std::string> getGlobalUnusedSet(std::vector<std::string> local_unused_keys) {
+  MPI_Comm comm = BoutComm::get();
+  const int nprocs = BoutComm::size();
+
+  // --- Step 1: share every processor's locally-unused key list ---
+
+  // Serialise this processor's unused keys as a newline-separated string.
+  // An empty key list produces an empty string, which is handled correctly
+  // by MPI_Allgatherv (contributing zero bytes).
+  const std::string local_serialized =
+      fmt::format("{}", fmt::join(local_unused_keys, "\n"));
+  int local_len = static_cast<int>(local_serialized.size());
+
+  // Gather the byte-lengths from all processors so we can allocate the
+  // receive buffer and build the displacement array for MPI_Allgatherv.
+  std::vector<int> all_lens(nprocs);
+  MPI_Allgather(&local_len, 1, MPI_INT, all_lens.data(), 1, MPI_INT, comm);
+
+  std::vector<int> displs(nprocs, 0);
+  for (int i = 1; i < nprocs; ++i) {
+    displs[i] = displs[i - 1] + all_lens[i - 1];
+  }
+  const int total_len = displs[nprocs - 1] + all_lens[nprocs - 1];
+
+  // Gather the serialised key strings from all processors.
+  std::string all_serialized(total_len, '\0');
+  MPI_Allgatherv(local_serialized.data(), local_len, MPI_CHAR, all_serialized.data(),
+                 all_lens.data(), displs.data(), MPI_CHAR, comm);
+
+  // Reconstruct the global union of unused keys by splitting each
+  // processor's contribution at the newline separator.
+  std::set<std::string> global_unused_union;
+  for (int i = 0; i < nprocs; ++i) {
+    if (all_lens[i] == 0) {
+      continue; // processor had no unused keys
+    }
+    const std::string proc_keys = all_serialized.substr(displs[i], all_lens[i]);
+    for (const auto& key : strsplit(proc_keys, '\n')) {
+      global_unused_union.insert(key);
+    }
+  }
+
+  if (global_unused_union.empty()) {
+    return {};
+  }
+
+  // --- Step 2: keep only keys that were unused on *every* processor ---
+
+  // Build a presence flag for each key in the global union: 1 if unused
+  // locally (i.e. in our local_unused_keys), 0 if it was used here.
+  const std::set<std::string> local_set(local_unused_keys.begin(),
+                                        local_unused_keys.end());
+  const std::vector<std::string> global_keys(global_unused_union.begin(),
+                                             global_unused_union.end());
+
+  std::vector<int> local_flags(global_keys.size());
+  for (std::size_t i = 0; i < global_keys.size(); ++i) {
+    local_flags[i] = local_set.contains(global_keys[i]) ? 1 : 0;
+  }
+
+  // MPI_PROD: product across all processors is 1 iff every processor
+  // contributed 1, i.e. iff the key was unused everywhere.
+  std::vector<int> global_flags(global_keys.size());
+  MPI_Allreduce(local_flags.data(), global_flags.data(),
+                static_cast<int>(global_keys.size()), MPI_INT, MPI_PROD, comm);
+
+  std::set<std::string> globally_unused;
+  for (std::size_t i = 0; i < global_keys.size(); ++i) {
+    if (global_flags[i] != 0) {
+      globally_unused.insert(global_keys[i]);
+    }
+  }
+  return globally_unused;
+}
+} // namespace
+
 void checkForUnusedOptions(const Options& options, const std::string& data_dir,
                            const std::string& option_file) {
   const Options unused = options.getUnused();
-  if (not unused.getChildren().empty()) {
+
+  // Get the keys that are not used on any processor
+  const auto keys = getGlobalUnusedSet(unused.getFlattenedKeys());
+
+  if (not keys.empty()) {
 
     // Construct a string with all the fuzzy matches for each unused option
-    const auto keys = unused.getFlattenedKeys();
     std::string possible_misspellings;
     for (const auto& key : keys) {
       auto fuzzy_matches = options.fuzzyFind(key);

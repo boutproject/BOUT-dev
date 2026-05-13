@@ -4,12 +4,14 @@
  * Mode discoverd by H.L. Berk et. al. 1993
  * Model version in the code created by M. Umansky and J. Myra.
  *******************************************************************************/
-#include <bout/physicsmodel.hxx>
 
 #include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/invert_laplace.hxx>
+#include <bout/physicsmodel.hxx>
+#include <bout/tokamak_coordinates.hxx>
+#include <bout/utils.hxx>
 
 class CWM : public PhysicsModel {
 private:
@@ -27,9 +29,6 @@ private:
 
   // Phi boundary conditions
   Field3D dphi_bc_ydown, dphi_bc_yup;
-
-  // Metric coefficients
-  Field2D Rxy, Bpxy, Btxy, hthe, Zxy;
 
   // parameters
   BoutReal Te_x, Ni_x, Vi_x, bmag, rho_s, fmei, AA, ZZ;
@@ -54,19 +53,12 @@ private:
   std::unique_ptr<Laplacian> phiSolver{nullptr};
 
   int init(bool UNUSED(restarting)) override {
-    Field2D I; // Shear factor
-
     /************* LOAD DATA FROM GRID FILE ****************/
 
     // Load 2D profiles (set to zero if not found)
     GRID_LOAD(Ni0, Te0);
 
     coord = mesh->getCoordinates();
-
-    // Load metrics
-    GRID_LOAD(Rxy, Zxy, Bpxy, Btxy, hthe);
-    mesh->get(coord->dx, "dpsi");
-    mesh->get(I, "sinty");
 
     // Load normalisation values
     GRID_LOAD(Te_x, Ni_x, bmag);
@@ -93,13 +85,11 @@ private:
 
     /************* SHIFTED RADIAL COORDINATES ************/
     // Check type of parallel transform
-    std::string ptstr =
-        Options::root()["mesh"]["paralleltransform"]["type"].withDefault<std::string>(
-            "identity");
+    const auto ptstr =
+        Options::root()["mesh"]["paralleltransform"]["type"].withDefault("identity");
 
-    if (lowercase(ptstr) == "shifted") {
-      ShearFactor = 0.0; // I disappears from metric
-    }
+    // I disappears from metric
+    const bool noshear = (lowercase(ptstr) == "shifted");
 
     /************** CALCULATE PARAMETERS *****************/
 
@@ -132,39 +122,19 @@ private:
     Ni0 /= Ni_x / 1.0e14;
     Te0 /= Te_x;
 
-    // Normalise geometry
-    Rxy /= rho_s;
-    hthe /= rho_s;
-    I *= rho_s * rho_s * (bmag / 1e4) * ShearFactor;
-    coord->dx /= rho_s * rho_s * (bmag / 1e4);
-
-    // Normalise magnetic field
-    Bpxy /= (bmag / 1.e4);
-    Btxy /= (bmag / 1.e4);
-    coord->Bxy /= (bmag / 1.e4);
-
     // Set nu
     nu = nu_hat * Ni0 / pow(Te0, 1.5);
 
     /**************** CALCULATE METRICS ******************/
 
-    coord->g11 = SQ(Rxy * Bpxy);
-    coord->g22 = 1.0 / SQ(hthe);
-    coord->g33 = SQ(I) * coord->g11 + SQ(coord->Bxy) / coord->g11;
-    coord->g12 = 0.0;
-    coord->g13 = -I * coord->g11;
-    coord->g23 = -Btxy / (hthe * Bpxy * Rxy);
-
-    coord->J = hthe / Bpxy;
-
-    coord->g_11 = 1.0 / coord->g11 + SQ(I * Rxy);
-    coord->g_22 = SQ(coord->Bxy * hthe / Bpxy);
-    coord->g_33 = Rxy * Rxy;
-    coord->g_12 = Btxy * hthe * I * Rxy / Bpxy;
-    coord->g_13 = I * Rxy * Rxy;
-    coord->g_23 = Btxy * hthe * Rxy / Bpxy;
-
-    coord->geometry();
+    // Read, normalise, and set coordinates
+    const auto tokamak_coords =
+        bout::set_tokamak_coordinates(*mesh, rho_s, bmag / 1e4, noshear);
+    auto Rxy = tokamak_coords.Rxy;
+    auto Zxy = tokamak_coords.Zxy;
+    auto Bpxy = tokamak_coords.Bpxy;
+    auto Btxy = tokamak_coords.Btxy;
+    auto hthe = tokamak_coords.hthe;
 
     /**************** SET EVOLVING VARIABLES *************/
 
