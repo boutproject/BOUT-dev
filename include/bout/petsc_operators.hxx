@@ -49,9 +49,16 @@ struct ForwardLegSpaceTag {};
 /// leg space. See @ref ForwardLegSpaceTag and @ref CellSpaceTag.
 struct BackwardLegSpaceTag {};
 
-// Forward declare
-template <typename OutSpaceTag, typename InSpaceTag>
+template <typename Out, typename In>
 class PetscOperator;
+
+/// Used to indicate whether forward or backward boundary 'legs' should be used
+enum class BoundaryDirection { Forward, Backward, Both };
+
+class PetscCellMapping;
+
+/// @brief Shared-pointer alias for a const PetscCellMapping.
+using PetscCellMappingPtr = std::shared_ptr<const PetscCellMapping>;
 
 /// @brief Bidirectional index mapping between mesh-file stored numbering and PETSc
 ///        row ownership.
@@ -314,6 +321,9 @@ public:
   /// @returns  A square Mat of global size n_evolving × n_evolving.
   Mat extractEvolvingSubmatrix(const PetscOperator<CellSpaceTag, CellSpaceTag>& op) const;
 
+  friend PetscOperator<CellSpaceTag, CellSpaceTag>
+  makeNeumannOperator(const PetscCellMappingPtr& mapping, BoundaryDirection direction);
+
 private:
   Field3D cell_number; ///< Stored cell numbers for interior/X-boundary cells.
   Field3D
@@ -345,9 +355,6 @@ public:
   ///                          are removed internally before building the permutation.
   PetscLegMapping(int total_legs, std::vector<int> local_leg_indices);
 };
-
-/// @brief Shared-pointer alias for a const PetscCellMapping.
-using PetscCellMappingPtr = std::shared_ptr<const PetscCellMapping>;
 
 /// @brief Shared-pointer alias for a const PetscLegMapping.
 using PetscLegMappingPtr = std::shared_ptr<const PetscLegMapping>;
@@ -1055,6 +1062,20 @@ private:
   Field3D backward_leg_interior_number;    ///< Stored interior leg numbers for L-.
   Field3D backward_leg_boundary_number;    ///< Stored boundary leg numbers for L-.
 };
+
+/// @brief Build the Neumann boundary operator N : C → C.
+///
+/// For each cell that has a forward or backward boundary virtual cell,
+/// copies the adjacent interior cell value into the virtual cell row.
+/// All other rows are identity. Used to ensure Restrict_minus has non-zero
+/// rows for boundary cells so that boundary conditions propagate into
+/// Grad_par and Div_par.
+///
+/// @param direction   Which Y boundary cells will be set
+///
+/// @returns A PetscCellOperator representing the Neumann boundary mapping.
+PetscCellOperator makeNeumannOperator(const PetscCellMappingPtr& mapping,
+                                      BoundaryDirection direction);
 
 #else
 
