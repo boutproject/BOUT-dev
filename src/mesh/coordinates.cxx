@@ -525,21 +525,21 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
   jacobian();
 
   // Attempt to read J from the grid file
-  auto Jcalc = J;
-  if (localmesh->get(J, "J" + suffix, 0.0, false) != 0) {
-    output_warn.write(
-        "\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
-    J = Jcalc;
-  } else {
-    fillGuards(J);
-
-    // Compare calculated and loaded values
+  if (localmesh->sourceHasVar("J" + suffix)) {
+    // Copy value previously calculated from metric components, use to check
+    // read in value
+    const auto Jcalc = J;
+    J = readAndFillGuards("J", 0.0);
     output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(J - Jcalc)));
 
     localmesh->communicate_no_slices(J);
 
     // Re-evaluate Bxy using new J
     Bxy = sqrt(g_22) / J;
+    fillGuards(Bxy);
+  } else {
+    output_warn.write(
+        "\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
   }
 
   // Check jacobian
@@ -550,15 +550,15 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
   }
 
   // Attempt to read Bxy from the grid file
-  auto Bcalc = Bxy;
-  if (localmesh->get(Bxy, "Bxy" + suffix, 0.0, false) != 0) {
+  if (localmesh->sourceHasVar("Bxy" + suffix)) {
+    // Copy value previously calculated from J, use to check read in value
+    const auto Bcalc = Bxy;
+    Bxy = readAndFillGuards("Bxy", 0.0);
+    output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(Bxy - Bcalc)));
+
+  } else {
     output_warn.write("\tWARNING: Magnitude of B field 'Bxy' not found. Calculating from "
                       "metric tensor\n");
-    Bxy = Bcalc;
-  } else {
-
-    fillGuards(Bxy);
-    output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(Bxy - Bcalc)));
   }
 
   // Check Bxy
