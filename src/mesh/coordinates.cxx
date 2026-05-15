@@ -398,6 +398,9 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
                         "cells. Set option extrapolate_y=false to disable this.\n"));
   }
 
+  // Some helper functions that let us avoid passing the same arguments every time
+
+  // Read from the mesh and transform from field aligned if required
   auto readField = [this, &suffix](const std::string& name,
                                    BoutReal def_value) -> FieldMetric {
     checkStaggeredGet(localmesh, name, suffix);
@@ -411,12 +414,14 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
     return field.setDirectionY(YDirectionType::Standard);
   };
 
+  // Just fill in the guard cells (via extrapolation) for an existing field
   auto fillGuards = [&, this](FieldMetric& field) {
     // Passing `field` in here twice is gross but ok because the second argument
     // is only used when interpolating, and we're not interpolating here
     fillGuards_impl(field, location, field, extrapolate_x, extrapolate_y);
   };
 
+  // Read the field, transform if required, and fill in the guards
   auto readAndFillGuards = [&](const std::string& name,
                                BoutReal def_value) -> FieldMetric {
     auto field = readField(name, def_value);
@@ -434,12 +439,20 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
 
     const auto default_dz = (zmax - zmin) * TWOPI / nz;
 
-    dz = readAndFillGuards("dz", default_dz);
+    // We can't use the helper functions here because in 3D we might (always?)
+    // need to transform from field aligned -- which requires dz! So we have to
+    // read it "plain" first...
+    localmesh->get(dz, "dz" + suffix, default_dz, false, location);
   }
 
-  // required early for differentiation.
+  // ...then we can set the transform (required early for differentiation)...
   setParallelTransform(options);
 
+  // ...and finally we can transform/interpolate/fill in guards
+  dz = interpolateAndExtrapolate(dz, location, extrapolate_x, extrapolate_y, false,
+                                 transform.get());
+
+  // everything else from this point on can use our helper functions
   dx = readAndFillGuards("dx", 1.0);
 
   if (localmesh->periodicX) {
