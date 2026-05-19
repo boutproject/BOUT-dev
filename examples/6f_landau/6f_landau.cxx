@@ -304,7 +304,7 @@ private:
   Field2D N_tmp0, Ne_tmp0, Te_tmp0, Limp0, Srad0, Wrad0; // Used for the linearization of the fixed-fraction radiation model
 
   BoutReal frac_imp;
-  
+
   /// parallel and perpendicular hyperdiffusion
   // M: 4th Parallel density diffusion
   BoutReal hyperdiff_par_n4, hyperdiff_par_ti4, hyperdiff_par_te4;
@@ -774,7 +774,7 @@ private:
     Field3D result;
     result.allocate();
     static dcomplex *f = NULL, *f2 = NULL;
-    int indx;
+    int indx, indy;
 
   #ifdef CHECK
     msg_stack.push("sink_zonal_core(Field3D, int)", filter_index);
@@ -1272,7 +1272,7 @@ protected:
       if (filter_position_ti <= 0) {
         filter_position_ti = ixsep;
 	      output << "\tWarning: filter_position_ti has a negtive value!\n";
-	      output << "\tfilter_position_ti is forced to be isxeps1=" << ixsep << ".\n";	
+	      output << "\tfilter_position_ti is forced to be isxeps1=" << ixsep << ".\n";
       }
       if (filter_position_te <= 0) {
         filter_position_te = ixsep;
@@ -1282,7 +1282,7 @@ protected:
       position_tmpi = std::min(filter_position_ni, filter_position_ti);
       position_tmpe = std::min(filter_position_ni, filter_position_te);
       position_tmp = std::min(position_tmpi, position_tmpe);
-    }     
+    }
 
     //source 
     NiAmp = options["NiAmp"].withDefault(-1.0);    // Amplitude of the explicit particle sourcing
@@ -2535,10 +2535,12 @@ protected:
         kappa_perp_i *= kappa_perp_i_fl / (kappa_perp_i + kappa_perp_i_fl);
         kappa_perp_e *= kappa_perp_e_fl / (kappa_perp_e + kappa_perp_e_fl);
       }
+
       kappa_perp_i *= Tipara1 * N0;
       output.write("\tUsed normalized ion perp thermal conductivity: {:e} -> {:e}\n", min(kappa_perp_i), max(kappa_perp_i));
       kappa_perp_i.applyBoundary();
       mesh->communicate(kappa_perp_i);
+
       kappa_perp_e *= Tepara1 * Ne0;
       output.write("\tUsed normalized electron perp thermal conductivity: {:e} -> {:e}\n", min(kappa_perp_e), max(kappa_perp_e));
       kappa_perp_e.applyBoundary();
@@ -2960,7 +2962,6 @@ protected:
       }
     }
 
-
     if (phi_constraint) {
       // Implicit Phi solve using IDA
 
@@ -3361,7 +3362,7 @@ protected:
     // Jpar2.setBoundary("J");
 
     F2D_tmp = 0.;
-    
+
     return 0;
   }
 
@@ -3859,7 +3860,6 @@ protected:
 
     // MPI_Barrier(BoutComm::get());
 
-    
     if (fix_fraction_imp) {
       N_tmp = field_larger(N0 + Ni, Low_limit);
       Te_tmp = field_larger(Te0 + Te, Low_limit);
@@ -3869,7 +3869,7 @@ protected:
         Ne_tmp = Zi * N_tmp;
       }
       Limp = 0.0;
-
+      
       if (Limp_carbon) {
         /// Carbon in coronal equilibrium
 	      // From I.H.Hutchinson Nucl. Fusion 34 (10) 1337 - 1348 (1994)
@@ -4106,7 +4106,7 @@ protected:
       Jpar *= mask_jx1d;
     }
 
-    // Jpar.applyBoundary();   // This will apply a different scheath BC to Jpar. I kept it because that's how it was in previous versions. 
+    Jpar.applyBoundary();   // This will apply a different scheath BC to Jpar. I kept it because that's how it was in previous versions. 
     mesh->communicate(Jpar);
 
     if (compress0) {
@@ -4209,12 +4209,11 @@ protected:
             //ddt(Psi) += hyperresist * Delp2(Jpar / B0);
             ddt(Apar) += hyperresist * Delp2(Jpar);
 	        }
-
 	      }
       } else { // emass
 
         ddt(Ajpar) = 0.0;
-      	ddt(Ajpar) = -Grad_parP(phi) / B0 - eta * Jpar / B0;
+        ddt(Ajpar) = -Grad_parP(phi) / B0 - eta * Jpar / B0;
 
 	      if (diamag && diamag_phi0) {
           if (diamag_er)
@@ -4510,8 +4509,7 @@ protected:
 
         ddt(U) += hyper_mu_x * coord->g11 * D2DX2(U);
 
-        if (first_run) {
-          // Print out maximum values of viscosity used on this processor
+        if (first_run) { // Print out maximum values of viscosity used on this processor
           output.write("   Hyper-viscosity values:\n");
           output.write("      Max mu_x = {:e}, Max_DC mu_x = {:e}\n", max(hyper_mu_x), max(DC(hyper_mu_x)));
         }
@@ -5478,7 +5476,7 @@ protected:
             var_fa(xind, jy, jz) = value_fa(xind, mesh->yend, jz);
             // var_fa(xind, jy, jz) = 2.0 * value_fa(xind, mesh->yend, jz) - var_fa(xind, mesh->yend, jz);
           }
-	      }
+        }
       }
     }
 
