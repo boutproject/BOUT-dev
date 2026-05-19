@@ -32,6 +32,7 @@
 #include <bout/globals.hxx>
 #include <bout/immersed_boundary.hxx>
 #include <bout/msg_stack.hxx>
+#include <bout/output_bout_types.hxx>
 #include <bout/solver.hxx>
 #include <bout/utils.hxx>
 #include <bout/vecops.hxx>
@@ -235,56 +236,57 @@ Field3D Div_par(const Field3D& f, const std::string& method, CELL_LOC outloc) {
   return f.getCoordinates(outloc)->Div_par(f, outloc, method);
 }
 
-Field3D Div_par(const Field3D& f_in, const Field3D& v_in) {
-#if BOUT_USE_FCI_AUTOMAGIC
-  auto f{f_in};
-  auto v{v_in};
-  if (!f.hasParallelSlices()) {
-    f.calcParallelSlices();
-  }
-  if (!v.hasParallelSlices()) {
-    v.calcParallelSlices();
-  }
-#else
-  const auto& f{f_in};
-  const auto& v{v_in};
-#endif
-
+Field3D Div_par(const Field3D& f, const Field3D& v) {
+  AUTO_TRACE();
   ASSERT1_FIELDS_COMPATIBLE(f, v);
+
+  // Either both have parallel slices or neither
+  if (!f.hasParallelSlices()) {
+    // No parallel slices
+    ASSERT1(!v.hasParallelSlices());
+
+    return Div_par(f * v);
+  }
+
+  // Using parallel slices
   ASSERT1(f.hasParallelSlices());
   ASSERT1(v.hasParallelSlices());
 
-  // Parallel divergence, using velocities at cell boundaries
-  // Note: Not guaranteed to be flux conservative
-  Mesh* mesh = f.getMesh();
-
-  Field3D result{emptyFrom(f)};
-
   Coordinates* coord = f.getCoordinates();
 
-  BOUT_FOR(i, f.getValidRegionWithDefault("RGN_NOBNDRY")) {
+  auto B = coord->Bxy;
+  auto B_up = coord->Bxy.yup();
+  auto B_down = coord->Bxy.ydown();
+
+  auto f_up = f.yup();
+  auto f_down = f.ydown();
+
+  auto v_up = v.yup();
+  auto v_down = v.ydown();
+
+  auto g_22 = coord->g_22;
+  auto dy = coord->dy;
+
+  Field3D result{emptyFrom(f)};
+  BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
     //IB_TODO: Double check new logic here ok.
     if (immBndry && !immBndry->IsInside(i)) {continue;}
 
-    // Value of f and v at left cell face
-    BoutReal fL = 0.5 * (f[i] + f.ydown()[i.ym()]);
-    BoutReal vL = 0.5 * (v[i] + v.ydown()[i.ym()]);
-    
-    BoutReal fR = 0.5 * (f[i] + f.yup()[i.yp()]);
-    BoutReal vR = 0.5 * (v[i] + v.yup()[i.yp()]);
-    
-    // Calculate flux at right boundary (y+1/2)
-    BoutReal fluxRight =
-        fR * vR * (coord->J[i] + coord->J[i.yp()])
-        / (sqrt(coord->g_22[i]) + sqrt(coord->g_22[i.yp()]));
-    
-        // Calculate at left boundary (y-1/2)
-    BoutReal fluxLeft =
-        fL * vL * (coord->J[i] + coord->J[i.ym()])
-        / (sqrt(coord->g_22[i]) + sqrt(coord->g_22[i.ym()]));
+    result[i] = B[i]
+                * ((f_up[i] * v_up[i] / B_up[i]) - (f_down[i] * v_down[i] / B_down[i]))
+                / (2 * dy[i] * sqrt(g_22[i]));
 
-    result[i] =
-        (fluxRight - fluxLeft) / (coord->dy[i] * coord->J[i]);
+#if CHECK > 2
+    if (!std::isfinite(result[i])) {
+      throw BoutException("Non-finite value in Div_par(f, v) at {}\n"
+                          "  f down {} up {}\n"
+                          "  v down {} up {}\n"
+                          "  B down {} central {} up {}\n"
+                          "  dy {} sqrt(g_22) {}\n",
+                          i, f_down[i], f_up[i], v_down[i], v_up[i], B_down[i], B[i],
+                          B_up[i], dy[i], sqrt(g_22[i]));
+    }
+#endif
   }
 
   return result;

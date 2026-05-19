@@ -203,7 +203,7 @@ LaplaceNaulin::LaplaceNaulin(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   ASSERT0(underrelax_recovery >= 1.);
   delp2solver = create(opt->getSection("delp2solver"), location, localmesh);
   std::string delp2type;
-  opt->getSection("delp2solver")->get("type", delp2type, "cyclic");
+  opt->getSection("delp2solver")->get("type", delp2type, LaplaceFactory::default_type);
   // Check delp2solver is using an FFT scheme, otherwise it will not exactly
   // invert Delp2 and we will not converge
   ASSERT0(delp2type == "cyclic" || delp2type == "spt" || delp2type == "tri");

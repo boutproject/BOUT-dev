@@ -94,7 +94,7 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
   TRACE("Field3D: Copy constructor from value");
 
   *this = val;
-#if BOUT_USE_FCI_AUTOMAGIC
+
   if (this->isFci()) {
     splitParallelSlices();
     for (size_t i = 0; i < numberParallelSlices(); ++i) {
@@ -102,7 +102,6 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
       ydown(i) = val;
     }
   }
-#endif
 }
 
 Field3D::Field3D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation,
@@ -362,18 +361,13 @@ Field3D& Field3D::operator=(const BoutReal val) {
   TRACE("Field3D = BoutReal");
   track(val, "operator=");
 
-#if BOUT_USE_FCI_AUTOMAGIC
-  if (isFci() && hasParallelSlices()) {
+  if (hasParallelSlices()) {
     for (size_t i = 0; i < numberParallelSlices(); ++i) {
       yup(i) = val;
       ydown(i) = val;
     }
   }
-#else
-  // Delete existing parallel slices. We don't copy parallel slices, so any
-  // that currently exist will be incorrect.
-  clearParallelSlices();
-#endif
+
   resetRegion();
 
   allocate();
@@ -387,11 +381,13 @@ Field3D& Field3D::operator=(const BoutReal val) {
 Field3D& Field3D::calcParallelSlices() {
   ASSERT2(allowCalcParallelSlices);
   getCoordinates()->getParallelTransform().calcParallelSlices(*this);
-#if BOUT_USE_FCI_AUTOMAGIC
-  if (this->isFci()) {
-    this->applyParallelBoundary("parallel_neumann_o2");
-  }
-#endif
+
+  // This seems like it could work but give wrong results.
+  // Better to insert NaNs into boundary cells
+  // if (this->isFci()) {
+  //   this->applyParallelBoundary("parallel_neumann_o2");
+  // }
+
   return *this;
 }
 
@@ -555,7 +551,12 @@ void Field3D::applyParallelBoundary() {
   TRACE("Field3D::applyParallelBoundary()");
 
   checkData(*this);
-  ASSERT1(hasParallelSlices());
+  if (isFci()) {
+    ASSERT1(hasParallelSlices());
+  }
+  if (!hasParallelSlices()) {
+    return;
+  }
 
   // Apply boundary to this field
   for (const auto& bndry : getBoundaryOpPars()) {
@@ -568,7 +569,12 @@ void Field3D::applyParallelBoundary(BoutReal t) {
   TRACE("Field3D::applyParallelBoundary(t)");
 
   checkData(*this);
-  ASSERT1(hasParallelSlices());
+  if (isFci()) {
+    ASSERT1(hasParallelSlices());
+  }
+  if (!hasParallelSlices()) {
+    return;
+  }
 
   // Apply boundary to this field
   for (const auto& bndry : getBoundaryOpPars()) {
@@ -581,7 +587,12 @@ void Field3D::applyParallelBoundary(const std::string& condition) {
   TRACE("Field3D::applyParallelBoundary(condition)");
 
   checkData(*this);
-  ASSERT1(hasParallelSlices());
+  if (isFci()) {
+    ASSERT1(hasParallelSlices());
+  }
+  if (!hasParallelSlices()) {
+    return;
+  }
 
   /// Get the boundary factory (singleton)
   BoundaryFactory* bfact = BoundaryFactory::getInstance();
@@ -600,7 +611,12 @@ void Field3D::applyParallelBoundary(const std::string& region,
   TRACE("Field3D::applyParallelBoundary(region, condition)");
 
   checkData(*this);
-  ASSERT1(hasParallelSlices());
+  if (isFci()) {
+    ASSERT1(hasParallelSlices());
+  }
+  if (!hasParallelSlices()) {
+    return;
+  }
 
   /// Get the boundary factory (singleton)
   BoundaryFactory* bfact = BoundaryFactory::getInstance();
@@ -622,7 +638,12 @@ void Field3D::applyParallelBoundary(const std::string& region,
   TRACE("Field3D::applyParallelBoundary(region, condition, f)");
 
   checkData(*this);
-  ASSERT1(hasParallelSlices());
+  if (isFci()) {
+    ASSERT1(hasParallelSlices());
+  }
+  if (!hasParallelSlices()) {
+    return;
+  }
 
   /// Get the boundary factory (singleton)
   BoundaryFactory* bfact = BoundaryFactory::getInstance();

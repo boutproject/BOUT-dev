@@ -4,10 +4,9 @@
  * Definition of main derivative kernels
  *
  **************************************************************************
- * Copyright 2018
- *    D.Dickinson
+ * Copyright 2018 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -204,13 +203,9 @@ T DDY(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "D
     ASSERT1(f.getDirectionY() == YDirectionType::Standard);
     T f_tmp = f;
     if (!f.hasParallelSlices()) {
-#if BOUT_USE_FCI_AUTOMAGIC
-      f_tmp.calcParallelSlices();
-#else
       throw BoutException(
           "parallel slices needed for parallel derivatives. Make sure to communicate and "
           "apply parallel boundary conditions before calling derivative");
-#endif
     }
     return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::Standard>(f_tmp, outloc,
                                                                           method, region);
