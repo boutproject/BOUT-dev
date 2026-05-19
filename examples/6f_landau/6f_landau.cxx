@@ -6139,20 +6139,22 @@ protected:
         if (BoutReal(indx) > ixsep * PF_limit_range) {
           for (jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
             for (jz = 0; jz < mesh->LocalNz; jz++) {
-              var(xind,jy,jz) = 2 * var(xind,jy - 1,jz) - var(xind,jy - 2,jz);
+              var_fa(xind,jy,jz) = 2 * var_fa(xind,jy - 1,jz) - var_fa(xind,jy - 2,jz);
+              // var_fa(xind,jy,jz) = SQ(var_fa(xind,jy - 1,jz)) / var_fa(xind,jy - 2,jz);
             }
           }
         } else if (BoutReal(indx) <= ixsep * PF_limit_range) {
           for (jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
             for (jz = 0; jz < mesh->LocalNz; jz++) {
-              var(xind,jy,jz) = var(xind,jy - 1,jz);
+              var_fa(xind,jy,jz) = var_fa(xind,jy - 1,jz);
             }
           }
         }
       } else {
         for (jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
           for (jz = 0; jz < mesh->LocalNz; jz++) {
-            var(xind,jy,jz) = 2 * var(xind,jy - 1,jz) - var(xind,jy - 2,jz);
+            var_fa(xind,jy,jz) = 2 * var_fa(xind,jy - 1,jz) - var_fa(xind,jy - 2,jz);
+            // var_fa(xind,jy,jz) = SQ(var_fa(xind,jy - 1,jz)) / var_fa(xind,jy - 2,jz);
           }
         }
       }
@@ -6165,21 +6167,23 @@ protected:
         if (BoutReal(indx) > ixsep * PF_limit_range) {
           for (jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
             for (jz = 0; jz < mesh->LocalNz; jz++) {
-              var(xind,jy,jz) = 2 * var(xind,jy+1,jz) + var(xind,jy+2,jz);
+              var_fa(xind,jy,jz) = 2 * var_fa(xind,jy+1,jz) - var_fa(xind,jy+2,jz);
+              // var_fa(xind,jy,jz) = SQ(var_fa(xind,jy + 1,jz)) / var_fa(xind,jy + 2,jz);
             }
           }
         }
         if (BoutReal(indx) <= ixsep * PF_limit_range) {
           for (jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
             for (jz = 0; jz < mesh->LocalNz; jz++) {
-              var(xind,jy,jz) = var(xind,jy+1,jz);
+              var_fa(xind,jy,jz) = var_fa(xind,jy+1,jz);
             }
           }
         }
       } else {
         for (jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
           for (jz = 0; jz < mesh->LocalNz; jz++) {
-            var(xind,jy,jz) = 2 * var(xind,jy+1,jz) + var(xind,jy+2,jz);
+            var_fa(xind,jy,jz) = 2 * var_fa(xind,jy+1,jz) - var_fa(xind,jy+2,jz);
+            // var_fa(xind,jy,jz) = SQ(var_fa(xind,jy + 1,jz)) / var_fa(xind,jy + 2,jz);
           }
         }
       }
