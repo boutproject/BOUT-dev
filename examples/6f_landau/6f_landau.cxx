@@ -48,7 +48,7 @@
 #include "bout/invert/laplacexy.hxx"
 #include "bout/interpolation.hxx"
 #include "bout/sourcex.hxx"
-#include "bout/neutral.hxx"
+// #include "bout/neutral.hxx"
 #include "bout/utils.hxx"
 //#include "bout/integrops.hxx"
 
@@ -298,41 +298,13 @@ private:
   BoutReal NiAmp, TeAmp, TiAmp;                  // Amplitude of the Gaussian shape sources
   int NiLoc, TeLoc, TiLoc, NiSig, TeSig, TiSig;  // Center locations and standard deviation of the sources
 
-  /// neutral
-  bool neutral, Solving_Eq_Nn, Solving_Eq_Vn;
-  bool initial_Nn;
-  bool full_sbc_Vn;                              // full-f version of sheath BC for neutral parallel velocity
-  bool read_collision_rate;
-  bool constent_Dn, Gradperp_Dn, Gradpar_Dn, Gradpar_etan, Gradperp_etan, external_source;
-  bool with_vipar, with_viperp;                  // Vi~Vn
-  Field3D Nn, Vn, Pn;
-  Field3D Dn, Dn_fl, Dn1, etan, etan_perp, Sn, Sn_ext, Sv, S_tmp;
-  bool fl_Dn;
-  BoutReal Lnn_min;
-  Field3D nu_iz, nu_cx, nu_rc, sigma_cx;
-  // used for initialize neutral profile
-  BoutReal NnAmp, NnLoc, NnSig, NnLoc_y, NnSig_y, fac_A, Diff_n, fac_Dn, fac_etan;  
-  BoutReal SnAmp, SnLoc, SnSig, SnLoc_y, SnSig_y;// used for gas puffing profile
-  Field3D Gamma_nn;
-  BoutReal Rcyc_Nn, Rcyc_Vn;                     // recycle coefficients
-  bool Nn_recyc_BC, Vn_recyc_BC;
-
   // Fixed-fraction model for impurity radiation
   bool fix_fraction_imp, Limp_carbon, Limp_carbon_adas, Limp_nitro, Limp_nitro_adas, Limp_Neon, Limp_Neon_adas, Limp_Argon, Limp_Argon_adas;
   Field3D Limp, Srad, Wrad;
   Field2D N_tmp0, Ne_tmp0, Te_tmp0, Limp0, Srad0, Wrad0; // Used for the linearization of the fixed-fraction radiation model
 
-  BoutReal Wiz, Wrc;                              // ionization and recombination energy in eV
   BoutReal frac_imp;
   
-  /// 3D const fueling flux
-  bool with_fueling;
-  bool initial_Nm, gas_puffing;
-  BoutReal CF_BC_x0, CF_BC_y0, CF_BC_y1, CF_BC_z0, CF_BC_z1;
-  Field3D Nm, Vmx, pm, Nm_tmp, S_diss, nu_diss, Sgas;
-  Vector3D Vm;
-  BoutReal Nm0, Vm0, Tm_x, Mm;
-
   /// parallel and perpendicular hyperdiffusion
   // M: 4th Parallel density diffusion
   BoutReal hyperdiff_par_n4, hyperdiff_par_ti4, hyperdiff_par_te4;
@@ -536,26 +508,6 @@ private:
   /// Solver for inverting Laplacian
   std::unique_ptr<Laplacian> phiSolver{nullptr};
   std::unique_ptr<Laplacian> aparSolver{nullptr};
-
-  const Field3D ret_const_flux_BC(const Field3D &var, const BoutReal value) {
-    Field3D result;
-    result.allocate();
-    for (int jx = 0; jx < mesh->LocalNx; jx++) {
-      int x_glb = mesh->getGlobalXIndex(jx);
-      for (int jy = 0; jy < mesh->LocalNy; jy++) {
-	      int y_glb = mesh->getGlobalYIndex(jy);
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
-          if(x_glb >= CF_BC_x0 && y_glb >= CF_BC_y0 && y_glb <= CF_BC_y1) {
-	          result(jx,jy,jz) = value;
-	        } else {
-	          result(jx,jy,jz) = var(jx,jy,jz);
-	        }
-	      }	  
-      }
-    }
-    mesh->communicate(result);
-    return(result);
-  }
 
   const Field2D tanhxl_core(const int filter_index) {
     Field2D result;
@@ -1094,7 +1046,6 @@ private:
   }
 
 
-
 protected:
 
   int init(bool restarting) override {
@@ -1344,42 +1295,6 @@ protected:
     TeSig = options["TeSig"].withDefault(floor(ixsep/12.));
     TiSig = options["TiSig"].withDefault(floor(ixsep/12.));
 
-    neutral = options["neutral"].withDefault(false);
-    Solving_Eq_Nn = options["Solving_Eq_Nn"].withDefault(false);
-    Solving_Eq_Vn = options["Solving_Eq_Vn"].withDefault(false);
-    with_vipar = options["with_vipar"].withDefault(false);
-    initial_Nn = options["initial_Nn"].withDefault(false);
-    fl_Dn = options["fl_Dn"].withDefault(false);
-    constent_Dn = options["constent_Dn"].withDefault(false);
-    Gradperp_Dn = options["Gradperp_Dn"].withDefault(false);
-    Gradpar_Dn = options["Gradpar_Dn"].withDefault(false);
-    Gradpar_etan = options["Gradpar_etan"].withDefault(false);
-    Gradperp_etan = options["Gradperp_etan"].withDefault(false);
-    external_source = options["external_source"].withDefault(false);
-    read_collision_rate = options["read_collision_rate"].withDefault(false);
-    NnAmp = options["NnAmp"].withDefault(0.2);
-    NnLoc = options["NnLoc"].withDefault(ixsep);
-    NnSig = options["NnSig"].withDefault(floor(Grid_NX/4.));
-    NnLoc_y = options["NnLoc_y"].withDefault(31.0);
-    NnSig_y = options["NnSig_y"].withDefault(4.0);
-    Nn_recyc_BC = options["Nn_recyc_BC"].withDefault(false);
-    Vn_recyc_BC = options["Vn_recyc_BC"].withDefault(false);
-    full_sbc_Vn = options["full_sbc_Vn"].withDefault(false);
-    Rcyc_Nn = options["Rcyc_Nn"].withDefault(1.0);
-    Rcyc_Vn = options["Rcyc_Vn"].withDefault(1.0);
-    fac_A = options["fac_A"].withDefault(0.4);
-    fac_Dn = options["fac_Dn"].withDefault(1.0);
-    fac_etan = options["fac_etan"].withDefault(1.0);
-    Lnn_min = options["Lnn_min"].withDefault(1.0e-3);
-    Diff_n = options["Diff_n"].withDefault(5.0);
-    SnAmp = options["SnAmp"].withDefault(0.1);
-    SnLoc = options["SnLoc"].withDefault(ixsep);
-    SnSig = options["SnSig"].withDefault(floor(Grid_NX/4.));
-    SnLoc_y = options["SnLoc_y"].withDefault(31);
-    SnSig_y = options["SnSig_y"].withDefault(4);
-    Wiz = options["Wiz"].withDefault(13.6);    // ionization energy in eV   
-    Wrc = options["Wrc"].withDefault(4.5);     //recombination energy in eV
-
     fix_fraction_imp = options["fix_fraction_imp"].withDefault(false);
     Limp_carbon = options["Limp_carbon"].withDefault(false);
     Limp_nitro = options["Limp_nitro"].withDefault(false);
@@ -1390,19 +1305,6 @@ protected:
     Limp_Neon_adas = options["Limp_Neon_adas"].withDefault(false);
     Limp_Argon_adas = options["Limp_Argon_adas"].withDefault(false);
     frac_imp = options["frac_imp"].withDefault(0.0);
-
-    with_fueling = options["with_fueling"].withDefault(false);
-    initial_Nm = options["initial_Nm"].withDefault(false);
-    gas_puffing = options["gas_puffing"].withDefault(false);
-    CF_BC_x0 = options["CF_BC_x0"].withDefault(1.01);
-    CF_BC_y0 = options["CF_BC_y0"].withDefault(0.47);
-    CF_BC_y1 = options["CF_BC_y1"].withDefault(0.53);
-    CF_BC_z0 = options["CF_BC_z0"].withDefault(0.0);
-    CF_BC_z1 = options["CF_BC_z1"].withDefault(2.0);  //default smbi in whole Z
-    Vm0 = options["Vm0"].withDefault(-500.0);         // Read in m/s
-    Nm0 = options["Nm0"].withDefault(1.0e7);          // Read in in 1.e^20 m^-3
-    Tm_x = options["Tm_x"].withDefault(0.0258);       // eV
-    Mm = options["Mm"].withDefault(2.0);              // in Mi
 
     // int bracket_method;
     bracket_method_exb = options["bracket_method_exb"].withDefault(0);
@@ -2460,31 +2362,6 @@ protected:
       dump.add(Vbtilde, "Vbtild", 1);
     }
 
-    if (neutral) {
-      dump.add(nu_iz, "nu_iz", 1);
-      dump.add(nu_rc, "nu_rc", 1);
-      dump.add(nu_cx, "nu_cx", 1);
-      dump.add(Dn, "Dn", 1);
-      dump.add(Dn_fl, "Dn_fl", 1);
-      dump.add(Dn1, "Dn1", 1);
-      dump.add(Gamma_nn, "Gamma_nn", 1);
-      dump.add(etan, "etan", 1);
-      dump.add(etan_perp, "etan_perp", 1);
-      dump.add(Pn, "Pn", 1);
-      dump.add(Sn, "Sn", 1);
-      dump.add(Sn_ext, "Sn_ext", 1);
-      dump.add(Sv, "Sv", 1);
-      dump.add(S_diss, "S_diss", 1);
-      dump.add(nu_diss, "nu_diss", 1);
-      dump.add(Sgas, "Sgas", 1);
-      dump.add(sigma_cx, "sigma_cx", 1);
-      if (with_vipar) {
-        dump.add(term1, "term1", 1);
-      }
-      dump.add(term2, "term2", 1);
-      dump.add(term3, "term3", 1);
-    }
-
     if (fix_fraction_imp) {
       dump.add(Limp, "Limp", 1);
       dump.add(Srad, "Srad", 1);
@@ -2832,155 +2709,6 @@ protected:
     // dump.add(NiSource, "NiSource", 1);
     // dump.add(TeSource, "TeSource", 1);
     // dump.add(TeSource, "TiSource", 1);
-
-    //initialize neutral profile				
-    if (neutral) {
-      output.write("Solving for Nn and Vn\n");
-      SOLVE_FOR(Nn);
-      SOLVE_FOR(Vn);
-      
-      if (!restarting) {
-        Nn = 1.0e-10;
-        Vn = 0.0;
-      }
-
-      if (with_fueling) {
-        SOLVE_FOR(Nm);
-        SOLVE_FOR(Vm);
-        if (!restarting) {
-          Nm = 1.0e-10;
-          Vm = 0.0;
-	      }
-      }
-      
-      if (with_fueling) {
-        Vmx = Vm.x;
-        Vm0 /= Lbar/Tbar;
-        //Nm=ret_const_flux_BC(Nm, Nm0);
-        //Vmx=ret_const_flux_BC(Vmx, Vm0);
-        if (initial_Nm) {
-          for (jz = 0; jz < mesh->LocalNz; jz++) {
-            for (jy = 0; jy< mesh->LocalNy; jy++) {
-              indy = mesh->getGlobalYIndex(jy);
-              for (jx = 0;jx < mesh->LocalNx; jx++) {
-	              indx = mesh->getGlobalXIndex(jx);
-                if (mag_config == 1 || mag_config == 2) {
-                  Vmx(jx,jy,jz) = Vm0*(1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
-                  Nm(jx,jy,jz) = Nm0*(1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
-	              }
-                if (mag_config == 3) {
-                  Vmx(jx,jy,jz) = Vm0*(1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
-                  Nm(jx,jy,jz) = Nm0*(1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
-	              }
-                if (mag_config == 4) {
-                  Vmx(jx,jy,jz) = Vm0*(1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
-                  Nm(jx,jy,jz) = Nm0*(1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
-	              }
-	            }
-	          }
-	        }
-	      } else {
-          Vmx = 0.0;
-          Nm = 1.0e-10;
-	      }
-        Vm.x = Vmx;
-        Vm.y = 0.0;
-        Vm.z = 0.0;
-        mesh->communicate(Nm);
-        mesh->communicate(Vmx);
-        mesh->communicate(Vm);
-        Nm.setBoundary("Nm");
-        Vm.setBoundary("Vm");
-        Nm.applyBoundary();
-        Vm.applyBoundary();
-        
-	      Sgas = 0.;
-        if (gas_puffing) {
-          for (jz = 0; jz < mesh->LocalNz; jz++) {
-            for (jy = 0; jy < mesh->LocalNy; jy++) {
-              indy = mesh->getGlobalYIndex(jy);
-              for (jx = 0; jx < mesh->LocalNx; jx++) {
-	              indx = mesh->getGlobalXIndex(jx);
-                if (mag_config == 1 || mag_config == 2) {
-                  Sgas(jx,jy,jz) = Nm0 * (1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
-		            }
-		            if (mag_config == 3) {
-                  Sgas(jx,jy,jz) = Nm0 * (1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
-                }
-                if (mag_config == 4) {
-                  Sgas(jx,jy,jz) = Nm0 * (1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
-                }
-	            }
-	          }
-	        }
-	      }
-        Sgas.setBoundary("Nm");
-        mesh->communicate(Sgas);
-        Sgas.applyBoundary();
-      }
-      
-      // ideally Nn and Vn shall have the neumann bc at radial boundaries
-      Nn.setBoundary("Nn");
-      //lNn.setBoundary("Ni");
-      Vn.setBoundary("Vn");
-      // initial neutral profile with tanh function, could be changed easily
-      if (initial_Nn) {
-       for (jz = 0; jz < mesh->LocalNz; jz++) {
-        for (jy = 0; jy < mesh->LocalNy; jy++) {
-          indy = mesh->getGlobalYIndex(jy);
-          for (jx = 0; jx < mesh->LocalNx; jx++) {
-	          indx = mesh->getGlobalXIndex(jx);
-            if (mag_config == 1 || mag_config == 2) {
-              Nn(jx,jy,jz) = NnAmp * (1 - fac_A * (tanh( - (indx - NnLoc) / NnSig) + 1.)) * (exp((indy - NnLoc_y) / NnSig_y) + exp( - (indy - NnLoc_y) / NnSig_y)) / 2. + 1.0e-10;
-	          }
-	          if (mag_config == 3) {
-              Nn(jx,jy,jz) = NnAmp * (1 - fac_A * (tanh( - (indx - NnLoc) / NnSig) + 1.)) * (exp((indy - NnLoc_y) / NnSig_y) + exp( - (indy - NnLoc_y) / NnSig_y)) / 2. + 1.0e-10;
-            }
-            if (mag_config == 4) {
-              Nn(jx,jy,jz) = NnAmp * (1 - fac_A * (tanh( - (indx - NnLoc) / NnSig) + 1.)) * (exp((indy - NnLoc_y) / NnSig_y) + exp( - (indy - NnLoc_y) / NnSig_y)) / 2. + 1.0e-10;
-            }
-	        }
-        }
-       }
-      } else {
-        Nn = 1.0e-10;
-      }
-      //mesh->communicate(lNn);
-      //lNn.applyBoundary();
-
-      //Nn = NnAmp*(1.-lNn);
-      //Nn = NnAmp;//*(lNn+1.0);
-      mesh->communicate(Nn);
-      Nn.applyBoundary();
-      output.write("Max and min of normalized Nn = {:e}, {:e}.\n", max(Nn), min(Nn));
-      //SAVE_ONCE(Nn);
-      //lNn = log(Nn);
-      //output.write("Max and min of normalized ln(Nn) = {:e}, {:e}.\n", max(lNn), min(lNn));
-      Sn_ext = 0.;
-      if (external_source) {
-        for (jz = 0; jz < mesh->LocalNz; jz++) {
-          for (jy = 0; jy < mesh->LocalNy; jy++) {
-            indy = mesh->getGlobalYIndex(jy);
-            for (jx = 0; jx < mesh->LocalNx; jx++) {
-	            indx = mesh->getGlobalXIndex(jx);
-              if (mag_config == 1 || mag_config == 2)
-                Sn_ext(jx,jy,jz) = SnAmp * (1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
-              if (mag_config == 3) {
-                if ( (indy > jysep1 - 2) && (indy <= jysep2 + 2) )
-                  Sn_ext(jx,jy,jz) = SnAmp * (1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
-              }
-              if (mag_config == 4) {
-                if ( ((indy > jysep1 - 2) && (indy <= jysep2_1)) || ((indy > jysep1_2) && (indy <= jysep2 + 2)))
-                  Sn_ext(jx,jy,jz) = SnAmp * (1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
-              }
-            }
-          }
-        }
-        Sn_ext.setBoundary("Nn");
-        mesh->communicate(Sn_ext);
-        Sn_ext.applyBoundary();
-      }
-    }
 
     // Background Impurity radiation source term. Calculated based on the background/equilibrium profiles.
     // To be substracted from the total source term  in the equation for the perturbed Te. 
@@ -3596,11 +3324,6 @@ protected:
       Vepar.setBoundary("Vipar");
     }
 
-    if (neutral) {
-      comms.add(Nn);
-      comms.add(Vn);
-    }
-
     if (hyperdiff_par_u4 > 0.0 || hyperdiff_perp_u4 > 0.0) {
       // tmpU2.setBoundary("U");
       tmpU2.setBoundary("neumann_input");
@@ -4136,95 +3859,6 @@ protected:
 
     // MPI_Barrier(BoutComm::get());
 
-    if (neutral) {
-      N_tmp = field_larger(N0 + Ni, Low_limit);
-      Ti_tmp = field_larger(Ti0 + Ti, Low_limit);
-      Te_tmp = field_larger(Te0 + Te, Low_limit);
-      if (impurity_prof)
-        Ne_tmp = field_larger(Ne0 + Zi * Ni, Low_limit);
-      else
-        Ne_tmp = Zi * N_tmp;
-      
-      // calculate from src code in neutral.cxx
-      if (read_collision_rate) {
-        nu_iz = iz_rate(Te_tmp * Tebar, 1) * Nbar * density * Lbar / Va;
-        nu_cx = cx_rate(Ti_tmp * Tibar, 1) * Nbar * density * Lbar / Va;
-        nu_rc = rc_rate(Te_tmp * Tebar, N_tmp * Nbar * density, 1) * Nbar * density * Lbar / Va;
-        sigma_cx = cx_sect(Ti_tmp * Tibar, 1) * Nbar * density * Lbar;
-      } else {
-        nu_iz = 3.e4 * Tbar * Nbar * Te_tmp * Te_tmp * Tebar * Tebar / (3. + 0.01 * Te_tmp * Te_tmp * Tebar * Tebar);
-        nu_cx = 1.e6 * Tbar * Nbar * (1.7 + 1.9 * ((pow(1.5 * Ti_tmp * Tibar, 0.333)) - 2.4662) / ((pow(150.0 * Ti_tmp * Tibar, 0.333)) - 2.4662));
-        Field3D lambda_rec=1.5789e5 / (Te_tmp * Tebar * 1.1604e4);  //Te trasfer unit from eV to Kelvin
-        nu_rc = Tbar * Nbar * 5.197 * Zi * sqrt(lambda_rec) * (0.4288 + 0.5 * log(lambda_rec) + 0.469 / pow(lambda_rec, 0.333));
-        sigma_cx = cx_sect(Ti_tmp * Tibar, 1) * Nbar * density * Lbar;
-        mesh->communicate(nu_iz);
-        mesh->communicate(nu_cx);
-        mesh->communicate(nu_rc);
-	      mesh->communicate(sigma_cx);
-      }
-      vth_i = 9.79e3 * sqrt((Ti_tmp) * Tibar / AA); // vth_i in m/S.
-
-      // diffusion and viscosity coefficients
-      if (constent_Dn) {
-        Dn = Diff_n /(Va * Va * Tbar);
-      } else {
-        Dn = vth_i * vth_i / (Va * Va * (N_tmp * nu_cx))/fac_Dn;
-      }
-      Dn1 = vth_i * vth_i / (Va * Va * (N_tmp * nu_cx));
-      Dn_fl = vth_i /Va * Lnn_min / Lbar;
-      if (fl_Dn) {
-        Dn *= Dn_fl / (Dn + Dn_fl);
-      }
-      mesh->communicate(Dn);
-      Dn.applyBoundary("neumann");
-
-      etan = 1.0 / (N_tmp + Nn) * vth_i / (Va * sigma_cx);
-      etan_perp = etan;
-      if (fac_etan > 0.0) {
-        etan_perp /= fac_etan;
-      }
-      mesh->communicate(etan);
-      etan.applyBoundary("neumann");
-
-      c_set = sqrt(abs(Tau_ie * Ti_tmp + Te_tmp));
-      c_se0 = sqrt(abs(Tau_ie * Ti0 + Te0));
-      const_cse = sqrt(KB * Tebar * eV_K / Mi);
-      c_se0 *= const_cse;
-      c_se = c_set - c_se0 / const_cse;
-      c_se *= const_cse / Va; // normalized
-      c_set *= const_cse;     // not normalized, with unit
-      mesh->communicate(c_set);
-      c_set.applyBoundary("neumann");
-      mesh->communicate(c_se);
-      c_se.applyBoundary("neumann");
-
-      if (full_sbc_Vn) {
-        Gamma_nn = Rcyc_Nn * N_tmp * c_set / Va / Dn;
-      } else {
-        Gamma_nn = Rcyc_Nn * N_tmp * c_se / Dn;
-      }
-      mesh->communicate(Gamma_nn);
-      Gamma_nn.applyBoundary("neumann");
-      if (Nn_recyc_BC) {
-        SBC_Gradpar(Nn, Gamma_nn, PF_limit, PF_limit_range);
-      } else {
-        Field3D Nn_sh = Rcyc_Nn * N_tmp;
-        SBC_Dirichlet(Nn, Nn_sh, PF_limit, PF_limit_range); //NOTE(malamast): TODO:CHECK. I changed added that instead of the below. Check the -value.
-        // SBC_yup_eq(Nn, Rcyc_Nn * N_tmp, PF_limit, PF_limit_range);
-        // SBC_ydown_eq(Nn, Rcyc_Nn * N_tmp, PF_limit, PF_limit_range);
-      }
-      if (Vn_recyc_BC) {
-        if (full_sbc_Vn) {
-          Field3D Vn_sh_n = -Rcyc_Vn * c_set / Va; 
-          SBC_Dirichlet(Vn, Vn_sh_n, PF_limit, PF_limit_range);
-        } else {
-          Field3D Vn_sh = -Rcyc_Vn * c_se;
-          SBC_Dirichlet(Vn, Vn_sh, PF_limit, PF_limit_range);
-        }
-      } else {
-        SBC_Gradpar(Vn, zero, PF_limit, PF_limit_range);
-      }
-    }
     
     if (fix_fraction_imp) {
       N_tmp = field_larger(N0 + Ni, Low_limit);
@@ -5573,139 +5207,6 @@ protected:
         }
       }
     }
-
-    //////////////////////////////////////////////////////////////////
-    if (neutral) { // neutral model
-    
-      N_tmp = field_larger(N0 + Ni, Low_limit);
-      Te_tmp = field_larger(Te0 + Te, Low_limit);
-      Ti_tmp = field_larger(Ti0 + Ti, Low_limit);
-      if (impurity_prof)
-        Ne_tmp = field_larger(Ne0 + Zi * Ni, Low_limit);
-      else
-        Ne_tmp = Zi * N_tmp;
-
-      //**************************************************************
-      // Molecule density Nm and Perpendicular Velocity in X ---Vmx---
-      //**************************************************************
-      if (with_fueling) {
-        ddt(Nm) = 0.0;
-        ddt(Vm) = 0.0;
-	
-        //******---Nm---******
-        Nm_tmp = Nm;
-        nu_diss = 3.e4 * Nm_tmp * Nbar * Te_tmp * Te_tmp * Tebar * Tebar/(3.+0.01 * Te_tmp * Te_tmp * Tebar * Tebar);
-        S_diss = N_tmp * nu_diss * Tbar;
-        mesh->communicate(S_diss);
-        S_diss.applyBoundary("neumann");
-      
-        ddt(Nm) -= V_dot_Grad(Vm, Nm)-Nm * Div(Vm) + S_diss;
-        
-        if (gas_puffing) {
-                ddt(Nm) += Sgas;
-        }
-
-        //******---Vmx---******
-        pm = Nm * Tm_x / Tebar;
-        //Vm.x=Vmx;
-        //Vm.y=0.;
-        //Vm.z=0.;
-        ddt(Vm) -= V_dot_Grad(Vm,Vm) + Grad(pm) / Nm_tmp / Mm;
-      }
-      
-      //**************************************************************
-      // Atom equations
-      //**************************************************************
-      Pn = Nn * Ti_tmp;
-      BoutReal minimum_val = 1.e-10;
-      Pn=field_larger(Pn,minimum_val);
-
-      ddt(Nn) = 0.;
-      ddt(Vn) = 0.;      
-	
-      // neutral density equations
-      if (Solving_Eq_Nn) {
-        ddt(Nn) += Dn * Delp2(Nn);
-        term2 = Dn * Delp2(Nn);
-
-        if (Gradperp_Dn) {
-          ddt(Nn) += Grad_perp(Dn) * Grad_perp(Nn);
-          term2 += Grad_perp(Dn) * Grad_perp(Nn);
-        }
-        mesh->communicate(term2);
-        term2.applyBoundary("neumann");
-
-        if (with_vipar) {
-          Field3D N_eff = Nn * (nu_cx + nu_rc)/(nu_cx + nu_iz);
-          ddt(Nn) -= Grad_par(Vipar) * N_eff + Vpar_Grad_par(Vipar, N_eff); //NOTE(malamast): Inconsistency: Vipar is the perturbed part. Not the total. 
-          term1 = -Grad_par(Vipar) * N_eff - Vpar_Grad_par(Vipar, N_eff);
-          mesh->communicate(term1);
-          term1.applyBoundary("neumann");
-        }
-	  
-        if (!Solving_Eq_Vn){
-          ddt(Nn) += Dn * Grad2_par2(Nn);
-          term3 = Dn * Grad2_par2(Nn);
-          if (Gradpar_Dn) {
-            ddt(Nn) += Grad_par(Dn) * Grad_par(Nn);
-            term3 += Grad_par(Dn) * Grad_par(Nn);
-          }
-          mesh->communicate(term3);
-          term3.applyBoundary("neumann");
-        } else {
-          ddt(Nn) -= Grad_par(Vn) * Nn + Vpar_Grad_par(Vn, Nn);
-        }
-
-        // source/sink terms
-        if (external_source) {
-                ddt(Nn) += Sn_ext;
-        }
-	  
-        if (with_fueling) {
-                ddt(Nn) += 2.0 * S_diss;
-        }
-        
-        Sn = nu_rc * Ne_tmp * N_tmp - nu_iz * Nn * N_tmp;
-        mesh->communicate(Sn);
-        Sn.applyBoundary("neumann");
-        ddt(Nn) += Sn;
-        ddt(Ni) -= Sn;
-      }
-
-      // neutral parallel velcocity equations
-      if (Solving_Eq_Vn) {
-        ddt(Vn) = -Vn * Grad_par(Vn);
-        ddt(Vn) -= Upara1 * Tau_ie * Grad_par(Pn);	  
-        //ddt(Vn) += (Grad_par(etan) * Grad_par(Vn) + etan * Grad2_par2new(Vn)) / Nn;
-        ddt(Vn) += etan * Grad2_par2(Vn);
-
-        if (Gradpar_etan) {
-          ddt(Vn) += (Grad_par(etan) * Grad_par(Vn));
-        }
-
-        if (Gradperp_etan) {
-          ddt(Vn) += etan_perp * Delp2(Vn);
-          ddt(Vn) += Grad_perp(etan_perp) * Grad_perp(Vn);
-	      }
-	
-      	if (compress0) {
-          Field3D Nn_tmp = Nn;
-          Nn_tmp=field_larger(Nn_tmp, minimum_val);
-          Sv = N_tmp * (Ne_tmp / Nn_tmp * nu_rc + nu_cx) * (Vipar - Vn);
-          mesh->communicate(Sv);
-          Sv.applyBoundary("neumann");
-          ddt(Vn) += Sv;
-	      }
-      }
-
-      // NOTE(malamast): The below are all wrong/inconsistent. Te, Ti, U, Vipar are all the perturbed parts. You cannot mix up terms.  
-      ddt(Te) -= nu_iz * Nn * (Te0 + Te + 2./3.* Wiz /Tebar); // ionization effect
-      ddt(Te) += nu_rc * Nn * Wrc / Tebar; // recombanation effect
-      ddt(Ti) -= (nu_iz-nu_rc) * Nn * (Ti0 + Ti);
-      ddt(U) -= (nu_iz+nu_rc) * Nn * U;
-      ddt(Vipar) -= Nn * (nu_iz + nu_cx) * (Vipar - Vn);
-    }
-    
     //////////////////////////////////////////////////////////////////
 
     if (PF_limit) {
@@ -5826,15 +5327,6 @@ protected:
         ddt(Vipar) = lowPass(ddt(Vipar), low_pass_z, zonal_bkgd);
       }
 
-      if (neutral) {
-        if (Solving_Eq_Nn){
-          ddt(Nn) = lowPass(ddt(Nn), low_pass_z, zonal_bkgd);
-        }
-        if (Solving_Eq_Vn){
-          ddt(Vn) = lowPass(ddt(Vn), low_pass_z, zonal_bkgd);
-        }
-      }
-
       if (pos_filter) {
         Ti = lowPass_pos2(Ti, Ti);
         Te = lowPass_pos2(Te, Te);
@@ -5919,14 +5411,6 @@ protected:
         ddt(Vipar) -= DC(ddt(Vipar));
       }
 
-      if (neutral) {
-        if (Solving_Eq_Nn){
-          ddt(Nn) -= DC(ddt(Nn));
-        }
-        if (Solving_Eq_Vn){
-          ddt(Vn) -= DC(ddt(Vn));
-        }
-      }
     }
 
     first_run = false;
