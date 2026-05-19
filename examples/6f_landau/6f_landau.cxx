@@ -3786,9 +3786,9 @@ protected:
       phi_sh.applyBoundary();
       mesh->communicate(phi_sh);
       // SBC_Gradpar(phi, phi_sh, PF_limit, PF_limit_range);
-      // SBC_Gradpar(phi, zero, PF_limit, PF_limit_range);
+      SBC_Gradpar(phi, zero, PF_limit, PF_limit_range);
       // SBC_Dirichlet(phi, zero, PF_limit, PF_limit_range);
-      SBC_FreeBoundary(phi, PF_limit, PF_limit_range);
+      // SBC_FreeBoundary(phi, PF_limit, PF_limit_range);
 
       if (nonlinear) {
         Jpar_sh = Ne_tmp * Nbar * density * ee;
