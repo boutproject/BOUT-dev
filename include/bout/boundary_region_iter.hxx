@@ -405,7 +405,9 @@ class BoundaryRegionFCI : public BoundaryRegionBase {
 public:
   BoundaryRegionFCI(const std::string& name, [[maybe_unused]] const BndryLoc& loc,
                     int dir, Mesh* mesh)
-      : BoundaryRegionBase(name, mesh), _dir(dir), localmesh(mesh) {};
+      : BoundaryRegionBase(name, mesh), _dir(dir), localmesh(mesh) {
+    isParallel = true;
+  };
   /// Add a point to the boundary
   void add_point(Ind3D ind, BoutReal x, BoutReal y, BoutReal z, BoutReal length,
                  char valid, signed char offset) {
