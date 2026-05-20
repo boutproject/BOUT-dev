@@ -479,7 +479,7 @@ public:
     if constexpr (check) {
       ASSERT3(_valid() > -off - 2);
     }
-    auto _off = _offset() + off * region->_dir;
+    auto _off = _offset() - off * region->_dir;
     return f.ynext(_off)[ind().yp(_off)];
   }
   template <bool check = true>
@@ -488,7 +488,7 @@ public:
     if constexpr (check) {
       ASSERT3(_valid() > -off - 2);
     }
-    auto _off = _offset() + off * region->_dir;
+    auto _off = _offset() - off * region->_dir;
     return f.ynext(_off)[ind().yp(_off)];
   }
   template <bool check = true>
@@ -497,7 +497,7 @@ public:
     if constexpr (check) {
       ASSERT3(_valid() > -off - 2);
     }
-    auto _off = _offset() + off * region->_dir;
+    auto _off = _offset() - off * region->_dir;
     return f.ynext(_off)[ind().yp(_off)];
   }
   template <bool check = true>
@@ -506,7 +506,7 @@ public:
     if constexpr (check) {
       ASSERT3(_valid() > -off - 2);
     }
-    auto _off = _offset() + off * region->_dir;
+    auto _off = _offset() - off * region->_dir;
     return f.ynext(_off)[ind().yp(_off)];
   }
   template <bool check = true>
