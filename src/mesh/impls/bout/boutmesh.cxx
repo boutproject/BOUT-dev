@@ -1655,7 +1655,17 @@ void BoutMesh::createXBoundaries() {
         boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend, this));
       }
     }
-    else{ // SN and SF have one core region at (jyseps1_1, jyseps2_1].
+    else if (mesh_topology == MeshTopology::SN){
+      //SN has only one core region, but it goes from (jyseps1_1, jyseps2_2], ny_inner = jyseps1_2 = jyseps2_1 are not relevant for that case. 
+      const bool in_core = ((yg > jyseps1_1) and (yg <= jyseps2_2));
+
+      if (in_core) {
+        boundary.push_back(new BoundaryRegionXIn("core", ystart, yend, this));
+      } else {
+        boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend, this));
+      }
+    }
+    else{ //SF has one core region at (jyseps1_1, jyseps2_1]. 
 
       const bool in_core = ((yg > jyseps1_1) and (yg <= jyseps2_1));
 
