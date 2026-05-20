@@ -538,10 +538,10 @@ public:
 } // namespace bout
 
 inline bout::boundary::BoundaryRegionIterFCI
-begin(const bout::boundary::BoundaryRegionFCI reg) {
+begin(const bout::boundary::BoundaryRegionFCI& reg) {
   return bout::boundary::BoundaryRegionIterFCI(&reg, true);
 }
 inline bout::boundary::BoundaryRegionIterFCI
-end(const bout::boundary::BoundaryRegionFCI reg) {
+end(const bout::boundary::BoundaryRegionFCI& reg) {
   return bout::boundary::BoundaryRegionIterFCI(&reg, false);
 }
