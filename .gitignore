@@ -87,6 +87,4 @@ coverage/
 /BOUT++-v*.tar.xz
 /CMakeCache.txt
 /CMakeFiles/cmake.check_cache
-
-# Debuging settings files
-*.vscode/
+.vscode/
