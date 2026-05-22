@@ -440,18 +440,18 @@ private:
   int _dir;
   // Vector of points in the boundary
   bout::parallel_boundary_region::IndicesVec bndry_points;
-  bool is_sorted{true};
   Mesh* localmesh;
-  Ind3D xyz2ind(int x, int y, int z) const {
-    const int ny = localmesh->LocalNy;
-    const int nz = localmesh->LocalNz;
-    return Ind3D{(x * ny + y) * nz + z, ny, nz};
-  }
+  bool is_sorted{true};
   void ensureSorted() {
     if (is_sorted) {
       return;
     }
     std::sort(std::begin(bndry_points), std::end(bndry_points));
+  }
+  Ind3D xyz2ind(int x, int y, int z) const {
+    const int ny = localmesh->LocalNy;
+    const int nz = localmesh->LocalNz;
+    return Ind3D{(x * ny + y) * nz + z, ny, nz};
   }
 };
 
@@ -536,6 +536,39 @@ public:
   // No-op for compatibility
   BoundaryRegionIterFCI& operator*() { return *this; }
 };
+
+class BoundaryRegionX : public BoundaryRegionBase {
+public:
+  BoundaryRegionX(const std::string& name, int dir, Mesh* mesh, Region<Ind3D>&& rgn)
+      : BoundaryRegionBase(name, mesh), _dir(dir), rgn(std::move(rgn)) {};
+  int dir() { return _dir; }
+  // legacy interface
+  void first() override { throw BoutException("Legacy interface is not suppored"); }
+  void next() override { throw BoutException("Legacy interface is not suppored"); }
+  bool isDone() override { throw BoutException("Legacy interface is not suppored"); }
+
+private:
+  friend class BoundaryRegionIterX;
+  int _dir;
+  Region<Ind3D> rgn;
+};
+
+inline BoundaryRegionX BoundaryRegionXIn(const std::string& name, int ymin, int ymax,
+                                         Mesh* mesh) {
+  return BoundaryRegionX(name, -1, mesh,
+                         Region<Ind3D>(0, mesh->xstart - 1, ymin, ymax, mesh->zstart,
+                                       mesh->zend - 1, mesh->LocalNy, mesh->LocalNz,
+                                       mesh->maxregionblocksize));
+}
+
+inline BoundaryRegionX BoundaryRegionXOut(const std::string& name, int ymin, int ymax,
+                                          Mesh* mesh) {
+  return BoundaryRegionX(name, 1, mesh,
+                         Region<Ind3D>(mesh->xend, mesh->LocalNx - 1, ymin, ymax,
+                                       mesh->zstart, mesh->zend - 1, mesh->LocalNy,
+                                       mesh->LocalNz, mesh->maxregionblocksize));
+}
+
 } // namespace boundary
 } // namespace bout
 
