@@ -540,7 +540,9 @@ public:
 class BoundaryRegionX : public BoundaryRegionBase {
 public:
   BoundaryRegionX(const std::string& name, int dir, Mesh* mesh, Region<Ind3D>&& rgn)
-      : BoundaryRegionBase(name, mesh), _dir(dir), rgn(std::move(rgn)) {};
+      : BoundaryRegionBase(name, mesh), _dir(dir), valid(mesh->xstart) {
+    BOUT_FOR_SERIAL(i, rgn) { this->rgn.emplace_back(i); }
+  }
   int dir() { return _dir; }
   // legacy interface
   void first() override { throw BoutException("Legacy interface is not suppored"); }
@@ -550,23 +552,98 @@ public:
 private:
   friend class BoundaryRegionIterX;
   int _dir;
-  Region<Ind3D> rgn;
+  std::vector<Ind3D> rgn;
+  BoutReal length{0.5};
+  signed char valid;
+};
+
+class BoundaryRegionIterX : public BoundaryRegionIterBase<BoundaryRegionIterX> {
+private:
+  // TODO(dave) make non-const?
+  const BoundaryRegionX* region;
+  size_t pos{0};
+
+public:
+  BoundaryRegionIterX() = delete;
+  BoundaryRegionIterX(const BoundaryRegionX* reg, bool isstart)
+      : region(reg), pos(isstart ? 0 : reg->rgn.size()) {}
+  int dir() const { return region->_dir; }
+  template <bool check = true>
+  BoutReal& _getAt(Field3D& f, int off) const {
+    ASSERT3(f.hasParallelSlices());
+    if constexpr (check) {
+      ASSERT3(_valid() > -off - 2);
+    }
+    auto _off = _offset() - off * region->_dir;
+    return f[ind().xp(_off)];
+  }
+  template <bool check = true>
+  const BoutReal& _getAt(const Field3D& f, int off) const {
+    ASSERT3(f.hasParallelSlices());
+    if constexpr (check) {
+      ASSERT3(_valid() > -off - 2);
+    }
+    auto _off = _offset() - off * region->_dir;
+    return f[ind().xp(_off)];
+  }
+  template <bool check = true>
+  BoutReal& _getAt(Field2D& f, int off) const {
+    ASSERT3(f.hasParallelSlices());
+    if constexpr (check) {
+      ASSERT3(_valid() > -off - 2);
+    }
+    auto _off = _offset() - off * region->_dir;
+    return f[ind().xp(_off)];
+  }
+  template <bool check = true>
+  const BoutReal& _getAt(const Field2D& f, int off) const {
+    ASSERT3(f.hasParallelSlices());
+    if constexpr (check) {
+      ASSERT3(_valid() > -off - 2);
+    }
+    auto _off = _offset() - off * region->_dir;
+    return f[ind().xp(_off)];
+  }
+  template <bool check = true>
+  BoutReal getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
+                 int off) const {
+    if constexpr (check) {
+      ASSERT3(valid() > -off - 2);
+    }
+    auto _off = _offset() + off * region->_dir;
+    return f(0, ind().xp(_off));
+  }
+  signed char _offset() const { return region->_dir; }
+  signed char _valid() const { return region->valid; }
+  Ind3D _ind() const { return region->rgn[pos]; }
+  signed char _boundary_width() const { return region->localmesh->xstart; }
+  const BoutReal& _length() const { return region->length; }
+  bool operator!=(BoundaryRegionIterX lhs) {
+    ASSERT3(region == lhs.region);
+    return pos != lhs.pos;
+  }
+  BoundaryRegionIterX& operator++() {
+    ++pos;
+    return *this;
+  }
+  // No-op for compatibility
+  BoundaryRegionIterX& operator*() { return *this; }
 };
 
 inline BoundaryRegionX BoundaryRegionXIn(const std::string& name, int ymin, int ymax,
                                          Mesh* mesh) {
   return BoundaryRegionX(name, -1, mesh,
-                         Region<Ind3D>(0, mesh->xstart - 1, ymin, ymax, mesh->zstart,
-                                       mesh->zend - 1, mesh->LocalNy, mesh->LocalNz,
-                                       mesh->maxregionblocksize));
+                         Region<Ind3D>(mesh->xstart, mesh->xstart, ymin, ymax,
+                                       mesh->zstart, mesh->zend - 1, mesh->LocalNy,
+                                       mesh->LocalNz, mesh->maxregionblocksize));
 }
 
 inline BoundaryRegionX BoundaryRegionXOut(const std::string& name, int ymin, int ymax,
                                           Mesh* mesh) {
   return BoundaryRegionX(name, 1, mesh,
-                         Region<Ind3D>(mesh->xend, mesh->LocalNx - 1, ymin, ymax,
-                                       mesh->zstart, mesh->zend - 1, mesh->LocalNy,
-                                       mesh->LocalNz, mesh->maxregionblocksize));
+                         Region<Ind3D>(mesh->xend, mesh->xend, ymin, ymax, mesh->zstart,
+                                       mesh->zend - 1, mesh->LocalNy, mesh->LocalNz,
+                                       mesh->maxregionblocksize));
 }
 
 } // namespace boundary
