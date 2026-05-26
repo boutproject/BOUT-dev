@@ -113,16 +113,13 @@ BoutReal limitFree(BoutReal fm, BoutReal fc, BoutReal mode) {
     throw BoutException("Unknown boundary mode");
   }
 
-  return fp;  // Extrapolation
-
-
 #if CHECKLEVEL >= 2
   if (!std::isfinite(fp)) {
     throw BoutException("SheathBoundary limitFree: {}, {} -> {}", fm, fc, fp);
   }
 #endif
 
-  return fp;
+  return fp;  // Extrapolation
 }
 
 } // namespace
@@ -232,13 +229,10 @@ private:
   bool diamag_er;                                // switch phi0 to Er
 
   bool nonlinear;
-  bool evolve_jpar;
-  BoutReal g;                                    // Only if compressible
-  bool phi_curv;
 
   bool include_curvature, include_jpar0, compress0;
   bool include_vipar, include_vpar0, include_U0;
-  bool evolve_pressure, continuity;
+  bool continuity;
   bool parallel_viscous;
   
   Field3D eta_i0, pi_ci;
@@ -399,10 +393,6 @@ private:
   BoutReal PF_limit_range;
   BoutReal PF_sink, PFs_width, PFs_length;       // sink at inner boundary of PF
 
-  bool relax_j_vac;
-  BoutReal relax_j_tconst;                       // Time-constant for j relax
-  Field3D Psitarget;                             // The (moving) target to relax to
-
   bool smooth_j_x;                               // Smooth Jpar in the x direction
   bool mask_j_x, mask_phi_x;                     // Mask Jpar at the inner boundary of x
   Field3D mask_jx1d, mask_px1d;                  // the variable of mask function, normalized to 1.
@@ -434,9 +424,6 @@ private:
   BoutReal diffusion_par;                        // Parallel thermal conductivity
   BoutReal diffusion_perp;                       // Perpendicular thermal conductivity (>0 open)
 
-  BoutReal heating_P;                            // heating power in pressure
-  BoutReal hp_width;                             // heating profile radial width in pressure
-  BoutReal hp_length;                            // heating radial domain in pressure
   BoutReal sink_vp;                              // sink in pressure
   BoutReal sp_width;                             // sink profile radial width in pressure
   BoutReal sp_length;                            // sink radial domain in pressure
@@ -458,7 +445,7 @@ private:
   Field3D Te_tmp, Ti_tmp, N_tmp, Ne_tmp;         // to avoid the negative value of total value
   BoutReal gamma_i_BC, gamma_e_BC;               // sheath energy transmission factors
   int Sheath_width;
-  bool SBC_phi;
+
   // variables for sheath boundary conditions
   Field3D c_se, Jpar_sh, q_se, q_si, vth_et, c_set, phi_sh; 
   Field2D vth_e0, c_se0, Jpar_sh0, phi_sh0;
@@ -1215,17 +1202,12 @@ protected:
     Sheath_width = options["Sheath_width"]
                   .doc("Sheath boundary width in grid number")
                   .withDefault(0);
-    SBC_phi = options["SBC_phi"]
-                  .doc("use sheath boundary on phi instead of Jpar")
-                  .withDefault(false);
 
     density = options["density"].doc("number density normalization factor [m^-3]").withDefault(1.0e20);
     density_unit = options["density_unit"].doc("Number density unit for grid [m^-3]").withDefault(1.0e20);
     Zi = options["Zi"].doc("ion charge number").withDefault(1);
     Zeff = options["Zeff"].doc("Electric resistivity multiplier").withDefault(1.0);
 
-    evolve_jpar =
-        options["evolve_jpar"].doc("If true, evolve J raher than Psi").withDefault(false);
     phi_constraint =
         options["phi_constraint"].doc("Use solver constraint for phi").withDefault(false);
 
@@ -1233,7 +1215,6 @@ protected:
     nonlinear = options["nonlinear"].withDefault(false);
     include_curvature = options["include_curvature"].withDefault(true);
     include_jpar0 = options["include_jpar0"].withDefault(true);
-    evolve_pressure = options["evolve_pressure"].withDefault(true);
     evolve_psi = options["evolve_psi"].withDefault(true);
 
     continuity = options["continuity"].doc("use continuity equation").withDefault(false);
@@ -1385,9 +1366,6 @@ protected:
 
     noshear = options["noshear"].withDefault(false);
 
-    relax_j_vac =
-        options["relax_j_vac"].doc("Relax vacuum current to zero").withDefault(false);
-    relax_j_tconst = options["relax_j_tconst"].withDefault(0.1);
 
     // Toroidal filtering
     filter_z = options["filter_z"].doc("Filter a single n").withDefault(false);
@@ -1553,17 +1531,6 @@ protected:
     output_Tevegradte  = options["output_Tevegradte"].withDefault(false);
     output_qparcompare  = options["output_qparcompare"].withDefault(false);
 
-    // heating factor in pressure
-    heating_P = options["heating_P"].doc("heating power in pressure").withDefault(-1.0);
-    //
-    hp_width = options["hp_width"]
-                   .doc("the percentage of radial grid points for heating profile radial "
-                        "width in pressure")
-                   .withDefault(0.1);
-    hp_length = options["hp_length"]
-                    .doc("the percentage of radial grid points for heating profile "
-                         "radial domain in pressure")
-                    .withDefault(0.04);
 
     // sink factor in pressure
     sink_vp = options["sink_vp"].doc("sink in pressure").withDefault(-1.0);
@@ -1601,10 +1568,6 @@ protected:
     sink_Ter = options["sink_Ter"].withDefault(-1.0);
     ste_widthr = options["ste_widthr"].withDefault(0.06);
     ste_lengthr = options["ste_lengthr"].withDefault(0.15);
-
-    // Compressional terms
-    phi_curv = options["phi_curv"].doc("Compressional ExB terms").withDefault(true);
-    g = options["gamma"].doc("Ratio of specific heats").withDefault(5.0 / 3.0);
 
     if (diffusion_par < 0. && output_flux_par) {
       output_flux_par = false;
@@ -1925,7 +1888,7 @@ protected:
       }
 
       SAVE_ONCE(diff_perp_Ni, diff_perp_Ti, diff_perp_Te, diff_perp_U, diff_perp_Vipar);
-      SAVE_ONCE1(Zeff);
+      SAVE_ONCE(Zeff);
     }
 
 
@@ -2561,6 +2524,7 @@ protected:
       xii_neo *= Tipara1;
       // Dri_neo.applyBoundary();
       // xii_neo.applyBoundary();
+
       output.write("\tNormalized ion neoclassic heat transport: {:e} -> {:e} [m^2/s]\n", min(xii_neo), max(xii_neo));
 
       // dump.add(Dri_neo, "Dri_neo", 1);
@@ -5408,7 +5372,6 @@ protected:
       if (compress0) {
         ddt(Vipar) -= DC(ddt(Vipar));
       }
-
     }
 
     first_run = false;
