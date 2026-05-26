@@ -492,7 +492,7 @@ public:
       ASSERT3(_valid() > -off - 2);
     }
     auto _off = _offset() - off * region->_dir;
-    return f.ynext(_off)[ind().yp(_off)];
+    return f.ynext(_off)[_ind().yp(_off)];
   }
   template <bool check = true>
   const BoutReal& _getAt(const Field3D& f, int off) const {
@@ -501,7 +501,7 @@ public:
       ASSERT3(_valid() > -off - 2);
     }
     auto _off = _offset() - off * region->_dir;
-    return f.ynext(_off)[ind().yp(_off)];
+    return f.ynext(_off)[_ind().yp(_off)];
   }
   template <bool check = true>
   BoutReal& _getAt(Field2D& f, int off) const {
@@ -510,7 +510,7 @@ public:
       ASSERT3(_valid() > -off - 2);
     }
     auto _off = _offset() - off * region->_dir;
-    return f.ynext(_off)[ind().yp(_off)];
+    return f.ynext(_off)[_ind().yp(_off)];
   }
   template <bool check = true>
   const BoutReal& _getAt(const Field2D& f, int off) const {
@@ -519,7 +519,7 @@ public:
       ASSERT3(_valid() > -off - 2);
     }
     auto _off = _offset() - off * region->_dir;
-    return f.ynext(_off)[ind().yp(_off)];
+    return f.ynext(_off)[_ind().yp(_off)];
   }
   template <bool check = true>
   BoutReal getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
@@ -528,7 +528,7 @@ public:
       ASSERT3(valid() > -off - 2);
     }
     auto _off = _offset() + off * region->_dir;
-    return f(_off, ind().yp(_off));
+    return f(_off, _ind().yp(_off));
   }
   signed char _offset() const { return region->bndry_points[pos].offset; }
   signed char _valid() const { return region->bndry_points[pos].valid; }
