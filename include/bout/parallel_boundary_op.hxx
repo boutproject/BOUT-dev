@@ -61,6 +61,7 @@ public:
   }
 
   bout::boundary::BoundaryRegionFCI* bndry{nullptr};
+  bout::boundary::BoundaryRegionX* bndryX{nullptr};
 
 protected:
   /// Possible ways to get boundary values
@@ -133,17 +134,27 @@ public:
   void apply(Field3D& f) override { return apply(f, 0); }
 
   void apply(Field3D& f, BoutReal t) override {
-    f.ynext(bndry->dir()).allocate(); // Ensure unique before modifying
-
-    auto dy = f.getCoordinates()->dy;
-
-    for (auto pnt : *bndry) {
-      //for (bndry->first(); !bndry->isDone(); bndry->next()) {
-      BoutReal value = getValue(pnt, t);
-      if (isNeumann) {
-        value *= dy[pnt.ind()];
+    if (bndry != nullptr) {
+      f.ynext(bndry->dir()).allocate(); // Ensure unique before modifying
+      auto dy = f.getCoordinates()->dy;
+      for (auto pnt : *bndry) {
+        BoutReal value = getValue(pnt, t);
+        if (isNeumann) {
+          value *= dy[pnt.ind()];
+        }
+        static_cast<T*>(this)->apply_stencil(f, pnt, value);
       }
-      static_cast<T*>(this)->apply_stencil(f, pnt, value);
+    }
+    if (bndryX != nullptr) {
+      f.allocate();
+      auto dy = f.getCoordinates()->dx;
+      for (auto pnt : *bndryX) {
+        BoutReal value = getValue(pnt, t);
+        if (isNeumann) {
+          value *= dy[pnt.ind()];
+        }
+        static_cast<T*>(this)->apply_stencil(f, pnt, value);
+      }
     }
   }
 };
