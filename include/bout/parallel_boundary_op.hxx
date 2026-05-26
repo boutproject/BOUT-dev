@@ -69,6 +69,7 @@ protected:
   const ValueType value_type{ValueType::REAL};
 
   BoutReal getValue(const bout::boundary::BoundaryRegionIterFCI& bndry, BoutReal t);
+  BoutReal getValue(const bout::boundary::BoundaryRegionIterX& bndry, BoutReal t);
 };
 
 template <class T, bool isNeumann = false>

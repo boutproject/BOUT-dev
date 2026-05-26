@@ -23,3 +23,16 @@ BoutReal BoundaryOpPar::getValue(const bout::boundary::BoundaryRegionIterFCI& bn
     throw BoutException("Invalid value_type encountered in BoundaryOpPar::getValue");
   }
 }
+
+BoutReal BoundaryOpPar::getValue(const bout::boundary::BoundaryRegionIterX& bndry,
+                                 BoutReal t) {
+  switch (value_type) {
+  case ValueType::FIELD:
+    // FIXME: Interpolate to s_x, s_y, s_z...
+    return (*field_values)[bndry.ind()];
+  case ValueType::REAL:
+    return real_value;
+  default:
+    throw BoutException("Invalid value_type encountered in BoundaryOpPar::getValue");
+  }
+}
