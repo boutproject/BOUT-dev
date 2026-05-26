@@ -131,7 +131,10 @@ public:
   BoutReal s_x() const { return bndry_position->intersection.s_x; }
   BoutReal s_y() const { return bndry_position->intersection.s_y; }
   BoutReal s_z() const { return bndry_position->intersection.s_z; }
-  BoutReal length() const { return bndry_position->length; }
+  BoutReal length([[maybe_unused]] CELL_LOC loc) const {
+    ASSERT3(loc == CELL_CENTRE);
+    return bndry_position->length;
+  }
   signed char valid() const { return bndry_position->valid; }
   signed char offset() const { return bndry_position->offset; }
   unsigned char abs_offset() const { return bndry_position->abs_offset; }
@@ -146,27 +149,27 @@ public:
     if (valid() < 1) {
       return extrapolate_sheath_o1(f);
     }
-    return ythis(f) * (1 + length()) - yprev(f) * length();
+    return ythis(f) * (1 + length(f.getLocation())) - yprev(f) * length(f.getLocation());
   }
   BoutReal
   extrapolate_sheath_o1(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
     return ythis(f);
   }
-  BoutReal
-  extrapolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
+  BoutReal extrapolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
+                                 CELL_LOC loc = CELL_CENTRE) const {
     ASSERT3(valid() >= 0);
     if (valid() < 1) {
       return extrapolate_sheath_o1(f);
     }
-    return ythis(f) * (1 + length()) - yprev(f) * length();
+    return ythis(f) * (1 + length(loc)) - yprev(f) * length(loc);
   }
 
   BoutReal interpolate_sheath_o2(const Field3D& f) const {
-    return ythis(f) * (1 - length()) + ynext(f) * length();
+    return ythis(f) * (1 - length(f.getLocation())) + ynext(f) * length(f.getLocation());
   }
-  BoutReal
-  interpolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
-    return ythis(f) * (1 - length()) + ynext(f) * length();
+  BoutReal interpolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
+                                 CELL_LOC loc = CELL_CENTRE) const {
+    return ythis(f) * (1 - length(loc)) + ynext(f) * length(loc);
   }
 
   BoutReal extrapolate_next_o1(const Field3D& f) const { return ythis(f); }
@@ -219,12 +222,12 @@ public:
   }
 
   void dirichlet_o2(Field3D& f, BoutReal value) const {
-    if (length() < small_value) {
+    if (length(f.getLocation()) < small_value) {
       return dirichlet_o1(f, value);
     }
     ITER() {
-      getAt(f, i) =
-          parallel_stencil::dirichlet_o2(i + 1, ythis(f), i + 1 - length(), value);
+      getAt(f, i) = parallel_stencil::dirichlet_o2(
+          i + 1, ythis(f), i + 1 - length(f.getLocation()), value);
     }
   }
 
@@ -233,15 +236,15 @@ public:
     if (valid() < 1) {
       return dirichlet_o2(f, value);
     }
-    if (length() < small_value) {
+    if (length(f.getLocation()) < small_value) {
       ITER() {
-        getAt(f, i) =
-            parallel_stencil::dirichlet_o2(i + 2, yprev(f), i + 1 - length(), value);
+        getAt(f, i) = parallel_stencil::dirichlet_o2(
+            i + 2, yprev(f), i + 1 - length(f.getLocation()), value);
       }
     } else {
       ITER() {
-        getAt(f, i) = parallel_stencil::dirichlet_o3(i + 2, yprev(f), i + 1, ythis(f),
-                                                     i + 1 - length(), value);
+        getAt(f, i) = parallel_stencil::dirichlet_o3(
+            i + 2, yprev(f), i + 1, ythis(f), i + 1 - length(f.getLocation()), value);
       }
     }
   }
@@ -279,8 +282,8 @@ public:
       return neumann_o2(f, value);
     }
     ITER() {
-      getAt(f, i) = parallel_stencil::neumann_o3(i + 1 - length(), value, i + 1, ythis(f),
-                                                 2, yprev(f));
+      getAt(f, i) = parallel_stencil::neumann_o3(i + 1 - length(f.getLocation()), value,
+                                                 i + 1, ythis(f), 2, yprev(f));
     }
   }
 
@@ -300,7 +303,7 @@ public:
                                  : (mode == SheathLimitMode::linear_free ? 0 : 1);
     auto val = ythis(f);
     BoutReal next = mode == SheathLimitMode::linear_free ? val + fac : val * fac;
-    return val * length() + next * (1 - length());
+    return val * length(f.getLocation()) + next * (1 - length(f.getLocation()));
   }
 
   void set_free(Field3D& f, SheathLimitMode mode) const {

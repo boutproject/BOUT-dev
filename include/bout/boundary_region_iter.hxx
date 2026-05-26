@@ -51,7 +51,9 @@ public:
   Ind3D ind() const { return static_cast<const impl*>(this)->_ind(); }
   /// get the length from the point in the domain to the boundary in index
   /// space. It is in the range [0, 1]
-  BoutReal length() const { return static_cast<const impl*>(this)->_length(); }
+  BoutReal length(CELL_LOC loc) const {
+    return static_cast<const impl*>(this)->_length(loc);
+  }
   /// Lower bound of how many points are between the first point in the domain
   /// and the boundary in the other direction.
   signed char valid() const { return static_cast<const impl*>(this)->_valid(); }
@@ -184,31 +186,34 @@ public:
     if (valid() < 1) {
       return extrapolate_boundary_o1(f);
     }
-    return current(f) * (1 + length()) - prev(f) * length();
+    return current(f) * (1 + length(f.getLocation())) - prev(f) * length(f.getLocation());
   }
   /// Extrapolate a given function to the boundary
-  BoutReal extrapolate_bounday_o1(
-      const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
+  BoutReal
+  extrapolate_bounday_o1(const std::function<BoutReal(int yoffset, Ind3D ind)>& func,
+                         [[maybe_unused]] CELL_LOC loc = CELL_CENTRE) const {
     return current(func);
   }
   /// Extrapolate a given function to the boundary
-  BoutReal extrapolate_boundary_o2(
-      const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
+  BoutReal
+  extrapolate_boundary_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& func,
+                          CELL_LOC loc = CELL_CENTRE) const {
     ASSERT3(valid() >= 0);
     if (valid() < 1) {
       return extrapolate_boundary_o1(func);
     }
-    return current(func) * (1 + length()) - prev(func) * length();
+    return current(func) * (1 + length(loc)) - prev(func) * length(loc);
   }
 
   /// Interpolate a field to the boundary, using the boundary values
   BoutReal interpolate_boundary_o2(const Field3D& f) const {
-    return current(f) * (1 - length()) + next(f) * length();
+    return current(f) * (1 - length(f.getLocation())) + next(f) * length(f.getLocation());
   }
   /// Interpolate a field to the boundary, using the boundary values
-  BoutReal interpolate_boundary_o2(
-      const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
-    return current(func) * (1 - length()) + next(func) * length();
+  BoutReal
+  interpolate_boundary_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& func,
+                          CELL_LOC loc = CELL_CENTRE) const {
+    return current(func) * (1 - length(loc)) + next(func) * length(loc);
   }
   /// Extrapolate to the first boundary value freely
   BoutReal extrapolate_next_o1(const Field3D& f) const { return current(f); }
@@ -253,7 +258,7 @@ public:
                                  : (mode == BoundaryFreeExtrapolation::linear ? 0 : 1);
     auto val = current(f);
     BoutReal next = mode == BoundaryFreeExtrapolation::linear ? val + fac : val * fac;
-    return val * length() + next * (1 - length());
+    return val * length(f.getLocation()) + next * (1 - length(f.getLocation()));
   }
 
   /*
@@ -269,12 +274,12 @@ public:
 
   /// Apply a dirichlet boundary condition
   void dirichlet_o2(Field3D& f, BoutReal value) const {
-    if (length() < small_value) {
+    if (length(f.getLocation()) < small_value) {
       return dirichlet_o1(f, value);
     }
     for (int i = 0; i < boundary_width(); ++i) {
-      getAt(f, i) =
-          parallel_stencil::dirichlet_o2(i + 1, current(f), i + 1 - length(), value);
+      getAt(f, i) = parallel_stencil::dirichlet_o2(
+          i + 1, current(f), i + 1 - length(f.getLocation()), value);
     }
   }
 
@@ -284,15 +289,15 @@ public:
     if (valid() < 1) {
       return dirichlet_o2(f, value);
     }
-    if (length() < small_value) {
+    if (length(f.getLocation()) < small_value) {
       for (int i = 0; i < boundary_width(); ++i) {
-        getAt(f, i) =
-            parallel_stencil::dirichlet_o2(i + 2, prev(f), i + 1 - length(), value);
+        getAt(f, i) = parallel_stencil::dirichlet_o2(
+            i + 2, prev(f), i + 1 - length(f.getLocation()), value);
       }
     } else {
       for (int i = 0; i < boundary_width(); ++i) {
-        getAt(f, i) = parallel_stencil::dirichlet_o3(i + 2, prev(f), i + 1, current(f),
-                                                     i + 1 - length(), value);
+        getAt(f, i) = parallel_stencil::dirichlet_o3(
+            i + 2, prev(f), i + 1, current(f), i + 1 - length(f.getLocation()), value);
       }
     }
   }
@@ -334,8 +339,8 @@ public:
       return neumann_o2(f, value);
     }
     for (int i = 0; i < boundary_width(); ++i) {
-      getAt(f, i) = parallel_stencil::neumann_o3(i + 1 - length(), value, i + 1,
-                                                 current(f), 2, prev(f));
+      getAt(f, i) = parallel_stencil::neumann_o3(i + 1 - length(f.getLocation()), value,
+                                                 i + 1, current(f), 2, prev(f));
     }
   }
 
@@ -531,7 +536,10 @@ public:
   signed char _boundary_width() const {
     return region->localmesh->ystart - region->bndry_points[pos].abs_offset;
   }
-  const BoutReal& _length() const { return region->bndry_points[pos].length; }
+  BoutReal _length([[maybe_unused]] CELL_LOC loc) const {
+    ASSERT3(loc == CELL_CENTRE);
+    return region->bndry_points[pos].length;
+  }
   bool operator!=(BoundaryRegionIterFCI lhs) {
     ASSERT3(region == lhs.region);
     return pos != lhs.pos;
@@ -624,7 +632,15 @@ public:
   signed char _valid() const { return region->valid; }
   Ind3D _ind() const { return region->rgn[pos]; }
   signed char _boundary_width() const { return region->localmesh->xstart; }
-  const BoutReal& _length() const { return region->length; }
+  BoutReal _length(CELL_LOC loc) const {
+    if (loc == CELL_XLOW) {
+      if (dir() == 1) {
+        return 1;
+      }
+      return 0;
+    }
+    return 0.5;
+  }
   bool operator!=(BoundaryRegionIterX lhs) {
     ASSERT3(region == lhs.region);
     return pos != lhs.pos;

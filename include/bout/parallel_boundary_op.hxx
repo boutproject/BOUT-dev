@@ -56,7 +56,6 @@ public:
   virtual BoundaryOpPar*
   clone(bout::boundary::BoundaryRegionFCI* region, const std::list<std::string>& args,
         const std::map<std::string, std::string>& UNUSED(keywords)) {
-    // If not implemented, call two-argument version
     return clone(region, args);
   }
   virtual BoundaryOpPar* clone(bout::boundary::BoundaryRegionX* region,
@@ -65,7 +64,6 @@ public:
   virtual BoundaryOpPar*
   clone(bout::boundary::BoundaryRegionX* region, const std::list<std::string>& args,
         const std::map<std::string, std::string>& UNUSED(keywords)) {
-    // If not implemented, call two-argument version
     return clone(region, args);
   }
   virtual BoundaryOpPar* clone(BoundaryOpPar* region,
@@ -74,7 +72,6 @@ public:
   virtual BoundaryOpPar*
   clone(BoundaryOpPar* region, const std::list<std::string>& args,
         const std::map<std::string, std::string>& UNUSED(keywords)) {
-    // If not implemented, call two-argument version
     return clone(region, args);
   }
 
