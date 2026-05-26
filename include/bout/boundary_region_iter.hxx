@@ -1,10 +1,17 @@
 #pragma once
 
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <string>
 #include <utility>
 
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/field_data.hxx"
+#include "bout/utils.hxx"
 #include <bout/bout_enum_class.hxx>
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
