@@ -672,11 +672,15 @@ void Mesh::createDefaultRegions() {
   addRegion3D("RGN_YGUARDS_OUT",
               Region<Ind3D>(xstart, xend, yend + 1, LocalNy - 1, zstart, zend, LocalNy,
                             LocalNz, maxregionblocksize));
+  addRegion3D("RGN_YGUARDS",
+              getRegion3D("RGN_YGUARDS_IN") + getRegion3D("RGN_YGUARDS_OUT"));
   addRegion3D("RGN_ZGUARDS_IN", Region<Ind3D>(xstart, xend, ystart, yend, 0, zstart - 1,
                                               LocalNy, LocalNz, maxregionblocksize));
   addRegion3D("RGN_ZGUARDS_OUT",
               Region<Ind3D>(xstart, xend, ystart, yend, zend + 1, LocalNz - 1, LocalNy,
                             LocalNz, maxregionblocksize));
+  addRegion3D("RGN_ZGUARDS",
+              getRegion3D("RGN_ZGUARDS_IN") + getRegion3D("RGN_ZGUARDS_OUT"));
   addRegion3D("RGN_NOCORNERS", (getRegion3D("RGN_NOBNDRY") + getRegion3D("RGN_XGUARDS")
                                 + getRegion3D("RGN_YGUARDS") + getRegion3D("RGN_ZGUARDS"))
                                    .unique());
