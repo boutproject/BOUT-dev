@@ -576,14 +576,12 @@ private:
   friend class BoundaryRegionIterXY;
   int _dir;
   std::vector<Ind3D> rgn;
-  BoutReal length{0.5};
   signed char valid;
 };
 
 template <bool isX>
 class BoundaryRegionIterXY : public BoundaryRegionIterBase<BoundaryRegionIterXY<isX>> {
 private:
-  // TODO(dave) make non-const?
   const BoundaryRegionXY<isX>* region;
   size_t pos{0};
 
