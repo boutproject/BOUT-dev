@@ -30,6 +30,15 @@ public:
       : bndry(region), real_value(value), value_type(ValueType::REAL) {}
   BoundaryOpPar(bout::boundary::BoundaryRegionFCI* region)
       : bndry(region), real_value(0.), value_type(ValueType::REAL) {}
+  BoundaryOpPar(bout::boundary::BoundaryRegionX* region,
+                std::shared_ptr<FieldGenerator> value)
+      : bndryX(region), gen_values(std::move(value)), value_type(ValueType::GEN) {}
+  BoundaryOpPar(bout::boundary::BoundaryRegionX* region, Field3D* value)
+      : bndryX(region), field_values(value), value_type(ValueType::FIELD) {}
+  BoundaryOpPar(bout::boundary::BoundaryRegionX* region, BoutReal value)
+      : bndryX(region), real_value(value), value_type(ValueType::REAL) {}
+  BoundaryOpPar(bout::boundary::BoundaryRegionX* region)
+      : bndryX(region), real_value(0.), value_type(ValueType::REAL) {}
   BoundaryOpPar(BoundaryOpPar* region, std::shared_ptr<FieldGenerator> value)
       : bndry(region->bndry), gen_values(std::move(value)), value_type(ValueType::GEN) {}
   BoundaryOpPar(BoundaryOpPar* region, Field3D* value)
@@ -43,16 +52,25 @@ public:
   // Note: All methods must implement clone, except for modifiers (see below)
   virtual BoundaryOpPar* clone(bout::boundary::BoundaryRegionFCI* region,
                                const std::list<std::string>& args) = 0;
-  virtual BoundaryOpPar* clone(BoundaryOpPar* region,
-                               const std::list<std::string>& args) = 0;
   virtual BoundaryOpPar* clone(bout::boundary::BoundaryRegionFCI* region, Field3D* f) = 0;
-  virtual BoundaryOpPar* clone(BoundaryOpPar* region, Field3D* f) = 0;
   virtual BoundaryOpPar*
   clone(bout::boundary::BoundaryRegionFCI* region, const std::list<std::string>& args,
         const std::map<std::string, std::string>& UNUSED(keywords)) {
     // If not implemented, call two-argument version
     return clone(region, args);
   }
+  virtual BoundaryOpPar* clone(bout::boundary::BoundaryRegionX* region,
+                               const std::list<std::string>& args) = 0;
+  virtual BoundaryOpPar* clone(bout::boundary::BoundaryRegionX* region, Field3D* f) = 0;
+  virtual BoundaryOpPar*
+  clone(bout::boundary::BoundaryRegionX* region, const std::list<std::string>& args,
+        const std::map<std::string, std::string>& UNUSED(keywords)) {
+    // If not implemented, call two-argument version
+    return clone(region, args);
+  }
+  virtual BoundaryOpPar* clone(BoundaryOpPar* region,
+                               const std::list<std::string>& args) = 0;
+  virtual BoundaryOpPar* clone(BoundaryOpPar* region, Field3D* f) = 0;
   virtual BoundaryOpPar*
   clone(BoundaryOpPar* region, const std::list<std::string>& args,
         const std::map<std::string, std::string>& UNUSED(keywords)) {
@@ -118,6 +136,26 @@ public:
   }
 
   BoundaryOpPar* clone(bout::boundary::BoundaryRegionFCI* region, Field3D* f) override {
+    return new T(region, f);
+  }
+  BoundaryOpPar* clone(bout::boundary::BoundaryRegionX* region,
+                       const std::list<std::string>& args) override {
+    if (!args.empty()) {
+      try {
+        real_value = stringToReal(args.front());
+        return new T(region, real_value);
+      } catch (const BoutException&) {
+        std::shared_ptr<FieldGenerator> newgen = nullptr;
+        // First argument should be an expression
+        newgen = FieldFactory::get()->parse(args.front());
+        return new T(region, newgen);
+      }
+    }
+
+    return new T(region);
+  }
+
+  BoundaryOpPar* clone(bout::boundary::BoundaryRegionX* region, Field3D* f) override {
     return new T(region, f);
   }
   BoundaryOpPar* clone(BoundaryOpPar* region, Field3D* f) override {
