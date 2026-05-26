@@ -657,3 +657,12 @@ inline bout::boundary::BoundaryRegionIterFCI
 end(const bout::boundary::BoundaryRegionFCI& reg) {
   return bout::boundary::BoundaryRegionIterFCI(&reg, false);
 }
+
+inline bout::boundary::BoundaryRegionIterX
+begin(const bout::boundary::BoundaryRegionX& reg) {
+  return bout::boundary::BoundaryRegionIterX(&reg, true);
+}
+inline bout::boundary::BoundaryRegionIterX
+end(const bout::boundary::BoundaryRegionX& reg) {
+  return bout::boundary::BoundaryRegionIterX(&reg, false);
+}
