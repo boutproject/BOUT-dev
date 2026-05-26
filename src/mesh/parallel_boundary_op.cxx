@@ -25,7 +25,7 @@ BoutReal BoundaryOpPar::getValue(const bout::boundary::BoundaryRegionIterFCI& bn
 }
 
 BoutReal BoundaryOpPar::getValue(const bout::boundary::BoundaryRegionIterX& bndry,
-                                 BoutReal t) {
+                                 [[maybe_unused]] BoutReal t) {
   switch (value_type) {
   case ValueType::FIELD:
     // FIXME: Interpolate to s_x, s_y, s_z...
