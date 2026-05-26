@@ -75,9 +75,18 @@ public:
   /// Get variable location
   virtual CELL_LOC getLocation() const;
 
+  /// Enum to distinguish the different kinds of Fields
+  enum class FieldType : std::uint8_t { field3d, field2d, fieldperp };
+  /// Is this an instance of `Field3D`, `Field2D`, or `FieldPerp`?
+  virtual FieldType field_type() const = 0;
+
   // Defines interface which must be implemented
   /// True if variable is 3D
-  virtual bool is3D() const = 0;
+  [[deprecated("Use `field_type()` instead")]]
+  bool is3D() const {
+    return field_type() == FieldType::field3d;
+  }
+
   /// Number of BoutReals in one element
   virtual int elementSize() const { return 1; }
 

@@ -262,16 +262,4 @@ private:
   mutable std::array<std::shared_ptr<YBoundary>, 3> ybndrys;
 };
 
-/*
-/// Standard coordinate system for tokamak simulations
-class TokamakCoordinates : public Coordinates {
-public:
-  TokamakCoordinates(Mesh *mesh) : Coordinates(mesh) {
-
-  }
-private:
-
-};
-*/
-
 #endif // BOUT_COORDINATES_H
