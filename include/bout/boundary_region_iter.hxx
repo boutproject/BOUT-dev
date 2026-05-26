@@ -643,7 +643,7 @@ public:
   BoutReal getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
                  int off) const {
     if constexpr (check) {
-      ASSERT3(valid() > -off - 2);
+      ASSERT3(_valid() > -off - 2);
     }
     auto _off = _offset() + off * region->_dir;
     if constexpr (isX) {
