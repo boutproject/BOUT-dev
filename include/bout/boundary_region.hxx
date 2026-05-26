@@ -57,6 +57,8 @@ public:
 
   BndryLoc location;       ///< Which side of the domain is it on?
   bool isParallel = false; ///< Is this a parallel boundary?
+  bool isX = false;
+  bool isY = false;
 
   virtual void first() = 0; ///< Move the region iterator to the start
   virtual void next() = 0;  ///< Get the next element in the loop

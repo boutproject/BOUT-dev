@@ -559,6 +559,11 @@ public:
       : BoundaryRegionBase(name, mesh), _dir(dir),
         valid(isX ? mesh->xstart : mesh->ystart) {
     BOUT_FOR_SERIAL(i, rgn) { this->rgn.emplace_back(i); }
+    if (isX) {
+      this->isX = true;
+    } else {
+      this->isY = true;
+    }
   }
   int dir() { return _dir; }
   // legacy interface

@@ -194,16 +194,22 @@ BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* 
     return mod->cloneMod(op, arglist);
   }
 
-  if (region->isParallel) {
-    // Parallel boundary
-    BoundaryOpPar* pop = findBoundaryOpPar(trim(func));
-    if (pop != nullptr) {
-      // An operation with arguments
+  BoundaryOpPar* pop = findBoundaryOpPar(trim(func));
+  if (pop != nullptr) {
+    // An operation with arguments
+    if (region->isParallel) {
       return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionFCI*>(region), arglist,
                         keywords);
+    } else if (region->isX) {
+      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionX*>(region), arglist,
+                        keywords);
+    } else if (region->isY) {
+      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionY*>(region), arglist,
+                        keywords);
     }
-  } else {
-    // Perpendicular boundary
+  }
+  if (!region->isParallel) {
+    // Legacy perpendicular boundary
     BoundaryOp* op = findBoundaryOp(trim(func));
     if (op != nullptr) {
       // An operation with arguments
