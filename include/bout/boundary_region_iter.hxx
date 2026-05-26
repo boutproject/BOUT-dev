@@ -552,10 +552,12 @@ public:
   BoundaryRegionIterFCI& operator*() { return *this; }
 };
 
-class BoundaryRegionX : public BoundaryRegionBase {
+template <bool isX>
+class BoundaryRegionXY : public BoundaryRegionBase {
 public:
-  BoundaryRegionX(const std::string& name, int dir, Mesh* mesh, Region<Ind3D>&& rgn)
-      : BoundaryRegionBase(name, mesh), _dir(dir), valid(mesh->xstart) {
+  BoundaryRegionXY(const std::string& name, int dir, Mesh* mesh, Region<Ind3D>&& rgn)
+      : BoundaryRegionBase(name, mesh), _dir(dir),
+        valid(isX ? mesh->xstart : mesh->ystart) {
     BOUT_FOR_SERIAL(i, rgn) { this->rgn.emplace_back(i); }
   }
   int dir() { return _dir; }
@@ -565,22 +567,24 @@ public:
   bool isDone() override { throw BoutException("Legacy interface is not suppored"); }
 
 private:
-  friend class BoundaryRegionIterX;
+  template <bool isIterX>
+  friend class BoundaryRegionIterXY;
   int _dir;
   std::vector<Ind3D> rgn;
   BoutReal length{0.5};
   signed char valid;
 };
 
-class BoundaryRegionIterX : public BoundaryRegionIterBase<BoundaryRegionIterX> {
+template <bool isX>
+class BoundaryRegionIterXY : public BoundaryRegionIterBase<BoundaryRegionIterXY<isX>> {
 private:
   // TODO(dave) make non-const?
-  const BoundaryRegionX* region;
+  const BoundaryRegionXY<isX>* region;
   size_t pos{0};
 
 public:
-  BoundaryRegionIterX() = delete;
-  BoundaryRegionIterX(const BoundaryRegionX* reg, bool isstart)
+  BoundaryRegionIterXY() = delete;
+  BoundaryRegionIterXY(const BoundaryRegionXY<isX>* reg, bool isstart)
       : region(reg), pos(isstart ? 0 : reg->rgn.size()) {}
   int dir() const { return region->_dir; }
   template <bool check = true>
@@ -590,7 +594,11 @@ public:
       ASSERT3(_valid() > -off - 2);
     }
     auto _off = _offset() - off * region->_dir;
-    return f[ind().xp(_off)];
+    if constexpr (isX) {
+      return f[_ind().xp(_off)];
+    } else {
+      return f[_ind().yp(_off)];
+    }
   }
   template <bool check = true>
   const BoutReal& _getAt(const Field3D& f, int off) const {
@@ -599,7 +607,11 @@ public:
       ASSERT3(_valid() > -off - 2);
     }
     auto _off = _offset() - off * region->_dir;
-    return f[ind().xp(_off)];
+    if constexpr (isX) {
+      return f[_ind().xp(_off)];
+    } else {
+      return f[_ind().yp(_off)];
+    }
   }
   template <bool check = true>
   BoutReal& _getAt(Field2D& f, int off) const {
@@ -608,7 +620,11 @@ public:
       ASSERT3(_valid() > -off - 2);
     }
     auto _off = _offset() - off * region->_dir;
-    return f[ind().xp(_off)];
+    if constexpr (isX) {
+      return f[_ind().xp(_off)];
+    } else {
+      return f[_ind().yp(_off)];
+    }
   }
   template <bool check = true>
   const BoutReal& _getAt(const Field2D& f, int off) const {
@@ -617,7 +633,11 @@ public:
       ASSERT3(_valid() > -off - 2);
     }
     auto _off = _offset() - off * region->_dir;
-    return f[ind().xp(_off)];
+    if constexpr (isX) {
+      return f[_ind().xp(_off)];
+    } else {
+      return f[_ind().yp(_off)];
+    }
   }
   template <bool check = true>
   BoutReal getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
@@ -626,7 +646,11 @@ public:
       ASSERT3(valid() > -off - 2);
     }
     auto _off = _offset() + off * region->_dir;
-    return f(0, ind().xp(_off));
+    if constexpr (isX) {
+      return f(0, _ind().xp(_off));
+    } else {
+      return f(0, _ind().yp(_off));
+    }
   }
   signed char _offset() const { return region->_dir; }
   signed char _valid() const { return region->valid; }
@@ -641,17 +665,21 @@ public:
     }
     return 0.5;
   }
-  bool operator!=(BoundaryRegionIterX lhs) {
+  bool operator!=(BoundaryRegionIterXY<isX> lhs) {
     ASSERT3(region == lhs.region);
     return pos != lhs.pos;
   }
-  BoundaryRegionIterX& operator++() {
+  BoundaryRegionIterXY& operator++() {
     ++pos;
     return *this;
   }
   // No-op for compatibility
-  BoundaryRegionIterX& operator*() { return *this; }
+  BoundaryRegionIterXY& operator*() { return *this; }
 };
+using BoundaryRegionX = BoundaryRegionXY<true>;
+using BoundaryRegionY = BoundaryRegionXY<false>;
+using BoundaryRegionIterX = BoundaryRegionIterXY<true>;
+using BoundaryRegionIterY = BoundaryRegionIterXY<false>;
 
 inline BoundaryRegionX BoundaryRegionXIn(const std::string& name, int ymin, int ymax,
                                          Mesh* mesh) {
@@ -681,11 +709,13 @@ end(const bout::boundary::BoundaryRegionFCI& reg) {
   return bout::boundary::BoundaryRegionIterFCI(&reg, false);
 }
 
-inline bout::boundary::BoundaryRegionIterX
-begin(const bout::boundary::BoundaryRegionX& reg) {
-  return bout::boundary::BoundaryRegionIterX(&reg, true);
+template <bool isX>
+inline bout::boundary::BoundaryRegionIterXY<isX>
+begin(const bout::boundary::BoundaryRegionXY<isX>& reg) {
+  return bout::boundary::BoundaryRegionIterXY<isX>(&reg, true);
 }
-inline bout::boundary::BoundaryRegionIterX
-end(const bout::boundary::BoundaryRegionX& reg) {
-  return bout::boundary::BoundaryRegionIterX(&reg, false);
+template <bool isX>
+inline bout::boundary::BoundaryRegionIterXY<isX>
+end(const bout::boundary::BoundaryRegionXY<isX>& reg) {
+  return bout::boundary::BoundaryRegionIterXY<isX>(&reg, false);
 }
