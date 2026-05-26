@@ -39,6 +39,15 @@ public:
       : bndryX(region), real_value(value), value_type(ValueType::REAL) {}
   BoundaryOpPar(bout::boundary::BoundaryRegionX* region)
       : bndryX(region), real_value(0.), value_type(ValueType::REAL) {}
+  BoundaryOpPar(bout::boundary::BoundaryRegionY* region,
+                std::shared_ptr<FieldGenerator> value)
+      : bndryY(region), gen_values(std::move(value)), value_type(ValueType::GEN) {}
+  BoundaryOpPar(bout::boundary::BoundaryRegionY* region, Field3D* value)
+      : bndryY(region), field_values(value), value_type(ValueType::FIELD) {}
+  BoundaryOpPar(bout::boundary::BoundaryRegionY* region, BoutReal value)
+      : bndryY(region), real_value(value), value_type(ValueType::REAL) {}
+  BoundaryOpPar(bout::boundary::BoundaryRegionY* region)
+      : bndryY(region), real_value(0.), value_type(ValueType::REAL) {}
   BoundaryOpPar(BoundaryOpPar* region, std::shared_ptr<FieldGenerator> value)
       : bndry(region->bndry), gen_values(std::move(value)), value_type(ValueType::GEN) {}
   BoundaryOpPar(BoundaryOpPar* region, Field3D* value)
@@ -66,6 +75,14 @@ public:
         const std::map<std::string, std::string>& UNUSED(keywords)) {
     return clone(region, args);
   }
+  virtual BoundaryOpPar* clone(bout::boundary::BoundaryRegionY* region,
+                               const std::list<std::string>& args) = 0;
+  virtual BoundaryOpPar* clone(bout::boundary::BoundaryRegionY* region, Field3D* f) = 0;
+  virtual BoundaryOpPar*
+  clone(bout::boundary::BoundaryRegionY* region, const std::list<std::string>& args,
+        const std::map<std::string, std::string>& UNUSED(keywords)) {
+    return clone(region, args);
+  }
   virtual BoundaryOpPar* clone(BoundaryOpPar* region,
                                const std::list<std::string>& args) = 0;
   virtual BoundaryOpPar* clone(BoundaryOpPar* region, Field3D* f) = 0;
@@ -77,6 +94,7 @@ public:
 
   bout::boundary::BoundaryRegionFCI* bndry{nullptr};
   bout::boundary::BoundaryRegionX* bndryX{nullptr};
+  bout::boundary::BoundaryRegionY* bndryY{nullptr};
 
 protected:
   /// Possible ways to get boundary values
@@ -90,6 +108,7 @@ protected:
 
   BoutReal getValue(const bout::boundary::BoundaryRegionIterFCI& bndry, BoutReal t);
   BoutReal getValue(const bout::boundary::BoundaryRegionIterX& bndry, BoutReal t);
+  BoutReal getValue(const bout::boundary::BoundaryRegionIterY& bndry, BoutReal t);
 };
 
 template <class T, bool isNeumann = false>
@@ -155,6 +174,26 @@ public:
   BoundaryOpPar* clone(bout::boundary::BoundaryRegionX* region, Field3D* f) override {
     return new T(region, f);
   }
+  BoundaryOpPar* clone(bout::boundary::BoundaryRegionY* region,
+                       const std::list<std::string>& args) override {
+    if (!args.empty()) {
+      try {
+        real_value = stringToReal(args.front());
+        return new T(region, real_value);
+      } catch (const BoutException&) {
+        std::shared_ptr<FieldGenerator> newgen = nullptr;
+        // First argument should be an expression
+        newgen = FieldFactory::get()->parse(args.front());
+        return new T(region, newgen);
+      }
+    }
+
+    return new T(region);
+  }
+
+  BoundaryOpPar* clone(bout::boundary::BoundaryRegionY* region, Field3D* f) override {
+    return new T(region, f);
+  }
   BoundaryOpPar* clone(BoundaryOpPar* region, Field3D* f) override {
     return new T(region, f);
   }
@@ -184,6 +223,17 @@ public:
       f.allocate();
       auto dy = f.getCoordinates()->dx;
       for (auto pnt : *bndryX) {
+        BoutReal value = getValue(pnt, t);
+        if (isNeumann) {
+          value *= dy[pnt.ind()];
+        }
+        static_cast<T*>(this)->apply_stencil(f, pnt, value);
+      }
+    }
+    if (bndryY != nullptr) {
+      f.allocate();
+      auto dy = f.getCoordinates()->dy;
+      for (auto pnt : *bndryY) {
         BoutReal value = getValue(pnt, t);
         if (isNeumann) {
           value *= dy[pnt.ind()];
