@@ -578,11 +578,11 @@ private:
 
   const Field3D filter_z_non(const Field3D &var, int N0, int N1) {
     // ASSERT1(var.isAllocated());
-    static dcomplex *f = (dcomplex *)NULL;
+    static std::unique_ptr<dcomplex[]> f{nullptr};
     ncz = mesh->LocalNz - 1;
-    if (f == (dcomplex *)NULL) {
-      // Allocate memory
-      f = new dcomplex[ncz / 2 + 1];
+    if (!f) {
+      // Allocate memory - automatically freed at program exit
+      f = std::make_unique<dcomplex[]>(ncz / 2 + 1);
     }
 
     Field3D result;
@@ -590,7 +590,7 @@ private:
     for (jx = 0; jx < mesh->LocalNx; jx++) {
       for (jy = 0; jy < mesh->LocalNy; jy++) {
 
-        rfft(var(jx,jy), ncz, f); // Forward FFT
+        rfft(var(jx,jy), ncz, f.get()); // Forward FFT
 
         for (jz = 0; jz <= ncz / 2; jz++) {
 
@@ -600,7 +600,7 @@ private:
           }
         }
 
-        irfft(f, ncz, result(jx,jy)); // Reverse FFT
+        irfft(f.get(), ncz, result(jx,jy)); // Reverse FFT
 
         result(jx,jy,ncz) = result(jx,jy,0);
       }
@@ -760,7 +760,8 @@ private:
   const Field3D sink_zonal_core(const Field3D &var, int filter_index) {
     Field3D result;
     result.allocate();
-    static dcomplex *f = NULL, *f2 = NULL;
+    static std::unique_ptr<dcomplex[]> f{nullptr};
+    static std::unique_ptr<dcomplex[]> f2{nullptr};
     int indx, indy;
 
   #ifdef CHECK
@@ -778,11 +779,11 @@ private:
     }
     int ncz = mesh->LocalNz - 1;
 
-    if (f == NULL)
-      f = new dcomplex[ncz / 2 + 1];
+    if (!f)
+      f = std::make_unique<dcomplex[]>(ncz / 2 + 1);
 
-    if (f2 == NULL)
-      f2 = new dcomplex[ncz / 2 + 1];
+    if (!f2)
+      f2 = std::make_unique<dcomplex[]>(ncz / 2 + 1);
 
     for (jx = 0; jx < mesh->LocalNx; jx++) {
       indx = mesh->getGlobalXIndex(jx);
@@ -794,13 +795,13 @@ private:
         //if ( ((indy > int(jysep1)) && (indy <= int(jysep2_1))) || ((indy > int(jysep1_2)) && (indy <= int(jysep2))) )
         {
           // Take FFT in the Z direction
-          rfft(var(jx,jy), ncz, f);
+          rfft(var(jx,jy), ncz, f.get());
           // Filter the zonal component based on the filter_index
           // f[0] *= (1.+TanH( (indx-length)/width ))/2.;
           f[0] *= tanh_tmp;
         }
 
-        irfft(f, ncz, result(jx,jy)); // Reverse FFT
+        irfft(f.get(), ncz, result(jx,jy)); // Reverse FFT
         result(jx,jy,ncz) = result(jx,jy,0);
       }
     }
