@@ -487,7 +487,7 @@ void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices) {
     } else if (newreg->isY) {
       // nothing to do
     } else {
-      auto reg = newreg->getLegacyPointer();
+      auto* reg = newreg->getLegacyPointer();
       if (isFci() && reg->by != 0) {
         continue;
       }

@@ -55,7 +55,7 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extr
   // Also, here we interpolate for the boundary points at xstart/ystart and
   // (xend+1)/(yend+1) instead of extrapolating.
   for (auto& newbndry : localmesh->getBoundaries()) {
-    auto bndry = newbndry->getLegacyPointer();
+    auto* bndry = newbndry->getLegacyPointer();
     if ((extrapolate_x and bndry->bx != 0) or (extrapolate_y and bndry->by != 0)) {
       int extrap_start = 0;
       if (not no_extra_interpolate) {
