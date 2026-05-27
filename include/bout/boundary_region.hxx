@@ -49,7 +49,7 @@ public:
       : localmesh(passmesh ? passmesh : bout::globals::mesh), label(std::move(name)),
         location(loc) {}
 
-  virtual ~BoundaryRegionBase() = default;
+  virtual ~BoundaryRegionBase();
 
   virtual BoundaryRegion* getLegacyPointer();
   Mesh* localmesh; ///< Mesh does this boundary region belongs to
