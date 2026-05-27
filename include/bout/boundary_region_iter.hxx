@@ -686,34 +686,42 @@ using BoundaryRegionIterY = BoundaryRegionIterXY<false>;
 
 inline BoundaryRegionX* NewBoundaryRegionXIn(const std::string& name, int ymin, int ymax,
                                              Mesh* mesh) {
-  return new BoundaryRegionX(name, -1, mesh,
-                             Region<Ind3D>(mesh->xstart, mesh->xstart, ymin, ymax,
-                                           mesh->zstart, mesh->zend, mesh->LocalNy,
-                                           mesh->LocalNz, mesh->maxregionblocksize));
+  auto pointer = new BoundaryRegionX(
+      name, -1, mesh,
+      Region<Ind3D>(mesh->xstart, mesh->xstart, ymin, ymax, mesh->zstart, mesh->zend,
+                    mesh->LocalNy, mesh->LocalNz, mesh->maxregionblocksize));
+  pointer->legacy = new ::BoundaryRegionXIn(name, ymin, ymax, mesh);
+  return pointer;
 }
 
 inline BoundaryRegionX* NewBoundaryRegionXOut(const std::string& name, int ymin, int ymax,
                                               Mesh* mesh) {
-  return new BoundaryRegionX(name, 1, mesh,
-                             Region<Ind3D>(mesh->xend, mesh->xend, ymin, ymax,
-                                           mesh->zstart, mesh->zend, mesh->LocalNy,
-                                           mesh->LocalNz, mesh->maxregionblocksize));
+  auto pointer = new BoundaryRegionX(
+      name, 1, mesh,
+      Region<Ind3D>(mesh->xend, mesh->xend, ymin, ymax, mesh->zstart, mesh->zend,
+                    mesh->LocalNy, mesh->LocalNz, mesh->maxregionblocksize));
+  pointer->legacy = new ::BoundaryRegionXOut(name, ymin, ymax, mesh);
+  return pointer;
 }
 
 inline BoundaryRegionY* NewBoundaryRegionYUp(const std::string& name, int xmin, int xmax,
                                              Mesh* mesh) {
-  return new BoundaryRegionY(name, -1, mesh,
-                             Region<Ind3D>(xmin, xmax, mesh->yend, mesh->yend,
-                                           mesh->zstart, mesh->zend, mesh->LocalNy,
-                                           mesh->LocalNz, mesh->maxregionblocksize));
+  auto pointer = new BoundaryRegionY(
+      name, -1, mesh,
+      Region<Ind3D>(xmin, xmax, mesh->yend, mesh->yend, mesh->zstart, mesh->zend,
+                    mesh->LocalNy, mesh->LocalNz, mesh->maxregionblocksize));
+  pointer->legacy = new ::BoundaryRegionYUp(name, xmin, xmax, mesh);
+  return pointer;
 }
 
 inline BoundaryRegionY* NewBoundaryRegionYDown(const std::string& name, int xmin,
                                                int xmax, Mesh* mesh) {
-  return new BoundaryRegionY(name, 1, mesh,
-                             Region<Ind3D>(xmin, xmax, mesh->ystart, mesh->ystart,
-                                           mesh->zstart, mesh->zend, mesh->LocalNy,
-                                           mesh->LocalNz, mesh->maxregionblocksize));
+  auto pointer = new BoundaryRegionY(
+      name, 1, mesh,
+      Region<Ind3D>(xmin, xmax, mesh->ystart, mesh->ystart, mesh->zstart, mesh->zend,
+                    mesh->LocalNy, mesh->LocalNz, mesh->maxregionblocksize));
+  pointer->legacy = new ::BoundaryRegionYDown(name, xmin, xmax, mesh);
+  return pointer;
 }
 
 template <class Func>
