@@ -51,6 +51,12 @@ public:
 
   virtual ~BoundaryRegionBase() = default;
 
+  virtual BoundaryRegion* getLegacyPointer() {
+    if (legacy == nullptr) {
+      throw BoutException("Legacy region not supported");
+    }
+    return legacy;
+  }
   Mesh* localmesh; ///< Mesh does this boundary region belongs to
 
   std::string label; ///< Label for this boundary region
@@ -66,6 +72,8 @@ public:
                             ///  X or Y first)
   virtual bool
   isDone() = 0; ///< Returns true if outside domain. Can use this with nested nextX, nextY
+
+  BoundaryRegion* legacy{nullptr};
 };
 
 /// Describes a region of the boundary, and a means of iterating over it
@@ -77,6 +85,7 @@ public:
   BoundaryRegion(std::string name, int xd, int yd, Mesh* passmesh = nullptr)
       : BoundaryRegionBase(name, passmesh), bx(xd), by(yd), width(2) {}
   ~BoundaryRegion() override = default;
+  BoundaryRegion* getLegacyPointer() override { return this; }
 
   int x, y;   ///< Indices of the point in the boundary
   int bx, by; ///< Direction of the boundary [x+bx][y+by] is going outwards
