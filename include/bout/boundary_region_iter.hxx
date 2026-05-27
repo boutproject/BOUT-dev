@@ -256,7 +256,7 @@ public:
 
   BoutReal extrapolate_boundary_free(const Field3D& f,
                                      BoundaryFreeExtrapolation mode) const {
-    BoutReal fac;
+    BoutReal fac = BoutNaN;
     if (valid() > 0) {
       fac = limitFreeScale(prev(f), current(f), mode);
     } else {
