@@ -46,7 +46,9 @@ enum class BoundaryFreeExtrapolation : std::int8_t { limited, exponential, linea
 //BOUT_ENUM_CLASS(BoundaryFreeExtrapolation, limited, exponential, linear);
 
 template <typename impl>
-class BoundaryRegionIterBase { /// get the index at the last point in domain
+class BoundaryRegionIterBase {
+  BoundaryRegionIterBase() = default;
+  /// get the index at the last point in domain
 public:
   Ind3D ind() const { return static_cast<const impl*>(this)->_ind(); }
   /// get the length from the point in the domain to the boundary in index
@@ -372,6 +374,7 @@ public:
 
 private:
   BoutReal small_value = 1e-4;
+  friend impl;
 };
 
 namespace {
