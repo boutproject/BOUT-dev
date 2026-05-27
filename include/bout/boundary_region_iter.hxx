@@ -466,7 +466,7 @@ private:
   Ind3D xyz2ind(int x, int y, int z) const {
     const int ny = localmesh->LocalNy;
     const int nz = localmesh->LocalNz;
-    return Ind3D{(x * ny + y) * nz + z, ny, nz};
+    return Ind3D{((x * ny + y) * nz) + z, ny, nz};
   }
 };
 
@@ -494,7 +494,7 @@ public:
     if constexpr (check) {
       ASSERT3(_valid() > -off - 2);
     }
-    auto _off = _offset() - off * region->_dir;
+    auto _off = _offset() - (off * region->_dir);
     return f.ynext(_off)[_ind().yp(_off)];
   }
   template <bool check = true>
@@ -503,7 +503,7 @@ public:
     if constexpr (check) {
       ASSERT3(_valid() > -off - 2);
     }
-    auto _off = _offset() - off * region->_dir;
+    auto _off = _offset() - (off * region->_dir);
     return f.ynext(_off)[_ind().yp(_off)];
   }
   template <bool check = true>
@@ -512,7 +512,7 @@ public:
     if constexpr (check) {
       ASSERT3(_valid() > -off - 2);
     }
-    auto _off = _offset() - off * region->_dir;
+    auto _off = _offset() - (off * region->_dir);
     return f.ynext(_off)[_ind().yp(_off)];
   }
   template <bool check = true>
@@ -521,7 +521,7 @@ public:
     if constexpr (check) {
       ASSERT3(_valid() > -off - 2);
     }
-    auto _off = _offset() - off * region->_dir;
+    auto _off = _offset() - (off * region->_dir);
     return f.ynext(_off)[_ind().yp(_off)];
   }
   template <bool check = true>
@@ -530,7 +530,7 @@ public:
     if constexpr (check) {
       ASSERT3(valid() > -off - 2);
     }
-    auto _off = _offset() + off * region->_dir;
+    auto _off = _offset() + (off * region->_dir);
     return f(_off, _ind().yp(_off));
   }
   signed char _offset() const { return region->bndry_points[pos].offset; }
