@@ -51,12 +51,7 @@ public:
 
   virtual ~BoundaryRegionBase() = default;
 
-  virtual BoundaryRegion* getLegacyPointer() {
-    if (legacy == nullptr) {
-      throw BoutException("Legacy region not supported");
-    }
-    return legacy;
-  }
+  virtual BoundaryRegion* getLegacyPointer();
   Mesh* localmesh; ///< Mesh does this boundary region belongs to
 
   std::string label; ///< Label for this boundary region

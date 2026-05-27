@@ -7,6 +7,13 @@
 #include <utility>
 using std::swap;
 
+BoundaryRegion* BoundaryRegionBase::getLegacyPointer() {
+  if (legacy == nullptr) {
+    throw BoutException("Legacy region not supported");
+  }
+  return legacy;
+}
+
 BoundaryRegionXIn::BoundaryRegionXIn(std::string name, int ymin, int ymax, Mesh* passmesh)
     : BoundaryRegion(std::move(name), -1, 0, passmesh), ys(ymin), ye(ymax) {
   location = BNDRY_XIN;
