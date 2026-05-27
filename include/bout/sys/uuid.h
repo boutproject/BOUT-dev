@@ -76,7 +76,7 @@ namespace uuids {
 
 namespace detail {
 template <typename TChar>
-constexpr inline unsigned char hex2char(const TChar ch) {
+constexpr unsigned char hex2char(const TChar ch) {
   if (ch >= static_cast<TChar>('0') && ch <= static_cast<TChar>('9'))
     return ch - static_cast<TChar>('0');
   if (ch >= static_cast<TChar>('a') && ch <= static_cast<TChar>('f'))
@@ -87,14 +87,14 @@ constexpr inline unsigned char hex2char(const TChar ch) {
 }
 
 template <typename TChar>
-constexpr inline bool is_hex(const TChar ch) {
+constexpr bool is_hex(const TChar ch) {
   return (ch >= static_cast<TChar>('0') && ch <= static_cast<TChar>('9'))
          || (ch >= static_cast<TChar>('a') && ch <= static_cast<TChar>('f'))
          || (ch >= static_cast<TChar>('A') && ch <= static_cast<TChar>('F'));
 }
 
 template <typename TChar>
-constexpr inline unsigned char hexpair2char(const TChar a, const TChar b) {
+constexpr unsigned char hexpair2char(const TChar a, const TChar b) {
   return (hex2char(a) << 4) | hex2char(b);
 }
 
@@ -105,7 +105,7 @@ public:
 
   static constexpr unsigned int block_bytes = 64;
 
-  inline static uint32_t left_rotate(uint32_t value, const size_t count) {
+  static uint32_t left_rotate(uint32_t value, const size_t count) {
     return (value << count) ^ (value >> (32 - count));
   }
 
@@ -395,9 +395,7 @@ public:
 
   void swap(uuid& other) noexcept { data.swap(other.data); }
 
-  inline const char* as_bytes() const {
-    return reinterpret_cast<const char*>(data.data());
-  }
+  const char* as_bytes() const { return reinterpret_cast<const char*>(data.data()); }
 
   template <class CharT = char>
   static bool is_valid_uuid(const CharT* str) noexcept {
