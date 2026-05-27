@@ -200,7 +200,8 @@ BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* 
     if (region->isParallel) {
       return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionFCI*>(region), arglist,
                         keywords);
-    } else if (region->isX) {
+    }
+    if (region->isX) {
       return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionX*>(region), arglist,
                         keywords);
     } else if (region->isY) {
