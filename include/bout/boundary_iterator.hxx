@@ -2,7 +2,6 @@
 
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
-#include "bout/build_defines.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/mesh.hxx"
@@ -160,7 +159,6 @@ protected:
   int y() const { return _y; }
   int z() const { return _z; }
 
-protected:
   void setx(int x) { _x = x; }
   void sety(int y) { _y = y; }
 
