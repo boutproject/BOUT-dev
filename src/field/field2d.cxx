@@ -32,6 +32,7 @@
 #include <bout/assert.hxx>
 #include <bout/boundary_factory.hxx>
 #include <bout/boundary_op.hxx>
+#include <bout/boundary_region_iter.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/field2d.hxx>
@@ -315,7 +316,14 @@ void Field2D::setBoundaryTo(const Field2D& f2d) {
 
   /// Loop over boundary regions
   for (const auto& regnew : fieldmesh->getBoundaries()) {
+    // if (regnew->isX || regnew->isY) {
+    //   bout::boundary::iter_boundary(regnew, [&](auto& point) {
+    // 	const auto val = point.interpolate_boundary_o2(f2d);
+    // 	point.dirichlet_o1(*this, val);
+    //   });
+    // } else
     {
+#warning Remove once ported
       /// Loop within each region
       auto reg = dynamic_cast<BoundaryRegion*>(regnew);
       ASSERT0(reg != nullptr);
