@@ -37,26 +37,23 @@ public:
   BoundaryOpPar(bout::boundary::BoundaryRegionX* region, Field3D* value)
       : bndryX(region), field_values(value), value_type(ValueType::FIELD) {}
   BoundaryOpPar(bout::boundary::BoundaryRegionX* region, BoutReal value)
-      : bndryX(region), real_value(value), value_type(ValueType::REAL) {}
-  BoundaryOpPar(bout::boundary::BoundaryRegionX* region)
-      : bndryX(region), real_value(0.), value_type(ValueType::REAL) {}
+      : bndryX(region), real_value(value) {}
+  BoundaryOpPar(bout::boundary::BoundaryRegionX* region) : bndryX(region) {}
   BoundaryOpPar(bout::boundary::BoundaryRegionY* region,
                 std::shared_ptr<FieldGenerator> value)
       : bndryY(region), gen_values(std::move(value)), value_type(ValueType::GEN) {}
   BoundaryOpPar(bout::boundary::BoundaryRegionY* region, Field3D* value)
       : bndryY(region), field_values(value), value_type(ValueType::FIELD) {}
   BoundaryOpPar(bout::boundary::BoundaryRegionY* region, BoutReal value)
-      : bndryY(region), real_value(value), value_type(ValueType::REAL) {}
-  BoundaryOpPar(bout::boundary::BoundaryRegionY* region)
-      : bndryY(region), real_value(0.), value_type(ValueType::REAL) {}
+      : bndryY(region), real_value(value) {}
+  BoundaryOpPar(bout::boundary::BoundaryRegionY* region) : bndryY(region) {}
   BoundaryOpPar(BoundaryOpPar* region, std::shared_ptr<FieldGenerator> value)
       : bndry(region->bndry), gen_values(std::move(value)), value_type(ValueType::GEN) {}
   BoundaryOpPar(BoundaryOpPar* region, Field3D* value)
       : bndry(region->bndry), field_values(value), value_type(ValueType::FIELD) {}
   BoundaryOpPar(BoundaryOpPar* region, BoutReal value)
-      : bndry(region->bndry), real_value(value), value_type(ValueType::REAL) {}
-  BoundaryOpPar(BoundaryOpPar* region)
-      : bndry(region->bndry), real_value(0.), value_type(ValueType::REAL) {}
+      : bndry(region->bndry), real_value(value) {}
+  BoundaryOpPar(BoundaryOpPar* region) : bndry(region->bndry) {}
   ~BoundaryOpPar() override = default;
 
   // Note: All methods must implement clone, except for modifiers (see below)
