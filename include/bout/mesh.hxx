@@ -484,10 +484,14 @@ public:
   virtual std::vector<BoundaryRegionBase*> getBoundaries() = 0;
 
   /// Get the set of all possible boundaries in this configuration
-  virtual std::set<std::string> getPossibleBoundaries() const { return {}; }
+  virtual std::set<std::string> getPossibleBoundaries() const {
+    throw BoutException("Not implemented for this mesh");
+  };
 
   /// Add a boundary region to this processor
-  virtual void addBoundary(BoundaryRegionBase* UNUSED(bndry)) {}
+  virtual void addBoundary(BoundaryRegionBase* UNUSED(bndry)) {
+    throw BoutException("This has never been implemented");
+  };
 
   /// Get the list of parallel boundary regions. The option specifies with
   /// region to get. Default is to get all regions. All possible options are

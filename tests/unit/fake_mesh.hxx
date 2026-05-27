@@ -123,6 +123,7 @@ public:
                    [[maybe_unused]] int Z) const override {
     return 0;
   }
+  std::set<std::string> getPossibleBoundaries() const override { return {}; }
   bool firstX() const override { return true; }
   bool lastX() const override { return true; }
   int sendXOut(BoutReal* UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) override {
