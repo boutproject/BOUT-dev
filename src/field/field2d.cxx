@@ -314,14 +314,18 @@ void Field2D::setBoundaryTo(const Field2D& f2d) {
   allocate(); // Make sure data allocated
 
   /// Loop over boundary regions
-  for (const auto& reg : fieldmesh->getBoundaries()) {
-    /// Loop within each region
-    for (reg->first(); !reg->isDone(); reg->next()) {
-      // Get value half-way between cells
-      BoutReal val =
-          0.5 * (f2d(reg->x, reg->y) + f2d(reg->x - reg->bx, reg->y - reg->by));
-      // Set to this value
-      (*this)(reg->x, reg->y) = 2. * val - (*this)(reg->x - reg->bx, reg->y - reg->by);
+  for (const auto& regnew : fieldmesh->getBoundaries()) {
+    {
+      /// Loop within each region
+      auto reg = dynamic_cast<BoundaryRegion*>(regnew);
+      ASSERT0(reg != nullptr);
+      for (reg->first(); !reg->isDone(); reg->next()) {
+        // Get value half-way between cells
+        BoutReal val =
+            0.5 * (f2d(reg->x, reg->y) + f2d(reg->x - reg->bx, reg->y - reg->by));
+        // Set to this value
+        (*this)(reg->x, reg->y) = 2. * val - (*this)(reg->x - reg->bx, reg->y - reg->by);
+      }
     }
   }
 }

@@ -3241,7 +3241,7 @@ RangeIterator BoutMesh::iterateBndryUpperY() const {
   return RangeIterator(xs, xe);
 }
 
-std::vector<BoundaryRegion*> BoutMesh::getBoundaries() { return boundary; }
+std::vector<BoundaryRegionBase*> BoutMesh::getBoundaries() { return boundary; }
 
 using bout::boundary::BoundaryRegionFCI;
 std::vector<std::shared_ptr<BoundaryRegionFCI>>

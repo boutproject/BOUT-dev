@@ -54,7 +54,9 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extr
   // initializing yet, leading to an infinite recursion.
   // Also, here we interpolate for the boundary points at xstart/ystart and
   // (xend+1)/(yend+1) instead of extrapolating.
-  for (auto& bndry : localmesh->getBoundaries()) {
+  for (auto& newbndry : localmesh->getBoundaries()) {
+    auto bndry = dynamic_cast<BoundaryRegion*>(newbndry);
+    ASSERT0(bndry != nullptr);
     if ((extrapolate_x and bndry->bx != 0) or (extrapolate_y and bndry->by != 0)) {
       int extrap_start = 0;
       if (not no_extra_interpolate) {
@@ -203,7 +205,9 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
   // initializing yet, leading to an infinite recursion.
   // Also, here we interpolate for the boundary points at xstart/ystart and
   // (xend+1)/(yend+1) instead of extrapolating.
-  for (auto& bndry : localmesh->getBoundaries()) {
+  for (auto& newbndry : localmesh->getBoundaries()) {
+    auto bndry = dynamic_cast<BoundaryRegion*>(newbndry);
+    ASSERT0(bndry != nullptr);
     if ((extrapolate_x and bndry->bx != 0) or (extrapolate_y and bndry->by != 0)) {
       int extrap_start = 0;
       if (not no_extra_interpolate) {

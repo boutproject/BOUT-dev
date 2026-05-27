@@ -478,19 +478,31 @@ void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices) {
   // Non-FCI.
   // Transform to field-aligned coordinates?
   // Loop over boundary regions
-  for (const auto& reg : fieldmesh->getBoundaries()) {
-    if (isFci() && reg->by != 0) {
-      continue;
-    }
-    /// Loop within each region
-    for (reg->first(); !reg->isDone(); reg->next()) {
-      for (int z = 0; z < nz; z++) {
-        // Get value half-way between cells
-        BoutReal val =
-            0.5 * (f3d(reg->x, reg->y, z) + f3d(reg->x - reg->bx, reg->y - reg->by, z));
-        // Set to this value
-        (*this)(reg->x, reg->y, z) =
-            2. * val - (*this)(reg->x - reg->bx, reg->y - reg->by, z);
+  for (const auto& newreg : fieldmesh->getBoundaries()) {
+    if (newreg->isX) {
+      auto reg = dynamic_cast<bout::boundary::BoundaryRegionX*>(newreg);
+      bout::boundary::iter_boundary(*reg, [&](auto& point) {
+        const BoutReal val = point.interpolate_boundary_o2(f3d);
+        point.dirichlet_o1(*this, val);
+      });
+    } else if (newreg->isY) {
+      // nothing to do
+    } else {
+      auto reg = dynamic_cast<BoundaryRegion*>(newreg);
+      ASSERT1(reg != nullptr);
+      if (isFci() && reg->by != 0) {
+        continue;
+      }
+      /// Loop within each region
+      for (reg->first(); !reg->isDone(); reg->next()) {
+        for (int z = 0; z < nz; z++) {
+          // Get value half-way between cells
+          BoutReal val =
+              0.5 * (f3d(reg->x, reg->y, z) + f3d(reg->x - reg->bx, reg->y - reg->by, z));
+          // Set to this value
+          (*this)(reg->x, reg->y, z) =
+              2. * val - (*this)(reg->x - reg->bx, reg->y - reg->by, z);
+        }
       }
     }
   }

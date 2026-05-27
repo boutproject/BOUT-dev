@@ -173,7 +173,7 @@ public:
   bool hasBndryLowerY() const override { return false; }
   bool hasBndryUpperY() const override { return false; }
   void addBoundary(BoundaryRegion* region) override { boundaries.push_back(region); }
-  std::vector<BoundaryRegion*> getBoundaries() override { return boundaries; }
+  std::vector<BoundaryRegionBase*> getBoundaries() override { return boundaries; }
   std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>
   getBoundariesPar(BoundaryParType UNUSED(type)) const override {
     return std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>();
@@ -265,7 +265,7 @@ public:
   using Mesh::msg_len;
 
 private:
-  std::vector<BoundaryRegion*> boundaries;
+  std::vector<BoundaryRegionBase*> boundaries;
 };
 
 /// FakeGridDataSource provides a non-null GridDataSource* source to use with FakeMesh, to
