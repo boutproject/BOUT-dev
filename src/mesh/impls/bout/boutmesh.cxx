@@ -1105,10 +1105,12 @@ void BoutMesh::createYBoundaries() {
 
   if ((UDATA_INDEST < 0) && (UDATA_XSPLIT > yboundary_xstart)) {
     boundary.push_back(
+        //bout::boundary::NewBoundaryRegionYUp("upper_target", yboundary_xstart, UDATA_XSPLIT - 1, this));
         new BoundaryRegionYUp("upper_target", yboundary_xstart, UDATA_XSPLIT - 1, this));
   }
   if ((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= yboundary_xend)) {
     boundary.push_back(
+        //bout::boundary::NewBoundaryRegionYUp("upper_target", UDATA_XSPLIT, yboundary_xend, this));
         new BoundaryRegionYUp("upper_target", UDATA_XSPLIT, yboundary_xend, this));
   }
 
