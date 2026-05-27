@@ -12,6 +12,7 @@
 #include "bout/assert.hxx"
 #include "bout/boundary_op.hxx"
 #include "bout/boundary_region.hxx"
+#include "bout/boundary_region_iter.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/coordinates.hxx"
 #include "bout/field2d.hxx"
