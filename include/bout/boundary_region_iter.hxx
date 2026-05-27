@@ -6,13 +6,13 @@
 #include <cstdint>
 #include <functional>
 #include <string>
-#include <utility>
+#include <type_traits>
+#include <vector>
 
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/field_data.hxx"
 #include "bout/utils.hxx"
-#include <bout/bout_enum_class.hxx>
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
 #include <bout/parallel_boundary_region.hxx>
