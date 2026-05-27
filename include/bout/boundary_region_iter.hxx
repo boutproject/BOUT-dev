@@ -716,9 +716,36 @@ inline BoundaryRegionY BoundaryRegionYDown(const std::string& name, int xmin, in
                                        mesh->LocalNz, mesh->maxregionblocksize));
 }
 
+template <class Func>
+void iter_boundary(const BoundaryRegionBase* bndrybase, const Func& func) {
+  if (bndrybase->isX) {
+    const auto bndry = dynamic_cast<const BoundaryRegionX*>(bndrybase);
+    return iter_boundary(*bndry, func);
+  }
+  if (bndrybase->isY) {
+    const auto bndry = dynamic_cast<const BoundaryRegionY*>(bndrybase);
+    return iter_boundary(*bndry, func);
+  }
+  if (bndrybase->isParallel) {
+    const auto bndry = dynamic_cast<const BoundaryRegionFCI*>(bndrybase);
+    return iter_boundary(*bndry, func);
+  }
+  throw BoutException("{} is of unknown type - probably a legacy iterator",
+                      bndrybase->label);
+}
+
+template <class Bndry, class Func,
+          typename = std::enable_if_t<std::is_base_of<BoundaryRegionBase, Bndry>::value>>
+void iter_boundary(const Bndry& bndry, const Func& func) {
+  static_assert(std::is_base_of<BoundaryRegionBase, Bndry>::value,
+                "Bndry must derive from BoundaryRegionY");
+  for (auto& point : bndry) {
+    func(point);
+  }
+}
+
 } // namespace boundary
 } // namespace bout
-
 inline bout::boundary::BoundaryRegionIterFCI
 begin(const bout::boundary::BoundaryRegionFCI& reg) {
   return bout::boundary::BoundaryRegionIterFCI(&reg, true);
