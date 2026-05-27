@@ -1068,16 +1068,17 @@ void BoutMesh::createXBoundaries() {
     if (((yg > jyseps1_1) and (yg <= jyseps2_1))
         or ((yg > jyseps1_2) and (yg <= jyseps2_2))) {
       // Core
-      boundary.push_back(new BoundaryRegionXIn("core", ystart, yend, this));
+      boundary.push_back(
+          bout::boundary::NewBoundaryRegionXIn("core", ystart, yend, this));
     } else {
       // PF region
-      boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend, this));
+      boundary.push_back(bout::boundary::NewBoundaryRegionXIn("pf", ystart, yend, this));
     }
   }
 
   if (PE_XIND == (NXPE - 1)) {
     // Outer SOL
-    boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend, this));
+    boundary.push_back(bout::boundary::NewBoundaryRegionXOut("sol", ystart, yend, this));
   }
 }
 
@@ -1104,23 +1105,21 @@ void BoutMesh::createYBoundaries() {
       (include_corner_cells and ODATA_DEST == -1) ? LocalNx - 1 : xend;
 
   if ((UDATA_INDEST < 0) && (UDATA_XSPLIT > yboundary_xstart)) {
-    boundary.push_back(
-        //bout::boundary::NewBoundaryRegionYUp("upper_target", yboundary_xstart, UDATA_XSPLIT - 1, this));
-        new BoundaryRegionYUp("upper_target", yboundary_xstart, UDATA_XSPLIT - 1, this));
+    boundary.push_back(bout::boundary::NewBoundaryRegionYUp(
+        "upper_target", yboundary_xstart, UDATA_XSPLIT - 1, this));
   }
   if ((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= yboundary_xend)) {
-    boundary.push_back(
-        //bout::boundary::NewBoundaryRegionYUp("upper_target", UDATA_XSPLIT, yboundary_xend, this));
-        new BoundaryRegionYUp("upper_target", UDATA_XSPLIT, yboundary_xend, this));
+    boundary.push_back(bout::boundary::NewBoundaryRegionYUp("upper_target", UDATA_XSPLIT,
+                                                            yboundary_xend, this));
   }
 
   if ((DDATA_INDEST < 0) && (DDATA_XSPLIT > yboundary_xstart)) {
-    boundary.push_back(new BoundaryRegionYDown("lower_target", yboundary_xstart,
-                                               DDATA_XSPLIT - 1, this));
+    boundary.push_back(bout::boundary::NewBoundaryRegionYDown(
+        "lower_target", yboundary_xstart, DDATA_XSPLIT - 1, this));
   }
   if ((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= yboundary_xend)) {
-    boundary.push_back(
-        new BoundaryRegionYDown("lower_target", DDATA_XSPLIT, yboundary_xend, this));
+    boundary.push_back(bout::boundary::NewBoundaryRegionYDown(
+        "lower_target", DDATA_XSPLIT, yboundary_xend, this));
   }
 }
 

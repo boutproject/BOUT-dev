@@ -96,10 +96,11 @@ public:
 
   // Use this if the FakeMesh needs x- and y-boundaries
   void createBoundaries() {
-    addBoundary(new BoundaryRegionXIn("core", ystart, yend, this));
-    addBoundary(new BoundaryRegionXOut("sol", ystart, yend, this));
-    addBoundary(new BoundaryRegionYUp("upper_target", xstart, xend, this));
-    addBoundary(new BoundaryRegionYDown("lower_target", xstart, xend, this));
+    addBoundary(bout::boundary::NewBoundaryRegionXIn("core", ystart, yend, this));
+    addBoundary(bout::boundary::NewBoundaryRegionXOut("sol", ystart, yend, this));
+    addBoundary(bout::boundary::NewBoundaryRegionYUp("upper_target", xstart, xend, this));
+    addBoundary(
+        bout::boundary::NewBoundaryRegionYDown("lower_target", xstart, xend, this));
   }
 
   comm_handle send(FieldGroup& UNUSED(g)) override { return nullptr; }
