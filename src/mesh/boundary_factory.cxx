@@ -118,7 +118,7 @@ BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* 
       // Clone the boundary operation, passing the region to operate over,
       // an empty args list and empty keyword map
       list<string> args;
-      return op->clone(dynamic_cast<BoundaryRegion*>(region), args, {});
+      return op->clone(region->getLegacyPointer(), args, {});
     }
   }
   // Contains a bracket. Find the last bracket and remove
@@ -213,7 +213,7 @@ BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* 
     BoundaryOp* op = findBoundaryOp(trim(func));
     if (op != nullptr) {
       // An operation with arguments
-      return op->clone(dynamic_cast<BoundaryRegion*>(region), arglist, keywords);
+      return op->clone(region->getLegacyPointer(), arglist, keywords);
     }
   }
 
