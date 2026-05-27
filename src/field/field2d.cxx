@@ -316,24 +316,14 @@ void Field2D::setBoundaryTo(const Field2D& f2d) {
 
   /// Loop over boundary regions
   for (const auto& regnew : fieldmesh->getBoundaries()) {
-    // if (regnew->isX || regnew->isY) {
-    //   bout::boundary::iter_boundary(regnew, [&](auto& point) {
-    // 	const auto val = point.interpolate_boundary_o2(f2d);
-    // 	point.dirichlet_o1(*this, val);
-    //   });
-    // } else
-    {
-#warning Remove once ported
-      /// Loop within each region
-      auto reg = dynamic_cast<BoundaryRegion*>(regnew);
-      ASSERT0(reg != nullptr);
-      for (reg->first(); !reg->isDone(); reg->next()) {
-        // Get value half-way between cells
-        BoutReal val =
-            0.5 * (f2d(reg->x, reg->y) + f2d(reg->x - reg->bx, reg->y - reg->by));
-        // Set to this value
-        (*this)(reg->x, reg->y) = 2. * val - (*this)(reg->x - reg->bx, reg->y - reg->by);
-      }
+    /// Loop within each region
+    auto reg = regnew->getLegacyPointer();
+    for (reg->first(); !reg->isDone(); reg->next()) {
+      // Get value half-way between cells
+      BoutReal val =
+          0.5 * (f2d(reg->x, reg->y) + f2d(reg->x - reg->bx, reg->y - reg->by));
+      // Set to this value
+      (*this)(reg->x, reg->y) = 2. * val - (*this)(reg->x - reg->bx, reg->y - reg->by);
     }
   }
 }
