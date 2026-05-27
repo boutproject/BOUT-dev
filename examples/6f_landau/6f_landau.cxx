@@ -3698,7 +3698,7 @@ protected:
     }
 
     // Smooth j in x
-    if (smooth_j_x && !sheath_boundaries) {
+    if (smooth_j_x) {
       Jpar = smooth_x(Jpar);
       // Jpar = smooth_y(Jpar);
       Jpar.applyBoundary();
@@ -4046,29 +4046,6 @@ protected:
       Wrad = Srad / Ne_tmp;
       mesh->communicate(Wrad);
       // Wrad.applyBoundary("neumann");
-    }
-
-    if (jpar_bndry_width > 0) {
-      // Zero j in boundary regions. Prevents vorticity drive
-      // at the boundary
-      for (jx = 0; jx < jpar_bndry_width; jx++)
-        for (jy = 0; jy < mesh->LocalNy; jy++)
-          for (jz = 0; jz < mesh->LocalNz - 1; jz++) {
-            if (mesh->firstX())
-              Jpar(jx,jy,jz) = 0.0;
-            if (mesh->lastX())
-              Jpar(mesh->LocalNx - 1 - jx,jy,jz) = 0.0;
-	        }
-    }
-
-    // Smooth j in x
-    if (smooth_j_x && sheath_boundaries) {
-      Jpar = smooth_x(Jpar);
-      // Jpar = smooth_y(Jpar); 
-    }
-
-    if (mask_j_x) {
-      Jpar *= mask_jx1d;
     }
 
     Jpar.applyBoundary();   // This will apply a different scheath BC to Jpar. I kept it because that's how it was in previous versions. 
