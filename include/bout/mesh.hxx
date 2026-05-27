@@ -487,7 +487,7 @@ public:
   virtual std::set<std::string> getPossibleBoundaries() const { return {}; }
 
   /// Add a boundary region to this processor
-  virtual void addBoundary(BoundaryRegion* UNUSED(bndry)) {}
+  virtual void addBoundary(BoundaryRegionBase* UNUSED(bndry)) {}
 
   /// Get the list of parallel boundary regions. The option specifies with
   /// region to get. Default is to get all regions. All possible options are

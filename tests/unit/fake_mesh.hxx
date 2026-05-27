@@ -173,7 +173,7 @@ public:
   RangeIterator iterateBndryUpperInnerY() const override { return RangeIterator(); }
   bool hasBndryLowerY() const override { return false; }
   bool hasBndryUpperY() const override { return false; }
-  void addBoundary(BoundaryRegion* region) override { boundaries.push_back(region); }
+  void addBoundary(BoundaryRegionBase* region) override { boundaries.push_back(region); }
   std::vector<BoundaryRegionBase*> getBoundaries() override { return boundaries; }
   std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>
   getBoundariesPar(BoundaryParType UNUSED(type)) const override {
