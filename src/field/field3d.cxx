@@ -480,8 +480,7 @@ void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices) {
   // Loop over boundary regions
   for (const auto& newreg : fieldmesh->getBoundaries()) {
     if (newreg->isX) {
-      auto reg = dynamic_cast<bout::boundary::BoundaryRegionX*>(newreg);
-      bout::boundary::iter_boundary(*reg, [&](auto& point) {
+      bout::boundary::iter_boundary(newreg, [&](auto& point) {
         const BoutReal val = point.interpolate_boundary_o2(f3d);
         point.dirichlet_o1(*this, val);
       });
