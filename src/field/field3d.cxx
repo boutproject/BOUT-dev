@@ -499,7 +499,7 @@ void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices) {
               0.5 * (f3d(reg->x, reg->y, z) + f3d(reg->x - reg->bx, reg->y - reg->by, z));
           // Set to this value
           (*this)(reg->x, reg->y, z) =
-              2. * val - (*this)(reg->x - reg->bx, reg->y - reg->by, z);
+              (2. * val) - (*this)(reg->x - reg->bx, reg->y - reg->by, z);
         }
       }
     }
