@@ -488,8 +488,7 @@ void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices) {
     } else if (newreg->isY) {
       // nothing to do
     } else {
-      auto reg = dynamic_cast<BoundaryRegion*>(newreg);
-      ASSERT1(reg != nullptr);
+      auto reg = newreg->getLegacyPointer();
       if (isFci() && reg->by != 0) {
         continue;
       }
