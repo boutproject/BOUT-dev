@@ -256,8 +256,12 @@ public:
 
   BoutReal extrapolate_boundary_free(const Field3D& f,
                                      BoundaryFreeExtrapolation mode) const {
-    const auto fac = valid() > 0 ? limitFreeScale(prev(f), current(f), mode)
-                                 : (mode == BoundaryFreeExtrapolation::linear ? 0 : 1);
+    BoutReal fac;
+    if (valid() > 0) {
+      fac = limitFreeScale(prev(f), current(f), mode);
+    } else {
+      fac = mode == BoundaryFreeExtrapolation::linear ? 0 : 1;
+    }
     auto val = current(f);
     BoutReal next = mode == BoundaryFreeExtrapolation::linear ? val + fac : val * fac;
     return val * length(f.getLocation()) + next * (1 - length(f.getLocation()));
