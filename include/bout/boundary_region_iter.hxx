@@ -444,7 +444,7 @@ public:
         std::lower_bound(std::begin(bndry_points), std::end(bndry_points), ind);
     return found != std::end(bndry_points) and found->index == ind;
   }
-  int dir() { return _dir; }
+  int dir() const { return _dir; }
   // legacy interface
   void first() override { throw BoutException("Legacy interface is not suppored"); }
   void next() override { throw BoutException("Legacy interface is not suppored"); }
@@ -543,7 +543,7 @@ public:
     ASSERT3(loc == CELL_CENTRE);
     return region->bndry_points[pos].length;
   }
-  bool operator!=(BoundaryRegionIterFCI lhs) {
+  bool operator!=(BoundaryRegionIterFCI lhs) const {
     ASSERT3(region == lhs.region);
     return pos != lhs.pos;
   }
