@@ -8,6 +8,7 @@
 #include "bout/field3d.hxx"
 #include "bout/field_factory.hxx"
 #include "bout/parallel_boundary_region.hxx"
+#include "bout/sys/expressionparser.hxx"
 #include "bout/unused.hxx"
 #include "bout/utils.hxx"
 

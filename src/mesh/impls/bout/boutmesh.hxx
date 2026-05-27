@@ -5,10 +5,13 @@
 #include "mpi.h"
 
 #include "bout/bout_types.hxx"
+#include "bout/field_data.hxx"
 #include "bout/unused.hxx"
 #include <bout/mesh.hxx>
 
+#include <array>
 #include <list>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>

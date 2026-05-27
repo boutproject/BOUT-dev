@@ -38,6 +38,7 @@
  *
  **************************************************************************/
 
+#include "bout/boutexception.hxx"
 class Mesh;
 
 #ifndef BOUT_MESH_H

@@ -3,7 +3,6 @@
 #include "bout/parallel_boundary_region.hxx"
 #include "bout/unused.hxx"
 #include <bout/boundary_factory.hxx>
-#include <bout/boundary_region_iter.hxx>
 #include <bout/field_data.hxx>
 #include <bout/field_factory.hxx>
 #include <bout/globals.hxx>

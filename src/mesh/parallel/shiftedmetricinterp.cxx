@@ -28,6 +28,7 @@
  **************************************************************************/
 
 #include <algorithm>
+#include <memory>
 
 #include "shiftedmetricinterp.hxx"
 
