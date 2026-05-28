@@ -25,7 +25,8 @@ enum class BndryLoc : std::int8_t {
   par_fwd_xin, // Don't include parallel boundaries
   par_bkwd_xin,
   par_fwd_xout, // Don't include parallel boundaries
-  par_bkwd_xout
+  par_bkwd_xout,
+  invalid = -1
 };
 constexpr BndryLoc BNDRY_XIN = BndryLoc::xin;
 constexpr BndryLoc BNDRY_XOUT = BndryLoc::xout;
@@ -36,6 +37,7 @@ constexpr BndryLoc BNDRY_PAR_FWD_XIN = BndryLoc::par_fwd_xin;
 constexpr BndryLoc BNDRY_PAR_BKWD_XIN = BndryLoc::par_bkwd_xin;
 constexpr BndryLoc BNDRY_PAR_FWD_XOUT = BndryLoc::par_fwd_xout;
 constexpr BndryLoc BNDRY_PAR_BKWD_XOUT = BndryLoc::par_bkwd_xout;
+constexpr BndryLoc BNDRY_INVALID = BndryLoc::invalid;
 
 /// Physical type of y boundary
 enum class YBndryType : std::int8_t { sheath, not_sheath, all };
@@ -56,8 +58,8 @@ public:
 
   std::string label; ///< Label for this boundary region
 
-  BndryLoc location;       ///< Which side of the domain is it on?
-  bool isParallel = false; ///< Is this a parallel boundary?
+  BndryLoc location{BndryLoc::invalid}; ///< Which side of the domain is it on?
+  bool isParallel = false;              ///< Is this a parallel boundary?
   bool isX = false;
   bool isY = false;
 

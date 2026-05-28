@@ -241,6 +241,7 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string& varname,
 
   std::array<string, 5> sides;
   sides[0] = region->label;
+  ASSERT2(region->location != BNDRY_INVALID)
   switch (region->location) {
   case BNDRY_XIN: {
     sides[1] = "xin";
