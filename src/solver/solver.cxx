@@ -1,7 +1,7 @@
 /**************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -742,7 +742,7 @@ void Solver::outputVars(Options& output_options, bool save_repeat) {
 
 void Solver::readEvolvingVariablesFromOptions(Options& options) {
   run_id = options["run_id"].withDefault(default_run_id);
-  simtime = options["tt"].as<BoutReal>();
+  simtime = options["tt"].withDefault<BoutReal>(0.0);
   iteration = options["hist_hi"].withDefault<int>(0);
   iteration_offset = iteration;
 
