@@ -90,11 +90,11 @@ public:
     return clone(region, args);
   }
 
+private:
   bout::boundary::BoundaryRegionFCI* bndry{nullptr};
   bout::boundary::BoundaryRegionX* bndryX{nullptr};
   bout::boundary::BoundaryRegionY* bndryY{nullptr};
 
-protected:
   /// Possible ways to get boundary values
   std::shared_ptr<FieldGenerator> gen_values;
   Field3D* field_values{nullptr};
@@ -107,6 +107,9 @@ protected:
   BoutReal getValue(const bout::boundary::BoundaryRegionIterFCI& bndry, BoutReal t);
   BoutReal getValue(const bout::boundary::BoundaryRegionIterX& bndry, BoutReal t);
   BoutReal getValue(const bout::boundary::BoundaryRegionIterY& bndry, BoutReal t);
+
+  template <class T, bool isNeumann>
+  friend class BoundaryOpParTemp;
 };
 
 template <class T, bool isNeumann = false>
