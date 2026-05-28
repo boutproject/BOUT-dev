@@ -422,9 +422,8 @@ inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc, BoundaryFreeExtrapolati
 
 class BoundaryRegionFCI : public BoundaryRegionBase {
 public:
-  BoundaryRegionFCI(const std::string& name, [[maybe_unused]] const BndryLoc& loc,
-                    int dir, Mesh* mesh)
-      : BoundaryRegionBase(name, mesh), _dir(dir), localmesh(mesh) {
+  BoundaryRegionFCI(const std::string& name, const BndryLoc& loc, int dir, Mesh* mesh)
+      : BoundaryRegionBase(name, loc, mesh), _dir(dir), localmesh(mesh) {
     isParallel = true;
   };
   /// Add a point to the boundary
@@ -568,8 +567,10 @@ public:
     BOUT_FOR_SERIAL(i, rgn) { this->rgn.emplace_back(i); }
     if (isX) {
       this->isX = true;
+      location = dir == 1 ? BNDRY_XOUT : BNDRY_XIN;
     } else {
       this->isY = true;
+      location = dir == 1 ? BNDRY_YUP : BNDRY_YDOWN;
     }
   }
   int dir() { return _dir; }
