@@ -512,7 +512,6 @@ int CvodeSolver::init() {
           != CVLS_SUCCESS) {
         throw BoutException("CVBBDPrecInit failed\n");
       }
-#endif
     }
 
     /// Set Jacobian-vector multiplication function
@@ -1039,3 +1038,4 @@ void CvodeSolver::resetInternalFields() {
     throw BoutException("CVodeReInit failed\n");
   }
 }
+#endif
