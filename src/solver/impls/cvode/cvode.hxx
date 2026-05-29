@@ -140,6 +140,10 @@ private:
   /// reducing timestep. CVODE default (used if this option is
   /// negative) is 3
   int max_nonlinear_iterations;
+  /// Max number of steps between calls to linear solver setup
+  long int lsetup_frequency;
+  /// Max number of steps between Jacobian/preconditioner evaluations
+  long int jac_eval_frequency;
   /// Use CVODE function CVodeSetConstraints to constrain variables -
   /// the constraint to be applied is set by the positivity_constraint
   /// option in the subsection for each variable

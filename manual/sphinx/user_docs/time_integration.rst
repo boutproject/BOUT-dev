@@ -161,6 +161,14 @@ prefixed keys into the ``[petsc]`` section). For example::
     cvode_petscpre_ksp_type = preonly
     cvode_petscpre_pc_type = hypre
 
+Two CVODE heuristics that control when the linear solver setup routine is called,
+and when the Jacobian/preconditioner are recomputed, can be adjusted with:
+
+- ``cvode_lsetup_frequency`` (default ``0``): Passed to ``CVodeSetLSetupFrequency``.
+  ``0`` uses the SUNDIALS default.
+- ``cvode_jac_eval_frequency`` (default ``0``): Passed to ``CVodeSetJacEvalFrequency``.
+  ``0`` uses the SUNDIALS default.
+
 CVODE can set constraints to keep some quantities positive, non-negative,
 negative or non-positive. These constraints can be activated by setting the
 option ``solver:apply_positivity_constraints=true``, and then in the section

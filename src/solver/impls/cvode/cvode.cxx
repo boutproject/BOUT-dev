@@ -119,6 +119,16 @@ CvodeSolver::CvodeSolver(Options* opts)
               .doc("Maximum number of nonlinear iterations allowed by CVODE before "
                    "reducing timestep.")
               .withDefault(3)),
+      lsetup_frequency(
+          (*options)["cvode_lsetup_frequency"]
+              .doc("Linear solver setup frequency (CVodeSetLSetupFrequency). "
+                   "0 uses the SUNDIALS default.")
+              .withDefault(0)),
+      jac_eval_frequency((*options)["cvode_jac_eval_frequency"]
+                             .doc("Jacobian/preconditioner evaluation frequency "
+                                  "(CVodeSetJacEvalFrequency). "
+                                  "0 uses the SUNDIALS default.")
+                             .withDefault(0)),
       apply_positivity_constraints(
           (*options)["apply_positivity_constraints"]
               .doc("Use CVODE function CVodeSetConstraints to constrain variables - the "
@@ -344,6 +354,10 @@ int CvodeSolver::init() {
     throw BoutException("CVodeSetMaxNonlinIters failed\n");
   }
 
+  if (CVodeSetLSetupFrequency(cvode_mem, lsetup_frequency) != CV_SUCCESS) {
+    throw BoutException("CVodeSetLSetupFrequency failed\n");
+  }
+
   if (apply_positivity_constraints) {
     auto f2d_constraints = create_constraints(f2d);
     auto f3d_constraints = create_constraints(f3d);
@@ -417,6 +431,10 @@ int CvodeSolver::init() {
     }
     if (CVodeSetLinearSolver(cvode_mem, sun_solver, nullptr) != CVLS_SUCCESS) {
       throw BoutException("CVodeSetLinearSolver failed\n");
+    }
+
+    if (CVodeSetJacEvalFrequency(cvode_mem, jac_eval_frequency) != CVLS_SUCCESS) {
+      throw BoutException("CVodeSetJacEvalFrequency failed\n");
     }
 
     if (selected_precon == CvodePreconMethod::none) {
