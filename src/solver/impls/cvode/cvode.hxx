@@ -4,9 +4,9 @@
  * NOTE: Only one solver can currently be compiled in
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -28,6 +28,7 @@
 #ifndef BOUT_SUNDIAL_SOLVER_H
 #define BOUT_SUNDIAL_SOLVER_H
 
+#include "bout/bout_enum_class.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/solver.hxx"
 
@@ -40,6 +41,7 @@ RegisterUnavailableSolver
 
 #else
 
+#include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/region.hxx"
 #include "bout/sundials_backports.hxx"
@@ -62,7 +64,9 @@ namespace {
 RegisterSolver<CvodeSolver> registersolvercvode("cvode");
 }
 
-enum class CvodePreconMethod { auto_select, bbd, petsc };
+// Preconditioner selection for CVODE.
+// Note: String comparisons are case-insensitive so "Auto" avoids conflict with keyword
+BOUT_ENUM_CLASS(CvodePreconMethod, none, Auto, user, petsc, bbd);
 
 #if SUNDIALS_VERSION_AT_LEAST(6, 0, 0)
 using CvodeBool = sunbooleantype;
@@ -142,8 +146,6 @@ private:
   bool apply_positivity_constraints;
   /// Maximum number of linear iterations
   int maxl;
-  /// Use preconditioner?
-  bool use_precon;
   /// Use right preconditioner? Otherwise use left.
   bool rightprec;
   bool use_jacobian;

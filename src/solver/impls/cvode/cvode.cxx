@@ -3,7 +3,7 @@
  *
  *
  **************************************************************************
- * Copyright 2010-2024 BOUT++ contributors
+ * Copyright 2010-2026 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -42,6 +42,7 @@
 #include "bout/msg_stack.hxx"
 #include "bout/options.hxx"
 #include "bout/output.hxx"
+#include "bout/solver.hxx"
 #include "bout/sundials_backports.hxx"
 #include "bout/unused.hxx"
 
@@ -57,8 +58,10 @@
 
 #include <algorithm>
 #include <iterator>
+#include <memory>
 #include <numeric>
 #include <string>
+#include <vector>
 
 BOUT_ENUM_CLASS(positivity_constraint, none, positive, non_negative, negative,
                 non_positive);
@@ -125,29 +128,17 @@ CvodeSolver::CvodeSolver(Options* opts)
                    "each variable")
               .withDefault(false)),
       maxl((*options)["maxl"].doc("Maximum number of linear iterations").withDefault(5)),
-      use_precon((*options)["use_precon"].doc("Use preconditioner?").withDefault(false)),
       rightprec((*options)["rightprec"]
                     .doc("Use right preconditioner? Otherwise use left.")
                     .withDefault(false)),
-      use_jacobian((*options)["use_jacobian"].withDefault(false)), precon_method([&]() {
-        const auto method =
-            (*options)["cvode_precon_method"]
-                .doc("Preconditioner to use when solver:use_precon=true and no user "
-                     "preconditioner is supplied: auto, bbd, petsc.")
-                .withDefault<std::string>("auto");
-        if (method == "auto" || method == "automatic") {
-          return CvodePreconMethod::auto_select;
-        }
-        if (method == "bbd") {
-          return CvodePreconMethod::bbd;
-        }
-        if (method == "petsc") {
-          return CvodePreconMethod::petsc;
-        }
-        throw BoutException("Invalid solver:cvode_precon_method '{}'. Valid values: "
-                            "auto, bbd, petsc.",
-                            method);
-      }()),
+      use_jacobian((*options)["use_jacobian"].withDefault(false)),
+      precon_method(
+          (*options)["cvode_precon_method"]
+              .doc("Preconditioner to use with CVODE Newton iteration. "
+                   "Choices: none, auto (default), user, petsc, bbd. "
+                   "auto prefers user (if supplied), then petsc (if available), "
+                   "then bbd.")
+              .withDefault(CvodePreconMethod::Auto)),
       cvode_nonlinear_convergence_coef(
           (*options)["cvode_nonlinear_convergence_coef"]
               .doc("Safety factor used in the nonlinear convergence test")
@@ -160,6 +151,12 @@ CvodeSolver::CvodeSolver(Options* opts)
       suncontext(createSUNContext(BoutComm::get())) {
   has_constraints = false; // This solver doesn't have constraints
   canReset = true;
+
+  if ((*options)["use_precon"].isSet()) {
+    output_warn << "WARNING: solver:use_precon is deprecated for CVODE and is now "
+                   "ignored. Use solver:cvode_precon_method=none to disable "
+                   "preconditioning.\n";
+  }
 
   // Add diagnostics to output
   // Needs to be in constructor not init() because init() is called after
@@ -381,8 +378,22 @@ int CvodeSolver::init() {
   } else {
     output_info.write("\tUsing Newton iteration\n");
 
-    const auto prectype =
-        use_precon ? (rightprec ? SUN_PREC_RIGHT : SUN_PREC_LEFT) : SUN_PREC_NONE;
+    CvodePreconMethod selected_precon = precon_method;
+    if (selected_precon == CvodePreconMethod::Auto) {
+      if (hasPreconditioner()) {
+        selected_precon = CvodePreconMethod::user;
+      } else {
+#if BOUT_HAS_PETSC
+        selected_precon = CvodePreconMethod::petsc;
+#else
+        selected_precon = CvodePreconMethod::bbd;
+#endif
+      }
+    }
+
+    const auto prectype = (selected_precon == CvodePreconMethod::none)
+                              ? SUN_PREC_NONE
+                              : (rightprec ? SUN_PREC_RIGHT : SUN_PREC_LEFT);
 
     switch ((*options)["linear_solver"]
                 .doc("Set linear solver type. Default is gmres.")
@@ -408,109 +419,82 @@ int CvodeSolver::init() {
       throw BoutException("CVodeSetLinearSolver failed\n");
     }
 
-    if (use_precon) {
-      if (hasPreconditioner()) {
-        output_info.write("\tUsing user-supplied preconditioner\n");
-
-        if (CVodeSetPreconditioner(cvode_mem, nullptr, cvode_pre) != CVLS_SUCCESS) {
-          throw BoutException("CVodeSetPreconditioner failed\n");
-        }
-      } else {
-        const bool prefer_petsc = (precon_method == CvodePreconMethod::petsc)
-                                  || (precon_method == CvodePreconMethod::auto_select);
-
-#if BOUT_HAS_PETSC
-        if (prefer_petsc) {
-          output_info.write("\tUsing PETSc coloring preconditioner\n");
-
-          if (!petsc_lib) {
-            petsc_lib = std::make_unique<PetscLib>();
-          }
-
-          petsc_global_N = neq;
-          petsc_rhs_tmp.resize(local_N);
-
-          if (petsc_ksp == nullptr) {
-            PetscCall(KSPCreate(BoutComm::get(), &petsc_ksp));
-            PetscCall(KSPSetType(petsc_ksp, KSPPREONLY));
-            PetscCall(KSPSetOptionsPrefix(petsc_ksp, "cvode_petscpre_"));
-            PetscCall(KSPSetFromOptions(petsc_ksp));
-          }
-
-          if (petsc_x == nullptr) {
-            PetscCall(VecCreateMPI(BoutComm::get(), local_N, petsc_global_N, &petsc_x));
-            PetscCall(VecDuplicate(petsc_x, &petsc_f));
-            PetscCall(VecCreateMPI(BoutComm::get(), local_N, petsc_global_N, &petsc_r));
-            PetscCall(VecCreateMPI(BoutComm::get(), local_N, petsc_global_N, &petsc_z));
-          }
-
-          Field3D index = globalIndex(0);
-          PetscCall(petsc_preconditioner.createJacobianPattern(
-              index, *options, local_N, n2Dvars(), n3Dvars(), BoutComm::get()));
-          PetscCall(
-              petsc_preconditioner.updateColoring(CvodeSolver::petscFormFunction, this));
-          PetscCall(MatFDColoringSetF(petsc_preconditioner.coloring(), petsc_f));
-
-          if (CVodeSetPreconditioner(cvode_mem, petscPSetup, petscPSolve)
-              != CVLS_SUCCESS) {
-            throw BoutException("CVodeSetPreconditioner (PETSc coloring) failed\n");
-          }
-        } else {
-          output_info.write("\tUsing BBD preconditioner\n");
-
-          /// Get options
-          // Compute band_width_default from actually added fields, to allow for multiple
-          // Mesh objects
-          //
-          // Previous implementation was equivalent to:
-          //   int MXSUB = mesh->xend - mesh->xstart + 1;
-          //   int band_width_default = n3Dvars()*(MXSUB+2);
-          const int band_width_default = std::accumulate(
-              begin(f3d), end(f3d), 0, [](int a, const VarStr<Field3D>& fvar) {
-                Mesh* localmesh = fvar.var->getMesh();
-                return a + localmesh->xend - localmesh->xstart + 3;
-              });
-
-          const auto mudq = (*options)["mudq"].withDefault(band_width_default);
-          const auto mldq = (*options)["mldq"].withDefault(band_width_default);
-          const auto mukeep = (*options)["mukeep"].withDefault(n3Dvars() + n2Dvars());
-          const auto mlkeep = (*options)["mlkeep"].withDefault(n3Dvars() + n2Dvars());
-
-          if (CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, mukeep, mlkeep, 0.0,
-                            cvode_bbd_rhs, nullptr)
-              != CVLS_SUCCESS) {
-            throw BoutException("CVBBDPrecInit failed\n");
-          }
-        }
-#else
-        if (precon_method == CvodePreconMethod::petsc) {
-          throw BoutException(
-              "solver:cvode_precon_method=petsc requested, but BOUT++ was not "
-              "configured with PETSc.");
-        }
-
-        output_info.write("\tUsing BBD preconditioner\n");
-
-        const int band_width_default = std::accumulate(
-            begin(f3d), end(f3d), 0, [](int a, const VarStr<Field3D>& fvar) {
-              Mesh* localmesh = fvar.var->getMesh();
-              return a + localmesh->xend - localmesh->xstart + 3;
-            });
-
-        const auto mudq = (*options)["mudq"].withDefault(band_width_default);
-        const auto mldq = (*options)["mldq"].withDefault(band_width_default);
-        const auto mukeep = (*options)["mukeep"].withDefault(n3Dvars() + n2Dvars());
-        const auto mlkeep = (*options)["mlkeep"].withDefault(n3Dvars() + n2Dvars());
-
-        if (CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, mukeep, mlkeep, 0.0,
-                          cvode_bbd_rhs, nullptr)
-            != CVLS_SUCCESS) {
-          throw BoutException("CVBBDPrecInit failed\n");
-        }
-#endif
-      }
-    } else {
+    if (selected_precon == CvodePreconMethod::none) {
       output_info.write("\tNo preconditioning\n");
+
+    } else if (selected_precon == CvodePreconMethod::user) {
+      if (!hasPreconditioner()) {
+        throw BoutException(
+            "solver:cvode_precon_method=user requested, but no user preconditioner "
+            "has been supplied.");
+      }
+
+      output_info.write("\tUsing user-supplied preconditioner\n");
+
+      if (CVodeSetPreconditioner(cvode_mem, nullptr, cvode_pre) != CVLS_SUCCESS) {
+        throw BoutException("CVodeSetPreconditioner failed\n");
+      }
+    } else if (selected_precon == CvodePreconMethod::petsc) {
+#if !BOUT_HAS_PETSC
+      throw BoutException(
+          "solver:cvode_precon_method=petsc requested, but BOUT++ was not "
+          "configured with PETSc.");
+#else
+      output_info.write("\tUsing PETSc coloring preconditioner\n");
+
+      if (!petsc_lib) {
+        petsc_lib = std::make_unique<PetscLib>();
+      }
+
+      petsc_global_N = neq;
+      petsc_rhs_tmp.resize(local_N);
+
+      if (petsc_ksp == nullptr) {
+        PetscCall(KSPCreate(BoutComm::get(), &petsc_ksp));
+        PetscCall(KSPSetType(petsc_ksp, KSPPREONLY));
+        PetscCall(KSPSetOptionsPrefix(petsc_ksp, "cvode_petscpre_"));
+        PetscCall(KSPSetFromOptions(petsc_ksp));
+      }
+
+      if (petsc_x == nullptr) {
+        PetscCall(VecCreateMPI(BoutComm::get(), local_N, petsc_global_N, &petsc_x));
+        PetscCall(VecDuplicate(petsc_x, &petsc_f));
+        PetscCall(VecCreateMPI(BoutComm::get(), local_N, petsc_global_N, &petsc_r));
+        PetscCall(VecCreateMPI(BoutComm::get(), local_N, petsc_global_N, &petsc_z));
+      }
+
+      Field3D index = globalIndex(0);
+      PetscCall(petsc_preconditioner.createJacobianPattern(
+          index, *options, local_N, n2Dvars(), n3Dvars(), BoutComm::get()));
+      PetscCall(
+          petsc_preconditioner.updateColoring(CvodeSolver::petscFormFunction, this));
+      PetscCall(MatFDColoringSetF(petsc_preconditioner.coloring(), petsc_f));
+
+      if (CVodeSetPreconditioner(cvode_mem, petscPSetup, petscPSolve) != CVLS_SUCCESS) {
+        throw BoutException("CVodeSetPreconditioner (PETSc coloring) failed\n");
+      }
+#endif // BOUT_HAS_PETSC
+
+    } else if (selected_precon == CvodePreconMethod::bbd) {
+      output_info.write("\tUsing BBD preconditioner\n");
+
+      const int band_width_default = std::accumulate(
+          begin(f3d), end(f3d), 0, [](int a, const VarStr<Field3D>& fvar) {
+            Mesh* localmesh = fvar.var->getMesh();
+            return a + localmesh->xend - localmesh->xstart + 3;
+          });
+
+      const auto mudq = (*options)["mudq"].withDefault(band_width_default);
+      const auto mldq = (*options)["mldq"].withDefault(band_width_default);
+      const auto mukeep = (*options)["mukeep"].withDefault(n3Dvars() + n2Dvars());
+      const auto mlkeep = (*options)["mlkeep"].withDefault(n3Dvars() + n2Dvars());
+
+      if (CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, mukeep, mlkeep, 0.0,
+                        cvode_bbd_rhs, nullptr)
+          != CVLS_SUCCESS) {
+        throw BoutException("CVBBDPrecInit failed\n");
+      }
+#endif
     }
 
     /// Set Jacobian-vector multiplication function
@@ -683,7 +667,7 @@ BoutReal CvodeSolver::run(BoutReal tout) {
     CVodeGetCurrentTime(cvode_mem, &internal_time);
     while (internal_time < tout) {
       // Run another step
-      BoutReal last_time = internal_time;
+      const BoutReal last_time = internal_time;
       flag = CVode(cvode_mem, tout, uvec, &internal_time, CV_ONE_STEP);
 
       if (flag < 0) {
@@ -742,7 +726,7 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udat
                       BoutReal* rvec, BoutReal* zvec) {
   TRACE("Running preconditioner: CvodeSolver::pre({})", t);
 
-  BoutReal tstart = bout::globals::mpi->MPI_Wtime();
+  const BoutReal tstart = bout::globals::mpi->MPI_Wtime();
 
   const auto length = N_VGetLocalLength_Parallel(uvec);
 
@@ -1037,5 +1021,3 @@ void CvodeSolver::resetInternalFields() {
     throw BoutException("CVodeReInit failed\n");
   }
 }
-
-#endif

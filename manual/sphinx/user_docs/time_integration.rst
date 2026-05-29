@@ -144,12 +144,14 @@ iterations becomes large, this may be an indication that the system is
 poorly conditioned, and a preconditioner might help improve performance.
 See :ref:`sec-preconditioning`.
 
-When ``solver:use_precon=true`` and no user-supplied preconditioner is provided,
-the preconditioner method can be selected using ``solver:cvode_precon_method``:
+CVODE preconditioning is controlled using ``solver:cvode_precon_method``:
 
-- ``auto`` (default): Prefer PETSc coloring if PETSc is available, otherwise use BBD.
-- ``bbd``: Force the built-in BBD preconditioner.
+- ``auto`` (default): Prefer a user-supplied preconditioner if provided, then PETSc
+  coloring if PETSc is available, otherwise use BBD.
+- ``none``: Disable preconditioning.
+- ``user``: Require a user-supplied preconditioner.
 - ``petsc``: Require PETSc and use PETSc coloring.
+- ``bbd``: Force the built-in BBD preconditioner.
 
 For ``cvode_precon_method = petsc``, PETSc options for the internal KSP/PC can be
 set with the prefix ``cvode_petscpre_`` (either on the command line, or by putting
