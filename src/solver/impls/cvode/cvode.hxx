@@ -44,6 +44,14 @@ RegisterUnavailableSolver
 #include "bout/region.hxx"
 #include "bout/sundials_backports.hxx"
 
+#if BOUT_HAS_PETSC
+#include "bout/petsc_preconditioner.hxx"
+#include "bout/petsclib.hxx"
+
+#include <petscksp.h>
+#include <petscvec.h>
+#endif
+
 #include <string>
 #include <vector>
 
@@ -53,6 +61,14 @@ class Options;
 namespace {
 RegisterSolver<CvodeSolver> registersolvercvode("cvode");
 }
+
+enum class CvodePreconMethod { auto_select, bbd, petsc };
+
+#if SUNDIALS_VERSION_AT_LEAST(6, 0, 0)
+using CvodeBool = sunbooleantype;
+#else
+using CvodeBool = booleantype;
+#endif
 
 class CvodeSolver : public Solver {
 public:
@@ -74,6 +90,15 @@ public:
   void jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata);
 
 private:
+#if BOUT_HAS_PETSC
+  static PetscErrorCode petscFormFunction(void* dummy, Vec x, Vec f, void* ctx);
+  static int petscPSetup(BoutReal t, N_Vector yy, N_Vector yp, CvodeBool jok,
+                         CvodeBool* jcurPtr, BoutReal gamma, void* user_data);
+  static int petscPSolve(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec,
+                         N_Vector zvec, BoutReal gamma, BoutReal delta, int lr,
+                         void* user_data);
+#endif
+
   BoutReal hcur; //< Current internal timestep
 
   bool diagnose{false}; //< Output additional diagnostics
@@ -122,6 +147,7 @@ private:
   /// Use right preconditioner? Otherwise use left.
   bool rightprec;
   bool use_jacobian;
+  CvodePreconMethod precon_method;
   BoutReal cvode_nonlinear_convergence_coef;
   BoutReal cvode_linear_convergence_coef;
 
@@ -153,6 +179,21 @@ private:
   SUNNonlinearSolver nonlinear_solver{nullptr};
   /// Context for SUNDIALS memory allocations
   sundials::Context suncontext;
+
+#if BOUT_HAS_PETSC
+  // PETSc-coloring-based preconditioning for CVODE
+  std::unique_ptr<PetscLib> petsc_lib;
+  PetscPreconditioner petsc_preconditioner;
+  KSP petsc_ksp{nullptr};
+  Vec petsc_r{nullptr};
+  Vec petsc_z{nullptr};
+  Vec petsc_x{nullptr};
+  Vec petsc_f{nullptr};
+  PetscInt petsc_global_N{0};
+  BoutReal petsc_gamma{0.0};
+  BoutReal petsc_t{0.0};
+  std::vector<BoutReal> petsc_rhs_tmp;
+#endif
 };
 
 #endif // BOUT_HAS_CVODE

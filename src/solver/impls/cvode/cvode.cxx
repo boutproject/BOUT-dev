@@ -129,7 +129,25 @@ CvodeSolver::CvodeSolver(Options* opts)
       rightprec((*options)["rightprec"]
                     .doc("Use right preconditioner? Otherwise use left.")
                     .withDefault(false)),
-      use_jacobian((*options)["use_jacobian"].withDefault(false)),
+      use_jacobian((*options)["use_jacobian"].withDefault(false)), precon_method([&]() {
+        const auto method =
+            (*options)["cvode_precon_method"]
+                .doc("Preconditioner to use when solver:use_precon=true and no user "
+                     "preconditioner is supplied: auto, bbd, petsc.")
+                .withDefault<std::string>("auto");
+        if (method == "auto" || method == "automatic") {
+          return CvodePreconMethod::auto_select;
+        }
+        if (method == "bbd") {
+          return CvodePreconMethod::bbd;
+        }
+        if (method == "petsc") {
+          return CvodePreconMethod::petsc;
+        }
+        throw BoutException("Invalid solver:cvode_precon_method '{}'. Valid values: "
+                            "auto, bbd, petsc.",
+                            method);
+      }()),
       cvode_nonlinear_convergence_coef(
           (*options)["cvode_nonlinear_convergence_coef"]
               .doc("Safety factor used in the nonlinear convergence test")
@@ -169,6 +187,23 @@ CvodeSolver::~CvodeSolver() {
     CVodeFree(&cvode_mem);
     SUNLinSolFree(sun_solver);
     SUNNonlinSolFree(nonlinear_solver);
+#if BOUT_HAS_PETSC
+    if (petsc_ksp != nullptr) {
+      KSPDestroy(&petsc_ksp);
+    }
+    if (petsc_r != nullptr) {
+      VecDestroy(&petsc_r);
+    }
+    if (petsc_z != nullptr) {
+      VecDestroy(&petsc_z);
+    }
+    if (petsc_x != nullptr) {
+      VecDestroy(&petsc_x);
+    }
+    if (petsc_f != nullptr) {
+      VecDestroy(&petsc_f);
+    }
+#endif
   }
 }
 
@@ -381,15 +416,81 @@ int CvodeSolver::init() {
           throw BoutException("CVodeSetPreconditioner failed\n");
         }
       } else {
+        const bool prefer_petsc = (precon_method == CvodePreconMethod::petsc)
+                                  || (precon_method == CvodePreconMethod::auto_select);
+
+#if BOUT_HAS_PETSC
+        if (prefer_petsc) {
+          output_info.write("\tUsing PETSc coloring preconditioner\n");
+
+          if (!petsc_lib) {
+            petsc_lib = std::make_unique<PetscLib>();
+          }
+
+          petsc_global_N = neq;
+          petsc_rhs_tmp.resize(local_N);
+
+          if (petsc_ksp == nullptr) {
+            PetscCall(KSPCreate(BoutComm::get(), &petsc_ksp));
+            PetscCall(KSPSetType(petsc_ksp, KSPPREONLY));
+            PetscCall(KSPSetOptionsPrefix(petsc_ksp, "cvode_petscpre_"));
+            PetscCall(KSPSetFromOptions(petsc_ksp));
+          }
+
+          if (petsc_x == nullptr) {
+            PetscCall(VecCreateMPI(BoutComm::get(), local_N, petsc_global_N, &petsc_x));
+            PetscCall(VecDuplicate(petsc_x, &petsc_f));
+            PetscCall(VecCreateMPI(BoutComm::get(), local_N, petsc_global_N, &petsc_r));
+            PetscCall(VecCreateMPI(BoutComm::get(), local_N, petsc_global_N, &petsc_z));
+          }
+
+          Field3D index = globalIndex(0);
+          PetscCall(petsc_preconditioner.createJacobianPattern(
+              index, *options, local_N, n2Dvars(), n3Dvars(), BoutComm::get()));
+          PetscCall(
+              petsc_preconditioner.updateColoring(CvodeSolver::petscFormFunction, this));
+          PetscCall(MatFDColoringSetF(petsc_preconditioner.coloring(), petsc_f));
+
+          if (CVodeSetPreconditioner(cvode_mem, petscPSetup, petscPSolve)
+              != CVLS_SUCCESS) {
+            throw BoutException("CVodeSetPreconditioner (PETSc coloring) failed\n");
+          }
+        } else {
+          output_info.write("\tUsing BBD preconditioner\n");
+
+          /// Get options
+          // Compute band_width_default from actually added fields, to allow for multiple
+          // Mesh objects
+          //
+          // Previous implementation was equivalent to:
+          //   int MXSUB = mesh->xend - mesh->xstart + 1;
+          //   int band_width_default = n3Dvars()*(MXSUB+2);
+          const int band_width_default = std::accumulate(
+              begin(f3d), end(f3d), 0, [](int a, const VarStr<Field3D>& fvar) {
+                Mesh* localmesh = fvar.var->getMesh();
+                return a + localmesh->xend - localmesh->xstart + 3;
+              });
+
+          const auto mudq = (*options)["mudq"].withDefault(band_width_default);
+          const auto mldq = (*options)["mldq"].withDefault(band_width_default);
+          const auto mukeep = (*options)["mukeep"].withDefault(n3Dvars() + n2Dvars());
+          const auto mlkeep = (*options)["mlkeep"].withDefault(n3Dvars() + n2Dvars());
+
+          if (CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, mukeep, mlkeep, 0.0,
+                            cvode_bbd_rhs, nullptr)
+              != CVLS_SUCCESS) {
+            throw BoutException("CVBBDPrecInit failed\n");
+          }
+        }
+#else
+        if (precon_method == CvodePreconMethod::petsc) {
+          throw BoutException(
+              "solver:cvode_precon_method=petsc requested, but BOUT++ was not "
+              "configured with PETSc.");
+        }
+
         output_info.write("\tUsing BBD preconditioner\n");
 
-        /// Get options
-        // Compute band_width_default from actually added fields, to allow for multiple
-        // Mesh objects
-        //
-        // Previous implementation was equivalent to:
-        //   int MXSUB = mesh->xend - mesh->xstart + 1;
-        //   int band_width_default = n3Dvars()*(MXSUB+2);
         const int band_width_default = std::accumulate(
             begin(f3d), end(f3d), 0, [](int a, const VarStr<Field3D>& fvar) {
               Mesh* localmesh = fvar.var->getMesh();
@@ -406,6 +507,7 @@ int CvodeSolver::init() {
             != CVLS_SUCCESS) {
           throw BoutException("CVBBDPrecInit failed\n");
         }
+#endif
       }
     } else {
       output_info.write("\tNo preconditioning\n");
@@ -765,6 +867,123 @@ int cvode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector UNUSED(f
 }
 } // namespace
 // NOLINTEND(readability-identifier-length)
+
+#if BOUT_HAS_PETSC
+PetscErrorCode CvodeSolver::petscFormFunction(void* UNUSED(dummy), Vec x, Vec f,
+                                              void* ctx) {
+  auto* s = static_cast<CvodeSolver*>(ctx);
+
+  PetscInt length = 0;
+  PetscCall(VecGetLocalSize(x, &length));
+  s->petsc_rhs_tmp.resize(static_cast<std::size_t>(length));
+
+  const BoutReal* xdata = nullptr;
+  PetscCall(VecGetArrayRead(x, &xdata));
+
+  BoutReal* fdata = nullptr;
+  PetscCall(VecGetArray(f, &fdata));
+
+  try {
+    s->rhs(s->petsc_t, const_cast<BoutReal*>(xdata), s->petsc_rhs_tmp.data(), true);
+  } catch (BoutRhsFail&) {
+    PetscCall(VecRestoreArrayRead(x, &xdata));
+    PetscCall(VecRestoreArray(f, &fdata));
+    return 1;
+  }
+
+  for (PetscInt i = 0; i < length; ++i) {
+    fdata[i] = xdata[i] - s->petsc_gamma * s->petsc_rhs_tmp[i];
+  }
+
+  PetscCall(VecRestoreArrayRead(x, &xdata));
+  PetscCall(VecRestoreArray(f, &fdata));
+
+  return PETSC_SUCCESS;
+}
+
+int CvodeSolver::petscPSetup(BoutReal t, N_Vector yy, N_Vector UNUSED(yp),
+                             CvodeBool UNUSED(jok), CvodeBool* jcurPtr, BoutReal gamma,
+                             void* user_data) {
+  auto* s = static_cast<CvodeSolver*>(user_data);
+
+  s->petsc_t = t;
+  s->petsc_gamma = gamma;
+
+  auto* ydata = N_VGetArrayPointer(yy);
+
+  PetscErrorCode ierr = VecPlaceArray(s->petsc_x, ydata);
+  if (ierr != 0) {
+    return 1;
+  }
+
+  ierr = petscFormFunction(nullptr, s->petsc_x, s->petsc_f, s);
+  if (ierr != 0) {
+    VecResetArray(s->petsc_x);
+    return 1;
+  }
+
+  Mat J = s->petsc_preconditioner.jacobian();
+  ierr = MatZeroEntries(J);
+  if (ierr != 0) {
+    VecResetArray(s->petsc_x);
+    return 1;
+  }
+
+  ierr = MatFDColoringApply(J, s->petsc_preconditioner.coloring(), s->petsc_x, nullptr);
+  if (ierr != 0) {
+    VecResetArray(s->petsc_x);
+    return 1;
+  }
+
+  ierr = MatAssemblyBegin(J, MAT_FINAL_ASSEMBLY);
+  if (ierr == 0) {
+    ierr = MatAssemblyEnd(J, MAT_FINAL_ASSEMBLY);
+  }
+  if (ierr != 0) {
+    VecResetArray(s->petsc_x);
+    return 1;
+  }
+
+  ierr = KSPSetOperators(s->petsc_ksp, J, J);
+  if (ierr == 0) {
+    ierr = KSPSetUp(s->petsc_ksp);
+  }
+
+  VecResetArray(s->petsc_x);
+
+  if (ierr != 0) {
+    return 1;
+  }
+
+  if (jcurPtr != nullptr) {
+    *jcurPtr = 1;
+  }
+
+  return 0;
+}
+
+int CvodeSolver::petscPSolve(BoutReal UNUSED(t), N_Vector UNUSED(yy), N_Vector UNUSED(yp),
+                             N_Vector rvec, N_Vector zvec, BoutReal UNUSED(gamma),
+                             BoutReal UNUSED(delta), int UNUSED(lr), void* user_data) {
+  auto* s = static_cast<CvodeSolver*>(user_data);
+
+  auto* rdata = N_VGetArrayPointer(rvec);
+  auto* zdata = N_VGetArrayPointer(zvec);
+
+  PetscErrorCode ierr = VecPlaceArray(s->petsc_r, rdata);
+  if (ierr == 0) {
+    ierr = VecPlaceArray(s->petsc_z, zdata);
+  }
+  if (ierr == 0) {
+    ierr = KSPSolve(s->petsc_ksp, s->petsc_r, s->petsc_z);
+  }
+
+  VecResetArray(s->petsc_r);
+  VecResetArray(s->petsc_z);
+
+  return ierr == 0 ? 0 : 1;
+}
+#endif
 
 /**************************************************************************
  * CVODE vector option functions

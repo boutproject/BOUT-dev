@@ -62,45 +62,6 @@
 #define PETSC_UNLIMITED (-3)
 #endif
 
-class ColoringStencil {
-private:
-  bool static isInSquare(int const i, int const j, int const n_square) {
-    return std::abs(i) <= n_square && std::abs(j) <= n_square;
-  }
-  bool static isInCross(int const i, int const j, int const n_cross) {
-    if (i == 0) {
-      return std::abs(j) <= n_cross;
-    }
-    if (j == 0) {
-      return std::abs(i) <= n_cross;
-    }
-    return false;
-  }
-  bool static isInTaxi(int const i, int const j, int const n_taxi) {
-    return std::abs(i) + std::abs(j) <= n_taxi;
-  }
-
-public:
-  auto static getOffsets(int n_square, int n_taxi, int n_cross) {
-    ASSERT2(n_square >= 0 && n_cross >= 0 && n_taxi >= 0
-            && n_square + n_cross + n_taxi > 0);
-    auto inside = [&](int i, int j) {
-      return isInSquare(i, j, n_square) || isInTaxi(i, j, n_taxi)
-             || isInCross(i, j, n_cross);
-    };
-    std::vector<std::pair<int, int>> xy_offsets;
-    auto loop_bound = std::max({n_square, n_taxi, n_cross});
-    for (int i = -loop_bound; i <= loop_bound; ++i) {
-      for (int j = -loop_bound; j <= loop_bound; ++j) {
-        if (inside(i, j)) {
-          xy_offsets.emplace_back(i, j);
-        }
-      }
-    }
-    return xy_offsets;
-  }
-};
-
 namespace {
 // PETSc callback function for matrix-free preconditioner
 PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
@@ -315,7 +276,6 @@ PetscSolver::~PetscSolver() {
   VecDestroy(&u);
   MatDestroy(&Jfd);
   MatDestroy(&Jmf);
-  MatFDColoringDestroy(&fdcoloring);
   TSDestroy(&ts);
 }
 
@@ -559,6 +519,13 @@ int PetscSolver::init() {
     // preconditioner.
 
     if (use_coloring) {
+      Field3D index = globalIndex(0);
+      PetscCall(petsc_preconditioner.createJacobianPattern(
+          index, *options, nlocal, n2Dvars(), n3Dvars(), BoutComm::get()));
+      output_progress.write("Creating Jacobian coloring\n");
+      updateColoring();
+
+#if 0
       // Use matrix coloring.  This greatly reduces the number of
       // times the rhs() function needs to be evaluated when
       // calculating the Jacobian, by identifying which quantities may
@@ -851,6 +818,7 @@ int PetscSolver::init() {
 
       output_progress.write("Creating Jacobian coloring\n");
       updateColoring();
+#endif
 
     } else {
       // Brute force calculation
@@ -996,55 +964,39 @@ PetscErrorCode PetscSolver::pre(Vec x, Vec y) {
 }
 
 void PetscSolver::updateColoring() {
-  // Re-calculate the coloring
-  MatColoring coloring{nullptr};
-  MatColoringCreate(Jfd, &coloring);
-  MatColoringSetType(coloring, MATCOLORINGGREEDY);
-  MatColoringSetFromOptions(coloring);
+  Mat jac = petsc_preconditioner.jacobian();
 
-  // Calculate new index sets
-  ISColoring iscoloring{nullptr};
-  MatColoringApply(coloring, &iscoloring);
-  MatColoringDestroy(&coloring);
-
-  // Replace the old coloring with the new one
-  MatFDColoringDestroy(&fdcoloring);
-  MatFDColoringCreate(Jfd, iscoloring, &fdcoloring);
   if (ts_type != TSSUNDIALS) {
     // Use the SNES function that is defined by the TS method
     // SNESTSFormFunction is defined in PETSc ts.c
     // The ctx pointer should be the TS object
-    //
-    // Note: The function type casting here is horrible but necessary
-    MatFDColoringSetFunction(fdcoloring, bout::cast_MatFDColoringFn(SNESTSFormFunction),
-                             ts);
+    BOUT_DO_PETSC(petsc_preconditioner.updateColoring(SNESTSFormFunction, ts));
   } else {
     // SNESTSFormFunction is not available for SUNDIALS.
     // This solver_form_function needs to know the shift
     // (SUNDIALS' gamma) that we capture in solver_ijacobian_color.
-    MatFDColoringSetFunction(fdcoloring, bout::cast_MatFDColoringFn(solver_form_function),
-                             this);
+    BOUT_DO_PETSC(petsc_preconditioner.updateColoring(solver_form_function, this));
   }
-  MatFDColoringSetFromOptions(fdcoloring);
-  MatFDColoringSetUp(Jfd, iscoloring, fdcoloring);
-  ISColoringDestroy(&iscoloring);
 
-  // Replace the CTX pointer in SNES Jacobian
+  // Replace the CTX pointer in SNES Jacobian / TS Jacobian callback
   if (ts_type == TSSUNDIALS) {
 #if PETSC_HAVE_SUNDIALS2
     // The SUNDIALS interface calls TSGetIJacobian
     // https://www.mcs.anl.gov/petsc/petsc-3.14/src/ts/impls/implicit/sundials/sundials.c
     // This sets the "TSMatFDColoring" property on the Jacobian, that is used in TSComputeIJacobianDefaultColor
-    PetscObjectCompose((PetscObject)Jfd, "TSMatFDColoring", (PetscObject)fdcoloring);
+    PetscObjectCompose((PetscObject)jac, "TSMatFDColoring",
+                       (PetscObject)petsc_preconditioner.coloring());
     // Call a wrapper function that stores the shift in the PetscSolver
-    TSSetIJacobian(ts, Jfd, Jfd, solver_ijacobian_color, this);
+    TSSetIJacobian(ts, jac, jac, solver_ijacobian_color, this);
 #endif
   } else {
     if (matrix_free_operator) {
       // Use matrix-free calculation for operator, finite difference for preconditioner
-      SNESSetJacobian(snes, Jmf, Jfd, SNESComputeJacobianDefaultColor, fdcoloring);
+      SNESSetJacobian(snes, Jmf, jac, SNESComputeJacobianDefaultColor,
+                      petsc_preconditioner.coloring());
     } else {
-      SNESSetJacobian(snes, Jfd, Jfd, SNESComputeJacobianDefaultColor, fdcoloring);
+      SNESSetJacobian(snes, jac, jac, SNESComputeJacobianDefaultColor,
+                      petsc_preconditioner.coloring());
     }
   }
 }

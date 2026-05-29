@@ -33,7 +33,7 @@ needed to make the solver available.
 
 .. _tab-solvers:
 .. table:: Available time integration solvers
-	   
+
    +---------------+-----------------------------------------+------------------------+
    | Name          | Description                             | Compile options        |
    +===============+=========================================+========================+
@@ -68,7 +68,7 @@ given in table :numref:`tab-solveropts`.
 
 .. _tab-solveropts:
 .. table:: Time integration solver options
-	   
+
    +--------------------------+--------------------------------------------+-------------------------------------+
    | Option                   | Description                                | Solvers used                        |
    +==========================+============================================+=====================================+
@@ -143,6 +143,21 @@ many iterations are needed to solve the linear system. If the number of
 iterations becomes large, this may be an indication that the system is
 poorly conditioned, and a preconditioner might help improve performance.
 See :ref:`sec-preconditioning`.
+
+When ``solver:use_precon=true`` and no user-supplied preconditioner is provided,
+the preconditioner method can be selected using ``solver:cvode_precon_method``:
+
+- ``auto`` (default): Prefer PETSc coloring if PETSc is available, otherwise use BBD.
+- ``bbd``: Force the built-in BBD preconditioner.
+- ``petsc``: Require PETSc and use PETSc coloring.
+
+For ``cvode_precon_method = petsc``, PETSc options for the internal KSP/PC can be
+set with the prefix ``cvode_petscpre_`` (either on the command line, or by putting
+prefixed keys into the ``[petsc]`` section). For example::
+
+    [petsc]
+    cvode_petscpre_ksp_type = preonly
+    cvode_petscpre_pc_type = hypre
 
 CVODE can set constraints to keep some quantities positive, non-negative,
 negative or non-positive. These constraints can be activated by setting the

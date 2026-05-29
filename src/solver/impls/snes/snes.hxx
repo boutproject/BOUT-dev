@@ -41,6 +41,7 @@ class SNESSolver;
 #include <bout/bout_types.hxx>
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
+#include <bout/petsc_preconditioner.hxx>
 #include <bout/petsclib.hxx>
 
 #include <petsc.h>
@@ -202,8 +203,8 @@ private:
   BoutReal kI; ///< (0.2 - 0.4) Integral parameter (smooths history of changes)
   BoutReal kD; ///< (0.1 - 0.3) Derivative (dampens oscillation - optional)
   bool pid_consider_failures; ///< Reduce timestep increases if recent solves have failed
-  BoutReal recent_failure_rate;            ///< Rolling average of recent failure rate
-  BoutReal last_failure_weight;            ///< 1 / number of recent solves
+  BoutReal recent_failure_rate; ///< Rolling average of recent failure rate
+  BoutReal last_failure_weight; ///< 1 / number of recent solves
 
   BoutReal nl_its_prev;
   BoutReal nl_its_prev2;
@@ -227,11 +228,11 @@ private:
   Vec x1;               ///< Previous solution
   BoutReal time1{-1.0}; ///< Time of previous solution
 
-  SNES snes;                         ///< SNES context
-  Mat Jmf;                           ///< Matrix Free Jacobian
-  Mat Jfd;                           ///< Finite Difference Jacobian
-  MatFDColoring fdcoloring{nullptr}; ///< Matrix coloring context
-                                     ///< Jacobian evaluation
+  SNES snes; ///< SNES context
+  Mat Jmf;   ///< Matrix Free Jacobian
+  Mat Jfd;   ///< Finite Difference Jacobian (brute-force, when not using coloring)
+  PetscPreconditioner
+      petsc_preconditioner; ///< Coloring-based FD Jacobian + MatFDColoring
 
   bool use_precon;                ///< Use preconditioner
   std::string ksp_type;           ///< Linear solver type
@@ -245,7 +246,7 @@ private:
   bool matrix_free_operator; ///< Use matrix free Jacobian in the operator?
   int lag_jacobian;          ///< Re-use Jacobian
   bool jacobian_persists; ///< Re-use Jacobian and preconditioner across nonlinear solves
-  bool use_coloring;         ///< Use matrix coloring
+  bool use_coloring;      ///< Use matrix coloring
 
   bool jacobian_recalculated; ///< Flag set when Jacobian is recalculated
   bool prune_jacobian;        ///< Remove small elements in the Jacobian?
@@ -253,7 +254,6 @@ private:
   BoutReal prune_fraction;    ///< Prune if fraction of small elements is larger than this
   bool jacobian_pruned{false}; ///< Has the Jacobian been pruned?
   Mat Jfd_original;            ///< Used to reset the Jacobian if over-pruned
-  void updateColoring();       ///< Updates the coloring using Jfd
 
   bool scale_rhs;          ///< Scale time derivatives?
   Vec rhs_scaling_factors; ///< Factors to multiply RHS function
