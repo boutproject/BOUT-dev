@@ -6,7 +6,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -31,13 +31,13 @@ class Field;
 
 #include <cmath>
 #include <cstdio>
+#include <optional>
 #include <string>
 
 #include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field_data.hxx"
-#include "bout/msg_stack.hxx"
 #include "bout/region.hxx"
 #include "bout/traits.hxx"
 #include "bout/utils.hxx"
@@ -127,6 +127,17 @@ public:
     swap(first.directions, second.directions);
   }
 
+  /// Dummy functions to increase portability
+  virtual void setRegion([[maybe_unused]] size_t regionID) {}
+  virtual void setRegion([[maybe_unused]] std::optional<size_t> regionID) {}
+  virtual void setRegion([[maybe_unused]] const std::string& region_name) {}
+  virtual void resetRegion() {}
+  virtual std::optional<size_t> getRegionID() const { return {}; }
+  virtual bool hasParallelSlices() const { return true; }
+  virtual void calcParallelSlices() {}
+  virtual void splitParallelSlices() {}
+  virtual void clearParallelSlices() {}
+
 private:
   /// Labels for the type of coordinate system this field is defined over
   DirectionTypes directions{YDirectionType::Standard, ZDirectionType::Standard};
@@ -178,7 +189,8 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
 template <typename T>
 inline T emptyFrom(const T& f) {
   static_assert(bout::utils::is_Field_v<T>, "emptyFrom only works on Fields");
-  return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()})
+  return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()},
+           f.getRegionID())
       .allocate();
 }
 
@@ -239,7 +251,6 @@ namespace bout {
 template <typename T>
 inline void checkFinite(const T& f, const std::string& name = "field",
                         const std::string& rgn = "RGN_ALL") {
-  AUTO_TRACE();
 
   if (!f.isAllocated()) {
     throw BoutException("{:s} is not allocated", name);
@@ -263,7 +274,6 @@ inline void checkFinite(const T& f, const std::string& name = "field",
 template <typename T>
 inline void checkPositive(const T& f, const std::string& name = "field",
                           const std::string& rgn = "RGN_ALL") {
-  AUTO_TRACE();
 
   if (!f.isAllocated()) {
     throw BoutException("{:s} is not allocated", name);
@@ -285,6 +295,7 @@ inline void checkPositive(const T& f, const std::string& name = "field",
 template <typename T>
 inline T toFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
   static_assert(bout::utils::is_Field_v<T>, "toFieldAligned only works on Fields");
+  ASSERT3(f.getCoordinates() != nullptr);
   return f.getCoordinates()->getParallelTransform().toFieldAligned(f, region);
 }
 
@@ -292,6 +303,7 @@ inline T toFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
 template <typename T>
 inline T fromFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
   static_assert(bout::utils::is_Field_v<T>, "fromFieldAligned only works on Fields");
+  ASSERT3(f.getCoordinates() != nullptr);
   return f.getCoordinates()->getParallelTransform().fromFieldAligned(f, region);
 }
 
@@ -307,7 +319,6 @@ inline T fromFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
 template <typename T, typename = bout::utils::EnableIfField<T>>
 inline BoutReal min(const T& f, bool allpe = false,
                     const std::string& rgn = "RGN_NOBNDRY") {
-  AUTO_TRACE();
 
   checkData(f);
 
@@ -392,7 +403,6 @@ inline BoutReal getUniform(const T& f, [[maybe_unused]] bool allpe = false,
 template <typename T, typename = bout::utils::EnableIfField<T>>
 inline BoutReal max(const T& f, bool allpe = false,
                     const std::string& rgn = "RGN_NOBNDRY") {
-  AUTO_TRACE();
 
   checkData(f);
 
@@ -426,7 +436,6 @@ inline BoutReal max(const T& f, bool allpe = false,
 template <typename T, typename = bout::utils::EnableIfField<T>>
 inline BoutReal mean(const T& f, bool allpe = false,
                      const std::string& rgn = "RGN_NOBNDRY") {
-  AUTO_TRACE();
 
   checkData(f);
 
@@ -457,7 +466,6 @@ inline BoutReal mean(const T& f, bool allpe = false,
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
 template <typename T, typename = bout::utils::EnableIfField<T>>
 T pow(const T& lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
-  AUTO_TRACE();
 
   ASSERT1(areFieldsCompatible(lhs, rhs));
 
@@ -471,7 +479,6 @@ T pow(const T& lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
 
 template <typename T, typename = bout::utils::EnableIfField<T>>
 T pow(const T& lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL") {
-  AUTO_TRACE();
 
   // Check if the inputs are allocated
   checkData(lhs);
@@ -487,7 +494,6 @@ T pow(const T& lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL") {
 
 template <typename T, typename = bout::utils::EnableIfField<T>>
 T pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
-  AUTO_TRACE();
 
   // Check if the inputs are allocated
   checkData(lhs);
@@ -524,7 +530,7 @@ T pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
 #define FIELD_FUNC(name, func)                                     \
   template <typename T, typename = bout::utils::EnableIfField<T>>  \
   inline T name(const T& f, const std::string& rgn = "RGN_ALL") {  \
-    AUTO_TRACE();                                                  \
+                                                                   \
     /* Check if the input is allocated */                          \
     checkData(f);                                                  \
     /* Define and allocate the output result */                    \
@@ -632,7 +638,6 @@ FIELD_FUNC(tanh, ::tanh)
 /// default (can be changed using the \p rgn argument
 template <typename T, typename = bout::utils::EnableIfField<T>>
 inline bool finite(const T& f, const std::string& rgn = "RGN_ALL") {
-  AUTO_TRACE();
 
   if (!f.isAllocated()) {
     return false;

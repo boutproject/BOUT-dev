@@ -1099,7 +1099,9 @@ value6 = 12
 }
 
 TEST_F(OptionsTest, InvalidFormat) {
-  EXPECT_THROW([[maybe_unused]] auto none = fmt::format("{:nope}", Options{}), fmt::format_error);
+  EXPECT_THROW([[maybe_unused]] auto none =
+                   fmt::format(fmt::runtime("{:nope}"), Options{}),
+               fmt::format_error);
 }
 
 TEST_F(OptionsTest, FormatValue) {
@@ -1467,4 +1469,37 @@ TEST_F(OptionsTest, MatrixInt) {
 
   const auto matrix_out = options["int_matrix"].as<Matrix<int>>();
   ASSERT_EQ(matrix_out(nx - 1, ny - 1), matrix_in(nx - 1, ny - 1));
+}
+
+TEST_F(OptionsTest, TensorIntToTensorBoutReal) {
+  constexpr int nx = 2;
+  constexpr int ny = 3;
+  constexpr int nz = 4;
+
+  Tensor<int> t_int(nx, ny, nz);
+  int count = 0;
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        t_int(i, j, k) = ++count;
+      }
+    }
+  }
+
+  Options option = t_int;
+
+  // Convert to Tensor<BoutReal>
+  Tensor<BoutReal> t_boutreal = option.as<Tensor<BoutReal>>();
+
+  std::tuple<int, int, int> expected_shape{nx, ny, nz};
+  ASSERT_EQ(expected_shape, t_boutreal.shape());
+
+  count = 0;
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        ASSERT_FLOAT_EQ(t_boutreal(i, j, k), static_cast<BoutReal>(++count));
+      }
+    }
+  }
 }

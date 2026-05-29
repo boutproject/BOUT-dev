@@ -3,16 +3,16 @@
  *
  * ChangeLog
  * =========
- * 
+ *
  * 2014-11-10 Ben Dudson <bd512@york.ac.uk>
  *    * Created by separating metric from Mesh
  *
- * 
+ *
  **************************************************************************
  * Copyright 2014-2025 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -33,10 +33,11 @@
 #ifndef BOUT_COORDINATES_H
 #define BOUT_COORDINATES_H
 
-#include "bout/bout_types.hxx"
-#include "bout/field2d.hxx"
-#include "bout/field3d.hxx"
-#include "bout/paralleltransform.hxx"
+#include <bout/bout_types.hxx>
+#include <bout/build_defines.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
+#include <bout/paralleltransform.hxx>
 
 class Mesh;
 
@@ -249,17 +250,5 @@ private:
   // check that contravariant tensors are positive (if expected) and finite (always)
   void checkContravariant();
 };
-
-/*
-/// Standard coordinate system for tokamak simulations
-class TokamakCoordinates : public Coordinates {
-public:
-  TokamakCoordinates(Mesh *mesh) : Coordinates(mesh) {
-    
-  }
-private:
-  
-};
-*/
 
 #endif // BOUT_COORDINATES_H

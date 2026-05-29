@@ -161,9 +161,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateZ) {
   auto output = this->create("z");
 
   auto expected = makeField<TypeParam>(
-      [](typename TypeParam::ind_type& index) -> BoutReal {
-        return TWOPI * index.z() / FieldFactoryCreationTest<TypeParam>::nz;
-      },
+      [](typename TypeParam::ind_type& index) -> BoutReal { return TWOPI * index.z(); },
       mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
@@ -209,7 +207,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateZStaggered) {
           offset = 0.5;
         }
 
-        return TWOPI * (index.z() - offset) / FieldFactoryCreationTest<TypeParam>::nz;
+        return TWOPI * (index.z() - offset);
       },
       mesh);
 

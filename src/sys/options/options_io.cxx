@@ -2,6 +2,7 @@
 #include "bout/bout.hxx"
 #include "bout/globals.hxx"
 #include "bout/mesh.hxx"
+#include "bout/version.hxx"
 
 #include "options_adios.hxx"
 #include "options_netcdf.hxx"
@@ -55,4 +56,12 @@ void writeDefaultOutputFile(Options& data) {
   OptionsIOFactory::getInstance().createOutput()->write(data);
 }
 
+void OptionsIO::write(const std::string& prefix, Options& data, Mesh* mesh) {
+  Options file_options = {{"prefix", prefix}};
+  data["BOUT_VERSION"].force(bout::version::as_double);
+  if (mesh != nullptr) {
+    mesh->outputVars(data);
+  }
+  OptionsIOFactory::getInstance().createOutput(&file_options)->write(data);
+}
 } // namespace bout

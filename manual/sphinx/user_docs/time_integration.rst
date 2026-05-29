@@ -444,29 +444,73 @@ on nonlinear iteration count.
    dt_min_reset = 1e-6                    # Reset the solver when timestep < this
 
    # Timestep adaptation
+   timestep_control = pid_nonlinear_its
+   target_its = 7        # Target number of nonlinear iterations
+   kP = 0.7              # Proportional gain
+   kI = 0.3              # Integral gain
+   kD = 0.2              # Derivative gain
+
+This uses a PID controller that adjusts the timestep to maintain approximately ``target_its``
+nonlinear iterations per solve.
+
+Residual Ratio
+^^^^^^^^^^^^^^
+
+This adjusts the timestep using the ratio of global residuals and a timestep factor:
+
+.. math::
+
+   dt_n = r dt_{n-1} \frac{||F(X_{n-1})||}{||F(X_{n})||
+
+so that as the residual falls the timestep :math:`dt` is increased.
+The :math:`r` parameter is input option ``timestep_factor`` that has
+default value 1.1.
+
+.. code-block:: ini
+
+   [solver]
+   timestep_control = residual_ratio  # Use global residual
+   timestep_factor = 1.1              # Constant timestep factor
+
+Threshold Controller
+^^^^^^^^^^^^^^^^^^^^
+
+An alternative adaptive strategy uses thresholds in nonlinear iterations
+to adjust the timestep:
+
+.. code-block:: ini
+
+   [solver]
+   timestep_control = threshold_nonlinear_its
    lower_its = 3                          # Increase dt if iterations < this
    upper_its = 10                         # Decrease dt if iterations > this
    timestep_factor_on_lower_its = 1.4     # Growth factor
    timestep_factor_on_upper_its = 0.9     # Reduction factor
    timestep_factor_on_failure = 0.5       # Reduction on convergence failure
 
-PID Controller
-^^^^^^^^^^^^^^
+The adjustments are less smooth than the default PID method, but the
+timestep is changed less frequently. This may enable the Jacobian and
+preconditioner to be used for more iterations.
 
-An alternative adaptive strategy using a PID controller:
+Output trigger
+~~~~~~~~~~~~~~
+
+The default behavior is to save outputs at a regular time interval, as
+BOUT++ solvers do. This is desirable when performing time-dependent
+simulations, but for simulations that are trying to get to steady
+state a better measure of progress is reduction of the global residual
+(norm of the time-derivatives of the system).
 
 .. code-block:: ini
 
    [solver]
-   pid_controller = true
-   target_its = 7        # Target number of nonlinear iterations
-   kP = 0.7              # Proportional gain
-   kI = 0.3              # Integral gain
-   kD = 0.2              # Derivative gain
+   output_trigger = residual_ratio  # Trigger an output based on the ratio of residuals
+   output_residual_ratio = 0.5     # Output when global residual is multiplied by this
 
-The PID controller adjusts the timestep to maintain approximately ``target_its``
-nonlinear iterations per solve, providing smoother adaptation than threshold-based
-methods.
+With this choice, each output has a global residual that is less than
+or equal to `output_residual_ratio` times the last output global
+residual. This provides a way of measuring progress to steady state
+that is independent of time integration accuracy.
 
 Pseudo-Transient Continuation and Switched Evolution Relaxation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -518,7 +562,7 @@ state.
    timestep = 1.0                # Initial timestep
 
    # SER parameters
-   pid_controller = true          # Scale timesteps based on iterations
+   timestep_control = pid_nonlinear_its  # Scale timesteps based on iterations
    pseudo_max_ratio = 2.0         # Limit neighbor timestep ratio
 
    # Tolerances
@@ -588,7 +632,7 @@ adjust ``pseudo_alpha`` depending on the nonlinearity of the system:
 .. code-block:: ini
 
    [solver]
-   pid_controller = true
+   timestep_control = pid_nonlinear_its   # Scale global timestep using PID controller
    target_its = 7        # Target number of nonlinear iterations
    kP = 0.7              # Proportional gain
    kI = 0.3              # Integral gain

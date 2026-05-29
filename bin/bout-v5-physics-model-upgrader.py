@@ -8,7 +8,6 @@ import re
 import textwrap
 import warnings
 
-
 PHYSICS_MODEL_INCLUDE = '#include "bout/physicsmodel.hxx"'
 
 PHYSICS_MODEL_SKELETON = """
@@ -213,13 +212,11 @@ def fix_bout_constrain(source, error_on_warning):
             "\n  ".join(["{}:{}".format(i, source_lines[i]) for i in line_range])
         )
 
-    message = textwrap.dedent(
-        """\
+    message = textwrap.dedent("""\
         Some uses of `bout_constrain` remain, but we could not automatically
         convert them to use `Solver::constraint`. Please fix them before
         continuing:
-        """
-    )
+        """)
     message += "  " + "\n  ".join(lines_context)
 
     if error_on_warning:
@@ -389,8 +386,7 @@ def create_patch(filename, original, modified):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=textwrap.dedent(
-            """\
+        description=textwrap.dedent("""\
             Upgrade legacy physics models to use the PhysicsModel class
 
             This will do the bare minimum required to compile, and
@@ -403,8 +399,7 @@ if __name__ == "__main__":
             By default, this will use the file name stripped of file
             extensions as the name of the new class. Use '--name=<new
             name>' to give a different name.
-            """
-        ),
+            """),
     )
 
     parser.add_argument("files", action="store", nargs="+", help="Files to fix")

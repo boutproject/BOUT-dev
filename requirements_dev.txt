@@ -1,0 +1,6 @@
+clang-format~=22.0
+clang-tidy~=22.0
+cmakelang~=0.6
+pre-commit>=4.5.1
+ruff
+sphinx-lint~=1.0

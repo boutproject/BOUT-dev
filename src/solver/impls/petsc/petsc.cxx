@@ -2,7 +2,7 @@
  * Interface to PETSc solver
  *
  **************************************************************************
- * Copyright 2010 - 2025 BOUT++ contributors
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -324,8 +324,6 @@ PetscSolver::~PetscSolver() {
  **************************************************************************/
 
 int PetscSolver::init() {
-
-  TRACE("Initialising PETSc-dev solver");
 
   Solver::init();
 
@@ -809,7 +807,7 @@ int PetscSolver::init() {
 
                     if (ierr != 0) {
                       output.write("ERROR: {} {} : ({}, {}) -> ({}, {}) : {} -> {}\n",
-                                   row, x, y, xi, yi, ind2, ind2 + n3d - 1);
+                                   row, col, x, y, xi, yi, ind2, ind2 + n3d - 1);
                     }
                     CHKERRQ(ierr);
                   }
@@ -942,12 +940,10 @@ PetscErrorCode PetscSolver::rhs(BoutReal t, Vec udata, Vec dudata, bool linear) 
   } catch (BoutException& e) {
     // Simulation might fail, e.g. negative densities
     // if timestep too large
-    output_warn.write("WARNING: BoutException thrown: {}\n", e.what());
-
-    // Tell SNES that the input was out of domain
-    SNESSetFunctionDomainError(snes);
-    // Note: Returning non-zero error here leaves vectors in locked state
-    return 0;
+    output_error.write("BoutException thrown: {}\n", e.what());
+    // There is no way to recover and synchronise MPI ranks
+    // unless they all threw an exception at the same point.
+    BoutComm::abort(1);
   }
 
   // Save derivatives to PETSc
@@ -970,7 +966,6 @@ PetscErrorCode PetscSolver::formFunction(Vec U, Vec F) {
 
 // Matrix-free preconditioner function
 PetscErrorCode PetscSolver::pre(Vec x, Vec y) {
-  TRACE("PetscSolver::pre()");
 
   BoutReal* data;
 

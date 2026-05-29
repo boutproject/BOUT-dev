@@ -138,11 +138,16 @@
  */
 // clang-format on
 
+#include "bout/build_defines.hxx"
+
+#if not BOUT_USE_METRIC_3D
+
 #include <bout/boutexception.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/derivs.hxx>
 #include <bout/difops.hxx>
 #include <bout/globals.hxx>
+#include <bout/invert_laplace.hxx>
 #include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
 
@@ -203,7 +208,7 @@ LaplaceNaulin::LaplaceNaulin(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   ASSERT0(underrelax_recovery >= 1.);
   delp2solver = create(opt->getSection("delp2solver"), location, localmesh);
   std::string delp2type;
-  opt->getSection("delp2solver")->get("type", delp2type, "cyclic");
+  opt->getSection("delp2solver")->get("type", delp2type, LaplaceFactory::default_type);
   // Check delp2solver is using an FFT scheme, otherwise it will not exactly
   // invert Delp2 and we will not converge
   ASSERT0(delp2type == "cyclic" || delp2type == "spt" || delp2type == "tri");
@@ -426,3 +431,5 @@ void LaplaceNaulin::outputVars(Options& output_options,
   output_options[fmt::format("{}_mean_underrelax_counts", getPerformanceName())]
       .assignRepeat(naulinsolver_mean_underrelax_counts, time_dimension);
 }
+
+#endif

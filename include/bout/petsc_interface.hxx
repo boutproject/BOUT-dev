@@ -40,18 +40,27 @@
 #include <type_traits>
 #include <vector>
 
+#include <bout/array.hxx>
+#include <bout/assert.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/globalindexer.hxx>
 #include <bout/mesh.hxx>
+#include <bout/openmpwrap.hxx>
 #include <bout/operatorstencil.hxx>
 #include <bout/paralleltransform.hxx>
 #include <bout/petsclib.hxx>
 #include <bout/region.hxx>
 #include <bout/traits.hxx>
 
+#include <petscmat.h>
+#include <petscsys.h>
 #include <petscsystypes.h>
 #include <petscvec.h>
+#include <petscversion.h>
+
+#include <utility>
 
 /*!
  * A class which wraps PETSc vector objects, allowing them to be
@@ -70,7 +79,7 @@ inline MPI_Comm getComm([[maybe_unused]] const T& field) {
 
 template <>
 inline MPI_Comm getComm([[maybe_unused]] const FieldPerp& field) {
-  return field.getMesh()->getXcomm();
+  return field.getMesh()->getXZcomm();
 }
 
 template <class T>
@@ -284,7 +293,7 @@ public:
   PetscMatrix(IndexerPtr<T> indConverter, bool preallocate = true)
       : matrix(new Mat()), indexConverter(indConverter),
         pt(&indConverter->getMesh()->getCoordinates()->getParallelTransform()) {
-    MPI_Comm comm = std::is_same_v<T, FieldPerp> ? indConverter->getMesh()->getXcomm()
+    MPI_Comm comm = std::is_same_v<T, FieldPerp> ? indConverter->getMesh()->getXZcomm()
                                                  : BoutComm::get();
     const int size = indexConverter->size();
 
@@ -363,7 +372,7 @@ public:
       }
     }
     Element& operator=(const Element& other) {
-      AUTO_TRACE();
+
       if (this == &other) {
         return *this;
       }
@@ -372,14 +381,14 @@ public:
       return *this;
     }
     Element& operator=(BoutReal val) {
-      AUTO_TRACE();
+
       ASSERT3(finite(val));
       value = val;
       setValues(val, INSERT_VALUES);
       return *this;
     }
     Element& operator+=(BoutReal val) {
-      AUTO_TRACE();
+
       ASSERT3(finite(val));
       auto columnPosition = std::find(positions.begin(), positions.end(), petscCol);
       if (columnPosition != positions.end()) {
@@ -394,7 +403,6 @@ public:
 
   private:
     void setValues(BoutReal val, InsertMode mode) {
-      TRACE("PetscMatrix setting values at ({}, {})", petscRow, petscCol);
       ASSERT3(positions.size() > 0);
       std::vector<PetscScalar> values;
       std::transform(weights.begin(), weights.end(), std::back_inserter(values),
@@ -405,7 +413,8 @@ public:
       status = MatSetValues(*petscMatrix, 1, &petscRow, positions.size(),
                             positions.data(), values.data(), mode);
       if (status != 0) {
-        throw BoutException("Error when setting elements of a PETSc matrix.");
+        throw BoutException("Error when setting elements of a PETSc matrix at ({}, {})",
+                            petscRow, petscCol);
       }
     }
     Mat* petscMatrix;

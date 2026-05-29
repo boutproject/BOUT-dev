@@ -211,8 +211,8 @@ TEST_F(RegionTest, regionLoopNoBndry) {
   BOUT_FOR(i, region) { a[i] = 1.0; }
 
   const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
-  const int ninner =
-      (mesh->LocalNz * (1 + mesh->xend - mesh->xstart) * (1 + mesh->yend - mesh->ystart));
+  const int ninner = ((1 + mesh->zend - mesh->zstart) * (1 + mesh->xend - mesh->xstart)
+                      * (1 + mesh->yend - mesh->ystart));
   int numExpectNotMatching = nmesh - ninner;
 
   int numNotMatching = 0;
@@ -249,8 +249,8 @@ TEST_F(RegionTest, regionLoopNoBndrySerial) {
   int count = 0;
   BOUT_FOR_SERIAL(i, region) { ++count; }
 
-  const int ninner =
-      (mesh->LocalNz * (1 + mesh->xend - mesh->xstart) * (1 + mesh->yend - mesh->ystart));
+  const int ninner = ((1 + mesh->zend - mesh->zstart) * (1 + mesh->xend - mesh->xstart)
+                      * (1 + mesh->yend - mesh->ystart));
 
   EXPECT_EQ(count, ninner);
 }
@@ -300,8 +300,8 @@ TEST_F(RegionTest, regionLoopNoBndrySection) {
     }
   }
 
-  const int ninner =
-      (mesh->LocalNz * (1 + mesh->xend - mesh->xstart) * (1 + mesh->yend - mesh->ystart));
+  const int ninner = ((1 + mesh->zend - mesh->zstart) * (1 + mesh->xend - mesh->xstart)
+                      * (1 + mesh->yend - mesh->ystart));
 
   EXPECT_EQ(count, ninner);
 }
@@ -334,8 +334,8 @@ TEST_F(RegionTest, regionLoopNoBndryInner) {
   }
 
   const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
-  const int ninner =
-      (mesh->LocalNz * (1 + mesh->xend - mesh->xstart) * (1 + mesh->yend - mesh->ystart));
+  const int ninner = ((1 + mesh->zend - mesh->zstart) * (1 + mesh->xend - mesh->xstart)
+                      * (1 + mesh->yend - mesh->ystart));
   int numExpectNotMatching = nmesh - ninner;
 
   int numNotMatching = 0;

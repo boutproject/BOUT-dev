@@ -1,4 +1,5 @@
 #include "bout/coordinates_accessor.hxx"
+#include <bout/build_defines.hxx>
 
 #include "bout/mesh.hxx"
 

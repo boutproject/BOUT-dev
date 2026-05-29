@@ -20,7 +20,6 @@ import pickle
 
 import time
 
-
 if __name__ == "__main__":
     build_and_log("MMS advection")
 
@@ -51,7 +50,7 @@ def run_mms(options, exit=True):
 
             dx = 2.0 * pi / (nx)
 
-            args = f"{opts} mesh:nx={nx+4} mesh:dx={dx} MZ={nx}"
+            args = f"{opts} mesh:nx={nx + 4} mesh:dx={dx} MZ={nx}"
 
             print("  Running with " + args)
 

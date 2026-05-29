@@ -3,6 +3,8 @@
  *
  */
 
+#include "bout/field2d.hxx"
+#include "bout/globals.hxx"
 #include <bout/bout.hxx>
 #include <bout/field_factory.hxx>
 #include <bout/invert_laplace.hxx>
@@ -11,6 +13,8 @@ int main(int argc, char** argv) {
 
   // Initialise BOUT++, setting up mesh
   BoutInitialise(argc, argv);
+
+  using bout::globals::mesh;
 
   FieldFactory f{bout::globals::mesh};
   Options dump;
@@ -24,14 +28,16 @@ int main(int argc, char** argv) {
   dump["c"] = c;
   dump["d"] = d;
 
-  auto lap = std::unique_ptr<Laplacian>{Laplacian::create()};
+  auto lap = Laplacian::create();
 
   lap->setCoefA(0.0);
   lap->setCoefC(1.0);
   lap->setCoefD(1.0);
   dump["flag0"] = lap->solve(input);
+  dump["flag0_perp"] = lap->solve(sliceXZ(input, mesh->ystart));
   lap->setInnerBoundaryFlags(INVERT_DC_GRAD + INVERT_AC_GRAD);
   dump["flag3"] = lap->solve(input);
+  dump["flag3_perp"] = lap->solve(sliceXZ(input, mesh->ystart));
 
   lap->setCoefA(a);
   lap->setInnerBoundaryFlags(0);

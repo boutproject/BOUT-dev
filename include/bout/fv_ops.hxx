@@ -5,11 +5,11 @@
 #ifndef BOUT_FV_OPS_H
 #define BOUT_FV_OPS_H
 
+#include "bout/build_defines.hxx"
 #include "bout/field3d.hxx"
 #include "bout/globals.hxx"
-#include "bout/vector2d.hxx"
-
 #include "bout/utils.hxx"
+#include "bout/vector2d.hxx"
 #include <bout/mesh.hxx>
 
 namespace FV {

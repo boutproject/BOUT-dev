@@ -159,7 +159,12 @@ auto read_variable(adios2::IO& io, adios2::Engine& reader, const std::string& na
     variable.SetMemorySelection(selection.memorySelection());
   }
 
-  reader.Get<U>(variable, value.begin(), adios2::Mode::Sync);
+  try {
+    reader.Get<U>(variable, value.begin(), adios2::Mode::Sync);
+  } catch (const std::exception& e) {
+    output_warn.write("ADIOS exception while reading '{}': {}\n", name, e.what());
+    return Options{};
+  }
   return Options(value);
 }
 
@@ -177,22 +182,22 @@ Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& 
   }
 
   if (variable.ShapeID() == adios2::ShapeID::LocalArray) {
-    throw BoutException(
-        "ADIOS reader did not implement reading local arrays like `{}` '{}' in file '{}'",
-        type, name, reader.Name());
+    throw BoutException("ADIOS reader did not implement reading local arrays like `{}` "
+                        "'{}' in file '{}'\n",
+                        type, name, reader.Name());
   }
 
-  if (type != "double" && type != "float" && type != "int32_t") {
+  if (type != "double" && type != "float" && type != "int32_t" && type != "int64_t") {
     throw BoutException("ADIOS reader did not implement reading arrays that are not "
-                        "`double`/`float`/`int32_t` type. "
-                        "Found `{}` '{}' in file '{}'",
+                        "`double`/`float`/`int32_t`/`int64_t` type. "
+                        "Found `{}` '{}' in file '{}'\n",
                         type, name, reader.Name());
   }
 
   if (type == "double" && sizeof(BoutReal) != sizeof(double)) {
     throw BoutException(
         "ADIOS does not allow for implicit type conversions. BoutReal type is "
-        "float but found `{}` '{}' in file '{}'",
+        "float but found `{}` '{}' in file '{}'\n",
         type, name, reader.Name());
   }
 
@@ -217,7 +222,7 @@ Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& 
       Array<BoutReal> value(dims[0]);
       return read_variable(io, reader, name, selection, value);
     }
-    if (type == "int32_t") {
+    if (type == "int32_t" or type == "int64_t") {
       Array<int> value(dims[0]);
       return read_variable(io, reader, name, selection, value);
     }
@@ -228,7 +233,7 @@ Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& 
       Matrix<BoutReal> value(selection.dims[0], selection.dims[1]);
       return read_variable(io, reader, name, selection, value);
     }
-    if (type == "int32_t") {
+    if (type == "int32_t" or type == "int64_t") {
       Matrix<int> value(selection.dims[0], selection.dims[1]);
       return read_variable(io, reader, name, selection, value);
     }
@@ -239,7 +244,7 @@ Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& 
       Tensor<BoutReal> value(selection.dims[0], selection.dims[1], selection.dims[2]);
       return read_variable(io, reader, name, selection, value);
     }
-    if (type == "int32_t") {
+    if (type == "int32_t" or type == "int64_t") {
       Tensor<int> value(selection.dims[0], selection.dims[1], selection.dims[2]);
       return read_variable(io, reader, name, selection, value);
     }
@@ -251,7 +256,7 @@ Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& 
   }
   auto dims_str = fmt::format("[{}]", fmt::join(dims, ", "));
   throw BoutException(
-      "ADIOS reader failed to read '{}' (shape: {}, type: '{}') in file '{}'", name,
+      "ADIOS reader failed to read '{}' (shape: {}, type: '{}') in file '{}'\n", name,
       dims_str, type, reader.Name());
 }
 
@@ -297,7 +302,7 @@ Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& 
     return readVariable<long double>(reader, io, name, type);
   }
 
-  output_warn.write("ADIOS readVariable can't read type '{}' (variable '{}')", type,
+  output_warn.write("ADIOS readVariable can't read type '{}' (variable '{}')\n", type,
                     name);
   return Options{};
 }
@@ -324,7 +329,7 @@ bool readAttribute(adios2::IO& io, const std::string& name, const std::string& t
     return true;
   }
 
-  output_warn.write("ADIOS readAttribute can't read type '{}' (variable '{}')", type,
+  output_warn.write("ADIOS readAttribute can't read type '{}' (variable '{}')\n", type,
                     name);
   return false;
 }
@@ -351,7 +356,7 @@ Options OptionsADIOS::read([[maybe_unused]] bool lazy) {
   const Timer timer("io");
 
   // Open file
-  ADIOSPtr const adiosp = GetADIOSPtr();
+  const ADIOSPtr adiosp = GetADIOSPtr();
   adios2::IO io;
   const std::string ioname = "read_" + filename;
   try {
@@ -362,7 +367,7 @@ Options OptionsADIOS::read([[maybe_unused]] bool lazy) {
 
   adios2::Engine reader = io.Open(filename, adios2::Mode::ReadRandomAccess);
   if (!reader) {
-    throw BoutException("Could not open ADIOS file '{:s}' for reading", filename);
+    throw BoutException("Could not open ADIOS file '{:s}' for reading\n", filename);
   }
 
   Options result;
