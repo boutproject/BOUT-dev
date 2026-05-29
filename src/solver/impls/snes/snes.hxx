@@ -153,6 +153,7 @@ private:
   // These are used if equation_form = pseudo_transient
   BoutPTCStrategy pseudo_strategy;  ///< Strategy to use when setting timesteps
   BoutReal pseudo_alpha;            ///< dt = alpha / residual
+  BoutReal pseudo_alpha_minimum;    ///< Minimum value of alpha
   BoutReal pseudo_growth_factor;    ///< Timestep increase 1.1 - 1.2
   BoutReal pseudo_reduction_factor; ///< Timestep decrease 0.5
   BoutReal pseudo_max_ratio;        ///< Maximum timestep ratio between neighboring cells
