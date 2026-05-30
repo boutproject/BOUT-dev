@@ -145,10 +145,10 @@ CvodeSolver::CvodeSolver(Options* opts)
       precon_method(
           (*options)["cvode_precon_method"]
               .doc("Preconditioner to use with CVODE Newton iteration. "
-                   "Choices: none, auto (default), user, petsc, bbd. "
+                   "Choices: none (default), auto, user, petsc, bbd. "
                    "auto prefers user (if supplied), then petsc (if available), "
                    "then bbd.")
-              .withDefault(CvodePreconMethod::Auto)),
+              .withDefault(CvodePreconMethod::none)),
       cvode_nonlinear_convergence_coef(
           (*options)["cvode_nonlinear_convergence_coef"]
               .doc("Safety factor used in the nonlinear convergence test")
