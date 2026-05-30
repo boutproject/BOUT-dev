@@ -354,9 +354,11 @@ int CvodeSolver::init() {
     throw BoutException("CVodeSetMaxNonlinIters failed\n");
   }
 
+#if SUNDIALS_VERSION_MAJOR >= 6
   if (CVodeSetLSetupFrequency(cvode_mem, lsetup_frequency) != CV_SUCCESS) {
     throw BoutException("CVodeSetLSetupFrequency failed\n");
   }
+#endif
 
   if (apply_positivity_constraints) {
     auto f2d_constraints = create_constraints(f2d);
@@ -433,9 +435,11 @@ int CvodeSolver::init() {
       throw BoutException("CVodeSetLinearSolver failed\n");
     }
 
+#if SUNDIALS_VERSION_MAJOR >= 6
     if (CVodeSetJacEvalFrequency(cvode_mem, jac_eval_frequency) != CVLS_SUCCESS) {
       throw BoutException("CVodeSetJacEvalFrequency failed\n");
     }
+#endif
 
     if (selected_precon == CvodePreconMethod::none) {
       output_info.write("\tNo preconditioning\n");
