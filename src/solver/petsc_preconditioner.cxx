@@ -5,17 +5,15 @@
 #include "bout/petsc_preconditioner.hxx"
 
 #include "bout/assert.hxx"
-#include "bout/bout_types.hxx"
-#include "bout/boutcomm.hxx"
 #include "bout/field3d.hxx"
 #include "bout/globals.hxx"
 #include "bout/mesh.hxx"
 #include "bout/options.hxx"
 #include "bout/output.hxx"
+#include "bout/utils.hxx"
 
 #include <algorithm>
 #include <cmath>
-#include <cstddef>
 #include <set>
 #include <utility>
 #include <vector>

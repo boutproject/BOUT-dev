@@ -185,7 +185,7 @@ private:
                                                  BoutReal current_residual);
   BoutReal updatePseudoTimestep_history_based(BoutReal previous_timestep,
                                               BoutReal previous_residual,
-                                              BoutReal current_residual);
+                                              BoutReal current_residual) const;
 
   Field3D pseudo_timestep;
 

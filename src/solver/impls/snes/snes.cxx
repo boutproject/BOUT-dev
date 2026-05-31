@@ -21,8 +21,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <set>
-#include <utility>
 #include <vector>
 
 #include "petscerror.h"
@@ -1274,7 +1272,7 @@ BoutReal SNESSolver::updatePseudoTimestep_inverse_residual(BoutReal previous_tim
 // Strategy based on history of residuals
 BoutReal SNESSolver::updatePseudoTimestep_history_based(BoutReal previous_timestep,
                                                         BoutReal previous_residual,
-                                                        BoutReal current_residual) {
+                                                        BoutReal current_residual) const {
   const BoutReal converged_threshold = 10 * atol;
   const BoutReal transition_threshold = 100 * atol;
 

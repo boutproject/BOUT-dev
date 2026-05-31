@@ -42,6 +42,7 @@
 #include "bout/msg_stack.hxx"
 #include "bout/options.hxx"
 #include "bout/output.hxx"
+#include "bout/region.hxx"
 #include "bout/solver.hxx"
 #include "bout/sundials_backports.hxx"
 #include "bout/unused.hxx"
@@ -168,6 +169,16 @@ CvodeSolver::CvodeSolver(Options* opts)
                    "preconditioning.\n";
   }
 
+#if BOUT_HAS_PETSC
+  // This is a temporary fix to initialise PetscLib early, working
+  // around a bug in Hermes-3 braginskii_conduction that creates a
+  // "petsc:type" subsection.
+  if (precon_method == CvodePreconMethod::petsc
+      || ((precon_method == CvodePreconMethod::Auto) && !this->hasPreconditioner())) {
+    petsc_lib = std::make_unique<PetscLib>();
+  }
+#endif
+
   // Add diagnostics to output
   // Needs to be in constructor not init() because init() is called after
   // Solver::outputVars()
@@ -228,9 +239,10 @@ int CvodeSolver::init() {
   const int local_N = getLocalN();
 
   // Get total problem size
-  int neq;
+  int neq{0};
   if (bout::globals::mpi->MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM,
-                                        BoutComm::get())) {
+                                        BoutComm::get())
+      != 0) {
     throw BoutException("Allreduce localN -> GlobalN failed!\n");
   }
 
@@ -661,7 +673,7 @@ int CvodeSolver::run() {
 
     /// Call the monitor function
 
-    if (call_monitors(simtime, i, getNumberOutputSteps())) {
+    if (call_monitors(simtime, i, getNumberOutputSteps()) != 0) {
       // User signalled to quit
       break;
     }
