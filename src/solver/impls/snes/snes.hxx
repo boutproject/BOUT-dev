@@ -106,7 +106,7 @@ public:
   /// and update the internal RHS scaling factors
   /// This is called by SNESComputeJacobianScaledColor with the
   /// finite difference approximated Jacobian.
-  PetscErrorCode scaleJacobian(Mat B);
+  PetscErrorCode scaleJacobian(Mat Jac_new);
 
   /// Save diagnostics to output
   void outputVars(Options& output_options, bool save_repeat = true) override;

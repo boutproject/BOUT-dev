@@ -91,7 +91,8 @@ PetscErrorCode PetscPreconditioner::createJacobianPattern(Field3D& index,
   PetscCall(MatSetFromOptions(Jfd));
 
   // Determine which row/columns of the matrix are locally owned
-  int Istart = 0, Iend = 0;
+  int Istart = 0;
+  int Iend = 0;
   PetscCall(MatGetOwnershipRange(Jfd, &Istart, &Iend));
 
   // Convert local into global indices

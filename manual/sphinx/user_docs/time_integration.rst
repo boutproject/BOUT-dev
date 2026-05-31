@@ -146,9 +146,9 @@ See :ref:`sec-preconditioning`.
 
 CVODE preconditioning is controlled using ``solver:cvode_precon_method``:
 
-- ``auto`` (default): Prefer a user-supplied preconditioner if provided, then PETSc
+- ``none`` (default): Disable preconditioning.
+- ``auto``: Prefer a user-supplied preconditioner if provided, then PETSc
   coloring if PETSc is available, otherwise use BBD.
-- ``none``: Disable preconditioning.
 - ``user``: Require a user-supplied preconditioner.
 - ``petsc``: Require PETSc and use PETSc coloring.
 - ``bbd``: Force the built-in BBD preconditioner.

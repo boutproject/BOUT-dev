@@ -42,6 +42,7 @@
 #include "bout/msg_stack.hxx"
 #include "bout/options.hxx"
 #include "bout/output.hxx"
+#include "bout/petsclib.hxx"
 #include "bout/region.hxx"
 #include "bout/solver.hxx"
 #include "bout/sundials_backports.hxx"

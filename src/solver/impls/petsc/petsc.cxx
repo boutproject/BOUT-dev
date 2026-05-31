@@ -29,11 +29,6 @@
 
 #include "petsc.hxx"
 
-#include <algorithm>
-#include <cmath>
-#include <utility>
-#include <vector>
-
 #include <bout/assert.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
