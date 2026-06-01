@@ -558,14 +558,14 @@ public:
   BoundaryRegionIterFCI& operator*() { return *this; }
 };
 
-template <bool isX>
+template <bool isXtemp>
 class BoundaryRegionXY : public BoundaryRegionBase {
 public:
   BoundaryRegionXY(const std::string& name, int dir, Mesh* mesh, Region<Ind3D>&& rgn)
       : BoundaryRegionBase(name, mesh), _dir(dir),
-        valid(isX ? mesh->xstart : mesh->ystart) {
+        valid(isXtemp ? mesh->xstart : mesh->ystart) {
     BOUT_FOR_SERIAL(i, rgn) { this->rgn.emplace_back(i); }
-    if (isX) {
+    if constexpr (isXtemp) {
       this->isX = true;
       location = dir == 1 ? BNDRY_XOUT : BNDRY_XIN;
     } else {
