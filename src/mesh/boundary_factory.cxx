@@ -204,7 +204,8 @@ BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* 
     if (region->isX) {
       return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionX*>(region), arglist,
                         keywords);
-    } else if (region->isY) {
+    }
+    if (region->isY) {
       return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionY*>(region), arglist,
                         keywords);
     }
