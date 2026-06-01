@@ -601,7 +601,6 @@ public:
   int dir() const { return region->_dir; }
   template <bool check = true>
   BoutReal& _getAt(Field3D& f, int off) const {
-    ASSERT3(f.hasParallelSlices());
     if constexpr (check) {
       ASSERT3(_valid() > -off - 2);
     }
@@ -614,7 +613,6 @@ public:
   }
   template <bool check = true>
   const BoutReal& _getAt(const Field3D& f, int off) const {
-    ASSERT3(f.hasParallelSlices());
     if constexpr (check) {
       ASSERT3(_valid() > -off - 2);
     }
@@ -627,7 +625,6 @@ public:
   }
   template <bool check = true>
   BoutReal& _getAt(Field2D& f, int off) const {
-    ASSERT3(f.hasParallelSlices());
     if constexpr (check) {
       ASSERT3(_valid() > -off - 2);
     }
@@ -640,7 +637,6 @@ public:
   }
   template <bool check = true>
   const BoutReal& _getAt(const Field2D& f, int off) const {
-    ASSERT3(f.hasParallelSlices());
     if constexpr (check) {
       ASSERT3(_valid() > -off - 2);
     }
