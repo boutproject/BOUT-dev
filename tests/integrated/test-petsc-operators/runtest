@@ -2,4 +2,4 @@
 #
 # requires: petsc
 
-pytest .
+python -m pytest .
