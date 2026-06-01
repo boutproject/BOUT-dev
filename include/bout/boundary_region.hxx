@@ -17,15 +17,15 @@ extern Mesh* mesh; ///< Global mesh
 
 /// Location of boundary
 enum class BndryLoc : std::int8_t {
-  xin,
-  xout,
-  ydown,
-  yup,
-  all,
-  par_fwd_xin, // Don't include parallel boundaries
-  par_bkwd_xin,
-  par_fwd_xout, // Don't include parallel boundaries
-  par_bkwd_xout,
+  xin = 0,
+  xout = 1,
+  ydown = 2,
+  yup = 3,
+  all = 4,
+  par_fwd_xin = 5, // Don't include parallel boundaries
+  par_bkwd_xin = 6,
+  par_fwd_xout = 7, // Don't include parallel boundaries
+  par_bkwd_xout = 8,
   invalid = -1
 };
 constexpr BndryLoc BNDRY_XIN = BndryLoc::xin;
