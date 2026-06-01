@@ -561,6 +561,7 @@ public:
 template <bool isXtemp>
 class BoundaryRegionXY : public BoundaryRegionBase {
 public:
+  BoundaryRegionXY() = delete;
   BoundaryRegionXY(const std::string& name, int dir, Mesh* mesh, Region<Ind3D>&& rgn)
       : BoundaryRegionBase(name, mesh), _dir(dir),
         valid(isXtemp ? mesh->xstart : mesh->ystart) {
