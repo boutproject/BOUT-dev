@@ -1,4 +1,5 @@
 
+#include "bout/assert.hxx"
 #include "bout/boutexception.hxx"
 #include <bout/boundary_region.hxx>
 #include <bout/globals.hxx>

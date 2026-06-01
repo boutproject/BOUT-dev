@@ -1,3 +1,4 @@
+#include "bout/assert.hxx"
 #include "bout/parallel_boundary_op.hxx"
 #include "bout/parallel_boundary_region.hxx"
 #include <bout/boundary_factory.hxx>
