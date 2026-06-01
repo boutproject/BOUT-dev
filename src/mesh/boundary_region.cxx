@@ -12,6 +12,9 @@ BoundaryRegion* BoundaryRegionBase::getLegacyPointer() {
   if (legacy == nullptr) {
     throw BoutException("Legacy region not supported");
   }
+  ASSERT3(legacy->location == location);
+  ASSERT3(legacy->label == label);
+  ASSERT3(legacy->localmesh == localmesh);
   return legacy;
 }
 BoundaryRegionBase::~BoundaryRegionBase() { delete legacy; };
