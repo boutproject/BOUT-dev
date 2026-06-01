@@ -351,7 +351,7 @@ public:
   }
 
   void set_free(Field3D& f, BoundaryFreeExtrapolation mode) const {
-    int fac;
+    BoutReal fac = BoutNaN;
     if (valid() > 0) {
       fac = limitFreeScale(prev(f), current(f), mode);
     } else {
