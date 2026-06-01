@@ -6,10 +6,10 @@ import numpy as np
 import warnings
 
 from boututils.run_wrapper import build_and_log, launch_safe
+from boutdata import collect
 
 
 def analyse_path(path, plot=False, tol=1e-12):
-    from boutdata import collect
 
     forward_op = collect("forward_op", path=path)
     forward = collect("forward", path=path)
