@@ -604,7 +604,7 @@ public:
     if constexpr (check) {
       ASSERT3(_valid() > -off - 2);
     }
-    auto _off = _offset() - off * region->_dir;
+    auto _off = (1 - off) * region->_dir;
     if constexpr (isX) {
       return f[_ind().xp(_off)];
     } else {
@@ -616,7 +616,7 @@ public:
     if constexpr (check) {
       ASSERT3(_valid() > -off - 2);
     }
-    auto _off = _offset() - off * region->_dir;
+    auto _off = (1 - off) * region->_dir;
     if constexpr (isX) {
       return f[_ind().xp(_off)];
     } else {
@@ -628,7 +628,7 @@ public:
     if constexpr (check) {
       ASSERT3(_valid() > -off - 2);
     }
-    auto _off = _offset() - off * region->_dir;
+    auto _off = (1 - off) * region->_dir;
     if constexpr (isX) {
       return f[_ind().xp(_off)];
     } else {
@@ -640,7 +640,7 @@ public:
     if constexpr (check) {
       ASSERT3(_valid() > -off - 2);
     }
-    auto _off = _offset() - off * region->_dir;
+    auto _off = (1 - off) * region->_dir;
     if constexpr (isX) {
       return f[_ind().xp(_off)];
     } else {
@@ -653,7 +653,7 @@ public:
     if constexpr (check) {
       ASSERT3(_valid() > -off - 2);
     }
-    auto _off = _offset() + off * region->_dir;
+    auto _off = (1 - off) * region->_dir;
     if constexpr (isX) {
       return f(0, _ind().xp(_off));
     } else {
