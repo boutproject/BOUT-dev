@@ -184,7 +184,11 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
 
   [[maybe_unused]] const int y_global_offset =
       localmesh->getYProcIndex() * (localmesh->yend - localmesh->ystart + 1);
+#if BOUT_HAS_PETSC
+  BOUT_FOR_SERIAL(i, getRegion(region)) {
+#else
   BOUT_FOR(i, getRegion(region)) {
+#endif
     const int x = i.x();
     const int y = i.y();
     const int z = i.z();

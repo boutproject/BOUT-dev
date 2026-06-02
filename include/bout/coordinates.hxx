@@ -33,13 +33,18 @@
 #ifndef BOUT_COORDINATES_H
 #define BOUT_COORDINATES_H
 
+#include "bout/field_data.hxx"
 #include <bout/bout_types.hxx>
 #include <bout/build_defines.hxx>
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
 #include <bout/paralleltransform.hxx>
 
+#include <array>
+#include <memory>
+
 class Mesh;
+class YBoundary;
 
 /*!
  * Represents a coordinate system, and associated operators
@@ -221,9 +226,13 @@ public:
   // solver
   Field2D Laplace_perpXY(const Field2D& A, const Field2D& f);
 
+  friend std::shared_ptr<YBoundary> getYBoundary(Coordinates* coords, YBndryType type);
+
 private:
+  std::shared_ptr<YBoundary> makeYBoundary(YBndryType type) const;
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;
+  Options* localoptions;
   CELL_LOC location;
 
   /// Handles calculation of yup and ydown
@@ -249,6 +258,8 @@ private:
   void checkCovariant();
   // check that contravariant tensors are positive (if expected) and finite (always)
   void checkContravariant();
+
+  mutable std::array<std::shared_ptr<YBoundary>, 3> ybndrys;
 };
 
 #endif // BOUT_COORDINATES_H

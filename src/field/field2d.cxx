@@ -314,8 +314,9 @@ void Field2D::setBoundaryTo(const Field2D& f2d) {
   allocate(); // Make sure data allocated
 
   /// Loop over boundary regions
-  for (const auto& reg : fieldmesh->getBoundaries()) {
+  for (const auto& regnew : fieldmesh->getBoundaries()) {
     /// Loop within each region
+    auto* reg = regnew->getLegacyPointer();
     for (reg->first(); !reg->isDone(); reg->next()) {
       // Get value half-way between cells
       BoutReal val =
