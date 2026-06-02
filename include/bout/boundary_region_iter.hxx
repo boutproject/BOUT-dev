@@ -663,7 +663,12 @@ public:
   signed char _offset() const { return region->_dir; }
   signed char _valid() const { return region->valid; }
   Ind3D _ind() const { return region->rgn[pos]; }
-  signed char _boundary_width() const { return region->localmesh->xstart; }
+  signed char _boundary_width() const {
+    if constexpr (isX) {
+      return region->localmesh->xstart;
+    }
+    return region->localmesh->ystart;
+  }
   BoutReal _length(CELL_LOC loc) const {
     if (loc == CELL_XLOW) {
       if (dir() == 1) {
