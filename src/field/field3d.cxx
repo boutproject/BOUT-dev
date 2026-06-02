@@ -446,7 +446,8 @@ void Field3D::applyTDerivBoundary() {
   }
 }
 
-void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices) {
+void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices,
+                            bool forceLegacy) {
 
   checkData(f3d);
 
@@ -484,6 +485,25 @@ void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices) {
         const BoutReal val = point.interpolate_boundary_o2(f3d);
         point.dirichlet_o2(*this, val);
       });
+      if (forceLegacy) {
+        // get the old, potentially wrong behaviour
+        auto* reg = newreg->getLegacyPointer();
+        if (isFci() && reg->by != 0) {
+          continue;
+        }
+        /// Loop within each region
+        for (reg->first(); !reg->isDone(); reg->next()) {
+          for (int z = 0; z < nz; z++) {
+            // Get value half-way between cells
+            const BoutReal val =
+                0.5
+                * (f3d(reg->x, reg->y, z) + f3d(reg->x - reg->bx, reg->y - reg->by, z));
+            // Set to this value
+            (*this)(reg->x, reg->y, z) =
+                ((2. * val) - (*this)(reg->x - reg->bx, reg->y - reg->by, z));
+          }
+        }
+      }
     } else if (newreg->isY) {
       // nothing to do
     } else {
