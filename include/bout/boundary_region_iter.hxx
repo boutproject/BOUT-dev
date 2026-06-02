@@ -274,7 +274,7 @@ public:
   /// Apply a dirichlet boundary condition
   void dirichlet_o1(Field3D& f, BoutReal value) const {
     for (int i = 0; i < boundary_width(); ++i) {
-      getAt(f, i) = value;
+      getAt(f, -i) = value;
     }
   }
 
@@ -284,7 +284,7 @@ public:
       return dirichlet_o1(f, value);
     }
     for (int i = 0; i < boundary_width(); ++i) {
-      getAt(f, i) = parallel_stencil::dirichlet_o2(
+      getAt(f, -i) = parallel_stencil::dirichlet_o2(
           i + 1, current(f), i + 1 - length(f.getLocation()), value);
     }
   }
@@ -297,12 +297,12 @@ public:
     }
     if (length(f.getLocation()) < small_value) {
       for (int i = 0; i < boundary_width(); ++i) {
-        getAt(f, i) = parallel_stencil::dirichlet_o2(
+        getAt(f, -i) = parallel_stencil::dirichlet_o2(
             i + 2, prev(f), i + 1 - length(f.getLocation()), value);
       }
     } else {
       for (int i = 0; i < boundary_width(); ++i) {
-        getAt(f, i) = parallel_stencil::dirichlet_o3(
+        getAt(f, -i) = parallel_stencil::dirichlet_o3(
             i + 2, prev(f), i + 1, current(f), i + 1 - length(f.getLocation()), value);
       }
     }
@@ -311,8 +311,8 @@ public:
   /// Ensure the value in the boundary is at least `value`
   void limit_at_least(Field3D& f, BoutReal value) const {
     for (int i = 0; i < boundary_width(); ++i) {
-      if (getAt(f, i) < value) {
-        getAt(f, i) = value;
+      if (getAt(f, -i) < value) {
+        getAt(f, -i) = value;
       }
     }
   }
@@ -323,7 +323,7 @@ public:
   // But in general we do not, and thus for normal C2 stencils, this is 1st order.
   void neumann_o1(Field3D& f, BoutReal value) const {
     for (int i = 0; i < boundary_width(); ++i) {
-      getAt(f, i) = current(f) + value * (i + 1);
+      getAt(f, -i) = current(f) + value * (i + 1);
     }
   }
 
@@ -334,7 +334,7 @@ public:
       return neumann_o1(f, value);
     }
     for (int i = 0; i < boundary_width(); ++i) {
-      getAt(f, i) = prev(f) + (2 + i) * value;
+      getAt(f, -i) = prev(f) + (2 + i) * value;
     }
   }
 
@@ -345,8 +345,8 @@ public:
       return neumann_o2(f, value);
     }
     for (int i = 0; i < boundary_width(); ++i) {
-      getAt(f, i) = parallel_stencil::neumann_o3(i + 1 - length(f.getLocation()), value,
-                                                 i + 1, current(f), 2, prev(f));
+      getAt(f, -i) = parallel_stencil::neumann_o3(i + 1 - length(f.getLocation()), value,
+                                                  i + 1, current(f), 2, prev(f));
     }
   }
 
@@ -361,12 +361,12 @@ public:
     if (mode == BoundaryFreeExtrapolation::linear) {
       for (int i = 0; i < boundary_width(); ++i) {
         val += fac;
-        getAt(f, i) = val;
+        getAt(f, -i) = val;
       }
     } else {
       for (int i = 0; i < boundary_width(); ++i) {
         val *= fac;
-        getAt(f, i) = val;
+        getAt(f, -i) = val;
       }
     }
   }
