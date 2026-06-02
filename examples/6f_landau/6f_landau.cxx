@@ -4063,8 +4063,8 @@ protected:
       // Wrad.applyBoundary("neumann");
     }
 
-    Jpar.applyBoundary();   // This will apply a different scheath BC to Jpar. I kept it because that's how it was in previous versions. 
-    mesh->communicate(Jpar);
+    // Jpar.applyBoundary();   // This will apply a different scheath BC to Jpar. I kept it because that's how it was in previous versions. 
+    // mesh->communicate(Jpar);
 
     if (compress0) {
       if (nonlinear) {
