@@ -2603,16 +2603,21 @@ protected:
           indy = mesh->getGlobalYIndex(jy);
           for (jx = 0; jx < mesh->LocalNx; jx++) {
 	          indx = mesh->getGlobalXIndex(jx);
-            if (mag_config == 1 || mag_config == 2)
+
+            if (mesh->periodicY(jx)) {
               NiSource(jx,jy,jz) = NiAmp * exp( - ((indx - NiLoc) * (indx - NiLoc) / (2. * NiSig * NiSig)));
-            if (mag_config == 3) {
-              if ( (indy > jysep1 - 2) && (indy <= jysep2 + 2) )
-                NiSource(jx,jy,jz) = NiAmp * exp( - ((indx - NiLoc) * (indx - NiLoc) / (2. * NiSig * NiSig)));
             }
-            if (mag_config == 4) {
-               if ( ((indy > jysep1 - 2) && (indy <= jysep2_1)) || ((indy > jysep1_2) && (indy <= jysep2 + 2)) )
-                 NiSource(jx,jy,jz) = NiAmp * exp( - ((indx - NiLoc) * (indx - NiLoc) / (2. * NiSig * NiSig)));
-	          }
+
+            // if (mag_config == 1 || mag_config == 2)
+            //   NiSource(jx,jy,jz) = NiAmp * exp( - ((indx - NiLoc) * (indx - NiLoc) / (2. * NiSig * NiSig)));
+            // if (mag_config == 3) {
+            //   if ( (indy > jysep1 - 2) && (indy <= jysep2 + 2) )
+            //     NiSource(jx,jy,jz) = NiAmp * exp( - ((indx - NiLoc) * (indx - NiLoc) / (2. * NiSig * NiSig)));
+            // }
+            // if (mag_config == 4) {
+            //    if ( ((indy > jysep1 - 2) && (indy <= jysep2_1)) || ((indy > jysep1_2) && (indy <= jysep2 + 2)) )
+            //      NiSource(jx,jy,jz) = NiAmp * exp( - ((indx - NiLoc) * (indx - NiLoc) / (2. * NiSig * NiSig)));
+	          // }
 	        }
 	      }
       }
@@ -2629,16 +2634,21 @@ protected:
           indy = mesh->getGlobalYIndex(jy);
           for (jx = 0; jx < mesh->LocalNx; jx++) {
 	          indx = mesh->getGlobalXIndex(jx);
-            if (mag_config == 1 || mag_config == 2)
+
+            if (mesh->periodicY(jx)) {
               TeSource(jx,jy,jz) = TeAmp * exp( - ((indx - TeLoc) * (indx - TeLoc) / (2. * TeSig * TeSig)));
-            if (mag_config == 3) {
-              if ( (indy > jysep1 - 2) && (indy <= jysep2 + 2) )
-                TeSource(jx,jy,jz) = TeAmp * exp( - ((indx - TeLoc) * (indx - TeLoc) / (2. * TeSig * TeSig)));
-	          }
-            if (mag_config == 4) {
-               if ( ((indy > jysep1 - 2) && (indy <= jysep2_1)) || ((indy > jysep1_2) && (indy <= jysep2 + 2)) )
-                 TeSource(jx,jy,jz) = TeAmp * exp( - ((indx - TeLoc) * (indx - TeLoc) / (2. * TeSig * TeSig)));
-	          }
+            }            
+
+            // if (mag_config == 1 || mag_config == 2)
+            //   TeSource(jx,jy,jz) = TeAmp * exp( - ((indx - TeLoc) * (indx - TeLoc) / (2. * TeSig * TeSig)));
+            // if (mag_config == 3) {
+            //   if ( (indy > jysep1 - 2) && (indy <= jysep2 + 2) )
+            //     TeSource(jx,jy,jz) = TeAmp * exp( - ((indx - TeLoc) * (indx - TeLoc) / (2. * TeSig * TeSig)));
+	          // }
+            // if (mag_config == 4) {
+            //    if ( ((indy > jysep1 - 2) && (indy <= jysep2_1)) || ((indy > jysep1_2) && (indy <= jysep2 + 2)) )
+            //      TeSource(jx,jy,jz) = TeAmp * exp( - ((indx - TeLoc) * (indx - TeLoc) / (2. * TeSig * TeSig)));
+	          // }
 	        }
 	      }
       }
@@ -2655,16 +2665,21 @@ protected:
           indy = mesh->getGlobalYIndex(jy);
           for (jx = 0; jx < mesh->LocalNx; jx++) {
 	          indx = mesh->getGlobalXIndex(jx);
-            if (mag_config == 1 || mag_config == 2)
+
+            if (mesh->periodicY(jx)) {
               TiSource(jx,jy,jz) = TiAmp * exp( - ((indx - TiLoc) * (indx - TiLoc) / (2. * TiSig * TiSig)));
-            if (mag_config == 3) {
-              if ( (indy > jysep1 - 2) && (indy <= jysep2 + 2) )
-                TiSource(jx,jy,jz) = TiAmp * exp( - ((indx - TiLoc) * (indx - TiLoc) / (2. * TiSig * TiSig)));
-            }
-            if (mag_config == 4) {
-               if ( ((indy > jysep1 - 2) && (indy <= jysep2_1)) || ((indy > jysep1_2) && (indy <= jysep2 + 2)))
-                 TiSource(jx,jy,jz) = TiAmp * exp( - ((indx - TiLoc) * (indx - TiLoc)/(2. * TiSig * TiSig)));
-            }
+            }                
+            
+            // if (mag_config == 1 || mag_config == 2)
+            //   TiSource(jx,jy,jz) = TiAmp * exp( - ((indx - TiLoc) * (indx - TiLoc) / (2. * TiSig * TiSig)));
+            // if (mag_config == 3) {
+            //   if ( (indy > jysep1 - 2) && (indy <= jysep2 + 2) )
+            //     TiSource(jx,jy,jz) = TiAmp * exp( - ((indx - TiLoc) * (indx - TiLoc) / (2. * TiSig * TiSig)));
+            // }
+            // if (mag_config == 4) {
+            //    if ( ((indy > jysep1 - 2) && (indy <= jysep2_1)) || ((indy > jysep1_2) && (indy <= jysep2 + 2)))
+            //      TiSource(jx,jy,jz) = TiAmp * exp( - ((indx - TiLoc) * (indx - TiLoc)/(2. * TiSig * TiSig)));
+            // }
 	        }
 	      }
       }
