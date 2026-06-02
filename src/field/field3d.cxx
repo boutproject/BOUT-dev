@@ -482,7 +482,7 @@ void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices) {
     if (newreg->isX) {
       bout::boundary::iter_boundary(newreg, [&](auto& point) {
         const BoutReal val = point.interpolate_boundary_o2(f3d);
-        point.dirichlet_o1(*this, val);
+        point.dirichlet_o2(*this, val);
       });
     } else if (newreg->isY) {
       // nothing to do
