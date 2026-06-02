@@ -224,6 +224,14 @@ The quickest way to run all the formatters on a PR at once is typically:
 
 This will run all our formatters on files that have changed since ``next``.
 
+The tools can be updated with:
+
+.. code-block:: console
+
+    uv lock -U
+    uv tool run sync-with-uv
+
+
 Install Pre-Commit Hooks (Optional but recommended)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -4,20 +4,22 @@
  * given the contravariant metric tensor terms
  **************************************************************************/
 
+#include "bout/field_data.hxx"
 #include <bout/assert.hxx>
 #include <bout/build_defines.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
-#include <bout/output.hxx>
-#include <bout/sys/timer.hxx>
-#include <bout/utils.hxx>
-
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
-#include <bout/interpolation.hxx>
-#include <bout/output_bout_types.hxx>
-
 #include <bout/globals.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/output.hxx>
+#include <bout/output_bout_types.hxx>
+#include <bout/sys/timer.hxx>
+#include <bout/utils.hxx>
+#include <bout/yboundary_regions.hxx>
+
+#include <memory>
 
 #include "invert3x3.hxx"
 #include "parallel/fci.hxx"
@@ -52,7 +54,8 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extr
   // initializing yet, leading to an infinite recursion.
   // Also, here we interpolate for the boundary points at xstart/ystart and
   // (xend+1)/(yend+1) instead of extrapolating.
-  for (auto& bndry : localmesh->getBoundaries()) {
+  for (auto& newbndry : localmesh->getBoundaries()) {
+    auto* bndry = newbndry->getLegacyPointer();
     if ((extrapolate_x and bndry->bx != 0) or (extrapolate_y and bndry->by != 0)) {
       int extrap_start = 0;
       if (not no_extra_interpolate) {
@@ -201,7 +204,8 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
   // initializing yet, leading to an infinite recursion.
   // Also, here we interpolate for the boundary points at xstart/ystart and
   // (xend+1)/(yend+1) instead of extrapolating.
-  for (auto& bndry : localmesh->getBoundaries()) {
+  for (auto& newbndry : localmesh->getBoundaries()) {
+    auto bndry = newbndry->getLegacyPointer();
     if ((extrapolate_x and bndry->bx != 0) or (extrapolate_y and bndry->by != 0)) {
       int extrap_start = 0;
       if (not no_extra_interpolate) {
@@ -369,7 +373,7 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
       g_22(std::move(g_22)), g_33(std::move(g_33)), g_12(std::move(g_12)),
       g_13(std::move(g_13)), g_23(std::move(g_23)), ShiftTorsion(std::move(ShiftTorsion)),
       IntShiftTorsion(std::move(IntShiftTorsion)), nz(mesh->LocalNz), localmesh(mesh),
-      location(CELL_CENTRE) {}
+      localoptions(nullptr), location(CELL_CENTRE) {}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options)
     : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
@@ -381,7 +385,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
       G1_13(mesh), G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh),
       G2_13(mesh), G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh),
       G3_13(mesh), G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
-      IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE) {
+      IntShiftTorsion(mesh), localmesh(mesh), localoptions(options),
+      location(CELL_CENTRE) {
 
   if (options == nullptr) {
     options = Options::getRoot()->getSection("mesh");
@@ -607,7 +612,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       G1_13(mesh), G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh),
       G2_13(mesh), G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh),
       G3_13(mesh), G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
-      IntShiftTorsion(mesh), localmesh(mesh), location(loc) {
+      IntShiftTorsion(mesh), localmesh(mesh), localoptions(options), location(loc) {
 
   std::string suffix = getLocationSuffix(location);
 
@@ -1995,4 +2000,8 @@ void Coordinates::checkContravariant() {
       }
     }
   }
+}
+
+std::shared_ptr<YBoundary> Coordinates::makeYBoundary(YBndryType type) const {
+  return std::make_shared<YBoundary>(type, localoptions, *localmesh);
 }
