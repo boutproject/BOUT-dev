@@ -2458,6 +2458,7 @@ protected:
       output.write("\tUsed normalized ion thermal conductivity: {:e} -> {:e} \n",min(kappa_par_i), max(kappa_par_i));
       kappa_par_i.applyBoundary();
       mesh->communicate(kappa_par_i);
+
       //kappa_par_e *= Tepara1 * N0 / Zi;
       kappa_par_e *= Tepara1 * Ne0;
       output.write("\tUsed normalized electron thermal conductivity: {:e} -> {:e} \n", min(kappa_par_e), max(kappa_par_e));
@@ -3218,7 +3219,6 @@ protected:
   
       vth_e0 = 4.19e5 * sqrt(Te0 * Tebar);
 
-
       // output << max(c_se0, true) << "\t" << max(vth_e0, true) << endl;
       dump.add(Jpar_sh, "Jpar_sh", 1);
       // Jpar_sh.setBoundary("neumann_input");
@@ -3818,7 +3818,7 @@ protected:
       SBC_Gradpar(Te, q_se, PF_limit, PF_limit_range);
       // SBC_Gradpar(Ti, zero, PF_limit, PF_limit_range);
       // SBC_Gradpar(Te, zero, PF_limit, PF_limit_range);
-   
+
     }
 
     
@@ -4280,10 +4280,10 @@ protected:
 
 	      if (compress0 && include_vipar) {
 	        ddt(U) -= Vpar_Grad_par(Vipar, U);
-          if (evolve_psi)
-            ddt(U) += Vipar * bracket(Psi, U, bm_mag) * B0; // Added by malamast
-          else
-            ddt(U) += Vipar * bracket(Apar, U, bm_mag); //  Added by malamast
+          // if (evolve_psi)
+          //   ddt(U) += Vipar * bracket(Psi, U, bm_mag) * B0; // Added by malamast
+          // else
+          //   ddt(U) += Vipar * bracket(Apar, U, bm_mag); //  Added by malamast
         }
       }
 
@@ -4561,15 +4561,15 @@ protected:
           if (include_vipar) {
             ddt(Ni) -= Vpar_Grad_par(Vipar, Ni); //NOTE(malamast): do we include correction for the perturbed magnetic field like we do in Grad_parP?
 
-            if (evolve_psi)
-              ddt(Ni) += Vipar * bracket(Psi, Ni, bm_mag) * B0; //NOTE(malamast): Added by malamast
-            else
-              ddt(Ni) += Vipar * bracket(Apar, Ni, bm_mag); //NOTE(malamast): Added by malamast
+            // if (evolve_psi)
+            //   ddt(Ni) += Vipar * bracket(Psi, Ni, bm_mag) * B0; //NOTE(malamast): Added by malamast
+            // else
+            //   ddt(Ni) += Vipar * bracket(Apar, Ni, bm_mag); //NOTE(malamast): Added by malamast
           }
 
           if (continuity) {
-            // ddt(Ni) -= Ni * B0 * Grad_par(Vipar / B0); //NOTE(malamast): why not Grad_parP?
-            ddt(Ni) -= Ni * B0 * Grad_parP(Vipar / B0);
+            ddt(Ni) -= Ni * B0 * Grad_par(Vipar / B0); //NOTE(malamast): why not Grad_parP?
+            // ddt(Ni) -= Ni * B0 * Grad_parP(Vipar / B0);
           }
         }
       }
@@ -4695,15 +4695,15 @@ protected:
 
           if (include_vipar) {
             ddt(Ti) -= Vpar_Grad_par(Vipar, Ti);
-            if (evolve_psi)
-              ddt(Ti) += Vipar * bracket(Psi, Ti, bm_mag) * B0; // Added by malamast
-            else
-              ddt(Ti) += Vipar * bracket(Apar, Ti, bm_mag); // Added by malamast
+            // if (evolve_psi)
+            //   ddt(Ti) += Vipar * bracket(Psi, Ti, bm_mag) * B0; // Added by malamast
+            // else
+            //   ddt(Ti) += Vipar * bracket(Apar, Ti, bm_mag); // Added by malamast
           }
 
           if (continuity)
-            // ddt(Ti) -= 2.0 / 3.0 * Ti * B0 * Grad_par(Vipar / B0); //NOTE(malamast): Should it be Grad_parP ?
-            ddt(Ti) -= 2.0 / 3.0 * Ti * B0 * Grad_parP(Vipar / B0);
+            ddt(Ti) -= 2.0 / 3.0 * Ti * B0 * Grad_par(Vipar / B0); //NOTE(malamast): Should it be Grad_parP ?
+            // ddt(Ti) -= 2.0 / 3.0 * Ti * B0 * Grad_parP(Vipar / B0);
         }
 
       }
@@ -4920,15 +4920,15 @@ protected:
 
           if (include_vipar) {
             ddt(Te) -= Vpar_Grad_par(Vepar, Te);
-            if (evolve_psi)
-              ddt(Te) += Vepar * bracket(Psi, Te, bm_mag) * B0; // Added by malamast
-            else
-              ddt(Te) += Vepar * bracket(Apar, Te, bm_mag); // Added by malamast
+            // if (evolve_psi)
+            //   ddt(Te) += Vepar * bracket(Psi, Te, bm_mag) * B0; // Added by malamast
+            // else
+            //   ddt(Te) += Vepar * bracket(Apar, Te, bm_mag); // Added by malamast
           }
 
           if (continuity) {
-            // ddt(Te) -= 2.0 / 3.0 * Te * B0 * Grad_par(Vepar / B0);
-            ddt(Te) -= 2.0 / 3.0 * Te * B0 * Grad_parP(Vepar / B0);
+            ddt(Te) -= 2.0 / 3.0 * Te * B0 * Grad_par(Vepar / B0);
+            // ddt(Te) -= 2.0 / 3.0 * Te * B0 * Grad_parP(Vepar / B0);
           }
         }
       }
@@ -5112,10 +5112,10 @@ protected:
 
         if (include_vipar) {
           ddt(Vipar) -= Vpar_Grad_par(Vipar, Vipar); 
-          if (evolve_psi)
-            ddt(Vipar) += Vipar * bracket(Psi, Vipar, bm_mag) * B0; //NOTE(malamast): Added by malamast
-          else
-            ddt(Vipar) += Vipar * bracket(Apar, Vipar, bm_mag); //NOTE(malamast): Added by malamast
+          // if (evolve_psi)
+          //   ddt(Vipar) += Vipar * bracket(Psi, Vipar, bm_mag) * B0; //NOTE(malamast): Added by malamast
+          // else
+          //   ddt(Vipar) += Vipar * bracket(Apar, Vipar, bm_mag); //NOTE(malamast): Added by malamast
         }
       }
 
