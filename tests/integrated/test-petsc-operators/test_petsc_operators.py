@@ -1,5 +1,3 @@
-import pytest
-import venv
 import subprocess
 import sys
 import numpy as np
@@ -101,37 +99,11 @@ def analyse_path(path, plot=False, tol=1e-12):
         fig.savefig("diffusion.png")
 
 
-@pytest.fixture(scope="session")
-def temporary_venv(tmp_path_factory):
-    # Create a venv
-    venv_dir = tmp_path_factory.mktemp("venv")
-    venv.create(venv_dir, with_pip=True, symlinks=True)
-
-    # Determine the correct python path (platform dependent)
-    python_exe = str(
-        venv_dir / ("Scripts" if sys.platform == "win32" else "bin") / "python"
-    )
-
-    # Clone and install latest version of Zoidberg
-    zoidberg_dir = tmp_path_factory.mktemp("zoidberg")
-    subprocess.check_call(
-        [
-            "git",
-            "clone",
-            "https://github.com/boutproject/zoidberg.git",
-            str(zoidberg_dir),
-        ]
-    )
-    subprocess.check_call([python_exe, "-m", "pip", "install", str(zoidberg_dir)])
-
-    return python_exe
-
-
-def test_petsc_operators(temporary_venv):
+def test_petsc_operators():
     grid_path = "grid.fci.nc"
 
     # Generate grid file and store in temporary path
-    subprocess.check_call([temporary_venv, "rotating-ellipse.py", "-o", grid_path])
+    subprocess.check_call([sys.executable, "rotating-ellipse.py", "-o", grid_path])
 
     # Build executable
     build_and_log("test_petsc_operators")
