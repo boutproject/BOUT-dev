@@ -42,6 +42,7 @@
 #include "bout/boundary_region_iter.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/field_data.hxx"

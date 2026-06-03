@@ -9,6 +9,7 @@
 #include "bout/bout_types.hxx"
 #include "bout/dcomplex.hxx"
 #include "bout/field3d.hxx"
+#include "bout/field_data.hxx"
 #include "bout/options.hxx"
 #include "bout/unused.hxx"
 

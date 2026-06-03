@@ -4,6 +4,7 @@
  * given the contravariant metric tensor terms
  **************************************************************************/
 
+#include "bout/field3d.hxx"
 #include "bout/field_data.hxx"
 #include <bout/assert.hxx>
 #include <bout/build_defines.hxx>
