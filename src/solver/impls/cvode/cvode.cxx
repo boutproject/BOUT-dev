@@ -521,7 +521,7 @@ int CvodeSolver::init() {
 
       const int band_width_default = std::accumulate(
           begin(f3d), end(f3d), 0, [](int a, const VarStr<Field3D>& fvar) {
-            Mesh* localmesh = fvar.var->getMesh();
+            const Mesh* localmesh = fvar.var->getMesh();
             return a + localmesh->xend - localmesh->xstart + 3;
           });
 
@@ -916,7 +916,7 @@ PetscErrorCode CvodeSolver::petscFormFunction(void* UNUSED(dummy), Vec x, Vec f,
   }
 
   for (PetscInt i = 0; i < length; ++i) {
-    fdata[i] = xdata[i] - s->petsc_gamma * s->petsc_rhs_tmp[i];
+    fdata[i] = xdata[i] - (s->petsc_gamma * s->petsc_rhs_tmp[i]);
   }
 
   PetscCall(VecRestoreArrayRead(x, &xdata));
