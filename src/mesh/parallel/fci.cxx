@@ -69,7 +69,7 @@ using bout::boundary::BoundaryRegionFCI;
 
 namespace {
 // Get a unique name for a field based on the sign/magnitude of the offset
-std::string parallel_slice_field_name(std::string field, int offset) {
+std::string parallel_slice_field_name(const std::string& field, int offset) {
   const std::string direction = (offset > 0) ? "forward" : "backward";
   // We only have a suffix for parallel slices beyond the first
   // This is for backwards compatibility
