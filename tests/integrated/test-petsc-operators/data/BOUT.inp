@@ -1,5 +1,5 @@
 [mesh]
-file = "rotating-ellipse-20x8x20-s5.fci.nc"
+file = "grid.fci.nc"
 
 [mesh:paralleltransform]
 type = fci

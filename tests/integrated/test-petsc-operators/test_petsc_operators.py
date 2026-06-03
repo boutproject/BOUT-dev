@@ -110,7 +110,7 @@ def test_petsc_operators():
     nproc = 1
 
     _, out = launch_safe(
-        f"./test_petsc_operators -d data mesh:file={grid_path}",
+        "./test_petsc_operators",
         nproc=nproc,
         pipe=True,
     )
