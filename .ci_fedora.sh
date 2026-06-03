@@ -48,7 +48,7 @@ test . != ".$1" && mpi="$1" || mpi=openmpi
     cd
     cd BOUT-dev
     python3 -m ensurepip
-    python3 -m pip install git+https://github.com/boutproject/zoidberg@better-metric
+    python3 -m pip install -r requirements.txt
     echo "starting configure"
     time cmake -S . -B build -DBOUT_USE_PETSC=ON \
 	 -DBOUT_UPDATE_GIT_SUBMODULE=OFF \
