@@ -420,9 +420,14 @@ int CvodeSolver::init() {
       }
     }
 
-    const auto prectype = (selected_precon == CvodePreconMethod::none)
-                              ? SUN_PREC_NONE
-                              : (rightprec ? SUN_PREC_RIGHT : SUN_PREC_LEFT);
+    auto prectype = SUN_PREC_NONE;
+    if (selected_precon != CvodePreconMethod::none) {
+      if (rightprec) {
+        prectype = SUN_PREC_RIGHT;
+      } else {
+        prectype = SUN_PREC_LEFT;
+      }
+    }
 
     switch ((*options)["linear_solver"]
                 .doc("Set linear solver type. Default is gmres.")
