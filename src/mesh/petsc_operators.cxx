@@ -74,7 +74,7 @@ void PetscIndexMapping::buildPermutation(PetscInt nlocal, PetscInt nglobal,
 
 Region<Ind3D> PetscCellMapping::create_region(const Field3D& cell_number) {
   Region<Ind3D>::RegionIndices indices;
-  BOUT_FOR(i, cell_number.getRegion("RGN_NOBNDRY")) {
+  BOUT_FOR_SERIAL(i, cell_number.getRegion("RGN_NOBNDRY")) {
     if (cell_number[i] >= 0) {
       indices.push_back(i);
     }
@@ -85,7 +85,7 @@ Region<Ind3D> PetscCellMapping::create_region(const Field3D& cell_number) {
 Region<Ind3D> PetscCellMapping::create_region_xin(const Field3D& cell_number) {
   Region<Ind3D>::RegionIndices indices;
   const auto& region = cell_number.getRegion("RGN_INNER_X");
-  BOUT_FOR(i, region) {
+  BOUT_FOR_SERIAL(i, region) {
     if (cell_number[i] >= 0) {
       indices.push_back(i);
     }
@@ -96,7 +96,7 @@ Region<Ind3D> PetscCellMapping::create_region_xin(const Field3D& cell_number) {
 Region<Ind3D> PetscCellMapping::create_region_xout(const Field3D& cell_number) {
   Region<Ind3D>::RegionIndices indices;
   const auto& region = cell_number.getRegion("RGN_OUTER_X");
-  BOUT_FOR(i, region) {
+  BOUT_FOR_SERIAL(i, region) {
     if (cell_number[i] >= 0) {
       indices.push_back(i);
     }
