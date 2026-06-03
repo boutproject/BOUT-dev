@@ -24,6 +24,8 @@
  **************************************************************************/
 
 #include "bout/build_defines.hxx"
+#include "bout/field3d.hxx"
+#include "bout/petsclib.hxx"
 
 #if BOUT_HAS_PETSC
 
