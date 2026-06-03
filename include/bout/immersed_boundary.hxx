@@ -26,6 +26,10 @@ public:
   bool IsInside(const Ind3D& ind) const;
   bool IsGhost(const Ind3D& ind) const;
   bool IsCutCell(const Ind3D& ind) const;
+  float xFaceFrac(const Ind3D& ind) const;
+  float zFaceFrac(const Ind3D& ind) const;
+  int xFaceGradOffset(const Ind3D& ind) const;
+  int zFaceGradOffset(const Ind3D& ind) const;
 
   void FieldSetup(Field3D& f);
   void FloorField(Field3D& f, const float val = 0.0) const;
@@ -44,6 +48,11 @@ private:
   /// Coordinate fields.
   Field3D R3;
   Field3D Z3;
+  //Partial face info.
+  Field3D x_face_frac;
+  Field3D z_face_frac;
+  Field3D fx_grad_offset;
+  Field3D fz_grad_offset;
 
   /// Ghost cell data arrays.
   int num_ghosts = 0;

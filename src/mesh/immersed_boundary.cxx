@@ -34,6 +34,10 @@ ImmersedBoundary::ImmersedBoundary() {
   ASSERT0(mesh->get(s2,                  "s2") == 0);
   ASSERT0(mesh->get(bweights,      "bweights") == 0);
   ASSERT0(mesh->get(bbase_inds,   "base_inds") == 0);
+  ASSERT0(mesh->get(x_face_frac, "face_fac_x") == 0);
+  ASSERT0(mesh->get(z_face_frac, "face_fac_z") == 0);
+  ASSERT0(mesh->get(fx_grad_offset, "fx_grad_offset") == 0);
+  ASSERT0(mesh->get(fz_grad_offset, "fz_grad_offset") == 0);
 
   if (num_weights <= 0 or num_ghosts <= 0 or num_bounds <= 0) {
     throw BoutException("Invalid number of ghost cells or weights or cut cells.");
@@ -132,6 +136,22 @@ bool ImmersedBoundary::IsInside(const Ind3D& ind) const {
 
 bool ImmersedBoundary::IsCutCell(const Ind3D& ind) const {
   return bound_ids[ind] >= 0;
+}
+
+float ImmersedBoundary::xFaceFrac(const Ind3D& ind) const {
+  return x_face_frac[ind];
+}
+
+float ImmersedBoundary::zFaceFrac(const Ind3D& ind) const {
+  return z_face_frac[ind];
+}
+
+int ImmersedBoundary::xFaceGradOffset(const Ind3D& ind) const {
+  return static_cast<int>(std::lround(fx_grad_offset[ind]));
+}
+
+int ImmersedBoundary::zFaceGradOffset(const Ind3D& ind) const {
+  return static_cast<int>(std::lround(fz_grad_offset[ind]));
 }
 
 bool ImmersedBoundary::IsBadInterpForMPI(const int global_indx) const {
