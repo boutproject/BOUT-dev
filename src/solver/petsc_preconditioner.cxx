@@ -5,6 +5,7 @@
 #include "bout/petsc_preconditioner.hxx"
 
 #include "bout/assert.hxx"
+#include "bout/boutcomm.hxx"
 #include "bout/field3d.hxx"
 #include "bout/globals.hxx"
 #include "bout/mesh.hxx"
