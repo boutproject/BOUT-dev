@@ -25,6 +25,7 @@
  **************************************************************************/
 
 #include "bout/build_defines.hxx"
+#include <cstddef>
 
 #include "cvode.hxx"
 

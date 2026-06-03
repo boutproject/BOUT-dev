@@ -31,6 +31,7 @@
 #include "bout/bout_enum_class.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/solver.hxx"
+#include <memory>
 
 #if not BOUT_HAS_CVODE
 
@@ -41,7 +42,6 @@ RegisterUnavailableSolver
 
 #else
 
-#include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/region.hxx"
 #include "bout/sundials_backports.hxx"
