@@ -1,7 +1,6 @@
 import subprocess
 import sys
 import numpy as np
-import warnings
 
 from boututils.run_wrapper import build_and_log, launch_safe
 from boutdata import collect
@@ -110,14 +109,10 @@ def test_petsc_operators():
 
     nproc = 1
 
-    try:
-        s, out = launch_safe(
-            f"./test_petsc_operators -d data mesh:file={grid_path}",
-            nproc=nproc,
-            pipe=True,
-        )
-    except Exception as e:
-        # May throw after run
-        warnings.warn(f"Caught exception: {e}", RuntimeWarning)
+    _, out = launch_safe(
+        f"./test_petsc_operators -d data mesh:file={grid_path}",
+        nproc=nproc,
+        pipe=True,
+    )
 
     analyse_path("data")
