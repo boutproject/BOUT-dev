@@ -4,18 +4,25 @@
 
 #include "snes.hxx"
 
+#include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/field.hxx>
+#include <bout/field3d.hxx>
 #include <bout/globals.hxx>
 #include <bout/output.hxx>
 #include <bout/output_bout_types.hxx>
 #include <bout/petsc_interface.hxx>
+#include <bout/solver.hxx>
 #include <bout/utils.hxx>
+#include <bout/unused.hxx>
 
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <set>
+#include <utility>
 #include <vector>
 
 #include "petscerror.h"
@@ -306,7 +313,7 @@ PetscErrorCode SNESSolver::FDJinitialise() {
         }
         // 3D fields
         for (int z = mesh->zstart; z <= mesh->zend; z++) {
-          int ind = ROUND(index(x, y, z));
+          const int ind = ROUND(index(x, y, z));
 
           for (int i = 0; i < n3d; i++) {
             PetscInt row = ind + i;
@@ -342,7 +349,7 @@ PetscErrorCode SNESSolver::FDJinitialise() {
                 // 3D fields on this cell
                 for (int j = 0; j < n3d; j++) {
                   const PetscInt col = ind2 + j;
-                  PetscErrorCode ierr =
+                  const PetscErrorCode ierr =
                       MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
 
                   if (ierr != PETSC_SUCCESS) {
@@ -536,6 +543,9 @@ SNESSolver::SNESSolver(Options* opts)
       pseudo_alpha((*options)["pseudo_alpha"]
                        .doc("Sets timestep using dt = alpha / residual")
                        .withDefault(100. * atol * timestep)),
+      pseudo_alpha_minimum(
+          (*options)["pseudo_alpha_minimum"].doc("Minimum value of pseudo_alpha")
+          .withDefault(0.1 * pseudo_alpha)),
       pseudo_growth_factor((*options)["pseudo_growth_factor"]
                                .doc("PTC growth factor on success")
                                .withDefault(1.1)),
@@ -884,7 +894,7 @@ int SNESSolver::run() {
     int saved_jacobian_lag = 0;
     int loop_count = 0;
 
-    BoutReal start_global_residual = global_residual;
+    const BoutReal start_global_residual = global_residual;
     do {
       if ((output_trigger == BoutSnesOutput::fixed_time_interval && (simtime >= target))
           || (output_trigger == BoutSnesOutput::residual_ratio
@@ -1181,8 +1191,10 @@ int SNESSolver::run() {
 
       if (equation_form == BoutSnesEquationForm::pseudo_transient) {
         // Adjust pseudo_alpha to globally scale timesteps
-        pseudo_alpha = updateGlobalTimestep(pseudo_alpha, nl_its, recent_failure_rate,
-                                            max_timestep * atol * 100);
+        pseudo_alpha = std::max({
+            updateGlobalTimestep(pseudo_alpha, nl_its, recent_failure_rate,
+                                 max_timestep * atol * 100),
+            pseudo_alpha_minimum});
 
         // Adjust local timesteps
         PetscCall(updatePseudoTimestepping());
@@ -1216,7 +1228,7 @@ int SNESSolver::run() {
 
       // Note: If simtime = target then alpha = 0
       //       and output_x = snes_x
-      BoutReal alpha = (simtime - target) / dt;
+      const BoutReal alpha = (simtime - target) / dt;
 
       // output_x <- alpha * x0 + (1 - alpha) * output_x
       VecAXPBY(output_x, alpha, 1. - alpha, x0);
@@ -1437,7 +1449,7 @@ PetscErrorCode SNESSolver::updatePseudoTimestepping() {
     }
     if (count > 0) {
       // Adjust timestep for these quantities
-      BoutReal new_timestep = updatePseudoTimestep(
+      const BoutReal new_timestep = updatePseudoTimestep(
           dt_data[idx], local_residual_2d_prev[i2d], local_residual_2d[i2d]);
       for (int i = 0; i != count; ++i) {
         dt_data[idx++] = new_timestep;
@@ -1529,9 +1541,10 @@ PetscErrorCode SNESSolver::updatePseudoTimestepping() {
 /// rapid changes in timestep.
 BoutReal SNESSolver::updatePseudoTimestep_inverse_residual(BoutReal previous_timestep,
                                                            BoutReal current_residual) {
-  return std::min(
-      {std::max({pseudo_alpha / current_residual, previous_timestep / 1.5, dt_min_reset}),
-       1.5 * previous_timestep, max_timestep});
+  return std::max({
+      std::min({std::max({pseudo_alpha / current_residual, previous_timestep / 1.5}),
+                1.5 * previous_timestep, max_timestep}),
+      dt_min_reset});
 }
 
 // Strategy based on history of residuals
@@ -1552,7 +1565,8 @@ BoutReal SNESSolver::updatePseudoTimestep_history_based(BoutReal previous_timest
     if (reduction_ratio < 0.8) {
       return std::min(0.5 * (pseudo_growth_factor + 1.) * previous_timestep,
                       max_timestep);
-    } else if (reduction_ratio > 1.2) {
+    }
+    if (reduction_ratio > 1.2) {
       return std::max(0.5 * (pseudo_reduction_factor + 1) * previous_timestep,
                       dt_min_reset);
     }
@@ -1780,10 +1794,8 @@ PetscErrorCode SNESSolver::scaleJacobian(Mat Jac_new) {
     // Calculate a norm of this row of the Jacobian
     PetscScalar norm = 0.0;
     for (int col = 0; col < ncols; col++) {
-      PetscScalar absval = std::abs(vals[col]);
-      if (absval > norm) {
-        norm = absval;
-      }
+      const PetscScalar absval = std::abs(vals[col]);
+      norm = std::max({norm, absval});
       // Can we identify small elements and remove them?
       // so we don't need to calculate them next time
     }

@@ -1,8 +1,9 @@
-
 #include <bout/field_factory.hxx>
 #include <bout/invert/laplacexz.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/physicsmodel.hxx>
+#include <bout/tokamak_coordinates.hxx>
+#include <bout/utils.hxx>
 
 /// Fundamental constants
 const BoutReal PI = 3.14159265;
@@ -129,12 +130,12 @@ protected:
   }
 
   /*!
-   * Preconditioner. This inverts the operator (1 - gamma*J) 
+   * Preconditioner. This inverts the operator (1 - gamma*J)
    * where J is the Jacobian of the system
    *
    * The system state at time t is stored as usual
    * whilst the vector to be inverted is in ddt(f)
-   * 
+   *
    * Inputs
    * ------
    *
@@ -146,7 +147,7 @@ protected:
    *
    * Output
    * ------
-   * 
+   *
    * ddt(f) = Result of the inversion
    */
   int precon(BoutReal, BoutReal, BoutReal) {
@@ -159,65 +160,14 @@ protected:
   }
 
   void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
-    // Load metric coefficients from the mesh
-    Field2D Rxy, Bpxy, Btxy, hthe, sinty;
-    GRID_LOAD5(Rxy, Bpxy, Btxy, hthe, sinty); // Load metrics
-
-    // Get the coordinates object
-    Coordinates* coord = mesh->getCoordinates();
-
-    // Checking for dpsi and qinty used in BOUT grids
-    Field2D dx;
-    if (!mesh->get(dx, "dpsi")) {
-      output << "\tUsing dpsi as the x grid spacing\n";
-      coord->dx = dx; // Only use dpsi if found
-    } else {
-      // dx will have been read already from the grid
-      output << "\tUsing dx as the x grid spacing\n";
-    }
-
-    Rxy /= Lnorm;
-    hthe /= Lnorm;
-    sinty *= SQ(Lnorm) * Bnorm;
-    coord->dx /= SQ(Lnorm) * Bnorm;
-
-    Bpxy /= Bnorm;
-    Btxy /= Bnorm;
-    coord->Bxy /= Bnorm;
-
     // Check type of parallel transform
-    std::string ptstr =
+    const auto ptstr =
         Options::root()["mesh"]["paralleltransform"]["type"].withDefault("identity");
 
-    if (lowercase(ptstr) == "shifted") {
-      // Using shifted metric method
-      sinty = 0.0; // I disappears from metric
-    }
-
-    BoutReal sbp = 1.0; // Sign of Bp
-    if (min(Bpxy, true) < 0.0) {
-      sbp = -1.0;
-    }
-
-    // Calculate metric components
-
-    coord->g11 = SQ(Rxy * Bpxy);
-    coord->g22 = 1.0 / SQ(hthe);
-    coord->g33 = SQ(sinty) * coord->g11 + SQ(coord->Bxy) / coord->g11;
-    coord->g12 = 0.0;
-    coord->g13 = -sinty * coord->g11;
-    coord->g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
-
-    coord->J = hthe / Bpxy;
-
-    coord->g_11 = 1.0 / coord->g11 + SQ(sinty * Rxy);
-    coord->g_22 = SQ(coord->Bxy * hthe / Bpxy);
-    coord->g_33 = Rxy * Rxy;
-    coord->g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
-    coord->g_13 = sinty * Rxy * Rxy;
-    coord->g_23 = sbp * Btxy * hthe * Rxy / Bpxy;
-
-    coord->geometry();
+    // I disappears from metric
+    const bool noshear = (lowercase(ptstr) == "shifted");
+    // Read, normalise, and set coordinates
+    bout::set_tokamak_coordinates(*mesh, Lnorm, Bnorm, noshear);
   }
 };
 

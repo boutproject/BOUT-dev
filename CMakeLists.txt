@@ -205,6 +205,7 @@ set(BOUT_SOURCES
     ./include/bout/sys/uuid.h
     ./include/bout/sys/variant.hxx
     ./include/bout/template_combinations.hxx
+    ./include/bout/tokamak_coordinates.hxx
     ./include/bout/traits.hxx
     ./include/bout/unused.hxx
     ./include/bout/utils.hxx
@@ -311,6 +312,7 @@ set(BOUT_SOURCES
     ./src/mesh/parallel_boundary_region.cxx
     ./src/mesh/petsc_operators.cxx
     ./src/mesh/surfaceiter.cxx
+    ./src/mesh/tokamak_coordinates.cxx
     ./src/physics/gyro_average.cxx
     ./src/physics/physicsmodel.cxx
     ./src/physics/smoothing.cxx
