@@ -68,10 +68,10 @@ PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
 
   PetscFunctionReturn(s->precon(x, y));
 }
-} // namespace
 
-static PetscErrorCode ComputeJacobianScaledColor(SNES snes, Vec x1, Mat Jac, Mat Jac_new,
-                                                 void* ctx);
+PetscErrorCode ComputeJacobianScaledColor(SNES snes, Vec x1, Mat Jac, Mat Jac_new,
+                                          void* ctx);
+} // namespace
 
 PetscErrorCode SNESSolver::FDJinitialise() {
   if (use_coloring) {
@@ -1548,6 +1548,7 @@ PetscErrorCode SNESSolver::scaleJacobian(Mat Jac_new) {
   return PETSC_SUCCESS;
 }
 
+namespace {
 ///
 /// Input Parameters:
 ///   snes - nonlinear solver object
@@ -1558,8 +1559,8 @@ PetscErrorCode SNESSolver::scaleJacobian(Mat Jac_new) {
 ///   Jac - Jacobian matrix (not altered in this routine)
 ///   Jac_new - newly computed Jacobian matrix to use with preconditioner (generally the same as
 ///   Jac)
-static PetscErrorCode ComputeJacobianScaledColor(SNES snes, Vec x1, Mat Jac, Mat Jac_new,
-                                                 void* ctx) {
+PetscErrorCode ComputeJacobianScaledColor(SNES snes, Vec x1, Mat Jac, Mat Jac_new,
+                                          void* ctx) {
   PetscErrorCode err = SNESComputeJacobianDefaultColor(snes, x1, Jac, Jac_new, ctx);
   CHKERRQ(err);
 
@@ -1576,6 +1577,7 @@ static PetscErrorCode ComputeJacobianScaledColor(SNES snes, Vec x1, Mat Jac, Mat
   // Call the SNESSolver function
   return fctx->scaleJacobian(Jac_new);
 }
+} // namespace
 
 BoutReal SNESSolver::pid(BoutReal timestep, int nl_its, BoutReal max_dt) {
 
