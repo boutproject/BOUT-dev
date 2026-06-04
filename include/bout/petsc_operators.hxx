@@ -1,3 +1,8 @@
+#pragma once
+
+#ifndef BOUT_PETSC_OPERATORS
+#define BOUT_PETSC_OPERATORS
+
 #include "bout/build_defines.hxx"
 
 #if BOUT_HAS_PETSC
@@ -1046,3 +1051,5 @@ PetscCellOperator makeNeumannOperator(const PetscCellMappingPtr& mapping,
 #warning PETSc not available. No PetscOperators.
 
 #endif
+
+#endif // BOUT_PETSC_OPERATORS
