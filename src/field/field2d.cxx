@@ -44,7 +44,7 @@
 #include <optional>
 
 Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in,
-                 std::optional<size_t> UNUSED(regionID))
+                 [[maybe_unused]] std::optional<size_t> regionID)
     : Field(localmesh, location_in, directions_in) {
 
   if (fieldmesh) {
