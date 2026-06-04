@@ -4,7 +4,7 @@
  * Class for 3D X-Y-Z scalar fields
  *
  **************************************************************************
- * Copyright 2010 - 2025 BOUT++ developers
+ * Copyright 2010 - 2026 BOUT++ developers
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -280,7 +280,7 @@ Field3D& Field3D::operator=(const Field3D& rhs) {
   return *this;
 }
 
-Field3D& Field3D::operator=(Field3D&& rhs) {
+Field3D& Field3D::operator=(Field3D&& rhs) noexcept {
   track(rhs, "operator=");
 
   // Move parallel slices or delete existing ones.

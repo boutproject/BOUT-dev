@@ -1,7 +1,7 @@
 /**************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -33,6 +33,7 @@ class Field3D;
 #include "bout/bout_types.hxx"
 #include "bout/field.hxx"
 #include "bout/field2d.hxx"
+#include "bout/field_data.hxx"
 #include "bout/fieldperp.hxx"
 #include "bout/region.hxx"
 #include "bout/traits.hxx"
@@ -40,6 +41,7 @@ class Field3D;
 #include <functional>
 #include <memory>
 #include <optional>
+#include <ostream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -389,7 +391,7 @@ public:
           jz, nx, ny, nz);
     }
 #endif
-    return data[(jx * ny + jy) * nz + jz];
+    return data[(((jx * ny) + jy) * nz) + jz];
   }
 
   inline const BoutReal& operator()(int jx, int jy, int jz) const {
@@ -404,7 +406,7 @@ public:
           jz, nx, ny, nz);
     }
 #endif
-    return data[(jx * ny + jy) * nz + jz];
+    return data[(((jx * ny) + jy) * nz) + jz];
   }
 
   /*!
@@ -448,7 +450,7 @@ public:
   /// Assignment operators
   ///@{
   Field3D& operator=(const Field3D& rhs);
-  Field3D& operator=(Field3D&& rhs);
+  Field3D& operator=(Field3D&& rhs) noexcept;
   Field3D& operator=(const Field2D& rhs);
   /// return void, as only part initialised
   void operator=(const FieldPerp& rhs);
@@ -544,7 +546,7 @@ public:
   void disallowCalcParallelSlices() { _allowCalcParallelSlices = false; };
 
   inline Field3DParallel asField3DParallel();
-  inline const Field3DParallel asField3DParallel() const;
+  inline Field3DParallel asField3DParallel() const;
 
 protected:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
@@ -695,7 +697,7 @@ lowPass(const Field3D& var, int zmax, int keep_zonal, REGION rgn = RGN_ALL) {
 /// @param[in] var   Variable to apply filter to
 /// @param[in] zmax  Maximum mode in Z
 /// @param[in] rgn   The region to calculate the result over
-inline Field3D lowPass(const Field3D& var, int zmax, const std::string rgn = "RGN_ALL") {
+inline Field3D lowPass(const Field3D& var, int zmax, const std::string& rgn = "RGN_ALL") {
   return lowPass(var, zmax, true, rgn);
 }
 
@@ -838,9 +840,7 @@ Field3DParallel Field3D::asField3DParallel() {
   }
   return Field3DParallel(*this, true);
 }
-const Field3DParallel Field3D::asField3DParallel() const {
-  return Field3DParallel(*this);
-}
+Field3DParallel Field3D::asField3DParallel() const { return Field3DParallel(*this); }
 
 inline Field3D operator+(const Field2D& lhs, const Field3DParallel& rhs) {
   return lhs + rhs.asField3D();
