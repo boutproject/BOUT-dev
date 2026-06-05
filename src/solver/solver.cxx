@@ -1028,179 +1028,6 @@ std::unique_ptr<Solver> Solver::create(const SolverType& type, Options* opts) {
   return SolverFactory::getInstance().create(type, opts);
 }
 
-/**************************************************************************
- * Looping over variables
- *
- * NOTE: This part is very inefficient, and should be replaced ASAP
- * Is the interleaving of variables needed or helpful to the solver?
- **************************************************************************/
-
-/// Perform an operation at a given Ind2D (jx,jy) location, moving data between BOUT++ and CVODE
-void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
-                          bool bndry) {
-  // Use global mesh: FIX THIS!
-  Mesh* mesh = bout::globals::mesh;
-
-  int nz = mesh->LocalNz;
-
-  switch (op) {
-  case SOLVER_VAR_OP::LOAD_VARS: {
-    /// Load variables from IDA into BOUT++
-
-    // Loop over 2D variables
-    for (const auto& f : f2d) {
-      if (bndry && !f.evolve_bndry) {
-        continue;
-      }
-      (*f.var)[i2d] = udata[p];
-      p++;
-    }
-
-    for (int jz = 0; jz < nz; jz++) {
-
-      // Loop over 3D variables
-      for (const auto& f : f3d) {
-        if (bndry && !f.evolve_bndry) {
-          continue;
-        }
-        (*f.var)[f.var->getMesh()->ind2Dto3D(i2d, jz)] = udata[p];
-        p++;
-      }
-    }
-    break;
-  }
-  case SOLVER_VAR_OP::LOAD_DERIVS: {
-    /// Load derivatives from IDA into BOUT++
-    /// Used for preconditioner
-
-    // Loop over 2D variables
-    for (const auto& f : f2d) {
-      if (bndry && !f.evolve_bndry) {
-        continue;
-      }
-      (*f.F_var)[i2d] = udata[p];
-      p++;
-    }
-
-    for (int jz = 0; jz < nz; jz++) {
-
-      // Loop over 3D variables
-      for (const auto& f : f3d) {
-        if (bndry && !f.evolve_bndry) {
-          continue;
-        }
-        (*f.F_var)[f.F_var->getMesh()->ind2Dto3D(i2d, jz)] = udata[p];
-        p++;
-      }
-    }
-
-    break;
-  }
-  case SOLVER_VAR_OP::SET_ID: {
-    /// Set the type of equation (Differential or Algebraic)
-
-    // Loop over 2D variables
-    for (const auto& f : f2d) {
-      if (bndry && !f.evolve_bndry) {
-        continue;
-      }
-      if (f.constraint) {
-        udata[p] = 0;
-      } else {
-        udata[p] = 1;
-      }
-      p++;
-    }
-
-    for (int jz = 0; jz < nz; jz++) {
-
-      // Loop over 3D variables
-      for (const auto& f : f3d) {
-        if (bndry && !f.evolve_bndry) {
-          continue;
-        }
-        if (f.constraint) {
-          udata[p] = 0;
-        } else {
-          udata[p] = 1;
-        }
-        p++;
-      }
-    }
-
-    break;
-  }
-  case SOLVER_VAR_OP::SAVE_VARS: {
-    /// Save variables from BOUT++ into IDA (only used at start of simulation)
-
-    // Loop over 2D variables
-    for (const auto& f : f2d) {
-      if (bndry && !f.evolve_bndry) {
-        continue;
-      }
-      udata[p] = (*f.var)[i2d];
-      p++;
-    }
-
-    for (int jz = 0; jz < nz; jz++) {
-
-      // Loop over 3D variables
-      for (const auto& f : f3d) {
-        if (bndry && !f.evolve_bndry) {
-          continue;
-        }
-        udata[p] = (*f.var)[f.var->getMesh()->ind2Dto3D(i2d, jz)];
-        p++;
-      }
-    }
-    break;
-  }
-    /// Save time-derivatives from BOUT++ into CVODE (returning RHS result)
-  case SOLVER_VAR_OP::SAVE_DERIVS: {
-
-    // Loop over 2D variables
-    for (const auto& f : f2d) {
-      if (bndry && !f.evolve_bndry) {
-        continue;
-      }
-      udata[p] = (*f.F_var)[i2d];
-      p++;
-    }
-
-    for (int jz = 0; jz < nz; jz++) {
-
-      // Loop over 3D variables
-      for (const auto& f : f3d) {
-        if (bndry && !f.evolve_bndry) {
-          continue;
-        }
-        udata[p] = (*f.F_var)[f.F_var->getMesh()->ind2Dto3D(i2d, jz)];
-        p++;
-      }
-    }
-    break;
-  }
-  }
-}
-
-/// Loop over variables and domain. Used for all data operations for consistency
-void Solver::loop_vars(BoutReal* udata, SOLVER_VAR_OP op) {
-  // Use global mesh: FIX THIS!
-  Mesh* mesh = bout::globals::mesh;
-
-  int p = 0; // Counter for location in udata array
-
-  // All boundaries
-  for (const auto& i2d : mesh->getRegion2D("RGN_BNDRY")) {
-    loop_vars_op(i2d, udata, p, op, true);
-  }
-
-  // Bulk of points
-  for (const auto& i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
-    loop_vars_op(i2d, udata, p, op, false);
-  }
-}
-
 void Solver::load_vars(BoutReal* udata) {
   // Make sure data is allocated
   for (const auto& f : f2d) {
@@ -1211,7 +1038,7 @@ void Solver::load_vars(BoutReal* udata) {
     f.var->setLocation(f.location);
   }
 
-  loop_vars(udata, SOLVER_VAR_OP::LOAD_VARS);
+  loop_vars(VarRange<FieldCategories::VARS, Field2D>(f2d), VarRange<FieldCategories::VARS, Field3D>(f3d), udata, SOLVER_VAR_OP::LOAD);
 
   // Mark each vector as either co- or contra-variant
 
@@ -1233,7 +1060,7 @@ void Solver::load_derivs(BoutReal* udata) {
     f.F_var->setLocation(f.location);
   }
 
-  loop_vars(udata, SOLVER_VAR_OP::LOAD_DERIVS);
+  loop_vars(VarRange<FieldCategories::DERIVS, Field2D>(f2d), VarRange<FieldCategories::DERIVS, Field3D>(f3d), udata, SOLVER_VAR_OP::LOAD);
 
   // Mark each vector as either co- or contra-variant
 
@@ -1275,7 +1102,7 @@ void Solver::save_vars(BoutReal* udata) {
     }
   }
 
-  loop_vars(udata, SOLVER_VAR_OP::SAVE_VARS);
+  loop_vars(VarRange<FieldCategories::VARS, Field2D>(f2d), VarRange<FieldCategories::VARS, Field3D>(f3d), udata, SOLVER_VAR_OP::SAVE);
 }
 
 void Solver::save_derivs(BoutReal* dudata) {
@@ -1305,10 +1132,10 @@ void Solver::save_derivs(BoutReal* dudata) {
     }
   }
 
-  loop_vars(dudata, SOLVER_VAR_OP::SAVE_DERIVS);
+  loop_vars(VarRange<FieldCategories::DERIVS, Field2D>(f2d), VarRange<FieldCategories::DERIVS, Field3D>(f3d), dudata, SOLVER_VAR_OP::SAVE);
 }
 
-void Solver::set_id(BoutReal* udata) { loop_vars(udata, SOLVER_VAR_OP::SET_ID); }
+void Solver::set_id(BoutReal* udata) { loop_vars(VarRange<FieldCategories::VARS, Field2D>(f2d), VarRange<FieldCategories::VARS, Field3D>(f3d), udata, SOLVER_VAR_OP::SET_ID); }
 
 Field3D Solver::globalIndex(int localStart) {
   // Use global mesh: FIX THIS!
