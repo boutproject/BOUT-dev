@@ -1,6 +1,8 @@
+#include "bout/assert.hxx"
 #include "bout/parallel_boundary_op.hxx"
 #include "bout/parallel_boundary_region.hxx"
 #include <bout/boundary_factory.hxx>
+#include <bout/boundary_region_iter.hxx>
 #include <bout/boundary_standard.hxx>
 #include <bout/globals.hxx>
 #include <bout/options.hxx>
@@ -105,7 +107,8 @@ BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* 
       // Clone the boundary operation, passing the region to operate over,
       // an empty args list and empty keyword map
       list<string> args;
-      return pop->clone(dynamic_cast<BoundaryRegionPar*>(region), args, {});
+      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionFCI*>(region), args,
+                        {});
     } else {
       // Perpendicular boundary
       BoundaryOp* op = findBoundaryOp(trim(name));
@@ -116,7 +119,7 @@ BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* 
       // Clone the boundary operation, passing the region to operate over,
       // an empty args list and empty keyword map
       list<string> args;
-      return op->clone(dynamic_cast<BoundaryRegion*>(region), args, {});
+      return op->clone(region->getLegacyPointer(), args, {});
     }
   }
   // Contains a bracket. Find the last bracket and remove
@@ -192,19 +195,28 @@ BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* 
     return mod->cloneMod(op, arglist);
   }
 
-  if (region->isParallel) {
-    // Parallel boundary
-    BoundaryOpPar* pop = findBoundaryOpPar(trim(func));
-    if (pop != nullptr) {
-      // An operation with arguments
-      return pop->clone(dynamic_cast<BoundaryRegionPar*>(region), arglist, keywords);
+  BoundaryOpPar* pop = findBoundaryOpPar(trim(func));
+  if (pop != nullptr) {
+    // An operation with arguments
+    if (region->isParallel) {
+      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionFCI*>(region), arglist,
+                        keywords);
     }
-  } else {
-    // Perpendicular boundary
+    if (region->isX) {
+      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionX*>(region), arglist,
+                        keywords);
+    }
+    if (region->isY) {
+      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionY*>(region), arglist,
+                        keywords);
+    }
+  }
+  if (!region->isParallel) {
+    // Legacy perpendicular boundary
     BoundaryOp* op = findBoundaryOp(trim(func));
     if (op != nullptr) {
       // An operation with arguments
-      return op->clone(dynamic_cast<BoundaryRegion*>(region), arglist, keywords);
+      return op->clone(region->getLegacyPointer(), arglist, keywords);
     }
   }
 
@@ -231,6 +243,7 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string& varname,
 
   std::array<string, 5> sides;
   sides[0] = region->label;
+  ASSERT2(region->location != BNDRY_INVALID)
   switch (region->location) {
   case BNDRY_XIN: {
     sides[1] = "xin";

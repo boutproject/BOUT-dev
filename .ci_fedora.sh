@@ -21,10 +21,10 @@ then
 	cmd="sudo docker"
     fi
     test . != ".$2" && mpi="$2" || mpi=openmpi
-    time $cmd pull ghcr.io/dschwoerer/bout-container-base:ci-fedora
+    time $cmd pull ghcr.io/boutproject/bout-container-base:main
     time $cmd create --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
 	 --shm-size 1G \
-         --name mobydick ghcr.io/dschwoerer/bout-container-base:ci-fedora \
+         --name mobydick ghcr.io/boutproject/bout-container-base:main \
 	     /tmp/BOUT-dev/.ci_fedora.sh $mpi
     time $cmd cp ${TRAVIS_BUILD_DIR:-$(pwd)} mobydick:/tmp/BOUT-dev
     time $cmd start -a mobydick
@@ -53,12 +53,15 @@ test . != ".$1" && mpi="$1" || mpi=openmpi
     export OMP_NUM_THREADS=1
     cd
     cd BOUT-dev
+    python3 -m ensurepip
+    python3 -m pip install -r requirements.txt
     echo "starting configure"
     time cmake -S . -B build -DBOUT_USE_PETSC=ON \
 	 -DBOUT_UPDATE_GIT_SUBMODULE=OFF \
 	 -DBOUT_USE_SYSTEM_FMT=ON \
 	 -DBOUT_USE_SYSTEM_MPARK_VARIANT=ON \
-	 -DBOUT_USE_SUNDIALS=ON
+	 -DBOUT_USE_SUNDIALS=ON \
+	 -DBOUT_USE_SYSTEM_CPPTRACE=ON
 
     time make -C build build-check -j 2
     time make -C build check

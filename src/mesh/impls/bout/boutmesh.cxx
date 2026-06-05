@@ -28,6 +28,7 @@
 
 #include <bout/assert.hxx>
 #include <bout/boundary_region.hxx>
+#include <bout/boundary_region_iter.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
@@ -647,22 +648,27 @@ int BoutMesh::load() {
   // Add boundary regions
   addBoundaryRegions();
 
-  // Set cached values
-  {
-    int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
-    int allbndry = 0;
-    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
-    has_boundary_lower_y = static_cast<bool>(allbndry);
-  }
-  {
-    int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
-    int allbndry = 0;
-    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
-    has_boundary_upper_y = static_cast<bool>(allbndry);
-  }
-
   // Initialize default coordinates
   getCoordinates();
+
+  // Set cached values
+  if (isFci()) {
+    has_boundary_lower_y = false;
+    has_boundary_upper_y = false;
+  } else {
+    {
+      int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
+      int allbndry = 0;
+      mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
+      has_boundary_lower_y = static_cast<bool>(allbndry);
+    }
+    {
+      int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
+      int allbndry = 0;
+      mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
+      has_boundary_upper_y = static_cast<bool>(allbndry);
+    }
+  }
 
   output_info.write(_("\tdone\n"));
 
@@ -1062,20 +1068,21 @@ void BoutMesh::createXBoundaries() {
     if (((yg > jyseps1_1) and (yg <= jyseps2_1))
         or ((yg > jyseps1_2) and (yg <= jyseps2_2))) {
       // Core
-      boundary.push_back(new BoundaryRegionXIn("core", ystart, yend, this));
+      boundary.push_back(
+          bout::boundary::NewBoundaryRegionXIn("core", ystart, yend, this));
     } else {
       // PF region
-      boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend, this));
+      boundary.push_back(bout::boundary::NewBoundaryRegionXIn("pf", ystart, yend, this));
     }
   }
 
   if (PE_XIND == (NXPE - 1)) {
     // Outer SOL
-    boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend, this));
+    boundary.push_back(bout::boundary::NewBoundaryRegionXOut("sol", ystart, yend, this));
   }
 }
 
-int BoutMesh::getProcIndex(int X, int Y, int Z) const {
+int BoutMesh::getProcIndex(int X, int Y, [[maybe_unused]] int Z) const {
   return (((Z * NYPE) + Y) * NXPE) + X;
 }
 
@@ -1098,21 +1105,21 @@ void BoutMesh::createYBoundaries() {
       (include_corner_cells and ODATA_DEST == -1) ? LocalNx - 1 : xend;
 
   if ((UDATA_INDEST < 0) && (UDATA_XSPLIT > yboundary_xstart)) {
-    boundary.push_back(
-        new BoundaryRegionYUp("upper_target", yboundary_xstart, UDATA_XSPLIT - 1, this));
+    boundary.push_back(bout::boundary::NewBoundaryRegionYUp(
+        "upper_target", yboundary_xstart, UDATA_XSPLIT - 1, this));
   }
   if ((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= yboundary_xend)) {
-    boundary.push_back(
-        new BoundaryRegionYUp("upper_target", UDATA_XSPLIT, yboundary_xend, this));
+    boundary.push_back(bout::boundary::NewBoundaryRegionYUp("upper_target", UDATA_XSPLIT,
+                                                            yboundary_xend, this));
   }
 
   if ((DDATA_INDEST < 0) && (DDATA_XSPLIT > yboundary_xstart)) {
-    boundary.push_back(new BoundaryRegionYDown("lower_target", yboundary_xstart,
-                                               DDATA_XSPLIT - 1, this));
+    boundary.push_back(bout::boundary::NewBoundaryRegionYDown(
+        "lower_target", yboundary_xstart, DDATA_XSPLIT - 1, this));
   }
   if ((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= yboundary_xend)) {
-    boundary.push_back(
-        new BoundaryRegionYDown("lower_target", DDATA_XSPLIT, yboundary_xend, this));
+    boundary.push_back(bout::boundary::NewBoundaryRegionYDown(
+        "lower_target", DDATA_XSPLIT, yboundary_xend, this));
   }
 }
 
@@ -3007,6 +3014,11 @@ void BoutMesh::addBoundaryRegions() {
 }
 
 RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
+#if CHECK > 0
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+#endif
 
   int xs = 0;
   int xe = LocalNx - 1;
@@ -3042,6 +3054,11 @@ RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
+#if CHECK > 0
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+#endif
 
   int xs = 0;
   int xe = LocalNx - 1;
@@ -3076,6 +3093,12 @@ RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryLowerY() const {
+#if CHECK > 0
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+#endif
+
   int xs = 0;
   int xe = LocalNx - 1;
   if ((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart)) {
@@ -3105,6 +3128,12 @@ RangeIterator BoutMesh::iterateBndryLowerY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
+#if CHECK > 0
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+#endif
+
   int xs = 0;
   int xe = LocalNx - 1;
 
@@ -3139,6 +3168,12 @@ RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
+#if CHECK > 0
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+#endif
+
   int xs = 0;
   int xe = LocalNx - 1;
 
@@ -3173,6 +3208,12 @@ RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryUpperY() const {
+#if CHECK > 0
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+#endif
+
   int xs = 0;
   int xe = LocalNx - 1;
   if ((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart)) {
@@ -3201,14 +3242,14 @@ RangeIterator BoutMesh::iterateBndryUpperY() const {
   return RangeIterator(xs, xe);
 }
 
-std::vector<BoundaryRegion*> BoutMesh::getBoundaries() { return boundary; }
+std::vector<BoundaryRegionBase*> BoutMesh::getBoundaries() { return boundary; }
 
-std::vector<std::shared_ptr<BoundaryRegionPar>>
-BoutMesh::getBoundariesPar(BoundaryParType type) {
+using bout::boundary::BoundaryRegionFCI;
+std::vector<std::shared_ptr<BoundaryRegionFCI>>
+BoutMesh::getBoundariesPar(BoundaryParType type) const {
   return par_boundary[static_cast<int>(type)];
 }
-
-void BoutMesh::addBoundaryPar(std::shared_ptr<BoundaryRegionPar> bndry,
+void BoutMesh::addBoundaryPar(std::shared_ptr<BoundaryRegionFCI> bndry,
                               BoundaryParType type) {
   output_info << "Adding new parallel boundary: " << bndry->label << endl;
   switch (type) {
