@@ -7,8 +7,10 @@
 # Requires: netcdf
 # Cores: 4
 
+import pytest
 import numpy as np
-from sys import stdout
+import itertools
+from pathlib import Path
 from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 
@@ -17,44 +19,51 @@ vars = ["yavg2d", "yavg3d", "sm3d"]
 tol = 1e-7  # Absolute tolerance, benchmark values are floats
 
 
-def test_smooth():
-
-    # Read benchmark values
-    print("Reading benchmark data")
+@pytest.fixture(scope="module")
+def benchmark_data():
+    """Reads the benchmark data once for all test iterations in this module."""
     bmk = {}
+    source_data_dir = str(Path(__file__).parent / "data")
+
     for v in vars:
-        bmk[v] = collect(v, path="data", prefix="benchmark", info=False)
+        bmk[v] = collect(v, path=source_data_dir, prefix="benchmark", info=False)
+    return bmk
 
-    print("Running smoothing operator test")
-    success = True
 
-    for nype in [1, 2]:
-        for nxpe in [1, 2]:
-            nproc = nxpe * nype
-            cmd = "./test_smooth"
+# Generate test configurations: [(1, 1), (1, 2), (2, 1), (2, 2)]
+PROCESSOR_TOPOLOGIES = list(itertools.product([1, 2], [1, 2]))
 
-            shell(["rm data/BOUT.dmp.*.nc"])
 
-            print("   %d processor (%d x %d)...." % (nproc, nxpe, nype))
-            s, out = launch_safe(cmd + " NXPE=" + str(nxpe), nproc=nproc, pipe=True)
-            with open("run.log." + str(nproc), "w") as f:
-                f.write(out)
+@pytest.mark.parametrize("nxpe, nype", PROCESSOR_TOPOLOGIES)
+def test_smooth(benchmark_data, nxpe, nype):
+    nproc = nxpe * nype
+    cmd = "./test_smooth"
 
-            # Collect output data
-            for v in vars:
-                stdout.write("      Checking variable " + v + " ... ")
-                result = collect(v, path="data", info=False)
-                # Compare benchmark and output
-                if np.shape(bmk[v]) != np.shape(result):
-                    print("Fail, wrong shape")
-                    success = False
-                    continue
+    # Clean up old data
+    shell(["rm -f data/BOUT.dmp.*.nc"])
 
-                diff = np.max(np.abs(bmk[v] - result))
-                if diff > tol:
-                    print("Fail, maximum difference = " + str(diff))
-                    success = False
-                else:
-                    print("Pass")
+    # Run the executable
+    s, out = launch_safe(f"{cmd} NXPE={nxpe}", nproc=nproc, pipe=True)
 
-    assert success, " => Some failed tests"
+    # Save log
+    with open(f"run.log.{nproc}", "w") as f:
+        f.write(out)
+
+    # Collect output data
+    for v in vars:
+        result = collect(v, path="data", info=False)
+        bmk = benchmark_data[v]
+
+        # Compare benchmark and output
+
+        assert bmk.shape == result.shape, (
+            f"Shape mismatch for variable '{v}' on {nxpe}x{nype} grid"
+        )
+
+        np.testing.assert_allclose(
+            result,
+            bmk,
+            atol=tol,
+            rtol=0,
+            err_msg=f"Data mismatch for variable '{v}' on {nxpe}x{nype} grid",
+        )
