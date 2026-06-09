@@ -196,6 +196,23 @@ formatters and run them according to the next section. Usually this is just:
 
 which will format just the parts of C++ files that have changed since ``next``.
 
+The "integrated" tests are run via pytest . To install the required packages using `uv
+<https://docs.astral.sh/uv/>`_ (from the top of your BOUT++ directory):
+
+.. code-block:: console
+
+    uv sync --group pytest --inexact
+
+They can be run via cmake in the same way as the other tests:
+
+.. code-block:: console
+
+    cmake --build build --target check-integrated-tests
+
+or directly, by running the script `tests/run_integrated_tests.sh`.
+
+For test isolation, pytest automatically copies each test to a temporary directory when running them.
+
 Formatting and Linters
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -206,7 +223,7 @@ install the majority of our developer tools at once using `uv
 
 .. code-block:: console
 
-    uv sync --only-dev --group pytest --inexact
+    uv sync --only-dev --inexact
 
 This will install all the developer tools into a virtual environment (creating
 one if necessary, typically under ``.venv``). You can then activate the virtual
