@@ -8,44 +8,36 @@
 #
 
 import numpy as np
-from boututils.run_wrapper import shell, launch_safe, getmpirun
+import pytest
+
 from boutdata.collect import collect
+from boututils.run_wrapper import shell, launch_safe, getmpirun
 
 
-def test_laplacexz():
+@pytest.mark.parametrize("nproc", [1, 2, 4])
+def test_laplacexz(nproc):
 
     tol = 1e-10  # Absolute tolerance
 
     MPIRUN = getmpirun()
 
-    print("Running LaplaceXZ test")
-    success = True
+    print(f"Running LaplaceXZ test on {nproc} processors...")
 
-    for nproc in [1, 2, 4]:
-        nxpe = nproc
+    # Unique data directory per processor configuration
+    cmd = f"./test-laplacexz nxpe={nproc}"
 
-        cmd = "./test-laplacexz nxpe=" + str(nxpe)
+    shell(["rm -f data/BOUT.dmp.*.nc"])
 
-        shell(["rm data/BOUT.dmp.*.nc"])
+    print(f"   {nproc} processors (nxpe = {nproc})....")
+    s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, mthread=1, pipe=True)
+    with open(f"run.log.{nproc}", "w") as f:
+        f.write(out)
 
-        print("   %d processors (nxpe = %d)...." % (nproc, nxpe))
-        s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, mthread=1, pipe=True)
-        with open("run.log." + str(nproc), "w") as f:
-            f.write(out)
-
-        # Collect output data
-        f = collect("f", path="data", info=False)
-        f2 = collect("f2", path="data", info=False)
-        print("      Checking tolerance... ")
-        # Compare benchmark and output
-        if np.shape(f) != np.shape(f2):
-            print("Fail, wrong shape")
-            success = False
-        diff = np.max(np.abs(f2 - f))
-        if diff > tol:
-            print("Fail, maximum difference = " + str(diff))
-            success = False
-        else:
-            print("Pass")
-
-    assert success, " => LaplaceXZ test failed"
+    # Collect output data
+    f = collect("f", path="data", info=False)
+    f2 = collect("f2", path="data", info=False)
+    print("      Checking tolerance... ")
+    # Compare benchmark and output
+    np.testing.assert_allclose(
+        f2, f, atol=tol, rtol=0, err_msg="LaplaceXZ output mismatch"
+    )
