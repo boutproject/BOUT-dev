@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from pathlib import Path
 
 #
 # Run the test, compare results against the benchmark
@@ -8,36 +9,43 @@
 # Requires: netcdf
 # Cores: 4
 
+import pytest
 import numpy as np
 from sys import stdout
 from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 
 # Variables to compare
-vars = ["pade1", "pade2"]
+variables = ["pade1", "pade2"]
 
 tol = 1e-7  # Absolute tolerance, benchmark values are floats
 
 
-def test_gyro():
-
-    # Read benchmark values
-    print("Reading benchmark data")
+@pytest.fixture(scope="module")
+def benchmark_data():
+    """Reads the benchmark data once for all test iterations in this module."""
     bmk = {}
-    for v in vars:
-        bmk[v] = collect(v, path="data", prefix="benchmark", info=False, xguards=False)
+    source_data_dir = str(Path(__file__).parent / "data")
+
+    for v in variables:
+        bmk[v] = collect(
+            v, path=source_data_dir, prefix="benchmark", info=False, xguards=False
+        )
+    return bmk
+
+
+def test_gyro(benchmark_data):
 
     print("Running Gyro-average inversion test")
-    success = True
 
     for nproc in [1, 2, 4]:
         nxpe = 1
         if nproc > 2:
             nxpe = 2
 
-        cmd = "./test_gyro NXPE=" + str(nxpe)
+        cmd = f"./test_gyro NXPE={nxpe}"
 
-        shell("rm data/BOUT.dmp.*.nc")
+        shell("rm -f data/BOUT.dmp.*.nc")
 
         print("   %d processors (nxpe = %d)...." % (nproc, nxpe))
         s, out = launch_safe(cmd, nproc=nproc, pipe=True)
@@ -45,18 +53,14 @@ def test_gyro():
             f.write(out)
 
         # Collect output data
-        for v in vars:
+        for v in variables:
             stdout.write("      Checking variable " + v + " ... ")
             result = collect(v, path="data", info=False, xguards=False)
             # Compare benchmark and output
-            if np.shape(bmk[v]) != np.shape(result):
-                print("Fail, wrong shape")
-                success = False
-            diff = np.max(np.abs(bmk[v] - result))
-            if diff > tol:
-                print("Fail, maximum difference = " + str(diff))
-                success = False
-            else:
-                print("Pass")
-
-    assert success, " => Some failed tests"
+            np.testing.assert_allclose(
+                benchmark_data[v],
+                result,
+                atol=tol,
+                rtol=0,
+                err_msg="Gyro-average output mismatch",
+            )
