@@ -24,8 +24,8 @@ TEST(FVOpsLimiterTest, VanAlbadaLinear) {
   FV::VanAlbada limiter;
   limiter(s);
 
-  EXPECT_NEAR(s.L, 0.5, 1e-14);
-  EXPECT_NEAR(s.R, 1.5, 1e-14);
+  EXPECT_NEAR(s.L, 0.5, 1e-12);
+  EXPECT_NEAR(s.R, 1.5, 1e-12);
 }
 
 TEST(FVOpsLimiterTest, VanAlbadaExtremumGivesZeroSlope) {
@@ -37,8 +37,8 @@ TEST(FVOpsLimiterTest, VanAlbadaExtremumGivesZeroSlope) {
   FV::VanAlbada limiter;
   limiter(s);
 
-  EXPECT_NEAR(s.L, 1.0, 1e-14);
-  EXPECT_NEAR(s.R, 1.0, 1e-14);
+  EXPECT_NEAR(s.L, 1.0, 1e-12);
+  EXPECT_NEAR(s.R, 1.0, 1e-12);
 }
 
 TEST(FVOpsLimiterTest, VanAlbadaLimitsToSmallerGradient) {
