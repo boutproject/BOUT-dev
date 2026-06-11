@@ -69,6 +69,7 @@ set(serial_tests_source
     ./include/bout/test_assert.cxx
     ./include/bout/test_bout_enum_class.cxx
     ./include/bout/test_deriv_store.cxx
+    ./include/bout/test_fv_ops.cxx
     ./include/bout/test_generic_factory.cxx
     ./include/bout/test_macro_for_each.cxx
     ./include/bout/test_monitor.cxx
