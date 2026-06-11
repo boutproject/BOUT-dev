@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <iterator>
 #include <vector>
 
 #include "petscerror.h"
@@ -400,6 +401,11 @@ int SNESSolver::init() {
     // Call the Solver function, which sets the array
     // to one when not a constraint, zero for constraint
     set_id(std::begin(is_dae));
+
+    if (equation_form != BoutSnesEquationForm::backward_euler) {
+      throw BoutException(
+          "SNES constraints currently require equation_form=backward_euler");
+    }
   }
 
   // Initialise PETSc components
