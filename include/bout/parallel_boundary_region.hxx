@@ -380,7 +380,7 @@ public:
     }
   }
 
-#if BOUT_USE_METRIC_3D == 0
+#if not(BOUT_USE_METRIC_3D)
   const BoutReal& ynext(const Field2D& f) const { return f.ynext(_dir)[ind().yp(_dir)]; }
   BoutReal& ynext(Field2D& f) const { return f.ynext(_dir)[ind().yp(_dir)]; }
 
