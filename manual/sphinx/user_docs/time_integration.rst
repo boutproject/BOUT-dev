@@ -419,8 +419,9 @@ Timestepping Modes
 
 The solver supports several timestepping strategies controlled by ``equation_form``:
 
-**Backward Euler (default)**
-   Standard implicit backward Euler method. Good for general timestepping.
+**Rearranged Backward Euler (default)**
+   Standard implicit backward Euler method, written in a rearranged form that is useful
+   for robust convergence to steady state.
 
    .. code-block:: ini
 
@@ -428,6 +429,14 @@ The solver supports several timestepping strategies controlled by ``equation_for
 
    This method has low accuracy in time but its dissipative properties
    are helpful when evolving to steady state solutions.
+
+**Backward Euler (DAE/constraints)**
+   Backward Euler with explicit support for algebraic constraint variables. This form is
+   required when using BOUT++ ``Solver::constraint(...)`` with the SNES solver.
+
+   .. code-block:: ini
+
+      equation_form = backward_euler
 
 **Direct Newton**
    Solves the steady-state problem F(u) = 0 directly without timestepping.
@@ -449,6 +458,56 @@ The solver supports several timestepping strategies controlled by ``equation_for
 
    This uses the same form as rearranged_backward_euler, but the time step
    can be different for each cell.
+
+Constraints (DAEs)
+~~~~~~~~~~~~~~~~~~
+
+BOUT++ can define algebraic constraints in a physics model using the ``Solver::constraint(...)``
+API. With the SNES solver these are treated as a differential-algebraic equation (DAE) system:
+
+- Differential variables: advanced with backward Euler
+- Algebraic (constraint) variables: solved from the algebraic equations ``G(x) = 0`` at each step
+
+Current limitations:
+
+- Constraints are supported only with ``equation_form = backward_euler``.
+- Constraint splitting requires ``matrix_free = false`` (``matrix_free_operator`` may still be
+  used).
+
+Preconditioner splitting
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+When constraints are enabled, the SNES solver can optionally split the preconditioner into a
+differential part and an algebraic part using PETSc ``fieldsplit``. The split names are:
+
+- ``diff``: differential variables
+- ``alg``: algebraic (constraint) variables
+
+To enable the split, set ``pc_type = fieldsplit`` in the ``[solver]`` section, then configure PETSc
+using standard fieldsplit options (in ``[petsc]`` or on the command line).
+
+Example:
+
+.. code-block:: ini
+
+   [solver]
+   type = snes
+   equation_form = backward_euler
+   pc_type = fieldsplit
+
+   [petsc]
+   # Preconditioner splitting
+   pc_fieldsplit_type = multiplicative  # additive, multiplicative, schur, gkb, ...
+
+   # Differential block
+   fieldsplit_diff_ksp_type = preonly
+   fieldsplit_diff_pc_type = hypre
+   fieldsplit_diff_pc_hypre_type = ilu
+
+   # Algebraic (constraint) block
+   fieldsplit_alg_ksp_type = preonly
+   fieldsplit_alg_pc_type = hypre
+   fieldsplit_alg_pc_hypre_type = boomeramg
 
 Adaptive Timestepping
 ~~~~~~~~~~~~~~~~~~~~~
