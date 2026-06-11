@@ -459,7 +459,7 @@ int SNESSolver::init() {
   global_residual = 0.0;
 
   if (have_constraints) {
-    // CreatePETSc-native index sets representing the two parts of your DAE.
+    // Create PETSc-native index sets representing the two parts of your DAE.
     PetscInt istart, iend;
     PetscCall(VecGetOwnershipRange(snes_x, &istart, &iend));
     ASSERT2(iend - istart == nlocal);

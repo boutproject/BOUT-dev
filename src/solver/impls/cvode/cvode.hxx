@@ -1,8 +1,6 @@
 /**************************************************************************
  * Interface to SUNDIALS CVODE
  *
- * NOTE: Only one solver can currently be compiled in
- *
  **************************************************************************
  * Copyright 2010 - 2026 BOUT++ contributors
  *
