@@ -459,9 +459,9 @@ public:
   /// -------
   /// A reference to `this`, for method chaining
   template <typename T>
-  Options& force(T val, const std::string source = "") {
-    is_section = true; // Invalidates any existing setting
-    return assign(val, source);
+  Options& force(T&& val, const std::string& source = "") {
+    is_section = true;
+    return assign(std::forward<T>(val), source);
   }
 
   /// Assign a value that is expected to vary in time.

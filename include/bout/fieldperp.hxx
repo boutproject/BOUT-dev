@@ -90,7 +90,7 @@ public:
       typename ResT, typename L, typename R, typename Func,
       typename = std::enable_if_t<(is_expr_fieldperp_v<L> && is_expr_fieldperp_v<R>)>>
   FieldPerp(const BinaryExpr<ResT, L, R, Func>& expr) {
-    std::cout << "RUNNING FieldPerp constructor with CUDA\n";
+    //std::cout << "RUNNING FieldPerp constructor with CUDA\n";
     Array<BoutReal> data{expr.size()};
     expr.evaluate(&data[0]);
     *this = std::move(FieldPerp{std::move(data), expr.getMesh(), expr.getLocation(),

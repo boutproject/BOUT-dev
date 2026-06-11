@@ -546,7 +546,6 @@ T pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
   template <typename T, typename = bout::utils::EnableIfField<T>>                       \
   inline BinaryExpr<T, T, T, bout::op::name> name(const T& f,                           \
                                                   const std::string& rgn = "RGN_ALL") { \
-    std::cout << "RUNNING " #name " with CUDA\n";                                       \
     return BinaryExpr<T, T, T, bout::op::name>{static_cast<typename T::View>(f),        \
                                                static_cast<typename T::View>(f),        \
                                                bout::op::name{},                        \

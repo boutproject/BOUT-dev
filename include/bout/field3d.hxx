@@ -460,7 +460,7 @@ public:
   template <typename ResT, typename L, typename R, typename Func>
   std::enable_if_t<is_expr_field3d_v<L>, Field3D&>
   operator=(BinaryExpr<ResT, L, R, Func>& expr) {
-    std::cout << "RUNNING operator= with CUDA\n";
+    //std::cout << "RUNNING operator= with CUDA\n";
     regionID = expr.getRegionID();
     if(isAllocated()) {
       expr.evaluate(&data[0]);

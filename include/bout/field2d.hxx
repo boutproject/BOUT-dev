@@ -108,7 +108,7 @@ public:
                                   || (is_expr_constant_v<L> && is_expr_field2d_v<R>)
                                   || (is_expr_field2d_v<L> && is_expr_constant_v<R>)>>
   Field2D(const BinaryExpr<ResT, L, R, Func>& expr) {
-    std::cout << "RUNNING Field2D constructor with CUDA\n";
+    //std::cout << "RUNNING Field2D constructor with CUDA\n";
     Array<BoutReal> data{expr.size()};
     expr.evaluate(&data[0]);
     *this = std::move(Field2D{std::move(data), expr.getMesh(), expr.getLocation(),
@@ -192,7 +192,7 @@ public:
   template <typename ResT, typename L, typename R, typename Func>
   std::enable_if_t<is_expr_field2d_v<L>, Field2D&>
   operator=(const BinaryExpr<ResT, L, R, Func>& expr) {
-    std::cout << "RUNNING Field2D operator= with CUDA\n";
+    //std::cout << "RUNNING Field2D operator= with CUDA\n";
     if (isAllocated()) {
       expr.evaluate(&data[0]);
     } else {
