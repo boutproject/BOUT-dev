@@ -54,3 +54,7 @@ for the second order MinMod method.
 Or, to use a smooth symmetric limiter:
 
     FV::Div_par<FV::VanAlbada>
+
+Or a higher-order smooth WENO reconstruction:
+
+    FV::Div_par<FV::WENO3>

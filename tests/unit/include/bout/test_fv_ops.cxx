@@ -54,3 +54,29 @@ TEST(FVOpsLimiterTest, VanAlbadaLimitsToSmallerGradient) {
   EXPECT_NEAR(s.L, 0.7, 1e-12);
   EXPECT_NEAR(s.R, 1.3, 1e-12);
 }
+
+TEST(FVOpsLimiterTest, WENO3Constant) {
+  FV::Stencil1D s{};
+  s.m = 1.0;
+  s.c = 1.0;
+  s.p = 1.0;
+
+  FV::WENO3 recon;
+  recon(s);
+
+  EXPECT_DOUBLE_EQ(s.L, 1.0);
+  EXPECT_DOUBLE_EQ(s.R, 1.0);
+}
+
+TEST(FVOpsLimiterTest, WENO3Linear) {
+  FV::Stencil1D s{};
+  s.m = 0.0;
+  s.c = 1.0;
+  s.p = 2.0;
+
+  FV::WENO3 recon;
+  recon(s);
+
+  EXPECT_NEAR(s.L, 0.5, 1e-14);
+  EXPECT_NEAR(s.R, 1.5, 1e-14);
+}

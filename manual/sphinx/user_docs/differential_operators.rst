@@ -671,6 +671,10 @@ values. Several slope limiters are defined in ``fv_ops.hxx``:
   avoids piecewise branches at extrema. This can be useful for nonlinear
   solvers and finite-difference Jacobian calculations.
 
+* ``WENO3`` - A third-order smooth WENO (Jiang-Shu) cell-face reconstruction
+  using a three-point stencil. This is typically less dissipative than TVD
+  slope limiters, but is not strictly monotonicity-preserving.
+
 Useful resources on slope limiters include:
 
 * `Wikipedia's Flux Limiter page <https://en.wikipedia.org/wiki/Flux_limiter>`_
