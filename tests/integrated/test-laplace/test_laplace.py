@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from pathlib import Path
 
 #
 # Run the test, compare results against the benchmark
@@ -8,9 +9,10 @@
 # Requires: netcdf
 # Cores: 4
 
+import pytest
+import numpy.testing as npt
 from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect, create_cache
-import numpy.testing as npt
 
 
 # Variables to compare
@@ -35,61 +37,55 @@ vars = [
 tol = 1e-6  # Absolute tolerance
 
 
-def test_laplace():
+@pytest.fixture(scope="module")
+def benchmark_data():
+    """Fixture to load benchmark data once for the entire test session."""
 
-    # Read benchmark values
-    print("Reading benchmark data")
-    bmk = {v: collect(v, path="data", prefix="benchmark", info=False) for v in vars}
+    source_data_dir = str(Path(__file__).parent / "data")
+    return {
+        v: collect(v, path=source_data_dir, prefix="benchmark", info=False)
+        for v in vars
+    }
 
-    print("Running Laplacian inversion test")
-    success = True
 
-    for solver in ["cyclic", "pcr", "pcr_thomas"]:
-        for nproc in [1, 2, 4]:
-            nxpe = 1
-            if nproc > 2:
-                nxpe = 2
+@pytest.mark.parametrize("solver", ["cyclic", "pcr", "pcr_thomas"])
+@pytest.mark.parametrize("nproc", [1, 2, 4])
+def test_laplace(solver, nproc, benchmark_data):
 
-            cmd = f"./test_laplace NXPE={nxpe} laplace:type={solver}"
+    nxpe = 2 if nproc > 2 else 1
+    cmd = f"./test_laplace NXPE={nxpe} laplace:type={solver}"
 
-            shell("rm data/BOUT.dmp.*.nc")
+    shell("rm data/BOUT.dmp.*.nc")
 
-            print(f"   {solver} solver with {nproc} processors ({nxpe=})....")
-            s, out = launch_safe(cmd, nproc=nproc, mthread=1, pipe=True)
-            with open(f"run.log.{nproc}", "w") as f:
-                f.write(out)
+    s, out = launch_safe(cmd, nproc=nproc, mthread=1, pipe=True)
 
-            cache = create_cache(path="data", prefix="BOUT.dmp")
+    with open(f"run.log.{nproc}", "w") as f:
+        f.write(out)
 
-            # Collect output data
-            for v in vars:
-                print(f"      Checking variable {v} ...", end="")
-                result = collect(v, path="data", info=False, datafile_cache=cache)
-                # Compare benchmark and output
-                try:
-                    npt.assert_allclose(result, bmk[v], atol=tol, rtol=tol)
-                    print("Pass")
-                except AssertionError as e:
-                    print(f"Fail: {e}")
-                    success = False
+    cache = create_cache(path="data", prefix="BOUT.dmp")
 
-            # Only check FieldPerps on one processor because reading them in is
-            # quite annoying on mutliple cores due to mismatched global y indices
-            if nproc == 1:
-                for v in ["flag0_perp", "flag3_perp"]:
-                    print(f"      Checking variable {v} ...", end="")
-                    result = collect(v, path="data", info=False, datafile_cache=cache)
-                    # Compare benchmark and output
-                    try:
-                        npt.assert_allclose(
-                            result,
-                            bmk[v.replace("_perp", "")][:, 0, :],
-                            atol=tol,
-                            rtol=tol,
-                        )
-                        print("Pass")
-                    except AssertionError as e:
-                        print(f"Fail: {e}")
-                        success = False
+    # Collect output data
+    for v in vars:
+        result = collect(v, path="data", info=False, datafile_cache=cache)
+        npt.assert_allclose(
+            result,
+            benchmark_data[v],
+            atol=tol,
+            rtol=tol,
+            err_msg=f"Failed checking variable: {v}",
+        )
 
-    assert success, " => Some failed tests"
+    # Only check FieldPerps on one processor because reading them in is
+    # quite annoying on multiple cores due to mismatched global y indices
+    if nproc == 1:
+        for v in ["flag0_perp", "flag3_perp"]:
+            result = collect(v, path="data", info=False, datafile_cache=cache)
+
+            # Compare benchmark and output
+            npt.assert_allclose(
+                result,
+                benchmark_data[v.replace("_perp", "")][:, 0, :],
+                atol=tol,
+                rtol=tol,
+                err_msg=f"Failed checking perpendicular variable: {v}",
+            )
