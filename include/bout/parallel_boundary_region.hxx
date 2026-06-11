@@ -381,16 +381,16 @@ public:
   }
 
 #if BOUT_USE_METRIC_3D == 0
-  const BoutReal& ynext(const Field2D& f) const { return f.ynext(dir)[ind().yp(dir)]; }
-  BoutReal& ynext(Field2D& f) const { return f.ynext(dir)[ind().yp(dir)]; }
+  const BoutReal& ynext(const Field2D& f) const { return f.ynext(_dir)[ind().yp(_dir)]; }
+  BoutReal& ynext(Field2D& f) const { return f.ynext(_dir)[ind().yp(_dir)]; }
 
   const BoutReal& yprev(const Field2D& f) const {
     ASSERT3(valid() > 0);
-    return f.ynext(-dir)[ind().yp(-dir)];
+    return f.ynext(-_dir)[ind().yp(-_dir)];
   }
   BoutReal& yprev(Field2D& f) const {
     ASSERT3(valid() > 0);
-    return f.ynext(-dir)[ind().yp(-dir)];
+    return f.ynext(-_dir)[ind().yp(-_dir)];
   }
 #endif
 
