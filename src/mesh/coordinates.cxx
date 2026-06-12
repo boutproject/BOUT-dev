@@ -4,22 +4,29 @@
  * given the contravariant metric tensor terms
  **************************************************************************/
 
+#include "bout/field3d.hxx"
+#include "bout/field_data.hxx"
 #include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/build_defines.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
+#include <bout/derivs.hxx>
+#include <bout/fft.hxx>
 #include <bout/field.hxx>
+#include <bout/globals.hxx>
+#include <bout/interpolation.hxx>
 #include <bout/output.hxx>
+#include <bout/output_bout_types.hxx>
+#include <bout/paralleltransform.hxx>
 #include <bout/region.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
+#include <bout/yboundary_regions.hxx>
 
-#include <bout/derivs.hxx>
-#include <bout/fft.hxx>
-#include <bout/interpolation.hxx>
-#include <bout/output_bout_types.hxx>
-
-#include <bout/globals.hxx>
+#include <memory>
+#include <string>
 
 #include "invert3x3.hxx"
 #include "parallel/fci.hxx"
@@ -54,16 +61,16 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extr
   // initializing yet, leading to an infinite recursion.
   // Also, here we interpolate for the boundary points at xstart/ystart and
   // (xend+1)/(yend+1) instead of extrapolating.
-  for (auto& bndry : localmesh->getBoundaries()) {
+  for (auto& newbndry : localmesh->getBoundaries()) {
+    auto* bndry = newbndry->getLegacyPointer();
     if ((extrapolate_x and bndry->bx != 0) or (extrapolate_y and bndry->by != 0)) {
       int extrap_start = 0;
       if (not no_extra_interpolate) {
         // Can use no_extra_interpolate argument to skip the extra interpolation when we
         // want to extrapolate the Christoffel symbol terms which come from derivatives so
         // don't have the extra point set already
-        if ((location == CELL_XLOW) && (bndry->bx > 0)) {
-          extrap_start = 1;
-        } else if ((location == CELL_YLOW) && (bndry->by > 0)) {
+        if (((location == CELL_XLOW) && (bndry->bx > 0))
+            || ((location == CELL_YLOW) && (bndry->by > 0))) {
           extrap_start = 1;
         }
       }
@@ -82,7 +89,7 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extr
               (9.
                    * (f(bndry->x - bndry->bx, bndry->y - bndry->by)
                       + f(bndry->x, bndry->y))
-               - f(bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by)
+               - f(bndry->x - (2 * bndry->bx), bndry->y - (2 * bndry->by))
                - f(bndry->x + bndry->bx, bndry->y + bndry->by))
               / 16.;
         }
@@ -108,8 +115,8 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extr
           }
           // extrapolate into boundary guard cells if there are enough grid points
           for (int i = extrap_start; i < bndry->width; i++) {
-            int xi = bndry->x + i * bndry->bx;
-            int yi = bndry->y + i * bndry->by;
+            int xi = bndry->x + (i * bndry->bx);
+            int yi = bndry->y + (i * bndry->by);
             result(xi, yi) = 3.0 * result(xi - bndry->bx, yi - bndry->by)
                              - 3.0 * result(xi - 2 * bndry->bx, yi - 2 * bndry->by)
                              + result(xi - 3 * bndry->bx, yi - 3 * bndry->by);
@@ -203,7 +210,8 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
   // initializing yet, leading to an infinite recursion.
   // Also, here we interpolate for the boundary points at xstart/ystart and
   // (xend+1)/(yend+1) instead of extrapolating.
-  for (auto& bndry : localmesh->getBoundaries()) {
+  for (auto& newbndry : localmesh->getBoundaries()) {
+    auto bndry = newbndry->getLegacyPointer();
     if ((extrapolate_x and bndry->bx != 0) or (extrapolate_y and bndry->by != 0)) {
       int extrap_start = 0;
       if (not no_extra_interpolate) {
@@ -371,7 +379,7 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
       g_22(std::move(g_22)), g_33(std::move(g_33)), g_12(std::move(g_12)),
       g_13(std::move(g_13)), g_23(std::move(g_23)), ShiftTorsion(std::move(ShiftTorsion)),
       IntShiftTorsion(std::move(IntShiftTorsion)), nz(mesh->LocalNz), localmesh(mesh),
-      location(CELL_CENTRE) {}
+      localoptions(nullptr), location(CELL_CENTRE) {}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options)
     : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
@@ -383,7 +391,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
       G1_13(mesh), G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh),
       G2_13(mesh), G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh),
       G3_13(mesh), G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
-      IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE) {
+      IntShiftTorsion(mesh), localmesh(mesh), localoptions(options),
+      location(CELL_CENTRE) {
 
   if (options == nullptr) {
     options = Options::getRoot()->getSection("mesh");
@@ -497,13 +506,13 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
       output_warn.write("Not all covariant components of metric tensor found. "
                         "Calculating all from the contravariant tensor\n");
       /// Calculate contravariant metric components if not found
-      if (calcCovariant("RGN_NOCORNERS")) {
+      if (calcCovariant("RGN_NOCORNERS") != 0) {
         throw BoutException("Error in calcCovariant call");
       }
     }
   } else {
     /// Calculate contravariant metric components if not found
-    if (calcCovariant("RGN_NOCORNERS")) {
+    if (calcCovariant("RGN_NOCORNERS") != 0) {
       throw BoutException("Error in calcCovariant call");
     }
   }
@@ -593,6 +602,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
     IntShiftTorsion = 0.;
   }
+
+  // Allow transform to fix things up
+  transform->loadParallelMetrics(this);
 }
 
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
@@ -606,7 +618,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       G1_13(mesh), G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh),
       G2_13(mesh), G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh),
       G3_13(mesh), G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
-      IntShiftTorsion(mesh), localmesh(mesh), location(loc) {
+      IntShiftTorsion(mesh), localmesh(mesh), localoptions(options), location(loc) {
 
   std::string suffix = getLocationSuffix(location);
 
@@ -881,6 +893,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                                                   true, true, false, transform.get());
     }
   }
+  // Allow transform to fix things up
+  transform->loadParallelMetrics(this);
 }
 
 void Coordinates::outputVars(Options& output_options) {
@@ -959,115 +973,119 @@ int Coordinates::geometry(bool recalculate_staggered,
   // Note: This calculation is completely general: metric
   // tensor can be 2D or 3D. For 2D, all DDZ terms are zero
 
-  G1_11 = 0.5 * g11 * DDX(g_11) + g12 * (DDX(g_12) - 0.5 * DDY(g_11))
-          + g13 * (DDX(g_13) - 0.5 * DDZ(g_11));
-  G1_22 = g11 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g12 * DDY(g_22)
-          + g13 * (DDY(g_23) - 0.5 * DDZ(g_22));
-  G1_33 = g11 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g12 * (DDZ(g_23) - 0.5 * DDY(g_33))
-          + 0.5 * g13 * DDZ(g_33);
-  G1_12 = 0.5 * g11 * DDY(g_11) + 0.5 * g12 * DDX(g_22)
-          + 0.5 * g13 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
-  G1_13 = 0.5 * g11 * DDZ(g_11) + 0.5 * g12 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
-          + 0.5 * g13 * DDX(g_33);
-  G1_23 = 0.5 * g11 * (DDZ(g_12) + DDY(g_13) - DDX(g_23))
-          + 0.5 * g12 * (DDZ(g_22) + DDY(g_23) - DDY(g_23))
-          // + 0.5 *g13*(DDZ(g_32) + DDY(g_33) - DDZ(g_23));
-          // which equals
-          + 0.5 * g13 * DDY(g_33);
+  if (!g11.isFci()) {
+    G1_11 = 0.5 * g11 * DDX(g_11) + g12 * (DDX(g_12) - 0.5 * DDY(g_11))
+            + g13 * (DDX(g_13) - 0.5 * DDZ(g_11));
+    G1_22 = g11 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g12 * DDY(g_22)
+            + g13 * (DDY(g_23) - 0.5 * DDZ(g_22));
+    G1_33 = g11 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g12 * (DDZ(g_23) - 0.5 * DDY(g_33))
+            + 0.5 * g13 * DDZ(g_33);
+    G1_12 = 0.5 * g11 * DDY(g_11) + 0.5 * g12 * DDX(g_22)
+            + 0.5 * g13 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
+    G1_13 = 0.5 * g11 * DDZ(g_11) + 0.5 * g12 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
+            + 0.5 * g13 * DDX(g_33);
+    G1_23 = 0.5 * g11 * (DDZ(g_12) + DDY(g_13) - DDX(g_23))
+            + 0.5 * g12 * (DDZ(g_22) + DDY(g_23) - DDY(g_23))
+            // + 0.5 *g13*(DDZ(g_32) + DDY(g_33) - DDZ(g_23));
+            // which equals
+            + 0.5 * g13 * DDY(g_33);
 
-  G2_11 = 0.5 * g12 * DDX(g_11) + g22 * (DDX(g_12) - 0.5 * DDY(g_11))
-          + g23 * (DDX(g_13) - 0.5 * DDZ(g_11));
-  G2_22 = g12 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g22 * DDY(g_22)
-          + g23 * (DDY(g23) - 0.5 * DDZ(g_22));
-  G2_33 = g12 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g22 * (DDZ(g_23) - 0.5 * DDY(g_33))
-          + 0.5 * g23 * DDZ(g_33);
-  G2_12 = 0.5 * g12 * DDY(g_11) + 0.5 * g22 * DDX(g_22)
-          + 0.5 * g23 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
-  G2_13 =
-      // 0.5 *g21*(DDZ(g_11) + DDX(g_13) - DDX(g_13))
-      // which equals
-      0.5 * g12 * (DDZ(g_11) + DDX(g_13) - DDX(g_13))
-      // + 0.5 *g22*(DDZ(g_21) + DDX(g_23) - DDY(g_13))
-      // which equals
-      + 0.5 * g22 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
-      // + 0.5 *g23*(DDZ(g_31) + DDX(g_33) - DDZ(g_13));
-      // which equals
-      + 0.5 * g23 * DDX(g_33);
-  G2_23 = 0.5 * g12 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g22 * DDZ(g_22)
-          + 0.5 * g23 * DDY(g_33);
+    G2_11 = 0.5 * g12 * DDX(g_11) + g22 * (DDX(g_12) - 0.5 * DDY(g_11))
+            + g23 * (DDX(g_13) - 0.5 * DDZ(g_11));
+    G2_22 = g12 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g22 * DDY(g_22)
+            + g23 * (DDY(g23) - 0.5 * DDZ(g_22));
+    G2_33 = g12 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g22 * (DDZ(g_23) - 0.5 * DDY(g_33))
+            + 0.5 * g23 * DDZ(g_33);
+    G2_12 = 0.5 * g12 * DDY(g_11) + 0.5 * g22 * DDX(g_22)
+            + 0.5 * g23 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
+    G2_13 =
+        // 0.5 *g21*(DDZ(g_11) + DDX(g_13) - DDX(g_13))
+        // which equals
+        0.5 * g12 * (DDZ(g_11) + DDX(g_13) - DDX(g_13))
+        // + 0.5 *g22*(DDZ(g_21) + DDX(g_23) - DDY(g_13))
+        // which equals
+        + 0.5 * g22 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
+        // + 0.5 *g23*(DDZ(g_31) + DDX(g_33) - DDZ(g_13));
+        // which equals
+        + 0.5 * g23 * DDX(g_33);
+    G2_23 = 0.5 * g12 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g22 * DDZ(g_22)
+            + 0.5 * g23 * DDY(g_33);
 
-  G3_11 = 0.5 * g13 * DDX(g_11) + g23 * (DDX(g_12) - 0.5 * DDY(g_11))
-          + g33 * (DDX(g_13) - 0.5 * DDZ(g_11));
-  G3_22 = g13 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g23 * DDY(g_22)
-          + g33 * (DDY(g_23) - 0.5 * DDZ(g_22));
-  G3_33 = g13 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g23 * (DDZ(g_23) - 0.5 * DDY(g_33))
-          + 0.5 * g33 * DDZ(g_33);
-  G3_12 =
-      // 0.5 *g31*(DDY(g_11) + DDX(g_12) - DDX(g_12))
-      // which equals to
-      0.5 * g13 * DDY(g_11)
-      // + 0.5 *g32*(DDY(g_21) + DDX(g_22) - DDY(g_12))
-      // which equals to
-      + 0.5 * g23 * DDX(g_22)
-      //+ 0.5 *g33*(DDY(g_31) + DDX(g_32) - DDZ(g_12));
-      // which equals to
-      + 0.5 * g33 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
-  G3_13 = 0.5 * g13 * DDZ(g_11) + 0.5 * g23 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
-          + 0.5 * g33 * DDX(g_33);
-  G3_23 = 0.5 * g13 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g23 * DDZ(g_22)
-          + 0.5 * g33 * DDY(g_33);
+    G3_11 = 0.5 * g13 * DDX(g_11) + g23 * (DDX(g_12) - 0.5 * DDY(g_11))
+            + g33 * (DDX(g_13) - 0.5 * DDZ(g_11));
+    G3_22 = g13 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g23 * DDY(g_22)
+            + g33 * (DDY(g_23) - 0.5 * DDZ(g_22));
+    G3_33 = g13 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g23 * (DDZ(g_23) - 0.5 * DDY(g_33))
+            + 0.5 * g33 * DDZ(g_33);
+    G3_12 =
+        // 0.5 *g31*(DDY(g_11) + DDX(g_12) - DDX(g_12))
+        // which equals to
+        0.5 * g13 * DDY(g_11)
+        // + 0.5 *g32*(DDY(g_21) + DDX(g_22) - DDY(g_12))
+        // which equals to
+        + 0.5 * g23 * DDX(g_22)
+        //+ 0.5 *g33*(DDY(g_31) + DDX(g_32) - DDZ(g_12));
+        // which equals to
+        + 0.5 * g33 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
+    G3_13 = 0.5 * g13 * DDZ(g_11) + 0.5 * g23 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
+            + 0.5 * g33 * DDX(g_33);
+    G3_23 = 0.5 * g13 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g23 * DDZ(g_22)
+            + 0.5 * g33 * DDY(g_33);
 
-  auto tmp = J * g12;
-  localmesh->communicate_no_slices(tmp);
-  G1 = (DDX(J * g11) + DDY(tmp) + DDZ(J * g13)) / J;
-  tmp = J * g22;
-  localmesh->communicate_no_slices(tmp);
-  G2 = (DDX(J * g12) + DDY(tmp) + DDZ(J * g23)) / J;
-  tmp = J * g23;
-  localmesh->communicate_no_slices(tmp);
-  G3 = (DDX(J * g13) + DDY(tmp) + DDZ(J * g33)) / J;
+    G1 = (DDX(J * g11) + DDY(J.asField3DParallel() * g12) + DDZ(J * g13)) / J;
+    G2 = (DDX(J * g12) + DDY(J.asField3DParallel() * g22) + DDZ(J * g23)) / J;
+    G3 = (DDX(J * g13) + DDY(J.asField3DParallel() * g23) + DDZ(J * g33)) / J;
 
-  // Communicate christoffel symbol terms
-  output_progress.write("\tCommunicating connection terms\n");
+    // Communicate christoffel symbol terms
+    output_progress.write("\tCommunicating connection terms\n");
 
-  localmesh->communicate_no_slices(G1_11, G1_22, G1_33, G1_12, G1_13, G1_23, G2_11, G2_22,
-                                   G2_33, G2_12, G2_13, G2_23, G3_11, G3_22, G3_33, G3_12,
-                                   G3_13, G3_23, G1, G2, G3);
+    localmesh->communicate_no_slices(G1_11, G1_22, G1_33, G1_12, G1_13, G1_23, G2_11,
+                                     G2_22, G2_33, G2_12, G2_13, G2_23, G3_11, G3_22,
+                                     G3_33, G3_12, G3_13, G3_23, G1, G2, G3);
 
-  // Set boundary guard cells of Christoffel symbol terms
-  // Ideally, when location is staggered, we would set the upper/outer boundary point
-  // correctly rather than by extrapolating here: e.g. if location==CELL_YLOW and we are
-  // at the upper y-boundary the x- and z-derivatives at yend+1 at the boundary can be
-  // calculated because the guard cells are available, while the y-derivative could be
-  // calculated from the CELL_CENTRE metric components (which have guard cells available
-  // past the boundary location). This would avoid the problem that the y-boundary on the
-  // CELL_YLOW grid is at a 'guard cell' location (yend+1).
-  // However, the above would require lots of special handling, so just extrapolate for
-  // now.
-  G1_11 = interpolateAndExtrapolate(G1_11, location, true, true, true, transform.get());
-  G1_22 = interpolateAndExtrapolate(G1_22, location, true, true, true, transform.get());
-  G1_33 = interpolateAndExtrapolate(G1_33, location, true, true, true, transform.get());
-  G1_12 = interpolateAndExtrapolate(G1_12, location, true, true, true, transform.get());
-  G1_13 = interpolateAndExtrapolate(G1_13, location, true, true, true, transform.get());
-  G1_23 = interpolateAndExtrapolate(G1_23, location, true, true, true, transform.get());
+    // Set boundary guard cells of Christoffel symbol terms
+    // Ideally, when location is staggered, we would set the upper/outer boundary point
+    // correctly rather than by extrapolating here: e.g. if location==CELL_YLOW and we are
+    // at the upper y-boundary the x- and z-derivatives at yend+1 at the boundary can be
+    // calculated because the guard cells are available, while the y-derivative could be
+    // calculated from the CELL_CENTRE metric components (which have guard cells available
+    // past the boundary location). This would avoid the problem that the y-boundary on the
+    // CELL_YLOW grid is at a 'guard cell' location (yend+1).
+    // However, the above would require lots of special handling, so just extrapolate for
+    // now.
+    G1_11 = interpolateAndExtrapolate(G1_11, location, true, true, true, transform.get());
+    G1_22 = interpolateAndExtrapolate(G1_22, location, true, true, true, transform.get());
+    G1_33 = interpolateAndExtrapolate(G1_33, location, true, true, true, transform.get());
+    G1_12 = interpolateAndExtrapolate(G1_12, location, true, true, true, transform.get());
+    G1_13 = interpolateAndExtrapolate(G1_13, location, true, true, true, transform.get());
+    G1_23 = interpolateAndExtrapolate(G1_23, location, true, true, true, transform.get());
 
-  G2_11 = interpolateAndExtrapolate(G2_11, location, true, true, true, transform.get());
-  G2_22 = interpolateAndExtrapolate(G2_22, location, true, true, true, transform.get());
-  G2_33 = interpolateAndExtrapolate(G2_33, location, true, true, true, transform.get());
-  G2_12 = interpolateAndExtrapolate(G2_12, location, true, true, true, transform.get());
-  G2_13 = interpolateAndExtrapolate(G2_13, location, true, true, true, transform.get());
-  G2_23 = interpolateAndExtrapolate(G2_23, location, true, true, true, transform.get());
+    G2_11 = interpolateAndExtrapolate(G2_11, location, true, true, true, transform.get());
+    G2_22 = interpolateAndExtrapolate(G2_22, location, true, true, true, transform.get());
+    G2_33 = interpolateAndExtrapolate(G2_33, location, true, true, true, transform.get());
+    G2_12 = interpolateAndExtrapolate(G2_12, location, true, true, true, transform.get());
+    G2_13 = interpolateAndExtrapolate(G2_13, location, true, true, true, transform.get());
+    G2_23 = interpolateAndExtrapolate(G2_23, location, true, true, true, transform.get());
 
-  G3_11 = interpolateAndExtrapolate(G3_11, location, true, true, true, transform.get());
-  G3_22 = interpolateAndExtrapolate(G3_22, location, true, true, true, transform.get());
-  G3_33 = interpolateAndExtrapolate(G3_33, location, true, true, true, transform.get());
-  G3_12 = interpolateAndExtrapolate(G3_12, location, true, true, true, transform.get());
-  G3_13 = interpolateAndExtrapolate(G3_13, location, true, true, true, transform.get());
-  G3_23 = interpolateAndExtrapolate(G3_23, location, true, true, true, transform.get());
+    G3_11 = interpolateAndExtrapolate(G3_11, location, true, true, true, transform.get());
+    G3_22 = interpolateAndExtrapolate(G3_22, location, true, true, true, transform.get());
+    G3_33 = interpolateAndExtrapolate(G3_33, location, true, true, true, transform.get());
+    G3_12 = interpolateAndExtrapolate(G3_12, location, true, true, true, transform.get());
+    G3_13 = interpolateAndExtrapolate(G3_13, location, true, true, true, transform.get());
+    G3_23 = interpolateAndExtrapolate(G3_23, location, true, true, true, transform.get());
 
-  G1 = interpolateAndExtrapolate(G1, location, true, true, true, transform.get());
-  G2 = interpolateAndExtrapolate(G2, location, true, true, true, transform.get());
-  G3 = interpolateAndExtrapolate(G3, location, true, true, true, transform.get());
+    G1 = interpolateAndExtrapolate(G1, location, true, true, true, transform.get());
+    G2 = interpolateAndExtrapolate(G2, location, true, true, true, transform.get());
+    G3 = interpolateAndExtrapolate(G3, location, true, true, true, transform.get());
+  } else {
+    G1_11 = G1_22 = G1_33 = G1_12 = G1_13 = G1_23 =
+
+        G2_11 = G2_22 = G2_33 = G2_12 = G2_13 = G2_23 =
+
+            G3_11 = G3_22 = G3_33 = G3_12 = G3_13 = G3_23 =
+
+                G1 = G2 = G3 = BoutNaN;
+  }
 
   //////////////////////////////////////////////////////
   /// Non-uniform meshes. Need to use DDX, DDY
@@ -1104,7 +1122,7 @@ int Coordinates::geometry(bool recalculate_staggered,
     if (localmesh->get(d2y, "d2y" + suffix, 0.0, false, location)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
-      d1_dy = DDY(1. / dy); // d/di(1/dy)
+      d1_dy = DDY(1. / dy.asField3DParallel()); // d/di(1/dy)
 
       localmesh->communicate_no_slices(d1_dy);
       d1_dy =
@@ -1487,16 +1505,8 @@ Coordinates::FieldMetric Coordinates::DDY(const Field2D& f, CELL_LOC loc,
   return bout::derivatives::index::DDY(f, loc, method, region) / dy;
 }
 
-Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
-                         const std::string& region) const {
-#if BOUT_USE_METRIC_3D
-  if (!f.hasParallelSlices() and !transform->canToFromFieldAligned()) {
-    Field3D f_parallel = f;
-    transform->calcParallelSlices(f_parallel);
-    f_parallel.applyParallelBoundary("parallel_neumann_o2");
-    return bout::derivatives::index::DDY(f_parallel, outloc, method, region);
-  }
-#endif
+Field3D Coordinates::DDY(const Field3DParallel& f, CELL_LOC outloc,
+                         const std::string& method, const std::string& region) const {
   return bout::derivatives::index::DDY(f, outloc, method, region) / dy;
 };
 
@@ -1528,7 +1538,7 @@ Coordinates::FieldMetric Coordinates::Grad_par(const Field2D& var,
   return DDY(var) * invSg();
 }
 
-Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
+Field3D Coordinates::Grad_par(const Field3DParallel& var, CELL_LOC outloc,
                               const std::string& method) {
 
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
@@ -1548,8 +1558,8 @@ Coordinates::FieldMetric Coordinates::Vpar_Grad_par(const Field2D& v, const Fiel
   return VDDY(v, f) * invSg();
 }
 
-Field3D Coordinates::Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
-                                   const std::string& method) {
+Field3D Coordinates::Vpar_Grad_par(const Field3D& v, const Field3DParallel& f,
+                                   CELL_LOC outloc, const std::string& method) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   return VDDY(v, f, outloc, method) * invSg();
@@ -1570,7 +1580,7 @@ Coordinates::FieldMetric Coordinates::Div_par(const Field2D& f, CELL_LOC outloc,
   return Bxy * Grad_par(f / Bxy_floc, outloc, method);
 }
 
-Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
+Field3D Coordinates::Div_par(const Field3DParallel& f, CELL_LOC outloc,
                              const std::string& method) {
 
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
@@ -1579,20 +1589,7 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
   // Coordinates object
   const auto& Bxy_floc = f.getCoordinates()->Bxy;
 
-  if (!f.hasParallelSlices()) {
-    // No yup/ydown fields. The Grad_par operator will
-    // shift to field aligned coordinates
-    return Bxy * Grad_par(f / Bxy_floc, outloc, method);
-  }
-
-  // Need to modify yup and ydown fields
-  Field3D f_B = f / Bxy_floc;
-  f_B.splitParallelSlices();
-  for (int i = 0; i < f.getMesh()->ystart; ++i) {
-    f_B.yup(i) = f.yup(i) / Bxy_floc.yup(i);
-    f_B.ydown(i) = f.ydown(i) / Bxy_floc.ydown(i);
-  }
-  return Bxy * Grad_par(f_B, outloc, method);
+  return Bxy * Grad_par(f / Bxy_floc, outloc, method);
 }
 
 /////////////////////////////////////////////////////////
@@ -1610,7 +1607,7 @@ Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outl
   return result;
 }
 
-Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
+Field3D Coordinates::Grad2_par2(const Field3DParallel& f, CELL_LOC outloc,
                                 const std::string& method) {
 
   if (outloc == CELL_DEFAULT) {
@@ -1776,9 +1773,10 @@ Coordinates::FieldMetric Coordinates::Laplace_par(const Field2D& f, CELL_LOC out
   return D2DY2(f, outloc) / g_22 + DDY(J / g_22, outloc) * DDY(f, outloc) / J;
 }
 
-Field3D Coordinates::Laplace_par(const Field3D& f, CELL_LOC outloc) {
+Field3D Coordinates::Laplace_par(const Field3DParallel& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
-  return D2DY2(f, outloc) / g_22 + DDY(J / g_22, outloc) * ::DDY(f, outloc) / J;
+  return D2DY2(f, outloc) / g_22
+         + DDY(J.asField3DParallel() / g_22, outloc) * ::DDY(f, outloc) / J;
 }
 
 // Full Laplacian operator on scalar field
@@ -1798,7 +1796,7 @@ Coordinates::FieldMetric Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
   return result;
 }
 
-Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
+Field3D Coordinates::Laplace(const Field3DParallel& f, CELL_LOC outloc,
                              const std::string& dfdy_boundary_conditions,
                              const std::string& dfdy_dy_region) {
 
@@ -2136,3 +2134,7 @@ void Coordinates::_compute_cell_area_z() const {
 }
 
 void Coordinates::_compute_cell_volume() const { _cell_volume.emplace(J * dx * dy * dz); }
+
+std::shared_ptr<YBoundary> Coordinates::makeYBoundary(YBndryType type) const {
+  return std::make_shared<YBoundary>(type, localoptions, *localmesh);
+}

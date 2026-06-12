@@ -82,7 +82,7 @@ Coordinates::FieldMetric DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-Field3D DDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+Field3D DDY(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
             const std::string& method = "DEFAULT",
             const std::string& region = "RGN_NOBNDRY");
 
@@ -410,7 +410,7 @@ Coordinates::FieldMetric VDDX(const Field2D& v, const Field2D& f,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-Field3D VDDY(const Field3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+Field3D VDDY(const Field3D& v, const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
              const std::string& method = "DEFAULT",
              const std::string& region = "RGN_NOBNDRY");
 
@@ -533,7 +533,7 @@ Coordinates::FieldMetric FDDX(const Field2D& v, const Field2D& f,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-Field3D FDDY(const Field3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+Field3D FDDY(const Field3D& v, const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
              const std::string& method = "DEFAULT",
              const std::string& region = "RGN_NOBNDRY");
 

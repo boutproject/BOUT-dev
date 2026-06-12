@@ -33,6 +33,7 @@
 #ifndef BOUT_COORDINATES_H
 #define BOUT_COORDINATES_H
 
+#include "bout/field_data.hxx"
 #include <bout/bout_types.hxx>
 #include <bout/build_defines.hxx>
 #include <bout/field2d.hxx>
@@ -40,7 +41,11 @@
 #include <bout/paralleltransform.hxx>
 #include <optional>
 
+#include <array>
+#include <memory>
+
 class Mesh;
+class YBoundary;
 
 /*!
  * Represents a coordinate system, and associated operators
@@ -267,7 +272,7 @@ public:
               const std::string& method = "DEFAULT",
               const std::string& region = "RGN_NOBNDRY");
 
-  Field3D DDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+  Field3D DDY(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
               const std::string& method = "DEFAULT",
               const std::string& region = "RGN_NOBNDRY") const;
 
@@ -279,7 +284,7 @@ public:
   FieldMetric Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
                        const std::string& method = "DEFAULT");
 
-  Field3D Grad_par(const Field3D& var, CELL_LOC outloc = CELL_DEFAULT,
+  Field3D Grad_par(const Field3DParallel& var, CELL_LOC outloc = CELL_DEFAULT,
                    const std::string& method = "DEFAULT");
 
   /// Advection along magnetic field V*b.Grad(f)
@@ -287,7 +292,7 @@ public:
                             CELL_LOC outloc = CELL_DEFAULT,
                             const std::string& method = "DEFAULT");
 
-  Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f,
+  Field3D Vpar_Grad_par(const Field3D& v, const Field3DParallel& f,
                         CELL_LOC outloc = CELL_DEFAULT,
                         const std::string& method = "DEFAULT");
 
@@ -295,14 +300,14 @@ public:
   FieldMetric Div_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                       const std::string& method = "DEFAULT");
 
-  Field3D Div_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+  Field3D Div_par(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
                   const std::string& method = "DEFAULT");
 
   // Second derivative along magnetic field
   FieldMetric Grad2_par2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                          const std::string& method = "DEFAULT");
 
-  Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+  Field3D Grad2_par2(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
                      const std::string& method = "DEFAULT");
   // Perpendicular Laplacian operator, using only X-Z derivatives
   // NOTE: This might be better bundled with the Laplacian inversion code
@@ -314,13 +319,13 @@ public:
   // Full parallel Laplacian operator on scalar field
   // Laplace_par(f) = Div( b (b dot Grad(f)) )
   FieldMetric Laplace_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT);
-  Field3D Laplace_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT);
+  Field3D Laplace_par(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT);
 
   // Full Laplacian operator on scalar field
   FieldMetric Laplace(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                       const std::string& dfdy_boundary_conditions = "free_o3",
                       const std::string& dfdy_dy_region = "");
-  Field3D Laplace(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+  Field3D Laplace(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
                   const std::string& dfdy_boundary_conditions = "free_o3",
                   const std::string& dfdy_dy_region = "");
 
@@ -328,9 +333,13 @@ public:
   // solver
   Field2D Laplace_perpXY(const Field2D& A, const Field2D& f);
 
+  friend std::shared_ptr<YBoundary> getYBoundary(Coordinates* coords, YBndryType type);
+
 private:
+  std::shared_ptr<YBoundary> makeYBoundary(YBndryType type) const;
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;
+  Options* localoptions;
   CELL_LOC location;
 
   /// Handles calculation of yup and ydown
@@ -356,6 +365,8 @@ private:
   void checkCovariant();
   // check that contravariant tensors are positive (if expected) and finite (always)
   void checkContravariant();
+
+  mutable std::array<std::shared_ptr<YBoundary>, 3> ybndrys;
 };
 
 #endif // BOUT_COORDINATES_H

@@ -187,7 +187,7 @@ jobs:
         run: BUILD_PETSC=${{ matrix.config.build_petsc }} ./.build_petsc_for_ci.sh ${{ matrix.config.build_petsc_branch }}
 
       - name: Build ADIOS2
-        run: BUILD_ADIOS2=${{ matrix.config.build_adios2 }} ./.build_adios2_for_ci.sh 
+        run: BUILD_ADIOS2=${{ matrix.config.build_adios2 }} ./.build_adios2_for_ci.sh
 
       - name: Build BOUT++
         run: UNIT_ONLY=${{ matrix.config.unit_only }} ./.ci_with_cmake.sh ${{ matrix.config.cmake_options }}

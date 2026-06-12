@@ -120,7 +120,7 @@ bool GridFile::get(Mesh* UNUSED(m), BoutReal& rval, const std::string& name,
 
 /*!
  * Reads a 2D, 3D or FieldPerp field variable from a file
- * 
+ *
  * Successfully reads Field2D or FieldPerp if the variable in the file is 0-D or 2-D.
  * Successfully reads Field3D if the variable in the file is 0-D, 2-D or 3-D.
  */
@@ -207,9 +207,6 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
   // we pass
   int ys = m->OffsetY;
 
-  // Total number of y-boundary cells in grid file, used for check later.
-  // Value depends on if we are double-null or not.
-  int total_grid_yguards = 2 * grid_yguards;
   if (m->numberOfXPoints > 1) {
     ASSERT1(m->numberOfXPoints == 2);
     // Need to check if we are before or after the target in the middle of the
@@ -219,9 +216,6 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
       // Note: neither ny_inner nor OffsetY include guard cells
       ys += 2 * grid_yguards;
     }
-
-    // Add y-boundary guard cells at upper target
-    total_grid_yguards += 2 * grid_yguards;
   }
 
   // Index offsets into destination
@@ -378,7 +372,7 @@ void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd, int n
 
     for (int x = xs; x < xs + nx_to_read; ++x) {
       for (int y = ys; y < ys + ny_to_read; ++y) {
-        BoutReal const value = full_var(x, y);
+        const BoutReal value = full_var(x, y);
         for (int z = 0; z < var.getNz(); z++) {
           var(x - xs + xd, y - ys + yd, z) = value;
         }

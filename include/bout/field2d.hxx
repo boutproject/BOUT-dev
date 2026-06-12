@@ -4,9 +4,9 @@
  * \brief Definition of 2D scalar field class
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -33,13 +33,17 @@ class Field2D;
 #define BOUT_FIELD2D_H
 
 #include "bout/array.hxx"
-#include "bout/build_config.hxx"
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/field.hxx"
 #include "bout/field_data.hxx"
 #include "bout/fieldperp.hxx"
 #include "bout/region.hxx"
 
 #include <cstddef>
+#include <ostream>
+#include <string>
 
 #if BOUT_HAS_RAJA
 #include "RAJA/RAJA.hpp" // using RAJA lib
@@ -70,7 +74,7 @@ public:
   Field2D(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
           DirectionTypes directions_in = {YDirectionType::Standard,
                                           ZDirectionType::Average},
-          std::optional<size_t> region = {});
+          std::optional<size_t> regionID = {});
 
   /*!
    * Copy constructor. After this both fields
@@ -206,7 +210,7 @@ public:
     }
 #endif
 
-    return data[jx * ny + jy];
+    return data[(jx * ny) + jy];
   }
   inline const BoutReal& operator()(int jx, int jy) const {
 #if CHECK > 2 && !BOUT_HAS_CUDA
@@ -220,7 +224,7 @@ public:
     }
 #endif
 
-    return data[jx * ny + jy];
+    return data[(jx * ny) + jy];
   }
 
   /*!
@@ -274,6 +278,8 @@ public:
 
   int size() const override { return nx * ny; }
 
+  /// Return a field that can be used to perform parallel (Y) derivatives.
+  /// This is used to write generic FA/FCI code.
   Field2D& asField3DParallel() { return *this; }
   const Field2D& asField3DParallel() const { return *this; }
 
@@ -289,6 +295,10 @@ private:
 };
 
 // Non-member overloaded operators
+FieldPerp operator+(const Field2D& lhs, const FieldPerp& rhs);
+FieldPerp operator-(const Field2D& lhs, const FieldPerp& rhs);
+FieldPerp operator*(const Field2D& lhs, const FieldPerp& rhs);
+FieldPerp operator/(const Field2D& lhs, const FieldPerp& rhs);
 
 Field2D operator+(const Field2D& lhs, const Field2D& rhs);
 Field2D operator-(const Field2D& lhs, const Field2D& rhs);

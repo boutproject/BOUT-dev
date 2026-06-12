@@ -87,6 +87,14 @@ The documentation is divided into the following sections:
 
 .. toctree::
    :maxdepth: 1
+   :caption: Topology Handling
+   :name: topologies
+
+   user_docs/topology
+   user_docs/supported_topologies
+
+.. toctree::
+   :maxdepth: 1
    :caption: Developer Documentation
    :name: developer-docs
 

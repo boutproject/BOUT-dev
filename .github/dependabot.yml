@@ -6,11 +6,6 @@ updates:
         interval: "weekly"
     directory: "/"
 
-  - package-ecosystem: "pip"
-    schedule:
-        interval: "daily"
-    directory: "/"
-  
   - package-ecosystem: "github-actions"
     schedule:
       interval: "weekly"
