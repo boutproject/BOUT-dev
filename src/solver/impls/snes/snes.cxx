@@ -886,7 +886,7 @@ int SNESSolver::run() {
 
   BoutReal target = simtime;
   recent_failure_rate = 0.0;
-  for (int s = 0; s < getNumberOutputSteps(); s++) {
+  for (int s = 1; s <= getNumberOutputSteps(); s++) {
     target += getOutputTimestep();
 
     bool looping = true;
