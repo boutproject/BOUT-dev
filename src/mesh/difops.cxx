@@ -38,7 +38,6 @@
 #include "bout/solver.hxx"
 #include "bout/unused.hxx"
 #include "bout/utils.hxx"
-#include "bout/vecops.hxx"
 
 #include <cmath>
 
