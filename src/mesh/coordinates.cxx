@@ -115,8 +115,8 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extr
           }
           // extrapolate into boundary guard cells if there are enough grid points
           for (int i = extrap_start; i < bndry->width; i++) {
-            int xi = bndry->x + (i * bndry->bx);
-            int yi = bndry->y + (i * bndry->by);
+            const int xi = bndry->x + (i * bndry->bx);
+            const int yi = bndry->y + (i * bndry->by);
             result(xi, yi) = 3.0 * result(xi - bndry->bx, yi - bndry->by)
                              - 3.0 * result(xi - 2 * bndry->bx, yi - 2 * bndry->by)
                              + result(xi - 3 * bndry->bx, yi - 3 * bndry->by);
