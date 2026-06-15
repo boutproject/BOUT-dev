@@ -524,8 +524,16 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
   // Calculate Jacobian and Bxy
   jacobian();
 
+  // Mesh::sourceHasVar is (currently) insufficient to check whether we can
+  // actually read a variable because it might be present but have the wrong
+  // size, so we have to attempt to read it
+  auto source_has_var = [&suffix, this](const std::string& name) -> bool {
+    FieldMetric var{localmesh};
+    return localmesh->get(var, name + suffix, 0.0, false) == 0;
+  };
+
   // Attempt to read J from the grid file
-  if (localmesh->sourceHasVar("J" + suffix)) {
+  if (source_has_var("J")) {
     // Copy value previously calculated from metric components, use to check
     // read in value
     const auto Jcalc = J;
@@ -550,7 +558,7 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
   }
 
   // Attempt to read Bxy from the grid file
-  if (localmesh->sourceHasVar("Bxy" + suffix)) {
+  if (source_has_var("Bxy")) {
     // Copy value previously calculated from J, use to check read in value
     const auto Bcalc = Bxy;
     Bxy = readAndFillGuards("Bxy", 0.0);
