@@ -118,72 +118,84 @@ public:
     if (!_cell_area_xlow.has_value()) {
       _compute_cell_area_x();
     }
+    ASSERT2(_cell_area_xlow.has_value());
     return *_cell_area_xlow;
   }
   const FieldMetric& cell_area_xhigh() const {
     if (!_cell_area_xhigh.has_value()) {
       _compute_cell_area_x();
     }
+    ASSERT2(_cell_area_xhigh.has_value());
     return *_cell_area_xhigh;
   }
   const FieldMetric& cell_area_ylow() const {
     if (!_cell_area_ylow.has_value()) {
       _compute_cell_area_y();
     }
+    ASSERT2(_cell_area_ylow.has_value());
     return *_cell_area_ylow;
   }
   const FieldMetric& cell_area_yhigh() const {
     if (!_cell_area_yhigh.has_value()) {
       _compute_cell_area_y();
     }
+    ASSERT2(_cell_area_yhigh.has_value());
     return *_cell_area_yhigh;
   }
   const FieldMetric& cell_area_zlow() const {
     if (!_cell_area_zlow.has_value()) {
       _compute_cell_area_z();
     }
+    ASSERT2(_cell_area_zlow.has_value());
     return *_cell_area_zlow;
   }
   const FieldMetric& cell_area_zhigh() const {
     if (!_cell_area_zhigh.has_value()) {
       _compute_cell_area_z();
     }
+    ASSERT2(_cell_area_zhigh.has_value());
     return *_cell_area_zhigh;
   }
   FieldMetric& cell_area_xlow() {
     if (!_cell_area_xlow.has_value()) {
       _compute_cell_area_x();
     }
+    ASSERT2(_cell_area_xlow.has_value());
     return *_cell_area_xlow;
   }
   FieldMetric& cell_area_xhigh() {
     if (!_cell_area_xhigh.has_value()) {
       _compute_cell_area_x();
     }
+    ASSERT2(_cell_area_xhigh.has_value());
     return *_cell_area_xhigh;
   }
   FieldMetric& cell_area_ylow() {
     if (!_cell_area_ylow.has_value()) {
       _compute_cell_area_y();
     }
+    ASSERT2(_cell_area_ylow.has_value());
     return *_cell_area_ylow;
   }
   FieldMetric& cell_area_yhigh() {
     if (!_cell_area_yhigh.has_value()) {
       _compute_cell_area_y();
     }
+    ASSERT2(_cell_area_yhigh.has_value());
     return *_cell_area_yhigh;
   }
   FieldMetric& cell_area_zlow() {
     if (!_cell_area_zlow.has_value()) {
       _compute_cell_area_z();
     }
+    ASSERT2(_cell_area_zlow.has_value());
     return *_cell_area_zlow;
   }
   FieldMetric& cell_area_zhigh() {
     if (!_cell_area_zhigh.has_value()) {
       _compute_cell_area_z();
     }
+    ASSERT2(_cell_area_zhigh.has_value());
     return *_cell_area_zhigh;
   }
   // Cell Volume
@@ -191,12 +203,14 @@ public:
     if (!_cell_volume.has_value()) {
       _compute_cell_volume();
     }
+    ASSERT2(_cell_volume.has_value());
     return *_cell_volume;
   }
   FieldMetric& cell_volume() {
     if (!_cell_volume.has_value()) {
       _compute_cell_volume();
     }
+    ASSERT2(_cell_volume.has_value());
     return *_cell_volume;
   }
 

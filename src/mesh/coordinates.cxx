@@ -2097,6 +2097,9 @@ void Coordinates::_compute_cell_area_x() const {
 
 void Coordinates::_compute_cell_area_y() const {
   _compute_Jxz_cell_faces();
+  ASSERT2(_jxz_centre.has_value());
+  ASSERT2(_jxz_ylow.has_value());
+  ASSERT2(_jxz_yhigh.has_value());
   if (_jxz_centre->isFci()) {
     ASSERT3(isUniform(dx, true, "RGN_ALL"));
     ASSERT2(isUniform(dx, false, "RGN_ALL"));
