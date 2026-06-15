@@ -11,7 +11,6 @@
 #include "bout/build_defines.hxx"
 #include "bout/coordinates.hxx"
 #include "bout/field.hxx"
-#include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/globals.hxx"
 #include "bout/mesh.hxx"
@@ -224,6 +223,97 @@ struct Superbee {
       n.L = n.c - half_slope;
       n.R = n.c + half_slope;
     }
+  }
+};
+
+/*!
+   * Symmetric Van Albada second order slope limiter
+   *
+   * Uses a smooth (differentiable) approximation to `max(a*b, 0)` to avoid
+   * introducing a kink at extrema, which can be helpful for nonlinear solvers
+   * and finite-difference Jacobian calculations.
+   *
+   * The limited slope is calculated from the left and right differences
+   * `dl = c - m` and `dr = p - c` as
+   *
+   *   slope = (pos(dl*dr) * (dl + dr)) / (dl^2 + dr^2)
+   *
+   * where `pos(x)` is a smooth approximation to `max(x, 0)`.
+   */
+struct VanAlbada {
+  void operator()(Stencil1D& n) {
+    const BoutReal dl = n.c - n.m;
+    const BoutReal dr = n.p - n.c;
+
+    const BoutReal denom = dl * dl + dr * dr;
+
+    // Smoothness parameters:
+    // - keep division well-defined when dl=dr=0
+    // - provide a differentiable approximation to max(dl*dr, 0)
+    const BoutReal eps = 1e-12 * denom + 1e-30;
+
+    const BoutReal ab = dl * dr;
+    const BoutReal ab_pos = 0.5 * (ab + sqrt(ab * ab + eps * eps));
+
+    const BoutReal slope = (ab_pos * (dl + dr)) / (denom + eps);
+
+    n.L = n.c - 0.5 * slope;
+    n.R = n.c + 0.5 * slope;
+  }
+};
+
+/*!
+   * WENO3-JS (Jiang-Shu) reconstruction to cell faces
+   *
+   * This is a third-order essentially non-oscillatory reconstruction using two
+   * candidate second-order polynomials and smoothness-weighted blending.
+   *
+   * Unlike TVD slope limiters (e.g. ``MC``), WENO reconstruction is generally
+   * smooth (differentiable) for all inputs, but it does not enforce strict
+   * monotonicity.
+   *
+   * Uses only the three-point stencil (`m`, `c`, `p`), so it is a drop-in
+   * replacement anywhere `Stencil1D` is populated with those values.
+   */
+struct WENO3 {
+  void operator()(Stencil1D& n) {
+    // Right face (between c and p): value from cell c (left state at i+1/2)
+    const BoutReal p0_r = 0.5 * (-n.m + 3.0 * n.c);
+    const BoutReal p1_r = 0.5 * (n.c + n.p);
+
+    const BoutReal beta0_r = SQ(n.c - n.m);
+    const BoutReal beta1_r = SQ(n.p - n.c);
+
+    // Left face (between m and c): value from cell c (right state at i-1/2)
+    const BoutReal p0_l = 0.5 * (-n.p + 3.0 * n.c);
+    const BoutReal p1_l = 0.5 * (n.m + n.c);
+
+    const BoutReal beta0_l = beta1_r;
+    const BoutReal beta1_l = beta0_r;
+
+    // Smoothness parameter (scaled to local variation)
+    const BoutReal eps = 1e-12 * (beta0_r + beta1_r) + 1e-30;
+
+    // Linear weights for WENO3-JS
+    constexpr BoutReal d0 = 1.0 / 3.0;
+    constexpr BoutReal d1 = 2.0 / 3.0;
+
+    // Right face weights
+    const BoutReal a0_r = d0 / SQ(eps + beta0_r);
+    const BoutReal a1_r = d1 / SQ(eps + beta1_r);
+    const BoutReal wsum_r = a0_r + a1_r;
+    const BoutReal w0_r = a0_r / wsum_r;
+    const BoutReal w1_r = a1_r / wsum_r;
+
+    // Left face weights (mirrored)
+    const BoutReal a0_l = d0 / SQ(eps + beta0_l);
+    const BoutReal a1_l = d1 / SQ(eps + beta1_l);
+    const BoutReal wsum_l = a0_l + a1_l;
+    const BoutReal w0_l = a0_l / wsum_l;
+    const BoutReal w1_l = a1_l / wsum_l;
+
+    n.R = w0_r * p0_r + w1_r * p1_r;
+    n.L = w0_l * p0_l + w1_l * p1_l;
   }
 };
 

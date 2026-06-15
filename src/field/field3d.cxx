@@ -4,7 +4,7 @@
  * Class for 3D X-Y-Z scalar fields
  *
  **************************************************************************
- * Copyright 2010 - 2025 BOUT++ developers
+ * Copyright 2010 - 2026 BOUT++ developers
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -28,6 +28,7 @@
 #include "bout/bout_types.hxx"
 #include "bout/build_defines.hxx"
 
+#include "bout/index_derivs_interface.hxx"
 #include <bout/boutcomm.hxx>
 #include <bout/globals.hxx>
 
@@ -43,6 +44,7 @@
 #include <bout/assert.hxx>
 #include <bout/boundary_factory.hxx>
 #include <bout/boundary_op.hxx>
+#include <bout/boundary_region_iter.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/dcomplex.hxx>
@@ -278,7 +280,7 @@ Field3D& Field3D::operator=(const Field3D& rhs) {
   return *this;
 }
 
-Field3D& Field3D::operator=(Field3D&& rhs) {
+Field3D& Field3D::operator=(Field3D&& rhs) noexcept {
   track(rhs, "operator=");
 
   // Move parallel slices or delete existing ones.
@@ -481,23 +483,81 @@ void Field3D::applyTDerivBoundary() {
   }
 }
 
-void Field3D::setBoundaryTo(const Field3D& f3d) {
+void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices,
+                            bool forceLegacy) {
 
   checkData(f3d);
 
   allocate(); // Make sure data allocated
 
-  /// Loop over boundary regions
-  for (const auto& reg : fieldmesh->getBoundaries()) {
-    /// Loop within each region
-    for (reg->first(); !reg->isDone(); reg->next()) {
-      for (int z = 0; z < nz; z++) {
-        // Get value half-way between cells
-        BoutReal val =
-            0.5 * (f3d(reg->x, reg->y, z) + f3d(reg->x - reg->bx, reg->y - reg->by, z));
-        // Set to this value
-        (*this)(reg->x, reg->y, z) =
-            2. * val - (*this)(reg->x - reg->bx, reg->y - reg->by, z);
+  if (isFci()) {
+    ASSERT1(f3d.hasParallelSlices());
+    if (copyParallelSlices) {
+      splitParallelSlices();
+      for (int i = 0; i < fieldmesh->ystart; ++i) {
+        yup(i) = f3d.yup(i);
+        ydown(i) = f3d.ydown(i);
+      }
+    } else {
+      // Set yup/ydown using midpoint values from f3d
+      ASSERT1(hasParallelSlices());
+
+      for (auto& region : fieldmesh->getBoundariesPar()) {
+        for (const auto& point : *region) {
+          // Interpolate midpoint value in f3d
+          const BoutReal val = point.interpolate_boundary_o2(f3d);
+          // Set the same boundary value in this field
+          point.dirichlet_o1(*this, val);
+        }
+      }
+    }
+  }
+
+  // Non-FCI.
+  // Transform to field-aligned coordinates?
+  // Loop over boundary regions
+  for (const auto& newreg : fieldmesh->getBoundaries()) {
+    if (newreg->isX) {
+      bout::boundary::iter_boundary(newreg, [&](auto& point) {
+        const BoutReal val = point.interpolate_boundary_o2(f3d);
+        point.dirichlet_o2(*this, val);
+      });
+      if (forceLegacy) {
+        // get the old, potentially wrong behaviour
+        auto* reg = newreg->getLegacyPointer();
+        if (isFci() && reg->by != 0) {
+          continue;
+        }
+        /// Loop within each region
+        for (reg->first(); !reg->isDone(); reg->next()) {
+          for (int z = 0; z < nz; z++) {
+            // Get value half-way between cells
+            const BoutReal val =
+                0.5
+                * (f3d(reg->x, reg->y, z) + f3d(reg->x - reg->bx, reg->y - reg->by, z));
+            // Set to this value
+            (*this)(reg->x, reg->y, z) =
+                ((2. * val) - (*this)(reg->x - reg->bx, reg->y - reg->by, z));
+          }
+        }
+      }
+    } else if (newreg->isY) {
+      // nothing to do
+    } else {
+      auto* reg = newreg->getLegacyPointer();
+      if (isFci() && reg->by != 0) {
+        continue;
+      }
+      /// Loop within each region
+      for (reg->first(); !reg->isDone(); reg->next()) {
+        for (int z = 0; z < nz; z++) {
+          // Get value half-way between cells
+          const BoutReal val =
+              0.5 * (f3d(reg->x, reg->y, z) + f3d(reg->x - reg->bx, reg->y - reg->by, z));
+          // Set to this value
+          (*this)(reg->x, reg->y, z) =
+              (2. * val) - (*this)(reg->x - reg->bx, reg->y - reg->by, z);
+        }
       }
     }
   }

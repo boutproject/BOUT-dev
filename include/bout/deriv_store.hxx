@@ -33,8 +33,10 @@
 #include <functional>
 #include <map>
 #include <set>
+#include <type_traits>
 #include <unordered_map>
 
+#include "bout/field3d.hxx"
 #include <bout/scorepwrapper.hxx>
 
 #include <bout/bout_types.hxx>
