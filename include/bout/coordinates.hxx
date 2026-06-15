@@ -33,6 +33,7 @@
 #ifndef BOUT_COORDINATES_H
 #define BOUT_COORDINATES_H
 
+#include "bout/assert.hxx"
 #include "bout/field_data.hxx"
 #include <bout/bout_types.hxx>
 #include <bout/build_defines.hxx>
