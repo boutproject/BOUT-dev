@@ -3,12 +3,15 @@
  *
  * Independently tests the bracket operator, perpendicular diffusion,
  * and parallel diffusion operators.
- * 
+ *
  */
 
+#include <bout/bout_types.hxx>
 #include <bout/derivs.hxx>
 #include <bout/field_factory.hxx>
+#include <bout/options.hxx>
 #include <bout/physicsmodel.hxx>
+#include <bout/tokamak_coordinates.hxx>
 
 class TokamakMMS : public PhysicsModel {
 public:
@@ -43,60 +46,9 @@ public:
     return 0;
   }
   void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
-    // Load metric coefficients from the mesh
-    Field2D Rxy, Bpxy, Btxy, hthe, sinty;
-    GRID_LOAD5(Rxy, Bpxy, Btxy, hthe, sinty); // Load metrics
+    const bool ShiftXderivs = Options::root()["shiftXderivs"].withDefault(false);
 
-    Coordinates* coords = mesh->getCoordinates();
-
-    // Checking for dpsi used in BOUT grids
-    Field2D dx;
-    if (!mesh->get(dx, "dpsi")) {
-      output << "\tUsing dpsi as the x grid spacing\n";
-      coords->dx = dx; // Only use dpsi if found
-    } else {
-      // dx will have been read already from the grid
-      output << "\tUsing dx as the x grid spacing\n";
-    }
-
-    Rxy /= Lnorm;
-    hthe /= Lnorm;
-    sinty *= SQ(Lnorm) * Bnorm;
-    coords->dx /= SQ(Lnorm) * Bnorm;
-
-    Bpxy /= Bnorm;
-    Btxy /= Bnorm;
-    coords->Bxy /= Bnorm;
-
-    // Calculate metric components
-    bool ShiftXderivs;
-    Options::getRoot()->get("shiftXderivs", ShiftXderivs, false); // Read global flag
-    if (ShiftXderivs) {
-      sinty = 0.0; // I disappears from metric
-    }
-
-    BoutReal sbp = 1.0; // Sign of Bp
-    if (min(Bpxy, true) < 0.0) {
-      sbp = -1.0;
-    }
-
-    coords->g11 = SQ(Rxy * Bpxy);
-    coords->g22 = 1.0 / SQ(hthe);
-    coords->g33 = SQ(sinty) * coords->g11 + SQ(coords->Bxy) / coords->g11;
-    coords->g12 = 0.0;
-    coords->g13 = -sinty * coords->g11;
-    coords->g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
-
-    coords->J = hthe / Bpxy;
-
-    coords->g_11 = 1.0 / coords->g11 + SQ(sinty * Rxy);
-    coords->g_22 = SQ(coords->Bxy * hthe / Bpxy);
-    coords->g_33 = Rxy * Rxy;
-    coords->g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
-    coords->g_13 = sinty * Rxy * Rxy;
-    coords->g_23 = sbp * Btxy * hthe * Rxy / Bpxy;
-
-    coords->geometry();
+    bout::set_tokamak_coordinates(*mesh, Lnorm, Bnorm, ShiftXderivs);
   }
 
 private:

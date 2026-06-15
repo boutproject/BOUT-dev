@@ -284,7 +284,27 @@ if(BOUT_USE_ADIOS2)
   else()
     find_package(ADIOS2 REQUIRED)
   endif()
-  target_link_libraries(bout++ PUBLIC adios2::cxx11_mpi MPI::MPI_C)
+
+  
+  foreach(_adios2_candidate
+    adios2::cxx_mpi
+    adios2::cxx20_mpi
+    adios2::cxx17_mpi
+    adios2::cxx11_mpi
+  )
+    if(TARGET ${_adios2_candidate})
+      set(_adios2_target ${_adios2_candidate})
+      break()
+    endif()
+  endforeach()
+
+  if(NOT DEFINED _adios2_target)
+    message(FATAL_ERROR
+      "Could not find a usable ADIOS2 CXX CMake target. ")
+  endif()
+  message(STATUS "Using ADIOS2 CMake target: ${_adios2_target}")
+
+  target_link_libraries(bout++ PUBLIC ${_adios2_target} MPI::MPI_C)
 endif()
 message(STATUS "ADIOS2 support: ${BOUT_USE_ADIOS2}")
 set(BOUT_HAS_ADIOS2 ${BOUT_USE_ADIOS2})

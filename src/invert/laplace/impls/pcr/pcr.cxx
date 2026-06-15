@@ -560,7 +560,6 @@ void LaplacePCR ::pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcomplex>& 
   const int nlevel = log2(nprocs);
   const int nhprocs = nprocs / 2;
   int dist_rank = 1;
-  int dist2_rank = 2;
 
   /// Parallel cyclic reduction continues until 2x2 matrix are made between a pair of
   /// rank, (myrank, myrank+nhprocs).
@@ -678,7 +677,6 @@ void LaplacePCR ::pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcomplex>& 
     }
 
     dist_rank *= 2;
-    dist2_rank *= 2;
   }
 
   /// Solving 2x2 matrix. All pair of ranks, myrank and myrank+nhprocs, solves it
