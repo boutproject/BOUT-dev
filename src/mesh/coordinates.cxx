@@ -25,6 +25,7 @@
 #include <bout/utils.hxx>
 #include <bout/yboundary_regions.hxx>
 
+#include <cmath>
 #include <memory>
 #include <string>
 
@@ -2022,7 +2023,7 @@ const Coordinates::FieldMetric& Coordinates::g_22_ylow() const {
   } else {
     ASSERT0(mesh->ystart > 0);
     BOUT_FOR(i, g_22.getRegion("RGN_NOY")) {
-      _g_22_ylow.value()[i] = SQ(0.5 * (sqrt(g_22[i]) + sqrt(g_22[i.ym()])));
+      _g_22_ylow.value()[i] = SQ(0.5 * (std::sqrt(g_22[i]) + std::sqrt(g_22[i.ym()])));
     }
   }
   return g_22_ylow();
@@ -2042,7 +2043,7 @@ const Coordinates::FieldMetric& Coordinates::g_22_yhigh() const {
   } else {
     ASSERT0(mesh->ystart > 0);
     BOUT_FOR(i, g_22.getRegion("RGN_NOY")) {
-      _g_22_yhigh.value()[i] = SQ(0.5 * (sqrt(g_22[i]) + sqrt(g_22[i.yp()])));
+      _g_22_yhigh.value()[i] = SQ(0.5 * (std::sqrt(g_22[i]) + std::sqrt(g_22[i.yp()])));
     }
   }
   return g_22_yhigh();
