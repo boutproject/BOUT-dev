@@ -982,7 +982,7 @@ int SNESSolver::run() {
         break; // Could happen if step over multiple outputs
       }
 
-      if (scale_vars and loop_count + 1 % rescale_period == 0) {
+      if (scale_vars and (loop_count + 1) % rescale_period == 0) {
         PetscCall(rescale(saved_jacobian_lag));
       }
       ++loop_count;
