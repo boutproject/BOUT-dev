@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Python script to run and analyse MMS test
+# Python script to run and analyse MPI test
 
 from boututils.run_wrapper import launch_safe
 from boutdata.collect import collect
@@ -20,7 +20,7 @@ def test_fci_mpi():
 
     def run_case(nxpe: int, nype: int, mthread: int):
 
-        cmd = f"./fci_mpi NXPE={nxpe} NYPE={nype}"
+        cmd = f"./fci_mpi NXPE={nxpe} NYPE={nype} mesh:paralleltransform:xzinterpolation:type={implementation}"
         print(f"Running command: {cmd}")
 
         _, out = launch_safe(cmd, nproc=nxpe * nype, mthread=mthread, pipe=True)
@@ -44,34 +44,35 @@ def test_fci_mpi():
 
     failures = []
 
-    for nslice in NSLICES:
-        # reference data!
-        run_case(1, 1, MAXCORES)
+    for implementation in ["hermitespline", "monotonichermitespline"]:
+        for nslice in NSLICES:
+            # reference data!
+            run_case(1, 1, MAXCORES)
 
-        ref = {}
-        for i in range(4):
-            for yp in range(1, nslice + 1):
-                for y in [-yp, yp]:
-                    name = f"output_{i}_{y:+d}"
-                    ref[name] = collect(name, **COLLECT_KW)
+            ref = {}
+            for i in range(4):
+                for yp in range(1, nslice + 1):
+                    for y in [-yp, yp]:
+                        name = f"output_{i}_{y:+d}"
+                        ref[name] = collect(name, **COLLECT_KW)
 
-        for nxpe, nype in itertools.product(NLIST, NLIST):
-            if (nxpe, nype) == (1, 1):
-                # reference case, done above
-                continue
+            for nxpe, nype in itertools.product(NLIST, NLIST):
+                if (nxpe, nype) == (1, 1):
+                    # reference case, done above
+                    continue
 
-            if nxpe * nype > MAXCORES:
-                continue
+                if nxpe * nype > MAXCORES:
+                    continue
 
-            mthread = MAXCORES // (nxpe * nype)
-            failures_ = test_case(nxpe, nype, mthread, ref)
-            failures.extend(failures_)
+                mthread = MAXCORES // (nxpe * nype)
+                failures_ = test_case(nxpe, nype, mthread, ref)
+                failures.extend(failures_)
 
-    success = len(failures) == 0
+        success = len(failures) == 0
 
-    assert success, "\nSome tests failed:"
+        assert success, "\nSome tests failed:"
 
-    if not success:
-        for nxpe, nype, name, error in failures:
-            print("----------")
-            print(f"case {nxpe=} {nype=} {name=}\n{error}")
+        if not success:
+            for nxpe, nype, name, error in failures:
+                print("----------")
+                print(f"case {nxpe=} {nype=} {name=}\n{error}")
