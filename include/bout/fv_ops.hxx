@@ -5,11 +5,17 @@
 #ifndef BOUT_FV_OPS_H
 #define BOUT_FV_OPS_H
 
+#include "boutexception.hxx"
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/build_defines.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/field.hxx"
 #include "bout/field3d.hxx"
 #include "bout/globals.hxx"
-#include "bout/vector2d.hxx"
-
+#include "bout/region.hxx"
 #include "bout/utils.hxx"
+#include "bout/vector2d.hxx"
 #include <bout/mesh.hxx>
 
 namespace FV {
@@ -100,7 +106,7 @@ struct Fromm {
 
 /*!
    * Second order slope limiter method
-   * 
+   *
    * Limits slope to minimum absolute value
    * of left and right gradients. If at a maximum
    * or minimum slope set to zero, i.e. reverts
@@ -110,7 +116,7 @@ struct MinMod {
   void operator()(Stencil1D& n) {
     // Choose the gradient within the cell
     // as the minimum (smoothest) solution
-    BoutReal slope = _minmod(n.p - n.c, n.c - n.m);
+    const BoutReal slope = _minmod(n.p - n.c, n.c - n.m);
     n.L = n.c - 0.5 * slope;
     n.R = n.c + 0.5 * slope;
   }
@@ -137,17 +143,17 @@ private:
 
 /*!
    * Monotonised Central (MC) second order slope limiter (Van Leer)
-   * 
-   * Limits the slope based on taking the slope with 
+   *
+   * Limits the slope based on taking the slope with
    * the minimum absolute value from central, 2*left and
    * 2*right. If any of these slopes have different signs
    * then the slope reverts to zero (i.e. 1st-order upwinding).
    */
 struct MC {
   void operator()(Stencil1D& n) {
-    BoutReal slope = minmod(2. * (n.p - n.c),  // 2*right difference
-                            0.5 * (n.p - n.m), // Central difference
-                            2. * (n.c - n.m)); // 2*left difference
+    const BoutReal slope = minmod(2. * (n.p - n.c),  // 2*right difference
+                                  0.5 * (n.p - n.m), // Central difference
+                                  2. * (n.c - n.m)); // 2*left difference
     n.L = n.c - 0.5 * slope;
     n.R = n.c + 0.5 * slope;
   }
@@ -163,6 +169,97 @@ private:
 
     // Return the minimum absolute value
     return SIGN(a) * BOUTMIN(fabs(a), fabs(b), fabs(c));
+  }
+};
+
+/*!
+   * Symmetric Van Albada second order slope limiter
+   *
+   * Uses a smooth (differentiable) approximation to `max(a*b, 0)` to avoid
+   * introducing a kink at extrema, which can be helpful for nonlinear solvers
+   * and finite-difference Jacobian calculations.
+   *
+   * The limited slope is calculated from the left and right differences
+   * `dl = c - m` and `dr = p - c` as
+   *
+   *   slope = (pos(dl*dr) * (dl + dr)) / (dl^2 + dr^2)
+   *
+   * where `pos(x)` is a smooth approximation to `max(x, 0)`.
+   */
+struct VanAlbada {
+  void operator()(Stencil1D& n) {
+    const BoutReal dl = n.c - n.m;
+    const BoutReal dr = n.p - n.c;
+
+    const BoutReal denom = dl * dl + dr * dr;
+
+    // Smoothness parameters:
+    // - keep division well-defined when dl=dr=0
+    // - provide a differentiable approximation to max(dl*dr, 0)
+    const BoutReal eps = 1e-12 * denom + 1e-30;
+
+    const BoutReal ab = dl * dr;
+    const BoutReal ab_pos = 0.5 * (ab + sqrt(ab * ab + eps * eps));
+
+    const BoutReal slope = (ab_pos * (dl + dr)) / (denom + eps);
+
+    n.L = n.c - 0.5 * slope;
+    n.R = n.c + 0.5 * slope;
+  }
+};
+
+/*!
+   * WENO3-JS (Jiang-Shu) reconstruction to cell faces
+   *
+   * This is a third-order essentially non-oscillatory reconstruction using two
+   * candidate second-order polynomials and smoothness-weighted blending.
+   *
+   * Unlike TVD slope limiters (e.g. ``MC``), WENO reconstruction is generally
+   * smooth (differentiable) for all inputs, but it does not enforce strict
+   * monotonicity.
+   *
+   * Uses only the three-point stencil (`m`, `c`, `p`), so it is a drop-in
+   * replacement anywhere `Stencil1D` is populated with those values.
+   */
+struct WENO3 {
+  void operator()(Stencil1D& n) {
+    // Right face (between c and p): value from cell c (left state at i+1/2)
+    const BoutReal p0_r = 0.5 * (-n.m + 3.0 * n.c);
+    const BoutReal p1_r = 0.5 * (n.c + n.p);
+
+    const BoutReal beta0_r = SQ(n.c - n.m);
+    const BoutReal beta1_r = SQ(n.p - n.c);
+
+    // Left face (between m and c): value from cell c (right state at i-1/2)
+    const BoutReal p0_l = 0.5 * (-n.p + 3.0 * n.c);
+    const BoutReal p1_l = 0.5 * (n.m + n.c);
+
+    const BoutReal beta0_l = beta1_r;
+    const BoutReal beta1_l = beta0_r;
+
+    // Smoothness parameter (scaled to local variation)
+    const BoutReal eps = 1e-12 * (beta0_r + beta1_r) + 1e-30;
+
+    // Linear weights for WENO3-JS
+    constexpr BoutReal d0 = 1.0 / 3.0;
+    constexpr BoutReal d1 = 2.0 / 3.0;
+
+    // Right face weights
+    const BoutReal a0_r = d0 / SQ(eps + beta0_r);
+    const BoutReal a1_r = d1 / SQ(eps + beta1_r);
+    const BoutReal wsum_r = a0_r + a1_r;
+    const BoutReal w0_r = a0_r / wsum_r;
+    const BoutReal w1_r = a1_r / wsum_r;
+
+    // Left face weights (mirrored)
+    const BoutReal a0_l = d0 / SQ(eps + beta0_l);
+    const BoutReal a1_l = d1 / SQ(eps + beta1_l);
+    const BoutReal wsum_l = a0_l + a1_l;
+    const BoutReal w0_l = a0_l / wsum_l;
+    const BoutReal w1_l = a1_l / wsum_l;
+
+    n.R = w0_r * p0_r + w1_r * p1_r;
+    n.L = w0_l * p0_l + w1_l * p1_l;
   }
 };
 
@@ -189,8 +286,8 @@ void communicateFluxes(Field3D& f);
 ///
 /// NB: Uses to/from FieldAligned coordinates
 template <typename CellEdges = MC>
-const Field3D Div_par(const Field3D& f_in, const Field3D& v_in,
-                      const Field3D& wave_speed_in, bool fixflux = true) {
+Field3D Div_par(const Field3D& f_in, const Field3D& v_in, const Field3D& wave_speed_in,
+                bool fixflux = true) {
 
   ASSERT1_FIELDS_COMPATIBLE(f_in, v_in);
   ASSERT1_FIELDS_COMPATIBLE(f_in, wave_speed_in);
@@ -246,19 +343,19 @@ const Field3D Div_par(const Field3D& f_in, const Field3D& v_in,
       BoutReal common_factor = (coord->J(i, j) + coord->J(i, j + 1))
                                / (sqrt(coord->g_22(i, j)) + sqrt(coord->g_22(i, j + 1)));
 
-      BoutReal flux_factor_rc = common_factor / (coord->dy(i, j) * coord->J(i, j));
-      BoutReal flux_factor_rp =
+      const BoutReal flux_factor_rc = common_factor / (coord->dy(i, j) * coord->J(i, j));
+      const BoutReal flux_factor_rp =
           common_factor / (coord->dy(i, j + 1) * coord->J(i, j + 1));
 
       // For left cell boundaries
       common_factor = (coord->J(i, j) + coord->J(i, j - 1))
                       / (sqrt(coord->g_22(i, j)) + sqrt(coord->g_22(i, j - 1)));
 
-      BoutReal flux_factor_lc = common_factor / (coord->dy(i, j) * coord->J(i, j));
-      BoutReal flux_factor_lm =
+      const BoutReal flux_factor_lc = common_factor / (coord->dy(i, j) * coord->J(i, j));
+      const BoutReal flux_factor_lm =
           common_factor / (coord->dy(i, j - 1) * coord->J(i, j - 1));
 #endif
-      for (int k = 0; k < mesh->LocalNz; k++) {
+      for (int k = mesh->zstart; k <= mesh->zend; k++) {
 #if BOUT_USE_METRIC_3D
         // For right cell boundaries
         BoutReal common_factor =
@@ -303,7 +400,7 @@ const Field3D Div_par(const Field3D& f_in, const Field3D& v_in,
         if (mesh->lastY(i) && (j == mesh->yend) && !mesh->periodicY(i)) {
           // Last point in domain
 
-          BoutReal bndryval = 0.5 * (s.c + s.p);
+          const BoutReal bndryval = 0.5 * (s.c + s.p);
           if (fixflux) {
             // Use mid-point to be consistent with boundary conditions
             flux = bndryval * vpar;
@@ -314,7 +411,7 @@ const Field3D Div_par(const Field3D& f_in, const Field3D& v_in,
         } else {
 
           // Maximum wave speed in the two cells
-          BoutReal amax = BOUTMAX(wave_speed(i, j, k), wave_speed(i, j + 1, k));
+          const BoutReal amax = BOUTMAX(wave_speed(i, j, k), wave_speed(i, j + 1, k));
 
           if (vpar > amax) {
             // Supersonic flow out of this cell
@@ -338,7 +435,7 @@ const Field3D Div_par(const Field3D& f_in, const Field3D& v_in,
 
         if (mesh->firstY(i) && (j == mesh->ystart) && !mesh->periodicY(i)) {
           // First point in domain
-          BoutReal bndryval = 0.5 * (s.c + s.m);
+          const BoutReal bndryval = 0.5 * (s.c + s.m);
           if (fixflux) {
             // Use mid-point to be consistent with boundary conditions
             flux = bndryval * vpar;
@@ -349,7 +446,7 @@ const Field3D Div_par(const Field3D& f_in, const Field3D& v_in,
         } else {
 
           // Maximum wave speed in the two cells
-          BoutReal amax = BOUTMAX(wave_speed(i, j, k), wave_speed(i, j - 1, k));
+          const BoutReal amax = BOUTMAX(wave_speed(i, j, k), wave_speed(i, j - 1, k));
 
           if (vpar < -amax) {
             // Supersonic out of this cell
@@ -374,16 +471,16 @@ const Field3D Div_par(const Field3D& f_in, const Field3D& v_in,
    * Div ( n * v )  -- Magnetic drifts
    *
    * This uses the expression
-   * 
+   *
    * Div( A ) = 1/J * d/di ( J * A^i )
-   * 
+   *
    * Hence the input vector should be contravariant
    *
    * Note: Uses to/from FieldAligned
    *
    */
 template <typename CellEdges = MC>
-const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
+Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
   ASSERT1(n_in.getLocation() == v.getLocation());
   ASSERT1_FIELDS_COMPATIBLE(n_in, v.x);
 
@@ -406,10 +503,10 @@ const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
 
   BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
     // Calculate velocities
-    BoutReal vU = 0.25 * (vz[i.zp()] + vz[i]) * (coord->J[i.zp()] + coord->J[i]);
-    BoutReal vD = 0.25 * (vz[i.zm()] + vz[i]) * (coord->J[i.zm()] + coord->J[i]);
-    BoutReal vL = 0.25 * (vx[i.xm()] + vx[i]) * (coord->J[i.xm()] + coord->J[i]);
-    BoutReal vR = 0.25 * (vx[i.xp()] + vx[i]) * (coord->J[i.xp()] + coord->J[i]);
+    const BoutReal vU = 0.25 * (vz[i.zp()] + vz[i]) * (coord->J[i.zp()] + coord->J[i]);
+    const BoutReal vD = 0.25 * (vz[i.zm()] + vz[i]) * (coord->J[i.zm()] + coord->J[i]);
+    const BoutReal vL = 0.25 * (vx[i.xm()] + vx[i]) * (coord->J[i.xm()] + coord->J[i]);
+    const BoutReal vR = 0.25 * (vx[i.xp()] + vx[i]) * (coord->J[i.xp()] + coord->J[i]);
 
     // X direction
     Stencil1D s;
@@ -439,7 +536,7 @@ const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
       // Not at a boundary
       if (vR > 0.0) {
         // Flux out into next cell
-        BoutReal flux = vR * s.R;
+        const BoutReal flux = vR * s.R;
         result[i] += flux / (coord->dx[i] * coord->J[i]);
         result[i.xp()] -= flux / (coord->dx[i.xp()] * coord->J[i.xp()]);
       }
@@ -465,7 +562,7 @@ const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
     } else {
       // Not at a boundary
       if (vL < 0.0) {
-        BoutReal flux = vL * s.L;
+        const BoutReal flux = vL * s.L;
         result[i] -= flux / (coord->dx[i] * coord->J[i]);
         result[i.xm()] += flux / (coord->dx[i.xm()] * coord->J[i.xm()]);
       }
@@ -482,12 +579,12 @@ const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
     cellboundary(s);
 
     if (vU > 0.0) {
-      BoutReal flux = vU * s.R;
+      const BoutReal flux = vU * s.R;
       result[i] += flux / (coord->J[i] * coord->dz[i]);
       result[i.zp()] -= flux / (coord->J[i.zp()] * coord->dz[i.zp()]);
     }
     if (vD < 0.0) {
-      BoutReal flux = vD * s.L;
+      const BoutReal flux = vD * s.L;
       result[i] -= flux / (coord->J[i] * coord->dz[i]);
       result[i.zm()] += flux / (coord->J[i.zm()] * coord->dz[i.zm()]);
     }
@@ -507,13 +604,13 @@ const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
 
   BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
     // Y velocities on y boundaries
-    BoutReal vU = 0.25 * (vy[i] + vy[i.yp()]) * (coord->J[i] + coord->J[i.yp()]);
-    BoutReal vD = 0.25 * (vy[i] + vy[i.ym()]) * (coord->J[i] + coord->J[i.ym()]);
+    const BoutReal vU = 0.25 * (vy[i] + vy[i.yp()]) * (coord->J[i] + coord->J[i.yp()]);
+    const BoutReal vD = 0.25 * (vy[i] + vy[i.ym()]) * (coord->J[i] + coord->J[i.ym()]);
 
     // n (advected quantity) on y boundaries
     // Note: Use unshifted n_in variable
-    BoutReal nU = 0.5 * (n[i] + n[i.yp()]);
-    BoutReal nD = 0.5 * (n[i] + n[i.ym()]);
+    const BoutReal nU = 0.5 * (n[i] + n[i.yp()]);
+    const BoutReal nD = 0.5 * (n[i] + n[i.ym()]);
 
     yresult[i] = (nU * vU - nD * vD) / (coord->J[i] * coord->dy[i]);
   }

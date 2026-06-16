@@ -1,0 +1,48 @@
+parse:
+  additional_commands:
+    bout_add_example:
+      pargs: 1
+      kwargs:
+        CONFLICTS: '*'
+        DATA_DIRS: '*'
+        EXTRA_FILES: '*'
+        REQUIRES: '*'
+        SOURCES: '*'
+    bout_add_integrated_test:
+      pargs: 1
+      flags: [USE_DATA_BOUT_INP, USE_RUNTEST]
+      kwargs:
+        CONFLICTS: '*'
+        DOWNLOAD: 1
+        DOWNLOAD_NAME: 1
+        EXECUTABLE_NAME: 1
+        EXTRA_DEPENDS: '*'
+        EXTRA_FILES: '*'
+        PROCESSORS: 1
+        REQUIRES: '*'
+        SOURCES: '*'
+        TESTARGS: '*'
+    bout_add_mms_test:
+      pargs: 1
+      flags: [USE_DATA_BOUT_INP, USE_RUNTEST]
+      kwargs:
+        CONFLICTS: '*'
+        DOWNLOAD: 1
+        DOWNLOAD_NAME: 1
+        EXECUTABLE_NAME: 1
+        EXTRA_DEPENDS: '*'
+        EXTRA_FILES: '*'
+        PROCESSORS: 1
+        REQUIRES: '*'
+        SOURCES: '*'
+        TESTARGS: '*'
+    bout_handle_requires_conflicts:
+      pargs: 2
+      kwargs:
+        CONFLICTS: '*'
+        REQUIRES: '*'
+format:
+  dangle_parens: true
+markup:
+  # markup messes up comments - disable it
+  enable_markup: false

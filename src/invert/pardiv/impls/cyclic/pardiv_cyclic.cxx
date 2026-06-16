@@ -46,7 +46,6 @@
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
 #include <bout/globals.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/surfaceiter.hxx>
 #include <bout/utils.hxx>
 
@@ -54,12 +53,13 @@
 
 InvertParDivCR::InvertParDivCR(Options* opt, CELL_LOC location, Mesh* mesh_in)
     : InvertParDiv(opt, location, mesh_in) {
+  bout::fft::assertZSerial(*localmesh, "InvertParDivCR");
   // Number of k equations to solve for each x location
   nsys = 1 + (localmesh->LocalNz) / 2;
 }
 
 Field3D InvertParDivCR::solve(const Field3D& f) {
-  TRACE("InvertParDivCR::solve(Field3D)");
+
   ASSERT1(localmesh == f.getMesh());
   ASSERT1(location == f.getLocation());
 

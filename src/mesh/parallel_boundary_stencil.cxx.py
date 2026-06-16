@@ -26,18 +26,10 @@ def run(cmd):
 
 if __name__ == "__main__":
     with tmpf("w", dir=".", delete=False) as f:
-        f.write("namespace {\n")
+        f.write("namespace bout::parallel_stencil {\n")
         f.write(
-            """
-inline BoutReal pow(BoutReal val, int exp) {
-  //constexpr int expval = exp;
-  //static_assert(expval == 2 or expval == 3, "This pow is only for exponent 2 or 3");
-  if (exp == 2) {
-    return val * val;
-  }
-  ASSERT3(exp == 3);
-  return val * val * val;
-}
+            """using std::pow;
+
 """
         )
 

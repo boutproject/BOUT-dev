@@ -177,7 +177,6 @@ CvodeSolver::~CvodeSolver() {
  **************************************************************************/
 
 int CvodeSolver::init() {
-  TRACE("Initialising CVODE solver");
 
   Solver::init();
 
@@ -346,7 +345,6 @@ int CvodeSolver::init() {
     }
   } else {
     output_info.write("\tUsing Newton iteration\n");
-    TRACE("Setting preconditioner");
 
     const auto prectype =
         use_precon ? (rightprec ? SUN_PREC_RIGHT : SUN_PREC_LEFT) : SUN_PREC_NONE;
@@ -486,7 +484,6 @@ CvodeSolver::create_constraints(const std::vector<VarStr<FieldType>>& fields) {
  **************************************************************************/
 
 int CvodeSolver::run() {
-  TRACE("CvodeSolver::run()");
 
   if (!cvode_initialised) {
     throw BoutException("CvodeSolver not initialised\n");
@@ -814,7 +811,7 @@ void CvodeSolver::loop_vector_option_values_op(Ind2D UNUSED(i2d), BoutReal* opti
 }
 
 void CvodeSolver::resetInternalFields() {
-  TRACE("CvodeSolver::resetInternalFields");
+
   save_vars(N_VGetArrayPointer(uvec));
 
   if (CVodeReInit(cvode_mem, simtime, uvec) != CV_SUCCESS) {

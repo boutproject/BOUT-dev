@@ -161,9 +161,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateZ) {
   auto output = this->create("z");
 
   auto expected = makeField<TypeParam>(
-      [](typename TypeParam::ind_type& index) -> BoutReal {
-        return TWOPI * index.z() / FieldFactoryCreationTest<TypeParam>::nz;
-      },
+      [](typename TypeParam::ind_type& index) -> BoutReal { return TWOPI * index.z(); },
       mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
@@ -209,7 +207,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateZStaggered) {
           offset = 0.5;
         }
 
-        return TWOPI * (index.z() - offset) / FieldFactoryCreationTest<TypeParam>::nz;
+        return TWOPI * (index.z() - offset);
       },
       mesh);
 
@@ -966,6 +964,66 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create3DCantTransform) {
 
   auto expected = makeField<Field3D>(
       [](typename Field3D::ind_type& index) -> BoutReal { return index.x(); }, mesh);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+TYPED_TEST(FieldFactoryCreationTest, CreatePeriodicY) {
+  auto output = this->create("is_periodic_y");
+
+  auto expected = makeField<TypeParam>(
+      [](typename TypeParam::ind_type& index) -> BoutReal {
+        return mesh->periodicY(index.x());
+      },
+      mesh);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+TYPED_TEST(FieldFactoryCreationTest, CreatePeriodicYoutsideCore) {
+  FakeMesh localmesh{5, 1, 1};
+  localmesh.createDefaultRegions();
+  localmesh.setCoordinates(std::make_shared<Coordinates>(
+      &localmesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
+      Field2D{0.0}, Field2D{0.0}));
+  // No call to Coordinates::geometry() needed here
+
+  localmesh.getCoordinates()->setParallelTransform(
+      bout::utils::make_unique<ParallelTransformIdentity>(localmesh));
+
+  localmesh.ix_separatrix = 0; // All points outside core
+
+  auto output = this->create("is_periodic_y", nullptr, &localmesh);
+
+  auto expected = makeField<TypeParam>(
+      [](typename TypeParam::ind_type& index) -> BoutReal { return 0.0; }, &localmesh);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+TYPED_TEST(FieldFactoryCreationTest, CreatePeriodicYacrossSeparatrix) {
+  FakeMesh localmesh{5, 1, 1};
+  localmesh.createDefaultRegions();
+  localmesh.ix_separatrix = 2; // All points in core
+  localmesh.setCoordinates(std::make_shared<Coordinates>(
+      &localmesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
+      Field2D{0.0}, Field2D{0.0}));
+  // No call to Coordinates::geometry() needed here
+
+  localmesh.getCoordinates()->setParallelTransform(
+      bout::utils::make_unique<ParallelTransformIdentity>(localmesh));
+
+  auto output = this->create("is_periodic_y", nullptr, &localmesh);
+
+  auto expected = makeField<TypeParam>(
+      [&](typename TypeParam::ind_type& index) -> BoutReal {
+        return index.x() < localmesh.ix_separatrix;
+      },
+      &localmesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
 }

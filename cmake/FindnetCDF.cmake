@@ -28,119 +28,129 @@
 include(BOUT++functions)
 include(CMakePrintHelpers)
 
-if (NOT netCDF_ROOT AND EXISTS "${BOUT_USE_NETCDF}")
+if(NOT netCDF_ROOT AND EXISTS "${BOUT_USE_NETCDF}")
   set(netCDF_ROOT "${BOUT_USE_NETCDF}")
 endif()
 
 enable_language(C)
 find_package(netCDF QUIET CONFIG)
 
-if (netCDF_FOUND)
+if(netCDF_FOUND)
   message(STATUS "netCDF CONFIG found")
   set(netCDF_FOUND TRUE)
-  if (NOT TARGET netCDF::netcdf)
+  if(NOT TARGET netCDF::netcdf)
     bout_add_library_alias(netCDF::netcdf netcdf)
   endif()
-  if (netCDF_DEBUG)
-     cmake_print_properties(TARGETS netcdf PROPERTIES LOCATION VERSION)
-  endif (netCDF_DEBUG)
+  if(netCDF_DEBUG)
+    cmake_print_properties(TARGETS netcdf PROPERTIES LOCATION VERSION)
+  endif(netCDF_DEBUG)
   return()
 endif()
 
-find_program(NC_CONFIG "nc-config"
+find_program(
+  NC_CONFIG "nc-config"
   PATHS "${netCDF_ROOT}"
   PATH_SUFFIXES bin
   DOC "Path to netCDF C config helper"
   NO_DEFAULT_PATH
-  )
+)
 
-find_program(NC_CONFIG "nc-config"
-  DOC "Path to netCDF C config helper"
-  )
+find_program(NC_CONFIG "nc-config" DOC "Path to netCDF C config helper")
 
 get_filename_component(NC_CONFIG_TMP "${NC_CONFIG}" DIRECTORY)
 get_filename_component(NC_CONFIG_LOCATION "${NC_CONFIG_TMP}" DIRECTORY)
-if (netCDF_DEBUG)
+if(netCDF_DEBUG)
   message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
-    " NC_CONFIG_LOCATION = ${NC_CONFIG_LOCATION}"
-    " netCDF_ROOT = ${netCDF_ROOT}")
+                 " NC_CONFIG_LOCATION = ${NC_CONFIG_LOCATION}"
+                 " netCDF_ROOT = ${netCDF_ROOT}"
+  )
 endif()
 
 bout_inspect_netcdf_config(NC_HINTS_INCLUDE_DIR "${NC_CONFIG}" "--includedir")
 bout_inspect_netcdf_config(NC_HINTS_PREFIX "${NC_CONFIG}" "--prefix")
 
-find_path(netCDF_C_INCLUDE_DIR
+find_path(
+  netCDF_C_INCLUDE_DIR
   NAMES netcdf.h
   DOC "netCDF C include directories"
-  HINTS
-    "${NC_HINTS_INCLUDE_DIR}"
-    "${NC_HINTS_PREFIX}"
-    "${NC_CONFIG_LOCATION}"
-  PATH_SUFFIXES
-    "include"
+  HINTS "${NC_HINTS_INCLUDE_DIR}" "${NC_HINTS_PREFIX}" "${NC_CONFIG_LOCATION}"
+  PATH_SUFFIXES "include"
+)
+if(netCDF_DEBUG)
+  message(
+    STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+           " netCDF_C_INCLUDE_DIR = ${netCDF_C_INCLUDE_DIR}"
+           " NC_HINTS_INCLUDE_DIR = ${NC_HINTS_INCLUDE_DIR}"
+           " NC_HINTS_PREFIX = ${NC_HINTS_PREFIX}"
   )
-if (netCDF_DEBUG)
-  message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
-    " netCDF_C_INCLUDE_DIR = ${netCDF_C_INCLUDE_DIR}"
-    " NC_HINTS_INCLUDE_DIR = ${NC_HINTS_INCLUDE_DIR}"
-    " NC_HINTS_PREFIX = ${NC_HINTS_PREFIX}"
-    )
 endif()
 mark_as_advanced(netCDF_C_INCLUDE_DIR)
 
-find_library(netCDF_C_LIBRARY
+find_library(
+  netCDF_C_LIBRARY
   NAMES netcdf
   DOC "netCDF C library"
-  HINTS
-    "${NC_HINTS_INCLUDE_DIR}"
-    "${NC_HINTS_PREFIX}"
-    "${NC_CONFIG_LOCATION}"
-  PATH_SUFFIXES
-    "lib" "lib64"
- )
-if (netCDF_DEBUG)
-  message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
-    " netCDF_C_LIBRARY = ${netCDF_C_LIBRARY}"
-    " NC_HINTS_INCLUDE_DIR = ${NC_HINTS_INCLUDE_DIR}"
-    " NC_HINTS_PREFIX = ${NC_HINTS_PREFIX}"
-    )
+  HINTS "${NC_HINTS_INCLUDE_DIR}" "${NC_HINTS_PREFIX}" "${NC_CONFIG_LOCATION}"
+  PATH_SUFFIXES "lib" "lib64"
+)
+if(netCDF_DEBUG)
+  message(
+    STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+           " netCDF_C_LIBRARY = ${netCDF_C_LIBRARY}"
+           " NC_HINTS_INCLUDE_DIR = ${NC_HINTS_INCLUDE_DIR}"
+           " NC_HINTS_PREFIX = ${NC_HINTS_PREFIX}"
+  )
 endif()
 mark_as_advanced(netCDF_C_LIBRARY)
 
-if (netCDF_C_INCLUDE_DIR)
+if(netCDF_C_INCLUDE_DIR)
   file(STRINGS "${netCDF_C_INCLUDE_DIR}/netcdf_meta.h" _netcdf_version_lines
-    REGEX "#define[ \t]+NC_VERSION_(MAJOR|MINOR|PATCH|NOTE)")
-  string(REGEX REPLACE ".*NC_VERSION_MAJOR *\([0-9]*\).*" "\\1" _netcdf_version_major "${_netcdf_version_lines}")
-  string(REGEX REPLACE ".*NC_VERSION_MINOR *\([0-9]*\).*" "\\1" _netcdf_version_minor "${_netcdf_version_lines}")
-  string(REGEX REPLACE ".*NC_VERSION_PATCH *\([0-9]*\).*" "\\1" _netcdf_version_patch "${_netcdf_version_lines}")
-  string(REGEX REPLACE ".*NC_VERSION_NOTE *\"\([^\"]*\)\".*" "\\1" _netcdf_version_note "${_netcdf_version_lines}")
-  if (NOT _netcdf_version_note STREQUAL "")
+       REGEX "#define[ \t]+NC_VERSION_(MAJOR|MINOR|PATCH|NOTE)"
+  )
+  string(REGEX REPLACE ".*NC_VERSION_MAJOR *\([0-9]*\).*" "\\1"
+                       _netcdf_version_major "${_netcdf_version_lines}"
+  )
+  string(REGEX REPLACE ".*NC_VERSION_MINOR *\([0-9]*\).*" "\\1"
+                       _netcdf_version_minor "${_netcdf_version_lines}"
+  )
+  string(REGEX REPLACE ".*NC_VERSION_PATCH *\([0-9]*\).*" "\\1"
+                       _netcdf_version_patch "${_netcdf_version_lines}"
+  )
+  string(REGEX REPLACE ".*NC_VERSION_NOTE *\"\([^\"]*\)\".*" "\\1"
+                       _netcdf_version_note "${_netcdf_version_lines}"
+  )
+  if(NOT _netcdf_version_note STREQUAL "")
     # Make development version compare higher than any patch level
     set(_netcdf_version_note ".99")
   endif()
-  set(netCDF_VERSION "${_netcdf_version_major}.${_netcdf_version_minor}.${_netcdf_version_patch}${_netcdf_version_note}")
+  set(netCDF_VERSION
+      "${_netcdf_version_major}.${_netcdf_version_minor}.${_netcdf_version_patch}${_netcdf_version_note}"
+  )
   unset(_netcdf_version_major)
   unset(_netcdf_version_minor)
   unset(_netcdf_version_patch)
   unset(_netcdf_version_note)
   unset(_netcdf_version_lines)
-endif ()
+endif()
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(netCDF
+find_package_handle_standard_args(
+  netCDF
   REQUIRED_VARS netCDF_C_LIBRARY netCDF_C_INCLUDE_DIR
-  VERSION_VAR netCDF_VERSION)
+  VERSION_VAR netCDF_VERSION
+)
 
-if (netCDF_FOUND)
+if(netCDF_FOUND)
   set(netCDF_INCLUDE_DIR "${netCDF_C_INCLUDE_DIR}")
   set(netCDF_INCLUDE_DIRS "${netCDF_C_INCLUDE_DIR}")
   set(netCDF_LIBRARIES "${netCDF_C_LIBRARY}")
 
-  if (NOT TARGET netCDF::netcdf)
+  if(NOT TARGET netCDF::netcdf)
     add_library(netCDF::netcdf UNKNOWN IMPORTED)
-    set_target_properties(netCDF::netcdf PROPERTIES
-      IMPORTED_LOCATION "${netCDF_C_LIBRARY}"
-      INTERFACE_INCLUDE_DIRECTORIES "${netCDF_C_INCLUDE_DIR}"
-      )
-  endif ()
-endif ()
+    set_target_properties(
+      netCDF::netcdf
+      PROPERTIES IMPORTED_LOCATION "${netCDF_C_LIBRARY}"
+                 INTERFACE_INCLUDE_DIRECTORIES "${netCDF_C_INCLUDE_DIR}"
+    )
+  endif()
+endif()

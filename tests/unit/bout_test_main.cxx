@@ -1,6 +1,7 @@
 #include <cstdio>
 
 #include "bout/array.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/fft.hxx"
 #include "bout/globalindexer.hxx"
 #include "bout/output.hxx"
@@ -21,6 +22,10 @@ GTEST_API_ int main(int argc, char** argv) {
 
   printf("Running main() from bout_test_main.cxx\n");
   testing::InitGoogleTest(&argc, argv);
+
+  // We throw and catch a bunch of exceptions as part of running the tests, and
+  // the backtrace generation can _significantly_ slow them down
+  BoutException::disableBacktrace();
 
   // Explicitly setup and teardown PETSc to avoid reentry problems
   // with certain MPI implementations (see #1916 for details)

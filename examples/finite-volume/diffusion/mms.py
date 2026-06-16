@@ -5,26 +5,26 @@ from boutdata.mms import Metric, sin, Div_par, Grad_par, exprToStr, diff, y, t
 from math import pi
 
 # Length of the y domain
-Ly = 10.
+Ly = 10.0
 
 # metric tensor
 metric = Metric()  # Identity
 
 # Define solution in terms of input x,y,z
 
-f = 1 + 0.1*sin(2*y - t)
-k = 1 + 0.1*sin(y)
+f = 1 + 0.1 * sin(2 * y - t)
+k = 1 + 0.1 * sin(y)
 
 # Turn solution into real x and z coordinates
-replace = [ (y, metric.y*2*pi/Ly) ]
+replace = [(y, metric.y * 2 * pi / Ly)]
 
 f = f.subs(replace)
-k = k.subs(replace) 
+k = k.subs(replace)
 
 ##############################
 # Calculate time derivatives
 
-dfdt = Div_par( k * Grad_par(f) )
+dfdt = Div_par(k * Grad_par(f))
 
 #############################
 # Calculate sources
@@ -32,7 +32,7 @@ dfdt = Div_par( k * Grad_par(f) )
 Sf = diff(f, t) - dfdt
 
 # Substitute back to get input y coordinates
-replace = [ (metric.y, y*Ly/(2*pi) ) ]
+replace = [(metric.y, y * Ly / (2 * pi))]
 
 k = k.subs(replace)
 f = f.subs(replace)

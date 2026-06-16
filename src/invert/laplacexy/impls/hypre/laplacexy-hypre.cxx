@@ -1,6 +1,6 @@
 #include "bout/build_defines.hxx"
 
-#if BOUT_HAS_HYPRE
+#if BOUT_HAS_HYPRE and not BOUT_USE_METRIC_3D
 
 #include "laplacexy-hypre.hxx"
 

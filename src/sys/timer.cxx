@@ -1,5 +1,7 @@
 #include "bout/sys/timer.hxx"
 
+#include <bout/output.hxx>
+
 #include <fmt/core.h>
 
 #include <algorithm>

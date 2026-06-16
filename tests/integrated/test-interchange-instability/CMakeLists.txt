@@ -1,4 +1,5 @@
-bout_add_integrated_test(test-interchange-instability
+bout_add_integrated_test(
+  test-interchange-instability
   SOURCES 2fluid.cxx
   CONFLICTS BOUT_USE_METRIC_3D
   USE_RUNTEST
@@ -6,4 +7,4 @@ bout_add_integrated_test(test-interchange-instability
   REQUIRES BOUT_HAS_NETCDF
   REQUIRES BOUT_HAS_FFTW
   PROCESSORS 2
-  )
+)
