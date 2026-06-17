@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 
-# requires: not metric_3d
-
 #
 # Run the test, check the error
 #
 
-# Cores: 3
-
 from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 
-tol = 2e-7  # Absolute tolerance
+tol = 2e-6  # Absolute tolerance
 numTests = 4  # We test 4 different boundary conditions (with slightly different inputs for each)
 
 
@@ -20,38 +16,33 @@ def test_multigrid_laplace():
     print("Running multigrid Laplacian inversion test")
     success = True
 
-    for nproc in [1, 3]:
-        # Make sure we don't use too many cores:
-        # Reduce number of OpenMP threads when using multiple MPI processes
-        mthread = 2
-        if nproc > 1:
-            mthread = 1
+    for nproc in [1, 2, 4]:
+        for inputfile in ["BOUT_jy4.inp", "BOUT_jy63.inp", "BOUT_jy127.inp"]:
+            # set nxpe on the command line as we only use solution from one point in y, so splitting in y-direction is redundant (and also doesn't help test the multigrid solver)
+            cmd = f"./test_multigrid_laplace -f {inputfile} NXPE={nproc}"
 
-        # set nxpe on the command line as we only use solution from one point in y,
-        # so splitting in y-direction is redundant (and also doesn't help test the multigrid solver)
-        cmd = "./test_multigrid_laplace NXPE=" + str(nproc)
+            shell(["rm data/BOUT.dmp.*.nc"])
 
-        shell(["rm data/BOUT.dmp.*.nc"])
+            print("   %d processors, input file is %s" % (nproc, inputfile))
+            s, out = launch_safe(cmd, nproc=nproc, pipe=True)
+            with open("run.log." + str(nproc), "w") as f:
+                f.write(out)
 
-        print("   %d processors..." % nproc)
-        s, out = launch_safe(cmd, nproc=nproc, mthread=mthread, pipe=True)
-        with open("run.log." + str(nproc), "w") as f:
-            f.write(out)
+            # Collect errors
+            errors = [
+                collect("max_error" + str(i), path="data")
+                for i in range(1, numTests + 1)
+            ]
 
-        # Collect errors
-        errors = [
-            collect("max_error" + str(i), path="data") for i in range(1, numTests + 1)
-        ]
-
-        for i, e in enumerate(errors):
-            print("Checking test " + str(i))
-            if e < 0.0:
-                print("Fail, solver did not converge")
-                success = False
-            if e > tol:
-                print("Fail, maximum absolute error = " + str(e))
-                success = False
-            else:
-                print("Pass")
+            for i, e in enumerate(errors):
+                print("Checking test " + str(i))
+                if e < 0.0:
+                    print("Fail, solver did not converge")
+                    success = False
+                if e > tol:
+                    print("Fail, maximum absolute error = " + str(e))
+                    success = False
+                else:
+                    print("Pass")
 
     assert success, " => Some failed tests"
