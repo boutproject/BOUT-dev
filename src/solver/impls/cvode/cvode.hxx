@@ -40,6 +40,7 @@ RegisterUnavailableSolver
 
 #else
 
+#include "../../sundials_nvector_interface.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/region.hxx"
 #include "bout/sundials_backports.hxx"
@@ -68,10 +69,10 @@ public:
   void resetInternalFields() override;
 
   // These functions are used internally (but need to be public)
-  void rhs(BoutReal t, BoutReal* udata, BoutReal* dudata, bool linear);
-  void pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udata, BoutReal* rvec,
-           BoutReal* zvec);
-  void jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata);
+  void rhs(BoutReal t, N_Vector u, N_Vector du, bool linear);
+  void pre(BoutReal t, BoutReal gamma, BoutReal delta, N_Vector u, N_Vector rvec,
+           N_Vector zvec);
+  void jac(BoutReal t, N_Vector y, N_Vector v, N_Vector Jv);
 
 private:
   BoutReal hcur; //< Current internal timestep
@@ -122,6 +123,7 @@ private:
   /// Use right preconditioner? Otherwise use left.
   bool rightprec;
   bool use_jacobian;
+  NVectorType nvector_type;
   BoutReal cvode_nonlinear_convergence_coef;
   BoutReal cvode_linear_convergence_coef;
 
@@ -139,13 +141,12 @@ private:
 
   bool cvode_initialised{false};
 
-  void set_vector_option_values(BoutReal* option_data, std::vector<BoutReal>& f2dtols,
-                                std::vector<BoutReal>& f3dtols);
-  void loop_vector_option_values_op(Ind2D i2d, BoutReal* option_data, int& p,
-                                    std::vector<BoutReal>& f2dtols,
-                                    std::vector<BoutReal>& f3dtols, bool bndry);
   template <class FieldType>
   std::vector<BoutReal> create_constraints(const std::vector<VarStr<FieldType>>& fields);
+
+  SundialsNVectorInterface nvector_backend() {
+    return SundialsNVectorInterface(*this, suncontext, nvector_type);
+  }
 
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};

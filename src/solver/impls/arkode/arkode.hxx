@@ -2,10 +2,8 @@
  * Interface to ARKODE solver
  * NOTE: ARKode is currently in beta testing so use with cautious optimism
  *
- * NOTE: Only one solver can currently be compiled in
- *
  **************************************************************************
- * Copyright 2010-2024 BOUT++ contributors
+ * Copyright 2010-2026 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -41,13 +39,11 @@ RegisterUnavailableSolver
 
 #else
 
+#include "../../sundials_nvector_interface.hxx"
 #include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/region.hxx"
 #include "bout/sundials_backports.hxx"
-#if BOUT_HAS_SUNDIALS_MANYVECTOR
-#include "../../nvector.hxx"
-#endif
 
 #include <nvector/nvector_parallel.h>
 #include <sundials/sundials_config.h>
@@ -78,9 +74,6 @@ BOUT_ENUM_CLASS(Treatment, ImEx, Implicit, Explicit);
 // Adaptivity method
 BOUT_ENUM_CLASS(AdapMethod, PID, PI, I, Explicit_Gustafsson, Implicit_Gustafsson,
                 ImEx_Gustafsson);
-
-// N_Vector backend
-BOUT_ENUM_CLASS(NVectorType, Sundials, ManyVector);
 
 // Shim for the ARKstep -> ARKode prefix change in SUNDIALS 7.1.0
 #if SUNDIALS_VERSION_LESS_THAN(7, 1, 0)
@@ -208,53 +201,9 @@ private:
                              std::vector<BoutReal>& f2dtols,
                              std::vector<BoutReal>& f3dtols, bool bndry);
 
-  bool use_manyvector() const { return nvector_type == NVectorType::ManyVector; }
-  N_Vector create_state_nvector(int local_N, int neq);
-  void load_state_from_nvector(N_Vector u);
-  void restore_state_nvector(N_Vector u);
-  void load_deriv_from_nvector(N_Vector du);
-  void restore_deriv_nvector(N_Vector du);
-
-#if BOUT_HAS_SUNDIALS_MANYVECTOR
-  N_Vector nvector_from_state(const sundials::Context& ctx) {
-    std::vector<N_Vector> subvectors;
-    subvectors.reserve(f2d.size() + f3d.size());
-    const auto inserter = std::back_inserter(subvectors);
-
-    const auto var_str_to_nvector = [&ctx](auto& var_str) {
-      return BoutNVector::create(ctx, *var_str.var, var_str.evolve_bndry);
-    };
-    std::transform(f2d.cbegin(), f2d.cend(), inserter, var_str_to_nvector);
-    std::transform(f3d.cbegin(), f3d.cend(), inserter, var_str_to_nvector);
-    return BoutNVector::create(ctx, subvectors);
+  SundialsNVectorInterface nvector_backend() {
+    return SundialsNVectorInterface(*this, suncontext, nvector_type);
   }
-
-  void swap_state(const N_Vector u) {
-    std::size_t i = 0;
-    for (auto& var_str : f2d) {
-      BoutNVector::swap(u, *var_str.var, i);
-      i++;
-    }
-
-    for (auto& var_str : f3d) {
-      BoutNVector::swap(u, *var_str.var, i);
-      i++;
-    }
-  }
-
-  void swap_deriv(const N_Vector du) {
-    std::size_t i = 0;
-    for (auto& var_str : f2d) {
-      BoutNVector::swap(du, *var_str.F_var, i);
-      i++;
-    }
-
-    for (auto& var_str : f3d) {
-      BoutNVector::swap(du, *var_str.F_var, i);
-      i++;
-    }
-  }
-#endif
 
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};

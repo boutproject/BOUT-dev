@@ -197,8 +197,18 @@ public:
   }
 
   template <typename T, typename = bout::utils::EnableIfField<T>>
+  static T& get(const N_Vector v) {
+    return get_field<T>(v);
+  }
+
+  template <typename T, typename = bout::utils::EnableIfField<T>>
   static void swap(const N_Vector v, T& field, std::size_t subvector) {
     return BoutNVector::swap(N_VGetSubvector_ManyVector(v, subvector), field);
+  }
+
+  template <typename T, typename = bout::utils::EnableIfField<T>>
+  static T& get(const N_Vector v, std::size_t subvector) {
+    return BoutNVector::get<T>(N_VGetSubvector_ManyVector(v, subvector));
   }
 };
 

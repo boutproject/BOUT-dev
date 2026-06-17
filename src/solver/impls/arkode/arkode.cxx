@@ -187,86 +187,16 @@ ArkodeSolver::~ArkodeSolver() {
 }
 
 /**************************************************************************
- * N_Vector backend helpers
- **************************************************************************/
-
-N_Vector ArkodeSolver::create_state_nvector(const int local_N, const int neq) {
-  if (use_manyvector()) {
-#if BOUT_HAS_SUNDIALS_MANYVECTOR
-    auto* vec = nvector_from_state(suncontext);
-    if (vec == nullptr) {
-      throw BoutException("BOUT N_Vector failed\n");
-    }
-    return vec;
-#else
-    throw BoutException("ARKode option 'nvector = manyvector' requested, but BOUT++ "
-                        "was built without SUNDIALS ManyVector support");
-#endif
-  }
-
-  auto* vec =
-      callWithSUNContext(N_VNew_Parallel, suncontext, BoutComm::get(), local_N, neq);
-  if (vec == nullptr) {
-    throw BoutException("SUNDIALS memory allocation failed\n");
-  }
-  save_vars(N_VGetArrayPointer(vec));
-  return vec;
-}
-
-void ArkodeSolver::load_state_from_nvector(N_Vector u) {
-  if (use_manyvector()) {
-#if BOUT_HAS_SUNDIALS_MANYVECTOR
-    swap_state(u);
-    return;
-#endif
-  }
-  load_vars(N_VGetArrayPointer(u));
-}
-
-void ArkodeSolver::restore_state_nvector(N_Vector u) {
-  if (use_manyvector()) {
-#if BOUT_HAS_SUNDIALS_MANYVECTOR
-    swap_state(u);
-    return;
-#endif
-  }
-  static_cast<void>(u);
-}
-
-void ArkodeSolver::load_deriv_from_nvector(N_Vector du) {
-  if (use_manyvector()) {
-#if BOUT_HAS_SUNDIALS_MANYVECTOR
-    swap_deriv(du);
-    return;
-#endif
-  }
-  load_derivs(N_VGetArrayPointer(du));
-}
-
-void ArkodeSolver::restore_deriv_nvector(N_Vector du) {
-  if (use_manyvector()) {
-#if BOUT_HAS_SUNDIALS_MANYVECTOR
-    swap_deriv(du);
-    return;
-#endif
-  }
-  save_derivs(N_VGetArrayPointer(du));
-}
-
-/**************************************************************************
  * Initialise
  **************************************************************************/
 
 int ArkodeSolver::init() {
 
   Solver::init();
+  const auto backend = nvector_backend();
 
   output.write("Initialising SUNDIALS' ARKODE solver\n");
-
-  if (use_manyvector() and not BOUT_HAS_SUNDIALS_MANYVECTOR) {
-    throw BoutException("ARKode option 'nvector = manyvector' requested, but BOUT++ "
-                        "was built without SUNDIALS ManyVector support");
-  }
+  backend.ensure_manyvector_available();
 
   // Calculate number of variables (in generic_solver)
   const int local_N = getLocalN();
@@ -281,12 +211,10 @@ int ArkodeSolver::init() {
   output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n", n3Dvars(),
                n2Dvars(), neq, local_N);
 
-  output.write("\tUsing {} N_Vector backend\n", use_manyvector()
-                                                    ? "SUNDIALS ManyVector-backed custom"
-                                                    : "SUNDIALS parallel");
+  output.write("\tUsing {} N_Vector backend\n", backend.backend_name());
 
   // Allocate memory
-  uvec = create_state_nvector(local_N, neq);
+  uvec = backend.create_state_vector(local_N, neq);
 
   switch (treatment) {
   case Treatment::ImEx:
@@ -638,6 +566,7 @@ int ArkodeSolver::run() {
 
 BoutReal ArkodeSolver::run(BoutReal tout) {
   TRACE("Running solver: solver::run({:e})", tout);
+  const auto backend = nvector_backend();
 
   bout::globals::mpi->MPI_Barrier(BoutComm::get());
 
@@ -672,7 +601,7 @@ BoutReal ArkodeSolver::run(BoutReal tout) {
   }
 
   // Copy variables
-  load_state_from_nvector(uvec);
+  backend.copy_state_from_vector(uvec);
   // Call rhs function to get extra variables at this time
   run_rhs(simtime);
   // run_diffusive(simtime);
@@ -691,12 +620,11 @@ BoutReal ArkodeSolver::run(BoutReal tout) {
 
 void ArkodeSolver::rhs_e(BoutReal t, N_Vector u, N_Vector du) {
   TRACE("Running RHS: ArkodeSolver::rhs_e({:e})", t);
+  const auto backend = nvector_backend();
 
   // Load state from udata
-  load_state_from_nvector(u);
-  if (use_manyvector()) {
-    load_deriv_from_nvector(du);
-  }
+  backend.copy_state_from_vector(u);
+  backend.copy_deriv_from_vector(du);
 
   // Get the current timestep
   // Note: ARKodeGetCurrentStep updated too late in older versions
@@ -706,8 +634,8 @@ void ArkodeSolver::rhs_e(BoutReal t, N_Vector u, N_Vector du) {
   run_convective(t);
 
   // Save derivatives to dudata
-  restore_state_nvector(u);
-  restore_deriv_nvector(du);
+  backend.copy_state_to_vector(u);
+  backend.copy_deriv_to_vector(du);
 }
 
 /**************************************************************************
@@ -716,16 +644,15 @@ void ArkodeSolver::rhs_e(BoutReal t, N_Vector u, N_Vector du) {
 
 void ArkodeSolver::rhs_i(BoutReal t, N_Vector u, N_Vector du) {
   TRACE("Running RHS: ArkodeSolver::rhs_i({:e})", t);
+  const auto backend = nvector_backend();
 
-  load_state_from_nvector(u);
-  if (use_manyvector()) {
-    load_deriv_from_nvector(du);
-  }
+  backend.copy_state_from_vector(u);
+  backend.copy_deriv_from_vector(du);
   ARKodeGetLastStep(arkode_mem, &hcur);
   // Call Implicit RHS function
   run_diffusive(t);
-  restore_state_nvector(u);
-  restore_deriv_nvector(du);
+  backend.copy_state_to_vector(u);
+  backend.copy_deriv_to_vector(du);
 }
 
 /**************************************************************************
@@ -733,16 +660,15 @@ void ArkodeSolver::rhs_i(BoutReal t, N_Vector u, N_Vector du) {
  **************************************************************************/
 void ArkodeSolver::rhs(BoutReal t, N_Vector u, N_Vector du) {
   TRACE("Running RHS: ArkodeSolver::rhs({:e})", t);
+  const auto backend = nvector_backend();
 
-  load_state_from_nvector(u);
-  if (use_manyvector()) {
-    load_deriv_from_nvector(du);
-  }
+  backend.copy_state_from_vector(u);
+  backend.copy_deriv_from_vector(du);
   ARKodeGetLastStep(arkode_mem, &hcur);
   // Call Implicit RHS function
   run_rhs(t);
-  restore_state_nvector(u);
-  restore_deriv_nvector(du);
+  backend.copy_state_to_vector(u);
+  backend.copy_deriv_to_vector(du);
 }
 
 /**************************************************************************
@@ -752,6 +678,7 @@ void ArkodeSolver::rhs(BoutReal t, N_Vector u, N_Vector du) {
 void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, N_Vector u,
                        N_Vector rvec, N_Vector zvec) {
   TRACE("Running preconditioner: ArkodeSolver::pre({:e})", t);
+  const auto backend = nvector_backend();
 
   const BoutReal tstart = bout::globals::mpi->MPI_Wtime();
 
@@ -762,16 +689,14 @@ void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, N_Vector u,
   }
 
   // Load state from udata (as with res function)
-  load_state_from_nvector(u);
-  load_deriv_from_nvector(rvec);
+  backend.copy_state_from_vector(u);
+  backend.copy_deriv_from_vector(rvec);
 
   runPreconditioner(t, gamma, delta);
 
   // Save the solution from F_vars
-  if (use_manyvector()) {
-    restore_state_nvector(u);
-  }
-  restore_deriv_nvector(zvec);
+  backend.copy_state_to_vector(u);
+  backend.copy_deriv_to_vector(zvec);
 
   pre_Wtime += bout::globals::mpi->MPI_Wtime() - tstart;
   pre_ncalls++;
@@ -783,23 +708,22 @@ void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, N_Vector u,
 
 void ArkodeSolver::jac(BoutReal t, N_Vector y, N_Vector v, N_Vector Jv) {
   TRACE("Running Jacobian: ArkodeSolver::jac({:e})", t);
+  const auto backend = nvector_backend();
 
   if (not hasJacobian()) {
     throw BoutException("No jacobian function supplied!\n");
   }
 
   // Load state from ydate
-  load_state_from_nvector(y);
-  load_deriv_from_nvector(v);
+  backend.copy_state_from_vector(y);
+  backend.copy_deriv_from_vector(v);
 
   // Call function
   runJacobian(t);
 
   // Save Jv from vars
-  if (use_manyvector()) {
-    restore_state_nvector(y);
-  }
-  restore_deriv_nvector(Jv);
+  backend.copy_state_to_vector(y);
+  backend.copy_deriv_to_vector(Jv);
 }
 
 /**************************************************************************
