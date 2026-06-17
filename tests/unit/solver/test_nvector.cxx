@@ -1,6 +1,6 @@
 #include "bout/build_defines.hxx"
 
-#if BOUT_HAS_SUNDIALS
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
 
 #include <cmath>
 #include <memory>
