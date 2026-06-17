@@ -27,9 +27,15 @@
 
 #include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/build_defines.hxx"
+#include "bout/field2d.hxx"
+#include "bout/globals.hxx"
+#include "bout/region.hxx"
 #include "bout/solver.hxx"
 #include "bout/sundials_backports.hxx"
+#include "bout/unused.hxx"
 
 #if BOUT_HAS_SUNDIALS_MANYVECTOR
 #include "nvector.hxx"

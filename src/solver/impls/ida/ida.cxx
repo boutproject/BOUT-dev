@@ -33,6 +33,8 @@
 
 #if BOUT_HAS_IDA
 
+#include "../../sundials_nvector_interface.hxx"
+
 #include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
@@ -51,7 +53,6 @@
 #include <ida/ida_bbdpre.h>
 #include <ida/ida_ls.h>
 
-#include <algorithm>
 #include <iterator>
 #include <numeric>
 #include <vector>

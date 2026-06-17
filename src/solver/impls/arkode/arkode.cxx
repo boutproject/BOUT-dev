@@ -27,9 +27,9 @@
 
 #if BOUT_HAS_ARKODE
 
+#include "../../sundials_nvector_interface.hxx"
 #include "arkode.hxx"
 
-#include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
@@ -41,6 +41,7 @@
 #include "bout/msg_stack.hxx"
 #include "bout/options.hxx"
 #include "bout/output.hxx"
+#include "bout/region.hxx"
 #include "bout/solver.hxx"
 #include "bout/sundials_backports.hxx"
 #include "bout/unused.hxx"
@@ -57,6 +58,7 @@
 #include <algorithm>
 #include <iterator>
 #include <numeric>
+#include <string>
 #include <vector>
 
 // NOLINTBEGIN(readability-identifier-length)

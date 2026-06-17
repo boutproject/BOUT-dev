@@ -10,6 +10,7 @@
 
 #include "fake_mesh_fixture.hxx"
 #include "test_extras.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"

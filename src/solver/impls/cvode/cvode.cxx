@@ -30,6 +30,8 @@
 
 #if BOUT_HAS_CVODE
 
+#include "../../sundials_nvector_interface.hxx"
+
 #include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
@@ -59,6 +61,7 @@
 #include <iterator>
 #include <numeric>
 #include <string>
+#include <vector>
 
 BOUT_ENUM_CLASS(positivity_constraint, none, positive, non_negative, negative,
                 non_positive);
@@ -386,7 +389,7 @@ int CvodeSolver::init() {
         //   int band_width_default = n3Dvars()*(MXSUB+2);
         const int band_width_default = std::accumulate(
             begin(f3d), end(f3d), 0, [](int a, const VarStr<Field3D>& fvar) {
-              Mesh* localmesh = fvar.var->getMesh();
+              const Mesh* localmesh = fvar.var->getMesh();
               return a + localmesh->xend - localmesh->xstart + 3;
             });
 
@@ -576,7 +579,7 @@ BoutReal CvodeSolver::run(BoutReal tout) {
     CVodeGetCurrentTime(cvode_mem, &internal_time);
     while (internal_time < tout) {
       // Run another step
-      BoutReal last_time = internal_time;
+      const BoutReal last_time = internal_time;
       flag = CVode(cvode_mem, tout, uvec, &internal_time, CV_ONE_STEP);
 
       if (flag < 0) {
@@ -638,7 +641,7 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, N_Vector u,
   TRACE("Running preconditioner: CvodeSolver::pre({})", t);
   const auto backend = nvector_backend();
 
-  BoutReal tstart = bout::globals::mpi->MPI_Wtime();
+  const BoutReal tstart = bout::globals::mpi->MPI_Wtime();
 
   if (!hasPreconditioner()) {
     // Identity (but should never happen)
