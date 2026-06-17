@@ -42,6 +42,7 @@
 #include "bout/boundary_region_iter.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/field_data.hxx"
@@ -65,6 +66,56 @@
 
 using namespace std::string_view_literals;
 using bout::boundary::BoundaryRegionFCI;
+
+namespace {
+// Get a unique name for a field based on the sign/magnitude of the offset
+std::string parallel_slice_field_name(const std::string& field, int offset) {
+  const std::string direction = (offset > 0) ? "forward" : "backward";
+  // We only have a suffix for parallel slices beyond the first
+  // This is for backwards compatibility
+  const std::string slice_suffix =
+      (std::abs(offset) > 1) ? "_" + std::to_string(std::abs(offset)) : "";
+  return direction + "_" + field + slice_suffix;
+};
+
+#if BOUT_USE_METRIC_3D
+void load_parallel_metric_component(std::string name, Field3D& component, int offset) {
+  Mesh* mesh = component.getMesh();
+  Field3D tmp{mesh};
+  const auto pname = parallel_slice_field_name(name, offset);
+  if (mesh->get(tmp, pname, 0.0, false) != 0) {
+    throw BoutException("Could not read {:s} from grid file!\n"
+                        "  Fix it up with `zoidberg-update-parallel-metrics <grid>`",
+                        pname);
+  }
+  if (!component.hasParallelSlices()) {
+    component.splitParallelSlices();
+    component.disallowCalcParallelSlices();
+    component.resetRegionParallel(true);
+  }
+  auto& pcom = component.ynext(offset);
+  pcom.allocate();
+  BOUT_FOR(i, component.getRegion("RGN_NOBNDRY")) { pcom[i.yp(offset)] = tmp[i]; }
+}
+
+void load_parallel_metric_components(Coordinates* coords, int offset) {
+#define LOAD_PAR(var) load_parallel_metric_component(#var, coords->var, offset)
+  LOAD_PAR(g11);
+  LOAD_PAR(g22);
+  LOAD_PAR(g33);
+  LOAD_PAR(g13);
+  LOAD_PAR(g_11);
+  LOAD_PAR(g_22);
+  LOAD_PAR(g_33);
+  LOAD_PAR(g_13);
+  LOAD_PAR(dy);
+  LOAD_PAR(Bxy);
+
+#undef LOAD_PAR
+}
+#endif
+
+} // namespace
 
 FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
                Options& options, int offset,
@@ -104,38 +155,29 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
   map_mesh->get(R, "R", 0.0, false);
   map_mesh->get(Z, "Z", 0.0, false);
 
-  // Get a unique name for a field based on the sign/magnitude of the offset
-  const auto parallel_slice_field_name = [&](std::string_view field) -> std::string {
-    const auto direction = (offset_ > 0) ? "forward"sv : "backward"sv;
-    // We only have a suffix for parallel slices beyond the first
-    // This is for backwards compatibility
-    if (std::abs(offset_) == 1) {
-      return fmt::format("{}_{}", direction, field);
-    }
-    return fmt::format("{}_{}_{}", direction, field, std::abs(offset_));
-  };
-
   // If we can't read in any of these fields, things will silently not
   // work, so best throw
-  if (map_mesh->get(xt_prime, parallel_slice_field_name("xt_prime"), 0.0, false) != 0) {
+  if (map_mesh->get(xt_prime, parallel_slice_field_name("xt_prime", offset), 0.0, false)
+      != 0) {
     throw BoutException("Could not read {:s} from grid file!\n"
                         "  Either add it to the grid file, or reduce MYG",
-                        parallel_slice_field_name("xt_prime"));
+                        parallel_slice_field_name("xt_prime", offset));
   }
-  if (map_mesh->get(zt_prime, parallel_slice_field_name("zt_prime"), 0.0, false) != 0) {
+  if (map_mesh->get(zt_prime, parallel_slice_field_name("zt_prime", offset), 0.0, false)
+      != 0) {
     throw BoutException("Could not read {:s} from grid file!\n"
                         "  Either add it to the grid file, or reduce MYG",
-                        parallel_slice_field_name("zt_prime"));
+                        parallel_slice_field_name("zt_prime", offset));
   }
-  if (map_mesh->get(R_prime, parallel_slice_field_name("R"), 0.0, false) != 0) {
+  if (map_mesh->get(R_prime, parallel_slice_field_name("R", offset), 0.0, false) != 0) {
     throw BoutException("Could not read {:s} from grid file!\n"
                         "  Either add it to the grid file, or reduce MYG",
-                        parallel_slice_field_name("R"));
+                        parallel_slice_field_name("R", offset));
   }
-  if (map_mesh->get(Z_prime, parallel_slice_field_name("Z"), 0.0, false) != 0) {
+  if (map_mesh->get(Z_prime, parallel_slice_field_name("Z", offset), 0.0, false) != 0) {
     throw BoutException("Could not read {:s} from grid file!\n"
                         "  Either add it to the grid file, or reduce MYG",
-                        parallel_slice_field_name("Z"));
+                        parallel_slice_field_name("Z", offset));
   }
 
   // Cell corners
@@ -424,4 +466,25 @@ void FCITransform::outputVars(Options& output_options) {
   // Real-space coordinates of grid points
   output_options["R"].force(R, "FCI");
   output_options["Z"].force(Z, "FCI");
+}
+
+void FCITransform::loadParallelMetrics(Coordinates* coords) {
+#if BOUT_USE_METRIC_3D
+  output_info.write("\tLoading parallel metrics\n");
+  const auto JB0 = coords->J * coords->Bxy;
+  coords->J.splitParallelSlices();
+  coords->J.disallowCalcParallelSlices();
+  coords->J.resetRegionParallel(true);
+  for (int i = 1; i <= mesh.ystart; ++i) {
+    load_parallel_metric_components(coords, -i);
+    load_parallel_metric_components(coords, i);
+
+    coords->J.ynext(i).allocate();
+    coords->J.ynext(-i).allocate();
+    BOUT_FOR(j, JB0.getRegion("RGN_NOBNDRY")) {
+      coords->J.ynext(i)[j.yp(i)] = JB0[j] / coords->Bxy.ynext(i)[j.yp(i)];
+      coords->J.ynext(-i)[j.yp(-i)] = JB0[j] / coords->Bxy.ynext(-i)[j.yp(-i)];
+    }
+  }
+#endif
 }
