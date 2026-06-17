@@ -207,19 +207,20 @@ int ArkodeSolver::init() {
                n2Dvars(), neq, local_N);
 
   // Allocate memory
-  // uvec = callWithSUNContext(N_VNew_Parallel, suncontext, BoutComm::get(), local_N, neq);
-  // if (uvec == nullptr) {
-  //   throw BoutException("SUNDIALS memory allocation failed\n");
-  // }
-
-  // uvec = N_VNew_Bout(suncontext, *f3d.back().var, false);
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
   uvec = nvector_from_state(suncontext);
   if (uvec == nullptr) {
     throw BoutException("BOUT N_Vector failed\n");
   }
+#else
+  uvec = callWithSUNContext(N_VNew_Parallel, suncontext, BoutComm::get(), local_N, neq);
+  if (uvec == nullptr) {
+    throw BoutException("SUNDIALS memory allocation failed\n");
+  }
 
   // Put the variables into uvec
-  // save_vars(N_VGetArrayPointer(uvec));
+  save_vars(N_VGetArrayPointer(uvec));
+#endif
 
   switch (treatment) {
   case Treatment::ImEx:
@@ -605,8 +606,11 @@ BoutReal ArkodeSolver::run(BoutReal tout) {
   }
 
   // Copy variables
-  // load_vars(N_VGetArrayPointer(uvec));
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
   swap_state(uvec);
+#else
+  load_vars(N_VGetArrayPointer(uvec));
+#endif
   // Call rhs function to get extra variables at this time
   run_rhs(simtime);
   // run_diffusive(simtime);
@@ -627,8 +631,12 @@ void ArkodeSolver::rhs_e(BoutReal t, N_Vector u, N_Vector du) {
   TRACE("Running RHS: ArkodeSolver::rhs_e({:e})", t);
 
   // Load state from udata
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
   swap_state(u);
   swap_deriv(du);
+#else
+  load_vars(N_VGetArrayPointer(u));
+#endif
 
   // Get the current timestep
   // Note: ARKodeGetCurrentStep updated too late in older versions
@@ -638,8 +646,12 @@ void ArkodeSolver::rhs_e(BoutReal t, N_Vector u, N_Vector du) {
   run_convective(t);
 
   // Save derivatives to dudata
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
   swap_state(u);
   swap_deriv(du);
+#else
+  save_derivs(N_VGetArrayPointer(du));
+#endif
 }
 
 /**************************************************************************
@@ -649,13 +661,21 @@ void ArkodeSolver::rhs_e(BoutReal t, N_Vector u, N_Vector du) {
 void ArkodeSolver::rhs_i(BoutReal t, N_Vector u, N_Vector du) {
   TRACE("Running RHS: ArkodeSolver::rhs_i({:e})", t);
 
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
   swap_state(u);
   swap_deriv(du);
+#else
+  load_vars(N_VGetArrayPointer(u));
+#endif
   ARKodeGetLastStep(arkode_mem, &hcur);
   // Call Implicit RHS function
   run_diffusive(t);
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
   swap_state(u);
   swap_deriv(du);
+#else
+  save_derivs(N_VGetArrayPointer(du));
+#endif
 }
 
 /**************************************************************************
@@ -664,13 +684,21 @@ void ArkodeSolver::rhs_i(BoutReal t, N_Vector u, N_Vector du) {
 void ArkodeSolver::rhs(BoutReal t, N_Vector u, N_Vector du) {
   TRACE("Running RHS: ArkodeSolver::rhs({:e})", t);
 
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
   swap_state(u);
   swap_deriv(du);
+#else
+  load_vars(N_VGetArrayPointer(u));
+#endif
   ARKodeGetLastStep(arkode_mem, &hcur);
   // Call Implicit RHS function
   run_rhs(t);
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
   swap_state(u);
   swap_deriv(du);
+#else
+  save_derivs(N_VGetArrayPointer(du));
+#endif
 }
 
 /**************************************************************************
@@ -690,14 +718,22 @@ void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, N_Vector u,
   }
 
   // Load state from udata (as with res function)
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
   swap_state(u);
   swap_deriv(rvec);
+#else
+  load_vars(N_VGetArrayPointer(u));
+  load_derivs(N_VGetArrayPointer(rvec));
+#endif
 
   runPreconditioner(t, gamma, delta);
 
   // Save the solution from F_vars
-  // TODO: only need to swap zvec not u
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
   swap_deriv(zvec);
+#else
+  save_derivs(N_VGetArrayPointer(zvec));
+#endif
 
   pre_Wtime += bout::globals::mpi->MPI_Wtime() - tstart;
   pre_ncalls++;
@@ -715,14 +751,23 @@ void ArkodeSolver::jac(BoutReal t, N_Vector y, N_Vector v, N_Vector Jv) {
   }
 
   // Load state from ydate
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
   swap_state(y);
   swap_deriv(v);
+#else
+  load_vars(N_VGetArrayPointer(y));
+  load_derivs(N_VGetArrayPointer(v));
+#endif
 
   // Call function
   runJacobian(t);
 
   // Save Jv from vars
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
   swap_deriv(Jv);
+#else
+  save_derivs(N_VGetArrayPointer(Jv));
+#endif
 }
 
 /**************************************************************************

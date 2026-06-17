@@ -45,7 +45,9 @@ RegisterUnavailableSolver
 #include "bout/bout_types.hxx"
 #include "bout/region.hxx"
 #include "bout/sundials_backports.hxx"
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
 #include "../../nvector.hxx"
+#endif
 
 #include <nvector/nvector_parallel.h>
 #include <sundials/sundials_config.h>
@@ -201,12 +203,13 @@ private:
                              std::vector<BoutReal>& f2dtols,
                              std::vector<BoutReal>& f3dtols, bool bndry);
 
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
   N_Vector nvector_from_state(const sundials::Context& ctx) {
     std::vector<N_Vector> subvectors;
     subvectors.reserve(f2d.size() + f3d.size());
     const auto inserter = std::back_inserter(subvectors);
 
-    const auto var_str_to_nvector = [&ctx](auto &var_str) {
+    const auto var_str_to_nvector = [&ctx](auto& var_str) {
       return BoutNVector::create(ctx, *var_str.var, var_str.evolve_bndry);
     };
     std::transform(f2d.cbegin(), f2d.cend(), inserter, var_str_to_nvector);
@@ -216,12 +219,12 @@ private:
 
   void swap_state(const N_Vector u) {
     std::size_t i = 0;
-    for (auto &var_str : f2d) {
+    for (auto& var_str : f2d) {
       BoutNVector::swap(u, *var_str.var, i);
       i++;
     }
 
-    for (auto &var_str : f3d) {
+    for (auto& var_str : f3d) {
       BoutNVector::swap(u, *var_str.var, i);
       i++;
     }
@@ -229,16 +232,17 @@ private:
 
   void swap_deriv(const N_Vector du) {
     std::size_t i = 0;
-    for (auto &var_str : f2d) {
+    for (auto& var_str : f2d) {
       BoutNVector::swap(du, *var_str.F_var, i);
       i++;
     }
 
-    for (auto &var_str : f3d) {
+    for (auto& var_str : f3d) {
       BoutNVector::swap(du, *var_str.F_var, i);
       i++;
     }
   }
+#endif
 
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};

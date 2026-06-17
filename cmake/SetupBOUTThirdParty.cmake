@@ -353,6 +353,7 @@ cmake_dependent_option(
   BOUT_USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF
   "NOT BOUT_DOWNLOAD_SUNDIALS" ON
 )
+set(BOUT_HAS_SUNDIALS_MANYVECTOR OFF)
 if(BOUT_USE_SUNDIALS)
   enable_language(C)
   if(BOUT_DOWNLOAD_SUNDIALS)
@@ -406,7 +407,14 @@ if(BOUT_USE_SUNDIALS)
     set(SUNDIALS_ROOT "${SUNDIALS_DIR}")
   endif()
   target_link_libraries(bout++ PUBLIC SUNDIALS::nvecparallel)
-  target_link_libraries(bout++ PUBLIC SUNDIALS::nvecmanyvector)
+  if(TARGET SUNDIALS::nvecmanyvector)
+    target_link_libraries(bout++ PUBLIC SUNDIALS::nvecmanyvector)
+    set(BOUT_HAS_SUNDIALS_MANYVECTOR ON)
+  else()
+    message(
+      STATUS "SUNDIALS ManyVector support not found; custom N_Vector disabled"
+    )
+  endif()
   target_link_libraries(bout++ PUBLIC SUNDIALS::cvode)
   target_link_libraries(bout++ PUBLIC SUNDIALS::ida)
   target_link_libraries(bout++ PUBLIC SUNDIALS::arkode)
