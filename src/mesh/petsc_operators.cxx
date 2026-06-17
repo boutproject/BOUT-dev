@@ -1,4 +1,7 @@
 #include "bout/build_defines.hxx"
+#include "bout/petsc_interface.hxx"
+#include "bout/petsclib.hxx"
+#include <cmath>
 
 #if BOUT_HAS_PETSC
 
