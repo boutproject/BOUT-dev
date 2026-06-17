@@ -25,11 +25,14 @@
 
 #include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/build_defines.hxx>
 #include <bout/field.hxx>
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
 #include <functional>
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
 #include <nvector/nvector_manyvector.h>
+#endif
 #include <sundials/sundials_nvector.h>
 #include <utility>
 
@@ -183,14 +186,6 @@ public:
     return v;
   }
 
-  template <typename V>
-  static N_Vector create(const sundials::Context& ctx, V& subvectors) {
-    const auto v = callWithSUNContext(N_VNew_ManyVector, ctx, std::size(subvectors),
-                                      std::data(subvectors));
-    ((N_VectorContent_ManyVector)v->content)->own_data = true;
-    return v;
-  }
-
   template <typename T, typename = bout::utils::EnableIfField<T>>
   static void swap(const N_Vector v, T& field) {
     field.swapData(get_field<T>(v));
@@ -199,6 +194,15 @@ public:
   template <typename T, typename = bout::utils::EnableIfField<T>>
   static T& get(const N_Vector v) {
     return get_field<T>(v);
+  }
+
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
+  template <typename V>
+  static N_Vector create(const sundials::Context& ctx, V& subvectors) {
+    const auto v = callWithSUNContext(N_VNew_ManyVector, ctx, std::size(subvectors),
+                                      std::data(subvectors));
+    ((N_VectorContent_ManyVector)v->content)->own_data = true;
+    return v;
   }
 
   template <typename T, typename = bout::utils::EnableIfField<T>>
@@ -210,6 +214,7 @@ public:
   static T& get(const N_Vector v, std::size_t subvector) {
     return BoutNVector::get<T>(N_VGetSubvector_ManyVector(v, subvector));
   }
+#endif
 };
 
 #endif
