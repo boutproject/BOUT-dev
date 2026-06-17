@@ -540,7 +540,7 @@ public:
   signed char _valid() const { return region->bndry_points[pos].valid; }
   Ind3D _ind() const { return region->bndry_points[pos].index; }
   signed char _boundary_width() const {
-    return region->localmesh->ystart - region->bndry_points[pos].abs_offset;
+    return region->localmesh->ystart - region->bndry_points[pos].abs_offset + 1;
   }
   BoutReal _length([[maybe_unused]] CELL_LOC loc) const {
     ASSERT3(loc == CELL_CENTRE);
