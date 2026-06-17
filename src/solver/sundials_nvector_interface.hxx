@@ -39,20 +39,27 @@
 #include <iterator>
 #include <vector>
 
+/// Supported SUNDIALS ``N_Vector`` backends that can be selected at runtime.
 BOUT_ENUM_CLASS(NVectorType, Sundials, ManyVector);
 
+/// Helper for moving solver state between BOUT++ fields and a chosen ``N_Vector``
+/// backend without exposing backend-specific details in each solver wrapper.
 class SundialsNVectorInterface {
 public:
   SundialsNVectorInterface(Solver& solver_in, const sundials::Context& ctx_in,
                            NVectorType nvector_type_in)
       : solver(solver_in), ctx(ctx_in), nvector_type(nvector_type_in) {}
 
+  /// Return ``true`` when using the field-backed ManyVector implementation.
   bool use_manyvector() const { return nvector_type == NVectorType::ManyVector; }
 
+  /// Human-readable backend name for logs and error messages.
   const char* backend_name() const {
     return use_manyvector() ? "SUNDIALS ManyVector-backed custom" : "SUNDIALS parallel";
   }
 
+  /// Throw if the selected backend requires SUNDIALS ManyVector support that was
+  /// not enabled when BOUT++ was built.
   void ensure_manyvector_available() const {
     if (use_manyvector() and not BOUT_HAS_SUNDIALS_MANYVECTOR) {
       throw BoutException("SUNDIALS ManyVector backend requested, but BOUT++ was "
@@ -60,6 +67,7 @@ public:
     }
   }
 
+  /// Create the main solver state vector using the selected backend.
   N_Vector create_state_vector(int local_N, int neq) const {
     ensure_manyvector_available();
 
@@ -81,6 +89,7 @@ public:
     return vec;
   }
 
+  /// Clone a vector of the same backend/layout, with a descriptive error on failure.
   N_Vector clone_vector_like(N_Vector source, const char* description) const {
     auto* vec = N_VClone(source);
     if (vec == nullptr) {
@@ -89,6 +98,7 @@ public:
     return vec;
   }
 
+  /// Copy the current solution state from ``u`` into the solver fields.
   void copy_state_from_vector(N_Vector u) const {
     ensure_manyvector_available();
 
@@ -102,6 +112,7 @@ public:
     solver.load_vars(N_VGetArrayPointer(u));
   }
 
+  /// Copy the solver fields into the solution vector ``u``.
   void copy_state_to_vector(N_Vector u) const {
     ensure_manyvector_available();
 
@@ -115,6 +126,7 @@ public:
     solver.save_vars(N_VGetArrayPointer(u));
   }
 
+  /// Copy time-derivative values from ``du`` into the solver derivative fields.
   void copy_deriv_from_vector(N_Vector du) const {
     ensure_manyvector_available();
 
@@ -128,6 +140,7 @@ public:
     solver.load_derivs(N_VGetArrayPointer(du));
   }
 
+  /// Copy the solver derivative fields into ``du``.
   void copy_deriv_to_vector(N_Vector du) const {
     ensure_manyvector_available();
 
@@ -141,6 +154,8 @@ public:
     solver.save_derivs(N_VGetArrayPointer(du));
   }
 
+  /// Fill every evolved entry in ``vec`` with per-field constants, respecting
+  /// whether each field evolves boundary cells.
   void fill_vector_values(N_Vector vec, const std::vector<BoutReal>& f2d_values,
                           const std::vector<BoutReal>& f3d_values) const {
     ensure_manyvector_available();
@@ -170,6 +185,8 @@ public:
     }
   }
 
+  /// Fill the IDA ``id`` vector with ``1`` for differential variables and ``0``
+  /// for constrained algebraic variables.
   void fill_id_vector(N_Vector vec) const {
     ensure_manyvector_available();
 
@@ -193,6 +210,8 @@ public:
     solver.set_id(N_VGetArrayPointer(vec));
   }
 
+  /// Apply the IDA residual update ``residual -= du`` only on differential
+  /// components selected by ``id``.
   void subtract_differential_term(N_Vector residual, N_Vector du, N_Vector id) const {
     ensure_manyvector_available();
 
@@ -254,6 +273,7 @@ private:
   }
 
 #if BOUT_HAS_SUNDIALS_MANYVECTOR
+  /// Build a field-backed ManyVector that aliases the solver state variables.
   N_Vector nvector_from_state() const {
     std::vector<N_Vector> subvectors;
     subvectors.reserve(solver.f2d.size() + solver.f3d.size());
@@ -267,6 +287,7 @@ private:
     return BoutNVector::create(ctx, subvectors);
   }
 
+  /// Swap the active solver state fields with the subvectors contained in ``u``.
   void swap_state(const N_Vector u) const {
     std::size_t i = 0;
     for (auto& var_str : solver.f2d) {
@@ -279,6 +300,7 @@ private:
     }
   }
 
+  /// Swap the active solver derivative fields with the subvectors in ``du``.
   void swap_deriv(const N_Vector du) const {
     std::size_t i = 0;
     for (auto& var_str : solver.f2d) {
