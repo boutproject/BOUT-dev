@@ -1,4 +1,5 @@
 #include "bout/build_defines.hxx"
+#include "bout/field2d.hxx"
 #include "bout/petsc_interface.hxx"
 #include "bout/petsclib.hxx"
 #include <cmath>
@@ -9,7 +10,6 @@
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field3d.hxx"
-#include "bout/output.hxx"
 #include "bout/output_bout_types.hxx"
 #include "bout/petsc_operators.hxx"
 #include "bout/region.hxx"
