@@ -222,6 +222,7 @@ private:
 
   PetscLib lib; ///< Handles initialising, finalising PETSc
   Vec snes_f;   ///< Used by SNES to store function
+  Vec deriv;    ///< Time derivative; only used if diagnose = true, otherwise will store in snes_f
   Vec snes_x;   ///< Result of SNES
   Vec x0;       ///< Solution at start of current timestep
   Vec f0;       ///< Residual at start of current timestep (only stored if diagnose = true)

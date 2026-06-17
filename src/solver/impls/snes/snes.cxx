@@ -680,6 +680,7 @@ int SNESSolver::init() {
   PetscCall(VecDuplicate(snes_x, &x0));
   if (diagnose) {
     PetscCall(VecDuplicate(snes_f, &f0));
+    PetscCall(VecDuplicate(snes_f, &deriv));
   }
 
   if ((equation_form == BoutSnesEquationForm::rearranged_backward_euler)
@@ -982,7 +983,7 @@ int SNESSolver::run() {
         break; // Could happen if step over multiple outputs
       }
 
-      if (scale_vars and (loop_count + 1) % rescale_period == 0) {
+      if (scale_vars and loop_count % rescale_period == 0 and (s > 0 or loop_count > 0)) {
         PetscCall(rescale(saved_jacobian_lag));
       }
       ++loop_count;
@@ -1118,6 +1119,7 @@ int SNESSolver::run() {
         }
         // Restore state
         VecCopy(x0, snes_x);
+        // FIXME: Not sure I need this
         if (diagnose) {
           VecCopy(f0, snes_f);
         }
@@ -1198,20 +1200,37 @@ int SNESSolver::run() {
         }
 
         // Copy derivatives back
-        {
+        if (diagnose) {
+          BoutReal* fdata = nullptr;
+          PetscCall(VecGetArray(deriv, &fdata));
+          save_derivs(fdata);
+          PetscCall(VecRestoreArray(deriv, &fdata));
+          // Forward Euler
+          VecAXPY(snes_x, dt, deriv);
+        }
+        else {
           BoutReal* fdata = nullptr;
           PetscCall(VecGetArray(snes_f, &fdata));
           save_derivs(fdata);
           PetscCall(VecRestoreArray(snes_f, &fdata));
+          // Forward Euler
+          VecAXPY(snes_x, dt, snes_f);
         }
 
-        // Forward Euler
-        VecAXPY(snes_x, dt, snes_f);
       }
+
+        // int i;
+        // PetscReal norm, minval, maxval;
+        // PetscCall(VecNorm(snes_f, NORM_2, &norm));
+        // PetscCall(VecMin(snes_f, &i, &minval));
+        // PetscCall(VecMax(snes_f, &i, &maxval));
+        // output.write("Max, min, and norm of residual for SNES function: {}, {}, {}\n", maxval, minval, norm);
+
 
       simtime += dt;
 
       // Update local and global residuals
+      /// FIXME: This overwrites snes_f with the time derivs!
       PetscCall(updateResiduals(snes_x));
 
       if (diagnose) {
@@ -1280,6 +1299,7 @@ int SNESSolver::run() {
       VecAXPBY(output_x, alpha, 1. - alpha, x0);
 
       if (diagnose) {
+        // FIXME: Is this a good approach to take here? It's not the *actual* residual of a solve this way.
         VecCopy(snes_f, output_f);
         VecAXPBY(output_f, alpha, 1 - alpha, f0);
       }
@@ -1392,12 +1412,20 @@ PetscErrorCode SNESSolver::updateResiduals(Vec x) {
   local_residual_2d_prev = copy(local_residual_2d);
   global_residual_prev = global_residual;
 
+  const BoutReal* current_residual = nullptr;
+  if (diagnose) {
+  // Call RHS function to get time derivatives
+    PetscCall(rhs_function(x, deriv, false));
+
+  // Reading the residual vectors
+  PetscCall(VecGetArrayRead(deriv, &current_residual));
+  } else {
   // Call RHS function to get time derivatives
   PetscCall(rhs_function(x, snes_f, false));
 
   // Reading the residual vectors
-  const BoutReal* current_residual = nullptr;
   PetscCall(VecGetArrayRead(snes_f, &current_residual));
+  }
 
   // Note: The ordering of quantities in the PETSc vectors
   // depends on the Solver::loop_vars function
@@ -1465,8 +1493,12 @@ PetscErrorCode SNESSolver::updateResiduals(Vec x) {
     }
   }
 
+  if (diagnose) {
   // Restore Vec data arrays
-  PetscCall(VecRestoreArrayRead(snes_f, &current_residual));
+    PetscCall(VecRestoreArrayRead(deriv, &current_residual));
+  } else {
+    PetscCall(VecRestoreArrayRead(snes_f, &current_residual));
+  }
 
   // Global residual metric (RMS)
   global_residual = std::sqrt(mean(SQ(local_residual), true));
