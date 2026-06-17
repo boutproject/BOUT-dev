@@ -1,8 +1,8 @@
 /**************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ * Contact: Ben Dudson, dudson2@llnl.gov
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -23,11 +23,15 @@
 #ifndef BOUT_NVECTOR_H
 #define BOUT_NVECTOR_H
 
+#include <bout/bout_types.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/field.hxx>
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
+#include <functional>
 #include <nvector/nvector_manyvector.h>
 #include <sundials/sundials_nvector.h>
+#include <utility>
 
 #include "bout/sundials_backports.hxx"
 
@@ -77,16 +81,17 @@ private:
     return get_content<T>(v).field;
   }
 
-  template <typename T, typename R, typename... V>
-  static BoutReal reduce_field(const R reduce, const bool allpe, const N_Vector v1,
+  template <typename T, typename Reduce, typename... V>
+  static BoutReal reduce_field(Reduce&& reduce, const bool allpe, const N_Vector v1,
                                const V... v2) {
     BoutReal result = 0;
     const auto region = get_content<T>(v1).getRegion();
-      BOUT_FOR_OMP(i, region, parallel for reduction(+:result)) {
-        result += reduce(get_field<T>(v1)[i], get_field<T>(v2)[i]...);
-      }
+    BOUT_FOR_OMP(i, region, parallel for reduction(+:result)) {
+      result += std::invoke(std::forward<Reduce>(reduce), get_field<T>(v1)[i],
+                            get_field<T>(v2)[i]...);
+    }
 
-      return allpe ? all_reduce(result) : result;
+    return allpe ? all_reduce(result) : result;
   }
 
 public:
@@ -108,7 +113,8 @@ public:
       const Content<T>& content = get_content<T>(x);
       // TODO: ensure no memory leaks
       // T* field_clone = new T(*content.field);
-      T* field_clone = new T(content.field.getMesh(), content.field.getLocation(), content.field.getDirections());
+      T* field_clone = new T(content.field.getMesh(), content.field.getLocation(),
+                             content.field.getDirections());
       field_clone->allocate();
       field_clone->copyBoundary(content.field);
       return create(x->sunctx, *field_clone, content.evolve_bndry, true);
@@ -171,7 +177,7 @@ public:
     };
 
     v->ops->nvl1norm = [](N_Vector x) {
-      return reduce_field<T>(std::abs<BoutReal>, true, x);
+      return reduce_field<T>([](const auto value) { return std::abs(value); }, true, x);
     };
 
     return v;
@@ -179,8 +185,8 @@ public:
 
   template <typename V>
   static N_Vector create(const sundials::Context& ctx, V& subvectors) {
-    const auto v =  callWithSUNContext(N_VNew_ManyVector, ctx, std::size(subvectors),
-                                       std::data(subvectors));
+    const auto v = callWithSUNContext(N_VNew_ManyVector, ctx, std::size(subvectors),
+                                      std::data(subvectors));
     ((N_VectorContent_ManyVector)v->content)->own_data = true;
     return v;
   }
