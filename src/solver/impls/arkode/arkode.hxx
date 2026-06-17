@@ -79,6 +79,9 @@ BOUT_ENUM_CLASS(Treatment, ImEx, Implicit, Explicit);
 BOUT_ENUM_CLASS(AdapMethod, PID, PI, I, Explicit_Gustafsson, Implicit_Gustafsson,
                 ImEx_Gustafsson);
 
+// N_Vector backend
+BOUT_ENUM_CLASS(NVectorType, Sundials, ManyVector);
+
 // Shim for the ARKstep -> ARKode prefix change in SUNDIALS 7.1.0
 #if SUNDIALS_VERSION_LESS_THAN(7, 1, 0)
 #include <arkode/arkode_arkstep.h>
@@ -184,6 +187,8 @@ private:
   bool rightprec;
   /// Use user-supplied Jacobian function
   bool use_jacobian;
+  /// N_Vector backend to use
+  NVectorType nvector_type;
 #if ARKODE_OPTIMAL_PARAMS_SUPPORT
   /// Use ARKode optimal parameters
   bool optimize;
@@ -202,6 +207,13 @@ private:
   void loop_abstol_values_op(Ind2D i2d, BoutReal* abstolvec_data, int& p,
                              std::vector<BoutReal>& f2dtols,
                              std::vector<BoutReal>& f3dtols, bool bndry);
+
+  bool use_manyvector() const { return nvector_type == NVectorType::ManyVector; }
+  N_Vector create_state_nvector(int local_N, int neq);
+  void load_state_from_nvector(N_Vector u);
+  void restore_state_nvector(N_Vector u);
+  void load_deriv_from_nvector(N_Vector du);
+  void restore_deriv_nvector(N_Vector du);
 
 #if BOUT_HAS_SUNDIALS_MANYVECTOR
   N_Vector nvector_from_state(const sundials::Context& ctx) {

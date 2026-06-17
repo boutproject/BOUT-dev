@@ -152,6 +152,9 @@ ArkodeSolver::ArkodeSolver(Options* opts)
       use_jacobian((*options)["use_jacobian"]
                        .doc("Use user-supplied Jacobian function")
                        .withDefault(false)),
+      nvector_type((*options)["nvector"]
+                       .doc("N_Vector backend to use: sundials or manyvector")
+                       .withDefault(NVectorType::Sundials)),
 #if ARKODE_OPTIMAL_PARAMS_SUPPORT
       optimize(
           (*options)["optimize"].doc("Use ARKode optimal parameters").withDefault(false)),
@@ -184,6 +187,73 @@ ArkodeSolver::~ArkodeSolver() {
 }
 
 /**************************************************************************
+ * N_Vector backend helpers
+ **************************************************************************/
+
+N_Vector ArkodeSolver::create_state_nvector(const int local_N, const int neq) {
+  if (use_manyvector()) {
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
+    auto* vec = nvector_from_state(suncontext);
+    if (vec == nullptr) {
+      throw BoutException("BOUT N_Vector failed\n");
+    }
+    return vec;
+#else
+    throw BoutException("ARKode option 'nvector = manyvector' requested, but BOUT++ "
+                        "was built without SUNDIALS ManyVector support");
+#endif
+  }
+
+  auto* vec =
+      callWithSUNContext(N_VNew_Parallel, suncontext, BoutComm::get(), local_N, neq);
+  if (vec == nullptr) {
+    throw BoutException("SUNDIALS memory allocation failed\n");
+  }
+  save_vars(N_VGetArrayPointer(vec));
+  return vec;
+}
+
+void ArkodeSolver::load_state_from_nvector(N_Vector u) {
+  if (use_manyvector()) {
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
+    swap_state(u);
+    return;
+#endif
+  }
+  load_vars(N_VGetArrayPointer(u));
+}
+
+void ArkodeSolver::restore_state_nvector(N_Vector u) {
+  if (use_manyvector()) {
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
+    swap_state(u);
+    return;
+#endif
+  }
+  static_cast<void>(u);
+}
+
+void ArkodeSolver::load_deriv_from_nvector(N_Vector du) {
+  if (use_manyvector()) {
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
+    swap_deriv(du);
+    return;
+#endif
+  }
+  load_derivs(N_VGetArrayPointer(du));
+}
+
+void ArkodeSolver::restore_deriv_nvector(N_Vector du) {
+  if (use_manyvector()) {
+#if BOUT_HAS_SUNDIALS_MANYVECTOR
+    swap_deriv(du);
+    return;
+#endif
+  }
+  save_derivs(N_VGetArrayPointer(du));
+}
+
+/**************************************************************************
  * Initialise
  **************************************************************************/
 
@@ -192,6 +262,11 @@ int ArkodeSolver::init() {
   Solver::init();
 
   output.write("Initialising SUNDIALS' ARKODE solver\n");
+
+  if (use_manyvector() and not BOUT_HAS_SUNDIALS_MANYVECTOR) {
+    throw BoutException("ARKode option 'nvector = manyvector' requested, but BOUT++ "
+                        "was built without SUNDIALS ManyVector support");
+  }
 
   // Calculate number of variables (in generic_solver)
   const int local_N = getLocalN();
@@ -206,21 +281,12 @@ int ArkodeSolver::init() {
   output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n", n3Dvars(),
                n2Dvars(), neq, local_N);
 
-  // Allocate memory
-#if BOUT_HAS_SUNDIALS_MANYVECTOR
-  uvec = nvector_from_state(suncontext);
-  if (uvec == nullptr) {
-    throw BoutException("BOUT N_Vector failed\n");
-  }
-#else
-  uvec = callWithSUNContext(N_VNew_Parallel, suncontext, BoutComm::get(), local_N, neq);
-  if (uvec == nullptr) {
-    throw BoutException("SUNDIALS memory allocation failed\n");
-  }
+  output.write("\tUsing {} N_Vector backend\n", use_manyvector()
+                                                    ? "SUNDIALS ManyVector-backed custom"
+                                                    : "SUNDIALS parallel");
 
-  // Put the variables into uvec
-  save_vars(N_VGetArrayPointer(uvec));
-#endif
+  // Allocate memory
+  uvec = create_state_nvector(local_N, neq);
 
   switch (treatment) {
   case Treatment::ImEx:
@@ -606,11 +672,7 @@ BoutReal ArkodeSolver::run(BoutReal tout) {
   }
 
   // Copy variables
-#if BOUT_HAS_SUNDIALS_MANYVECTOR
-  swap_state(uvec);
-#else
-  load_vars(N_VGetArrayPointer(uvec));
-#endif
+  load_state_from_nvector(uvec);
   // Call rhs function to get extra variables at this time
   run_rhs(simtime);
   // run_diffusive(simtime);
@@ -631,12 +693,10 @@ void ArkodeSolver::rhs_e(BoutReal t, N_Vector u, N_Vector du) {
   TRACE("Running RHS: ArkodeSolver::rhs_e({:e})", t);
 
   // Load state from udata
-#if BOUT_HAS_SUNDIALS_MANYVECTOR
-  swap_state(u);
-  swap_deriv(du);
-#else
-  load_vars(N_VGetArrayPointer(u));
-#endif
+  load_state_from_nvector(u);
+  if (use_manyvector()) {
+    load_deriv_from_nvector(du);
+  }
 
   // Get the current timestep
   // Note: ARKodeGetCurrentStep updated too late in older versions
@@ -646,12 +706,8 @@ void ArkodeSolver::rhs_e(BoutReal t, N_Vector u, N_Vector du) {
   run_convective(t);
 
   // Save derivatives to dudata
-#if BOUT_HAS_SUNDIALS_MANYVECTOR
-  swap_state(u);
-  swap_deriv(du);
-#else
-  save_derivs(N_VGetArrayPointer(du));
-#endif
+  restore_state_nvector(u);
+  restore_deriv_nvector(du);
 }
 
 /**************************************************************************
@@ -661,21 +717,15 @@ void ArkodeSolver::rhs_e(BoutReal t, N_Vector u, N_Vector du) {
 void ArkodeSolver::rhs_i(BoutReal t, N_Vector u, N_Vector du) {
   TRACE("Running RHS: ArkodeSolver::rhs_i({:e})", t);
 
-#if BOUT_HAS_SUNDIALS_MANYVECTOR
-  swap_state(u);
-  swap_deriv(du);
-#else
-  load_vars(N_VGetArrayPointer(u));
-#endif
+  load_state_from_nvector(u);
+  if (use_manyvector()) {
+    load_deriv_from_nvector(du);
+  }
   ARKodeGetLastStep(arkode_mem, &hcur);
   // Call Implicit RHS function
   run_diffusive(t);
-#if BOUT_HAS_SUNDIALS_MANYVECTOR
-  swap_state(u);
-  swap_deriv(du);
-#else
-  save_derivs(N_VGetArrayPointer(du));
-#endif
+  restore_state_nvector(u);
+  restore_deriv_nvector(du);
 }
 
 /**************************************************************************
@@ -684,21 +734,15 @@ void ArkodeSolver::rhs_i(BoutReal t, N_Vector u, N_Vector du) {
 void ArkodeSolver::rhs(BoutReal t, N_Vector u, N_Vector du) {
   TRACE("Running RHS: ArkodeSolver::rhs({:e})", t);
 
-#if BOUT_HAS_SUNDIALS_MANYVECTOR
-  swap_state(u);
-  swap_deriv(du);
-#else
-  load_vars(N_VGetArrayPointer(u));
-#endif
+  load_state_from_nvector(u);
+  if (use_manyvector()) {
+    load_deriv_from_nvector(du);
+  }
   ARKodeGetLastStep(arkode_mem, &hcur);
   // Call Implicit RHS function
   run_rhs(t);
-#if BOUT_HAS_SUNDIALS_MANYVECTOR
-  swap_state(u);
-  swap_deriv(du);
-#else
-  save_derivs(N_VGetArrayPointer(du));
-#endif
+  restore_state_nvector(u);
+  restore_deriv_nvector(du);
 }
 
 /**************************************************************************
@@ -718,22 +762,16 @@ void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, N_Vector u,
   }
 
   // Load state from udata (as with res function)
-#if BOUT_HAS_SUNDIALS_MANYVECTOR
-  swap_state(u);
-  swap_deriv(rvec);
-#else
-  load_vars(N_VGetArrayPointer(u));
-  load_derivs(N_VGetArrayPointer(rvec));
-#endif
+  load_state_from_nvector(u);
+  load_deriv_from_nvector(rvec);
 
   runPreconditioner(t, gamma, delta);
 
   // Save the solution from F_vars
-#if BOUT_HAS_SUNDIALS_MANYVECTOR
-  swap_deriv(zvec);
-#else
-  save_derivs(N_VGetArrayPointer(zvec));
-#endif
+  if (use_manyvector()) {
+    restore_state_nvector(u);
+  }
+  restore_deriv_nvector(zvec);
 
   pre_Wtime += bout::globals::mpi->MPI_Wtime() - tstart;
   pre_ncalls++;
@@ -751,23 +789,17 @@ void ArkodeSolver::jac(BoutReal t, N_Vector y, N_Vector v, N_Vector Jv) {
   }
 
   // Load state from ydate
-#if BOUT_HAS_SUNDIALS_MANYVECTOR
-  swap_state(y);
-  swap_deriv(v);
-#else
-  load_vars(N_VGetArrayPointer(y));
-  load_derivs(N_VGetArrayPointer(v));
-#endif
+  load_state_from_nvector(y);
+  load_deriv_from_nvector(v);
 
   // Call function
   runJacobian(t);
 
   // Save Jv from vars
-#if BOUT_HAS_SUNDIALS_MANYVECTOR
-  swap_deriv(Jv);
-#else
-  save_derivs(N_VGetArrayPointer(Jv));
-#endif
+  if (use_manyvector()) {
+    restore_state_nvector(y);
+  }
+  restore_deriv_nvector(Jv);
 }
 
 /**************************************************************************
