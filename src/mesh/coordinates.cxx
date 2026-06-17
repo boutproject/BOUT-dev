@@ -2099,10 +2099,17 @@ void Coordinates::_compute_cell_area_y() const {
     _cell_area_yhigh.emplace(emptyFrom(area_centre));
     // We cannot setLocation, as that would trigger the computation of staggered
     // metrics.
-    ASSERT0(mesh->ystart > 0);
-    BOUT_FOR(i, mesh->getRegion("RGN_NOY")) {
-      (*_cell_area_ylow)[i] = 0.5 * (area_centre[i] + area_centre[i.ym()]);
-      (*_cell_area_yhigh)[i] = 0.5 * (area_centre[i] + area_centre[i.yp()]);
+    BOUT_FOR(i, mesh->getRegion("RGN_ALL")) {
+      if (i.y() > 0) {
+        (*_cell_area_ylow)[i] = 0.5 * (area_centre[i] + area_centre[i.ym()]);
+      } else {
+        (*_cell_area_ylow)[i] = BoutNaN;
+      }
+      if (i.y() < mesh->LocalNy - 1) {
+        (*_cell_area_yhigh)[i] = 0.5 * (area_centre[i] + area_centre[i.yp()]);
+      } else {
+        (*_cell_area_yhigh)[i] = BoutNaN;
+      }
     }
   }
 }
