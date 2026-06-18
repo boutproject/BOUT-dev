@@ -5,7 +5,6 @@
 
 #include <bout/constants.hxx>
 #include <bout/fft.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
@@ -14,6 +13,7 @@
 LaplaceXZcyclic::LaplaceXZcyclic(Mesh* m, Options* options, const CELL_LOC loc)
     : LaplaceXZ(m, options, loc) {
   // Note: `m` may be nullptr, but localmesh is set in LaplaceXZ base constructor
+  bout::fft::assertZSerial(*localmesh, "`cyclic` X-Z inversion");
 
   // Number of Z Fourier modes, including DC
   nmode = (localmesh->LocalNz) / 2 + 1;
@@ -61,7 +61,7 @@ LaplaceXZcyclic::LaplaceXZcyclic(Mesh* m, Options* options, const CELL_LOC loc)
 }
 
 void LaplaceXZcyclic::setCoefs(const Field2D& A2D, const Field2D& B2D) {
-  TRACE("LaplaceXZcyclic::setCoefs");
+
   Timer timer("invert");
 
   ASSERT1(A2D.getMesh() == localmesh);

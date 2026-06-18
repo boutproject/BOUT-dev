@@ -50,6 +50,7 @@
 // C function pointer types
 
 class Solver;
+class SundialsNVectorInterface;
 
 /// RHS function pointer
 using rhsfunc = int (*)(BoutReal);
@@ -358,6 +359,8 @@ public:
   int getIterationOffset() const { return iteration_offset; }
 
 protected:
+  friend class SundialsNVectorInterface;
+
   /// Number of command-line arguments
   static int* pargc;
   /// Command-line arguments

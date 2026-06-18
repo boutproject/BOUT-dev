@@ -67,11 +67,6 @@ def bump_version_numbers(
     new_version_number: VersionNumber, next_version_number: VersionNumber
 ):
     update_version_number_in_file(
-        "configure.ac",
-        r"^AC_INIT\(\[BOUT\+\+\],\[(\d+\.\d+\.\d+)\]",
-        new_version_number,
-    )
-    update_version_number_in_file(
         "CITATION.cff", r"^version: (\d+\.\d+\.\d+)", new_version_number
     )
     update_version_number_in_file(
@@ -163,8 +158,7 @@ def create_patch(filename, original, modified):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=textwrap.dedent(
-            """\
+        description=textwrap.dedent("""\
             Update the software version number to the specified version, 
             to be given in the form major.minor.patch, 
             e.g. 5.10.3
@@ -177,8 +171,7 @@ if __name__ == "__main__":
             the 'minor' version number of the provided version will be incremented by 1, 
             e.g. 5.10.3 -> 5.11.3
             
-            """
-        ),
+            """),
     )
 
     parser.add_argument(

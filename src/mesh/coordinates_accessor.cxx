@@ -1,4 +1,5 @@
 #include "bout/coordinates_accessor.hxx"
+#include <bout/build_defines.hxx>
 
 #include "bout/mesh.hxx"
 
@@ -45,8 +46,10 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
     data[stripe_size * ind.ind + static_cast<int>(Offset::symbol)] = coords->symbol[ind];
 
   // Implement copy for each argument
-#define COPY_STRIPE(...) \
-  { MACRO_FOR_EACH(COPY_STRIPE1, __VA_ARGS__) }
+#define COPY_STRIPE(...)                      \
+  {                                           \
+    MACRO_FOR_EACH(COPY_STRIPE1, __VA_ARGS__) \
+  }
 
   // Iterate over all points in the field
   // Note this could be 2D or 3D, depending on FieldMetric type

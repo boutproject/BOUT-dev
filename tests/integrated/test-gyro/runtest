@@ -25,7 +25,6 @@ from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
-
 build_and_log("Gyro-average inversion test")
 
 # Read benchmark values

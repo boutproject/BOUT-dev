@@ -2,9 +2,9 @@
  * Functions to interpolate between cell locations (e.g. lower Y and centred)
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -57,7 +57,6 @@ inline BoutReal interp(const stencil& s) {
 template <typename T>
 std::enable_if_t<bout::utils::is_Field2D_v<T> || bout::utils::is_Field3D_v<T>, const T>
 interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_ALL") {
-  AUTO_TRACE();
   static_assert(bout::utils::is_Field2D_v<T> || bout::utils::is_Field3D_v<T>,
                 "interp_to must be templated with one of Field2D or Field3D.");
   ASSERT1(loc != CELL_DEFAULT); // doesn't make sense to interplote to CELL_DEFAULT
@@ -204,17 +203,16 @@ interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_ALL") {
   return result;
 }
 
-
-template<typename E>
-std::enable_if_t<is_expr_field3d_v<E> && !bout::utils::is_Field3D_v<E>, const Field3D> 
-interp_to(const E &expr, CELL_LOC loc, const std::string rgn = "RGN_ALL") {
-  return interp_to( Field3D{expr}, loc, std::move(rgn) );
+template <typename E>
+std::enable_if_t<is_expr_field3d_v<E> && !bout::utils::is_Field3D_v<E>, const Field3D>
+interp_to(const E& expr, CELL_LOC loc, const std::string rgn = "RGN_ALL") {
+  return interp_to(Field3D{expr}, loc, std::move(rgn));
 }
 
-template<typename E>
-std::enable_if_t<is_expr_field2d_v<E> && !bout::utils::is_Field2D_v<E>, const Field2D> 
-interp_to(const E &expr, CELL_LOC loc, const std::string rgn = "RGN_ALL") {
-  return interp_to( Field2D{expr}, loc, std::move(rgn) );
+template <typename E>
+std::enable_if_t<is_expr_field2d_v<E> && !bout::utils::is_Field2D_v<E>, const Field2D>
+interp_to(const E& expr, CELL_LOC loc, const std::string rgn = "RGN_ALL") {
+  return interp_to(Field2D{expr}, loc, std::move(rgn));
 }
 
 #endif // BOUT_INTERP_H

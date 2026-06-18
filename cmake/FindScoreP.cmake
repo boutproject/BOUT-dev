@@ -61,76 +61,90 @@
 # IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 # THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
 find_program(ScoreP_CONFIG scorep-config)
 mark_as_advanced(ScoreP_CONFIG)
 
 get_filename_component(ScoreP_TMP "${ScoreP_CONFIG}" DIRECTORY)
 get_filename_component(ScoreP_EXEC_LOCATION "${ScoreP_TMP}" DIRECTORY)
 
-if (ScoreP_DEBUG)
+if(ScoreP_DEBUG)
   message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
-    " ScoreP_CONFIG = ${ScoreP_CONFIG}"
-    " ScoreP_EXEC_LOCATION = ${ScoreP_EXEC_LOCATION}")
+                 " ScoreP_CONFIG = ${ScoreP_CONFIG}"
+                 " ScoreP_EXEC_LOCATION = ${ScoreP_EXEC_LOCATION}"
+  )
 endif()
 
 if(ScoreP_CONFIG)
   message(STATUS "SCOREP library found. (using ${ScoreP_CONFIG})")
 
-  execute_process(COMMAND ${ScoreP_CONFIG} "--user" "--nocompiler" "--cppflags"
-    OUTPUT_VARIABLE ScoreP_CONFIG_FLAGS)
+  execute_process(
+    COMMAND ${ScoreP_CONFIG} "--user" "--nocompiler" "--cppflags"
+    OUTPUT_VARIABLE ScoreP_CONFIG_FLAGS
+  )
 
-  string(REGEX MATCHALL "-I[^ ]*" ScoreP_CONFIG_INCLUDES "${ScoreP_CONFIG_FLAGS}")
+  string(REGEX MATCHALL "-I[^ ]*" ScoreP_CONFIG_INCLUDES
+               "${ScoreP_CONFIG_FLAGS}"
+  )
   foreach(inc ${ScoreP_CONFIG_INCLUDES})
     string(SUBSTRING ${inc} 2 -1 inc)
     list(APPEND ScoreP_INCLUDE_DIRS ${inc})
   endforeach()
 
-  if (ScoreP_DEBUG)
+  if(ScoreP_DEBUG)
     message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
-      " ScoreP_INCLUDE_DIRS = ${ScoreP_INCLUDE_DIRS}")
+                   " ScoreP_INCLUDE_DIRS = ${ScoreP_INCLUDE_DIRS}"
+    )
   endif()
 
-  string(REGEX MATCHALL "(^| +)-[^I][^ ]*" ScoreP_CONFIG_CXXFLAGS "${ScoreP_CONFIG_FLAGS}")
+  string(REGEX MATCHALL "(^| +)-[^I][^ ]*" ScoreP_CONFIG_CXXFLAGS
+               "${ScoreP_CONFIG_FLAGS}"
+  )
   foreach(flag ${ScoreP_CONFIG_CXXFLAGS})
     string(STRIP ${flag} flag)
     list(APPEND ScoreP_CXX_FLAGS ${flag})
   endforeach()
 
-  if (ScoreP_DEBUG)
+  if(ScoreP_DEBUG)
     message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
-      " ScoreP_CXX_FLAGS = ${ScoreP_CXX_FLAGS}")
+                   " ScoreP_CXX_FLAGS = ${ScoreP_CXX_FLAGS}"
+    )
   endif()
 
   unset(ScoreP_CONFIG_FLAGS)
   unset(ScoreP_CONFIG_INCLUDES)
   unset(ScoreP_CONFIG_CXXFLAGS)
 
-  execute_process(COMMAND ${ScoreP_CONFIG} "--user" "--nocompiler" "--ldflags"
-    OUTPUT_VARIABLE _LINK_LD_ARGS)
-  string( REPLACE " " ";" _LINK_LD_ARGS ${_LINK_LD_ARGS} )
-  foreach( _ARG ${_LINK_LD_ARGS} )
+  execute_process(
+    COMMAND ${ScoreP_CONFIG} "--user" "--nocompiler" "--ldflags"
+    OUTPUT_VARIABLE _LINK_LD_ARGS
+  )
+  string(REPLACE " " ";" _LINK_LD_ARGS ${_LINK_LD_ARGS})
+  foreach(_ARG ${_LINK_LD_ARGS})
     if(${_ARG} MATCHES "^-L")
-      STRING(REGEX REPLACE "^-L" "" _ARG ${_ARG})
-      SET(ScoreP_LINK_DIRS ${ScoreP_LINK_DIRS} ${_ARG})
+      string(REGEX REPLACE "^-L" "" _ARG ${_ARG})
+      set(ScoreP_LINK_DIRS ${ScoreP_LINK_DIRS} ${_ARG})
     endif()
   endforeach()
 
-  if (ScoreP_DEBUG)
+  if(ScoreP_DEBUG)
     message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
-      " ScoreP_LINK_DIRS = ${ScoreP_LINK_DIRS}")
+                   " ScoreP_LINK_DIRS = ${ScoreP_LINK_DIRS}"
+    )
   endif()
 
-  execute_process(COMMAND ${ScoreP_CONFIG} "--user" "--nocompiler" "--libs"
-    OUTPUT_VARIABLE _LINK_LD_ARGS)
-  string( REPLACE " " ";" _LINK_LD_ARGS ${_LINK_LD_ARGS} )
-  foreach( _ARG ${_LINK_LD_ARGS} )
+  execute_process(
+    COMMAND ${ScoreP_CONFIG} "--user" "--nocompiler" "--libs"
+    OUTPUT_VARIABLE _LINK_LD_ARGS
+  )
+  string(REPLACE " " ";" _LINK_LD_ARGS ${_LINK_LD_ARGS})
+  foreach(_ARG ${_LINK_LD_ARGS})
     if(${_ARG} MATCHES "^-l")
       string(REGEX REPLACE "^-l" "" _ARG ${_ARG})
-      find_library(_SCOREP_LIB_FROM_ARG NAMES ${_ARG}
-        PATHS
-        ${ScoreP_LINK_DIRS}
-        )
+      find_library(
+        _SCOREP_LIB_FROM_ARG
+        NAMES ${_ARG}
+        PATHS ${ScoreP_LINK_DIRS}
+      )
       if(_SCOREP_LIB_FROM_ARG)
         set(ScoreP_LIBRARIES ${ScoreP_LIBRARIES} ${_SCOREP_LIB_FROM_ARG})
       endif()
@@ -138,26 +152,26 @@ if(ScoreP_CONFIG)
     endif()
   endforeach()
 
-  if (ScoreP_DEBUG)
+  if(ScoreP_DEBUG)
     message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
-      " ScoreP_LIBRARIES = ${ScoreP_LIBRARIES}")
+                   " ScoreP_LIBRARIES = ${ScoreP_LIBRARIES}"
+    )
   endif()
 
 endif()
 
-include (FindPackageHandleStandardArgs)
-find_package_handle_standard_args(ScoreP DEFAULT_MSG
-    ScoreP_CONFIG
-    ScoreP_LIBRARIES
-    ScoreP_INCLUDE_DIRS
-  )
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(
+  ScoreP DEFAULT_MSG ScoreP_CONFIG ScoreP_LIBRARIES ScoreP_INCLUDE_DIRS
+)
 
-if (ScoreP_FOUND AND NOT TARGET ScoreP::ScoreP)
+if(ScoreP_FOUND AND NOT TARGET ScoreP::ScoreP)
   add_library(ScoreP::ScoreP UNKNOWN IMPORTED)
-  set_target_properties(ScoreP::ScoreP PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${ScoreP_INCLUDE_DIRS}"
-    IMPORTED_LINK_INTERFACE_LIBRARIES "${ScoreP_LIBRARIES}"
-    INTERFACE_INCLUDE_DEFINITIONS "${ScoreP_CXX_FLAGS}"
-    IMPORTED_LINK_INTERFACE_LANGUAGES "C"
-    )
+  set_target_properties(
+    ScoreP::ScoreP
+    PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${ScoreP_INCLUDE_DIRS}"
+               IMPORTED_LINK_INTERFACE_LIBRARIES "${ScoreP_LIBRARIES}"
+               INTERFACE_INCLUDE_DEFINITIONS "${ScoreP_CXX_FLAGS}"
+               IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+  )
 endif()

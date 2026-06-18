@@ -5,7 +5,7 @@ zperiod = 1
 MXG = 0  # No guard cells in X
 MYG = 1  # No guard cells in Y
 
-input = sin(z)
+input_field = sin(z)
 solution = -sin(z)
 
 [mesh]

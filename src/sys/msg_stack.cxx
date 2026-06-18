@@ -27,7 +27,7 @@
 #include "bout/openmpwrap.hxx"
 #include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
-#include <cstdarg>
+
 #include <string>
 
 #if BOUT_USE_OPENMP
@@ -91,7 +91,7 @@ void MsgStack::dump() {
 }
 
 std::string MsgStack::getDump() {
-  std::string res = "====== Back trace ======\n";
+  std::string res = "=== Additional information ===\n";
   for (int i = position - 1; i >= 0; i--) {
     if (stack[i] != "") {
       res += " -> ";

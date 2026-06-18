@@ -30,6 +30,7 @@ constexpr auto has_uuid_system_generator =
     static_cast<bool>(BOUT_HAS_UUID_SYSTEM_GENERATOR);
 constexpr auto has_slepc = static_cast<bool>(BOUT_HAS_SLEPC);
 constexpr auto has_sundials = static_cast<bool>(BOUT_HAS_SUNDIALS);
+constexpr auto has_sundials_manyvector = static_cast<bool>(BOUT_HAS_SUNDIALS_MANYVECTOR);
 constexpr auto use_backtrace = static_cast<bool>(BOUT_USE_BACKTRACE);
 constexpr auto use_color = static_cast<bool>(BOUT_USE_COLOR);
 constexpr auto use_openmp = static_cast<bool>(BOUT_USE_OPENMP);

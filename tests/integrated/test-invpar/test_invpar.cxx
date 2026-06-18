@@ -47,7 +47,7 @@ int test(const std::string& acoef, const std::string& bcoef, const std::string& 
     local_ystart = mesh->ystart + 1;
   }
   for (int y = local_ystart; y < mesh->yend; y++) {
-    for (int z = 0; z < mesh->LocalNz; z++) {
+    for (int z = mesh->zstart; z <= mesh->zend; z++) {
       output.write("result: [{:d},{:d}] : {:e}, {:e}, {:e}\n", y, z,
                    input(mesh->xstart, y, z), result(mesh->xstart, y, z),
                    deriv(mesh->xstart, y, z));
