@@ -1,4 +1,5 @@
 #include "test_extras.hxx"
+#include "fake_mesh_fixture.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
@@ -41,4 +42,14 @@ void fillField(Field2D& f, std::vector<std::vector<BoutReal>> values) {
       ++i;
     }
   }
+}
+
+using TestExtrasFieldExpr = FakeMeshFixture;
+
+TEST_F(TestExtrasFieldExpr, IsFieldEqualHandlesBinaryExprOnEitherSide) {
+  const Field2D field{1.0};
+  const Field2D expected{3.0};
+
+  EXPECT_TRUE(IsFieldEqual(field + 2.0, expected));
+  EXPECT_TRUE(IsFieldEqual(expected, field + 2.0));
 }

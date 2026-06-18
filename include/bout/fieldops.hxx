@@ -187,38 +187,11 @@ struct BinaryExpr {
              const Region<IndType>& region)
       //: lhs(static_cast<typename L::View>(lhs)), rhs(static_cast<typename R::View>(rhs)),
       : lhs(lhs), rhs(rhs), f(f), mesh(mesh), location(location), directions(directions),
-        regionID(regionID), indices(region.getIndices().size()) {
+        indices(region.getIndices().size()), regionID(regionID) {
     // Copy the region indices into the managed array
     for (int i = 0; i < indices.size(); ++i) {
       indices[i] = region.getIndices()[i].ind;
     }
-    //std::cout << "===PRE-sorting indices\n";
-    //for (auto& ind : indices) {
-    //  std::cout << ind << " ";
-    //}
-    //std::cout << "===end PRE\n";
-    //std::sort(indices.begin(), indices.end(),
-    //          [](const auto& a, const auto& b) { return a < b; });
-    //std::cout << "===POST-sorting indices\n";
-    //for (auto& ind : indices) {
-    //  std::cout << ind << " ";
-    //}
-    //std::cout << "===end POST\n";
-    //if (regionIndicesCache.find(static_cast<void*>(const_cast<Region<IndType>*>(&region)))
-    //    != regionIndicesCache.end()) {
-    //  // If we have already computed the indices for this region, use them
-    //  indices =
-    //      regionIndicesCache[static_cast<void*>(const_cast<Region<IndType>*>(&region))];
-    //} else {
-    //  // Otherwise, compute the indices and store them in the cache
-    //  indices = Array<int>(region.getIndices().size());
-    //  // Copy the region indices into the managed array
-    //  for (int i = 0; i < indices.size(); ++i) {
-    //    indices[i] = region.getIndices()[i].ind;
-    //  }
-    //  regionIndicesCache[static_cast<void*>(const_cast<Region<IndType>*>(&region))] =
-    //      indices;
-    //}
   }
 
   BinaryExpr& operator=(const BinaryExpr&) = delete;
