@@ -670,6 +670,8 @@ void Field3D::applyParallelBoundary(const std::string& region,
   }
 }
 
+void Field3D::swapData(Field3D& other) { std::swap(data, other.data); }
+
 /***************************************************************
  *               NON-MEMBER OVERLOADED OPERATORS
  ***************************************************************/

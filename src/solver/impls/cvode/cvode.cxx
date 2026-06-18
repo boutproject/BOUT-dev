@@ -3,7 +3,7 @@
  *
  *
  **************************************************************************
- * Copyright 2010-2024 BOUT++ contributors
+ * Copyright 2010-2026 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -29,6 +29,8 @@
 #include "cvode.hxx"
 
 #if BOUT_HAS_CVODE
+
+#include "../../sundials_nvector_interface.hxx"
 
 #include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
@@ -59,6 +61,7 @@
 #include <iterator>
 #include <numeric>
 #include <string>
+#include <vector>
 
 BOUT_ENUM_CLASS(positivity_constraint, none, positive, non_negative, negative,
                 non_positive);
@@ -130,6 +133,9 @@ CvodeSolver::CvodeSolver(Options* opts)
                     .doc("Use right preconditioner? Otherwise use left.")
                     .withDefault(false)),
       use_jacobian((*options)["use_jacobian"].withDefault(false)),
+      nvector_type((*options)["nvector"]
+                       .doc("N_Vector backend to use: sundials or manyvector")
+                       .withDefault(NVectorType::Sundials)),
       cvode_nonlinear_convergence_coef(
           (*options)["cvode_nonlinear_convergence_coef"]
               .doc("Safety factor used in the nonlinear convergence test")
@@ -177,8 +183,10 @@ CvodeSolver::~CvodeSolver() {
  **************************************************************************/
 
 int CvodeSolver::init() {
+  const auto backend = nvector_backend();
 
   Solver::init();
+  backend.ensure_manyvector_available();
 
   output_progress.write("Initialising SUNDIALS' CVODE solver\n");
 
@@ -194,15 +202,10 @@ int CvodeSolver::init() {
 
   output_info.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
                     n3Dvars(), n2Dvars(), neq, local_N);
+  output_info.write("\tUsing {} N_Vector backend\n", backend.backend_name());
 
   // Allocate memory
-  uvec = callWithSUNContext(N_VNew_Parallel, suncontext, BoutComm::get(), local_N, neq);
-  if (uvec == nullptr) {
-    throw BoutException("SUNDIALS memory allocation failed\n");
-  }
-
-  // Put the variables into uvec
-  save_vars(N_VGetArrayPointer(uvec));
+  uvec = backend.create_state_vector(local_N, neq);
 
   if (adams_moulton) {
     // By default use functional iteration for Adams-Moulton
@@ -274,12 +277,10 @@ int CvodeSolver::init() {
                      return Options::root()[f3.name]["atol"].withDefault(abstol);
                    });
 
-    N_Vector abstolvec = N_VClone(uvec);
-    if (abstolvec == nullptr) {
-      throw BoutException("SUNDIALS memory allocation (abstol vector) failed\n");
-    }
+    N_Vector abstolvec =
+        backend.clone_vector_like(uvec, "SUNDIALS memory allocation (abstol vector)");
 
-    set_vector_option_values(N_VGetArrayPointer(abstolvec), f2dtols, f3dtols);
+    backend.fill_vector_values(abstolvec, f2dtols, f3dtols);
 
     if (CVodeSVtolerances(cvode_mem, reltol, abstolvec) != CV_SUCCESS) {
       throw BoutException("CVodeSVtolerances failed\n");
@@ -316,14 +317,10 @@ int CvodeSolver::init() {
     auto f2d_constraints = create_constraints(f2d);
     auto f3d_constraints = create_constraints(f3d);
 
-    N_Vector constraints_vec = N_VClone(uvec);
-    if (constraints_vec == nullptr) {
-      throw BoutException("SUNDIALS memory allocation (positivity constraints vector) "
-                          "failed\n");
-    }
+    N_Vector constraints_vec = backend.clone_vector_like(
+        uvec, "SUNDIALS memory allocation (positivity constraints vector)");
 
-    set_vector_option_values(N_VGetArrayPointer(constraints_vec), f2d_constraints,
-                             f3d_constraints);
+    backend.fill_vector_values(constraints_vec, f2d_constraints, f3d_constraints);
 
     if (CVodeSetConstraints(cvode_mem, constraints_vec) != CV_SUCCESS) {
       throw BoutException("CVodeSetConstraints failed\n");
@@ -392,7 +389,7 @@ int CvodeSolver::init() {
         //   int band_width_default = n3Dvars()*(MXSUB+2);
         const int band_width_default = std::accumulate(
             begin(f3d), end(f3d), 0, [](int a, const VarStr<Field3D>& fvar) {
-              Mesh* localmesh = fvar.var->getMesh();
+              const Mesh* localmesh = fvar.var->getMesh();
               return a + localmesh->xend - localmesh->xstart + 3;
             });
 
@@ -565,6 +562,7 @@ int CvodeSolver::run() {
 
 BoutReal CvodeSolver::run(BoutReal tout) {
   TRACE("Running solver: solver::run({})", tout);
+  const auto backend = nvector_backend();
 
   bout::globals::mpi->MPI_Barrier(BoutComm::get());
 
@@ -581,7 +579,7 @@ BoutReal CvodeSolver::run(BoutReal tout) {
     CVodeGetCurrentTime(cvode_mem, &internal_time);
     while (internal_time < tout) {
       // Run another step
-      BoutReal last_time = internal_time;
+      const BoutReal last_time = internal_time;
       flag = CVode(cvode_mem, tout, uvec, &internal_time, CV_ONE_STEP);
 
       if (flag < 0) {
@@ -598,7 +596,7 @@ BoutReal CvodeSolver::run(BoutReal tout) {
   }
 
   // Copy variables
-  load_vars(N_VGetArrayPointer(uvec));
+  backend.copy_state_from_vector(uvec);
 
   // Call rhs function to get extra variables at this time
   run_rhs(simtime);
@@ -615,11 +613,12 @@ BoutReal CvodeSolver::run(BoutReal tout) {
  * RHS function du = F(t, u)
  **************************************************************************/
 
-void CvodeSolver::rhs(BoutReal t, BoutReal* udata, BoutReal* dudata, bool linear) {
+void CvodeSolver::rhs(BoutReal t, N_Vector u, N_Vector du, bool linear) {
   TRACE("Running RHS: CvodeSolver::res({})", t);
+  const auto backend = nvector_backend();
 
   // Load state from udata
-  load_vars(udata);
+  backend.copy_state_from_vector(u);
 
   // Get the current timestep
   // Note: CVodeGetCurrentStep updated too late in older versions
@@ -629,39 +628,38 @@ void CvodeSolver::rhs(BoutReal t, BoutReal* udata, BoutReal* dudata, bool linear
   run_rhs(t, linear);
 
   // Save derivatives to dudata
-  save_derivs(dudata);
+  backend.copy_state_to_vector(u);
+  backend.copy_deriv_to_vector(du);
 }
 
 /**************************************************************************
  * Preconditioner function
  **************************************************************************/
 
-void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udata,
-                      BoutReal* rvec, BoutReal* zvec) {
+void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, N_Vector u,
+                      N_Vector rvec, N_Vector zvec) {
   TRACE("Running preconditioner: CvodeSolver::pre({})", t);
+  const auto backend = nvector_backend();
 
-  BoutReal tstart = bout::globals::mpi->MPI_Wtime();
-
-  const auto length = N_VGetLocalLength_Parallel(uvec);
+  const BoutReal tstart = bout::globals::mpi->MPI_Wtime();
 
   if (!hasPreconditioner()) {
     // Identity (but should never happen)
-    for (int i = 0; i < length; i++) {
-      zvec[i] = rvec[i];
-    }
+    N_VScale(1.0, rvec, zvec);
     return;
   }
 
   // Load state from udata (as with res function)
-  load_vars(udata);
+  backend.copy_state_from_vector(u);
 
   // Load vector to be inverted into F_vars
-  load_derivs(rvec);
+  backend.copy_deriv_from_vector(rvec);
 
   runPreconditioner(t, gamma, delta);
 
   // Save the solution from F_vars
-  save_derivs(zvec);
+  backend.copy_state_to_vector(u);
+  backend.copy_deriv_to_vector(zvec);
 
   pre_Wtime += bout::globals::mpi->MPI_Wtime() - tstart;
   pre_ncalls++;
@@ -671,24 +669,26 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udat
  * Jacobian-vector multiplication function
  **************************************************************************/
 
-void CvodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata) {
+void CvodeSolver::jac(BoutReal t, N_Vector y, N_Vector v, N_Vector Jv) {
   TRACE("Running Jacobian: CvodeSolver::jac({})", t);
+  const auto backend = nvector_backend();
 
   if (not hasJacobian()) {
     throw BoutException("No jacobian function supplied!\n");
   }
 
   // Load state from ydate
-  load_vars(ydata);
+  backend.copy_state_from_vector(y);
 
   // Load vector to be multiplied into F_vars
-  load_derivs(vdata);
+  backend.copy_deriv_from_vector(v);
 
   // Call function
   runJacobian(t);
 
   // Save Jv from vars
-  save_derivs(Jvdata);
+  backend.copy_state_to_vector(y);
+  backend.copy_deriv_to_vector(Jv);
 }
 
 /**************************************************************************
@@ -698,15 +698,11 @@ void CvodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jv
 // NOLINTBEGIN(readability-identifier-length)
 namespace {
 int cvode_linear_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
-
-  BoutReal* udata = N_VGetArrayPointer(u);
-  BoutReal* dudata = N_VGetArrayPointer(du);
-
   auto* s = static_cast<CvodeSolver*>(user_data);
 
   // Calculate RHS function
   try {
-    s->rhs(t, udata, dudata, true);
+    s->rhs(t, u, du, true);
   } catch (BoutRhsFail& error) {
     return 1;
   }
@@ -714,15 +710,11 @@ int cvode_linear_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
 }
 
 int cvode_nonlinear_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
-
-  BoutReal* udata = N_VGetArrayPointer(u);
-  BoutReal* dudata = N_VGetArrayPointer(du);
-
   auto* s = static_cast<CvodeSolver*>(user_data);
 
   // Calculate RHS function
   try {
-    s->rhs(t, udata, dudata, false);
+    s->rhs(t, u, du, false);
   } catch (BoutRhsFail& error) {
     return 1;
   }
@@ -738,14 +730,10 @@ int cvode_bbd_rhs(sunindextype UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vector 
 /// Preconditioner function
 int cvode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec, N_Vector zvec,
               BoutReal gamma, BoutReal delta, int UNUSED(lr), void* user_data) {
-  BoutReal* udata = N_VGetArrayPointer(yy);
-  BoutReal* rdata = N_VGetArrayPointer(rvec);
-  BoutReal* zdata = N_VGetArrayPointer(zvec);
-
   auto* s = static_cast<CvodeSolver*>(user_data);
 
   // Calculate residuals
-  s->pre(t, gamma, delta, udata, rdata, zdata);
+  s->pre(t, gamma, delta, yy, rvec, zvec);
 
   return 0;
 }
@@ -753,66 +741,19 @@ int cvode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec, N_Vec
 /// Jacobian-vector multiplication function
 int cvode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector UNUSED(fy),
               void* user_data, N_Vector UNUSED(tmp)) {
-  BoutReal* ydata = N_VGetArrayPointer(y);   ///< System state
-  BoutReal* vdata = N_VGetArrayPointer(v);   ///< Input vector
-  BoutReal* Jvdata = N_VGetArrayPointer(Jv); ///< Jacobian*vector output
-
   auto* s = static_cast<CvodeSolver*>(user_data);
 
-  s->jac(t, ydata, vdata, Jvdata);
+  s->jac(t, y, v, Jv);
 
   return 0;
 }
 } // namespace
 // NOLINTEND(readability-identifier-length)
 
-/**************************************************************************
- * CVODE vector option functions
- **************************************************************************/
-
-void CvodeSolver::set_vector_option_values(BoutReal* option_data,
-                                           std::vector<BoutReal>& f2dtols,
-                                           std::vector<BoutReal>& f3dtols) {
-  int p = 0; // Counter for location in option_data array
-
-  // All boundaries
-  for (const auto& i2d : bout::globals::mesh->getRegion2D("RGN_BNDRY")) {
-    loop_vector_option_values_op(i2d, option_data, p, f2dtols, f3dtols, true);
-  }
-  // Bulk of points
-  for (const auto& i2d : bout::globals::mesh->getRegion2D("RGN_NOBNDRY")) {
-    loop_vector_option_values_op(i2d, option_data, p, f2dtols, f3dtols, false);
-  }
-}
-
-void CvodeSolver::loop_vector_option_values_op(Ind2D UNUSED(i2d), BoutReal* option_data,
-                                               int& p, std::vector<BoutReal>& f2dtols,
-                                               std::vector<BoutReal>& f3dtols,
-                                               bool bndry) {
-  // Loop over 2D variables
-  for (std::vector<BoutReal>::size_type i = 0; i < f2dtols.size(); i++) {
-    if (bndry && !f2d[i].evolve_bndry) {
-      continue;
-    }
-    option_data[p] = f2dtols[i];
-    p++;
-  }
-
-  for (int jz = 0; jz < bout::globals::mesh->LocalNz; jz++) {
-    // Loop over 3D variables
-    for (std::vector<BoutReal>::size_type i = 0; i < f3dtols.size(); i++) {
-      if (bndry && !f3d[i].evolve_bndry) {
-        continue;
-      }
-      option_data[p] = f3dtols[i];
-      p++;
-    }
-  }
-}
-
 void CvodeSolver::resetInternalFields() {
+  const auto backend = nvector_backend();
 
-  save_vars(N_VGetArrayPointer(uvec));
+  backend.copy_state_to_vector(uvec);
 
   if (CVodeReInit(cvode_mem, simtime, uvec) != CV_SUCCESS) {
     throw BoutException("CVodeReInit failed\n");

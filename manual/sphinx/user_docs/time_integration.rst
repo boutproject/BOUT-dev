@@ -33,7 +33,7 @@ needed to make the solver available.
 
 .. _tab-solvers:
 .. table:: Available time integration solvers
-	   
+
    +---------------+-----------------------------------------+------------------------+
    | Name          | Description                             | Compile options        |
    +===============+=========================================+========================+
@@ -68,7 +68,7 @@ given in table :numref:`tab-solveropts`.
 
 .. _tab-solveropts:
 .. table:: Time integration solver options
-	   
+
    +--------------------------+--------------------------------------------+-------------------------------------+
    | Option                   | Description                                | Solvers used                        |
    +==========================+============================================+=====================================+
@@ -104,12 +104,39 @@ given in table :numref:`tab-solveropts`.
    +--------------------------+--------------------------------------------+-------------------------------------+
    | diagnose                 | Collect and print additional diagnostics   | cvode, imexbdf2, beuler             |
    +--------------------------+--------------------------------------------+-------------------------------------+
+   | nvector                  | ``N_Vector`` backend for SUNDIALS solvers: | cvode, ida, arkode                  |
+   |                          | ``sundials`` or ``manyvector``             |                                     |
+   +--------------------------+--------------------------------------------+-------------------------------------+
 
 |
 
 The most commonly changed options are the absolute and relative solver
 tolerances, ``atol`` and ``rtol`` which should be varied to check
 convergence.
+
+SUNDIALS ``N_Vector`` backends
+------------------------------
+
+The SUNDIALS-based solvers ``cvode``, ``ida``, and ``arkode`` can select
+the ``N_Vector`` backend at runtime using ``solver:nvector``:
+
+.. code-block:: cfg
+
+    [solver]
+    type = cvode
+    nvector = sundials
+
+Valid values are:
+
+- ``sundials`` uses the standard SUNDIALS parallel ``N_Vector``. This is the
+  default.
+- ``manyvector`` uses the BOUT++ field-backed custom ``N_Vector`` built on top
+  of SUNDIALS ManyVector support.
+
+The ``manyvector`` option is only available when BOUT++ was built with SUNDIALS
+ManyVector support. If ``solver:nvector=manyvector`` is selected in a build
+that does not provide this support, solver initialisation will throw an
+exception.
 
 CVODE
 -----
