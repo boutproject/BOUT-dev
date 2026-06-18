@@ -82,7 +82,7 @@ outer_line = zoidberg.rzline.circle(R0=xcentre, r=0.6)
 # Generate a grid on each poloidal slice using the elliptic grid generator
 
 pol_grids = [
-    zoidberg.poloidal_grid.grid_elliptic(inner_line, outer_line, args.nx, args.nz)
+    zoidberg.poloidal_grid.grid_elliptic(outer_line, inner_line, args.nx, args.nz)
     for inner_line in inner_lines
 ]
 
