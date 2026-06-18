@@ -93,12 +93,9 @@ public:
   template <
       typename ResT, typename L, typename R, typename Func,
       typename = std::enable_if_t<(is_expr_fieldperp_v<L> && is_expr_fieldperp_v<R>)>>
-  FieldPerp(const BinaryExpr<ResT, L, R, Func>& expr) {
-    Array<BoutReal> data{expr.size()};
-    expr.evaluate(&data[0]);
-    *this = std::move(FieldPerp{std::move(data), expr.getMesh(), expr.getLocation(),
-                                /* yindex */ -1, expr.getDirections()});
-  }
+  FieldPerp(const BinaryExpr<ResT, L, R, Func>& expr)
+      : FieldPerp(evaluateBinaryExpr(expr), expr.getMesh(), expr.getLocation(),
+                  /* yindex */ -1, expr.getDirections()) {}
 
   ~FieldPerp() override = default;
 
@@ -340,6 +337,13 @@ public:
   operator View() const { return View{const_cast<BoutReal*>(&data[0])}; }
 
 private:
+  template <typename ResT, typename L, typename R, typename Func>
+  static Array<BoutReal> evaluateBinaryExpr(const BinaryExpr<ResT, L, R, Func>& expr) {
+    Array<BoutReal> data{expr.size()};
+    expr.evaluate(&data[0]);
+    return data;
+  }
+
   /// The Y index at which this FieldPerp is defined
   int yindex{-1};
 

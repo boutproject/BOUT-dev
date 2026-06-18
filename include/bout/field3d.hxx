@@ -201,11 +201,9 @@ public:
                                           ZDirectionType::Standard});
   template <typename L, typename R, typename Func,
             typename = std::enable_if_t<is_expr_field3d_v<L> || is_expr_field3d_v<R>>>
-  Field3D(const BinaryExpr<Field3D, L, R, Func>& expr) {
-    Array<BoutReal> data{expr.size()};
-    expr.evaluate(&data[0]);
-    *this = std::move(Field3D{std::move(data), expr.getMesh(), expr.getLocation(),
-                              expr.getDirections()});
+  Field3D(const BinaryExpr<Field3D, L, R, Func>& expr)
+      : Field3D(evaluateBinaryExpr(expr), expr.getMesh(), expr.getLocation(),
+                expr.getDirections()) {
     setRegion(expr.getRegionID());
   }
   /// Destructor
@@ -643,6 +641,13 @@ protected:
   template <typename T, typename = bout::utils::EnableIfField<T>>
   void _track(const T& change, std::string operation);
   void _track(const BoutReal& change, std::string operation);
+
+  template <typename L, typename R, typename Func>
+  static Array<BoutReal> evaluateBinaryExpr(const BinaryExpr<Field3D, L, R, Func>& expr) {
+    Array<BoutReal> data{expr.size()};
+    expr.evaluate(&data[0]);
+    return data;
+  }
 };
 
 // Non-member overloaded operators

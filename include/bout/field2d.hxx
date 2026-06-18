@@ -115,12 +115,9 @@ public:
       typename = std::enable_if_t<(is_expr_field2d_v<L> && is_expr_field2d_v<R>)
                                   || (is_expr_constant_v<L> && is_expr_field2d_v<R>)
                                   || (is_expr_field2d_v<L> && is_expr_constant_v<R>)>>
-  Field2D(const BinaryExpr<ResT, L, R, Func>& expr) {
-    Array<BoutReal> data{expr.size()};
-    expr.evaluate(&data[0]);
-    *this = std::move(Field2D{std::move(data), expr.getMesh(), expr.getLocation(),
-                              expr.getDirections()});
-  }
+  Field2D(const BinaryExpr<ResT, L, R, Func>& expr)
+      : Field2D(evaluateBinaryExpr(expr), expr.getMesh(), expr.getLocation(),
+                expr.getDirections()) {}
   /*!
    * Destructor
    */
@@ -351,6 +348,13 @@ public:
   BOUT_DEVICE inline BoutReal operator()(int i) const { return View()(i); }
 
 private:
+  template <typename ResT, typename L, typename R, typename Func>
+  static Array<BoutReal> evaluateBinaryExpr(const BinaryExpr<ResT, L, R, Func>& expr) {
+    Array<BoutReal> data{expr.size()};
+    expr.evaluate(&data[0]);
+    return data;
+  }
+
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
 
