@@ -22,6 +22,8 @@
 #ifndef BOUT_TYPES_H
 #define BOUT_TYPES_H
 
+#include "bout/build_config.hxx"
+
 #include <limits>
 #include <string>
 
@@ -145,9 +147,8 @@ struct Constant {
   T val;
   struct View {
     T v;
-    cudaStream_t stream = 0;
     View(T v) : v(v) {}
-    __host__ __device__ T operator()(int) const { return v; }
+    BOUT_HOST_DEVICE T operator()(int) const { return v; }
   };
   operator View() const { return {val}; }
 };

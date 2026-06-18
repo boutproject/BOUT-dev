@@ -63,8 +63,7 @@ struct FieldAccessor {
 
     if (auto* Coords = f.getCoordinates()) {
       coords = CoordinatesAccessor{Coords};
-    }
-    else {
+    } else {
       coords = CoordinatesAccessor{};
     }
 
@@ -96,7 +95,7 @@ struct FieldAccessor {
   ///
   BOUT_HOST_DEVICE inline const BoutReal& operator[](int ind) const { return data[ind]; }
   BOUT_HOST_DEVICE inline BoutReal& operator[](int ind) { return data[ind]; }
-  __device__ inline BoutReal operator()(int i) const { return data[i]; }
+  BOUT_DEVICE inline BoutReal operator()(int i) const { return data[i]; }
 
   BOUT_HOST_DEVICE inline const BoutReal& operator[](const Ind3D& ind) const {
     return data[ind.ind];

@@ -324,10 +324,10 @@ public:
     BoutReal* data;
     int mul = 1;
     int div = 1;
-    __host__ __device__ inline BoutReal operator()(int idx) const {
+    BOUT_HOST_DEVICE inline BoutReal operator()(int idx) const {
       return data[(idx * mul / div)];
     }
-    __host__ __device__ inline BoutReal& operator[](int idx) const {
+    BOUT_HOST_DEVICE inline BoutReal& operator[](int idx) const {
       return data[(idx * mul) / div];
     }
 
@@ -340,8 +340,8 @@ public:
   operator View() { return View{&data[0]}; }
   operator View() const { return View{const_cast<BoutReal*>(&data[0])}; }
 
-  __device__ inline BoutReal operator()(int i) { return View()(i); }
-  __device__ inline BoutReal operator()(int i) const { return View()(i); }
+  BOUT_DEVICE inline BoutReal operator()(int i) { return View()(i); }
+  BOUT_DEVICE inline BoutReal operator()(int i) const { return View()(i); }
 
 private:
   /// Internal data array. Handles allocation/freeing of memory

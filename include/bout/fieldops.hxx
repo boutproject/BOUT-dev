@@ -5,10 +5,14 @@
 #include "bout/array.hxx"
 #include "bout/bout_types.hxx"
 
-#include <cuda_runtime.h>
 #include <optional>
 #include <type_traits>
 #include <unordered_map>
+#include <vector>
+
+#if BOUT_HAS_CUDA
+#include <cuda_runtime.h>
+#endif
 
 class Mesh;
 class Field3D;
@@ -51,57 +55,55 @@ struct Assign {
   int scale = 1;
   int offset = 0;
   template <typename Expr>
-  __host__ __device__ void operator()(int idx, BoutReal* out, const Expr& expr) const {
+  BOUT_HOST_DEVICE void operator()(int idx, BoutReal* out, const Expr& expr) const {
     out[(idx * scale) + offset] = expr.lhs(idx) + expr.rhs(idx);
   }
 };
 
 struct Add {
   template <typename LView, typename RView>
-  __host__ __device__ __forceinline__ BoutReal operator()(int idx, const LView& L,
-                                                          const RView& R) const {
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx, const LView& L,
+                                                        const RView& R) const {
     return L(idx) + R(idx);
   }
-  __host__ __device__ __forceinline__ BoutReal operator()(BoutReal a, BoutReal b) const {
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(BoutReal a, BoutReal b) const {
     return a + b;
   }
 };
-  struct Sub {
-    template <typename LView, typename RView>
-    __host__ __device__ __forceinline__ BoutReal operator()(int idx, const LView& L,
-                                                            const RView& R) const {
-      return L(idx) - R(idx);
-    }
-    __host__ __device__ __forceinline__ BoutReal operator()(BoutReal a,
-                                                            BoutReal b) const {
-      return a - b;
-    }
-  };
-  struct Mul {
-    template <typename LView, typename RView>
-    __host__ __device__ __forceinline__ BoutReal operator()(int idx, const LView& L,
-                                                            const RView& R) const {
-      return L(idx) * R(idx);
-    }
-    __host__ __device__ __forceinline__ BoutReal operator()(BoutReal a,
-                                                            BoutReal b) const {
-      return a * b;
-    }
-  };
-  struct Div {
-    template <typename LView, typename RView>
-    __host__ __device__ __forceinline__ BoutReal operator()(int idx, const LView& L,
-                                                            const RView& R) const {
-      return L(idx) / R(idx);
-    }
-    __host__ __device__ __forceinline__ BoutReal operator()(BoutReal a,
-                                                            BoutReal b) const {
-      return a / b;
-    }
-  };
+struct Sub {
+  template <typename LView, typename RView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx, const LView& L,
+                                                        const RView& R) const {
+    return L(idx) - R(idx);
+  }
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(BoutReal a, BoutReal b) const {
+    return a - b;
+  }
 };
+struct Mul {
+  template <typename LView, typename RView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx, const LView& L,
+                                                        const RView& R) const {
+    return L(idx) * R(idx);
+  }
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(BoutReal a, BoutReal b) const {
+    return a * b;
+  }
 };
+struct Div {
+  template <typename LView, typename RView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx, const LView& L,
+                                                        const RView& R) const {
+    return L(idx) / R(idx);
+  }
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(BoutReal a, BoutReal b) const {
+    return a / b;
+  }
+};
+}; // namespace op
+}; // namespace bout
 
+#if BOUT_HAS_CUDA && defined(__CUDACC__)
 template <typename Expr>
 __global__ void __launch_bounds__(THREADS) evaluatorExpr(BoutReal* out, const Expr expr) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
@@ -127,9 +129,11 @@ __global__ void __launch_bounds__(THREADS) evaluatorExpr(BoutReal* out, const Ex
   //  out[idx] = expr(idx); // single‐pass fusion
   //}
 }
+#endif
 
 inline std::unordered_map<void*, Array<int>> regionIndicesCache;
 
+#if BOUT_HAS_CUDA && defined(__CUDACC__)
 struct StreamsRAII {
   std::vector<cudaStream_t> streams;
 
@@ -163,6 +167,7 @@ struct StreamsRAII {
   StreamsRAII& operator=(StreamsRAII&&) = delete;
 };
 inline struct StreamsRAII streams;
+#endif
 
 template <typename ResT, typename L, typename R, typename Func>
 struct BinaryExpr {
@@ -216,7 +221,7 @@ struct BinaryExpr {
     //}
   }
 
-  BinaryExpr& operator=(BinaryExpr const&) = delete;
+  BinaryExpr& operator=(const BinaryExpr&) = delete;
   BinaryExpr& operator=(BinaryExpr&&) = delete;
 
   inline int size() const { return indices.size(); }
@@ -240,11 +245,11 @@ struct BinaryExpr {
       this->div = div;
       return *this;
     }
-    __host__ __device__ __forceinline__ int size() const { return num_indices; }
-    __host__ __device__ __forceinline__ int regionIdx(int idx) const {
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE int size() const { return num_indices; }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE int regionIdx(int idx) const {
       return indices[idx];
     }
-    __host__ __device__ __forceinline__ BoutReal operator()(int idx) const {
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx) const {
       return f((idx * mul) / div, lhs, rhs); // single‐pass fusion
       //return f(lhs((idx * mul) / div), rhs((idx * mul) / div)); // single‐pass fusion
     }
@@ -254,18 +259,14 @@ struct BinaryExpr {
   operator View() const { return View{lhs, rhs, &indices[0], indices.size(), f}; }
 
   void evaluate(BoutReal* data) const {
-#if 1
+#if BOUT_HAS_CUDA && defined(__CUDACC__)
     cudaStream_t stream = streams.get();
     int blocks = (size() + THREADS - 1) / THREADS;
     evaluatorExpr<<<blocks, THREADS, 0, stream>>>(&data[0], static_cast<View>(*this));
     cudaStreamSynchronize(stream);
     streams.put(stream);
-#endif
-
-#if 0
-    // OpenMP impl.
+#else
     int e = size();
-    //#pragma omp parallel for
     for (int i = 0; i < e; ++i) {
       int idx = regionIdx(i);
       data[idx] = operator()(idx); // single‐pass fusion

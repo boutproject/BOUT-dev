@@ -324,10 +324,10 @@ public:
     BoutReal* data;
     int mul = 1;
     int div = 1;
-    __host__ __device__ inline BoutReal operator()(int idx) const {
+    BOUT_HOST_DEVICE inline BoutReal operator()(int idx) const {
       return data[(idx * mul) / div];
     }
-    __host__ __device__ inline BoutReal& operator[](int idx) const {
+    BOUT_HOST_DEVICE inline BoutReal& operator[](int idx) const {
       return data[(idx * mul) / div];
     }
 

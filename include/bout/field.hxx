@@ -547,8 +547,8 @@ class Field3DParallel;
   namespace bout::op {                                                             \
   struct name {                                                                    \
     template <typename LView, typename RView>                                      \
-    __host__ __device__ BoutReal operator()(int idx, const LView& L,               \
-                                            const RView& R) const {                \
+    BOUT_HOST_DEVICE BoutReal operator()(int idx, const LView& L,                  \
+                                         const RView& R) const {                   \
       return func(L(idx));                                                         \
     }                                                                              \
   };                                                                               \
