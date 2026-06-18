@@ -19,7 +19,7 @@ def test_multigrid_laplace():
     for nproc in [1, 2, 4]:
         for inputfile in ["BOUT_jy4.inp", "BOUT_jy63.inp", "BOUT_jy127.inp"]:
             # set nxpe on the command line as we only use solution from one point in y, so splitting in y-direction is redundant (and also doesn't help test the multigrid solver)
-            cmd = f"./test_multigrid_laplace -f {inputfile} NXPE={nproc}"
+            cmd = f"./test_multigrid_laplace -f {inputfile} NXPE={nproc} input:error_on_unused_options=false"
 
             shell(["rm data/BOUT.dmp.*.nc"])
 
