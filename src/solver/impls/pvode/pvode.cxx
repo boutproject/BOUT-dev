@@ -5,7 +5,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -20,7 +20,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  **************************************************************************/
 
 #include "bout/build_defines.hxx"
@@ -195,8 +195,8 @@ int PvodeSolver::init() {
   BoutReal* udata = N_VDATA(u);
   save_vars(udata);
 
-  /* Call CVodeMalloc to initialize CVODE: 
-     
+  /* Call CVodeMalloc to initialize CVODE:
+
      neq     is the problem size = number of equations
      f       is the user's right hand side function in y'=f(t,y)
      T0      is the initial time

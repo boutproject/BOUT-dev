@@ -33,7 +33,7 @@ needed to make the solver available.
 
 .. _tab-solvers:
 .. table:: Available time integration solvers
-	   
+
    +---------------+-----------------------------------------+------------------------+
    | Name          | Description                             | Compile options        |
    +===============+=========================================+========================+
@@ -68,7 +68,7 @@ given in table :numref:`tab-solveropts`.
 
 .. _tab-solveropts:
 .. table:: Time integration solver options
-	   
+
    +--------------------------+--------------------------------------------+-------------------------------------+
    | Option                   | Description                                | Solvers used                        |
    +==========================+============================================+=====================================+
