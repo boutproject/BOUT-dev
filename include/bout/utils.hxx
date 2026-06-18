@@ -47,6 +47,8 @@
 #include <sstream>
 #include <string>
 
+class Field;
+
 #ifdef _MSC_VER
 // finite is not actually standard C++, it's a BSD extention for C
 inline auto finite(BoutReal x) -> bool { return std::isfinite(x); }
@@ -436,7 +438,8 @@ inline BoutReal randomu() {
  * Calculate the square of a variable \p t
  * i.e. t * t
  */
-template <typename T>
+template <typename T,
+          typename = std::enable_if_t<!std::is_base_of_v<Field, std::decay_t<T>>>>
 inline auto SQ(const T& t) {
   return t * t;
 }

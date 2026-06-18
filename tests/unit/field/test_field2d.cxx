@@ -1175,6 +1175,19 @@ TEST_F(Field2DTest, Sqrt) {
   EXPECT_TRUE(IsFieldEqual(sqrt(field), 4.0));
 }
 
+TEST_F(Field2DTest, SQExpressionUsesSquareOp) {
+  Field2D field;
+
+  field = 2.0;
+  const auto expr = field + 1.0;
+
+  EXPECT_TRUE(
+      (std::is_same_v<std::decay_t<decltype(SQ(expr))>,
+                      BinaryExpr<Field2D, std::decay_t<decltype(expr)>,
+                                 std::decay_t<decltype(expr)>, bout::op::Square>>));
+  EXPECT_TRUE(IsFieldEqual(SQ(expr), 9.0));
+}
+
 TEST_F(Field2DTest, Abs) {
   Field2D field;
 

@@ -193,6 +193,12 @@ struct BinaryExpr {
     }
   }
 
+  BinaryExpr(const typename L::View& lhs, const typename R::View& rhs, Func f, Mesh* mesh,
+             CELL_LOC location, DirectionTypes directions, std::optional<size_t> regionID,
+             const Array<int>& indices)
+      : lhs(lhs), rhs(rhs), indices(indices), f(f), mesh(mesh), location(location),
+        directions(directions), regionID(regionID) {}
+
   BinaryExpr& operator=(const BinaryExpr&) = delete;
   BinaryExpr& operator=(BinaryExpr&&) = delete;
 

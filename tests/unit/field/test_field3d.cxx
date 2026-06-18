@@ -1949,6 +1949,36 @@ TEST_F(Field3DTest, Sqrt) {
   EXPECT_TRUE(IsFieldEqual(sqrt(field), 4.0));
 }
 
+TEST_F(Field3DTest, SQExpressionUsesSquareOp) {
+  Field3D field;
+
+  field = 2.0;
+  const auto expr = field + 1.0;
+
+  EXPECT_TRUE(
+      (std::is_same_v<std::decay_t<decltype(SQ(expr))>,
+                      BinaryExpr<Field3D, std::decay_t<decltype(expr)>,
+                                 std::decay_t<decltype(expr)>, bout::op::Square>>));
+  EXPECT_TRUE(IsFieldEqual(SQ(expr), 9.0));
+}
+
+TEST_F(Field3DTest, SQField3DParallelPreservesParallelSlices) {
+  Field3DParallel field;
+
+  field = 2.0;
+  field.splitParallelSlices();
+  field.yup() = 3.0;
+  field.ydown() = 4.0;
+
+  const auto squared = SQ(field);
+
+  EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(squared)>, Field3DParallel>));
+  EXPECT_TRUE(squared.hasParallelSlices());
+  EXPECT_TRUE(IsFieldEqual(squared, 4.0));
+  EXPECT_TRUE(IsFieldEqual(squared.yup(), 9.0));
+  EXPECT_TRUE(IsFieldEqual(squared.ydown(), 16.0));
+}
+
 TEST_F(Field3DTest, Abs) {
   Field3D field;
 

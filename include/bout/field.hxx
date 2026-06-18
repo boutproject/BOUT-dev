@@ -496,6 +496,12 @@ inline BoutReal mean(const T& f, bool allpe = false,
   return result / static_cast<BoutReal>(count);
 }
 
+template <typename ResT, typename L, typename R, typename Func>
+inline BoutReal mean(const BinaryExpr<ResT, L, R, Func>& f, bool allpe = false,
+                     const std::string& rgn = "RGN_NOBNDRY") {
+  return mean(ResT{f}, allpe, rgn);
+}
+
 /// Exponent: pow(lhs, lhs) is \p lhs raised to the power of \p rhs
 ///
 /// This loops over the entire domain, including guard/boundary cells by
@@ -606,6 +612,63 @@ class Field3DParallel;
     return name(ResT{f}, rgn);                                                          \
   }
 #endif
+
+namespace bout::op {
+struct Square {
+  template <typename LView, typename RView>
+  BOUT_HOST_DEVICE BoutReal operator()(int idx, const LView& L, const RView&) const {
+    const BoutReal value = L(idx);
+    return ::SQ(value);
+  }
+};
+}; // namespace bout::op
+
+template <typename T, typename = bout::utils::EnableIfField<T>>
+inline auto SQ(const T& f, const std::string& rgn = "RGN_ALL") {
+  if constexpr (std::is_same_v<T, Field3DParallel>) {
+    checkData(f);
+    T result{emptyFrom(f)};
+    if (f.hasParallelSlices() and !result.hasParallelSlices()) {
+      result.splitParallelSlices();
+    }
+    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = ::SQ(f[d]); }
+    for (size_t i = 0; i < f.numberParallelSlices(); ++i) {
+      result.yup(i) = SQ(f.yup(i), rgn);
+      result.ydown(i) = SQ(f.ydown(i), rgn);
+    }
+    result.name = std::string("SQ(") + f.name + std::string(")");
+    checkData(result);
+    return result;
+  } else {
+    return BinaryExpr<T, T, T, bout::op::Square>{static_cast<typename T::View>(f),
+                                                 static_cast<typename T::View>(f),
+                                                 bout::op::Square{},
+                                                 f.getMesh(),
+                                                 f.getLocation(),
+                                                 f.getDirections(),
+                                                 std::nullopt,
+                                                 f.getRegion(rgn)};
+  }
+}
+
+template <typename ResT, typename L, typename R, typename Func>
+inline auto SQ(const BinaryExpr<ResT, L, R, Func>& f) {
+  return BinaryExpr<ResT, BinaryExpr<ResT, L, R, Func>, BinaryExpr<ResT, L, R, Func>,
+                    bout::op::Square>{
+      static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),
+      static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),
+      bout::op::Square{},
+      f.getMesh(),
+      f.getLocation(),
+      f.getDirections(),
+      f.getRegionID(),
+      f.indices};
+}
+
+template <typename ResT, typename L, typename R, typename Func>
+inline auto SQ(const BinaryExpr<ResT, L, R, Func>& f, const std::string& rgn) {
+  return SQ(ResT{f}, rgn);
+}
 
 /// Square root of \p f over region \p rgn
 ///

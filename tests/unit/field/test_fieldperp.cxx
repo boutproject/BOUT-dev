@@ -1577,6 +1577,14 @@ TEST_F(FieldPerpTest, Sqrt) {
   EXPECT_TRUE(IsFieldEqual(sqrt(field), 4.0));
 }
 
+TEST_F(FieldPerpTest, SQFieldPerp) {
+  FieldPerp field;
+  field.setIndex(0);
+
+  field = 3.0;
+  EXPECT_TRUE(IsFieldEqual(SQ(field), 9.0));
+}
+
 TEST_F(FieldPerpTest, Abs) {
   FieldPerp field;
   field.setIndex(0);
