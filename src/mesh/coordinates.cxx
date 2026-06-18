@@ -400,18 +400,23 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
 
   // Some helper functions that let us avoid passing the same arguments every time
 
-  // Read from the mesh and transform from field aligned if required
-  auto readField = [this, &suffix](const std::string& name,
-                                   BoutReal def_value) -> FieldMetric {
-    checkStaggeredGet(localmesh, name, suffix);
-
-    FieldMetric field{localmesh};
-    localmesh->get(field, name + suffix, def_value, false, location);
+  // Ensure that we have an unaligned field, transforming if necessary
+  auto ensuredUnaligned = [this](FieldMetric& field) -> FieldMetric {
     if (field.getDirectionY() == YDirectionType::Aligned
         and transform->canToFromFieldAligned()) {
       return transform->fromFieldAligned(field);
     }
     return field.setDirectionY(YDirectionType::Standard);
+  };
+
+  // Read from the mesh and transform from field aligned if required
+  auto readField = [this, &suffix, ensuredUnaligned](const std::string& name,
+                                                     BoutReal def_value) -> FieldMetric {
+    checkStaggeredGet(localmesh, name, suffix);
+
+    FieldMetric field{localmesh};
+    localmesh->get(field, name + suffix, def_value, false, location);
+    return ensuredUnaligned(field);
   };
 
   // Just fill in the guard cells (via extrapolation) for an existing field
@@ -531,6 +536,8 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
         "\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
     J = Jcalc;
   } else {
+    checkStaggeredGet(localmesh, "J", suffix);
+    J = ensuredUnaligned(J);
     fillGuards(J);
 
     // Compare calculated and loaded values
@@ -556,7 +563,8 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
                       "metric tensor\n");
     Bxy = Bcalc;
   } else {
-
+    checkStaggeredGet(localmesh, "Bxy", suffix);
+    Bxy = ensuredUnaligned(Bxy);
     fillGuards(Bxy);
     output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(Bxy - Bcalc)));
   }
