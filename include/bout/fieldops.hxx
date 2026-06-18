@@ -200,6 +200,11 @@ struct BinaryExpr {
   inline BoutReal operator()(int idx) const {
     return f(idx, lhs, rhs); // single‐pass fusion
   }
+  template <typename IndType>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE auto operator[](const IndType& d) const
+      -> decltype(d.ind, BoutReal{}) {
+    return operator()(d.ind);
+  }
   inline int regionIdx(int idx) const { return indices[idx]; }
 
   //operator ResT() { return ResT{*this}; }

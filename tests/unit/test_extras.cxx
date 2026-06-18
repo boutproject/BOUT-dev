@@ -53,3 +53,19 @@ TEST_F(TestExtrasFieldExpr, IsFieldEqualHandlesBinaryExprOnEitherSide) {
   EXPECT_TRUE(IsFieldEqual(field + 2.0, expected));
   EXPECT_TRUE(IsFieldEqual(expected, field + 2.0));
 }
+
+TEST_F(TestExtrasFieldExpr, BinaryExprCanBeIndexedWithRegionIndex) {
+  const Field3D lhs{
+      makeField<Field3D>([](const Ind3D& i) { return static_cast<BoutReal>(i.x()); })};
+  const Field3D rhs{
+      makeField<Field3D>([](const Ind3D& i) { return static_cast<BoutReal>(i.y()); })};
+
+  const auto expr = lhs + 2.0 * rhs;
+  Field3D result{emptyFrom(lhs)};
+
+  BOUT_FOR_SERIAL(i, result.getRegion("RGN_ALL")) { result[i] = expr[i]; }
+
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
+    EXPECT_DOUBLE_EQ(result[i], lhs[i] + 2.0 * rhs[i]);
+  }
+}

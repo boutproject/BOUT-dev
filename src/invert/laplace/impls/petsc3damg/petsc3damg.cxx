@@ -120,39 +120,64 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
 
   // Set up boundary conditions in operator
   const bool inner_X_neumann = isInnerBoundaryFlagSet(INVERT_AC_GRAD);
-  const auto inner_X_BC = inner_X_neumann ? -1. / coords->dx / sqrt(coords->g_11) : 0.5;
-  const auto inner_X_BC_plus = inner_X_neumann ? -inner_X_BC : 0.5;
-
-  BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
-    operator3D(i, i) = inner_X_BC[i];
-    operator3D(i, i.xp()) = inner_X_BC_plus[i];
+  if (inner_X_neumann) {
+    // This is a BinaryExpr that is only evaluated when needed
+    const auto inner_X_BC = -1. / coords->dx / sqrt(coords->g_11);
+    BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
+      const BoutReal bc = inner_X_BC[i];
+      operator3D(i, i) = bc;
+      operator3D(i, i.xp()) = -bc;
+    }
+  } else {
+    BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
+      operator3D(i, i) = 0.5;
+      operator3D(i, i.xp()) = 0.5;
+    }
   }
 
   const bool outer_X_neumann = isOuterBoundaryFlagSet(INVERT_AC_GRAD);
-  const auto outer_X_BC = outer_X_neumann ? 1. / coords->dx / sqrt(coords->g_11) : 0.5;
-  const auto outer_X_BC_minus = outer_X_neumann ? -outer_X_BC : 0.5;
-
-  BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
-    operator3D(i, i) = outer_X_BC[i];
-    operator3D(i, i.xm()) = outer_X_BC_minus[i];
+  if (outer_X_neumann) {
+    const auto outer_X_BC = 1. / coords->dx / sqrt(coords->g_11);
+    BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
+      const BoutReal bc = outer_X_BC[i];
+      operator3D(i, i) = bc;
+      operator3D(i, i.xm()) = -bc;
+    }
+  } else {
+    BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
+      operator3D(i, i) = 0.5;
+      operator3D(i, i.xm()) = 0.5;
+    }
   }
 
   const bool lower_Y_neumann = flagSet(lower_boundary_flags, INVERT_AC_GRAD);
-  const auto lower_Y_BC = lower_Y_neumann ? -1. / coords->dy / sqrt(coords->g_22) : 0.5;
-  const auto lower_Y_BC_plus = lower_Y_neumann ? -lower_Y_BC : 0.5;
-
-  BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
-    operator3D(i, i) = lower_Y_BC[i];
-    operator3D(i, i.yp()) = lower_Y_BC_plus[i];
+  if (lower_Y_neumann) {
+    const auto lower_Y_BC = -1. / coords->dy / sqrt(coords->g_22);
+    BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
+      const BoutReal bc = lower_Y_BC[i];
+      operator3D(i, i) = bc;
+      operator3D(i, i.yp()) = -bc;
+    }
+  } else {
+    BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
+      operator3D(i, i) = 0.5;
+      operator3D(i, i.yp()) = 0.5;
+    }
   }
 
   const bool upper_Y_neumann = flagSet(upper_boundary_flags, INVERT_AC_GRAD);
-  const auto upper_Y_BC = upper_Y_neumann ? 1. / coords->dy / sqrt(coords->g_22) : 0.5;
-  const auto upper_Y_BC_minus = upper_Y_neumann ? -upper_Y_BC : 0.5;
-
-  BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
-    operator3D(i, i) = upper_Y_BC[i];
-    operator3D(i, i.ym()) = upper_Y_BC_minus[i];
+  if (upper_Y_neumann) {
+    const auto upper_Y_BC = 1. / coords->dy / sqrt(coords->g_22);
+    BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
+      const BoutReal bc = upper_Y_BC[i];
+      operator3D(i, i) = bc;
+      operator3D(i, i.ym()) = -bc;
+    }
+  } else {
+    BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
+      operator3D(i, i) = 0.5;
+      operator3D(i, i.ym()) = 0.5;
+    }
   }
 }
 
