@@ -183,8 +183,30 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
                         #field2, toString((field2).getDirections()));                    \
   }
 
+#define ASSERT1_EXPR_COMPATIBLE(expr1, expr2)                                          \
+  if ((expr1).getLocation() != (expr2).getLocation()) {                                \
+    throw BoutException("Error in {:s}:{:d}\nFields at different position:"            \
+                        "`{:s}` at {:s}, `{:s}` at {:s}",                              \
+                        __FILE__, __LINE__, #expr1, toString((expr1).getLocation()),   \
+                        #expr2, toString((expr2).getLocation()));                      \
+  }                                                                                    \
+  if ((expr1).getMesh() != (expr2).getMesh()) {                                        \
+    throw BoutException("Error in {:s}:{:d}\nFields are on different Meshes:"          \
+                        "`{:s}` at {:p}, `{:s}` at {:p}",                              \
+                        __FILE__, __LINE__, #expr1,                                    \
+                        static_cast<void*>((expr1).getMesh()), #expr2,                 \
+                        static_cast<void*>((expr2).getMesh()));                        \
+  }                                                                                    \
+  if (!areDirectionsCompatible((expr1).getDirections(), (expr2).getDirections())) {    \
+    throw BoutException("Error in {:s}:{:d}\nFields at different directions:"          \
+                        "`{:s}` at {:s}, `{:s}` at {:s}",                              \
+                        __FILE__, __LINE__, #expr1, toString((expr1).getDirections()), \
+                        #expr2, toString((expr2).getDirections()));                    \
+  }
+
 #else
 #define ASSERT1_FIELDS_COMPATIBLE(field1, field2) ;
+#define ASSERT1_EXPR_COMPATIBLE(expr1, expr2) ;
 #endif
 
 /// Return an empty shell field of some type derived from Field, with metadata

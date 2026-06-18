@@ -397,6 +397,7 @@ FIELD2D_FIELD2D_FIELD2D_OP(/, Div)
   std::enable_if_t<is_expr_field2d_v<L> && is_expr_field3d_v<R>, \
                    BinaryExpr<Field3D, L, R, bout::op::OP_TYPE>> \
   operator OP_SYM(const L& lhs, const R& rhs) {                  \
+    ASSERT1_EXPR_COMPATIBLE(lhs, rhs);                           \
     auto regionID = rhs.getRegionID();                           \
     int mesh_nz = rhs.getMesh()->LocalNz;                        \
     return BinaryExpr<Field3D, L, R, bout::op::OP_TYPE>{         \
