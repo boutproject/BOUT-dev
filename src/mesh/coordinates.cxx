@@ -166,7 +166,7 @@ void fillGuards_impl(T& result, CELL_LOC location, const T& f, bool extrapolate_
 #endif
 }
 
-/// Interpolate a Field2D to a new CELL_LOC with interp_to.
+/// Interpolate a Field to a new CELL_LOC with interp_to.
 /// Communicates to set internal guard cells.
 /// Boundary guard cells are set by extrapolating from the grid, like
 /// 'free_o3' boundary conditions
