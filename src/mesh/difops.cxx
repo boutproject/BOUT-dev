@@ -284,7 +284,8 @@ Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc,
   auto Bxy_floc = f.getCoordinates()->Bxy;
 
   if (!f.hasParallelSlices()) {
-    return metric->Bxy * FDDY(v, f / Bxy_floc, outloc, method) / sqrt(metric->g_22);
+    Field3D f_B = f / Bxy_floc;
+    return metric->Bxy * FDDY(v, f_B, outloc, method) / sqrt(metric->g_22);
   }
 
   // Need to modify yup and ydown fields

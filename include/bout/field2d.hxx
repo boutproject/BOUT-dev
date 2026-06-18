@@ -271,6 +271,15 @@ public:
     return operator()(jx, jy);
   }
 
+  Field2D& operator*=(const Field2D& rhs);
+  Field2D& operator/=(const Field2D& rhs);
+  Field2D& operator+=(const Field2D& rhs);
+  Field2D& operator-=(const Field2D& rhs);
+  Field2D& operator*=(BoutReal rhs);
+  Field2D& operator/=(BoutReal rhs);
+  Field2D& operator+=(BoutReal rhs);
+  Field2D& operator-=(BoutReal rhs);
+
 #define FIELD2D_OP_EQUALS(OP_SYM)                                           \
   template <typename R>                                                     \
   std::enable_if_t<is_expr_field2d_v<R> || is_expr_constant_v<R>, Field2D&> \

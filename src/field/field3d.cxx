@@ -51,6 +51,7 @@
 #include <bout/fft.hxx>
 #include <bout/field3d.hxx>
 #include <bout/interpolation.hxx>
+#include <bout/mesh.hxx>
 #include <bout/output.hxx>
 #include <bout/utils.hxx>
 
@@ -82,6 +83,38 @@ Field3D::Field3D(const Field3D& f)
     ny = fieldmesh->LocalNy;
     nz = fieldmesh->LocalNz;
   }
+}
+
+Field3D operator+(const Field2D& lhs, const Field3DParallel& rhs) {
+  return lhs + rhs.asField3D();
+}
+
+Field3D operator-(const Field2D& lhs, const Field3DParallel& rhs) {
+  return lhs - rhs.asField3D();
+}
+
+Field3D operator*(const Field2D& lhs, const Field3DParallel& rhs) {
+  return lhs * rhs.asField3D();
+}
+
+Field3D operator/(const Field2D& lhs, const Field3DParallel& rhs) {
+  return lhs / rhs.asField3D();
+}
+
+Field3D operator+(const Field3DParallel& lhs, const Field2D& rhs) {
+  return lhs.asField3D() + rhs;
+}
+
+Field3D operator-(const Field3DParallel& lhs, const Field2D& rhs) {
+  return lhs.asField3D() - rhs;
+}
+
+Field3D operator*(const Field3DParallel& lhs, const Field2D& rhs) {
+  return lhs.asField3D() * rhs;
+}
+
+Field3D operator/(const Field3DParallel& lhs, const Field2D& rhs) {
+  return lhs.asField3D() / rhs;
 }
 
 Field3D::Field3D(const Field2D& f) : Field(f) {

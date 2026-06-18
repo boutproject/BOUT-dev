@@ -36,7 +36,6 @@ class Field3D;
 #include "bout/field2d.hxx"
 #include "bout/field_data.hxx"
 #include "bout/fieldperp.hxx"
-#include "bout/mesh.hxx"
 #include "bout/region.hxx"
 #include "bout/traits.hxx"
 
@@ -526,6 +525,20 @@ public:
 
   ///@}
 
+  Field3D& operator*=(const Field3D& rhs);
+  Field3D& operator+=(const Field3D& rhs);
+  Field3D& operator-=(const Field3D& rhs);
+  Field3D& operator*=(const Field3DParallel& rhs);
+  Field3D& operator/=(const Field3DParallel& rhs);
+  Field3D& operator+=(const Field3DParallel& rhs);
+  Field3D& operator-=(const Field3DParallel& rhs);
+  Field3D& operator*=(const Field2D& rhs);
+  Field3D& operator+=(const Field2D& rhs);
+  Field3D& operator-=(const Field2D& rhs);
+  Field3D& operator*=(BoutReal rhs);
+  Field3D& operator+=(BoutReal rhs);
+  Field3D& operator-=(BoutReal rhs);
+
   /// Division operators
   ///@{
   Field3D& operator/=(const Field3D& rhs);
@@ -965,9 +978,28 @@ Field3DParallel Field3D::asField3DParallel() {
 }
 Field3DParallel Field3D::asField3DParallel() const { return Field3DParallel(*this); }
 
+inline Field3D& Field3D::operator*=(const Field3DParallel& rhs) {
+  return (*this) *= rhs.asField3D();
+}
+
+inline Field3D& Field3D::operator/=(const Field3DParallel& rhs) {
+  return (*this) /= rhs.asField3D();
+}
+
+inline Field3D& Field3D::operator+=(const Field3DParallel& rhs) {
+  return (*this) += rhs.asField3D();
+}
+
+inline Field3D& Field3D::operator-=(const Field3DParallel& rhs) {
+  return (*this) -= rhs.asField3D();
+}
+
 // A raw Field3D is an expression leaf
 template <>
 struct is_expr_field3d<Field3D> : std::true_type {};
+
+template <>
+struct is_expr_field3d<Field3DParallel> : std::true_type {};
 
 template <>
 struct is_expr_field2d<Field2D> : std::true_type {};
@@ -977,31 +1009,15 @@ struct is_expr_field3d<BinaryExpr<ResT, L, R, Fun>>
     : std::integral_constant<bool, is_expr_field3d<std::decay_t<L>>::value
                                        || is_expr_field3d_v<std::decay_t<R>>> {};
 
-inline Field3D operator+(const Field2D& lhs, const Field3DParallel& rhs) {
-  return lhs + rhs.asField3D();
-}
-inline Field3D operator-(const Field2D& lhs, const Field3DParallel& rhs) {
-  return lhs + rhs.asField3D();
-}
-inline Field3D operator*(const Field2D& lhs, const Field3DParallel& rhs) {
-  return lhs + rhs.asField3D();
-}
-inline Field3D operator/(const Field2D& lhs, const Field3DParallel& rhs) {
-  return lhs + rhs.asField3D();
-}
+Field3D operator+(const Field2D& lhs, const Field3DParallel& rhs);
+Field3D operator-(const Field2D& lhs, const Field3DParallel& rhs);
+Field3D operator*(const Field2D& lhs, const Field3DParallel& rhs);
+Field3D operator/(const Field2D& lhs, const Field3DParallel& rhs);
 
-inline Field3D operator+(const Field3DParallel& lhs, const Field2D& rhs) {
-  return lhs.asField3D() + rhs;
-}
-inline Field3D operator-(const Field3DParallel& lhs, const Field2D& rhs) {
-  return lhs.asField3D() - rhs;
-}
-inline Field3D operator*(const Field3DParallel& lhs, const Field2D& rhs) {
-  return lhs.asField3D() * rhs;
-}
-inline Field3D operator/(const Field3DParallel& lhs, const Field2D& rhs) {
-  return lhs.asField3D() / rhs;
-}
+Field3D operator+(const Field3DParallel& lhs, const Field2D& rhs);
+Field3D operator-(const Field3DParallel& lhs, const Field2D& rhs);
+Field3D operator*(const Field3DParallel& lhs, const Field2D& rhs);
+Field3D operator/(const Field3DParallel& lhs, const Field2D& rhs);
 
 inline Field3DParallel
 filledFrom(const Field3DParallel& f,
