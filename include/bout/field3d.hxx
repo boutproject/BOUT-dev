@@ -31,10 +31,12 @@ class Field3D;
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/build_config.hxx"
 #include "bout/field.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field_data.hxx"
 #include "bout/fieldperp.hxx"
+#include "bout/mesh.hxx"
 #include "bout/region.hxx"
 #include "bout/traits.hxx"
 
@@ -43,6 +45,7 @@ class Field3D;
 #include <optional>
 #include <ostream>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -200,7 +203,6 @@ public:
   template <typename L, typename R, typename Func,
             typename = std::enable_if_t<is_expr_field3d_v<L> || is_expr_field3d_v<R>>>
   Field3D(const BinaryExpr<Field3D, L, R, Func>& expr) {
-    //std::cout << "RUNNING constructor from BinaryExpr\n";
     Array<BoutReal> data{expr.size()};
     expr.evaluate(&data[0]);
     *this = std::move(Field3D{std::move(data), expr.getMesh(), expr.getLocation(),
@@ -491,7 +493,6 @@ public:
   template <typename ResT, typename L, typename R, typename Func>
   std::enable_if_t<is_expr_field3d_v<L>, Field3D&>
   operator=(BinaryExpr<ResT, L, R, Func>& expr) {
-    std::cout << "RUNNING operator= with CUDA\n";
     regionID = expr.getRegionID();
     if (isAllocated()) {
       expr.evaluate(&data[0]);
@@ -964,200 +965,6 @@ Field3DParallel Field3D::asField3DParallel() {
 }
 Field3DParallel Field3D::asField3DParallel() const { return Field3DParallel(*this); }
 
-inline Field3D operator+(const Field2D& lhs, const Field3DParallel& rhs) {
-  return lhs + rhs.asField3D();
-}
-inline Field3D operator-(const Field2D& lhs, const Field3DParallel& rhs) {
-  return lhs + rhs.asField3D();
-}
-inline Field3D operator*(const Field2D& lhs, const Field3DParallel& rhs) {
-  return lhs + rhs.asField3D();
-}
-inline Field3D operator/(const Field2D& lhs, const Field3DParallel& rhs) {
-  return lhs + rhs.asField3D();
-}
-
-inline Field3D operator+(const Field3DParallel& lhs, const Field2D& rhs) {
-  return lhs.asField3D() + rhs;
-}
-inline Field3D operator-(const Field3DParallel& lhs, const Field2D& rhs) {
-  return lhs.asField3D() - rhs;
-}
-inline Field3D operator*(const Field3DParallel& lhs, const Field2D& rhs) {
-  return lhs.asField3D() * rhs;
-}
-inline Field3D operator/(const Field3DParallel& lhs, const Field2D& rhs) {
-  return lhs.asField3D() / rhs;
-}
-
-inline Field3DParallel
-filledFrom(const Field3DParallel& f,
-           const std::function<BoutReal(int yoffset, Ind3D index)>& func) {
-  auto result{emptyFrom(f)};
-  if (f.isFci()) {
-    BOUT_FOR(i, result.getRegion("RGN_NOY")) { result[i] = func(0, i); }
-
-    for (size_t i = 0; i < result.numberParallelSlices(); ++i) {
-      result.yup(i).allocate();
-      BOUT_FOR(d, result.yup(i).getValidRegionWithDefault("RGN_INVALID")) {
-        result.yup(i)[d] = func(i + 1, d);
-      }
-      result.ydown(i).allocate();
-      BOUT_FOR(d, result.ydown(i).getValidRegionWithDefault("RGN_INVALID")) {
-        result.ydown(i)[d] = func(-i - 1, d);
-      }
-    }
-  } else {
-    BOUT_FOR(i, result.getRegion("RGN_ALL")) { result[i] = func(0, i); }
-  }
-
-  return result;
-}
-
-inline Field3D copy(const Field3D& f) {
-  Field3D result{f};
-  result.allocate();
-  for (size_t i = 0; i < result.numberParallelSlices(); ++i) {
-    result.yup(i).allocate();
-    result.ydown(i).allocate();
-  }
-  return result;
-}
-
-/// Field3DParallel is intended to behave like Field3D, but preserve parallel
-/// Fields.
-/// Operations on Field3D, like multiplication, exp and floor only work on the
-/// "main" field, Field3DParallel will retain the parallel slices.
-class Field3DParallel : public Field3D {
-public:
-  template <class... Types>
-  explicit Field3DParallel(Types... args) : Field3D(std::move(args)...) {
-    ensureFieldAligned();
-  }
-  Field3DParallel(const Field3D& f) : Field3D(f) { ensureFieldAligned(); }
-  Field3DParallel(const Field3D& f, bool isRef) : Field3D(f), isRef(isRef) {
-    ensureFieldAligned();
-  }
-  Field3DParallel(const Field2D& f) : Field3D(f) { ensureFieldAligned(); }
-  // Explicitly needed, as DirectionTypes is sometimes constructed from a
-  // brace enclosed list
-  explicit Field3DParallel(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
-                           DirectionTypes directions_in = {YDirectionType::Standard,
-                                                           ZDirectionType::Standard},
-                           std::optional<size_t> regionID = {})
-      : Field3D(localmesh, location_in, directions_in, regionID) {
-    if (isFci()) {
-      splitParallelSlices();
-    }
-    ensureFieldAligned();
-  }
-  explicit Field3DParallel(Array<BoutReal> data, Mesh* localmesh,
-                           CELL_LOC location = CELL_CENTRE,
-                           DirectionTypes directions_in = {YDirectionType::Standard,
-                                                           ZDirectionType::Standard})
-      : Field3D(std::move(data), localmesh, location, directions_in) {
-    ensureFieldAligned();
-  }
-  explicit Field3DParallel(BoutReal, Mesh* mesh = nullptr);
-  Field3D& asField3D() { return *this; }
-  const Field3D& asField3D() const { return *this; }
-
-  Field3DParallel& operator*=(const Field3D&);
-  Field3DParallel& operator/=(const Field3D&);
-  Field3DParallel& operator+=(const Field3D&);
-  Field3DParallel& operator-=(const Field3D&);
-  Field3DParallel& operator*=(const Field3DParallel&);
-  Field3DParallel& operator/=(const Field3DParallel&);
-  Field3DParallel& operator+=(const Field3DParallel&);
-  Field3DParallel& operator-=(const Field3DParallel&);
-  Field3DParallel& operator*=(BoutReal);
-  Field3DParallel& operator/=(BoutReal);
-  Field3DParallel& operator+=(BoutReal);
-  Field3DParallel& operator-=(BoutReal);
-  Field3DParallel& operator=(const Field3D& rhs) {
-    Field3D::operator=(rhs);
-    ensureFieldAligned();
-    return *this;
-  }
-  Field3DParallel& operator=(Field3D&& rhs) {
-    Field3D::operator=(std::move(rhs));
-    ensureFieldAligned();
-    return *this;
-  }
-  Field3DParallel& operator=(BoutReal);
-  Field3DParallel& allocate();
-
-private:
-  void ensureFieldAligned();
-  bool isRef{false};
-};
-
-Field3DParallel Field3D::asField3DParallel() {
-  if (isAllocated()) {
-    allocate();
-    for (size_t i = 0; i < numberParallelSlices(); ++i) {
-      if (yup(i).isAllocated()) {
-        yup(i).allocate();
-      }
-      if (ydown(i).isAllocated()) {
-        ydown(i).allocate();
-      }
-    }
-  }
-  return Field3DParallel(*this, true);
-}
-Field3DParallel Field3D::asField3DParallel() const { return Field3DParallel(*this); }
-
-inline Field3D operator+(const Field2D& lhs, const Field3DParallel& rhs) {
-  return lhs + rhs.asField3D();
-}
-inline Field3D operator-(const Field2D& lhs, const Field3DParallel& rhs) {
-  return lhs + rhs.asField3D();
-}
-inline Field3D operator*(const Field2D& lhs, const Field3DParallel& rhs) {
-  return lhs + rhs.asField3D();
-}
-inline Field3D operator/(const Field2D& lhs, const Field3DParallel& rhs) {
-  return lhs + rhs.asField3D();
-}
-
-inline Field3D operator+(const Field3DParallel& lhs, const Field2D& rhs) {
-  return lhs.asField3D() + rhs;
-}
-inline Field3D operator-(const Field3DParallel& lhs, const Field2D& rhs) {
-  return lhs.asField3D() - rhs;
-}
-inline Field3D operator*(const Field3DParallel& lhs, const Field2D& rhs) {
-  return lhs.asField3D() * rhs;
-}
-inline Field3D operator/(const Field3DParallel& lhs, const Field2D& rhs) {
-  return lhs.asField3D() / rhs;
-}
-
-inline Field3DParallel
-filledFrom(const Field3DParallel& f,
-           const std::function<BoutReal(int yoffset, Ind3D index)>& func) {
-  auto result{emptyFrom(f)};
-  if (f.isFci()) {
-    BOUT_FOR(i, result.getRegion("RGN_NOY")) { result[i] = func(0, i); }
-
-    for (size_t i = 0; i < result.numberParallelSlices(); ++i) {
-      result.yup(i).allocate();
-      BOUT_FOR(d, result.yup(i).getValidRegionWithDefault("RGN_INVALID")) {
-        result.yup(i)[d] = func(i + 1, d);
-      }
-      result.ydown(i).allocate();
-      BOUT_FOR(d, result.ydown(i).getValidRegionWithDefault("RGN_INVALID")) {
-        result.ydown(i)[d] = func(-i - 1, d);
-      }
-    }
-  } else {
-    BOUT_FOR(i, result.getRegion("RGN_ALL")) { result[i] = func(0, i); }
-  }
-
-  return result;
-}
-
 // A raw Field3D is an expression leaf
 template <>
 struct is_expr_field3d<Field3D> : std::true_type {};
@@ -1169,5 +976,55 @@ template <typename ResT, typename L, typename R, typename Fun>
 struct is_expr_field3d<BinaryExpr<ResT, L, R, Fun>>
     : std::integral_constant<bool, is_expr_field3d<std::decay_t<L>>::value
                                        || is_expr_field3d_v<std::decay_t<R>>> {};
+
+inline Field3D operator+(const Field2D& lhs, const Field3DParallel& rhs) {
+  return lhs + rhs.asField3D();
+}
+inline Field3D operator-(const Field2D& lhs, const Field3DParallel& rhs) {
+  return lhs + rhs.asField3D();
+}
+inline Field3D operator*(const Field2D& lhs, const Field3DParallel& rhs) {
+  return lhs + rhs.asField3D();
+}
+inline Field3D operator/(const Field2D& lhs, const Field3DParallel& rhs) {
+  return lhs + rhs.asField3D();
+}
+
+inline Field3D operator+(const Field3DParallel& lhs, const Field2D& rhs) {
+  return lhs.asField3D() + rhs;
+}
+inline Field3D operator-(const Field3DParallel& lhs, const Field2D& rhs) {
+  return lhs.asField3D() - rhs;
+}
+inline Field3D operator*(const Field3DParallel& lhs, const Field2D& rhs) {
+  return lhs.asField3D() * rhs;
+}
+inline Field3D operator/(const Field3DParallel& lhs, const Field2D& rhs) {
+  return lhs.asField3D() / rhs;
+}
+
+inline Field3DParallel
+filledFrom(const Field3DParallel& f,
+           const std::function<BoutReal(int yoffset, Ind3D index)>& func) {
+  auto result{emptyFrom(f)};
+  if (f.isFci()) {
+    BOUT_FOR(i, result.getRegion("RGN_NOY")) { result[i] = func(0, i); }
+
+    for (size_t i = 0; i < result.numberParallelSlices(); ++i) {
+      result.yup(i).allocate();
+      BOUT_FOR(d, result.yup(i).getValidRegionWithDefault("RGN_INVALID")) {
+        result.yup(i)[d] = func(i + 1, d);
+      }
+      result.ydown(i).allocate();
+      BOUT_FOR(d, result.ydown(i).getValidRegionWithDefault("RGN_INVALID")) {
+        result.ydown(i)[d] = func(-i - 1, d);
+      }
+    }
+  } else {
+    BOUT_FOR(i, result.getRegion("RGN_ALL")) { result[i] = func(0, i); }
+  }
+
+  return result;
+}
 
 #endif /* BOUT_FIELD3D_H */

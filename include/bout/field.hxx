@@ -543,47 +543,45 @@ class Field3DParallel;
 #ifdef FIELD_FUNC
 #error This macro has already been defined
 #else
-#define FIELD_FUNC(name, func)                                                     \
-  namespace bout::op {                                                             \
-  struct name {                                                                    \
-    template <typename LView, typename RView>                                      \
-    BOUT_HOST_DEVICE BoutReal operator()(int idx, const LView& L,                  \
-                                         const RView& R) const {                   \
-      return func(L(idx));                                                         \
-    }                                                                              \
-  };                                                                               \
-  };                                                                               \
-  template <typename T, typename = bout::utils::EnableIfField<T>>                  \
-  inline auto name(const T& f, const std::string& rgn = "RGN_ALL") {               \
-    if constexpr (std::is_same_v<T, Field3DParallel>) {                            \
-      /* Check if the input is allocated */                                        \
-      checkData(f);                                                                \
-      /* Define and allocate the output result */                                  \
-      T result{emptyFrom(f)};                                                      \
-      BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }               \
-      for (int i = 0; i < f.numberParallelSlices(); ++i) {                         \
-        result.yup(i) = func(f.yup(i));                                            \
-        result.ydown(i) = func(f.ydown(i));                                        \
-      }                                                                            \
-      result.name = std::string(#name "(") + f.name + std::string(")");            \
-      checkData(result);                                                           \
-      return result;                                                               \
-    } else {                                                                       \
-      std::cout << "RUNNING " #name " with CUDA\n";                                \
-      return BinaryExpr<T, T, T, bout::op::name>{static_cast<typename T::View>(f), \
-                                                 static_cast<typename T::View>(f), \
-                                                 bout::op::name{},                 \
-                                                 f.getMesh(),                      \
-                                                 f.getLocation(),                  \
-                                                 f.getDirections(),                \
-                                                 std::nullopt,                     \
-                                                 f.getRegion(rgn)};                \
-    }                                                                              \
-  }                                                                                \
-  template <typename ResT, typename L, typename R, typename Func>                  \
-  inline auto name(const BinaryExpr<ResT, L, R, Func>& f,                          \
-                   const std::string& rgn = "RGN_ALL") {                           \
-    return name(ResT{f}, rgn);                                                     \
+#define FIELD_FUNC(name, func)                                                          \
+  namespace bout::op {                                                                  \
+  struct name {                                                                         \
+    template <typename LView, typename RView>                                           \
+    BOUT_HOST_DEVICE BoutReal operator()(int idx, const LView& L, const RView&) const { \
+      return func(L(idx));                                                              \
+    }                                                                                   \
+  };                                                                                    \
+  };                                                                                    \
+  template <typename T, typename = bout::utils::EnableIfField<T>>                       \
+  inline auto name(const T& f, const std::string& rgn = "RGN_ALL") {                    \
+    if constexpr (std::is_same_v<T, Field3DParallel>) {                                 \
+      /* Check if the input is allocated */                                             \
+      checkData(f);                                                                     \
+      /* Define and allocate the output result */                                       \
+      T result{emptyFrom(f)};                                                           \
+      BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }                    \
+      for (int i = 0; i < f.numberParallelSlices(); ++i) {                              \
+        result.yup(i) = func(f.yup(i));                                                 \
+        result.ydown(i) = func(f.ydown(i));                                             \
+      }                                                                                 \
+      result.name = std::string(#name "(") + f.name + std::string(")");                 \
+      checkData(result);                                                                \
+      return result;                                                                    \
+    } else {                                                                            \
+      return BinaryExpr<T, T, T, bout::op::name>{static_cast<typename T::View>(f),      \
+                                                 static_cast<typename T::View>(f),      \
+                                                 bout::op::name{},                      \
+                                                 f.getMesh(),                           \
+                                                 f.getLocation(),                       \
+                                                 f.getDirections(),                     \
+                                                 std::nullopt,                          \
+                                                 f.getRegion(rgn)};                     \
+    }                                                                                   \
+  }                                                                                     \
+  template <typename ResT, typename L, typename R, typename Func>                       \
+  inline auto name(const BinaryExpr<ResT, L, R, Func>& f,                               \
+                   const std::string& rgn = "RGN_ALL") {                                \
+    return name(ResT{f}, rgn);                                                          \
   }
 #endif
 

@@ -2,9 +2,9 @@
  * Class for 2D X-Z slices
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -94,7 +94,6 @@ public:
       typename ResT, typename L, typename R, typename Func,
       typename = std::enable_if_t<(is_expr_fieldperp_v<L> && is_expr_fieldperp_v<R>)>>
   FieldPerp(const BinaryExpr<ResT, L, R, Func>& expr) {
-    std::cout << "RUNNING FieldPerp constructor with CUDA\n";
     Array<BoutReal> data{expr.size()};
     expr.evaluate(&data[0]);
     *this = std::move(FieldPerp{std::move(data), expr.getMesh(), expr.getLocation(),
