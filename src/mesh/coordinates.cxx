@@ -2036,7 +2036,6 @@ const Coordinates::FieldMetric& Coordinates::g_22_yhigh() const {
     return *_g_22_yhigh;
   }
   _g_22_yhigh.emplace(emptyFrom(g_22));
-  //_g_22_yhigh->setLocation(CELL_YHIGH);
   auto* mesh = Bxy.getMesh();
   if (Bxy.isFci()) {
     if (mesh->get(_g_22_yhigh.value(), "g_22_cell_yhigh", 0.0, false) != 0) {
@@ -2052,7 +2051,7 @@ const Coordinates::FieldMetric& Coordinates::g_22_yhigh() const {
 }
 
 void Coordinates::_compute_cell_area_x() const {
-  const auto area_centre = sqrt(g_22 * g_33 - SQ(g_23)) * dy * dz;
+  const FieldMetric area_centre = sqrt(g_22 * g_33 - SQ(g_23)) * dy * dz;
   _cell_area_xlow.emplace(emptyFrom(area_centre));
   _cell_area_xhigh.emplace(emptyFrom(area_centre));
   // We cannot setLocation, as that would trigger the computation of staggered
@@ -2068,7 +2067,7 @@ void Coordinates::_compute_cell_area_x() const {
 void Coordinates::_compute_cell_area_y() const {
   auto* mesh = Bxy.getMesh();
   if (g_11.isFci()) {
-    const auto jxz_centre = sqrt(g_11 * g_33 - SQ(g_13));
+    const FieldMetric jxz_centre = sqrt(g_11 * g_33 - SQ(g_13));
     auto jxz_ylow = emptyFrom(jxz_centre);
     auto jxz_yhigh = emptyFrom(jxz_centre);
 
@@ -2096,7 +2095,7 @@ void Coordinates::_compute_cell_area_y() const {
     _cell_area_yhigh.emplace(jxz_yhigh * dx * dz);
   } else {
     // Field aligned
-    const auto area_centre = sqrt(g_11 * g_33 - SQ(g_13)) * dx * dz;
+    const FieldMetric area_centre = sqrt(g_11 * g_33 - SQ(g_13)) * dx * dz;
     _cell_area_ylow.emplace(emptyFrom(area_centre));
     _cell_area_yhigh.emplace(emptyFrom(area_centre));
     // We cannot setLocation, as that would trigger the computation of staggered
@@ -2117,12 +2116,11 @@ void Coordinates::_compute_cell_area_y() const {
 }
 
 void Coordinates::_compute_cell_area_z() const {
-  const auto area_centre = sqrt(g_11 * g_22 - SQ(g_12)) * dx * dy;
+  const FieldMetric area_centre = sqrt(g_11 * g_22 - SQ(g_12)) * dx * dy;
   _cell_area_zlow.emplace(emptyFrom(area_centre));
   _cell_area_zhigh.emplace(emptyFrom(area_centre));
   // We cannot setLocation, as that would trigger the computation of staggered
   // metrics.
-  //ASSERT0(mesh->zstart > 0);
   BOUT_FOR(i, area_centre.getRegion("RGN_NOZ")) {
     (*_cell_area_zlow)[i] = 0.5 * (area_centre[i] + area_centre[i.zm()]);
     (*_cell_area_zhigh)[i] = 0.5 * (area_centre[i] + area_centre[i.zp()]);
