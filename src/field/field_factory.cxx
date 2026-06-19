@@ -36,6 +36,7 @@
 #include <bout/utils.hxx>
 
 #include "fieldgenerators.hxx"
+#include "fmt/format.h"
 
 #include <cmath>
 #include <memory>
@@ -94,7 +95,8 @@ private:
 // Read variables from the grid file and make them available in expressions
 template <class T>
 auto add_grid_variable(FieldFactory& factory, Mesh& mesh, const std::string& name) {
-  factory.addGenerator(name, std::make_shared<GridVariable<T>>(&mesh, name));
+  factory.addGenerator(fmt::format("gridvar:{}", name),
+                       std::make_shared<GridVariable<T>>(&mesh, name));
 }
 
 auto read_grid_variables(FieldFactory& factory, Mesh& mesh, Options& options) {

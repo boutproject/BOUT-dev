@@ -1066,7 +1066,7 @@ TEST_F(FieldFactoryFieldVariableTest, CreateField3D) {
     dynamic_cast<FakeMesh*>(mesh)->setGridDataSource(new GridFile{filename});
     auto factory = FieldFactory{mesh, &options};
 
-    const auto output = factory.create3D("rho * cos(theta)");
+    const auto output = factory.create3D("gridvar:rho * cos(gridvar:theta)");
     const auto x = factory.create3D("x");
     EXPECT_TRUE(IsFieldEqual(output, x, "RGN_NOBNDRY", 1e-14));
   }
@@ -1094,7 +1094,7 @@ TEST_F(FieldFactoryFieldVariableTest, CreateField2D) {
     dynamic_cast<FakeMesh*>(mesh)->setGridDataSource(new GridFile{filename});
     auto factory = FieldFactory{mesh, &options};
 
-    const auto output = factory.create2D("rho * cos(theta)");
+    const auto output = factory.create2D("gridvar:rho * cos(gridvar:theta)");
     const auto x = factory.create2D("x");
     EXPECT_TRUE(IsFieldEqual(output, x, "RGN_ALL", 1e-14));
   }
