@@ -1,4 +1,4 @@
-ARG BASE
+ARG BASE=mpich-full-main
 FROM ghcr.io/boutproject/bout-container-base:$BASE
 
 # ----------------------------------------------------------------
