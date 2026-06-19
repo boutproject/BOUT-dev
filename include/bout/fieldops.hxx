@@ -21,6 +21,7 @@
 class Mesh;
 class Field3D;
 class Field2D;
+class FieldPerp;
 
 template <typename T>
 struct is_expr_field2d : std::false_type {};
@@ -327,19 +328,20 @@ struct BinaryExpr {
   CELL_LOC location = CELL_CENTRE;
   DirectionTypes directions;
   std::optional<size_t> regionID;
+  std::optional<int> yindex;
 
   template <typename IndType>
   BinaryExpr(const typename L::View& lhs, const typename R::View& rhs, Func f, Mesh* mesh,
              CELL_LOC location, DirectionTypes directions, std::optional<size_t> regionID,
-             const Region<IndType>& region)
+             const Region<IndType>& region, std::optional<int> yindex = std::nullopt)
       : lhs(lhs), rhs(rhs), indices(region.getLinearIndices()), f(f), mesh(mesh),
-        location(location), directions(directions), regionID(regionID) {}
+        location(location), directions(directions), regionID(regionID), yindex(yindex) {}
 
   BinaryExpr(const typename L::View& lhs, const typename R::View& rhs, Func f, Mesh* mesh,
              CELL_LOC location, DirectionTypes directions, std::optional<size_t> regionID,
-             const Array<int>& indices)
+             const Array<int>& indices, std::optional<int> yindex = std::nullopt)
       : lhs(lhs), rhs(rhs), indices(indices), f(f), mesh(mesh), location(location),
-        directions(directions), regionID(regionID) {}
+        directions(directions), regionID(regionID), yindex(yindex) {}
 
   BinaryExpr& operator=(const BinaryExpr&) = delete;
   BinaryExpr& operator=(BinaryExpr&&) = delete;
@@ -407,6 +409,7 @@ struct BinaryExpr {
   CELL_LOC getLocation() const { return location; }
   DirectionTypes getDirections() const { return directions; }
   std::optional<size_t> getRegionID() const { return regionID; };
+  int getIndex() const { return yindex.value_or(-1); }
 };
 
 #endif // BOUT_FIELDSOPS_HXX

@@ -1345,8 +1345,8 @@ int Coordinates::jacobian() {
   const bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
   const bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
 
-  auto g = FieldMetric{g11 * g22 * g33 + 2.0 * g12 * g13 * g23 - g11 * g23 * g23
-                       - g22 * g13 * g13 - g33 * g12 * g12};
+  FieldMetric g = g11 * g22 * g33 + 2.0 * g12 * g13 * g23 - g11 * g23 * g23
+                  - g22 * g13 * g13 - g33 * g12 * g12;
 
   // Check that g is positive
   bout::checkPositive(g, "The determinant of g^ij", "RGN_NOBNDRY");

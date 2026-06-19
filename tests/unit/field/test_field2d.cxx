@@ -853,7 +853,7 @@ TEST_F(Field2DTest, InvalidateGuards) {
 
   sum = 0;
   for (const auto& i : field) {
-    if (!finite(field[i])) {
+    if (!std::isfinite(field[i])) {
       sum++;
     }
   }
@@ -1500,6 +1500,23 @@ TEST_F(Field2DTest, OperatorEqualsField2D) {
   EXPECT_EQ(field.getLocation(), field2.getLocation());
   EXPECT_EQ(field.getDirectionY(), field2.getDirectionY());
   EXPECT_EQ(field.getDirectionZ(), field2.getDirectionZ());
+}
+
+TEST_F(Field2DTest, OperatorEqualsBinaryExprCopiesMetadata) {
+  Field2D source{
+      mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+  source = 4.;
+
+  Field2D target(mesh_staggered);
+  target = 0.;
+
+  target = sqrt(source);
+
+  EXPECT_EQ(target.getMesh(), source.getMesh());
+  EXPECT_EQ(target.getLocation(), source.getLocation());
+  EXPECT_EQ(target.getDirectionY(), source.getDirectionY());
+  EXPECT_EQ(target.getDirectionZ(), source.getDirectionZ());
+  EXPECT_TRUE(IsFieldEqual(target, 2.));
 }
 
 TEST_F(Field2DTest, EmptyFrom) {

@@ -605,6 +605,28 @@ T pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
  *
  */
 class Field3DParallel;
+class FieldPerp;
+
+namespace bout::detail {
+template <typename T>
+std::optional<int> getPerpYIndex(const T& value) {
+  if constexpr (std::is_same_v<std::decay_t<T>, ::FieldPerp>) {
+    return value.getIndex();
+  } else {
+    return std::nullopt;
+  }
+}
+
+template <typename ResT, typename L, typename R, typename Func>
+std::optional<int> getPerpYIndex(const BinaryExpr<ResT, L, R, Func>& expr) {
+  if constexpr (std::is_same_v<ResT, ::FieldPerp>) {
+    return expr.getIndex();
+  } else {
+    return std::nullopt;
+  }
+}
+} // namespace bout::detail
+
 #ifdef FIELD_FUNC
 #error This macro has already been defined
 #else
@@ -640,7 +662,8 @@ class Field3DParallel;
                                                  f.getLocation(),                       \
                                                  f.getDirections(),                     \
                                                  std::nullopt,                          \
-                                                 f.getRegion(rgn)};                     \
+                                                 f.getRegion(rgn),                      \
+                                                 bout::detail::getPerpYIndex(f)};       \
     }                                                                                   \
   }                                                                                     \
   template <typename ResT, typename L, typename R, typename Func>                       \
@@ -654,7 +677,8 @@ class Field3DParallel;
         f.getLocation(),                                                                \
         f.getDirections(),                                                              \
         f.getRegionID(),                                                                \
-        f.indices};                                                                     \
+        f.indices,                                                                      \
+        bout::detail::getPerpYIndex(f)};                                                \
   }                                                                                     \
   template <typename ResT, typename L, typename R, typename Func>                       \
   inline auto name(const BinaryExpr<ResT, L, R, Func>& f, const std::string& rgn) {     \
@@ -696,7 +720,8 @@ inline auto SQ(const T& f, const std::string& rgn = "RGN_ALL") {
                                                  f.getLocation(),
                                                  f.getDirections(),
                                                  std::nullopt,
-                                                 f.getRegion(rgn)};
+                                                 f.getRegion(rgn),
+                                                 bout::detail::getPerpYIndex(f)};
   }
 }
 
@@ -711,7 +736,8 @@ inline auto SQ(const BinaryExpr<ResT, L, R, Func>& f) {
       f.getLocation(),
       f.getDirections(),
       f.getRegionID(),
-      f.indices};
+      f.indices,
+      bout::detail::getPerpYIndex(f)};
 }
 
 template <typename ResT, typename L, typename R, typename Func>

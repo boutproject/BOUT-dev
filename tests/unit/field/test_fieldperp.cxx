@@ -849,7 +849,7 @@ TEST_F(FieldPerpTest, InvalidateGuards) {
 
   sum = 0;
   for (const auto& i : field) {
-    if (!finite(field[i])) {
+    if (!std::isfinite(field[i])) {
       sum++;
     }
   }
@@ -1782,6 +1782,42 @@ TEST_F(FieldPerpTest, OperatorEqualsFieldPerp) {
   EXPECT_EQ(field.getLocation(), field2.getLocation());
   EXPECT_EQ(field.getDirectionY(), field2.getDirectionY());
   EXPECT_EQ(field.getDirectionZ(), field2.getDirectionZ());
+}
+
+TEST_F(FieldPerpTest, ConstructFromBinaryExprCopiesMetadata) {
+  FieldPerp source{
+      mesh_staggered, CELL_XLOW, 3, {YDirectionType::Aligned, ZDirectionType::Average}};
+  source = 4.;
+
+  FieldPerp result{sqrt(source)};
+
+  EXPECT_EQ(result.getMesh(), source.getMesh());
+  EXPECT_EQ(result.getLocation(), source.getLocation());
+  EXPECT_EQ(result.getIndex(), source.getIndex());
+  EXPECT_EQ(result.getDirectionY(), source.getDirectionY());
+  EXPECT_EQ(result.getDirectionZ(), source.getDirectionZ());
+  EXPECT_TRUE(IsFieldEqual(result, 2.));
+}
+
+TEST_F(FieldPerpTest, OperatorEqualsBinaryExprCopiesMetadata) {
+  FieldPerp source{
+      mesh_staggered, CELL_XLOW, 3, {YDirectionType::Aligned, ZDirectionType::Average}};
+  source = 4.;
+
+  FieldPerp target{mesh_staggered,
+                   CELL_CENTRE,
+                   1,
+                   {YDirectionType::Standard, ZDirectionType::Standard}};
+  target = 0.;
+
+  target = sqrt(source);
+
+  EXPECT_EQ(target.getMesh(), source.getMesh());
+  EXPECT_EQ(target.getLocation(), source.getLocation());
+  EXPECT_EQ(target.getIndex(), source.getIndex());
+  EXPECT_EQ(target.getDirectionY(), source.getDirectionY());
+  EXPECT_EQ(target.getDirectionZ(), source.getDirectionZ());
+  EXPECT_TRUE(IsFieldEqual(target, 2.));
 }
 
 TEST_F(FieldPerpTest, EmptyFrom) {

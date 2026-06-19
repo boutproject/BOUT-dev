@@ -489,13 +489,18 @@ public:
   Field3D& operator=(BoutReal val);
   template <typename ResT, typename L, typename R, typename Func>
   std::enable_if_t<is_expr_field3d_v<L>, Field3D&>
-  operator=(BinaryExpr<ResT, L, R, Func>& expr) {
-    regionID = expr.getRegionID();
-    if (isAllocated()) {
-      expr.evaluate(&data[0]);
-    } else {
+  operator=(const BinaryExpr<ResT, L, R, Func>& expr) {
+    if (!isAllocated() || getMesh() != expr.getMesh()) {
       *this = Field3D{expr};
+      return *this;
     }
+
+    clearParallelSlices();
+    setRegion(expr.getRegionID());
+    setLocation(expr.getLocation());
+    setDirections(expr.getDirections());
+    allocate();
+    expr.evaluate(&data[0]);
     return *this;
   }
 

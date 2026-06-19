@@ -1211,7 +1211,7 @@ TEST_F(Field3DTest, InvalidateGuards) {
 
   sum = 0;
   for (const auto& i : field) {
-    if (!finite(field[i])) {
+    if (!std::isfinite(field[i])) {
       sum++;
     }
   }
@@ -2515,6 +2515,25 @@ TEST_F(Field3DTest, OperatorEqualsField3D) {
   EXPECT_EQ(field.getLocation(), field2.getLocation());
   EXPECT_EQ(field.getDirectionY(), field2.getDirectionY());
   EXPECT_EQ(field.getDirectionZ(), field2.getDirectionZ());
+}
+
+TEST_F(Field3DTest, OperatorEqualsBinaryExprCopiesMetadata) {
+  Field3D source{
+      mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+  source = 9.;
+
+  Field3D target(mesh_staggered);
+  target = 0.;
+  target.splitParallelSlices();
+
+  target = sqrt(source);
+
+  EXPECT_EQ(target.getMesh(), source.getMesh());
+  EXPECT_EQ(target.getLocation(), source.getLocation());
+  EXPECT_EQ(target.getDirectionY(), source.getDirectionY());
+  EXPECT_EQ(target.getDirectionZ(), source.getDirectionZ());
+  EXPECT_FALSE(target.hasParallelSlices());
+  EXPECT_TRUE(IsFieldEqual(target, 3.));
 }
 
 TEST_F(Field3DTest, EmptyFrom) {

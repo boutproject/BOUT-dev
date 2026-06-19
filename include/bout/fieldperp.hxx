@@ -98,7 +98,7 @@ public:
       typename = std::enable_if_t<(is_expr_fieldperp_v<L> && is_expr_fieldperp_v<R>)>>
   FieldPerp(const BinaryExpr<ResT, L, R, Func>& expr)
       : FieldPerp(evaluateBinaryExpr(expr), expr.getMesh(), expr.getLocation(),
-                  /* yindex */ -1, expr.getDirections()) {}
+                  expr.getIndex(), expr.getDirections()) {}
 
   ~FieldPerp() override = default;
 
@@ -108,6 +108,21 @@ public:
   FieldPerp& operator=(const FieldPerp& rhs);
   FieldPerp& operator=(FieldPerp&& rhs) = default;
   FieldPerp& operator=(BoutReal rhs);
+  template <typename ResT, typename L, typename R, typename Func>
+  std::enable_if_t<is_expr_fieldperp_v<L>, FieldPerp&>
+  operator=(const BinaryExpr<ResT, L, R, Func>& expr) {
+    if (!isAllocated() || getMesh() != expr.getMesh()) {
+      *this = FieldPerp{expr};
+      return *this;
+    }
+
+    setLocation(expr.getLocation());
+    setDirections(expr.getDirections());
+    setIndex(expr.getIndex());
+    allocate();
+    expr.evaluate(&data[0]);
+    return *this;
+  }
 
   /// Return a Region<IndPerp> reference to use to iterate over this field
   const Region<IndPerp>& getRegion(REGION region) const;

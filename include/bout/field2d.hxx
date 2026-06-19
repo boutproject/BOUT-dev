@@ -189,11 +189,15 @@ public:
   template <typename ResT, typename L, typename R, typename Func>
   std::enable_if_t<is_expr_field2d_v<L>, Field2D&>
   operator=(const BinaryExpr<ResT, L, R, Func>& expr) {
-    if (isAllocated()) {
-      expr.evaluate(&data[0]);
-    } else {
+    if (!isAllocated() || getMesh() != expr.getMesh()) {
       *this = Field2D{expr};
+      return *this;
     }
+
+    setLocation(expr.getLocation());
+    setDirections(expr.getDirections());
+    allocate();
+    expr.evaluate(&data[0]);
     return *this;
   }
 
