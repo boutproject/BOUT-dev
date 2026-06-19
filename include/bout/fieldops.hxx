@@ -104,21 +104,10 @@ struct Div {
 
 namespace reduce {
 
-struct MinState {
-  BoutReal value;
-};
-
-struct MaxState {
-  BoutReal value;
-};
-
-struct MeanState {
-  BoutReal sum;
-  int count;
-};
-
 struct Min {
-  using State = MinState;
+  struct State {
+    BoutReal value;
+  };
 
   BOUT_HOST_DEVICE static State identity() {
     return {std::numeric_limits<BoutReal>::infinity()};
@@ -133,7 +122,9 @@ struct Min {
 };
 
 struct Max {
-  using State = MaxState;
+  struct State {
+    BoutReal value;
+  };
 
   BOUT_HOST_DEVICE static State identity() {
     return {-std::numeric_limits<BoutReal>::infinity()};
@@ -148,7 +139,10 @@ struct Max {
 };
 
 struct Mean {
-  using State = MeanState;
+  struct State {
+    BoutReal sum;
+    int count;
+  };
 
   BOUT_HOST_DEVICE static State identity() { return {0.0, 0}; }
   BOUT_HOST_DEVICE static void accumulate(State& state, BoutReal value) {
