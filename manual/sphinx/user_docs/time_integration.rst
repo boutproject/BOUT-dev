@@ -1305,7 +1305,9 @@ implement the outputMonitor method of PhysicsModel::
     int outputMonitor(BoutReal simtime, int iter, int nout)
 
 The first input is the current simulation time, the second is the output
-number, and the last is the total number of outputs requested.
+number, and the last is the total number of outputs requested. If an initial
+dump is written, it is output number ``0``. Solver output steps are numbered
+from ``1`` to ``nout``, so ``iter == nout`` indicates the final output.
 This method is called by a monitor object PhysicsModel::modelMonitor, which
 writes the restart files at the same time. You can change the frequency at which
 the monitor is called by calling, in PhysicsModel::init::
@@ -1330,7 +1332,9 @@ returns an int::
 
 The first input is the solver object, the second is the current
 simulation time, the third is the output number, and the last is the
-total number of outputs requested. To get the solver to call this
+total number of outputs requested. As for ``outputMonitor()``, output number
+``0`` is reserved for the initial dump when it is written, and solver output
+steps are numbered from ``1`` to ``NOUT``. To get the solver to call this
 function every output time, define a `MyOutputMonitor` object as a member of your
 PhysicsModel::
 
