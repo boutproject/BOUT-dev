@@ -8,20 +8,27 @@
 #include "bout/field3d.hxx"
 #include "bout/field_data.hxx"
 #include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/build_defines.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
+#include <bout/field.hxx>
 #include <bout/globals.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/output.hxx>
 #include <bout/output_bout_types.hxx>
+#include <bout/paralleltransform.hxx>
+#include <bout/region.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 #include <bout/yboundary_regions.hxx>
 
+#include <cmath>
 #include <memory>
+#include <string>
 
 #include "invert3x3.hxx"
 #include "parallel/fci.hxx"
@@ -64,9 +71,8 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extr
         // Can use no_extra_interpolate argument to skip the extra interpolation when we
         // want to extrapolate the Christoffel symbol terms which come from derivatives so
         // don't have the extra point set already
-        if ((location == CELL_XLOW) && (bndry->bx > 0)) {
-          extrap_start = 1;
-        } else if ((location == CELL_YLOW) && (bndry->by > 0)) {
+        if (((location == CELL_XLOW) && (bndry->bx > 0))
+            || ((location == CELL_YLOW) && (bndry->by > 0))) {
           extrap_start = 1;
         }
       }
@@ -85,7 +91,7 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extr
               (9.
                    * (f(bndry->x - bndry->bx, bndry->y - bndry->by)
                       + f(bndry->x, bndry->y))
-               - f(bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by)
+               - f(bndry->x - (2 * bndry->bx), bndry->y - (2 * bndry->by))
                - f(bndry->x + bndry->bx, bndry->y + bndry->by))
               / 16.;
         }
@@ -111,8 +117,8 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extr
           }
           // extrapolate into boundary guard cells if there are enough grid points
           for (int i = extrap_start; i < bndry->width; i++) {
-            int xi = bndry->x + i * bndry->bx;
-            int yi = bndry->y + i * bndry->by;
+            const int xi = bndry->x + (i * bndry->bx);
+            const int yi = bndry->y + (i * bndry->by);
             result(xi, yi) = 3.0 * result(xi - bndry->bx, yi - bndry->by)
                              - 3.0 * result(xi - 2 * bndry->bx, yi - 2 * bndry->by)
                              + result(xi - 3 * bndry->bx, yi - 3 * bndry->by);
@@ -502,13 +508,13 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
       output_warn.write("Not all covariant components of metric tensor found. "
                         "Calculating all from the contravariant tensor\n");
       /// Calculate contravariant metric components if not found
-      if (calcCovariant("RGN_NOCORNERS")) {
+      if (calcCovariant("RGN_NOCORNERS") != 0) {
         throw BoutException("Error in calcCovariant call");
       }
     }
   } else {
     /// Calculate contravariant metric components if not found
-    if (calcCovariant("RGN_NOCORNERS")) {
+    if (calcCovariant("RGN_NOCORNERS") != 0) {
       throw BoutException("Error in calcCovariant call");
     }
   }
@@ -1875,7 +1881,7 @@ Field2D Coordinates::Laplace_perpXY([[maybe_unused]] const Field2D& A,
 
 const Coordinates::FieldMetric& Coordinates::invSg() const {
   if (invSgCache == nullptr) {
-    auto ptr = std::make_unique<FieldMetric>();
+    auto ptr = std::make_unique<Coordinates::FieldMetric>();
     (*ptr) = 1.0 / sqrt(g_22);
     invSgCache = std::move(ptr);
   }
@@ -1895,7 +1901,7 @@ Coordinates::Grad2_par2_DDY_invSg(CELL_LOC outloc, const std::string& method) co
   invSgCache->applyParallelBoundary("parallel_neumann_o2");
 
   // cache
-  auto ptr = std::make_unique<FieldMetric>();
+  auto ptr = std::make_unique<Coordinates::FieldMetric>();
   *ptr = DDY(*invSgCache, outloc, method) * invSg();
   Grad2_par2_DDY_invSgCache[method] = std::move(ptr);
   return *Grad2_par2_DDY_invSgCache[method];
@@ -2004,6 +2010,126 @@ void Coordinates::checkContravariant() {
     }
   }
 }
+
+const Coordinates::FieldMetric& Coordinates::g_22_ylow() const {
+  if (_g_22_ylow.has_value()) {
+    return *_g_22_ylow;
+  }
+  _g_22_ylow.emplace(emptyFrom(g_22));
+  //_g_22_ylow->setLocation(CELL_YLOW);
+  auto* mesh = Bxy.getMesh();
+  if (Bxy.isFci()) {
+    if (mesh->get(_g_22_ylow.value(), "g_22_cell_ylow", 0.0, false) != 0) {
+      throw BoutException("The grid file does not contain `g_22_cell_ylow`.");
+    }
+  } else {
+    ASSERT0(mesh->ystart > 0);
+    BOUT_FOR(i, g_22.getRegion("RGN_NOY")) {
+      _g_22_ylow.value()[i] = SQ(0.5 * (std::sqrt(g_22[i]) + std::sqrt(g_22[i.ym()])));
+    }
+  }
+  return g_22_ylow();
+}
+
+const Coordinates::FieldMetric& Coordinates::g_22_yhigh() const {
+  if (_g_22_yhigh.has_value()) {
+    return *_g_22_yhigh;
+  }
+  _g_22_yhigh.emplace(emptyFrom(g_22));
+  //_g_22_yhigh->setLocation(CELL_YHIGH);
+  auto* mesh = Bxy.getMesh();
+  if (Bxy.isFci()) {
+    if (mesh->get(_g_22_yhigh.value(), "g_22_cell_yhigh", 0.0, false) != 0) {
+      throw BoutException("The grid file does not contain `g_22_cell_yhigh`.");
+    }
+  } else {
+    ASSERT0(mesh->ystart > 0);
+    BOUT_FOR(i, g_22.getRegion("RGN_NOY")) {
+      _g_22_yhigh.value()[i] = SQ(0.5 * (std::sqrt(g_22[i]) + std::sqrt(g_22[i.yp()])));
+    }
+  }
+  return g_22_yhigh();
+}
+
+void Coordinates::_compute_cell_area_x() const {
+  const auto area_centre = sqrt(g_22 * g_33 - SQ(g_23)) * dy * dz;
+  _cell_area_xlow.emplace(emptyFrom(area_centre));
+  _cell_area_xhigh.emplace(emptyFrom(area_centre));
+  // We cannot setLocation, as that would trigger the computation of staggered
+  // metrics.
+  auto* mesh = Bxy.getMesh();
+  ASSERT0(mesh->xstart > 0);
+  BOUT_FOR(i, area_centre.getRegion("RGN_NOX")) {
+    (*_cell_area_xlow)[i] = 0.5 * (area_centre[i] + area_centre[i.xm()]);
+    (*_cell_area_xhigh)[i] = 0.5 * (area_centre[i] + area_centre[i.xp()]);
+  }
+}
+
+void Coordinates::_compute_cell_area_y() const {
+  auto* mesh = Bxy.getMesh();
+  if (g_11.isFci()) {
+    const auto jxz_centre = sqrt(g_11 * g_33 - SQ(g_13));
+    auto jxz_ylow = emptyFrom(jxz_centre);
+    auto jxz_yhigh = emptyFrom(jxz_centre);
+
+    auto By_c = emptyFrom(jxz_centre);
+    auto By_h = emptyFrom(jxz_yhigh);
+    auto By_l = emptyFrom(jxz_ylow);
+    if (mesh->get(By_c, "By", 0.0, false, CELL_CENTRE) != 0) {
+      throw BoutException("The grid file does not contain `By`.");
+    }
+    if (mesh->get(By_l, "By_cell_ylow", 0.0, false) != 0) {
+      throw BoutException("The grid file does not contain `By_cell_ylow`.");
+    }
+    if (mesh->get(By_h, "By_cell_yhigh", 0.0, false) != 0) {
+      throw BoutException("The grid file does not contain `By_cell_yhigh`.");
+    }
+    BOUT_FOR(i, By_c.getRegion("RGN_NOY")) {
+      jxz_ylow[i] = By_c[i] / By_l[i] * jxz_centre[i];
+      jxz_yhigh[i] = By_c[i] / By_h[i] * jxz_centre[i];
+    }
+    ASSERT3(isUniform(dx, true, "RGN_ALL"));
+    ASSERT2(isUniform(dx, false, "RGN_ALL"));
+    ASSERT3(isUniform(dz, true, "RGN_ALL"));
+    ASSERT2(isUniform(dz, false, "RGN_ALL"));
+    _cell_area_ylow.emplace(jxz_ylow * dx * dz);
+    _cell_area_yhigh.emplace(jxz_yhigh * dx * dz);
+  } else {
+    // Field aligned
+    const auto area_centre = sqrt(g_11 * g_33 - SQ(g_13)) * dx * dz;
+    _cell_area_ylow.emplace(emptyFrom(area_centre));
+    _cell_area_yhigh.emplace(emptyFrom(area_centre));
+    // We cannot setLocation, as that would trigger the computation of staggered
+    // metrics.
+    BOUT_FOR(i, mesh->getRegion("RGN_ALL")) {
+      if (i.y() > 0) {
+        (*_cell_area_ylow)[i] = 0.5 * (area_centre[i] + area_centre[i.ym()]);
+      } else {
+        (*_cell_area_ylow)[i] = BoutNaN;
+      }
+      if (i.y() < mesh->LocalNy - 1) {
+        (*_cell_area_yhigh)[i] = 0.5 * (area_centre[i] + area_centre[i.yp()]);
+      } else {
+        (*_cell_area_yhigh)[i] = BoutNaN;
+      }
+    }
+  }
+}
+
+void Coordinates::_compute_cell_area_z() const {
+  const auto area_centre = sqrt(g_11 * g_22 - SQ(g_12)) * dx * dy;
+  _cell_area_zlow.emplace(emptyFrom(area_centre));
+  _cell_area_zhigh.emplace(emptyFrom(area_centre));
+  // We cannot setLocation, as that would trigger the computation of staggered
+  // metrics.
+  //ASSERT0(mesh->zstart > 0);
+  BOUT_FOR(i, area_centre.getRegion("RGN_NOZ")) {
+    (*_cell_area_zlow)[i] = 0.5 * (area_centre[i] + area_centre[i.zm()]);
+    (*_cell_area_zhigh)[i] = 0.5 * (area_centre[i] + area_centre[i.zp()]);
+  }
+}
+
+void Coordinates::_compute_cell_volume() const { _cell_volume.emplace(J * dx * dy * dz); }
 
 std::shared_ptr<YBoundary> Coordinates::makeYBoundary(YBndryType type) const {
   return std::make_shared<YBoundary>(type, localoptions, *localmesh);

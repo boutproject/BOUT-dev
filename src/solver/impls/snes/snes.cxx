@@ -15,8 +15,8 @@
 #include <bout/output_bout_types.hxx>
 #include <bout/petsc_interface.hxx>
 #include <bout/solver.hxx>
-#include <bout/utils.hxx>
 #include <bout/unused.hxx>
+#include <bout/utils.hxx>
 
 #include <algorithm>
 #include <cmath>
@@ -35,10 +35,10 @@
 
 class ColoringStencil {
 private:
-  bool static isInSquare(int const i, int const j, int const n_square) {
+  bool static isInSquare(const int i, const int j, const int n_square) {
     return std::abs(i) <= n_square && std::abs(j) <= n_square;
   }
-  bool static isInCross(int const i, int const j, int const n_cross) {
+  bool static isInCross(const int i, const int j, const int n_cross) {
     if (i == 0) {
       return std::abs(j) <= n_cross;
     }
@@ -47,7 +47,7 @@ private:
     }
     return false;
   }
-  bool static isInTaxi(int const i, int const j, int const n_taxi) {
+  bool static isInTaxi(const int i, const int j, const int n_taxi) {
     return std::abs(i) + std::abs(j) <= n_taxi;
   }
 
@@ -161,7 +161,7 @@ PetscErrorCode SNESSolver::FDJinitialise() {
                       .doc("Extent of stencil (taxi-cab norm)")
                       .withDefault<int>((n_square == 0 && n_cross == 0) ? 2 : 0);
 
-    auto const xy_offsets = ColoringStencil::getOffsets(n_square, n_taxi, n_cross);
+    const auto xy_offsets = ColoringStencil::getOffsets(n_square, n_taxi, n_cross);
     {
       // This is ugly but can't think of a better and robust way to
       // count the non-zeros for some arbitrary stencil
@@ -543,9 +543,9 @@ SNESSolver::SNESSolver(Options* opts)
       pseudo_alpha((*options)["pseudo_alpha"]
                        .doc("Sets timestep using dt = alpha / residual")
                        .withDefault(100. * atol * timestep)),
-      pseudo_alpha_minimum(
-          (*options)["pseudo_alpha_minimum"].doc("Minimum value of pseudo_alpha")
-          .withDefault(0.1 * pseudo_alpha)),
+      pseudo_alpha_minimum((*options)["pseudo_alpha_minimum"]
+                               .doc("Minimum value of pseudo_alpha")
+                               .withDefault(0.1 * pseudo_alpha)),
       pseudo_growth_factor((*options)["pseudo_growth_factor"]
                                .doc("PTC growth factor on success")
                                .withDefault(1.1)),
@@ -886,7 +886,7 @@ int SNESSolver::run() {
 
   BoutReal target = simtime;
   recent_failure_rate = 0.0;
-  for (int s = 0; s < getNumberOutputSteps(); s++) {
+  for (int s = 1; s <= getNumberOutputSteps(); s++) {
     target += getOutputTimestep();
 
     bool looping = true;
@@ -1191,10 +1191,10 @@ int SNESSolver::run() {
 
       if (equation_form == BoutSnesEquationForm::pseudo_transient) {
         // Adjust pseudo_alpha to globally scale timesteps
-        pseudo_alpha = std::max({
-            updateGlobalTimestep(pseudo_alpha, nl_its, recent_failure_rate,
-                                 max_timestep * atol * 100),
-            pseudo_alpha_minimum});
+        pseudo_alpha =
+            std::max({updateGlobalTimestep(pseudo_alpha, nl_its, recent_failure_rate,
+                                           max_timestep * atol * 100),
+                      pseudo_alpha_minimum});
 
         // Adjust local timesteps
         PetscCall(updatePseudoTimestepping());
@@ -1541,10 +1541,10 @@ PetscErrorCode SNESSolver::updatePseudoTimestepping() {
 /// rapid changes in timestep.
 BoutReal SNESSolver::updatePseudoTimestep_inverse_residual(BoutReal previous_timestep,
                                                            BoutReal current_residual) {
-  return std::max({
-      std::min({std::max({pseudo_alpha / current_residual, previous_timestep / 1.5}),
-                1.5 * previous_timestep, max_timestep}),
-      dt_min_reset});
+  return std::max(
+      {std::min({std::max({pseudo_alpha / current_residual, previous_timestep / 1.5}),
+                 1.5 * previous_timestep, max_timestep}),
+       dt_min_reset});
 }
 
 // Strategy based on history of residuals

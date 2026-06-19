@@ -231,7 +231,7 @@ int IdaSolver::run() {
     throw BoutException("IdaSolver not initialised\n");
   }
 
-  for (int i = 0; i < getNumberOutputSteps(); i++) {
+  for (int i = 1; i <= getNumberOutputSteps(); i++) {
 
     /// Run the solver for one output timestep
     simtime = run(simtime + getOutputTimestep());

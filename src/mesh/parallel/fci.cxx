@@ -468,7 +468,7 @@ void FCITransform::outputVars(Options& output_options) {
   output_options["Z"].force(Z, "FCI");
 }
 
-void FCITransform::loadParallelMetrics(Coordinates* coords) {
+void FCITransform::loadParallelMetrics([[maybe_unused]] Coordinates* coords) {
 #if BOUT_USE_METRIC_3D
   output_info.write("\tLoading parallel metrics\n");
   const Coordinates::FieldMetric JB0 = coords->J * coords->Bxy;
