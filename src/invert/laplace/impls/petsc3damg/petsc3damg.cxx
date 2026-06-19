@@ -299,7 +299,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   const Field3D dc_dx = issetC ? DDX(C2) : Field3D();
   const Field3D dc_dy = issetC ? DDY(C2) : Field3D();
   const Field3D dc_dz = issetC ? DDZ(C2) : Field3D();
-  const auto dJ_dy = DDY(coords->J / coords->g_22);
+  const auto dJ_dy = DDY(Coordinates::FieldMetric{coords->J / coords->g_22});
 
   // Set up the matrix for the internal points on the grid.
   // Boundary conditions were set in the constructor.
@@ -384,7 +384,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   // Must add these (rather than assign) so that elements used in
   // interpolation don't overwrite each other.
   BOUT_FOR_SERIAL(l, indexer->getRegionNobndry()) {
-    BoutReal C_df_dy = (coords->G2[l] - dJ_dy[l] / coords->J[l]);
+    BoutReal C_df_dy = coords->G2[l] - (dJ_dy[l] / coords->J[l]);
     if (issetD) {
       C_df_dy *= D[l];
     }
@@ -395,7 +395,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
           / C1[l];
     }
 
-    BoutReal C_d2f_dy2 = (coords->g22[l] - 1.0 / coords->g_22[l]);
+    BoutReal C_d2f_dy2 = coords->g22[l] - (1.0 / coords->g_22[l]);
     if (issetD) {
       C_d2f_dy2 *= D[l];
     }

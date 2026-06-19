@@ -546,7 +546,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
                                   transform.get());
 
     // Compare calculated and loaded values
-    Field2D diff = J - Jcalc;
+    const auto diff = J - Jcalc;
     output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(diff)));
 
     mesh->communicate_no_slices(J);
@@ -1140,7 +1140,7 @@ int Coordinates::geometry(bool recalculate_staggered,
     if (localmesh->get(d2z, "d2z" + suffix, 0.0, false)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2z' not found. Calculating from dz\n");
-      d1_dz = bout::derivatives::index::DDZ(1. / dz);
+      d1_dz = bout::derivatives::index::DDZ(FieldMetric{1. / dz});
       localmesh->communicate_no_slices(d1_dz);
       d1_dz =
           interpolateAndExtrapolate(d1_dz, location, true, true, true, transform.get());
@@ -1174,7 +1174,7 @@ int Coordinates::geometry(bool recalculate_staggered,
     if (localmesh->get(d2y, "d2y", 0.0, false)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
-      d1_dy = DDY(1. / dy); // d/di(1/dy)
+      d1_dy = DDY(FieldMetric{1. / dy}); // d/di(1/dy)
 
       localmesh->communicate_no_slices(d1_dy);
       d1_dy =
@@ -1190,7 +1190,7 @@ int Coordinates::geometry(bool recalculate_staggered,
     if (localmesh->get(d2z, "d2z", 0.0, false)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2z' not found. Calculating from dz\n");
-      d1_dz = bout::derivatives::index::DDZ(1. / dz);
+      d1_dz = bout::derivatives::index::DDZ(FieldMetric{1. / dz});
 
       localmesh->communicate_no_slices(d1_dz);
       d1_dz =
@@ -1578,7 +1578,7 @@ Coordinates::FieldMetric Coordinates::Div_par(const Field2D& f, CELL_LOC outloc,
   // Coordinates object
   auto Bxy_floc = f.getCoordinates()->Bxy;
 
-  return Bxy * Grad_par(f / Bxy_floc, outloc, method);
+  return Bxy * Grad_par(FieldMetric{f / Bxy_floc}, outloc, method);
 }
 
 Field3D Coordinates::Div_par(const Field3DParallel& f, CELL_LOC outloc,
@@ -1771,7 +1771,8 @@ FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
 
 Coordinates::FieldMetric Coordinates::Laplace_par(const Field2D& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
-  return D2DY2(f, outloc) / g_22 + DDY(J / g_22, outloc) * DDY(f, outloc) / J;
+  return D2DY2(f, outloc) / g_22
+         + DDY(FieldMetric{J / g_22}, outloc) * DDY(f, outloc) / J;
 }
 
 Field3D Coordinates::Laplace_par(const Field3DParallel& f, CELL_LOC outloc) {

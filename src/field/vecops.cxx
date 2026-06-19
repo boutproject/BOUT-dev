@@ -1,11 +1,10 @@
 /**************************************************************************
  * Operators on vector objects
- * B.Dudson, October 2007
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -161,8 +160,8 @@ Coordinates::FieldMetric Div(const Vector2D& v, CELL_LOC outloc,
   vcn.toContravariant();
 
   Coordinates::FieldMetric result = DDX(metric->J * vcn.x, outloc, method);
-  result += DDY(metric->J * vcn.y, outloc, method);
-  result += DDZ(metric->J * vcn.z, outloc, method);
+  result += DDY(Coordinates::FieldMetric{metric->J * vcn.y}, outloc, method);
+  result += DDZ(Coordinates::FieldMetric{metric->J * vcn.z}, outloc, method);
   result /= metric->J;
 
   return result;
@@ -195,8 +194,8 @@ Field3D Div(const Vector3D& v, CELL_LOC outloc, const std::string& method) {
   }
   auto result = DDY(vcnJy, outloc, method);
 
-  result += DDX(vcn.x.getCoordinates()->J * vcn.x, outloc, method);
-  result += DDZ(vcn.z.getCoordinates()->J * vcn.z, outloc, method);
+  result += DDX(Field3D{vcn.x.getCoordinates()->J * vcn.x}, outloc, method);
+  result += DDZ(Field3D{vcn.z.getCoordinates()->J * vcn.z}, outloc, method);
   result /= metric->J;
 
   return result;
@@ -224,10 +223,12 @@ Coordinates::FieldMetric Div(const Vector2D& v, const Field2D& f, CELL_LOC outlo
   Vector2D vcn = v;
   vcn.toContravariant();
 
-  Coordinates::FieldMetric result =
-      FDDX(vcn.x.getCoordinates()->J * vcn.x, f, outloc, method);
-  result += FDDY(vcn.y.getCoordinates()->J * vcn.y, f, outloc, method);
-  result += FDDZ(vcn.z.getCoordinates()->J * vcn.z, f, outloc, method);
+  Coordinates::FieldMetric result = FDDX(
+      Coordinates::FieldMetric{vcn.x.getCoordinates()->J * vcn.x}, f, outloc, method);
+  result += FDDY(Coordinates::FieldMetric{vcn.y.getCoordinates()->J * vcn.y}, f, outloc,
+                 method);
+  result += FDDZ(Coordinates::FieldMetric{vcn.z.getCoordinates()->J * vcn.z}, f, outloc,
+                 method);
   result /= metric->J;
 
   return result;
@@ -249,9 +250,9 @@ Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc,
   Vector3D vcn = v;
   vcn.toContravariant();
 
-  Field3D result = FDDX(vcn.x.getCoordinates()->J * vcn.x, f, outloc, method);
-  result += FDDY(vcn.y.getCoordinates()->J * vcn.y, f, outloc, method);
-  result += FDDZ(vcn.z.getCoordinates()->J * vcn.z, f, outloc, method);
+  Field3D result = FDDX(Field3D{vcn.x.getCoordinates()->J * vcn.x}, f, outloc, method);
+  result += FDDY(Field3D{vcn.y.getCoordinates()->J * vcn.y}, f, outloc, method);
+  result += FDDZ(Field3D{vcn.z.getCoordinates()->J * vcn.z}, f, outloc, method);
   result /= metric->J;
 
   return result;

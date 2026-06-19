@@ -17,9 +17,9 @@
  *    Div(v*f)
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -38,15 +38,22 @@
  *
  **************************************************************************/
 
+#include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/build_defines.hxx>
 #include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
 #include <bout/globals.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/output.hxx>
 #include <bout/unused.hxx>
 #include <bout/utils.hxx>
+
+#include <string>
 
 /*******************************************************************************
  * First central derivatives
@@ -96,7 +103,7 @@ Coordinates::FieldMetric DDZ(const Field2D& f, CELL_LOC UNUSED(outloc),
 Vector3D DDZ(const Vector3D& v, CELL_LOC outloc, const std::string& method,
              const std::string& region) {
   Vector3D result(v.getMesh());
-  Coordinates* metric = v.x.getCoordinates(outloc);
+  const Coordinates* metric = v.x.getCoordinates(outloc);
 
   if (v.covariant) {
     // From equation (2.6.32) in D'Haeseleer
@@ -148,7 +155,7 @@ Vector2D DDZ(const Vector2D& v, CELL_LOC UNUSED(outloc),
 
 Field3D D2DX2(const Field3D& f, CELL_LOC outloc, const std::string& method,
               const std::string& region) {
-  Coordinates* coords = f.getCoordinates(outloc);
+  const Coordinates* coords = f.getCoordinates(outloc);
 
   Field3D result =
       bout::derivatives::index::D2DX2(f, outloc, method, region) / SQ(coords->dx);
@@ -167,9 +174,9 @@ Field3D D2DX2(const Field3D& f, CELL_LOC outloc, const std::string& method,
 
 Coordinates::FieldMetric D2DX2(const Field2D& f, CELL_LOC outloc,
                                const std::string& method, const std::string& region) {
-  Coordinates* coords = f.getCoordinates(outloc);
+  const Coordinates* coords = f.getCoordinates(outloc);
 
-  Field2D result =
+  Coordinates::FieldMetric result =
       bout::derivatives::index::D2DX2(f, outloc, method, region) / SQ(coords->dx);
 
   if (coords->non_uniform) {
@@ -185,7 +192,7 @@ Coordinates::FieldMetric D2DX2(const Field2D& f, CELL_LOC outloc,
 
 Field3D D2DY2(const Field3D& f, CELL_LOC outloc, const std::string& method,
               const std::string& region) {
-  Coordinates* coords = f.getCoordinates(outloc);
+  const Coordinates* coords = f.getCoordinates(outloc);
 
   Field3D result =
       bout::derivatives::index::D2DY2(f, outloc, method, region) / SQ(coords->dy);
@@ -204,9 +211,9 @@ Field3D D2DY2(const Field3D& f, CELL_LOC outloc, const std::string& method,
 
 Coordinates::FieldMetric D2DY2(const Field2D& f, CELL_LOC outloc,
                                const std::string& method, const std::string& region) {
-  Coordinates* coords = f.getCoordinates(outloc);
+  const Coordinates* coords = f.getCoordinates(outloc);
 
-  Field2D result =
+  Coordinates::FieldMetric result =
       bout::derivatives::index::D2DY2(f, outloc, method, region) / SQ(coords->dy);
   if (coords->non_uniform) {
     // Correction for non-uniform f.getMesh()
@@ -286,7 +293,7 @@ Coordinates::FieldMetric D2DXDY(const Field2D& f, CELL_LOC outloc,
                                 const std::string& method, const std::string& region,
                                 const std::string& dfdy_boundary_condition,
                                 const std::string& dfdy_region) {
-  std::string dy_region = dfdy_region.empty() ? region : dfdy_region;
+  const std::string dy_region = dfdy_region.empty() ? region : dfdy_region;
 
   // If staggering in x, take y-derivative at f's location.
   const auto y_location =
@@ -311,7 +318,7 @@ Coordinates::FieldMetric D2DXDY(const Field2D& f, CELL_LOC outloc,
 Field3D D2DXDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
                const std::string& region, const std::string& dfdy_boundary_condition,
                const std::string& dfdy_region) {
-  std::string dy_region = dfdy_region.empty() ? region : dfdy_region;
+  const std::string dy_region = dfdy_region.empty() ? region : dfdy_region;
 
   // If staggering in x, take y-derivative at f's location.
   const auto y_location =
