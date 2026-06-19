@@ -322,13 +322,8 @@ struct BinaryExpr {
   BinaryExpr(const typename L::View& lhs, const typename R::View& rhs, Func f, Mesh* mesh,
              CELL_LOC location, DirectionTypes directions, std::optional<size_t> regionID,
              const Region<IndType>& region)
-      : lhs(lhs), rhs(rhs), indices(region.getIndices().size()), f(f), mesh(mesh),
-        location(location), directions(directions), regionID(regionID) {
-    // Copy the region indices into the managed array
-    for (int i = 0; i < indices.size(); ++i) {
-      indices[i] = region.getIndices()[i].ind;
-    }
-  }
+      : lhs(lhs), rhs(rhs), indices(region.getLinearIndices()), f(f), mesh(mesh),
+        location(location), directions(directions), regionID(regionID) {}
 
   BinaryExpr(const typename L::View& lhs, const typename R::View& rhs, Func f, Mesh* mesh,
              CELL_LOC location, DirectionTypes directions, std::optional<size_t> regionID,
