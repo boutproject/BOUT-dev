@@ -1204,10 +1204,10 @@ int SNESSolver::run() {
 
         // Copy derivatives back
         if (diagnose) {
-          BoutReal* fdata = nullptr;
-          PetscCall(VecGetArray(deriv, &fdata));
-          save_derivs(fdata);
-          PetscCall(VecRestoreArray(deriv, &fdata));
+          BoutReal* ddata = nullptr;
+          PetscCall(VecGetArray(deriv, &ddata));
+          save_derivs(ddata);
+          PetscCall(VecRestoreArray(deriv, &ddata));
           // Forward Euler
           VecAXPY(snes_x, dt, deriv);
         } else {

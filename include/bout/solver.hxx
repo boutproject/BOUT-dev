@@ -41,11 +41,13 @@
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/globals.hxx"
+#include "bout/mesh.hxx"
 #include "bout/monitor.hxx"
 #include "bout/options.hxx"
-#include "bout/regions.hxx"
+#include "bout/region.hxx"
 #include "bout/unused.hxx"
 
+#include <cstdint>
 #include <iterator>
 #include <memory>
 
@@ -487,7 +489,7 @@ protected:
     }
 
   private:
-    underlying_iterator it;
+    underlying_iterator it{};
   };
 
   template <FieldCategories C, class T>
