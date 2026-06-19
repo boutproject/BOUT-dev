@@ -100,6 +100,18 @@ struct Div {
     return a / b;
   }
 };
+struct IfElse {
+  bool condition;
+
+  template <typename LView, typename RView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx, const LView& L,
+                                                        const RView& R) const {
+    return condition ? L(idx) : R(idx);
+  }
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(BoutReal a, BoutReal b) const {
+    return condition ? a : b;
+  }
+};
 }; // namespace op
 
 namespace reduce {

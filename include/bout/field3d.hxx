@@ -754,6 +754,74 @@ FIELD3D_BOUTREAL_FIELD3D_OP(-, Sub)
 FIELD3D_BOUTREAL_FIELD3D_OP(*, Mul)
 FIELD3D_BOUTREAL_FIELD3D_OP(/, Div)
 
+template <typename L, typename R,
+          typename = std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>>>
+BinaryExpr<Field3D, L, R, bout::op::IfElse> if_else(bool condition, const L& lhs,
+                                                    const R& rhs) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
+  return BinaryExpr<Field3D, L, R, bout::op::IfElse>{
+      static_cast<typename L::View>(lhs),
+      static_cast<typename R::View>(rhs),
+      bout::op::IfElse{condition},
+      lhs.getMesh(),
+      lhs.getLocation(),
+      lhs.getDirections(),
+      regionID,
+      (regionID.has_value() ? lhs.getMesh()->getRegion(regionID.value())
+                            : lhs.getMesh()->getRegion("RGN_ALL"))};
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>,
+                 BinaryExpr<Field3D, L, R, bout::op::IfElse>>
+if_else(bool condition, const L& lhs, const R& rhs) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  auto regionID = lhs.getRegionID();
+  int mesh_nz = lhs.getMesh()->LocalNz;
+  return BinaryExpr<Field3D, L, R, bout::op::IfElse>{
+      static_cast<typename L::View>(lhs),
+      static_cast<typename R::View>(rhs).setScale(1, mesh_nz),
+      bout::op::IfElse{condition},
+      lhs.getMesh(),
+      lhs.getLocation(),
+      lhs.getDirections(),
+      regionID,
+      lhs.getMesh()->getRegion("RGN_ALL")};
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_field3d_v<L> && is_expr_constant_v<R>,
+                 BinaryExpr<Field3D, L, Constant<R>, bout::op::IfElse>>
+if_else(bool condition, const L& lhs, R rhs) {
+  auto regionID = lhs.getRegionID();
+  return BinaryExpr<Field3D, L, Constant<R>, bout::op::IfElse>{
+      static_cast<typename L::View>(lhs),
+      static_cast<typename Constant<R>::View>(rhs),
+      bout::op::IfElse{condition},
+      lhs.getMesh(),
+      lhs.getLocation(),
+      lhs.getDirections(),
+      regionID,
+      lhs.getMesh()->getRegion("RGN_ALL")};
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_constant_v<L> && is_expr_field3d_v<R>,
+                 BinaryExpr<Field3D, Constant<L>, R, bout::op::IfElse>>
+if_else(bool condition, const L& lhs, const R& rhs) {
+  auto regionID = rhs.getRegionID();
+  return BinaryExpr<Field3D, Constant<L>, R, bout::op::IfElse>{
+      static_cast<typename Constant<L>::View>(lhs),
+      static_cast<typename R::View>(rhs),
+      bout::op::IfElse{condition},
+      rhs.getMesh(),
+      rhs.getLocation(),
+      rhs.getDirections(),
+      regionID,
+      rhs.getMesh()->getRegion("RGN_ALL")};
+}
+
 Field3DParallel operator+(const Field3D& lhs, const Field3DParallel& rhs);
 Field3DParallel operator-(const Field3D& lhs, const Field3DParallel& rhs);
 Field3DParallel operator*(const Field3D& lhs, const Field3DParallel& rhs);

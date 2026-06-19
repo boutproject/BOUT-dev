@@ -458,6 +458,75 @@ FIELD2D_BOUTREAL_FIELD2D_OP(-, Sub)
 FIELD2D_BOUTREAL_FIELD2D_OP(*, Mul)
 FIELD2D_BOUTREAL_FIELD2D_OP(/, Div)
 
+template <typename L, typename R>
+std::enable_if_t<is_expr_field2d_v<L> && is_expr_field2d_v<R>,
+                 BinaryExpr<Field2D, L, R, bout::op::IfElse>>
+if_else(bool condition, const L& lhs, const R& rhs) {
+  return BinaryExpr<Field2D, L, R, bout::op::IfElse>{
+      static_cast<typename L::View>(lhs),
+      static_cast<typename R::View>(rhs),
+      bout::op::IfElse{condition},
+      lhs.getMesh(),
+      lhs.getLocation(),
+      lhs.getDirections(),
+      std::nullopt,
+      lhs.getMesh()->getRegion2D("RGN_ALL")};
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_field2d_v<L> && is_expr_field3d_v<R>,
+                 BinaryExpr<Field3D, L, R, bout::op::IfElse>>
+if_else(bool condition, const L& lhs, const R& rhs) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  auto regionID = rhs.getRegionID();
+  int mesh_nz = rhs.getMesh()->LocalNz;
+  return BinaryExpr<Field3D, L, R, bout::op::IfElse>{
+      static_cast<typename L::View>(lhs).setScale(1, mesh_nz),
+      static_cast<typename R::View>(rhs),
+      bout::op::IfElse{condition},
+      rhs.getMesh(),
+      rhs.getLocation(),
+      rhs.getDirections(),
+      regionID,
+      rhs.getMesh()->getRegion("RGN_ALL")};
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_field2d_v<L> && is_expr_constant_v<R>,
+                 BinaryExpr<Field2D, L, Constant<R>, bout::op::IfElse>>
+if_else(bool condition, const L& lhs, R rhs) {
+  return BinaryExpr<Field2D, L, Constant<R>, bout::op::IfElse>{
+      static_cast<typename L::View>(lhs),
+      static_cast<typename Constant<R>::View>(rhs),
+      bout::op::IfElse{condition},
+      lhs.getMesh(),
+      lhs.getLocation(),
+      lhs.getDirections(),
+      std::nullopt,
+      lhs.getMesh()->getRegion2D("RGN_ALL")};
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_constant_v<L> && is_expr_field2d_v<R>,
+                 BinaryExpr<Field2D, Constant<L>, R, bout::op::IfElse>>
+if_else(bool condition, L lhs, const R& rhs) {
+  return BinaryExpr<Field2D, Constant<L>, R, bout::op::IfElse>{
+      static_cast<typename Constant<L>::View>(lhs),
+      static_cast<typename R::View>(rhs),
+      bout::op::IfElse{condition},
+      rhs.getMesh(),
+      rhs.getLocation(),
+      rhs.getDirections(),
+      std::nullopt,
+      rhs.getMesh()->getRegion2D("RGN_ALL")};
+}
+
+template <typename L,
+          typename = std::enable_if_t<is_expr_field2d_v<L> || is_expr_field3d_v<L>>>
+auto if_else_zero(bool condition, const L& lhs) {
+  return if_else(condition, lhs, 0.0);
+}
+
 /*!
  * Unary minus. Returns the negative of given field,
  * iterates over whole domain including guard/boundary cells.
