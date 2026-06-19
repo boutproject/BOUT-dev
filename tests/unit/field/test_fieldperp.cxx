@@ -1593,6 +1593,17 @@ TEST_F(FieldPerpTest, Abs) {
   EXPECT_TRUE(IsFieldEqual(abs(field), 31.0));
 }
 
+TEST_F(FieldPerpTest, RegionLimitedExpressionConstructsFieldPerp) {
+  FieldPerp field;
+  field.setIndex(0);
+
+  field = -31.0;
+
+  FieldPerp result = abs(field, "RGN_NOX");
+
+  EXPECT_TRUE(IsFieldEqual(result, 31.0, "RGN_NOX"));
+}
+
 TEST_F(FieldPerpTest, Exp) {
   FieldPerp field;
   field.setIndex(0);

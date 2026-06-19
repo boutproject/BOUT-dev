@@ -644,7 +644,10 @@ protected:
 
   template <typename L, typename R, typename Func>
   static Array<BoutReal> evaluateBinaryExpr(const BinaryExpr<Field3D, L, R, Func>& expr) {
-    Array<BoutReal> data{expr.size()};
+    const auto* mesh = expr.getMesh();
+    ASSERT1(mesh != nullptr);
+
+    Array<BoutReal> data{mesh->LocalNx * mesh->LocalNy * mesh->LocalNz};
     expr.evaluate(&data[0]);
     return data;
   }

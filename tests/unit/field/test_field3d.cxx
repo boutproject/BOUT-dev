@@ -1999,6 +1999,16 @@ TEST_F(Field3DTest, AbsExpressionUsesAbsOp) {
   EXPECT_TRUE(IsFieldEqual(abs(expr, "RGN_ALL"), 1.0));
 }
 
+TEST_F(Field3DTest, RegionLimitedExpressionConstructsField3D) {
+  Field3D field;
+
+  field = -31.0;
+
+  Field3D result = abs(field, "RGN_NOBNDRY");
+
+  EXPECT_TRUE(IsFieldEqual(result, 31.0, "RGN_NOBNDRY"));
+}
+
 TEST_F(Field3DTest, Exp) {
   Field3D field;
 

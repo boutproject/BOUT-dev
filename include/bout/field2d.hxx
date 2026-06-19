@@ -350,7 +350,10 @@ public:
 private:
   template <typename ResT, typename L, typename R, typename Func>
   static Array<BoutReal> evaluateBinaryExpr(const BinaryExpr<ResT, L, R, Func>& expr) {
-    Array<BoutReal> data{expr.size()};
+    const auto* mesh = expr.getMesh();
+    ASSERT1(mesh != nullptr);
+
+    Array<BoutReal> data{mesh->LocalNx * mesh->LocalNy};
     expr.evaluate(&data[0]);
     return data;
   }
