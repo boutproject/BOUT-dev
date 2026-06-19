@@ -2,16 +2,16 @@
  * Defines a macro ASSERT which throws a BoutException if a given
  * condition is false. Whether the assertion is tested depends on
  * the checking level, so assetions can be removed for optimised runs.
- * 
+ *
  * ASSERT<level> ( condition )
  *
  *   level     - An integer known at compile time.
  *               condition tested if level >= CHECK
  *
  *   condition - The expression to test
- * 
+ *
  * e.g. ASSERT2( condition ) will only test condition if CHECK >= 2
- * 
+ *
  */
 
 #ifndef BOUT_ASSERT_H

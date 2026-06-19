@@ -137,7 +137,7 @@ private:
 /// to create variables which shadow the class members.
 ///
 #define BOUT_FOR_RAJA(index, region, ...) \
-RajaForAll(region) << [ =, ##__VA_ARGS__ ] RAJA_DEVICE(int index) mutable
+  RajaForAll(region) << [ =, ##__VA_ARGS__ ] RAJA_DEVICE(int index) mutable
 
 #else // BOUT_HAS_RAJA
 
