@@ -40,10 +40,13 @@
 
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/globals.hxx"
 #include "bout/monitor.hxx"
 #include "bout/options.hxx"
+#include "bout/regions.hxx"
 #include "bout/unused.hxx"
 
+#include <iterator>
 #include <memory>
 
 ///////////////////////////////////////////////////////////////////
@@ -92,8 +95,8 @@ constexpr auto SOLVERIMEXBDF2 = "imexbdf2";
 constexpr auto SOLVERSNES = "snes";
 constexpr auto SOLVERRKGENERIC = "rkgeneric";
 
-enum class FieldCategories { VARS, DERIVS, MMS };
-enum class SOLVER_VAR_OP { LOAD, SET_ID, SAVE };
+enum class FieldCategories : std::uint8_t { VARS, DERIVS, MMS };
+enum class SOLVER_VAR_OP : std::uint8_t { LOAD, SET_ID, SAVE };
 
 /// A type to set where in the list monitors are added
 enum class MonitorPosition { BACK, FRONT };
@@ -635,7 +638,7 @@ protected:
   void loop_vars(RangeF2D f2d_range, RangeF3D f3d_range, BoutReal* udata,
                  SOLVER_VAR_OP op) {
     // Use global mesh: FIX THIS!
-    Mesh* mesh = bout::globals::mesh;
+    const Mesh* mesh = bout::globals::mesh;
 
     int p = 0; // Counter for location in udata array
 
@@ -719,9 +722,9 @@ private:
  * Is the interleaving of variables needed or helpful to the solver?
  **************************************************************************/
     // Use global mesh: FIX THIS!
-    Mesh* mesh = bout::globals::mesh;
+    const Mesh* mesh = bout::globals::mesh;
 
-    int nz = mesh->LocalNz;
+    const int nz = mesh->LocalNz;
 
     switch (op) {
     case SOLVER_VAR_OP::LOAD: {

@@ -885,15 +885,16 @@ PetscErrorCode SNESSolver::rescale(int& saved_jacobian_lag) {
   // Individual variable scaling
   // Note: If variables are rescaled then the Jacobian columns
   //       need to be scaled or recalculated
-  int istart, iend;
+  int istart = 0;
+  int iend = 0;
   VecGetOwnershipRange(snes_x, &istart, &iend);
 
   // Take ownership of snes_x and var_scaling_factors data
   PetscScalar* snes_x_data = nullptr;
   PetscCall(VecGetArray(snes_x, &snes_x_data));
-  PetscScalar* x1_data;
+  PetscScalar* x1_data = nullptr;
   PetscCall(VecGetArray(x1, &x1_data));
-  PetscScalar* var_scaling_factors_data;
+  PetscScalar* var_scaling_factors_data = nullptr;
   PetscCall(VecGetArray(var_scaling_factors, &var_scaling_factors_data));
 
   // Normalise each value in the state
@@ -901,8 +902,7 @@ PetscErrorCode SNESSolver::rescale(int& saved_jacobian_lag) {
   for (int i = 0; i < iend - istart; ++i) {
     const PetscScalar norm =
         BOUTMAX(std::abs(snes_x_data[i]), rtol / var_scaling_factors_data[i]);
-    snes_x_data[i] /=
-        norm;
+    snes_x_data[i] /= norm;
     x1_data[i] /= norm; // Update history for predictor
     var_scaling_factors_data[i] *= norm;
   }
@@ -914,7 +914,8 @@ PetscErrorCode SNESSolver::rescale(int& saved_jacobian_lag) {
 
   if (diagnose) {
     // Print maximum and minimum scaling factors
-    PetscReal max_scale, min_scale;
+    PetscReal max_scale = 0.;
+    PetscReal min_scale = 0.;
     VecMax(var_scaling_factors, nullptr, &max_scale);
     VecMin(var_scaling_factors, nullptr, &min_scale);
     output.write("Var scaling: {} -> {}\n", min_scale, max_scale);
@@ -922,6 +923,10 @@ PetscErrorCode SNESSolver::rescale(int& saved_jacobian_lag) {
 
   // Force recalculation of the Jacobian
   SNESGetLagJacobian(snes, &saved_jacobian_lag);
+  // FIXME: This isn't actually what we want to happen. The lag should
+  // stay as before, we just want to make sure the Jacobian gets
+  // re-evaluated at the start of the solve. We need to use
+  // SNESSetJacobianPersist for that.
   SNESSetLagJacobian(snes, 1);
   return PETSC_SUCCESS;
 }
@@ -945,8 +950,8 @@ int SNESSolver::run() {
     PetscCall(VecRestoreArray(snes_x, &xdata));
   }
 
+  int saved_jacobian_lag = 0;
   if (scale_vars) {
-    int saved_jacobian_lag;
     PetscCall(rescale(saved_jacobian_lag));
   }
 
@@ -973,8 +978,6 @@ int SNESSolver::run() {
 
     bool looping = true;
     int snes_failures = 0; // Count SNES convergence failures
-    int saved_jacobian_lag = 0;
-    PetscBool saved_jacobian_persist = PETSC_FALSE;
 
     const BoutReal start_global_residual = global_residual;
     do {
@@ -1347,7 +1350,7 @@ int SNESSolver::run() {
     }
 
     if (diagnose) {
-      BoutReal* resid_data;
+      BoutReal* resid_data = nullptr;
       PetscCall(VecGetArray(output_f, &resid_data));
       loop_vars(resid_2d, resid_3d, resid_data, SOLVER_VAR_OP::LOAD);
       PetscCall(VecRestoreArray(output_f, &resid_data));
@@ -1789,7 +1792,7 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
     // if (scale_vars) {
     //   VecPointwiseMult(delta_x, delta_x, var_scaling_factors);
     // }
-    VecAXPY(f, -1. / dt, delta_x);  // f <- f - delta_x / dt
+    VecAXPY(f, -1. / dt, delta_x); // f <- f - delta_x / dt
     break;
   }
   case BoutSnesEquationForm::pseudo_transient: {

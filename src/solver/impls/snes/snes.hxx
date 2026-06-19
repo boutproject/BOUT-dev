@@ -35,6 +35,8 @@
 
 class SNESSolver;
 
+#include <vector>
+
 #include "mpi.h"
 
 #include <bout/bout_enum_class.hxx>
@@ -223,10 +225,10 @@ private:
   PetscLib lib; ///< Handles initialising, finalising PETSc
   Vec snes_f;   ///< Used by SNES to store function
   Vec deriv; ///< Time derivative; only used if diagnose = true, otherwise will store in snes_f
-  Vec snes_x;   ///< Result of SNES
-  Vec x0;       ///< Solution at start of current timestep
-  Vec f0; ///< Residual at start of current timestep (only stored if diagnose = true)
-  Vec delta_x;  ///< Change in solution
+  Vec snes_x;  ///< Result of SNES
+  Vec x0;      ///< Solution at start of current timestep
+  Vec f0;      ///< Residual at start of current timestep (only stored if diagnose = true)
+  Vec delta_x; ///< Change in solution
   Vec output_x; ///< Solution to output. Used if interpolating.
   Vec output_f; ///< Residual to output, if diagnose == true. Used if interpolating.
 
@@ -252,7 +254,7 @@ private:
   bool matrix_free_operator; ///< Use matrix free Jacobian in the operator?
   int lag_jacobian;          ///< Re-use Jacobian
   bool jacobian_persists; ///< Re-use Jacobian and preconditioner across nonlinear solves
-  bool use_coloring;         ///< Use matrix coloring
+  bool use_coloring;      ///< Use matrix coloring
 
   bool jacobian_recalculated; ///< Flag set when Jacobian is recalculated
   bool prune_jacobian;        ///< Remove small elements in the Jacobian?
@@ -266,8 +268,8 @@ private:
   Vec rhs_scaling_factors; ///< Factors to multiply RHS function
   Vec jac_row_inv_norms;   ///< 1 / Norm of the rows of the Jacobian
 
-  bool scale_vars;         ///< Scale individual variables?
-  int rescale_period;      ///< How many time-steps before rescaling variables
+  bool scale_vars;    ///< Scale individual variables?
+  int rescale_period; ///< How many time-steps before rescaling variables
   BoutReal
       rescale_threshold; //< How much change in the state there should be before rescaling
   Vec var_scaling_factors; ///< Factors to multiply variables when passing to user
