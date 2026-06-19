@@ -632,12 +632,14 @@ SNESSolver::SNESSolver(Options* opts)
       scale_vars((*options)["scale_vars"]
                      .doc("Scale variables (Jacobian column scaling)?")
                      .withDefault<bool>(false)),
-      rescale_period((*options)["rescale_period"]
-                         .doc("Number of iterations before recalculating variable scaling")
-                     .withDefault<int>(30)),
+      rescale_period(
+          (*options)["rescale_period"]
+              .doc("Number of iterations before recalculating variable scaling")
+              .withDefault<int>(30)),
       rescale_threshold((*options)["rescale_threshold"]
-                         .doc("How much change their should be in the norm of the state, before rescaling")
-                     .withDefault<BoutReal>(100.)),
+                            .doc("How much change their should be in the norm of the "
+                                 "state, before rescaling")
+                            .withDefault<BoutReal>(100.)),
       asinh_vars((*options)["asinh_vars"]
                      .doc("Apply asinh() to all variables?")
                      .withDefault<bool>(false)) {}
@@ -663,10 +665,10 @@ int SNESSolver::init() {
 
   // Initialise fields for storing residual of nonlinear solves
   if (diagnose) {
-    for (const auto& f: f2d) {
+    for (const auto& f : f2d) {
       resid_2d.emplace_back(emptyFrom(*f.var));
     }
-    for (const auto& f: f3d) {
+    for (const auto& f : f3d) {
       resid_3d.emplace_back(emptyFrom(*f.var));
     }
   }
@@ -880,53 +882,48 @@ int SNESSolver::init() {
 }
 
 PetscErrorCode SNESSolver::rescale(int& saved_jacobian_lag) {
-        // Individual variable scaling
-        // Note: If variables are rescaled then the Jacobian columns
-        //       need to be scaled or recalculated
-          int istart, iend;
-          VecGetOwnershipRange(snes_x, &istart, &iend);
+  // Individual variable scaling
+  // Note: If variables are rescaled then the Jacobian columns
+  //       need to be scaled or recalculated
+  int istart, iend;
+  VecGetOwnershipRange(snes_x, &istart, &iend);
 
-          // Take ownership of snes_x and var_scaling_factors data
-          PetscScalar* snes_x_data = nullptr;
-          PetscCall(VecGetArray(snes_x, &snes_x_data));
-          PetscScalar* x1_data;
-          PetscCall(VecGetArray(x1, &x1_data));
-          PetscScalar* var_scaling_factors_data;
-          PetscCall(VecGetArray(var_scaling_factors, &var_scaling_factors_data));
+  // Take ownership of snes_x and var_scaling_factors data
+  PetscScalar* snes_x_data = nullptr;
+  PetscCall(VecGetArray(snes_x, &snes_x_data));
+  PetscScalar* x1_data;
+  PetscCall(VecGetArray(x1, &x1_data));
+  PetscScalar* var_scaling_factors_data;
+  PetscCall(VecGetArray(var_scaling_factors, &var_scaling_factors_data));
 
-          // Normalise each value in the state
-          // Limit normalisation so scaling factor is never smaller than rtol
-          // NOTE: The normalisation value is being progressively updated, hence why we multiply var_scaling_scaling_factors by the new norm
-          for (int i = 0; i < iend - istart; ++i) {
-            // THIS LOOKS LIKE IT COULD INTRODUCE A SHARP DISCONTINUITY. COULD THAT BE A SOURCE OF NUMERICAL PROBLEMS? MAYBE, BUT NOTHING TOO SIGNIFICANT THOUGH
-            const PetscScalar norm =
-                BOUTMAX(std::abs(snes_x_data[i]), rtol / var_scaling_factors_data[i]);
-            snes_x_data[i] /= norm; // FIXME: Is this right? In most cases this means the variable is just 1. Yes, because this is just the guess for the next solution
-            x1_data[i] /= norm; // Update history for predictor
-            var_scaling_factors_data[i] *= norm;
-          }
+  // Normalise each value in the state
+  // Limit normalisation so scaling factor is never smaller than rtol
+  for (int i = 0; i < iend - istart; ++i) {
+    const PetscScalar norm =
+        BOUTMAX(std::abs(snes_x_data[i]), rtol / var_scaling_factors_data[i]);
+    snes_x_data[i] /=
+        norm;
+    x1_data[i] /= norm; // Update history for predictor
+    var_scaling_factors_data[i] *= norm;
+  }
 
-          // Restore vector underlying data
-          PetscCall(VecRestoreArray(var_scaling_factors, &var_scaling_factors_data));
-          PetscCall(VecRestoreArray(x1, &x1_data));
-          PetscCall(VecRestoreArray(snes_x, &snes_x_data));
+  // Restore vector underlying data
+  PetscCall(VecRestoreArray(var_scaling_factors, &var_scaling_factors_data));
+  PetscCall(VecRestoreArray(x1, &x1_data));
+  PetscCall(VecRestoreArray(snes_x, &snes_x_data));
 
-          if (diagnose) {
-            // Print maximum and minimum scaling factors
-            PetscReal max_scale, min_scale;
-            VecMax(var_scaling_factors, nullptr, &max_scale);
-            VecMin(var_scaling_factors, nullptr, &min_scale);
-            output.write("Var scaling: {} -> {}\n", min_scale, max_scale);
-          }
-          
-          // Force recalculation of the Jacobian
-          // TODO: Get my head around lagged jacobians so I can check if this is right
-          // SNESGetLagJacobianPersists(snes, saved_jacobian_persist);
-          // SNESSetLagJacobianPersists(snes, PETSC_FALSE);
+  if (diagnose) {
+    // Print maximum and minimum scaling factors
+    PetscReal max_scale, min_scale;
+    VecMax(var_scaling_factors, nullptr, &max_scale);
+    VecMin(var_scaling_factors, nullptr, &min_scale);
+    output.write("Var scaling: {} -> {}\n", min_scale, max_scale);
+  }
 
-          SNESGetLagJacobian(snes, &saved_jacobian_lag);
-          SNESSetLagJacobian(snes, 1);
-          return PETSC_SUCCESS;
+  // Force recalculation of the Jacobian
+  SNESGetLagJacobian(snes, &saved_jacobian_lag);
+  SNESSetLagJacobian(snes, 1);
+  return PETSC_SUCCESS;
 }
 
 int SNESSolver::run() {
@@ -965,12 +962,12 @@ int SNESSolver::run() {
   // If saving solver residuals, need to get initial value.
   if (diagnose) {
     snes_function(snes_x, snes_f, false);
-  }    
+  }
 
   BoutReal target = simtime;
-  BoutReal accumulated_change = 0.;
   recent_failure_rate = 0.0;
-  int loop_count = 0;
+  int steps_since_rescale = 0;
+  BoutReal change_since_rescale = 0.;
   for (int s = 1; s <= getNumberOutputSteps(); s++) {
     target += getOutputTimestep();
 
@@ -987,11 +984,12 @@ int SNESSolver::run() {
         break; // Could happen if step over multiple outputs
       }
 
-      //output.write("Accumulated change to state is: {}", accumulated_change);
-      if (scale_vars and (accumulated_change > rescale_threshold or loop_count == rescale_period)) {
+      if (scale_vars
+          and (change_since_rescale > rescale_threshold
+               or steps_since_rescale == rescale_period)) {
         PetscCall(rescale(saved_jacobian_lag));
-        accumulated_change = 0.;
-        loop_count = 0;
+        change_since_rescale = 0.;
+        steps_since_rescale = 0;
       }
 
       // Copy the state (snes_x) into initial values (x0)
@@ -1036,8 +1034,6 @@ int SNESSolver::run() {
             && simtime + dt >= target) {
           // Note: When the timestep is changed the preconditioner needs to be updated
           // => Step over the output time and interpolate if not matrix free
-
-          // FIXME: Is this the most appropriate thing to do when we're taking such massive timesteps?
 
           if (matrix_free) {
             // Ensure that the timestep goes to the next output time and then stops.
@@ -1126,9 +1122,9 @@ int SNESSolver::run() {
         // Restore state
         VecCopy(x0, snes_x);
         // FIXME: Not sure I need this
-        if (diagnose) {
-          VecCopy(f0, snes_f);
-        }
+        // if (diagnose) {
+        //   VecCopy(f0, snes_f);
+        // }
 
         // Recalculate the Jacobian
         if (jacobian_pruned and (snes_failures > 2) and (4 * lin_its > 3 * maxl)) {
@@ -1140,7 +1136,6 @@ int SNESSolver::run() {
           PetscCall(FDJrestoreFromPruning());
         }
 
-        // **** FIXME: Replace with booleans
         if (saved_jacobian_lag == 0) {
           // This triggers a Jacobian recalculation
           SNESGetLagJacobian(snes, &saved_jacobian_lag);
@@ -1161,7 +1156,6 @@ int SNESSolver::run() {
         continue; // Try again
       }
 
-        // **** FIXME: Replace with booleans
       if (saved_jacobian_lag != 0) {
         // Following successful step, reset Jacobian lag
         // to previous value
@@ -1213,8 +1207,7 @@ int SNESSolver::run() {
           PetscCall(VecRestoreArray(deriv, &fdata));
           // Forward Euler
           VecAXPY(snes_x, dt, deriv);
-        }
-        else {
+        } else {
           BoutReal* fdata = nullptr;
           PetscCall(VecGetArray(snes_f, &fdata));
           save_derivs(fdata);
@@ -1222,24 +1215,21 @@ int SNESSolver::run() {
           // Forward Euler
           VecAXPY(snes_x, dt, snes_f);
         }
-
       }
 
-        // int i;
-        // PetscReal norm, minval, maxval;
-        // PetscCall(VecNorm(snes_f, NORM_2, &norm));
-        // PetscCall(VecMin(snes_f, &i, &minval));
-        // PetscCall(VecMax(snes_f, &i, &maxval));
-        // output.write("Max, min, and norm of residual for SNES function: {}, {}, {}\n", maxval, minval, norm);
-
+      // int i;
+      // PetscReal norm, minval, maxval;
+      // PetscCall(VecNorm(snes_f, NORM_2, &norm));
+      // PetscCall(VecMin(snes_f, &i, &minval));
+      // PetscCall(VecMax(snes_f, &i, &maxval));
+      // output.write("Max, min, and norm of residual for SNES function: {}, {}, {}\n", maxval, minval, norm);
 
       simtime += dt;
 
       // Update local and global residuals
-      /// FIXME: This overwrites snes_f with the time derivs!
       PetscCall(updateResiduals(snes_x));
-      accumulated_change += global_residual * dt;
-      ++loop_count;
+      change_since_rescale += global_residual * dt;
+      ++steps_since_rescale;
 
       if (diagnose) {
         // Gather and print diagnostic information
@@ -1307,7 +1297,6 @@ int SNESSolver::run() {
       VecAXPBY(output_x, alpha, 1. - alpha, x0);
 
       if (diagnose) {
-        // FIXME: Is this a good approach to take here? It's not the *actual* residual of a solve this way.
         VecCopy(snes_f, output_f);
         VecAXPBY(output_f, alpha, 1 - alpha, f0);
       }
@@ -1326,7 +1315,6 @@ int SNESSolver::run() {
       // scaled_x <- output_x * var_scaling_factors
       PetscCall(VecPointwiseMult(scaled_x, output_x, var_scaling_factors));
     } else if (asinh_vars) {
-      // FIXME: scale_vars and asinh_vars aren't mutually exclusive, are they?
       PetscCall(VecCopy(output_x, scaled_x));
     } else {
       scaled_x = output_x;
@@ -1422,17 +1410,17 @@ PetscErrorCode SNESSolver::updateResiduals(Vec x) {
 
   const BoutReal* current_residual = nullptr;
   if (diagnose) {
-  // Call RHS function to get time derivatives
+    // Call RHS function to get time derivatives
     PetscCall(rhs_function(x, deriv, false));
 
-  // Reading the residual vectors
-  PetscCall(VecGetArrayRead(deriv, &current_residual));
+    // Reading the residual vectors
+    PetscCall(VecGetArrayRead(deriv, &current_residual));
   } else {
-  // Call RHS function to get time derivatives
-  PetscCall(rhs_function(x, snes_f, false));
+    // Call RHS function to get time derivatives
+    PetscCall(rhs_function(x, snes_f, false));
 
-  // Reading the residual vectors
-  PetscCall(VecGetArrayRead(snes_f, &current_residual));
+    // Reading the residual vectors
+    PetscCall(VecGetArrayRead(snes_f, &current_residual));
   }
 
   // Note: The ordering of quantities in the PETSc vectors
@@ -1502,7 +1490,7 @@ PetscErrorCode SNESSolver::updateResiduals(Vec x) {
   }
 
   if (diagnose) {
-  // Restore Vec data arrays
+    // Restore Vec data arrays
     PetscCall(VecRestoreArrayRead(deriv, &current_residual));
   } else {
     PetscCall(VecRestoreArrayRead(snes_f, &current_residual));

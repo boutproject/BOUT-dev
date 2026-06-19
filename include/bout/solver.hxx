@@ -394,8 +394,7 @@ protected:
 
   /// A structure for iterating over fields
   template <FieldCategories C, class T>
-  struct VarIterator 
-  {
+  struct VarIterator {
     using iterator_category = std::random_access_iterator_tag;
     using value_type = T;
     using pointer = T*;
@@ -407,46 +406,82 @@ protected:
 
     reference operator*() const {
       switch (C) {
-      case(FieldCategories::VARS):
+      case (FieldCategories::VARS):
         return *(it->var);
-      case(FieldCategories::DERIVS):
+      case (FieldCategories::DERIVS):
         return *(it->F_var);
-      case(FieldCategories::MMS):
+      case (FieldCategories::MMS):
         return *(it->MMS_err);
       }
     }
     pointer operator->() const {
       switch (C) {
-      case(FieldCategories::VARS):
+      case (FieldCategories::VARS):
         return it->var;
-      case(FieldCategories::DERIVS):
+      case (FieldCategories::DERIVS):
         return it->F_var;
-      case(FieldCategories::MMS):
+      case (FieldCategories::MMS):
         return it->MMS_err.get();
       }
     }
 
-    VarIterator& operator++() { it++; return *this; }
-    VarIterator operator++(int) { VarIterator tmp = *this; ++(*this); return tmp; }
-    VarIterator& operator+=(difference_type n) { it += n; return *this; }
+    VarIterator& operator++() {
+      it++;
+      return *this;
+    }
+    VarIterator operator++(int) {
+      VarIterator tmp = *this;
+      ++(*this);
+      return tmp;
+    }
+    VarIterator& operator+=(difference_type n) {
+      it += n;
+      return *this;
+    }
     VarIterator operator+(difference_type n) const { return VarIterator(it + n); }
-    friend VarIterator operator+(difference_type n, const VarIterator& a) { return VarIterator(n + a.it); }
+    friend VarIterator operator+(difference_type n, const VarIterator& a) {
+      return VarIterator(n + a.it);
+    }
 
-    VarIterator& operator--() { it--; return *this; }
-    VarIterator operator--(int) { VarIterator tmp = *this; --(*this); return tmp; }
-    VarIterator& operator-=(difference_type n) { it -= n; return *this; }
+    VarIterator& operator--() {
+      it--;
+      return *this;
+    }
+    VarIterator operator--(int) {
+      VarIterator tmp = *this;
+      --(*this);
+      return tmp;
+    }
+    VarIterator& operator-=(difference_type n) {
+      it -= n;
+      return *this;
+    }
     VarIterator operator-(difference_type n) const { return VarIterator(it - n); }
-    friend VarIterator operator-(difference_type n, const VarIterator& a) { return VarIterator(n - a.it); }
+    friend VarIterator operator-(difference_type n, const VarIterator& a) {
+      return VarIterator(n - a.it);
+    }
 
     difference_type operator-(const VarIterator& b) { return it - b.it; }
     reference operator[](difference_type n) { return *VarIterator(it[n]); }
-    
-    friend bool operator== (const VarIterator& a, const VarIterator& b) { return a.it == b.it; }
-    friend bool operator!= (const VarIterator& a, const VarIterator& b) { return a.it != b.it; }
-    friend bool operator< (const VarIterator& a, const VarIterator& b) { return a.it < b.it; }
-    friend bool operator> (const VarIterator& a, const VarIterator& b) { return a.it > b.it; }
-    friend bool operator<= (const VarIterator& a, const VarIterator& b) { return a.it <= b.it; }
-    friend bool operator>= (const VarIterator& a, const VarIterator& b) { return a.it >= b.it; }
+
+    friend bool operator==(const VarIterator& a, const VarIterator& b) {
+      return a.it == b.it;
+    }
+    friend bool operator!=(const VarIterator& a, const VarIterator& b) {
+      return a.it != b.it;
+    }
+    friend bool operator<(const VarIterator& a, const VarIterator& b) {
+      return a.it < b.it;
+    }
+    friend bool operator>(const VarIterator& a, const VarIterator& b) {
+      return a.it > b.it;
+    }
+    friend bool operator<=(const VarIterator& a, const VarIterator& b) {
+      return a.it <= b.it;
+    }
+    friend bool operator>=(const VarIterator& a, const VarIterator& b) {
+      return a.it >= b.it;
+    }
 
   private:
     underlying_iterator it;
@@ -459,12 +494,12 @@ protected:
     VarRange(std::vector<VarStr<T>>& vars) : _begin(vars.begin()), _end(vars.end()) {}
 
     iterator begin() const { return _begin; }
-    iterator end() const {return _end; }
+    iterator end() const { return _end; }
+
   private:
     iterator _begin, _end;
   };
 
-  
   /// Does \p var represent field \p name?
   template <class T>
   friend bool operator==(const VarStr<T>& var, const std::string& name) {
@@ -596,8 +631,9 @@ protected:
   /// Loop over variables (accessed by iterating the f2d_range and f3d_range
   /// arguments) and domain. Used for all data operations for
   /// consistency
-  template<class RangeF2D, class RangeF3D>
-  void loop_vars(RangeF2D f2d_range, RangeF3D f3d_range, BoutReal* udata, SOLVER_VAR_OP op) {
+  template <class RangeF2D, class RangeF3D>
+  void loop_vars(RangeF2D f2d_range, RangeF3D f3d_range, BoutReal* udata,
+                 SOLVER_VAR_OP op) {
     // Use global mesh: FIX THIS!
     Mesh* mesh = bout::globals::mesh;
 
@@ -613,7 +649,7 @@ protected:
       loop_vars_op(f2d_range, f3d_range, i2d, udata, p, op, false);
     }
   }
-  
+
 private:
   /// Generate a random UUID (version 4) and broadcast it to all processors
   std::string createRunID() const;
@@ -673,69 +709,55 @@ private:
   /// sets of fields (accessed using f2d_range and f3d_range), provided they
   /// are the same number, shape, size, etc. as the fields being
   /// solved for.
-  template<class RangeF2D, class RangeF3D>
-  void loop_vars_op(RangeF2D f2d_range, RangeF3D f3d_range, Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op, bool bndry) {
-/**************************************************************************
+  template <class RangeF2D, class RangeF3D>
+  void loop_vars_op(RangeF2D f2d_range, RangeF3D f3d_range, Ind2D i2d, BoutReal* udata,
+                    int& p, SOLVER_VAR_OP op, bool bndry) {
+    /**************************************************************************
  * Looping over variables
  *
  * NOTE: This part is very inefficient, and should be replaced ASAP
  * Is the interleaving of variables needed or helpful to the solver?
  **************************************************************************/
-  // Use global mesh: FIX THIS!
-  Mesh* mesh = bout::globals::mesh;
+    // Use global mesh: FIX THIS!
+    Mesh* mesh = bout::globals::mesh;
 
-  int nz = mesh->LocalNz;
+    int nz = mesh->LocalNz;
 
-  switch (op) {
-  case SOLVER_VAR_OP::LOAD: {
-    /// Load variables from IDA into BOUT++
+    switch (op) {
+    case SOLVER_VAR_OP::LOAD: {
+      /// Load variables from IDA into BOUT++
 
-    // Loop over 2D variables
-    auto metadata_it = f2d.begin();
-    for (auto& field : f2d_range) {
-      if (bndry && !metadata_it->evolve_bndry) {
-        continue;
-      }
-      field[i2d] = udata[p];
-      p++;
-      metadata_it++;
-    }
-
-    for (int jz = 0; jz < nz; jz++) {
-
-      auto metadata_it = f3d.begin();
-      // Loop over 3D variables
-      for (auto& field : f3d_range) {
+      // Loop over 2D variables
+      auto metadata_it = f2d.begin();
+      for (auto& field : f2d_range) {
         if (bndry && !metadata_it->evolve_bndry) {
           continue;
         }
-        field[field.getMesh()->ind2Dto3D(i2d, jz)] = udata[p];
+        field[i2d] = udata[p];
         p++;
         metadata_it++;
       }
-    }
-    break;
-  }
-  case SOLVER_VAR_OP::SET_ID: {
-    /// Set the type of equation (Differential or Algebraic)
 
-    // Loop over 2D variables
-    for (const auto& metadata : f2d) {
-      if (bndry && !metadata.evolve_bndry) {
-        continue;
+      for (int jz = 0; jz < nz; jz++) {
+
+        auto metadata_it = f3d.begin();
+        // Loop over 3D variables
+        for (auto& field : f3d_range) {
+          if (bndry && !metadata_it->evolve_bndry) {
+            continue;
+          }
+          field[field.getMesh()->ind2Dto3D(i2d, jz)] = udata[p];
+          p++;
+          metadata_it++;
+        }
       }
-      if (metadata.constraint) {
-        udata[p] = 0;
-      } else {
-        udata[p] = 1;
-      }
-      p++;
+      break;
     }
+    case SOLVER_VAR_OP::SET_ID: {
+      /// Set the type of equation (Differential or Algebraic)
 
-    for (int jz = 0; jz < nz; jz++) {
-
-      // Loop over 3D variables
-      for (const auto& metadata : f3d) {
+      // Loop over 2D variables
+      for (const auto& metadata : f2d) {
         if (bndry && !metadata.evolve_bndry) {
           continue;
         }
@@ -746,41 +768,56 @@ private:
         }
         p++;
       }
-    }
 
-    break;
-  }
-  case SOLVER_VAR_OP::SAVE: {
-    /// Save variables from BOUT++ into IDA (only used at start of simulation)
+      for (int jz = 0; jz < nz; jz++) {
 
-    // Loop over 2D variables
-    auto metadata_it = f2d.begin();
-    for (const auto& field : f2d_range) {
-      if (bndry && !metadata_it->evolve_bndry) {
-        continue;
+        // Loop over 3D variables
+        for (const auto& metadata : f3d) {
+          if (bndry && !metadata.evolve_bndry) {
+            continue;
+          }
+          if (metadata.constraint) {
+            udata[p] = 0;
+          } else {
+            udata[p] = 1;
+          }
+          p++;
+        }
       }
-      udata[p] = field[i2d];
-      p++;
-      metadata_it++;
+
+      break;
     }
+    case SOLVER_VAR_OP::SAVE: {
+      /// Save variables from BOUT++ into IDA (only used at start of simulation)
 
-    for (int jz = 0; jz < nz; jz++) {
-
-      auto metadata_it = f3d.begin();
-      // Loop over 3D variables
-      for (const auto& field : f3d_range) {
+      // Loop over 2D variables
+      auto metadata_it = f2d.begin();
+      for (const auto& field : f2d_range) {
         if (bndry && !metadata_it->evolve_bndry) {
           continue;
         }
-        udata[p] = field[field.getMesh()->ind2Dto3D(i2d, jz)];
+        udata[p] = field[i2d];
         p++;
         metadata_it++;
       }
+
+      for (int jz = 0; jz < nz; jz++) {
+
+        auto metadata_it = f3d.begin();
+        // Loop over 3D variables
+        for (const auto& field : f3d_range) {
+          if (bndry && !metadata_it->evolve_bndry) {
+            continue;
+          }
+          udata[p] = field[field.getMesh()->ind2Dto3D(i2d, jz)];
+          p++;
+          metadata_it++;
+        }
+      }
+      break;
     }
-    break;
+    }
   }
-  }
-}
 
   /// Check if a variable has already been added
   bool varAdded(const std::string& name);

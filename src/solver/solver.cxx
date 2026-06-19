@@ -1038,7 +1038,8 @@ void Solver::load_vars(BoutReal* udata) {
     f.var->setLocation(f.location);
   }
 
-  loop_vars(VarRange<FieldCategories::VARS, Field2D>(f2d), VarRange<FieldCategories::VARS, Field3D>(f3d), udata, SOLVER_VAR_OP::LOAD);
+  loop_vars(VarRange<FieldCategories::VARS, Field2D>(f2d),
+            VarRange<FieldCategories::VARS, Field3D>(f3d), udata, SOLVER_VAR_OP::LOAD);
 
   // Mark each vector as either co- or contra-variant
 
@@ -1060,7 +1061,8 @@ void Solver::load_derivs(BoutReal* udata) {
     f.F_var->setLocation(f.location);
   }
 
-  loop_vars(VarRange<FieldCategories::DERIVS, Field2D>(f2d), VarRange<FieldCategories::DERIVS, Field3D>(f3d), udata, SOLVER_VAR_OP::LOAD);
+  loop_vars(VarRange<FieldCategories::DERIVS, Field2D>(f2d),
+            VarRange<FieldCategories::DERIVS, Field3D>(f3d), udata, SOLVER_VAR_OP::LOAD);
 
   // Mark each vector as either co- or contra-variant
 
@@ -1102,7 +1104,8 @@ void Solver::save_vars(BoutReal* udata) {
     }
   }
 
-  loop_vars(VarRange<FieldCategories::VARS, Field2D>(f2d), VarRange<FieldCategories::VARS, Field3D>(f3d), udata, SOLVER_VAR_OP::SAVE);
+  loop_vars(VarRange<FieldCategories::VARS, Field2D>(f2d),
+            VarRange<FieldCategories::VARS, Field3D>(f3d), udata, SOLVER_VAR_OP::SAVE);
 }
 
 void Solver::save_derivs(BoutReal* dudata) {
@@ -1132,10 +1135,14 @@ void Solver::save_derivs(BoutReal* dudata) {
     }
   }
 
-  loop_vars(VarRange<FieldCategories::DERIVS, Field2D>(f2d), VarRange<FieldCategories::DERIVS, Field3D>(f3d), dudata, SOLVER_VAR_OP::SAVE);
+  loop_vars(VarRange<FieldCategories::DERIVS, Field2D>(f2d),
+            VarRange<FieldCategories::DERIVS, Field3D>(f3d), dudata, SOLVER_VAR_OP::SAVE);
 }
 
-void Solver::set_id(BoutReal* udata) { loop_vars(VarRange<FieldCategories::VARS, Field2D>(f2d), VarRange<FieldCategories::VARS, Field3D>(f3d), udata, SOLVER_VAR_OP::SET_ID); }
+void Solver::set_id(BoutReal* udata) {
+  loop_vars(VarRange<FieldCategories::VARS, Field2D>(f2d),
+            VarRange<FieldCategories::VARS, Field3D>(f3d), udata, SOLVER_VAR_OP::SET_ID);
+}
 
 Field3D Solver::globalIndex(int localStart) {
   // Use global mesh: FIX THIS!
