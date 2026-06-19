@@ -209,7 +209,11 @@ struct BinaryExpr {
   template <typename IndType>
   BOUT_HOST_DEVICE BOUT_FORCEINLINE auto operator[](const IndType& d) const
       -> decltype(d.ind, BoutReal{}) {
-    return operator()(d.ind);
+    if constexpr (std::is_same_v<ResT, Field2D>) {
+      return operator()(d.ind / d.nz);
+    } else {
+      return operator()(d.ind);
+    }
   }
   inline int regionIdx(int idx) const { return indices[idx]; }
 

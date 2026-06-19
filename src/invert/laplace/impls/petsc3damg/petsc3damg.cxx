@@ -4,9 +4,9 @@
  *                           Using PETSc Solvers
  *
  **************************************************************************
- * Copyright 2013 J. Buchanan, J.Omotani
+ * Copyright 2013 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
