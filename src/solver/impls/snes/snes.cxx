@@ -633,8 +633,11 @@ SNESSolver::SNESSolver(Options* opts)
                      .doc("Scale variables (Jacobian column scaling)?")
                      .withDefault<bool>(false)),
       rescale_period((*options)["rescale_period"]
-                         .doc("Number of timesteps before recalculating variabl secaling")
-                     .withDefault<int>(100)),
+                         .doc("Number of iterations before recalculating variable scaling")
+                     .withDefault<int>(30)),
+      rescale_threshold((*options)["rescale_threshold"]
+                         .doc("How much change their should be in the norm of the state, before rescaling")
+                     .withDefault<BoutReal>(100.)),
       asinh_vars((*options)["asinh_vars"]
                      .doc("Apply asinh() to all variables?")
                      .withDefault<bool>(false)) {}
@@ -965,7 +968,9 @@ int SNESSolver::run() {
   }    
 
   BoutReal target = simtime;
+  BoutReal accumulated_change = 0.;
   recent_failure_rate = 0.0;
+  int loop_count = 0;
   for (int s = 1; s <= getNumberOutputSteps(); s++) {
     target += getOutputTimestep();
 
@@ -973,7 +978,6 @@ int SNESSolver::run() {
     int snes_failures = 0; // Count SNES convergence failures
     int saved_jacobian_lag = 0;
     PetscBool saved_jacobian_persist = PETSC_FALSE;
-    int loop_count = 0;
 
     const BoutReal start_global_residual = global_residual;
     do {
@@ -983,10 +987,12 @@ int SNESSolver::run() {
         break; // Could happen if step over multiple outputs
       }
 
-      if (scale_vars and loop_count % rescale_period == 0 and (s > 0 or loop_count > 0)) {
+      //output.write("Accumulated change to state is: {}", accumulated_change);
+      if (scale_vars and (accumulated_change > rescale_threshold or loop_count == rescale_period)) {
         PetscCall(rescale(saved_jacobian_lag));
+        accumulated_change = 0.;
+        loop_count = 0;
       }
-      ++loop_count;
 
       // Copy the state (snes_x) into initial values (x0)
       VecCopy(snes_x, x0);
@@ -1232,6 +1238,8 @@ int SNESSolver::run() {
       // Update local and global residuals
       /// FIXME: This overwrites snes_f with the time derivs!
       PetscCall(updateResiduals(snes_x));
+      accumulated_change += global_residual * dt;
+      ++loop_count;
 
       if (diagnose) {
         // Gather and print diagnostic information

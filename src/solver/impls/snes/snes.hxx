@@ -268,6 +268,7 @@ private:
 
   bool scale_vars;         ///< Scale individual variables?
   int rescale_period;      ///< How many time-steps before rescaling variables
+  BoutReal rescale_threshold; //< How much change in the state there should be before rescaling
   Vec var_scaling_factors; ///< Factors to multiply variables when passing to user
   Vec scaled_x;            ///< The values passed to the user RHS
 
