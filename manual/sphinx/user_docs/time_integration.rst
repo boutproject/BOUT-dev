@@ -747,6 +747,34 @@ Setting ``solver:force_symmetric_coloring = true``, will make sure
 that the jacobian colouring matrix is symmetric.  This will often
 include a few extra non-zeros that the stencil will miss otherwise
 
+
+Variable Scaling
+~~~~~~~~~~~~~~~~
+
+There may be differences of many orders of magnitude between your
+variables or within variables across the domain. This can result in a
+particular area of the domain for a particular variable dominating the
+residual in the nonlinear solve because its residual has the largest
+absolute value, even if not the largest relative value. As a
+consequence, tighter tolerances will be needed to ensure other
+variables and parts of the domain are solved to sufficient
+accuracy. The ``scale_vars`` option can help address this by
+renormalising all variables to be of order unity across the entire
+domain.
+
+.. code-block:: ini
+
+   scale_vars = true
+   rescale_period = 30  # Maximum number of time-steps taken before rescaling the variables
+   rescale_threshold = 100.  # Approximate overall change to variables permitted before rescaling
+
+It has been found that scaling variables in this way allows
+simulations to run with much looser tolerances than would otherwise be
+possible (e.g., ``rtol = 1e-5`` and ``atol = 1e-3``). Four-times
+speedups have been observed by doing this. Once a steady-state has
+been reached the simulation can be run for a further few time-steps
+with tighter tolerances to improve the accuracy.
+
 Diagnostics and Monitoring
 ---------------------------
 
@@ -764,6 +792,10 @@ When ``equation_form = pseudo_transient``, the solver saves additional diagnosti
 
 These can be visualized to understand convergence behavior and identify
 problematic regions.
+
+The residuals from the last nonlinear solve are also saved with names
+``resid_<var name>``. Plotting these can help to understand which
+variables and parts of the domain are controlling convergence.
 
 Summary of solver options
 ~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -630,7 +630,7 @@ SNESSolver::SNESSolver(Options* opts)
                     .doc("Scale time derivatives (Jacobian row scaling)?")
                     .withDefault<bool>(false)),
       scale_vars((*options)["scale_vars"]
-                     .doc("Scale variables (Jacobian column scaling)?")
+                     .doc("Scale variables to be order unity?")
                      .withDefault<bool>(false)),
       rescale_period(
           (*options)["rescale_period"]
