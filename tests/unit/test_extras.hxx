@@ -14,6 +14,7 @@
 #include "bout/field.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
+#include "bout/fieldops.hxx"
 #include "bout/fieldperp.hxx"
 #include "bout/region.hxx"
 
