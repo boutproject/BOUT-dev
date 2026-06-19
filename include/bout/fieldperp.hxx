@@ -23,24 +23,27 @@
  *
  **************************************************************************/
 
-#include <cstddef>
-#include <optional>
-#include <vector>
 class FieldPerp;
 
 #ifndef BOUT_FIELDPERP_H
 #define BOUT_FIELDPERP_H
 
-#include "bout/field.hxx"
-
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/build_config.hxx"
+#include "bout/field.hxx"
+#include "bout/fieldops.hxx"
 #include "bout/region.hxx"
-
 #include "bout/unused.hxx"
+#include "bout/utils.hxx"
 
+#include <cstddef>
+#include <optional>
 #include <ostream>
 #include <string>
+#include <type_traits>
+#include <vector>
 
 class Field2D; // #include "bout/field2d.hxx"
 class Field3D; // #include "bout/field3d.hxx"
@@ -230,7 +233,7 @@ public:
                           jx, jz, nx, nz);
     }
 #endif
-    return data[jx * nz + jz];
+    return data[(jx * nz) + jz];
   }
 
   /*!
@@ -247,7 +250,7 @@ public:
                           jx, jz, nx, nz);
     }
 #endif
-    return data[jx * nz + jz];
+    return data[(jx * nz) + jz];
   }
 
   /*!

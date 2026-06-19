@@ -3,12 +3,16 @@
 #define BOUT_FIELDOPS_HXX
 
 #include "bout/array.hxx"
+#include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
+#include "bout/region.hxx"
 
+#include <cstddef>
 #include <limits>
 #include <optional>
 #include <type_traits>
-#include <vector>
 
 #if BOUT_HAS_CUDA
 #include <cuda_runtime.h>
@@ -197,12 +201,6 @@ template <typename Expr>
 __global__ void __launch_bounds__(THREADS) evaluatorExpr(BoutReal* out, const Expr expr) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   int e = expr.size();
-
-  // In-bounds version
-  //if (tid < e) {
-  //  int idx = expr.regionIdx(tid);
-  //  out[idx] = expr(idx); // single‐pass fusion
-  //}
 
   // Out-of-bounds version
   if (tid >= e) {

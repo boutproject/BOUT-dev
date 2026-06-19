@@ -18,9 +18,9 @@
  * =========
  *
  **************************************************************************
- * Copyright 2018 B.D.Dudson, M. Loiten, J. Omotani
+ * Copyright 2018 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, benjamin.dudson@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -274,9 +274,8 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
   delp2solver->setCoefC2(C2coef_DC);
 
   // Use this below to normalize error for relative error estimate
-  Field3D SQField = SQ(rhsOverD);
   BoutReal RMS_rhsOverD = sqrt(mean(
-      SQField, true,
+      SQ(rhsOverD), true,
       "RGN_NOBNDRY")); // use sqrt(mean(SQ)) to make sure we do not divide by zero at a point
 
   BoutReal error_rel = 1e20, error_abs = 1e20, last_error = error_abs;

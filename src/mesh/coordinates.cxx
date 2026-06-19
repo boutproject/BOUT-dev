@@ -546,8 +546,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
                                   transform.get());
 
     // Compare calculated and loaded values
-    const auto diff = J - Jcalc;
-    output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(diff)));
+    output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(J - Jcalc)));
 
     mesh->communicate_no_slices(J);
 
@@ -572,8 +571,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 
     Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y, false,
                                     transform.get());
-    FieldMetric diff = Bxy - Bcalc;
-    output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(diff)));
+    output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(Bxy - Bcalc)));
   }
 
   // Check Bxy
@@ -757,9 +755,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y, false,
                                     transform.get());
 
-      FieldMetric diff = J - Jcalc;
       // Compare calculated and loaded values
-      output_warn.write("\tMaximum difference in J is %e\n", max(abs(diff)));
+      output_warn.write("\tMaximum difference in J is %e\n", max(abs(J - Jcalc)));
 
       // Re-evaluate Bxy using new J
       Bxy = sqrt(g_22) / J;
@@ -783,9 +780,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     } else {
       Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y, false,
                                       transform.get());
-
-      FieldMetric diff = Bxy - Bcalc;
-      output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(diff)));
+      output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
     }
 
     // Check Bxy

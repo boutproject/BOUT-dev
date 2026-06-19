@@ -26,8 +26,18 @@
 #ifndef BOUT_INTERP_H
 #define BOUT_INTERP_H
 
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 #include "bout/mesh.hxx"
+#include "bout/msg_stack.hxx"
+#include "bout/region.hxx"
 #include "bout/stencils.hxx"
+
+#include <string>
+#include <type_traits>
 
 /// Perform interpolation between centre -> shifted or vice-versa
 /*!
@@ -56,14 +66,14 @@ inline BoutReal interp(const stencil& s) {
 */
 template <typename T>
 std::enable_if_t<bout::utils::is_Field2D_v<T> || bout::utils::is_Field3D_v<T>, const T>
-interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_ALL") {
+interp_to(const T& var, CELL_LOC loc, const std::string& region = "RGN_ALL") {
   static_assert(bout::utils::is_Field2D_v<T> || bout::utils::is_Field3D_v<T>,
                 "interp_to must be templated with one of Field2D or Field3D.");
   ASSERT1(loc != CELL_DEFAULT); // doesn't make sense to interplote to CELL_DEFAULT
 
   Mesh* fieldmesh = var.getMesh();
 
-  if ((loc != CELL_CENTRE) && (fieldmesh->StaggerGrids == false)) {
+  if ((loc != CELL_CENTRE) && !fieldmesh->StaggerGrids) {
     throw BoutException("Asked to interpolate, but StaggerGrids is disabled!");
   }
 
@@ -72,7 +82,7 @@ interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_ALL") {
     return var;
   }
 
-  // NOTE: invalidateGuards() is called in Field3D::alloctate() if the data
+  // NOTE: invalidateGuards() is called in Field3D::allocate() if the data
   // block is not already allocated, so will be called here if
   // region==RGN_NOBNDRY
   T result{emptyFrom(var).setLocation(loc)};
@@ -205,14 +215,14 @@ interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_ALL") {
 
 template <typename E>
 std::enable_if_t<is_expr_field3d_v<E> && !bout::utils::is_Field3D_v<E>, const Field3D>
-interp_to(const E& expr, CELL_LOC loc, const std::string rgn = "RGN_ALL") {
-  return interp_to(Field3D{expr}, loc, std::move(rgn));
+interp_to(const E& expr, CELL_LOC loc, const std::string& rgn = "RGN_ALL") {
+  return interp_to(Field3D{expr}, loc, rgn);
 }
 
 template <typename E>
 std::enable_if_t<is_expr_field2d_v<E> && !bout::utils::is_Field2D_v<E>, const Field2D>
-interp_to(const E& expr, CELL_LOC loc, const std::string rgn = "RGN_ALL") {
-  return interp_to(Field2D{expr}, loc, std::move(rgn));
+interp_to(const E& expr, CELL_LOC loc, const std::string& rgn = "RGN_ALL") {
+  return interp_to(Field2D{expr}, loc, rgn);
 }
 
 #endif // BOUT_INTERP_H
