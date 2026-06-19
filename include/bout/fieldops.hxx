@@ -5,9 +5,9 @@
 #include "bout/array.hxx"
 #include "bout/bout_types.hxx"
 
+#include <limits>
 #include <optional>
 #include <type_traits>
-#include <unordered_map>
 #include <vector>
 
 #if BOUT_HAS_CUDA
@@ -101,7 +101,90 @@ struct Div {
   }
 };
 }; // namespace op
+
+namespace reduce {
+
+struct MinState {
+  BoutReal value;
+};
+
+struct MaxState {
+  BoutReal value;
+};
+
+struct MeanState {
+  BoutReal sum;
+  int count;
+};
+
+struct Min {
+  using State = MinState;
+
+  BOUT_HOST_DEVICE static State identity() {
+    return {std::numeric_limits<BoutReal>::infinity()};
+  }
+  BOUT_HOST_DEVICE static void accumulate(State& state, BoutReal value) {
+    state.value = value < state.value ? value : state.value;
+  }
+  BOUT_HOST_DEVICE static void combine(State& state, const State& other) {
+    state.value = other.value < state.value ? other.value : state.value;
+  }
+  static BoutReal finalize(const State& state) { return state.value; }
+};
+
+struct Max {
+  using State = MaxState;
+
+  BOUT_HOST_DEVICE static State identity() {
+    return {-std::numeric_limits<BoutReal>::infinity()};
+  }
+  BOUT_HOST_DEVICE static void accumulate(State& state, BoutReal value) {
+    state.value = value > state.value ? value : state.value;
+  }
+  BOUT_HOST_DEVICE static void combine(State& state, const State& other) {
+    state.value = other.value > state.value ? other.value : state.value;
+  }
+  static BoutReal finalize(const State& state) { return state.value; }
+};
+
+struct Mean {
+  using State = MeanState;
+
+  BOUT_HOST_DEVICE static State identity() { return {0.0, 0}; }
+  BOUT_HOST_DEVICE static void accumulate(State& state, BoutReal value) {
+    state.sum += value;
+    state.count += 1;
+  }
+  BOUT_HOST_DEVICE static void combine(State& state, const State& other) {
+    state.sum += other.sum;
+    state.count += other.count;
+  }
+  static BoutReal finalize(const State& state) {
+    return state.sum / static_cast<BoutReal>(state.count);
+  }
+};
+
+} // namespace reduce
 }; // namespace bout
+
+template <typename ExprView>
+struct ReductionView {
+  ExprView expr;
+  const int* indices;
+  int num_indices;
+
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE int size() const { return num_indices; }
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal valueAtRegionPos(int idx) const {
+    return expr(indices[idx]);
+  }
+};
+
+template <typename ExprView>
+ReductionView<ExprView> makeReductionView(const ExprView& expr,
+                                          const Array<int>& indices) {
+  return ReductionView<ExprView>{expr, indices.size() > 0 ? &indices[0] : nullptr,
+                                 indices.size()};
+}
 
 #if BOUT_HAS_CUDA && defined(__CUDACC__)
 template <typename Expr>
@@ -129,9 +212,39 @@ __global__ void __launch_bounds__(THREADS) evaluatorExpr(BoutReal* out, const Ex
   //  out[idx] = expr(idx); // single‐pass fusion
   //}
 }
-#endif
 
-inline std::unordered_map<void*, Array<int>> regionIndicesCache;
+template <typename Reducer, typename ExprView>
+__global__ void __launch_bounds__(THREADS)
+    reducerExpr(typename Reducer::State* partials, const ExprView expr) {
+  using State = typename Reducer::State;
+
+  __shared__ State shared[THREADS];
+
+  const int tid = threadIdx.x;
+  const int global = blockIdx.x * blockDim.x + tid;
+  const int stride = blockDim.x * gridDim.x;
+
+  State local = Reducer::identity();
+
+  for (int i = global; i < expr.size(); i += stride) {
+    Reducer::accumulate(local, expr.valueAtRegionPos(i));
+  }
+
+  shared[tid] = local;
+  __syncthreads();
+
+  for (int offset = blockDim.x / 2; offset > 0; offset /= 2) {
+    if (tid < offset) {
+      Reducer::combine(shared[tid], shared[tid + offset]);
+    }
+    __syncthreads();
+  }
+
+  if (tid == 0) {
+    partials[blockIdx.x] = shared[0];
+  }
+}
+#endif
 
 #if BOUT_HAS_CUDA && defined(__CUDACC__)
 struct StreamsRAII {
@@ -168,6 +281,36 @@ struct StreamsRAII {
 };
 inline struct StreamsRAII streams;
 #endif
+
+template <typename Reducer, typename ExprView>
+auto reduceExpr(const ExprView& expr_view) -> typename Reducer::State {
+  using State = typename Reducer::State;
+
+  ASSERT1(expr_view.size() > 0);
+
+#if BOUT_HAS_CUDA && defined(__CUDACC__)
+  cudaStream_t stream = streams.get();
+  int blocks = (expr_view.size() + THREADS - 1) / THREADS;
+  blocks = blocks < 1024 ? blocks : 1024;
+  Array<State> partials(blocks);
+
+  reducerExpr<Reducer><<<blocks, THREADS, 0, stream>>>(&partials[0], expr_view);
+  cudaStreamSynchronize(stream);
+  streams.put(stream);
+
+  State result = Reducer::identity();
+  for (int i = 0; i < blocks; ++i) {
+    Reducer::combine(result, partials[i]);
+  }
+  return result;
+#else
+  State result = Reducer::identity();
+  for (int i = 0; i < expr_view.size(); ++i) {
+    Reducer::accumulate(result, expr_view.valueAtRegionPos(i));
+  }
+  return result;
+#endif
+}
 
 template <typename ResT, typename L, typename R, typename Func>
 struct BinaryExpr {

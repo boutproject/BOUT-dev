@@ -368,7 +368,19 @@ inline BoutReal min(const T& f, bool allpe = false,
 template <typename ResT, typename L, typename R, typename Func>
 inline BoutReal min(const BinaryExpr<ResT, L, R, Func>& f, bool allpe = false,
                     const std::string& rgn = "RGN_NOBNDRY") {
-  return min(ResT{f}, allpe, rgn);
+  const auto& region = f.getMesh()->template getRegion<ResT>(rgn);
+  const auto reduction_view =
+      makeReductionView(static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),
+                        region.getLinearIndices());
+  BoutReal result =
+      bout::reduce::Min::finalize(reduceExpr<bout::reduce::Min>(reduction_view));
+
+  if (allpe) {
+    BoutReal localresult = result;
+    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MIN, BoutComm::get());
+  }
+
+  return result;
 }
 
 /// Returns true if all elements of \p f over \p region are equal. By
@@ -458,7 +470,19 @@ inline BoutReal max(const T& f, bool allpe = false,
 template <typename ResT, typename L, typename R, typename Func>
 inline BoutReal max(const BinaryExpr<ResT, L, R, Func>& f, bool allpe = false,
                     const std::string& rgn = "RGN_NOBNDRY") {
-  return max(ResT{f}, allpe, rgn);
+  const auto& region = f.getMesh()->template getRegion<ResT>(rgn);
+  const auto reduction_view =
+      makeReductionView(static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),
+                        region.getLinearIndices());
+  BoutReal result =
+      bout::reduce::Max::finalize(reduceExpr<bout::reduce::Max>(reduction_view));
+
+  if (allpe) {
+    BoutReal localresult = result;
+    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get());
+  }
+
+  return result;
 }
 
 /// Mean of \p f, excluding the boundary/guard cells by default (can
@@ -499,7 +523,20 @@ inline BoutReal mean(const T& f, bool allpe = false,
 template <typename ResT, typename L, typename R, typename Func>
 inline BoutReal mean(const BinaryExpr<ResT, L, R, Func>& f, bool allpe = false,
                      const std::string& rgn = "RGN_NOBNDRY") {
-  return mean(ResT{f}, allpe, rgn);
+  const auto& region = f.getMesh()->template getRegion<ResT>(rgn);
+  const auto reduction_view =
+      makeReductionView(static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),
+                        region.getLinearIndices());
+  auto state = reduceExpr<bout::reduce::Mean>(reduction_view);
+
+  if (allpe) {
+    BoutReal localsum = state.sum;
+    int localcount = state.count;
+    MPI_Allreduce(&localsum, &state.sum, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get());
+    MPI_Allreduce(&localcount, &state.count, 1, MPI_INT, MPI_SUM, BoutComm::get());
+  }
+
+  return bout::reduce::Mean::finalize(state);
 }
 
 /// Exponent: pow(lhs, lhs) is \p lhs raised to the power of \p rhs

@@ -2102,6 +2102,21 @@ TEST_F(Field3DTest, Min) {
   EXPECT_EQ(min(field, true, "RGN_ALL"), -99.0);
 }
 
+TEST_F(Field3DTest, MinBinaryExpr) {
+  Field3D field;
+
+  field = 50.0;
+  field(0, 0, 0) = -99.0;
+  field(1, 1, 1) = 60.0;
+  field(1, 2, 2) = 40.0;
+  field(2, 4, 3) = 99.0;
+
+  const auto expr = field / 2.0 - 5.0;
+
+  EXPECT_EQ(min(expr, false), 15.0);
+  EXPECT_EQ(min(expr, false, "RGN_ALL"), -54.5);
+}
+
 TEST_F(Field3DTest, Max) {
   Field3D field;
 
@@ -2117,6 +2132,21 @@ TEST_F(Field3DTest, Max) {
   EXPECT_EQ(max(field, false), max_value);
   EXPECT_EQ(max(field, false, "RGN_ALL"), 99.0);
   EXPECT_EQ(max(field, true, "RGN_ALL"), 99.0);
+}
+
+TEST_F(Field3DTest, MaxBinaryExpr) {
+  Field3D field;
+
+  field = 50.0;
+  field(0, 0, 0) = -99.0;
+  field(1, 1, 1) = 40.0;
+  field(1, 2, 2) = 60.0;
+  field(2, 4, 3) = 99.0;
+
+  const auto expr = field / 2.0 - 5.0;
+
+  EXPECT_EQ(max(expr, false), 25.0);
+  EXPECT_EQ(max(expr, false, "RGN_ALL"), 44.5);
 }
 
 TEST_F(Field3DTest, Mean) {
@@ -2136,6 +2166,24 @@ TEST_F(Field3DTest, Mean) {
   EXPECT_EQ(mean(field, false), mean_value_nobndry);
   EXPECT_EQ(mean(field, false, "RGN_ALL"), mean_value_all);
   EXPECT_EQ(mean(field, true, "RGN_ALL"), mean_value_all);
+}
+
+TEST_F(Field3DTest, MeanBinaryExpr) {
+  Field3D field;
+
+  field = 50.0;
+  field(0, 0, 0) = 1.0;
+  field(1, 1, 1) = 40.0;
+  field(1, 2, 2) = 60.0;
+  field(2, 4, 3) = 109.0;
+
+  const int npoints_all = nx * ny * nz;
+  const BoutReal mean_value_nobndry = 103.0;
+  const BoutReal mean_value_all = 103.0 + 20.0 / npoints_all;
+  const auto expr = field * 2.0 + 3.0;
+
+  EXPECT_EQ(mean(expr, false), mean_value_nobndry);
+  EXPECT_EQ(mean(expr, false, "RGN_ALL"), mean_value_all);
 }
 
 TEST_F(Field3DTest, DC) {

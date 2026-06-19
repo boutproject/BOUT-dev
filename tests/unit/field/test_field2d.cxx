@@ -1311,6 +1311,21 @@ TEST_F(Field2DTest, Min) {
   EXPECT_EQ(min(field, true, "RGN_ALL"), -99.0);
 }
 
+TEST_F(Field2DTest, MinBinaryExpr) {
+  Field2D field;
+
+  field = 50.0;
+  field(0, 0) = -99.0;
+  field(1, 1) = 60.0;
+  field(1, 2) = 40.0;
+  field(2, 4) = 99.0;
+
+  const auto expr = field / 2.0 - 5.0;
+
+  EXPECT_EQ(min(expr, false), 15.0);
+  EXPECT_EQ(min(expr, false, "RGN_ALL"), -54.5);
+}
+
 TEST_F(Field2DTest, Max) {
   Field2D field;
 
@@ -1326,6 +1341,21 @@ TEST_F(Field2DTest, Max) {
   EXPECT_EQ(max(field, false), max_value);
   EXPECT_EQ(max(field, false, "RGN_ALL"), 99.0);
   EXPECT_EQ(max(field, true, "RGN_ALL"), 99.0);
+}
+
+TEST_F(Field2DTest, MaxBinaryExpr) {
+  Field2D field;
+
+  field = 50.0;
+  field(0, 0) = -99.0;
+  field(1, 1) = 40.0;
+  field(1, 2) = 60.0;
+  field(2, 4) = 99.0;
+
+  const auto expr = field / 2.0 - 5.0;
+
+  EXPECT_EQ(max(expr, false), 25.0);
+  EXPECT_EQ(max(expr, false, "RGN_ALL"), 44.5);
 }
 
 TEST_F(Field2DTest, Swap) {

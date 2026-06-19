@@ -69,3 +69,16 @@ TEST_F(TestExtrasFieldExpr, BinaryExprCanBeIndexedWithRegionIndex) {
     EXPECT_DOUBLE_EQ(result[i], lhs[i] + 2.0 * rhs[i]);
   }
 }
+
+TEST_F(TestExtrasFieldExpr, Field2DBinaryExprCanBeIndexedWithInd3D) {
+  const Field2D lhs{
+      makeField<Field2D>([](const Ind2D& i) { return static_cast<BoutReal>(i.x()); })};
+  const Field2D rhs{
+      makeField<Field2D>([](const Ind2D& i) { return static_cast<BoutReal>(i.y()); })};
+
+  const auto expr = lhs + 2.0 * rhs;
+
+  BOUT_FOR(i, lhs.getMesh()->getRegion3D("RGN_ALL")) {
+    EXPECT_DOUBLE_EQ(expr[i], lhs[i] + 2.0 * rhs[i]);
+  }
+}
