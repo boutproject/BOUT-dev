@@ -644,8 +644,20 @@ class Field3DParallel;
     }                                                                                   \
   }                                                                                     \
   template <typename ResT, typename L, typename R, typename Func>                       \
-  inline auto name(const BinaryExpr<ResT, L, R, Func>& f,                               \
-                   const std::string& rgn = "RGN_ALL") {                                \
+  inline auto name(const BinaryExpr<ResT, L, R, Func>& f) {                             \
+    return BinaryExpr<ResT, BinaryExpr<ResT, L, R, Func>, BinaryExpr<ResT, L, R, Func>, \
+                      bout::op::name>{                                                  \
+        static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),                    \
+        static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),                    \
+        bout::op::name{},                                                               \
+        f.getMesh(),                                                                    \
+        f.getLocation(),                                                                \
+        f.getDirections(),                                                              \
+        f.getRegionID(),                                                                \
+        f.indices};                                                                     \
+  }                                                                                     \
+  template <typename ResT, typename L, typename R, typename Func>                       \
+  inline auto name(const BinaryExpr<ResT, L, R, Func>& f, const std::string& rgn) {     \
     return name(ResT{f}, rgn);                                                          \
   }
 #endif

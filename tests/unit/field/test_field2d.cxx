@@ -1195,6 +1195,19 @@ TEST_F(Field2DTest, Abs) {
   EXPECT_TRUE(IsFieldEqual(abs(field), 31.0));
 }
 
+TEST_F(Field2DTest, AbsExpressionUsesAbsOp) {
+  Field2D field;
+
+  field = -2.0;
+  const auto expr = field + 1.0;
+
+  EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(abs(expr))>,
+                              BinaryExpr<Field2D, std::decay_t<decltype(expr)>,
+                                         std::decay_t<decltype(expr)>, bout::op::abs>>));
+  EXPECT_TRUE(IsFieldEqual(abs(expr), 1.0));
+  EXPECT_TRUE(IsFieldEqual(abs(expr, "RGN_ALL"), 1.0));
+}
+
 TEST_F(Field2DTest, Exp) {
   Field2D field;
 
