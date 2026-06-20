@@ -1,5 +1,7 @@
 #include "bout/build_defines.hxx"
 
+#if BOUT_HAS_HYPRE
+
 #include <math.h>
 #include <tuple>
 
@@ -17,8 +19,6 @@
 #include "bout/mesh.hxx"
 #include "bout/options.hxx"
 #include "bout/vecops.hxx"
-
-#if BOUT_HAS_HYPRE
 
 #include "fake_mesh_fixture.hxx"
 
@@ -39,9 +39,9 @@ public:
   }
 
   const Field3D operator()(Field3D& f) {
-    auto result = d * Laplace_perp(f, CELL_DEFAULT, "free", "RGN_NOY")
-                  + (Grad(f) * Grad(c2) - DDY(c2) * DDY(f) / coords->g_22) / c1 + a * f
-                  + ex * DDX(f) + ez * DDZ(f);
+    Field3D result = d * Laplace_perp(f, CELL_DEFAULT, "free", "RGN_NOY")
+                     + (Grad(f) * Grad(c2) - DDY(c2) * DDY(f) / coords->g_22) / c1 + a * f
+                     + ex * DDX(f) + ez * DDZ(f);
     applyBoundaries(result, f);
     return result;
   }

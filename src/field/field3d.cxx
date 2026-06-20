@@ -51,6 +51,7 @@
 #include <bout/fft.hxx>
 #include <bout/field3d.hxx>
 #include <bout/interpolation.hxx>
+#include <bout/mesh.hxx>
 #include <bout/output.hxx>
 #include <bout/utils.hxx>
 
@@ -82,6 +83,38 @@ Field3D::Field3D(const Field3D& f)
     ny = fieldmesh->LocalNy;
     nz = fieldmesh->LocalNz;
   }
+}
+
+Field3D operator+(const Field2D& lhs, const Field3DParallel& rhs) {
+  return lhs + rhs.asField3D();
+}
+
+Field3D operator-(const Field2D& lhs, const Field3DParallel& rhs) {
+  return lhs - rhs.asField3D();
+}
+
+Field3D operator*(const Field2D& lhs, const Field3DParallel& rhs) {
+  return lhs * rhs.asField3D();
+}
+
+Field3D operator/(const Field2D& lhs, const Field3DParallel& rhs) {
+  return lhs / rhs.asField3D();
+}
+
+Field3D operator+(const Field3DParallel& lhs, const Field2D& rhs) {
+  return lhs.asField3D() + rhs;
+}
+
+Field3D operator-(const Field3DParallel& lhs, const Field2D& rhs) {
+  return lhs.asField3D() - rhs;
+}
+
+Field3D operator*(const Field3DParallel& lhs, const Field2D& rhs) {
+  return lhs.asField3D() * rhs;
+}
+
+Field3D operator/(const Field3DParallel& lhs, const Field2D& rhs) {
+  return lhs.asField3D() / rhs;
 }
 
 Field3D::Field3D(const Field2D& f) : Field(f) {
@@ -121,8 +154,6 @@ Field3D::Field3D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation
 
   ASSERT1(data.size() == nx * ny * nz);
 }
-
-Field3D::~Field3D() { delete deriv; }
 
 Field3D& Field3D::allocate() {
   if (data.empty()) {
@@ -276,27 +307,6 @@ Field3D& Field3D::operator=(const Field3D& rhs) {
   nz = rhs.nz;
 
   data = rhs.data;
-
-  return *this;
-}
-
-Field3D& Field3D::operator=(Field3D&& rhs) noexcept {
-  track(rhs, "operator=");
-
-  // Move parallel slices or delete existing ones.
-  yup_fields = std::move(rhs.yup_fields);
-  ydown_fields = std::move(rhs.ydown_fields);
-
-  // Move the data and data sizes
-  nx = rhs.nx;
-  ny = rhs.ny;
-  nz = rhs.nz;
-  regionID = rhs.regionID;
-
-  data = std::move(rhs.data);
-
-  // Move base slice last
-  Field::operator=(std::move(rhs));
 
   return *this;
 }
@@ -676,8 +686,6 @@ void Field3D::swapData(Field3D& other) { std::swap(data, other.data); }
  *               NON-MEMBER OVERLOADED OPERATORS
  ***************************************************************/
 
-Field3D operator-(const Field3D& f) { return -1.0 * f; }
-
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
 Field3D pow(const Field3D& lhs, const Field2D& rhs, const std::string& rgn) {
@@ -910,7 +918,8 @@ bool operator==(const Field3D& a, const Field3D& b) {
   if (!a.isAllocated() || !b.isAllocated()) {
     return false;
   }
-  return min(abs(a - b)) < 1e-10;
+  Field3D Sub = a - b;
+  return min(Sub) < 1e-10;
 }
 
 std::ostream& operator<<(std::ostream& out, const Field3D& value) {

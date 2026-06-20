@@ -2,9 +2,9 @@
  * Class for 2D X-Z slices
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -23,24 +23,27 @@
  *
  **************************************************************************/
 
-#include <cstddef>
-#include <optional>
-#include <vector>
 class FieldPerp;
 
 #ifndef BOUT_FIELDPERP_H
 #define BOUT_FIELDPERP_H
 
-#include "bout/field.hxx"
-
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/build_config.hxx"
+#include "bout/field.hxx"
+#include "bout/fieldops.hxx"
 #include "bout/region.hxx"
-
 #include "bout/unused.hxx"
+#include "bout/utils.hxx"
 
+#include <cstddef>
+#include <optional>
 #include <ostream>
 #include <string>
+#include <type_traits>
+#include <vector>
 
 class Field2D; // #include "bout/field2d.hxx"
 class Field3D; // #include "bout/field3d.hxx"
@@ -90,6 +93,15 @@ public:
             DirectionTypes directions_in = {YDirectionType::Standard,
                                             ZDirectionType::Standard});
 
+  template <
+      typename ResT, typename L, typename R, typename Func,
+      typename = std::enable_if_t<(is_expr_fieldperp_v<L> && is_expr_fieldperp_v<R>)
+                                  || (is_expr_constant_v<L> && is_expr_fieldperp_v<R>)
+                                  || (is_expr_fieldperp_v<L> && is_expr_constant_v<R>)>>
+  FieldPerp(const BinaryExpr<ResT, L, R, Func>& expr)
+      : FieldPerp(evaluateBinaryExpr(expr), expr.getMesh(), expr.getLocation(),
+                  expr.getIndex(), expr.getDirections()) {}
+
   ~FieldPerp() override = default;
 
   /*!
@@ -98,6 +110,21 @@ public:
   FieldPerp& operator=(const FieldPerp& rhs);
   FieldPerp& operator=(FieldPerp&& rhs) = default;
   FieldPerp& operator=(BoutReal rhs);
+  template <typename ResT, typename L, typename R, typename Func>
+  std::enable_if_t<is_expr_fieldperp_v<L> || is_expr_constant_v<L>, FieldPerp&>
+  operator=(const BinaryExpr<ResT, L, R, Func>& expr) {
+    if (!isAllocated() || getMesh() != expr.getMesh()) {
+      *this = FieldPerp{expr};
+      return *this;
+    }
+
+    setLocation(expr.getLocation());
+    setDirections(expr.getDirections());
+    setIndex(expr.getIndex());
+    allocate();
+    expr.evaluate(&data[0]);
+    return *this;
+  }
 
   /// Return a Region<IndPerp> reference to use to iterate over this field
   const Region<IndPerp>& getRegion(REGION region) const;
@@ -223,7 +250,7 @@ public:
                           jx, jz, nx, nz);
     }
 #endif
-    return data[jx * nz + jz];
+    return data[(jx * nz) + jz];
   }
 
   /*!
@@ -240,7 +267,7 @@ public:
                           jx, jz, nx, nz);
     }
 #endif
-    return data[jx * nz + jz];
+    return data[(jx * nz) + jz];
   }
 
   /*!
@@ -309,7 +336,37 @@ public:
 
   int size() const override { return nx * nz; };
 
+  struct View {
+    BoutReal* data;
+    int mul = 1;
+    int div = 1;
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx) const {
+      return data[(idx * mul) / div];
+    }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal& operator[](int idx) const {
+      return data[(idx * mul) / div];
+    }
+
+    View& setScale(int mul, int div) {
+      this->mul = mul;
+      this->div = div;
+      return *this;
+    }
+  };
+  operator View() { return View{&data[0]}; }
+  operator View() const { return View{const_cast<BoutReal*>(&data[0])}; }
+
 private:
+  template <typename ResT, typename L, typename R, typename Func>
+  static Array<BoutReal> evaluateBinaryExpr(const BinaryExpr<ResT, L, R, Func>& expr) {
+    const auto* mesh = expr.getMesh();
+    ASSERT1(mesh != nullptr);
+
+    Array<BoutReal> data{mesh->LocalNx * mesh->LocalNz};
+    expr.evaluate(&data[0]);
+    return data;
+  }
+
   /// The Y index at which this FieldPerp is defined
   int yindex{-1};
 
@@ -352,7 +409,18 @@ FieldPerp operator/(BoutReal lhs, const FieldPerp& rhs);
  * Unary minus. Returns the negative of given field,
  * iterates over whole domain including guard/boundary cells.
  */
-FieldPerp operator-(const FieldPerp& f);
+inline auto operator-(const FieldPerp& f) {
+  return BinaryExpr<FieldPerp, Constant<BoutReal>, FieldPerp, bout::op::Mul>{
+      static_cast<typename Constant<BoutReal>::View>(-1.0),
+      static_cast<FieldPerp::View>(f),
+      bout::op::Mul{},
+      f.getMesh(),
+      f.getLocation(),
+      f.getDirections(),
+      std::nullopt,
+      f.getRegion("RGN_ALL"),
+      f.getIndex()};
+}
 
 /// Create a FieldPerp by slicing a 3D field at a given y
 const FieldPerp sliceXZ(const Field3D& f, int y);
@@ -395,5 +463,14 @@ bool operator==(const FieldPerp& a, const FieldPerp& b);
 
 /// Output a string describing a FieldPerp to a stream
 std::ostream& operator<<(std::ostream& out, const FieldPerp& value);
+
+template <typename ResT, typename L, typename R, typename Fun>
+struct is_expr_fieldperp<BinaryExpr<ResT, L, R, Fun>>
+    : std::integral_constant<bool, (is_expr_fieldperp_v<std::decay_t<L>>
+                                    && is_expr_fieldperp_v<std::decay_t<R>>)
+                                       || (is_expr_constant_v<std::decay_t<L>>
+                                           && is_expr_fieldperp_v<std::decay_t<R>>)
+                                       || (is_expr_fieldperp_v<std::decay_t<L>>
+                                           && is_expr_constant_v<std::decay_t<R>>)> {};
 
 #endif
