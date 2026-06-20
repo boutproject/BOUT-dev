@@ -207,7 +207,7 @@ public:
     setRegion(expr.getRegionID());
   }
   /// Destructor
-  ~Field3D() override;
+  ~Field3D() override { delete deriv; }
 
   /// Data type stored in this field
   using value_type = BoutReal;
@@ -482,7 +482,26 @@ public:
   /// Assignment operators
   ///@{
   Field3D& operator=(const Field3D& rhs);
-  Field3D& operator=(Field3D&& rhs) noexcept;
+  Field3D& operator=(Field3D&& rhs) noexcept {
+    track(rhs, "operator=");
+
+    // Move parallel slices or delete existing ones.
+    yup_fields = std::move(rhs.yup_fields);
+    ydown_fields = std::move(rhs.ydown_fields);
+
+    // Move the data and data sizes
+    nx = rhs.nx;
+    ny = rhs.ny;
+    nz = rhs.nz;
+    regionID = rhs.regionID;
+
+    data = std::move(rhs.data);
+
+    // Move base slice last
+    Field::operator=(std::move(rhs));
+
+    return *this;
+  }
   Field3D& operator=(const Field2D& rhs);
   /// return void, as only part initialised
   void operator=(const FieldPerp& rhs);
@@ -859,7 +878,18 @@ Field3DParallel operator/(const Field3DParallel& lhs, BoutReal rhs);
  * Unary minus. Returns the negative of given field,
  * iterates over whole domain including guard/boundary cells.
  */
-inline auto operator-(const Field3D& f) { return -1.0 * f; }
+inline auto operator-(const Field3D& f) {
+  auto regionID = f.getRegionID();
+  return BinaryExpr<Field3D, Constant<BoutReal>, Field3D, bout::op::Mul>{
+      static_cast<typename Constant<BoutReal>::View>(-1.0),
+      static_cast<Field3D::View>(f),
+      bout::op::Mul{},
+      f.getMesh(),
+      f.getLocation(),
+      f.getDirections(),
+      regionID,
+      f.getRegion("RGN_ALL")};
+}
 
 // Non-member functions
 

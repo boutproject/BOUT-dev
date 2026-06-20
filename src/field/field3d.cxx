@@ -155,8 +155,6 @@ Field3D::Field3D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation
   ASSERT1(data.size() == nx * ny * nz);
 }
 
-Field3D::~Field3D() { delete deriv; }
-
 Field3D& Field3D::allocate() {
   if (data.empty()) {
     if (!fieldmesh) {
@@ -309,27 +307,6 @@ Field3D& Field3D::operator=(const Field3D& rhs) {
   nz = rhs.nz;
 
   data = rhs.data;
-
-  return *this;
-}
-
-Field3D& Field3D::operator=(Field3D&& rhs) noexcept {
-  track(rhs, "operator=");
-
-  // Move parallel slices or delete existing ones.
-  yup_fields = std::move(rhs.yup_fields);
-  ydown_fields = std::move(rhs.ydown_fields);
-
-  // Move the data and data sizes
-  nx = rhs.nx;
-  ny = rhs.ny;
-  nz = rhs.nz;
-  regionID = rhs.regionID;
-
-  data = std::move(rhs.data);
-
-  // Move base slice last
-  Field::operator=(std::move(rhs));
 
   return *this;
 }

@@ -538,7 +538,17 @@ auto if_else_zero(bool condition, const L& lhs) {
  * Unary minus. Returns the negative of given field,
  * iterates over whole domain including guard/boundary cells.
  */
-inline auto operator-(const Field2D& f) { return -1.0 * f; }
+inline auto operator-(const Field2D& f) {
+  return BinaryExpr<Field2D, Constant<BoutReal>, Field2D, bout::op::Mul>{
+      static_cast<typename Constant<BoutReal>::View>(-1.0),
+      static_cast<Field2D::View>(f),
+      bout::op::Mul{},
+      f.getMesh(),
+      f.getLocation(),
+      f.getDirections(),
+      std::nullopt,
+      f.getRegion("RGN_ALL")};
+}
 
 // Non-member functions
 

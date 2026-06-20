@@ -95,7 +95,9 @@ public:
 
   template <
       typename ResT, typename L, typename R, typename Func,
-      typename = std::enable_if_t<(is_expr_fieldperp_v<L> && is_expr_fieldperp_v<R>)>>
+      typename = std::enable_if_t<(is_expr_fieldperp_v<L> && is_expr_fieldperp_v<R>)
+                                  || (is_expr_constant_v<L> && is_expr_fieldperp_v<R>)
+                                  || (is_expr_fieldperp_v<L> && is_expr_constant_v<R>)>>
   FieldPerp(const BinaryExpr<ResT, L, R, Func>& expr)
       : FieldPerp(evaluateBinaryExpr(expr), expr.getMesh(), expr.getLocation(),
                   expr.getIndex(), expr.getDirections()) {}
@@ -109,7 +111,7 @@ public:
   FieldPerp& operator=(FieldPerp&& rhs) = default;
   FieldPerp& operator=(BoutReal rhs);
   template <typename ResT, typename L, typename R, typename Func>
-  std::enable_if_t<is_expr_fieldperp_v<L>, FieldPerp&>
+  std::enable_if_t<is_expr_fieldperp_v<L> || is_expr_constant_v<L>, FieldPerp&>
   operator=(const BinaryExpr<ResT, L, R, Func>& expr) {
     if (!isAllocated() || getMesh() != expr.getMesh()) {
       *this = FieldPerp{expr};
@@ -407,7 +409,18 @@ FieldPerp operator/(BoutReal lhs, const FieldPerp& rhs);
  * Unary minus. Returns the negative of given field,
  * iterates over whole domain including guard/boundary cells.
  */
-inline auto operator-(const FieldPerp& f) { return -1.0 * f; }
+inline auto operator-(const FieldPerp& f) {
+  return BinaryExpr<FieldPerp, Constant<BoutReal>, FieldPerp, bout::op::Mul>{
+      static_cast<typename Constant<BoutReal>::View>(-1.0),
+      static_cast<FieldPerp::View>(f),
+      bout::op::Mul{},
+      f.getMesh(),
+      f.getLocation(),
+      f.getDirections(),
+      std::nullopt,
+      f.getRegion("RGN_ALL"),
+      f.getIndex()};
+}
 
 /// Create a FieldPerp by slicing a 3D field at a given y
 const FieldPerp sliceXZ(const Field3D& f, int y);
@@ -453,7 +466,11 @@ std::ostream& operator<<(std::ostream& out, const FieldPerp& value);
 
 template <typename ResT, typename L, typename R, typename Fun>
 struct is_expr_fieldperp<BinaryExpr<ResT, L, R, Fun>>
-    : std::integral_constant<bool, is_expr_fieldperp_v<std::decay_t<L>>
-                                       && is_expr_fieldperp_v<std::decay_t<R>>> {};
+    : std::integral_constant<bool, (is_expr_fieldperp_v<std::decay_t<L>>
+                                    && is_expr_fieldperp_v<std::decay_t<R>>)
+                                       || (is_expr_constant_v<std::decay_t<L>>
+                                           && is_expr_fieldperp_v<std::decay_t<R>>)
+                                       || (is_expr_fieldperp_v<std::decay_t<L>>
+                                           && is_expr_constant_v<std::decay_t<R>>)> {};
 
 #endif
