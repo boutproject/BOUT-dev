@@ -410,22 +410,22 @@ protected:
     VarIterator(underlying_iterator _it) : it(std::move(_it)) {}
 
     reference operator*() const {
-      switch (C) {
-      case (FieldCategories::VARS):
+      if constexpr (C == FieldCategories::VARS) {
         return *(it->var);
-      case (FieldCategories::DERIVS):
+      } else if constexpr (C == FieldCategories::DERIVS) {
         return *(it->F_var);
-      case (FieldCategories::MMS):
+      } else {
+        static_assert(C == FieldCategories::MMS);
         return *(it->MMS_err);
       }
     }
     pointer operator->() const {
-      switch (C) {
-      case (FieldCategories::VARS):
+      if constexpr (C == FieldCategories::VARS) {
         return it->var;
-      case (FieldCategories::DERIVS):
+      } else if constexpr (C == FieldCategories::DERIVS) {
         return it->F_var;
-      case (FieldCategories::MMS):
+      } else {
+        static_assert(C == FieldCategories::MMS);
         return it->MMS_err.get();
       }
     }
