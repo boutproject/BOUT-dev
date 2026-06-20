@@ -1131,10 +1131,6 @@ int SNESSolver::run() {
         }
         // Restore state
         VecCopy(x0, snes_x);
-        // FIXME: Not sure I need this
-        // if (diagnose) {
-        //   VecCopy(f0, snes_f);
-        // }
 
         // Recalculate the Jacobian
         if (jacobian_pruned and (snes_failures > 2) and (4 * lin_its > 3 * maxl)) {
@@ -1232,13 +1228,6 @@ int SNESSolver::run() {
           VecAXPY(snes_x, dt, snes_f);
         }
       }
-
-      // int i;
-      // PetscReal norm, minval, maxval;
-      // PetscCall(VecNorm(snes_f, NORM_2, &norm));
-      // PetscCall(VecMin(snes_f, &i, &minval));
-      // PetscCall(VecMax(snes_f, &i, &maxval));
-      // output.write("Max, min, and norm of residual for SNES function: {}, {}, {}\n", maxval, minval, norm);
 
       simtime += dt;
 
@@ -1802,10 +1791,7 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
     // f = (x0 - x)/Δt + f
     // First calculate x - x0 to minimise floating point issues
     VecWAXPY(delta_x, -1.0, x0, x); // delta_x = x - x0
-    // if (scale_vars) {
-    //   VecPointwiseMult(delta_x, delta_x, var_scaling_factors);
-    // }
-    VecAXPY(f, -1. / dt, delta_x); // f <- f - delta_x / dt
+    VecAXPY(f, -1. / dt, delta_x);  // f <- f - delta_x / dt
     break;
   }
   case BoutSnesEquationForm::pseudo_transient: {
@@ -1813,9 +1799,6 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
     // except that Δt is a vector
     // f = (x0 - x)/Δt + f
     VecWAXPY(delta_x, -1.0, x0, x);
-    // if (scale_vars) {
-    //   VecPointwiseMult(delta_x, delta_x, var_scaling_factors);
-    // }
     VecPointwiseDivide(delta_x, delta_x, dt_vec); // delta_x /= dt
     VecAXPY(f, -1., delta_x);                     // f <- f - delta_x
     break;
@@ -1823,10 +1806,6 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
   case BoutSnesEquationForm::backward_euler: {
     // Backward Euler
     // Set f = x - x0 - Δt*f
-    // if (scale_vars) {
-    //   VecPointwiseMult(x, x, var_scaling_factors);
-    //   VecPointwiseMult(x0, x0, var_scaling_factors);
-    // }
     VecAYPX(f, -dt, x);   // f <- x - Δt*f
     VecAXPY(f, -1.0, x0); // f <- f - x0
     break;

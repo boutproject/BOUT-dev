@@ -718,11 +718,11 @@ private:
   void loop_vars_op(RangeF2D f2d_range, RangeF3D f3d_range, Ind2D i2d, BoutReal* udata,
                     int& p, SOLVER_VAR_OP op, bool bndry) {
     /**************************************************************************
- * Looping over variables
- *
- * NOTE: This part is very inefficient, and should be replaced ASAP
- * Is the interleaving of variables needed or helpful to the solver?
- **************************************************************************/
+     * Looping over variables
+     *
+     * NOTE: This part is very inefficient, and should be replaced ASAP
+     * Is the interleaving of variables needed or helpful to the solver?
+     **************************************************************************/
     // Use global mesh: FIX THIS!
     const Mesh* mesh = bout::globals::mesh;
 
