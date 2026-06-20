@@ -893,7 +893,10 @@ PetscErrorCode SNESSolver::rescale(int& saved_jacobian_lag) {
   PetscScalar* snes_x_data = nullptr;
   PetscCall(VecGetArray(snes_x, &snes_x_data));
   PetscScalar* x1_data = nullptr;
-  PetscCall(VecGetArray(x1, &x1_data));
+  if (predictor) {
+    // x1 is only allocated if predictor is enabled
+    PetscCall(VecGetArray(x1, &x1_data));
+  }
   PetscScalar* var_scaling_factors_data = nullptr;
   PetscCall(VecGetArray(var_scaling_factors, &var_scaling_factors_data));
 
@@ -903,13 +906,17 @@ PetscErrorCode SNESSolver::rescale(int& saved_jacobian_lag) {
     const PetscScalar norm =
         BOUTMAX(std::abs(snes_x_data[i]), rtol / var_scaling_factors_data[i]);
     snes_x_data[i] /= norm;
-    x1_data[i] /= norm; // Update history for predictor
+    if (predictor) {
+      x1_data[i] /= norm; // Update history for predictor
+    }
     var_scaling_factors_data[i] *= norm;
   }
 
   // Restore vector underlying data
   PetscCall(VecRestoreArray(var_scaling_factors, &var_scaling_factors_data));
-  PetscCall(VecRestoreArray(x1, &x1_data));
+  if (predictor) {
+    PetscCall(VecRestoreArray(x1, &x1_data));
+  }
   PetscCall(VecRestoreArray(snes_x, &snes_x_data));
 
   if (diagnose) {
