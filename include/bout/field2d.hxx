@@ -332,10 +332,10 @@ public:
     BoutReal* data;
     int mul = 1;
     int div = 1;
-    BOUT_HOST_DEVICE inline BoutReal operator()(int idx) const {
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx) const {
       return data[(idx * mul / div)];
     }
-    BOUT_HOST_DEVICE inline BoutReal& operator[](int idx) const {
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal& operator[](int idx) const {
       return data[(idx * mul) / div];
     }
 

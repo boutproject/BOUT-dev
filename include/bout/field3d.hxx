@@ -459,10 +459,10 @@ public:
     BoutReal* data;
     int mul = 1;
     int div = 1;
-    BOUT_HOST_DEVICE inline BoutReal operator()(int idx) const {
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx) const {
       return data[(idx * mul) / div];
     }
-    BOUT_HOST_DEVICE inline BoutReal& operator[](int idx) const {
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal& operator[](int idx) const {
       return data[(idx * mul) / div];
     }
 
@@ -1076,16 +1076,6 @@ inline Field3D& Field3D::operator+=(const Field3DParallel& rhs) {
 inline Field3D& Field3D::operator-=(const Field3DParallel& rhs) {
   return (*this) -= rhs.asField3D();
 }
-
-// A raw Field3D is an expression leaf
-template <>
-struct is_expr_field3d<Field3D> : std::true_type {};
-
-template <>
-struct is_expr_field3d<Field3DParallel> : std::true_type {};
-
-template <>
-struct is_expr_field2d<Field2D> : std::true_type {};
 
 template <typename ResT, typename L, typename R, typename Fun>
 struct is_expr_field3d<BinaryExpr<ResT, L, R, Fun>>

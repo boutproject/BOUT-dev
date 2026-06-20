@@ -338,10 +338,10 @@ public:
     BoutReal* data;
     int mul = 1;
     int div = 1;
-    BOUT_HOST_DEVICE inline BoutReal operator()(int idx) const {
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx) const {
       return data[(idx * mul) / div];
     }
-    BOUT_HOST_DEVICE inline BoutReal& operator[](int idx) const {
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal& operator[](int idx) const {
       return data[(idx * mul) / div];
     }
 
@@ -450,9 +450,6 @@ bool operator==(const FieldPerp& a, const FieldPerp& b);
 
 /// Output a string describing a FieldPerp to a stream
 std::ostream& operator<<(std::ostream& out, const FieldPerp& value);
-
-template <>
-struct is_expr_fieldperp<FieldPerp> : std::true_type {};
 
 template <typename ResT, typename L, typename R, typename Fun>
 struct is_expr_fieldperp<BinaryExpr<ResT, L, R, Fun>>

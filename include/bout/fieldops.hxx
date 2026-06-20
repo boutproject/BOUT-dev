@@ -20,11 +20,15 @@
 
 class Mesh;
 class Field3D;
+class Field3DParallel;
 class Field2D;
 class FieldPerp;
 
 template <typename T>
 struct is_expr_field2d : std::false_type {};
+
+template <>
+struct is_expr_field2d<Field2D> : std::true_type {};
 
 template <typename T>
 inline constexpr bool is_expr_field2d_v = is_expr_field2d<std::decay_t<T>>::value;
@@ -33,8 +37,17 @@ inline constexpr bool is_expr_field2d_v = is_expr_field2d<std::decay_t<T>>::valu
 template <typename T>
 struct is_expr_field3d : std::false_type {};
 
+template <>
+struct is_expr_field3d<Field3D> : std::true_type {};
+
+template <>
+struct is_expr_field3d<Field3DParallel> : std::true_type {};
+
 template <typename T>
 struct is_expr_fieldperp : std::false_type {};
+
+template <>
+struct is_expr_fieldperp<FieldPerp> : std::true_type {};
 
 template <typename T>
 inline constexpr bool is_expr_fieldperp_v = is_expr_fieldperp<std::decay_t<T>>::value;
@@ -346,8 +359,8 @@ struct BinaryExpr {
   BinaryExpr& operator=(const BinaryExpr&) = delete;
   BinaryExpr& operator=(BinaryExpr&&) = delete;
 
-  inline int size() const { return indices.size(); }
-  inline BoutReal operator()(int idx) const {
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE int size() const { return indices.size(); }
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx) const {
     return f(idx, lhs, rhs); // single‐pass fusion
   }
   template <typename IndType>
@@ -359,7 +372,7 @@ struct BinaryExpr {
       return operator()(d.ind);
     }
   }
-  inline int regionIdx(int idx) const { return indices[idx]; }
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE int regionIdx(int idx) const { return indices[idx]; }
 
   //operator ResT() { return ResT{*this}; }
   struct View {
