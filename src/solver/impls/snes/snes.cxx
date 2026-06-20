@@ -1215,6 +1215,9 @@ int SNESSolver::run() {
           PetscCall(VecGetArray(deriv, &ddata));
           save_derivs(ddata);
           PetscCall(VecRestoreArray(deriv, &ddata));
+          if (scale_vars) {
+            PetscCall(VecPointwiseDivide(deriv, deriv, var_scaling_factors));
+          }
           // Forward Euler
           VecAXPY(snes_x, dt, deriv);
         } else {
@@ -1222,6 +1225,9 @@ int SNESSolver::run() {
           PetscCall(VecGetArray(snes_f, &fdata));
           save_derivs(fdata);
           PetscCall(VecRestoreArray(snes_f, &fdata));
+          if (scale_vars) {
+            PetscCall(VecPointwiseDivide(snes_f, snes_f, var_scaling_factors));
+          }
           // Forward Euler
           VecAXPY(snes_x, dt, snes_f);
         }
