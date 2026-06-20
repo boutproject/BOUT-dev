@@ -52,7 +52,7 @@ msgstr "\t -> კარგი მნიშვნელობა\n"
 #, c++-format
 msgid ""
 "\t -> Leg region jyseps1_1+1 ({:d}) must be a multiple of MYSUB ({:d})\n"
-msgstr ""
+msgstr "\t -> რეგიონი Leg jyseps1_1+1 ({:d}) MYSUB-ის ({:d}) ნამრავლი უნდა იყოს\n"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:206
 #, c++-format
@@ -60,6 +60,8 @@ msgid ""
 "\t -> leg region jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) must be a "
 "multiple of MYSUB ({:d})\n"
 msgstr ""
+"\t -> რეგიონი leg jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) MYSUB-ის ({:d}) "
+"ნამრავლი უნდა იყოს\n"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:223
 #, c++-format
@@ -67,6 +69,8 @@ msgid ""
 "\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a multiple of "
 "MYSUB ({:d})\n"
 msgstr ""
+"\t -> რეგიონი leg ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) MYSUB-ის ({:d}) "
+"ნამრავლი უნდა იყოს\n"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:199
 #, c++-format
@@ -74,6 +78,8 @@ msgid ""
 "\t -> leg region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must be a "
 "multiple of MYSUB ({:d})\n"
 msgstr ""
+"\t -> რეგიონი leg ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) MYSUB-ის ({:d}) "
+"ნამრავლი უნდა იყოს\n"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:166
 #, c++-format
@@ -121,6 +127,8 @@ msgid ""
 "\tDomain split (NXPE={:d}, NYPE={:d}) into domains (localNx={:d}, "
 "localNy={:d})\n"
 msgstr ""
+"\tდომენი დაყოფილია (NXPE={:d}, NYPE={:d}) დომენებად (localNx={:d}, "
+"localNy={:d})\n"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:357
 #, c++-format
@@ -268,7 +276,7 @@ msgstr "\tnz წაკითხულია შეყვანილი ბა�
 
 #: ../src/mesh/mesh.cxx:249
 msgid "\tReading contravariant vector "
-msgstr "\tკოვარიანტული ვექტორის წაკითხვა "
+msgstr "\tკონტრავარიანტული ვექტორის წაკითხვა "
 
 #: ../src/mesh/mesh.cxx:242 ../src/mesh/mesh.cxx:263
 msgid "\tReading covariant vector "
@@ -397,6 +405,34 @@ msgid ""
 "\n"
 "{}"
 msgstr ""
+"\n"
+"აღმოჩენილია გამოუყენებელი შეყვანის პარამეტრები:\n"
+"-----\n"
+"{:i}\n"
+"-----\n"
+"შესაძლებელია, ზოგიერთი პარამეტრი შეცდომით გაქვთ აკრეფილი. BOUT++-ის "
+"შეყვანის არგუმენტები\n"
+"ახლა დიდ და პატარა ასოებს არჩევს და ზოგიერთ მათგანს სახელიც შეეცვალა. "
+"შეგიძლიათ გაუშვათ\n"
+"\n"
+"    <BOUT++ directory>/bin/bout-v5-input-file-upgrader.py {}/{}\n"
+"\n"
+"რათა ყველაზე გავრცელებული პრობლემები ავტომატურად გასწორდეს. თუ ზემოთ მოცემული "
+"პარამეტრები\n"
+"ზოგჯერ სხვა პარამეტრებზეა დამოკიდებული, შეგიძლიათ გამოიძახოთ\n"
+"`Options::setConditionallyUsed()`, მაგალითად:\n"
+"\n"
+"    Options::root()[\"{}\"].setConditionallyUsed();\n"
+"\n"
+"რათა მონაკვეთი ან მნიშვნელობა სხვა მნიშვნელობებზე დამოკიდებულად მონიშნოთ და ამ "
+"შემოწმებაში\n"
+"მისი იგნორირება მოხდეს. თუ დარწმუნებული ხართ, რომ ზემოთ მითითებული შეყვანები\n"
+"შეცდომა არაა, შეგიძლიათ დააყენოთ 'input:error_on_unused_options=false', რათა\n"
+"გამოუყენებელი პარამეტრების ეს შემოწმება გამოირთოს. ასევე ყოველთვის შეგიძლიათ\n"
+"'input:validate=true' დააყენოთ, რათა შეყვანები სრული სიმულაციის გაშვების "
+"გარეშე გადაამოწმოთ.\n"
+"\n"
+"{}"
 
 #: ../src/bout++.cxx:389
 #, c++-format
@@ -486,7 +522,7 @@ msgstr "ყველა გამოყენებული პარამე�
 #: ../src/bout++.cxx:535
 #, c++-format
 msgid "BOUT++ version {:s}\n"
-msgstr "BOUT++-ის მხარდაჭერა {:s}\n"
+msgstr "BOUT++ ვერსია {:s}\n"
 
 #: ../src/bout++.cxx:147
 msgid "Bad command line arguments:\n"
@@ -566,8 +602,7 @@ msgstr "წაკითხვის შეცდომა მთელი რი
 #. Failed . Probably not important enough to stop the simulation
 #: ../src/bout++.cxx:637
 msgid "Could not run bout-log-color. Make sure it is in your PATH\n"
-msgstr ""
-"bout-log-color-ის გაშვება შეუძლებელია. დარწმუნდით, რომ ის თქვენს PATH-შია\n"
+msgstr "bout-log-color-ის გაშვება შეუძლებელია. დარწმუნდით, რომ ის თქვენს PATH-შია\n"
 
 #: ../src/solver/solver.cxx:772
 #, c++-format
@@ -804,6 +839,8 @@ msgid ""
 "Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n"
 "\n"
 msgstr ""
+"სიმ. დრო | RHS გამოთვ. | კედლ. დრო | გამოთვ. ინვ. კავშ. I/O  ამომხს.\n"
+"\n"
 
 #: ../src/bout++.cxx:879
 msgid ""
@@ -811,6 +848,9 @@ msgid ""
 "Comm    I/O   SOLVER\n"
 "\n"
 msgstr ""
+"სიმ. დრო | RHS_e გამოთვ. | RHS_I გამოთვ. | კედლ. დრო | გამოთვ. ინვ. კავშ. "
+"I/O  ამომხს.\n"
+"\n"
 
 #: ../src/solver/solver.cxx:514
 #, c++-format
@@ -839,6 +879,8 @@ msgid ""
 "Time derivative at wrong location - Field is at {:s}, derivative is at {:s} "
 "for field '{:s}'\n"
 msgstr ""
+"დროითი წარმოებული არასწორ მდებარეობაზეა - ველი არის {:s}-ზე, წარმოებული კი "
+"{:s}-ზე ველისთვის '{:s}'\n"
 
 #: ../src/solver/solver.cxx:1494
 #, c++-format
@@ -868,16 +910,22 @@ msgid ""
 "This is likely the result of clashing input options, and you may have to "
 "rename one of them.\n"
 msgstr ""
+"მიმდინარეობს პარამეტრის '{0}' ინდექსაცია '{1}'-ით, მაგრამ '{0}' მნიშვნელობაა "
+"და არა სექცია.\n"
+"ეს, სავარაუდოდ, კონფლიქტური შეყვანის პარამეტრების შედეგია და შეიძლება ერთ-"
+"ერთის სახელის გადარქმევა დაგჭირდეთ.\n"
 
 #: ../src/mesh/coordinates.cxx:1464
 msgid ""
 "Unrecognised paralleltransform option.\n"
 "Valid choices are 'identity', 'shifted', 'fci'"
 msgstr ""
+"უცნობი პარამეტრია paralleltransform.\n"
+"დასაშვები მნიშვნელობებია 'identity', 'shifted', 'fci'"
 
 #: ../src/sys/options.cxx:899
 msgid "Unused options:\n"
-msgstr "გამოიყენებელი პარამეტრები:\n"
+msgstr "გამოუყენებელი პარამეტრები:\n"
 
 #: ../src/bout++.cxx:446
 #, c++-format
@@ -994,30 +1042,36 @@ msgid ""
 "WARNING: Number of toroidal points should be 2^n for efficient FFT "
 "performance -- consider changing MZ ({:d}) if using FFTs\n"
 msgstr ""
+"გაფრთხილება: FFT-ის ეფექტური წარმადობისთვის ტოროიდული წერტილების რაოდენობა "
+"უნდა იყოს 2^n -- თუ FFT-ებს იყენებთ, განიხილეთ MZ-ის ({:d}) შეცვლა\n"
 
 #: ../src/mesh/coordinates.cxx:635
 msgid "WARNING: extrapolating input mesh quantities into x-boundary cells\n"
-msgstr ""
+msgstr "გაფრთხილება: შეყვანილი ბადის სიდიდეები ექსტრაპოლირდება x-სასაზღვრო უჯრედებში\n"
 
 #: ../src/mesh/coordinates.cxx:412
 msgid ""
 "WARNING: extrapolating input mesh quantities into x-boundary cells. Set "
 "option extrapolate_x=false to disable this.\n"
 msgstr ""
+"გაფრთხილება: შეყვანილი ბადის სიდიდეები ექსტრაპოლირდება x-სასაზღვრო უჯრედებში. "
+"ამის გასათიშად დააყენეთ პარამეტრი extrapolate_x=false.\n"
 
 #: ../src/mesh/coordinates.cxx:640
 msgid "WARNING: extrapolating input mesh quantities into y-boundary cells\n"
-msgstr ""
+msgstr "გაფრთხილება: შეყვანილი ბადის სიდიდეები ექსტრაპოლირდება y-სასაზღვრო უჯრედებში\n"
 
 #: ../src/mesh/coordinates.cxx:417
 msgid ""
 "WARNING: extrapolating input mesh quantities into y-boundary cells. Set "
 "option extrapolate_y=false to disable this.\n"
 msgstr ""
+"გაფრთხილება: შეყვანილი ბადის სიდიდეები ექსტრაპოლირდება y-სასაზღვრო უჯრედებში. "
+"ამის გასათიშად დააყენეთ პარამეტრი extrapolate_y=false.\n"
 
 #: ../src/bout++.cxx:825
 msgid "Wall time limit in hours. By default (< 0), no limit"
-msgstr ""
+msgstr "კედლის დროის ზღვარი საათებში. ნაგულისხმევად (< 0) ზღვარი არ არსებობს"
 
 #: ../src/sys/optionsreader.cxx:42
 #, c++-format
