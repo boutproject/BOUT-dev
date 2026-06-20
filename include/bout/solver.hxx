@@ -735,12 +735,13 @@ private:
       // Loop over 2D variables
       auto metadata_it = f2d.begin();
       for (auto& field : f2d_range) {
-        if (bndry && !metadata_it->evolve_bndry) {
+        const auto& metadata = *metadata_it;
+        ++metadata_it;
+        if (bndry && !metadata.evolve_bndry) {
           continue;
         }
         field[i2d] = udata[p];
         p++;
-        metadata_it++;
       }
 
       for (int jz = 0; jz < nz; jz++) {
@@ -748,12 +749,13 @@ private:
         auto metadata_it = f3d.begin();
         // Loop over 3D variables
         for (auto& field : f3d_range) {
-          if (bndry && !metadata_it->evolve_bndry) {
+          const auto& metadata = *metadata_it;
+          ++metadata_it;
+          if (bndry && !metadata.evolve_bndry) {
             continue;
           }
           field[field.getMesh()->ind2Dto3D(i2d, jz)] = udata[p];
           p++;
-          metadata_it++;
         }
       }
       break;
@@ -798,12 +800,13 @@ private:
       // Loop over 2D variables
       auto metadata_it = f2d.begin();
       for (const auto& field : f2d_range) {
-        if (bndry && !metadata_it->evolve_bndry) {
+        const auto& metadata = *metadata_it;
+        ++metadata_it;
+        if (bndry && !metadata.evolve_bndry) {
           continue;
         }
         udata[p] = field[i2d];
         p++;
-        metadata_it++;
       }
 
       for (int jz = 0; jz < nz; jz++) {
@@ -811,12 +814,13 @@ private:
         auto metadata_it = f3d.begin();
         // Loop over 3D variables
         for (const auto& field : f3d_range) {
-          if (bndry && !metadata_it->evolve_bndry) {
+          const auto& metadata = *metadata_it;
+          ++metadata_it;
+          if (bndry && !metadata.evolve_bndry) {
             continue;
           }
           udata[p] = field[field.getMesh()->ind2Dto3D(i2d, jz)];
           p++;
-          metadata_it++;
         }
       }
       break;
