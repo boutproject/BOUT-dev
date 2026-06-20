@@ -538,7 +538,7 @@ auto if_else_zero(bool condition, const L& lhs) {
  * Unary minus. Returns the negative of given field,
  * iterates over whole domain including guard/boundary cells.
  */
-Field2D operator-(const Field2D& f);
+inline auto operator-(const Field2D& f) { return -1.0 * f; }
 
 // Non-member functions
 

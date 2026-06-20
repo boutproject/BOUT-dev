@@ -709,8 +709,6 @@ void Field3D::swapData(Field3D& other) { std::swap(data, other.data); }
  *               NON-MEMBER OVERLOADED OPERATORS
  ***************************************************************/
 
-Field3D operator-(const Field3D& f) { return -1.0 * f; }
-
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
 Field3D pow(const Field3D& lhs, const Field2D& rhs, const std::string& rgn) {

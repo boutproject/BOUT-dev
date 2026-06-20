@@ -859,7 +859,7 @@ Field3DParallel operator/(const Field3DParallel& lhs, BoutReal rhs);
  * Unary minus. Returns the negative of given field,
  * iterates over whole domain including guard/boundary cells.
  */
-Field3D operator-(const Field3D& f);
+inline auto operator-(const Field3D& f) { return -1.0 * f; }
 
 // Non-member functions
 

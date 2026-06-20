@@ -407,7 +407,7 @@ FieldPerp operator/(BoutReal lhs, const FieldPerp& rhs);
  * Unary minus. Returns the negative of given field,
  * iterates over whole domain including guard/boundary cells.
  */
-FieldPerp operator-(const FieldPerp& f);
+inline auto operator-(const FieldPerp& f) { return -1.0 * f; }
 
 /// Create a FieldPerp by slicing a 3D field at a given y
 const FieldPerp sliceXZ(const Field3D& f, int y);

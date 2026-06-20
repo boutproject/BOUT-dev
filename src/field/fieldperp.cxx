@@ -150,9 +150,6 @@ FieldPerp fromFieldAligned(const FieldPerp& f, const std::string& region) {
 
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
 
-// Unary minus
-FieldPerp operator-(const FieldPerp& f) { return -1.0 * f; }
-
 /////////////////////////////////////////////////
 // functions
 
