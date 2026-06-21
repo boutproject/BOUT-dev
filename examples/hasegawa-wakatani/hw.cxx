@@ -3,6 +3,7 @@
 #include <bout/invert_laplace.hxx>
 #include <bout/physicsmodel.hxx>
 #include <bout/smoothing.hxx>
+#include <bout/stencil_expr.hxx>
 
 class HW : public PhysicsModel {
 private:
@@ -110,7 +111,7 @@ protected:
     }
 
     ddt(n) =
-        -bracket(phi, n, bm) + alpha * (nonzonal_phi - nonzonal_n) - kappa * DDZ(phi);
+        -bracket(phi, n, bm) + alpha * (nonzonal_phi - nonzonal_n) - kappa * DDZ_C2(phi);
 
     ddt(vort) = -bracket(phi, vort, bm) + alpha * (nonzonal_phi - nonzonal_n);
 
