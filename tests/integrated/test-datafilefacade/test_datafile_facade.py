@@ -5,9 +5,10 @@
 # requires: netcdf
 # cores: 2
 
+import pytest
+import numpy
 from boutdata.collect import collect
 from boututils.run_wrapper import shell, launch_safe
-import numpy
 
 
 testvars = {
@@ -33,44 +34,30 @@ testvars = {
 }
 
 
-def test_datafile_facade():
+@pytest.mark.parametrize("nproc", [1, 2])
+def test_datafile_facade(nproc):
 
-    success = True
+    # delete any existing output
+    shell(["rm -f data/BOUT.dmp.*.nc data/BOUT.restart.*.nc"])
 
-    for nproc in [1, 2]:
-        # delete any existing output
-        shell(["rm -f data/BOUT.dmp.*.nc data/BOUT.restart.*.nc"])
+    print(f"   {nproc} processor(s)....")
 
-        print(f"   {nproc} processor....")
+    # run the test executable
+    s, out = launch_safe("./test-datafile-facade", nproc=nproc, pipe=True)
+    with open(f"run.log.{nproc}", "w") as f:
+        f.write(out)
 
-        # run the test executable
-        s, out = launch_safe("./test-datafile-facade", nproc=nproc, pipe=True)
-        with open(f"run.log.{nproc}", "w") as f:
-            f.write(out)
+    # Check the results
+    for name, expected in testvars.items():
+        # Check non-evolving version
+        result = collect(name, path="data", info=False)
 
-        # check the results
-        for name, expected in testvars.items():
-            # check non-evolving version
-            result = collect(name, path="data", info=False)
-
-            if result.dtype.kind in ("S", "U"):
-                if str(result) != expected:
-                    success = False
-                    print(
-                        f"{name} is different: got '{str(result)}', expected '{expected}'"
-                    )
-                continue
-
-            if not numpy.allclose(expected, result):
-                success = False
-                print(f"{name} is different: {numpy.max(numpy.abs(expected - result))}")
-
-    if success:
-        print("=> All DataFileFacade tests passed")
-        # clean up binary files
-        shell(
-            [
-                "rm -f data/BOUT.dmp.*.nc data/BOUT.restart.*.nc data/restart/BOUT.restart.0.nc"
-            ]
-        )
-    assert success, "=> Some failed tests"
+        if result.dtype.kind in ("S", "U"):
+            assert str(result) == expected, (
+                f"{name} is different: got '{str(result)}', expected '{expected}'"
+            )
+        else:
+            diff = numpy.max(numpy.abs(expected - result))
+            assert numpy.allclose(expected, result), (
+                f"{name} is different: max diff is {diff}"
+            )
