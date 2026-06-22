@@ -33,12 +33,14 @@
 #ifndef BOUT_COORDINATES_H
 #define BOUT_COORDINATES_H
 
+#include "bout/assert.hxx"
 #include "bout/field_data.hxx"
 #include <bout/bout_types.hxx>
 #include <bout/build_defines.hxx>
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
 #include <bout/paralleltransform.hxx>
+#include <optional>
 
 #include <array>
 #include <memory>
@@ -107,6 +109,124 @@ public:
   /// Covariant metric tensor
   FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
 
+  /// get g_22 at the cell faces;
+  const FieldMetric& g_22_ylow() const;
+  const FieldMetric& g_22_yhigh() const;
+  FieldMetric& g_22_ylow();
+  FieldMetric& g_22_yhigh();
+  // Cell Areas
+  const FieldMetric& cell_area_xlow() const {
+    if (!_cell_area_xlow.has_value()) {
+      _compute_cell_area_x();
+    }
+    ASSERT2(_cell_area_xlow.has_value());
+    return *_cell_area_xlow;
+  }
+  const FieldMetric& cell_area_xhigh() const {
+    if (!_cell_area_xhigh.has_value()) {
+      _compute_cell_area_x();
+    }
+    ASSERT2(_cell_area_xhigh.has_value());
+    return *_cell_area_xhigh;
+  }
+  const FieldMetric& cell_area_ylow() const {
+    if (!_cell_area_ylow.has_value()) {
+      _compute_cell_area_y();
+    }
+    ASSERT2(_cell_area_ylow.has_value());
+    return *_cell_area_ylow;
+  }
+  const FieldMetric& cell_area_yhigh() const {
+    if (!_cell_area_yhigh.has_value()) {
+      _compute_cell_area_y();
+    }
+    ASSERT2(_cell_area_yhigh.has_value());
+    return *_cell_area_yhigh;
+  }
+  const FieldMetric& cell_area_zlow() const {
+    if (!_cell_area_zlow.has_value()) {
+      _compute_cell_area_z();
+    }
+    ASSERT2(_cell_area_zlow.has_value());
+    return *_cell_area_zlow;
+  }
+  const FieldMetric& cell_area_zhigh() const {
+    if (!_cell_area_zhigh.has_value()) {
+      _compute_cell_area_z();
+    }
+    ASSERT2(_cell_area_zhigh.has_value());
+    return *_cell_area_zhigh;
+  }
+  FieldMetric& cell_area_xlow() {
+    if (!_cell_area_xlow.has_value()) {
+      _compute_cell_area_x();
+    }
+    ASSERT2(_cell_area_xlow.has_value());
+    return *_cell_area_xlow;
+  }
+  FieldMetric& cell_area_xhigh() {
+    if (!_cell_area_xhigh.has_value()) {
+      _compute_cell_area_x();
+    }
+    ASSERT2(_cell_area_xhigh.has_value());
+    return *_cell_area_xhigh;
+  }
+  FieldMetric& cell_area_ylow() {
+    if (!_cell_area_ylow.has_value()) {
+      _compute_cell_area_y();
+    }
+    ASSERT2(_cell_area_ylow.has_value());
+    return *_cell_area_ylow;
+  }
+  FieldMetric& cell_area_yhigh() {
+    if (!_cell_area_yhigh.has_value()) {
+      _compute_cell_area_y();
+    }
+    ASSERT2(_cell_area_yhigh.has_value());
+    return *_cell_area_yhigh;
+  }
+  FieldMetric& cell_area_zlow() {
+    if (!_cell_area_zlow.has_value()) {
+      _compute_cell_area_z();
+    }
+    ASSERT2(_cell_area_zlow.has_value());
+    return *_cell_area_zlow;
+  }
+  FieldMetric& cell_area_zhigh() {
+    if (!_cell_area_zhigh.has_value()) {
+      _compute_cell_area_z();
+    }
+    ASSERT2(_cell_area_zhigh.has_value());
+    return *_cell_area_zhigh;
+  }
+  // Cell Volume
+  const FieldMetric& cell_volume() const {
+    if (!_cell_volume.has_value()) {
+      _compute_cell_volume();
+    }
+    ASSERT2(_cell_volume.has_value());
+    return *_cell_volume;
+  }
+  FieldMetric& cell_volume() {
+    if (!_cell_volume.has_value()) {
+      _compute_cell_volume();
+    }
+    ASSERT2(_cell_volume.has_value());
+    return *_cell_volume;
+  }
+
+private:
+  mutable std::optional<FieldMetric> _g_22_ylow, _g_22_yhigh;
+  mutable std::optional<FieldMetric> _cell_area_xlow, _cell_area_xhigh;
+  mutable std::optional<FieldMetric> _cell_area_ylow, _cell_area_yhigh;
+  mutable std::optional<FieldMetric> _cell_area_zlow, _cell_area_zhigh;
+  mutable std::optional<FieldMetric> _cell_volume;
+  void _compute_cell_area_x() const;
+  void _compute_cell_area_y() const;
+  void _compute_cell_area_z() const;
+  void _compute_cell_volume() const;
+
+public:
   /// Christoffel symbol of the second kind (connection coefficients)
   FieldMetric G1_11, G1_22, G1_33, G1_12, G1_13, G1_23;
   FieldMetric G2_11, G2_22, G2_33, G2_12, G2_13, G2_23;

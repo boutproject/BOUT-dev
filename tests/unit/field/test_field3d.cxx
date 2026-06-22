@@ -1211,7 +1211,7 @@ TEST_F(Field3DTest, InvalidateGuards) {
 
   sum = 0;
   for (const auto& i : field) {
-    if (!finite(field[i])) {
+    if (!std::isfinite(field[i])) {
       sum++;
     }
   }
@@ -1949,11 +1949,64 @@ TEST_F(Field3DTest, Sqrt) {
   EXPECT_TRUE(IsFieldEqual(sqrt(field), 4.0));
 }
 
+TEST_F(Field3DTest, SQExpressionUsesSquareOp) {
+  Field3D field;
+
+  field = 2.0;
+  const auto expr = field + 1.0;
+
+  EXPECT_TRUE(
+      (std::is_same_v<std::decay_t<decltype(SQ(expr))>,
+                      BinaryExpr<Field3D, std::decay_t<decltype(expr)>,
+                                 std::decay_t<decltype(expr)>, bout::op::Square>>));
+  EXPECT_TRUE(IsFieldEqual(SQ(expr), 9.0));
+}
+
+TEST_F(Field3DTest, SQField3DParallelPreservesParallelSlices) {
+  Field3DParallel field;
+
+  field = 2.0;
+  field.splitParallelSlices();
+  field.yup() = 3.0;
+  field.ydown() = 4.0;
+
+  const auto squared = SQ(field);
+
+  EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(squared)>, Field3DParallel>));
+  EXPECT_TRUE(squared.hasParallelSlices());
+  EXPECT_TRUE(IsFieldEqual(squared, 4.0));
+  EXPECT_TRUE(IsFieldEqual(squared.yup(), 9.0));
+  EXPECT_TRUE(IsFieldEqual(squared.ydown(), 16.0));
+}
+
 TEST_F(Field3DTest, Abs) {
   Field3D field;
 
   field = -31.0;
   EXPECT_TRUE(IsFieldEqual(abs(field), 31.0));
+}
+
+TEST_F(Field3DTest, AbsExpressionUsesAbsOp) {
+  Field3D field;
+
+  field = -2.0;
+  const auto expr = field + 1.0;
+
+  EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(abs(expr))>,
+                              BinaryExpr<Field3D, std::decay_t<decltype(expr)>,
+                                         std::decay_t<decltype(expr)>, bout::op::abs>>));
+  EXPECT_TRUE(IsFieldEqual(abs(expr), 1.0));
+  EXPECT_TRUE(IsFieldEqual(abs(expr, "RGN_ALL"), 1.0));
+}
+
+TEST_F(Field3DTest, RegionLimitedExpressionConstructsField3D) {
+  Field3D field;
+
+  field = -31.0;
+
+  Field3D result = abs(field, "RGN_NOBNDRY");
+
+  EXPECT_TRUE(IsFieldEqual(result, 31.0, "RGN_NOBNDRY"));
 }
 
 TEST_F(Field3DTest, Exp) {
@@ -2072,6 +2125,21 @@ TEST_F(Field3DTest, Min) {
   EXPECT_EQ(min(field, true, "RGN_ALL"), -99.0);
 }
 
+TEST_F(Field3DTest, MinBinaryExpr) {
+  Field3D field;
+
+  field = 50.0;
+  field(0, 0, 0) = -99.0;
+  field(1, 1, 1) = 60.0;
+  field(1, 2, 2) = 40.0;
+  field(2, 4, 3) = 99.0;
+
+  const auto expr = field / 2.0 - 5.0;
+
+  EXPECT_EQ(min(expr, false), 15.0);
+  EXPECT_EQ(min(expr, false, "RGN_ALL"), -54.5);
+}
+
 TEST_F(Field3DTest, Max) {
   Field3D field;
 
@@ -2087,6 +2155,21 @@ TEST_F(Field3DTest, Max) {
   EXPECT_EQ(max(field, false), max_value);
   EXPECT_EQ(max(field, false, "RGN_ALL"), 99.0);
   EXPECT_EQ(max(field, true, "RGN_ALL"), 99.0);
+}
+
+TEST_F(Field3DTest, MaxBinaryExpr) {
+  Field3D field;
+
+  field = 50.0;
+  field(0, 0, 0) = -99.0;
+  field(1, 1, 1) = 40.0;
+  field(1, 2, 2) = 60.0;
+  field(2, 4, 3) = 99.0;
+
+  const auto expr = field / 2.0 - 5.0;
+
+  EXPECT_EQ(max(expr, false), 25.0);
+  EXPECT_EQ(max(expr, false, "RGN_ALL"), 44.5);
 }
 
 TEST_F(Field3DTest, Mean) {
@@ -2106,6 +2189,24 @@ TEST_F(Field3DTest, Mean) {
   EXPECT_EQ(mean(field, false), mean_value_nobndry);
   EXPECT_EQ(mean(field, false, "RGN_ALL"), mean_value_all);
   EXPECT_EQ(mean(field, true, "RGN_ALL"), mean_value_all);
+}
+
+TEST_F(Field3DTest, MeanBinaryExpr) {
+  Field3D field;
+
+  field = 50.0;
+  field(0, 0, 0) = 1.0;
+  field(1, 1, 1) = 40.0;
+  field(1, 2, 2) = 60.0;
+  field(2, 4, 3) = 109.0;
+
+  const int npoints_all = nx * ny * nz;
+  const BoutReal mean_value_nobndry = 103.0;
+  const BoutReal mean_value_all = 103.0 + 20.0 / npoints_all;
+  const auto expr = field * 2.0 + 3.0;
+
+  EXPECT_EQ(mean(expr, false), mean_value_nobndry);
+  EXPECT_EQ(mean(expr, false, "RGN_ALL"), mean_value_all);
 }
 
 TEST_F(Field3DTest, DC) {
@@ -2414,6 +2515,25 @@ TEST_F(Field3DTest, OperatorEqualsField3D) {
   EXPECT_EQ(field.getLocation(), field2.getLocation());
   EXPECT_EQ(field.getDirectionY(), field2.getDirectionY());
   EXPECT_EQ(field.getDirectionZ(), field2.getDirectionZ());
+}
+
+TEST_F(Field3DTest, OperatorEqualsBinaryExprCopiesMetadata) {
+  Field3D source{
+      mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+  source = 9.;
+
+  Field3D target(mesh_staggered);
+  target = 0.;
+  target.splitParallelSlices();
+
+  target = sqrt(source);
+
+  EXPECT_EQ(target.getMesh(), source.getMesh());
+  EXPECT_EQ(target.getLocation(), source.getLocation());
+  EXPECT_EQ(target.getDirectionY(), source.getDirectionY());
+  EXPECT_EQ(target.getDirectionZ(), source.getDirectionZ());
+  EXPECT_FALSE(target.hasParallelSlices());
+  EXPECT_TRUE(IsFieldEqual(target, 3.));
 }
 
 TEST_F(Field3DTest, EmptyFrom) {

@@ -8,7 +8,6 @@
 #include <bout/interpolation.hxx>
 #include <bout/mesh.hxx>
 #include <bout/region.hxx>
-#include <cstddef>
 
 // Provide the C++ wrapper for multiplication of Field3D and Field3D
 Field3D operator*(const Field3D& lhs, const Field3D& rhs) {
@@ -20,10 +19,9 @@ Field3D operator*(const Field3D& lhs, const Field3D& rhs) {
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -42,8 +40,7 @@ Field3D& Field3D::update_multiplication_inplace(const Field3D& rhs) {
 
   regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
 
-  BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
-
+  BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
   track(rhs, "operator*=");
 #if BOUT_USE_TRACK
   name = fmt::format("{:s} *= {:s}", this->name, rhs.name);
@@ -69,8 +66,7 @@ Field3D& Field3D::operator*=(const Field3D& rhs) {
 
     regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
-
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
     track(rhs, "operator*=");
 
     checkData(*this);
@@ -92,10 +88,9 @@ Field3D operator/(const Field3D& lhs, const Field3D& rhs) {
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] / rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -114,8 +109,7 @@ Field3D& Field3D::update_division_inplace(const Field3D& rhs) {
 
   regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
 
-  BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
-
+  BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
   track(rhs, "operator/=");
 #if BOUT_USE_TRACK
   name = fmt::format("{:s} /= {:s}", this->name, rhs.name);
@@ -141,8 +135,7 @@ Field3D& Field3D::operator/=(const Field3D& rhs) {
 
     regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
-
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
     track(rhs, "operator/=");
 
     checkData(*this);
@@ -164,10 +157,9 @@ Field3D operator+(const Field3D& lhs, const Field3D& rhs) {
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] + rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -186,8 +178,7 @@ Field3D& Field3D::update_addition_inplace(const Field3D& rhs) {
 
   regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
 
-  BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
-
+  BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
   track(rhs, "operator+=");
 #if BOUT_USE_TRACK
   name = fmt::format("{:s} += {:s}", this->name, rhs.name);
@@ -213,8 +204,7 @@ Field3D& Field3D::operator+=(const Field3D& rhs) {
 
     regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
-
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
     track(rhs, "operator+=");
 
     checkData(*this);
@@ -236,10 +226,9 @@ Field3D operator-(const Field3D& lhs, const Field3D& rhs) {
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] - rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -258,8 +247,7 @@ Field3D& Field3D::update_subtraction_inplace(const Field3D& rhs) {
 
   regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
 
-  BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
-
+  BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
   track(rhs, "operator-=");
 #if BOUT_USE_TRACK
   name = fmt::format("{:s} -= {:s}", this->name, rhs.name);
@@ -285,8 +273,7 @@ Field3D& Field3D::operator-=(const Field3D& rhs) {
 
     regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
-
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
     track(rhs, "operator-=");
 
     checkData(*this);
@@ -310,13 +297,12 @@ Field3D operator*(const Field3D& lhs, const Field2D& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, rhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
     for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
       result[base_ind + jz] = lhs[base_ind + jz] * rhs[index];
     }
   }
-
   checkData(result);
   return result;
 }
@@ -333,13 +319,12 @@ Field3D& Field3D::update_multiplication_inplace(const Field2D& rhs) {
   checkData(*this);
   checkData(rhs);
 
-  BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, rhs.getRegion("RGN_ALL")) {
     const auto base_ind = fieldmesh->ind2Dto3D(index);
     for (int jz = 0; jz < fieldmesh->LocalNz; ++jz) {
       (*this)[base_ind + jz] *= rhs[index];
     }
   }
-
   track(rhs, "operator*=");
 #if BOUT_USE_TRACK
   name = fmt::format("{:s} *= {:s}", this->name, rhs.name);
@@ -363,13 +348,12 @@ Field3D& Field3D::operator*=(const Field2D& rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+    BOUT_FOR_SERIAL(index, rhs.getRegion("RGN_ALL")) {
       const auto base_ind = fieldmesh->ind2Dto3D(index);
       for (int jz = 0; jz < fieldmesh->LocalNz; ++jz) {
         (*this)[base_ind + jz] *= rhs[index];
       }
     }
-
     track(rhs, "operator*=");
 
     checkData(*this);
@@ -393,14 +377,13 @@ Field3D operator/(const Field3D& lhs, const Field2D& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, rhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
     const auto tmp = 1.0 / rhs[index];
     for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
       result[base_ind + jz] = lhs[base_ind + jz] * tmp;
     }
   }
-
   checkData(result);
   return result;
 }
@@ -417,14 +400,13 @@ Field3D& Field3D::update_division_inplace(const Field2D& rhs) {
   checkData(*this);
   checkData(rhs);
 
-  BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, rhs.getRegion("RGN_ALL")) {
     const auto base_ind = fieldmesh->ind2Dto3D(index);
     const auto tmp = 1.0 / rhs[index];
     for (int jz = 0; jz < fieldmesh->LocalNz; ++jz) {
       (*this)[base_ind + jz] *= tmp;
     }
   }
-
   track(rhs, "operator/=");
 #if BOUT_USE_TRACK
   name = fmt::format("{:s} /= {:s}", this->name, rhs.name);
@@ -448,14 +430,13 @@ Field3D& Field3D::operator/=(const Field2D& rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+    BOUT_FOR_SERIAL(index, rhs.getRegion("RGN_ALL")) {
       const auto base_ind = fieldmesh->ind2Dto3D(index);
       const auto tmp = 1.0 / rhs[index];
       for (int jz = 0; jz < fieldmesh->LocalNz; ++jz) {
         (*this)[base_ind + jz] *= tmp;
       }
     }
-
     track(rhs, "operator/=");
 
     checkData(*this);
@@ -479,13 +460,12 @@ Field3D operator+(const Field3D& lhs, const Field2D& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, rhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
     for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
       result[base_ind + jz] = lhs[base_ind + jz] + rhs[index];
     }
   }
-
   checkData(result);
   return result;
 }
@@ -502,13 +482,12 @@ Field3D& Field3D::update_addition_inplace(const Field2D& rhs) {
   checkData(*this);
   checkData(rhs);
 
-  BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, rhs.getRegion("RGN_ALL")) {
     const auto base_ind = fieldmesh->ind2Dto3D(index);
     for (int jz = 0; jz < fieldmesh->LocalNz; ++jz) {
       (*this)[base_ind + jz] += rhs[index];
     }
   }
-
   track(rhs, "operator+=");
 #if BOUT_USE_TRACK
   name = fmt::format("{:s} += {:s}", this->name, rhs.name);
@@ -532,13 +511,12 @@ Field3D& Field3D::operator+=(const Field2D& rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+    BOUT_FOR_SERIAL(index, rhs.getRegion("RGN_ALL")) {
       const auto base_ind = fieldmesh->ind2Dto3D(index);
       for (int jz = 0; jz < fieldmesh->LocalNz; ++jz) {
         (*this)[base_ind + jz] += rhs[index];
       }
     }
-
     track(rhs, "operator+=");
 
     checkData(*this);
@@ -562,13 +540,12 @@ Field3D operator-(const Field3D& lhs, const Field2D& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, rhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
     for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
       result[base_ind + jz] = lhs[base_ind + jz] - rhs[index];
     }
   }
-
   checkData(result);
   return result;
 }
@@ -585,13 +562,12 @@ Field3D& Field3D::update_subtraction_inplace(const Field2D& rhs) {
   checkData(*this);
   checkData(rhs);
 
-  BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, rhs.getRegion("RGN_ALL")) {
     const auto base_ind = fieldmesh->ind2Dto3D(index);
     for (int jz = 0; jz < fieldmesh->LocalNz; ++jz) {
       (*this)[base_ind + jz] -= rhs[index];
     }
   }
-
   track(rhs, "operator-=");
 #if BOUT_USE_TRACK
   name = fmt::format("{:s} -= {:s}", this->name, rhs.name);
@@ -615,13 +591,12 @@ Field3D& Field3D::operator-=(const Field2D& rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+    BOUT_FOR_SERIAL(index, rhs.getRegion("RGN_ALL")) {
       const auto base_ind = fieldmesh->ind2Dto3D(index);
       for (int jz = 0; jz < fieldmesh->LocalNz; ++jz) {
         (*this)[base_ind + jz] -= rhs[index];
       }
     }
-
     track(rhs, "operator-=");
 
     checkData(*this);
@@ -643,12 +618,11 @@ FieldPerp operator*(const Field3D& lhs, const FieldPerp& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getRegion("RGN_ALL")) {
     int yind = rhs.getIndex();
     const auto base_ind = localmesh->indPerpto3D(index, yind);
     result[index] = lhs[base_ind] * rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -663,12 +637,11 @@ FieldPerp operator/(const Field3D& lhs, const FieldPerp& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getRegion("RGN_ALL")) {
     int yind = rhs.getIndex();
     const auto base_ind = localmesh->indPerpto3D(index, yind);
     result[index] = lhs[base_ind] / rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -683,12 +656,11 @@ FieldPerp operator+(const Field3D& lhs, const FieldPerp& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getRegion("RGN_ALL")) {
     int yind = rhs.getIndex();
     const auto base_ind = localmesh->indPerpto3D(index, yind);
     result[index] = lhs[base_ind] + rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -703,12 +675,11 @@ FieldPerp operator-(const Field3D& lhs, const FieldPerp& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getRegion("RGN_ALL")) {
     int yind = rhs.getIndex();
     const auto base_ind = localmesh->indPerpto3D(index, yind);
     result[index] = lhs[base_ind] - rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -722,10 +693,9 @@ Field3D operator*(const Field3D& lhs, const BoutReal rhs) {
 
   result.setRegion(lhs.getRegionID());
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * rhs;
   }
-
   checkData(result);
   return result;
 }
@@ -741,8 +711,7 @@ Field3D& Field3D::update_multiplication_inplace(const BoutReal rhs) {
   checkData(*this);
   checkData(rhs);
 
-  BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
-
+  BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
   track(rhs, "operator*=");
 #if BOUT_USE_TRACK
   name = fmt::format("{:s} *= {:s}", this->name, "BR");
@@ -765,8 +734,7 @@ Field3D& Field3D::operator*=(const BoutReal rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
-
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
     track(rhs, "operator*=");
 
     checkData(*this);
@@ -788,10 +756,9 @@ Field3D operator/(const Field3D& lhs, const BoutReal rhs) {
   result.setRegion(lhs.getRegionID());
 
   const auto tmp = 1.0 / rhs;
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * tmp;
   }
-
   checkData(result);
   return result;
 }
@@ -808,8 +775,7 @@ Field3D& Field3D::update_division_inplace(const BoutReal rhs) {
   checkData(rhs);
 
   const auto tmp = 1.0 / rhs;
-  BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= tmp; }
-
+  BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] *= tmp; }
   track(rhs, "operator/=");
 #if BOUT_USE_TRACK
   name = fmt::format("{:s} /= {:s}", this->name, "BR");
@@ -833,8 +799,7 @@ Field3D& Field3D::operator/=(const BoutReal rhs) {
     checkData(rhs);
 
     const auto tmp = 1.0 / rhs;
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= tmp; }
-
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] *= tmp; }
     track(rhs, "operator/=");
 
     checkData(*this);
@@ -855,10 +820,9 @@ Field3D operator+(const Field3D& lhs, const BoutReal rhs) {
 
   result.setRegion(lhs.getRegionID());
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] + rhs;
   }
-
   checkData(result);
   return result;
 }
@@ -874,8 +838,7 @@ Field3D& Field3D::update_addition_inplace(const BoutReal rhs) {
   checkData(*this);
   checkData(rhs);
 
-  BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
-
+  BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
   track(rhs, "operator+=");
 #if BOUT_USE_TRACK
   name = fmt::format("{:s} += {:s}", this->name, "BR");
@@ -898,8 +861,7 @@ Field3D& Field3D::operator+=(const BoutReal rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
-
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
     track(rhs, "operator+=");
 
     checkData(*this);
@@ -920,10 +882,9 @@ Field3D operator-(const Field3D& lhs, const BoutReal rhs) {
 
   result.setRegion(lhs.getRegionID());
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] - rhs;
   }
-
   checkData(result);
   return result;
 }
@@ -939,8 +900,7 @@ Field3D& Field3D::update_subtraction_inplace(const BoutReal rhs) {
   checkData(*this);
   checkData(rhs);
 
-  BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
-
+  BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
   track(rhs, "operator-=");
 #if BOUT_USE_TRACK
   name = fmt::format("{:s} -= {:s}", this->name, "BR");
@@ -963,8 +923,7 @@ Field3D& Field3D::operator-=(const BoutReal rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
-
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
     track(rhs, "operator-=");
 
     checkData(*this);
@@ -988,13 +947,12 @@ Field3D operator*(const Field2D& lhs, const Field3D& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, lhs.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, lhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
     for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
       result[base_ind + jz] = lhs[index] * rhs[base_ind + jz];
     }
   }
-
   checkData(result);
   return result;
 }
@@ -1011,13 +969,12 @@ Field3D operator/(const Field2D& lhs, const Field3D& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, lhs.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, lhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
     for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
       result[base_ind + jz] = lhs[index] / rhs[base_ind + jz];
     }
   }
-
   checkData(result);
   return result;
 }
@@ -1034,13 +991,12 @@ Field3D operator+(const Field2D& lhs, const Field3D& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, lhs.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, lhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
     for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
       result[base_ind + jz] = lhs[index] + rhs[base_ind + jz];
     }
   }
-
   checkData(result);
   return result;
 }
@@ -1057,13 +1013,12 @@ Field3D operator-(const Field2D& lhs, const Field3D& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, lhs.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, lhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
     for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
       result[base_ind + jz] = lhs[index] - rhs[base_ind + jz];
     }
   }
-
   checkData(result);
   return result;
 }
@@ -1076,10 +1031,9 @@ Field2D operator*(const Field2D& lhs, const Field2D& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -1094,7 +1048,7 @@ Field2D& Field2D::operator*=(const Field2D& rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
 
     checkData(*this);
 
@@ -1112,10 +1066,9 @@ Field2D operator/(const Field2D& lhs, const Field2D& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] / rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -1130,7 +1083,7 @@ Field2D& Field2D::operator/=(const Field2D& rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
 
     checkData(*this);
 
@@ -1148,10 +1101,9 @@ Field2D operator+(const Field2D& lhs, const Field2D& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] + rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -1166,7 +1118,7 @@ Field2D& Field2D::operator+=(const Field2D& rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
 
     checkData(*this);
 
@@ -1184,10 +1136,9 @@ Field2D operator-(const Field2D& lhs, const Field2D& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] - rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -1202,7 +1153,7 @@ Field2D& Field2D::operator-=(const Field2D& rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
 
     checkData(*this);
 
@@ -1222,12 +1173,11 @@ FieldPerp operator*(const Field2D& lhs, const FieldPerp& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getRegion("RGN_ALL")) {
     int yind = rhs.getIndex();
     const auto base_ind = localmesh->indPerpto3D(index, yind);
     result[index] = lhs[base_ind] * rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -1242,12 +1192,11 @@ FieldPerp operator/(const Field2D& lhs, const FieldPerp& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getRegion("RGN_ALL")) {
     int yind = rhs.getIndex();
     const auto base_ind = localmesh->indPerpto3D(index, yind);
     result[index] = lhs[base_ind] / rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -1262,12 +1211,11 @@ FieldPerp operator+(const Field2D& lhs, const FieldPerp& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getRegion("RGN_ALL")) {
     int yind = rhs.getIndex();
     const auto base_ind = localmesh->indPerpto3D(index, yind);
     result[index] = lhs[base_ind] + rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -1282,12 +1230,11 @@ FieldPerp operator-(const Field2D& lhs, const FieldPerp& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getRegion("RGN_ALL")) {
     int yind = rhs.getIndex();
     const auto base_ind = localmesh->indPerpto3D(index, yind);
     result[index] = lhs[base_ind] - rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -1299,10 +1246,9 @@ Field2D operator*(const Field2D& lhs, const BoutReal rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * rhs;
   }
-
   checkData(result);
   return result;
 }
@@ -1316,7 +1262,7 @@ Field2D& Field2D::operator*=(const BoutReal rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
 
     checkData(*this);
 
@@ -1334,10 +1280,9 @@ Field2D operator/(const Field2D& lhs, const BoutReal rhs) {
   checkData(rhs);
 
   const auto tmp = 1.0 / rhs;
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * tmp;
   }
-
   checkData(result);
   return result;
 }
@@ -1352,7 +1297,7 @@ Field2D& Field2D::operator/=(const BoutReal rhs) {
     checkData(rhs);
 
     const auto tmp = 1.0 / rhs;
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= tmp; }
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] *= tmp; }
 
     checkData(*this);
 
@@ -1369,10 +1314,9 @@ Field2D operator+(const Field2D& lhs, const BoutReal rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] + rhs;
   }
-
   checkData(result);
   return result;
 }
@@ -1386,7 +1330,7 @@ Field2D& Field2D::operator+=(const BoutReal rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
 
     checkData(*this);
 
@@ -1403,10 +1347,9 @@ Field2D operator-(const Field2D& lhs, const BoutReal rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] - rhs;
   }
-
   checkData(result);
   return result;
 }
@@ -1420,7 +1363,7 @@ Field2D& Field2D::operator-=(const BoutReal rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
 
     checkData(*this);
 
@@ -1440,12 +1383,11 @@ FieldPerp operator*(const FieldPerp& lhs, const Field3D& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getRegion("RGN_ALL")) {
     int yind = lhs.getIndex();
     const auto base_ind = localmesh->indPerpto3D(index, yind);
     result[index] = lhs[index] * rhs[base_ind];
   }
-
   checkData(result);
   return result;
 }
@@ -1462,7 +1404,7 @@ FieldPerp& FieldPerp::operator*=(const Field3D& rhs) {
 
     Mesh* localmesh = this->getMesh();
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) {
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) {
       int yind = this->getIndex();
       const auto base_ind = localmesh->indPerpto3D(index, yind);
       (*this)[index] *= rhs[base_ind];
@@ -1486,12 +1428,11 @@ FieldPerp operator/(const FieldPerp& lhs, const Field3D& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getRegion("RGN_ALL")) {
     int yind = lhs.getIndex();
     const auto base_ind = localmesh->indPerpto3D(index, yind);
     result[index] = lhs[index] / rhs[base_ind];
   }
-
   checkData(result);
   return result;
 }
@@ -1508,7 +1449,7 @@ FieldPerp& FieldPerp::operator/=(const Field3D& rhs) {
 
     Mesh* localmesh = this->getMesh();
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) {
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) {
       int yind = this->getIndex();
       const auto base_ind = localmesh->indPerpto3D(index, yind);
       (*this)[index] /= rhs[base_ind];
@@ -1532,12 +1473,11 @@ FieldPerp operator+(const FieldPerp& lhs, const Field3D& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getRegion("RGN_ALL")) {
     int yind = lhs.getIndex();
     const auto base_ind = localmesh->indPerpto3D(index, yind);
     result[index] = lhs[index] + rhs[base_ind];
   }
-
   checkData(result);
   return result;
 }
@@ -1554,7 +1494,7 @@ FieldPerp& FieldPerp::operator+=(const Field3D& rhs) {
 
     Mesh* localmesh = this->getMesh();
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) {
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) {
       int yind = this->getIndex();
       const auto base_ind = localmesh->indPerpto3D(index, yind);
       (*this)[index] += rhs[base_ind];
@@ -1578,12 +1518,11 @@ FieldPerp operator-(const FieldPerp& lhs, const Field3D& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getRegion("RGN_ALL")) {
     int yind = lhs.getIndex();
     const auto base_ind = localmesh->indPerpto3D(index, yind);
     result[index] = lhs[index] - rhs[base_ind];
   }
-
   checkData(result);
   return result;
 }
@@ -1600,7 +1539,7 @@ FieldPerp& FieldPerp::operator-=(const Field3D& rhs) {
 
     Mesh* localmesh = this->getMesh();
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) {
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) {
       int yind = this->getIndex();
       const auto base_ind = localmesh->indPerpto3D(index, yind);
       (*this)[index] -= rhs[base_ind];
@@ -1624,12 +1563,11 @@ FieldPerp operator*(const FieldPerp& lhs, const Field2D& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getRegion("RGN_ALL")) {
     int yind = lhs.getIndex();
     const auto base_ind = localmesh->indPerpto3D(index, yind);
     result[index] = lhs[index] * rhs[base_ind];
   }
-
   checkData(result);
   return result;
 }
@@ -1646,7 +1584,7 @@ FieldPerp& FieldPerp::operator*=(const Field2D& rhs) {
 
     Mesh* localmesh = this->getMesh();
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) {
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) {
       int yind = this->getIndex();
       const auto base_ind = localmesh->indPerpto3D(index, yind);
       (*this)[index] *= rhs[base_ind];
@@ -1670,12 +1608,11 @@ FieldPerp operator/(const FieldPerp& lhs, const Field2D& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getRegion("RGN_ALL")) {
     int yind = lhs.getIndex();
     const auto base_ind = localmesh->indPerpto3D(index, yind);
     result[index] = lhs[index] / rhs[base_ind];
   }
-
   checkData(result);
   return result;
 }
@@ -1692,7 +1629,7 @@ FieldPerp& FieldPerp::operator/=(const Field2D& rhs) {
 
     Mesh* localmesh = this->getMesh();
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) {
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) {
       int yind = this->getIndex();
       const auto base_ind = localmesh->indPerpto3D(index, yind);
       (*this)[index] /= rhs[base_ind];
@@ -1716,12 +1653,11 @@ FieldPerp operator+(const FieldPerp& lhs, const Field2D& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getRegion("RGN_ALL")) {
     int yind = lhs.getIndex();
     const auto base_ind = localmesh->indPerpto3D(index, yind);
     result[index] = lhs[index] + rhs[base_ind];
   }
-
   checkData(result);
   return result;
 }
@@ -1738,7 +1674,7 @@ FieldPerp& FieldPerp::operator+=(const Field2D& rhs) {
 
     Mesh* localmesh = this->getMesh();
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) {
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) {
       int yind = this->getIndex();
       const auto base_ind = localmesh->indPerpto3D(index, yind);
       (*this)[index] += rhs[base_ind];
@@ -1762,12 +1698,11 @@ FieldPerp operator-(const FieldPerp& lhs, const Field2D& rhs) {
 
   Mesh* localmesh = lhs.getMesh();
 
-  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getRegion("RGN_ALL")) {
     int yind = lhs.getIndex();
     const auto base_ind = localmesh->indPerpto3D(index, yind);
     result[index] = lhs[index] - rhs[base_ind];
   }
-
   checkData(result);
   return result;
 }
@@ -1784,7 +1719,7 @@ FieldPerp& FieldPerp::operator-=(const Field2D& rhs) {
 
     Mesh* localmesh = this->getMesh();
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) {
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) {
       int yind = this->getIndex();
       const auto base_ind = localmesh->indPerpto3D(index, yind);
       (*this)[index] -= rhs[base_ind];
@@ -1806,10 +1741,9 @@ FieldPerp operator*(const FieldPerp& lhs, const FieldPerp& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -1824,7 +1758,7 @@ FieldPerp& FieldPerp::operator*=(const FieldPerp& rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
 
     checkData(*this);
 
@@ -1842,10 +1776,9 @@ FieldPerp operator/(const FieldPerp& lhs, const FieldPerp& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] / rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -1860,7 +1793,7 @@ FieldPerp& FieldPerp::operator/=(const FieldPerp& rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
 
     checkData(*this);
 
@@ -1878,10 +1811,9 @@ FieldPerp operator+(const FieldPerp& lhs, const FieldPerp& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] + rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -1896,7 +1828,7 @@ FieldPerp& FieldPerp::operator+=(const FieldPerp& rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
 
     checkData(*this);
 
@@ -1914,10 +1846,9 @@ FieldPerp operator-(const FieldPerp& lhs, const FieldPerp& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] - rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -1932,7 +1863,7 @@ FieldPerp& FieldPerp::operator-=(const FieldPerp& rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
 
     checkData(*this);
 
@@ -1949,10 +1880,9 @@ FieldPerp operator*(const FieldPerp& lhs, const BoutReal rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * rhs;
   }
-
   checkData(result);
   return result;
 }
@@ -1966,7 +1896,7 @@ FieldPerp& FieldPerp::operator*=(const BoutReal rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
 
     checkData(*this);
 
@@ -1984,10 +1914,9 @@ FieldPerp operator/(const FieldPerp& lhs, const BoutReal rhs) {
   checkData(rhs);
 
   const auto tmp = 1.0 / rhs;
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * tmp;
   }
-
   checkData(result);
   return result;
 }
@@ -2001,7 +1930,7 @@ FieldPerp& FieldPerp::operator/=(const BoutReal rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs; }
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs; }
 
     checkData(*this);
 
@@ -2018,10 +1947,9 @@ FieldPerp operator+(const FieldPerp& lhs, const BoutReal rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] + rhs;
   }
-
   checkData(result);
   return result;
 }
@@ -2035,7 +1963,7 @@ FieldPerp& FieldPerp::operator+=(const BoutReal rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
 
     checkData(*this);
 
@@ -2052,10 +1980,9 @@ FieldPerp operator-(const FieldPerp& lhs, const BoutReal rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] - rhs;
   }
-
   checkData(result);
   return result;
 }
@@ -2069,7 +1996,7 @@ FieldPerp& FieldPerp::operator-=(const BoutReal rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
 
     checkData(*this);
 
@@ -2088,10 +2015,9 @@ Field3D operator*(const BoutReal lhs, const Field3D& rhs) {
 
   result.setRegion(rhs.getRegionID());
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs * rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2105,10 +2031,9 @@ Field3D operator/(const BoutReal lhs, const Field3D& rhs) {
 
   result.setRegion(rhs.getRegionID());
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs / rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2122,10 +2047,9 @@ Field3D operator+(const BoutReal lhs, const Field3D& rhs) {
 
   result.setRegion(rhs.getRegionID());
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs + rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2139,10 +2063,9 @@ Field3D operator-(const BoutReal lhs, const Field3D& rhs) {
 
   result.setRegion(rhs.getRegionID());
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs - rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2154,10 +2077,9 @@ Field2D operator*(const BoutReal lhs, const Field2D& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs * rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2169,10 +2091,9 @@ Field2D operator/(const BoutReal lhs, const Field2D& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs / rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2184,10 +2105,9 @@ Field2D operator+(const BoutReal lhs, const Field2D& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs + rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2199,10 +2119,9 @@ Field2D operator-(const BoutReal lhs, const Field2D& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs - rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2214,10 +2133,9 @@ FieldPerp operator*(const BoutReal lhs, const FieldPerp& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs * rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2229,10 +2147,9 @@ FieldPerp operator/(const BoutReal lhs, const FieldPerp& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs / rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2244,10 +2161,9 @@ FieldPerp operator+(const BoutReal lhs, const FieldPerp& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs + rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2259,10 +2175,9 @@ FieldPerp operator-(const BoutReal lhs, const FieldPerp& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs - rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2302,10 +2217,9 @@ Field3DParallel operator*(const Field3D& lhs, const Field3DParallel& rhs) {
     }
   }
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2345,10 +2259,9 @@ Field3DParallel operator/(const Field3D& lhs, const Field3DParallel& rhs) {
     }
   }
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] / rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2388,10 +2301,9 @@ Field3DParallel operator+(const Field3D& lhs, const Field3DParallel& rhs) {
     }
   }
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] + rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2431,10 +2343,9 @@ Field3DParallel operator-(const Field3D& lhs, const Field3DParallel& rhs) {
     }
   }
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] - rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2474,10 +2385,9 @@ Field3DParallel operator*(const Field3DParallel& lhs, const Field3D& rhs) {
     }
   }
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2509,8 +2419,7 @@ Field3DParallel& Field3DParallel::operator*=(const Field3D& rhs) {
 
     regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
-
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
     track(rhs, "operator*=");
 
     checkData(*this);
@@ -2557,10 +2466,9 @@ Field3DParallel operator/(const Field3DParallel& lhs, const Field3D& rhs) {
     }
   }
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] / rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2592,8 +2500,7 @@ Field3DParallel& Field3DParallel::operator/=(const Field3D& rhs) {
 
     regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
-
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
     track(rhs, "operator/=");
 
     checkData(*this);
@@ -2640,10 +2547,9 @@ Field3DParallel operator+(const Field3DParallel& lhs, const Field3D& rhs) {
     }
   }
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] + rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2675,8 +2581,7 @@ Field3DParallel& Field3DParallel::operator+=(const Field3D& rhs) {
 
     regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
-
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
     track(rhs, "operator+=");
 
     checkData(*this);
@@ -2723,10 +2628,9 @@ Field3DParallel operator-(const Field3DParallel& lhs, const Field3D& rhs) {
     }
   }
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] - rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2758,8 +2662,7 @@ Field3DParallel& Field3DParallel::operator-=(const Field3D& rhs) {
 
     regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
-
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
     track(rhs, "operator-=");
 
     checkData(*this);
@@ -2806,10 +2709,9 @@ Field3DParallel operator*(const Field3DParallel& lhs, const Field3DParallel& rhs
     }
   }
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2841,8 +2743,7 @@ Field3DParallel& Field3DParallel::operator*=(const Field3DParallel& rhs) {
 
     regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
-
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
     track(rhs, "operator*=");
 
     checkData(*this);
@@ -2889,10 +2790,9 @@ Field3DParallel operator/(const Field3DParallel& lhs, const Field3DParallel& rhs
     }
   }
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] / rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -2924,8 +2824,7 @@ Field3DParallel& Field3DParallel::operator/=(const Field3DParallel& rhs) {
 
     regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
-
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
     track(rhs, "operator/=");
 
     checkData(*this);
@@ -2972,10 +2871,9 @@ Field3DParallel operator+(const Field3DParallel& lhs, const Field3DParallel& rhs
     }
   }
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] + rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -3007,8 +2905,7 @@ Field3DParallel& Field3DParallel::operator+=(const Field3DParallel& rhs) {
 
     regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
-
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
     track(rhs, "operator+=");
 
     checkData(*this);
@@ -3055,10 +2952,9 @@ Field3DParallel operator-(const Field3DParallel& lhs, const Field3DParallel& rhs
     }
   }
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] - rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -3090,8 +2986,7 @@ Field3DParallel& Field3DParallel::operator-=(const Field3DParallel& rhs) {
 
     regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
-
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
     track(rhs, "operator-=");
 
     checkData(*this);
@@ -3132,10 +3027,9 @@ Field3DParallel operator*(const Field3DParallel& lhs, const BoutReal rhs) {
     }
   }
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * rhs;
   }
-
   checkData(result);
   return result;
 }
@@ -3164,8 +3058,7 @@ Field3DParallel& Field3DParallel::operator*=(const BoutReal rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
-
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
     track(rhs, "operator*=");
 
     checkData(*this);
@@ -3207,10 +3100,9 @@ Field3DParallel operator/(const Field3DParallel& lhs, const BoutReal rhs) {
   }
 
   const auto tmp = 1.0 / rhs;
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * tmp;
   }
-
   checkData(result);
   return result;
 }
@@ -3239,8 +3131,7 @@ Field3DParallel& Field3DParallel::operator/=(const BoutReal rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs; }
-
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs; }
     track(rhs, "operator/=");
 
     checkData(*this);
@@ -3281,10 +3172,9 @@ Field3DParallel operator+(const Field3DParallel& lhs, const BoutReal rhs) {
     }
   }
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] + rhs;
   }
-
   checkData(result);
   return result;
 }
@@ -3313,8 +3203,7 @@ Field3DParallel& Field3DParallel::operator+=(const BoutReal rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
-
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
     track(rhs, "operator+=");
 
     checkData(*this);
@@ -3355,10 +3244,9 @@ Field3DParallel operator-(const Field3DParallel& lhs, const BoutReal rhs) {
     }
   }
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] - rhs;
   }
-
   checkData(result);
   return result;
 }
@@ -3387,8 +3275,7 @@ Field3DParallel& Field3DParallel::operator-=(const BoutReal rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
-
+    BOUT_FOR_SERIAL(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
     track(rhs, "operator-=");
 
     checkData(*this);
@@ -3428,10 +3315,9 @@ Field3DParallel operator*(const BoutReal lhs, const Field3DParallel& rhs) {
     }
   }
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs * rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -3464,10 +3350,9 @@ Field3DParallel operator/(const BoutReal lhs, const Field3DParallel& rhs) {
     }
   }
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs / rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -3500,10 +3385,9 @@ Field3DParallel operator+(const BoutReal lhs, const Field3DParallel& rhs) {
     }
   }
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs + rhs[index];
   }
-
   checkData(result);
   return result;
 }
@@ -3536,10 +3420,9 @@ Field3DParallel operator-(const BoutReal lhs, const Field3DParallel& rhs) {
     }
   }
 
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+  BOUT_FOR_SERIAL(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs - rhs[index];
   }
-
   checkData(result);
   return result;
 }
