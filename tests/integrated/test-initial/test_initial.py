@@ -5,11 +5,13 @@
 import pytest
 import configparser
 import itertools
+import platform
+import warnings
 import numpy as np
 from scipy.special import erf
 from pathlib import Path
 
-from boututils.run_wrapper import launch_safe
+from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 
 # requires not make
@@ -154,20 +156,19 @@ pi = np.pi
 erf = erf
 
 
-def test_initial():
-    # Running the test
-
-    # Some parameters
-    success = True
+@pytest.mark.parametrize("nproc", [1, 2, 3, 4])
+def test_initial(nproc):
     tolerance = 1e-13
     cmd = "./test_initial"
     datadir = Path("data")
     inputfile = datadir / "BOUT.inp"
 
+    shell(["rm -f data/BOUT.dmp.*.nc"])
+
     # Read the input file
     config = configparser.ConfigParser()
     with open(inputfile, "r") as f:
-        config.read_file(itertools.chain(["[global]"], f), source=inputfile)
+        config.read_file(itertools.chain(["[global]"], f), source=str(inputfile))
 
     # Find the variables that have a "function" option
     varlist = [key for key, values in config.items() if "function" in values]
@@ -176,67 +177,55 @@ def test_initial():
     for coord in ["var_x", "var_y", "var_z"]:
         varlist.remove(coord)
 
-    nprocs = [1, 2, 3, 4]
-    for nproc in nprocs:
-        status, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
-        with open("run.log.{}".format(nproc), "w") as f:
-            f.write(out)
+    status, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
+    with open(f"run.log.{nproc}", "w") as f:
+        f.write(out)
 
-        if status != 0:
-            print(status)
-            pytest.fail("=> Could not run test")
+    # Collect the coordinate arrays separately
+    x = collect("var_x", xguards=True, yguards=True, path=str(datadir), info=False)
+    y = collect("var_y", xguards=True, yguards=True, path=str(datadir), info=False)
+    z = collect("var_z", xguards=True, yguards=True, path=str(datadir), info=False)
 
-        # Collect the coordinate arrays separately
-        x = collect("var_x", xguards=True, yguards=True, path=datadir, info=False)
-        y = collect("var_y", xguards=True, yguards=True, path=datadir, info=False)
-        z = collect("var_z", xguards=True, yguards=True, path=datadir, info=False)
+    failures = []
 
-        # Evaluate the functions
-        for var in varlist:
-            function = config[var]["function"]
-            function = function.replace("^", "**")
-            if ":" in function:
-                print(
-                    "{} contains reference to variable - not possible to resolve at this time".format(
-                        var
+    # Evaluate the functions
+    for var in varlist:
+        function = config[var]["function"]
+        function = function.replace("^", "**")
+
+        if ":" in function:
+            print(
+                f"{var} contains reference to variable - not possible to resolve at this time"
+            )
+            continue
+
+        context = {"x": x, "y": y, "z": z}
+
+        try:
+            analytic = eval(function, globals(), context)
+        except NotImplementedError as err:
+            print(f"{err.args[0]} not implemented, skipping")
+            continue
+
+        data = collect(var, xguards=True, yguards=True, path=str(datadir), info=False)
+        E2 = np.sqrt(np.mean((analytic - data) ** 2))
+        if E2 >= tolerance:
+            if var in ("mixmode", "mixmode_seed") and E2 < 1e-3:
+                arch = platform.machine()
+                if arch == "i686":
+                    # This can happen due tue excess precision e.g. on X87 architecture
+                    warnings.warn(
+                        f"WARNING: Excess precision detected on i686 architecture for {var} (E2={E2:.4e})"
                     )
-                )
-                continue
-
-            context = {"x": x, "y": y, "z": z}
-            try:
-                analytic = eval(function, globals(), context)
-            except NotImplementedError as err:
-                print("{} not implemented, skipping".format(err.args[0]))
-            else:
-                data = collect(
-                    var, xguards=True, yguards=True, path=datadir, info=False
-                )
-                E2 = np.sqrt(np.mean((analytic - data) ** 2))
-                if E2 < tolerance:
-                    success_string = "PASS"
+                    continue
                 else:
-                    if (var == "mixmode" or var == "mixmode_seed") and E2 < 1e-3:
-                        import platform
-
-                        arch = platform.machine()
-                        if arch == "i686":
-                            # This can happen due tue excess precision e.g. on X87 architecture
-                            success_string = "WARNING"
-                        else:
-                            print(
-                                "This should only happen in i686 with an x87 math architecture."
-                            )
-                            print("We detected however an %s architecture." % arch)
-                            success_string = "FAIL"
-                            success = False
-                    else:
-                        success_string = "FAIL"
-                        success = False
-                print(
-                    "\tChecking {var:<12}: l-2: {err:.4e} ... {success}".format(
-                        var=var, err=E2, success=success_string
+                    failures.append(
+                        f"{var} (arch: {arch}): l-2 error {E2:.4e} >= {tolerance}"
                     )
-                )
+            else:
+                failures.append(f"{var}: l-2 error {E2:.4e} >= {tolerance}")
 
-    assert success, " => Some failed tests"
+    # Assert that the failures list is empty, otherwise print all collected failures
+    assert not failures, (
+        "The following variables failed tolerance checks:\n" + "\n".join(failures)
+    )
