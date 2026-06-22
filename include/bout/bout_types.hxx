@@ -1,8 +1,8 @@
 /**************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact Ben Dudson, bd512@york.ac.uk
- * 
+ * Contact Ben Dudson, dudson2@llnl.gov
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -21,6 +21,8 @@
 
 #ifndef BOUT_TYPES_H
 #define BOUT_TYPES_H
+
+#include "bout/build_config.hxx"
 
 #include <limits>
 #include <string>
@@ -139,5 +141,16 @@ struct enumWrapper {
 
 /// Boundary condition function
 using FuncPtr = BoutReal (*)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
+
+template <typename T>
+struct Constant {
+  T val;
+  struct View {
+    T v;
+    View(T v) : v(v) {}
+    BOUT_HOST_DEVICE T operator()(int) const { return v; }
+  };
+  operator View() const { return {val}; }
+};
 
 #endif // BOUT_TYPES_H

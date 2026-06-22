@@ -15,8 +15,8 @@
 #include <bout/output_bout_types.hxx>
 #include <bout/petsc_interface.hxx>
 #include <bout/solver.hxx>
-#include <bout/utils.hxx>
 #include <bout/unused.hxx>
+#include <bout/utils.hxx>
 
 #include <algorithm>
 #include <cmath>
@@ -35,10 +35,10 @@
 
 class ColoringStencil {
 private:
-  bool static isInSquare(int const i, int const j, int const n_square) {
+  bool static isInSquare(const int i, const int j, const int n_square) {
     return std::abs(i) <= n_square && std::abs(j) <= n_square;
   }
-  bool static isInCross(int const i, int const j, int const n_cross) {
+  bool static isInCross(const int i, const int j, const int n_cross) {
     if (i == 0) {
       return std::abs(j) <= n_cross;
     }
@@ -47,7 +47,7 @@ private:
     }
     return false;
   }
-  bool static isInTaxi(int const i, int const j, int const n_taxi) {
+  bool static isInTaxi(const int i, const int j, const int n_taxi) {
     return std::abs(i) + std::abs(j) <= n_taxi;
   }
 
@@ -161,7 +161,7 @@ PetscErrorCode SNESSolver::FDJinitialise() {
                       .doc("Extent of stencil (taxi-cab norm)")
                       .withDefault<int>((n_square == 0 && n_cross == 0) ? 2 : 0);
 
-    auto const xy_offsets = ColoringStencil::getOffsets(n_square, n_taxi, n_cross);
+    const auto xy_offsets = ColoringStencil::getOffsets(n_square, n_taxi, n_cross);
     {
       // This is ugly but can't think of a better and robust way to
       // count the non-zeros for some arbitrary stencil
@@ -543,9 +543,9 @@ SNESSolver::SNESSolver(Options* opts)
       pseudo_alpha((*options)["pseudo_alpha"]
                        .doc("Sets timestep using dt = alpha / residual")
                        .withDefault(100. * atol * timestep)),
-      pseudo_alpha_minimum(
-          (*options)["pseudo_alpha_minimum"].doc("Minimum value of pseudo_alpha")
-          .withDefault(0.1 * pseudo_alpha)),
+      pseudo_alpha_minimum((*options)["pseudo_alpha_minimum"]
+                               .doc("Minimum value of pseudo_alpha")
+                               .withDefault(0.1 * pseudo_alpha)),
       pseudo_growth_factor((*options)["pseudo_growth_factor"]
                                .doc("PTC growth factor on success")
                                .withDefault(1.1)),
@@ -630,8 +630,16 @@ SNESSolver::SNESSolver(Options* opts)
                     .doc("Scale time derivatives (Jacobian row scaling)?")
                     .withDefault<bool>(false)),
       scale_vars((*options)["scale_vars"]
-                     .doc("Scale variables (Jacobian column scaling)?")
+                     .doc("Scale variables to be order unity?")
                      .withDefault<bool>(false)),
+      rescale_period(
+          (*options)["rescale_period"]
+              .doc("Number of iterations before recalculating variable scaling")
+              .withDefault<int>(30)),
+      rescale_threshold((*options)["rescale_threshold"]
+                            .doc("How much change their should be in the norm of the "
+                                 "state, before rescaling")
+                            .withDefault<BoutReal>(100.)),
       asinh_vars((*options)["asinh_vars"]
                      .doc("Apply asinh() to all variables?")
                      .withDefault<bool>(false)) {}
@@ -655,6 +663,16 @@ int SNESSolver::init() {
   output_info.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
                     n3Dvars(), n2Dvars(), neq, nlocal);
 
+  // Initialise fields for storing residual of nonlinear solves
+  if (diagnose) {
+    for (const auto& f : f2d) {
+      resid_2d.emplace_back(emptyFrom(*f.var));
+    }
+    for (const auto& f : f3d) {
+      resid_3d.emplace_back(emptyFrom(*f.var));
+    }
+  }
+
   // Initialise PETSc components
 
   // Vectors
@@ -665,6 +683,10 @@ int SNESSolver::init() {
 
   PetscCall(VecDuplicate(snes_x, &snes_f));
   PetscCall(VecDuplicate(snes_x, &x0));
+  if (diagnose) {
+    PetscCall(VecDuplicate(snes_f, &f0));
+    PetscCall(VecDuplicate(snes_f, &deriv));
+  }
 
   if ((equation_form == BoutSnesEquationForm::rearranged_backward_euler)
       || (equation_form == BoutSnesEquationForm::pseudo_transient)) {
@@ -755,6 +777,9 @@ int SNESSolver::init() {
     // Used so that the timestep does not have to be adjusted,
     // because that would require updating the preconditioner.
     PetscCall(VecDuplicate(snes_x, &output_x));
+    if (diagnose) {
+      PetscCall(VecDuplicate(snes_f, &output_f));
+    }
 
     // Initialize the Finite Difference Jacobian
     PetscCall(FDJinitialise());
@@ -856,6 +881,63 @@ int SNESSolver::init() {
   return 0;
 }
 
+PetscErrorCode SNESSolver::rescale(int& saved_jacobian_lag) {
+  // Individual variable scaling
+  // Note: If variables are rescaled then the Jacobian columns
+  //       need to be scaled or recalculated
+  int istart = 0;
+  int iend = 0;
+  VecGetOwnershipRange(snes_x, &istart, &iend);
+
+  // Take ownership of snes_x and var_scaling_factors data
+  PetscScalar* snes_x_data = nullptr;
+  PetscCall(VecGetArray(snes_x, &snes_x_data));
+  PetscScalar* x1_data = nullptr;
+  if (predictor) {
+    // x1 is only allocated if predictor is enabled
+    PetscCall(VecGetArray(x1, &x1_data));
+  }
+  PetscScalar* var_scaling_factors_data = nullptr;
+  PetscCall(VecGetArray(var_scaling_factors, &var_scaling_factors_data));
+
+  // Normalise each value in the state
+  // Limit normalisation so scaling factor is never smaller than rtol
+  for (int i = 0; i < iend - istart; ++i) {
+    const PetscScalar norm =
+        BOUTMAX(std::abs(snes_x_data[i]), rtol / var_scaling_factors_data[i]);
+    snes_x_data[i] /= norm;
+    if (predictor) {
+      x1_data[i] /= norm; // Update history for predictor
+    }
+    var_scaling_factors_data[i] *= norm;
+  }
+
+  // Restore vector underlying data
+  PetscCall(VecRestoreArray(var_scaling_factors, &var_scaling_factors_data));
+  if (predictor) {
+    PetscCall(VecRestoreArray(x1, &x1_data));
+  }
+  PetscCall(VecRestoreArray(snes_x, &snes_x_data));
+
+  if (diagnose) {
+    // Print maximum and minimum scaling factors
+    PetscReal max_scale = 0.;
+    PetscReal min_scale = 0.;
+    VecMax(var_scaling_factors, nullptr, &max_scale);
+    VecMin(var_scaling_factors, nullptr, &min_scale);
+    output.write("Var scaling: {} -> {}\n", min_scale, max_scale);
+  }
+
+  // Force recalculation of the Jacobian
+  SNESGetLagJacobian(snes, &saved_jacobian_lag);
+  // FIXME: This isn't actually what we want to happen. The lag should
+  // stay as before, we just want to make sure the Jacobian gets
+  // re-evaluated at the start of the solve. We need to use
+  // SNESSetJacobianPersist for that.
+  SNESSetLagJacobian(snes, 1);
+  return PETSC_SUCCESS;
+}
+
 int SNESSolver::run() {
   // Set initial guess at the solution from variables
   {
@@ -875,6 +957,11 @@ int SNESSolver::run() {
     PetscCall(VecRestoreArray(snes_x, &xdata));
   }
 
+  int saved_jacobian_lag = 0;
+  if (scale_vars) {
+    PetscCall(rescale(saved_jacobian_lag));
+  }
+
   // Initialise residuals
   local_residual = 0.0;
   local_residual_2d = 0.0;
@@ -884,15 +971,20 @@ int SNESSolver::run() {
     output.write("\n    Residual: {}\n", global_residual);
   }
 
+  // If saving solver residuals, need to get initial value.
+  if (diagnose) {
+    snes_function(snes_x, snes_f, false);
+  }
+
   BoutReal target = simtime;
   recent_failure_rate = 0.0;
-  for (int s = 0; s < getNumberOutputSteps(); s++) {
+  int steps_since_rescale = 0;
+  BoutReal change_since_rescale = 0.;
+  for (int s = 1; s <= getNumberOutputSteps(); s++) {
     target += getOutputTimestep();
 
     bool looping = true;
     int snes_failures = 0; // Count SNES convergence failures
-    int saved_jacobian_lag = 0;
-    int loop_count = 0;
 
     const BoutReal start_global_residual = global_residual;
     do {
@@ -902,57 +994,19 @@ int SNESSolver::run() {
         break; // Could happen if step over multiple outputs
       }
 
-      if (scale_vars) {
-        // Individual variable scaling
-        // Note: If variables are rescaled then the Jacobian columns
-        //       need to be scaled or recalculated
-
-        if (loop_count % 100 == 0) {
-          // Rescale state (snes_x) so that all quantities are around 1
-          // If quantities are near zero then RTOL is used
-          int istart, iend;
-          VecGetOwnershipRange(snes_x, &istart, &iend);
-
-          // Take ownership of snes_x and var_scaling_factors data
-          PetscScalar* snes_x_data = nullptr;
-          PetscCall(VecGetArray(snes_x, &snes_x_data));
-          PetscScalar* x1_data;
-          PetscCall(VecGetArray(x1, &x1_data));
-          PetscScalar* var_scaling_factors_data;
-          PetscCall(VecGetArray(var_scaling_factors, &var_scaling_factors_data));
-
-          // Normalise each value in the state
-          // Limit normalisation so scaling factor is never smaller than rtol
-          for (int i = 0; i < iend - istart; ++i) {
-            const PetscScalar norm =
-                BOUTMAX(std::abs(snes_x_data[i]), rtol / var_scaling_factors_data[i]);
-            snes_x_data[i] /= norm;
-            x1_data[i] /= norm; // Update history for predictor
-            var_scaling_factors_data[i] *= norm;
-          }
-
-          // Restore vector underlying data
-          PetscCall(VecRestoreArray(var_scaling_factors, &var_scaling_factors_data));
-          PetscCall(VecRestoreArray(x1, &x1_data));
-          PetscCall(VecRestoreArray(snes_x, &snes_x_data));
-
-          if (diagnose) {
-            // Print maximum and minimum scaling factors
-            PetscReal max_scale, min_scale;
-            VecMax(var_scaling_factors, nullptr, &max_scale);
-            VecMin(var_scaling_factors, nullptr, &min_scale);
-            output.write("Var scaling: {} -> {}\n", min_scale, max_scale);
-          }
-
-          // Force recalculation of the Jacobian
-          SNESGetLagJacobian(snes, &saved_jacobian_lag);
-          SNESSetLagJacobian(snes, 1);
-        }
+      if (scale_vars
+          and (change_since_rescale > rescale_threshold
+               or steps_since_rescale == rescale_period)) {
+        PetscCall(rescale(saved_jacobian_lag));
+        change_since_rescale = 0.;
+        steps_since_rescale = 0;
       }
-      ++loop_count;
 
       // Copy the state (snes_x) into initial values (x0)
       VecCopy(snes_x, x0);
+      if (diagnose) {
+        VecCopy(snes_f, f0);
+      }
 
       if (equation_form == BoutSnesEquationForm::pseudo_transient) {
         // Pseudo-Transient Continuation
@@ -1152,21 +1206,35 @@ int SNESSolver::run() {
         }
 
         // Copy derivatives back
-        {
+        if (diagnose) {
+          BoutReal* ddata = nullptr;
+          PetscCall(VecGetArray(deriv, &ddata));
+          save_derivs(ddata);
+          PetscCall(VecRestoreArray(deriv, &ddata));
+          if (scale_vars) {
+            PetscCall(VecPointwiseDivide(deriv, deriv, var_scaling_factors));
+          }
+          // Forward Euler
+          VecAXPY(snes_x, dt, deriv);
+        } else {
           BoutReal* fdata = nullptr;
           PetscCall(VecGetArray(snes_f, &fdata));
           save_derivs(fdata);
           PetscCall(VecRestoreArray(snes_f, &fdata));
+          if (scale_vars) {
+            PetscCall(VecPointwiseDivide(snes_f, snes_f, var_scaling_factors));
+          }
+          // Forward Euler
+          VecAXPY(snes_x, dt, snes_f);
         }
-
-        // Forward Euler
-        VecAXPY(snes_x, dt, snes_f);
       }
 
       simtime += dt;
 
       // Update local and global residuals
       PetscCall(updateResiduals(snes_x));
+      change_since_rescale += global_residual * dt;
+      ++steps_since_rescale;
 
       if (diagnose) {
         // Gather and print diagnostic information
@@ -1191,10 +1259,10 @@ int SNESSolver::run() {
 
       if (equation_form == BoutSnesEquationForm::pseudo_transient) {
         // Adjust pseudo_alpha to globally scale timesteps
-        pseudo_alpha = std::max({
-            updateGlobalTimestep(pseudo_alpha, nl_its, recent_failure_rate,
-                                 max_timestep * atol * 100),
-            pseudo_alpha_minimum});
+        pseudo_alpha =
+            std::max({updateGlobalTimestep(pseudo_alpha, nl_its, recent_failure_rate,
+                                           max_timestep * atol * 100),
+                      pseudo_alpha_minimum});
 
         // Adjust local timesteps
         PetscCall(updatePseudoTimestepping());
@@ -1232,11 +1300,19 @@ int SNESSolver::run() {
 
       // output_x <- alpha * x0 + (1 - alpha) * output_x
       VecAXPBY(output_x, alpha, 1. - alpha, x0);
-      output_time = target;
 
+      if (diagnose) {
+        VecCopy(snes_f, output_f);
+        VecAXPBY(output_f, alpha, 1 - alpha, f0);
+      }
+
+      output_time = target;
     } else {
       // Timestep was adjusted to hit target output time
       output_x = snes_x;
+      if (diagnose) {
+        output_f = snes_f;
+      }
     }
 
     // Put the result into variables
@@ -1273,6 +1349,13 @@ int SNESSolver::run() {
       // Abort simulation. There is no way to recover unless
       // all processors throw an exception at the same point.
       BoutComm::abort(1);
+    }
+
+    if (diagnose) {
+      BoutReal* resid_data = nullptr;
+      PetscCall(VecGetArray(output_f, &resid_data));
+      loop_vars(resid_2d, resid_3d, resid_data, SOLVER_VAR_OP::LOAD);
+      PetscCall(VecRestoreArray(output_f, &resid_data));
     }
 
     if (call_monitors(output_time, s, getNumberOutputSteps()) != 0) {
@@ -1330,12 +1413,20 @@ PetscErrorCode SNESSolver::updateResiduals(Vec x) {
   local_residual_2d_prev = copy(local_residual_2d);
   global_residual_prev = global_residual;
 
-  // Call RHS function to get time derivatives
-  PetscCall(rhs_function(x, snes_f, false));
-
-  // Reading the residual vectors
   const BoutReal* current_residual = nullptr;
-  PetscCall(VecGetArrayRead(snes_f, &current_residual));
+  if (diagnose) {
+    // Call RHS function to get time derivatives
+    PetscCall(rhs_function(x, deriv, false));
+
+    // Reading the residual vectors
+    PetscCall(VecGetArrayRead(deriv, &current_residual));
+  } else {
+    // Call RHS function to get time derivatives
+    PetscCall(rhs_function(x, snes_f, false));
+
+    // Reading the residual vectors
+    PetscCall(VecGetArrayRead(snes_f, &current_residual));
+  }
 
   // Note: The ordering of quantities in the PETSc vectors
   // depends on the Solver::loop_vars function
@@ -1403,8 +1494,12 @@ PetscErrorCode SNESSolver::updateResiduals(Vec x) {
     }
   }
 
-  // Restore Vec data arrays
-  PetscCall(VecRestoreArrayRead(snes_f, &current_residual));
+  if (diagnose) {
+    // Restore Vec data arrays
+    PetscCall(VecRestoreArrayRead(deriv, &current_residual));
+  } else {
+    PetscCall(VecRestoreArrayRead(snes_f, &current_residual));
+  }
 
   // Global residual metric (RMS)
   global_residual = std::sqrt(mean(SQ(local_residual), true));
@@ -1541,10 +1636,10 @@ PetscErrorCode SNESSolver::updatePseudoTimestepping() {
 /// rapid changes in timestep.
 BoutReal SNESSolver::updatePseudoTimestep_inverse_residual(BoutReal previous_timestep,
                                                            BoutReal current_residual) {
-  return std::max({
-      std::min({std::max({pseudo_alpha / current_residual, previous_timestep / 1.5}),
-                1.5 * previous_timestep, max_timestep}),
-      dt_min_reset});
+  return std::max(
+      {std::min({std::max({pseudo_alpha / current_residual, previous_timestep / 1.5}),
+                 1.5 * previous_timestep, max_timestep}),
+       dt_min_reset});
 }
 
 // Strategy based on history of residuals
@@ -1672,6 +1767,10 @@ PetscErrorCode SNESSolver::rhs_function(Vec x, Vec f, bool linear) {
   }
 
   PetscCall(VecRestoreArray(f, &fdata));
+
+  if (scale_vars) {
+    PetscCall(VecPointwiseDivide(f, f, var_scaling_factors));
+  }
   return PETSC_SUCCESS;
 }
 
@@ -1932,6 +2031,24 @@ void SNESSolver::outputVars(Options& output_options, bool save_repeat) {
                                                      "SNESSolver");
     output_options["snes_pseudo_timestep"].assignRepeat(pseudo_timestep, "t", save_repeat,
                                                         "SNESSolver");
+  }
+
+  if (diagnose) {
+    auto meta_2d_it = f2d.begin();
+    for (const auto& f : resid_2d) {
+      const std::string name = "resid_" + meta_2d_it->name;
+      output_options[name].assignRepeat(f, "t", save_repeat, "SNES");
+      output_options[name].attributes["description"] = meta_2d_it->description;
+      ++meta_2d_it;
+    }
+
+    auto meta_3d_it = f3d.begin();
+    for (const auto& f : resid_3d) {
+      const std::string name = "resid_" + meta_3d_it->name;
+      output_options[name].assignRepeat(f, "t", save_repeat, "SNES");
+      output_options[name].attributes["description"] = meta_3d_it->description;
+      ++meta_3d_it;
+    }
   }
 }
 
