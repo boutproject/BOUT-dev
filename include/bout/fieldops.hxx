@@ -12,7 +12,10 @@
 #include <cstddef>
 #include <limits>
 #include <optional>
+#include <tuple>
 #include <type_traits>
+#include <utility>
+#include <vector>
 
 #if BOUT_HAS_CUDA
 #include <cuda_runtime.h>
@@ -298,7 +301,160 @@ struct StreamsRAII {
   StreamsRAII& operator=(StreamsRAII&&) = delete;
 };
 inline struct StreamsRAII streams;
+
+struct BorrowedStreams {
+  std::vector<cudaStream_t> borrowed;
+
+  cudaStream_t acquire() {
+    auto stream = streams.get();
+    borrowed.push_back(stream);
+    return stream;
+  }
+
+  void synchronize() {
+    for (auto& stream : borrowed) {
+      cudaStreamSynchronize(stream);
+    }
+  }
+
+  ~BorrowedStreams() {
+    for (auto& stream : borrowed) {
+      streams.put(stream);
+    }
+  }
+
+  BorrowedStreams() = default;
+  BorrowedStreams(const BorrowedStreams&) = delete;
+  BorrowedStreams(BorrowedStreams&&) = delete;
+  BorrowedStreams& operator=(const BorrowedStreams&) = delete;
+  BorrowedStreams& operator=(BorrowedStreams&&) = delete;
+};
 #endif
+
+template <typename ExprView>
+void launchExprView(BoutReal* out, const ExprView& expr_view
+#if BOUT_HAS_CUDA && defined(__CUDACC__)
+                    ,
+                    cudaStream_t stream
+#endif
+) {
+  if (expr_view.size() == 0) {
+    return;
+  }
+
+#if BOUT_HAS_CUDA && defined(__CUDACC__)
+  int blocks = (expr_view.size() + THREADS - 1) / THREADS;
+  evaluatorExpr<<<blocks, THREADS, 0, stream>>>(out, expr_view);
+#else
+  int e = expr_view.size();
+  for (int i = 0; i < e; ++i) {
+    const int idx = expr_view.regionIdx(i);
+    out[idx] = expr_view(idx);
+  }
+#endif
+}
+
+template <typename Expr>
+void launchExprAsync(BoutReal* out, const Expr& expr
+#if BOUT_HAS_CUDA && defined(__CUDACC__)
+                     ,
+                     cudaStream_t stream
+#endif
+) {
+  launchExprView(out, static_cast<typename Expr::View>(expr)
+#if BOUT_HAS_CUDA && defined(__CUDACC__)
+                          ,
+                 stream
+#endif
+  );
+}
+
+template <typename Expr>
+void launchExprSync(BoutReal* out, const Expr& expr) {
+#if BOUT_HAS_CUDA && defined(__CUDACC__)
+  auto stream = streams.get();
+  launchExprAsync(out, expr, stream);
+  cudaStreamSynchronize(stream);
+  streams.put(stream);
+#else
+  launchExprAsync(out, expr);
+#endif
+}
+
+namespace bout::detail {
+
+template <typename T>
+inline constexpr bool is_eval_result_v =
+    std::is_same_v<std::decay_t<T>, Field2D> || std::is_same_v<std::decay_t<T>, Field3D>
+    || std::is_same_v<std::decay_t<T>, FieldPerp>;
+
+template <typename Result, typename Expr>
+inline constexpr bool is_eval_compatible_v =
+    (std::is_same_v<std::decay_t<Result>, Field3D> && is_expr_field3d_v<Expr>)
+    || (std::is_same_v<std::decay_t<Result>, Field2D> && is_expr_field2d_v<Expr>)
+    || (std::is_same_v<std::decay_t<Result>, FieldPerp> && is_expr_fieldperp_v<Expr>);
+
+template <typename Expr>
+inline constexpr bool is_materialized_eval_expr_v =
+    std::is_same_v<std::decay_t<Expr>, Field3D>
+    || std::is_same_v<std::decay_t<Expr>, Field2D>
+    || std::is_same_v<std::decay_t<Expr>, FieldPerp>;
+
+template <typename Result, typename Expr>
+void resetEvalResult(Result& result, const Expr& expr) {
+  using ResultType = std::decay_t<Result>;
+
+  if constexpr (std::is_same_v<ResultType, Field3D>) {
+    result = Field3D{expr.getMesh(), expr.getLocation(), expr.getDirections(),
+                     expr.getRegionID()};
+  } else if constexpr (std::is_same_v<ResultType, Field2D>) {
+    result = Field2D{expr.getMesh(), expr.getLocation(), expr.getDirections(),
+                     expr.getRegionID()};
+  } else if constexpr (std::is_same_v<ResultType, FieldPerp>) {
+    result = FieldPerp{expr.getMesh(), expr.getLocation(), expr.getIndex(),
+                       expr.getDirections(), expr.getRegionID()};
+  } else {
+    static_assert(is_eval_result_v<ResultType>, "Unsupported eval_into result type");
+  }
+}
+
+template <typename Result, typename Expr>
+void prepareEvalResult(Result& result, const Expr& expr) {
+  if (!result.isAllocated() || result.getMesh() != expr.getMesh()) {
+    resetEvalResult(result, expr);
+  }
+
+  if constexpr (std::is_same_v<std::decay_t<Result>, Field3D>) {
+    result.clearParallelSlices();
+    result.setRegion(expr.getRegionID());
+  }
+
+  result.setLocation(expr.getLocation());
+  result.setDirections(expr.getDirections());
+
+  if constexpr (std::is_same_v<std::decay_t<Result>, FieldPerp>) {
+    result.setIndex(expr.getIndex());
+  }
+
+  result.allocate();
+}
+
+template <typename Result>
+BoutReal* evalResultData(Result& result) {
+  return static_cast<typename std::decay_t<Result>::View>(result).data;
+}
+
+template <typename Result, typename Expr>
+void executeEvalTask(Result& result, const Expr& expr) {
+  if constexpr (is_materialized_eval_expr_v<Expr>) {
+    result = expr;
+  } else {
+    prepareEvalResult(result, expr);
+    launchExprSync(evalResultData(result), expr);
+  }
+}
+
+} // namespace bout::detail
 
 template <typename Reducer, typename ExprView>
 auto reduceExpr(const ExprView& expr_view) -> typename Reducer::State {
@@ -356,6 +512,8 @@ struct BinaryExpr {
       : lhs(lhs), rhs(rhs), indices(indices), f(f), mesh(mesh), location(location),
         directions(directions), regionID(regionID), yindex(yindex) {}
 
+  BinaryExpr(const BinaryExpr&) = default;
+  BinaryExpr(BinaryExpr&&) = default;
   BinaryExpr& operator=(const BinaryExpr&) = delete;
   BinaryExpr& operator=(BinaryExpr&&) = delete;
 
@@ -402,21 +560,7 @@ struct BinaryExpr {
   operator View() { return View{lhs, rhs, &indices[0], indices.size(), f}; }
   operator View() const { return View{lhs, rhs, &indices[0], indices.size(), f}; }
 
-  void evaluate(BoutReal* data) const {
-#if BOUT_HAS_CUDA && defined(__CUDACC__)
-    cudaStream_t stream = streams.get();
-    int blocks = (size() + THREADS - 1) / THREADS;
-    evaluatorExpr<<<blocks, THREADS, 0, stream>>>(&data[0], static_cast<View>(*this));
-    cudaStreamSynchronize(stream);
-    streams.put(stream);
-#else
-    int e = size();
-    for (int i = 0; i < e; ++i) {
-      int idx = regionIdx(i);
-      data[idx] = operator()(idx); // single‐pass fusion
-    }
-#endif
-  }
+  void evaluate(BoutReal* data) const { launchExprSync(&data[0], *this); }
 
   Mesh* getMesh() const { return mesh; }
   CELL_LOC getLocation() const { return location; }
@@ -424,5 +568,102 @@ struct BinaryExpr {
   std::optional<size_t> getRegionID() const { return regionID; };
   int getIndex() const { return yindex.value_or(-1); }
 };
+
+template <typename Result, typename Expr>
+struct EvalTask {
+  Result* result;
+  std::decay_t<Expr> expr;
+};
+
+template <typename... Tasks>
+struct EvalBuilder {
+  std::tuple<Tasks...> tasks;
+
+  template <typename Result, typename Expr>
+  auto eval_into(Result& result, Expr&& expr) && {
+    using ExprType = std::decay_t<Expr>;
+    static_assert(bout::detail::is_eval_result_v<Result>,
+                  "eval_into only supports Field2D, Field3D, and FieldPerp results");
+    static_assert(bout::detail::is_eval_compatible_v<Result, ExprType>,
+                  "eval_into result type does not match the expression family");
+
+    using Task = EvalTask<std::decay_t<Result>, ExprType>;
+    return EvalBuilder<Tasks..., Task>{std::tuple_cat(
+        std::move(tasks), std::make_tuple(Task{&result, std::forward<Expr>(expr)}))};
+  }
+
+  template <typename Result, typename Expr>
+  auto eval_into(Result& result, Expr&& expr) const& {
+    using ExprType = std::decay_t<Expr>;
+    static_assert(bout::detail::is_eval_result_v<Result>,
+                  "eval_into only supports Field2D, Field3D, and FieldPerp results");
+    static_assert(bout::detail::is_eval_compatible_v<Result, ExprType>,
+                  "eval_into result type does not match the expression family");
+
+    using Task = EvalTask<std::decay_t<Result>, ExprType>;
+    return EvalBuilder<Tasks..., Task>{
+        std::tuple_cat(tasks, std::make_tuple(Task{&result, std::forward<Expr>(expr)}))};
+  }
+
+  // Prototype entry point: this currently shares the stream execution path
+  // until a fused multi-output kernel is added.
+  void merge() && { stream_impl(); }
+  void merge() const& { stream_impl(); }
+
+  void stream() && { stream_impl(); }
+  void stream() const& { stream_impl(); }
+
+private:
+  void stream_impl() const {
+#if BOUT_HAS_CUDA && defined(__CUDACC__)
+    std::apply(
+        [](auto&... task) {
+          (([&] {
+             if constexpr (!bout::detail::is_materialized_eval_expr_v<
+                               decltype(task.expr)>) {
+               bout::detail::prepareEvalResult(*task.result, task.expr);
+             }
+           }()),
+           ...);
+        },
+        tasks);
+
+    BorrowedStreams borrowed_streams;
+    std::apply(
+        [&](auto&... task) {
+          (([&] {
+             if constexpr (bout::detail::is_materialized_eval_expr_v<
+                               decltype(task.expr)>) {
+               *task.result = task.expr;
+             } else {
+               launchExprAsync(bout::detail::evalResultData(*task.result), task.expr,
+                               borrowed_streams.acquire());
+             }
+           }()),
+           ...);
+        },
+        tasks);
+    borrowed_streams.synchronize();
+#else
+    std::apply(
+        [](auto&... task) {
+          ((bout::detail::executeEvalTask(*task.result, task.expr)), ...);
+        },
+        tasks);
+#endif
+  }
+};
+
+template <typename Result, typename Expr>
+auto eval_into(Result& result, Expr&& expr) {
+  using ExprType = std::decay_t<Expr>;
+  static_assert(bout::detail::is_eval_result_v<Result>,
+                "eval_into only supports Field2D, Field3D, and FieldPerp results");
+  static_assert(bout::detail::is_eval_compatible_v<Result, ExprType>,
+                "eval_into result type does not match the expression family");
+
+  using Task = EvalTask<std::decay_t<Result>, ExprType>;
+  return EvalBuilder<Task>{std::make_tuple(Task{&result, std::forward<Expr>(expr)})};
+}
 
 #endif // BOUT_FIELDSOPS_HXX

@@ -1899,4 +1899,29 @@ TEST_F(FieldPerpTest, Inequality) {
   EXPECT_FALSE(field1 == field5);
 }
 
+TEST_F(FieldPerpTest, EvalIntoStreamChainsBinaryExprs) {
+  FieldPerp a{
+      mesh_staggered, CELL_XLOW, 3, {YDirectionType::Aligned, ZDirectionType::Average}};
+  FieldPerp b{a};
+  FieldPerp c{a};
+  FieldPerp d{a};
+
+  a = 1.0;
+  b = 2.0;
+  c = 3.0;
+  d = 4.0;
+
+  FieldPerp first;
+  FieldPerp second;
+
+  eval_into(first, a + b * c).eval_into(second, b + d).stream();
+
+  EXPECT_TRUE(IsFieldEqual(first, 7.0));
+  EXPECT_TRUE(IsFieldEqual(second, 6.0));
+  EXPECT_EQ(first.getLocation(), a.getLocation());
+  EXPECT_EQ(first.getIndex(), a.getIndex());
+  EXPECT_EQ(first.getDirectionY(), a.getDirectionY());
+  EXPECT_EQ(first.getDirectionZ(), a.getDirectionZ());
+}
+
 #pragma GCC diagnostic pop

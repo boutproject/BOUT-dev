@@ -1560,4 +1560,28 @@ TEST_F(Field2DTest, DC) {
   EXPECT_EQ(DC(field), field);
 }
 
+TEST_F(Field2DTest, EvalIntoMergeChainsBinaryExprs) {
+  Field2D a{
+      mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+  Field2D b{a};
+  Field2D c{a};
+  Field2D d{a};
+
+  a = 1.0;
+  b = 2.0;
+  c = 3.0;
+  d = 4.0;
+
+  Field2D first;
+  Field2D second;
+
+  eval_into(first, a + b * c).eval_into(second, b + d).merge();
+
+  EXPECT_TRUE(IsFieldEqual(first, 7.0));
+  EXPECT_TRUE(IsFieldEqual(second, 6.0));
+  EXPECT_EQ(first.getLocation(), a.getLocation());
+  EXPECT_EQ(first.getDirectionY(), a.getDirectionY());
+  EXPECT_EQ(first.getDirectionZ(), a.getDirectionZ());
+}
+
 #pragma GCC diagnostic pop
