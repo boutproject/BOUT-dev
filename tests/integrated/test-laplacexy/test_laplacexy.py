@@ -9,6 +9,7 @@
 # requires: all_tests
 # cores: 8
 
+import pytest
 from boututils.run_wrapper import shell, launch, launch_safe
 from boutdata.collect import collect
 
@@ -52,48 +53,40 @@ argslist = [
 ]
 
 
-def test_laplacexy():
+@pytest.mark.parametrize(
+    "is_nonorth, tol",
+    [(False, tol_orth), (True, tol_nonorth)],
+    ids=["orthogonal", "non_orthogonal"],
+)
+@pytest.mark.parametrize("case_idx, base_args", enumerate(argslist))
+def test_laplacexy(is_nonorth, tol, case_idx, base_args):
+    nproc = 8
 
-    print("Running LaplaceXY inversion test")
-    success = True
+    args = base_args if is_nonorth else f"{base_args} mesh:g12=0."
+    cmd = f"./test-laplacexy {args}"
 
-    for nproc in [8]:
-        print("   %d processors...." % nproc)
-        for nonorth, tol in [(False, tol_orth), (True, tol_nonorth)]:
-            for args in argslist:
-                if not nonorth:
-                    args += " mesh:g12=0."
+    shell(["rm -f data/BOUT.dmp.*.nc"])
 
-                cmd = "./test-laplacexy " + args
+    if "hypre" in args:
+        s, out = launch(cmd, nproc=nproc, pipe=True, verbose=True)
+        if s == 134:
+            # PETSc did not recognise pctype option, probably means it
+            # was not compiled with hypre, so skip tests that need
+            # hypre to converge
+            pytest.skip("hypre not available as pre-conditioner in PETSc. Skipping...")
+    else:
+        s, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
 
-                shell(["rm data/BOUT.dmp.*.nc > /dev/null 2>&1"])
+    label = "nonorth" if is_nonorth else "orth"
+    log_filename = f"run.log.{nproc}.{label}.case_{case_idx}"
+    with open(log_filename, "w") as f:
+        f.write(out)
 
-                if "hypre" in args:
-                    s, out = launch(cmd, nproc=nproc, pipe=True, verbose=True)
-                    if s == 134:
-                        # PETSc did not recognise pctype option, probably means it
-                        # was not compiled with hypre, so skip tests that need
-                        # hypre to converge
-                        print(
-                            "hypre not available as pre-conditioner in PETSc. Skipping..."
-                        )
-                        continue
-                else:
-                    s, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
+    # Collect output data
+    error = collect("max_error", path="data", info=False)
 
-                f = open("run.log." + str(nproc), "w")
-                f.write(out)
-                f.close()
-
-                # Collect output data
-                error = collect("max_error", path="data", info=False)
-                if error <= 0:
-                    print("Convergence error")
-                    success = False
-                elif error > tol:
-                    print("Fail, maximum error is = " + str(error))
-                    success = False
-                else:
-                    print("Pass")
-
-    assert success, " => Some failed tests"
+    assert error > 0, "Convergence error"
+    assert error <= tol, (
+        f"Validation failure on case {case_idx} ({label}). "
+        f"Maximum absolute error {error:.4e} exceeds defined tolerance threshold {tol:.4e}"
+    )
