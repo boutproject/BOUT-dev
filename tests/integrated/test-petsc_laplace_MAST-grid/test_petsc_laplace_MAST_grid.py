@@ -8,59 +8,50 @@
 # requires: petsc
 # cores: 4
 
+import pytest
 from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
-from sys import stdout
 
 # Variables to compare
 vars = [
-    ["max_error1", 2.0e-4],
-    ["max_error2", 1.0e-4],
-    ["max_error3", 1.0e-4],
-    ["max_error4", 1.0e-4],
-    ["max_error5", 2.0e-3],
-    ["max_error6", 3.0e-4],
-    ["max_error7", 2.0e-4],
-    ["max_error8", 1.0e-4],
+    ("max_error1", 2.0e-4),
+    ("max_error2", 1.0e-4),
+    ("max_error3", 1.0e-4),
+    ("max_error4", 1.0e-4),
+    ("max_error5", 2.0e-3),
+    ("max_error6", 3.0e-4),
+    ("max_error7", 2.0e-4),
+    ("max_error8", 1.0e-4),
 ]
 # tol = 1e-4                  # Absolute (?) tolerance
 
 
-def test_petsc_laplace_MAST_grid():
-
+@pytest.mark.parametrize("nproc", [1, 2, 4])
+@pytest.mark.parametrize("jy", [2, 34, 65, 81, 113])
+def test_petsc_laplace_MAST_grid(nproc, jy):
     print(
         "Running PETSc Laplacian inversion test with non-identity metric (taken from grid for MAST SOL)"
     )
-    success = True
 
-    for nproc in [1, 2, 4]:
-        #  nxpe = 1
-        #  if nproc > 2:
-        #    nxpe = 2
-        for jy in [2, 34, 65, 81, 113]:
-            cmd = "./test_petsc_laplace_MAST_grid mesh:file=grids/grid_MAST_SOL_jyis{}.nc".format(
-                jy
+    cmd = f"./test_petsc_laplace_MAST_grid mesh:file=grids/grid_MAST_SOL_jyis{jy}.nc"
+
+    shell(["rm -f data/BOUT.dmp.*.nc"])
+
+    s, out = launch_safe(cmd, nproc=nproc, pipe=True)
+
+    with open(f"run.log.{nproc}.jy_{jy}", "w") as f:
+        f.write(out)
+
+    # Collect output data
+    failures = []
+    for var_name, tolerance in vars:
+        error = collect(var_name, path="data", info=False)
+
+        if error <= 0:
+            failures.append(f"{var_name}: Solver did not converge (error = {error})")
+        elif error > tolerance:
+            failures.append(
+                f"{var_name}: Absolute error {error:.4e} exceeds tolerance {tolerance:.4e}"
             )
 
-            shell(["rm data/BOUT.dmp.*.nc"])
-
-            print("   {} processors, grid_MAST_SOL_jyis{}".format(nproc, jy))
-            s, out = launch_safe(cmd, nproc=nproc, pipe=True)
-            f = open("run.log." + str(nproc), "w")
-            f.write(out)
-            f.close()
-
-            # Collect output data
-            for v in vars:
-                stdout.write("      Checking " + v[0] + " ... ")
-                error = collect(v[0], path="data", info=False)
-                if error <= 0:
-                    print("Convergence error")
-                    success = False
-                elif error > v[1]:
-                    print("Fail, maximum error is = " + str(error))
-                    success = False
-                else:
-                    print("Pass")
-
-    assert success, " => Some failed tests"
+    assert not failures, "Some failed tests:\n" + "\n".join(failures)
