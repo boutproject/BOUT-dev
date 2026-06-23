@@ -1,18 +1,24 @@
 #!/usr/bin/env python3
 
+import numpy as np
 from boutdata import collect
 from boututils.run_wrapper import launch_safe
-import numpy
 
 datapath = "data"
 nproc = 1
 tol = 1.0e-13
+non_periodic_tol = 1.0e-6
+
+GUARD_PAIRS = [(0, -4), (1, -3), (2, -2), (3, -1)]
 
 
 def test_twistshift():
 
-    s, out = launch_safe("./test-twistshift", nproc=nproc, pipe=True)
-    with open("run.log." + str(nproc), "w") as f:
+    cmd = "./test-twistshift"
+
+    s, out = launch_safe(cmd, nproc=nproc, pipe=True)
+
+    with open(f"run.log.{nproc}", "w") as f:
         f.write(out)
 
     test = collect("test", path=datapath, yguards=True, info=False)
@@ -22,52 +28,35 @@ def test_twistshift():
     # from boututils.showdata import showdata
     # showdata([test, test_aligned, result], titles=['test', 'test_aligned', 'result'])
 
-    success = True
-
     # Check test_aligned is *not* periodic in y
-    def test1(ylower, yupper):
-        global success
-        if numpy.any(
-            numpy.abs(test_aligned[:, yupper, :] - test_aligned[:, ylower, :]) < 1.0e-6
-        ):
-            success = False
-            print(
-                "Fail - test_aligned should not be periodic jy=%i and jy=%i should be "
-                "different",
-                yupper,
-                ylower,
+    failures = []
+    for ylower, yupper in GUARD_PAIRS:
+        diff = np.abs(test_aligned[:, yupper, :] - test_aligned[:, ylower, :])
+        if np.any(diff < non_periodic_tol):
+            failures.append(
+                f"Alignment Check: 'test_aligned' should not be periodic. "
+                f"Slices at jy={yupper} and jy={ylower} are identical within {non_periodic_tol}."
             )
-
-    test1(0, -4)
-    test1(1, -3)
-    test1(2, -2)
-    test1(3, -1)
 
     # Check test and result are the same
-    if numpy.any(numpy.abs(result - test) > tol):
-        print(
-            "Fail - result has not been communicated correctly - is different from input"
+    diff_result_test = np.abs(result - test)
+    if np.any(diff_result_test > tol):
+        max_diff = np.max(diff_result_test)
+        failures.append(
+            f"Fail - result has not been communicated correctly - is different from input. "
+            f"Maximum divergence is {max_diff:.4e} (exceeds {tol:.4e} tolerance)."
         )
-        success = False
 
     # Check result is periodic in y
-    def test2(ylower, yupper):
-        global success
-        if numpy.any(numpy.abs(result[:, yupper, :] - result[:, ylower, :]) > tol):
-            success = False
-            print(
-                "Fail - result should be periodic jy=%i and jy=%i should not be "
-                "different",
-                yupper,
-                ylower,
+    for ylower, yupper in GUARD_PAIRS:
+        diff = np.abs(result[:, yupper, :] - result[:, ylower, :])
+        if np.any(diff > tol):
+            max_diff = np.max(diff)
+            failures.append(
+                f"Fail - result should be periodic  jy={yupper} and jy={ylower} should not be different. "
+                f"Maximum difference is {max_diff:.4e}."
             )
-            print(ylower, result[:, ylower, :])
-            print(yupper, result[:, yupper, :])
-            print(result[:, ylower, :] - result[:, yupper, :])
 
-    test2(0, -4)
-    test2(1, -3)
-    test2(2, -2)
-    test2(3, -1)
-
-    assert success
+    assert not failures, "TwistShift validation encountered failures:\n" + "\n".join(
+        failures
+    )
