@@ -41,6 +41,44 @@ struct DDZ_C4_Op {
   }
 };
 
+struct DDZ_Dispatch_Op {
+  CoordinatesAccessor coords;
+  int nz{0};
+  DIFF_METHOD method{DIFF_DEFAULT};
+
+  template <typename LView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal apply_c2(int idx, const LView& lhs) const {
+    const int izp = i_zp(idx, nz);
+    const int izm = i_zm(idx, nz);
+
+    return 0.5 * (lhs(izp) - lhs(izm)) / coords.dz(idx);
+  }
+
+  template <typename LView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal apply_c4(int idx, const LView& lhs) const {
+    const int izp = i_zp(idx, nz);
+    const int izm = i_zm(idx, nz);
+    const int izp2 = i_zp(izp, nz);
+    const int izm2 = i_zm(izm, nz);
+
+    return (-lhs(izp2) + 8.0 * lhs(izp) - 8.0 * lhs(izm) + lhs(izm2))
+           / (12.0 * coords.dz(idx));
+  }
+
+  template <typename LView, typename RView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx, const LView& lhs,
+                                                        const RView&) const {
+    switch (method) {
+    case DIFF_C2:
+      return apply_c2(idx, lhs);
+    case DIFF_C4:
+      return apply_c4(idx, lhs);
+    default:
+      return 0.0;
+    }
+  }
+};
+
 struct BracketArakawaOp {
   CoordinatesAccessor coords;
   int ny{0};
@@ -78,6 +116,7 @@ struct BracketArakawaOp {
 
 using DDZExprC2 = BinaryExpr<Field3D, Field3D, Field3D, DDZ_C2_Op>;
 using DDZExprC4 = BinaryExpr<Field3D, Field3D, Field3D, DDZ_C4_Op>;
+using DDZDispatchExpr = BinaryExpr<Field3D, Field3D, Field3D, DDZ_Dispatch_Op>;
 using BracketArakawaExpr = BinaryExpr<Field3D, Field3D, Field3D, BracketArakawaOp>;
 
 } // namespace bout::stencil
@@ -107,6 +146,28 @@ inline bout::stencil::DDZExprC4 DDZ_C4(const Field3D& f) {
       static_cast<Field3D::View>(f),
       static_cast<Field3D::View>(f),
       bout::stencil::DDZ_C4_Op{CoordinatesAccessor{f.getCoordinates()}, f.getNz()},
+      f.getMesh(),
+      f.getLocation(),
+      f.getDirections(),
+      region_id,
+      f.getMesh()->getRegion("RGN_NOBNDRY")};
+}
+
+inline bout::stencil::DDZDispatchExpr DDZ_Dispatch(const Field3D& f, DIFF_METHOD method) {
+  checkData(f);
+
+  if ((method != DIFF_C2) && (method != DIFF_C4)) {
+    throw BoutException("DDZ_Dispatch only supports DIFF_C2 and DIFF_C4, got {:s}",
+                        toString(method));
+  }
+
+  const auto region_id = f.getMesh()->getRegionID("RGN_NOBNDRY");
+
+  return bout::stencil::DDZDispatchExpr{
+      static_cast<Field3D::View>(f),
+      static_cast<Field3D::View>(f),
+      bout::stencil::DDZ_Dispatch_Op{CoordinatesAccessor{f.getCoordinates()}, f.getNz(),
+                                     method},
       f.getMesh(),
       f.getLocation(),
       f.getDirections(),

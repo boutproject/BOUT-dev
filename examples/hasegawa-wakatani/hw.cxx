@@ -111,7 +111,7 @@ protected:
     }
 
     ddt(n) = -bracket_arakawa(phi, n) + alpha * (nonzonal_phi - nonzonal_n)
-             - kappa * DDZ_C2(phi);
+             - kappa * DDZ_Dispatch(phi, DIFF_C2);
 
     ddt(vort) = -bracket_arakawa(phi, vort) + alpha * (nonzonal_phi - nonzonal_n);
 
