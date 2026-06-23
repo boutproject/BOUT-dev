@@ -86,12 +86,6 @@ Coordinates::FieldMetric DDY(const Field2D& f, CELL_LOC outloc, const std::strin
 
 ////////////// Z DERIVATIVE /////////////////
 
-Field3D DDZ(const Field3D& f, CELL_LOC outloc, const std::string& method,
-            const std::string& region) {
-  return bout::derivatives::index::DDZ(f, outloc, method, region)
-         / f.getCoordinates(outloc)->dz;
-}
-
 Coordinates::FieldMetric DDZ(const Field2D& f, CELL_LOC UNUSED(outloc),
                              const std::string& UNUSED(method),
                              const std::string& UNUSED(region)) {
@@ -100,7 +94,7 @@ Coordinates::FieldMetric DDZ(const Field2D& f, CELL_LOC UNUSED(outloc),
   return tmp;
 }
 
-Vector3D DDZ(const Vector3D& v, CELL_LOC outloc, const std::string& method,
+Vector3D DDZ(const Vector3D& v, CELL_LOC outloc, DIFF_METHOD method,
              const std::string& region) {
   Vector3D result(v.getMesh());
   const Coordinates* metric = v.x.getCoordinates(outloc);
@@ -131,8 +125,37 @@ Vector3D DDZ(const Vector3D& v, CELL_LOC outloc, const std::string& method,
   return result;
 }
 
-Vector2D DDZ(const Vector2D& v, CELL_LOC UNUSED(outloc),
-             const std::string& UNUSED(method), const std::string& UNUSED(region)) {
+Vector3D DDZ(const Vector3D& v, CELL_LOC outloc, const std::string& method,
+             const std::string& region) {
+  Vector3D result(v.getMesh());
+  const Coordinates* metric = v.x.getCoordinates(outloc);
+
+  if (v.covariant) {
+    result.x = DDZ(v.x, outloc, method, region) - v.x * metric->G1_13
+               - v.y * metric->G2_13 - v.z * metric->G3_13;
+    result.y = DDZ(v.y, outloc, method, region) - v.x * metric->G1_23
+               - v.y * metric->G2_23 - v.z * metric->G3_23;
+    result.z = DDZ(v.z, outloc, method, region) - v.x * metric->G1_33
+               - v.y * metric->G2_33 - v.z * metric->G3_33;
+    result.covariant = true;
+  } else {
+    result.x = DDZ(v.x, outloc, method, region) + v.x * metric->G1_13
+               + v.y * metric->G1_23 + v.z * metric->G1_33;
+    result.y = DDZ(v.y, outloc, method, region) + v.x * metric->G2_13
+               + v.y * metric->G2_23 + v.z * metric->G2_33;
+    result.z = DDZ(v.z, outloc, method, region) + v.x * metric->G3_13
+               + v.y * metric->G3_23 + v.z * metric->G3_33;
+    result.covariant = false;
+  }
+
+  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == v.getLocation()))
+          || (result.getLocation() == outloc));
+
+  return result;
+}
+
+Vector2D DDZ(const Vector2D& v, CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSED(method),
+             const std::string& UNUSED(region)) {
   Vector2D result(v.getMesh());
 
   result.covariant = v.covariant;
@@ -145,6 +168,11 @@ Vector2D DDZ(const Vector2D& v, CELL_LOC UNUSED(outloc),
   result.z = 0.;
 
   return result;
+}
+
+Vector2D DDZ(const Vector2D& v, CELL_LOC outloc, const std::string& method,
+             const std::string& region) {
+  return DDZ(v, outloc, parseDDZMethodString(method), region);
 }
 
 /*******************************************************************************

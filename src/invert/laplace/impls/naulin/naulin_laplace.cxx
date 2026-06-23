@@ -247,7 +247,7 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
   Field3D coef_y = DDY(C2coef, location, "C2") / C1TimesD;
 
   // z-component of 1./(C1*D) * Grad_perp(C2)
-  Field3D coef_z = DDZ(C2coef, location, "FFT") / C1TimesD;
+  Field3D coef_z = DDZ(C2coef, location, DIFF_C4) / C1TimesD;
 
   Field3D AOverD = Acoef / Dcoef;
 
@@ -286,7 +286,7 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
   auto calc_b_guess = [&](const Field3D& x_in) {
     // Derivatives of x
     Field3D ddx_x = DDX(x_in, location, "C2");
-    Field3D ddz_x = DDZ(x_in, location, "FFT");
+    Field3D ddz_x = DDZ(x_in, location, DIFF_C4);
     return rhsOverD
            - (coords->g11 * coef_x_AC * ddx_x + coords->g33 * coef_z * ddz_x
               + coords->g13 * (coef_x_AC * ddz_x + coef_z * ddx_x))

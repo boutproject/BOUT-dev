@@ -110,8 +110,8 @@ protected:
       nonzonal_phi -= averageY(DC(phi));
     }
 
-    ddt(n) = -bracket_arakawa(phi, n) + alpha * (nonzonal_phi - nonzonal_n)
-             - kappa * DDZ_Dispatch(phi);
+    ddt(n) =
+        -bracket_arakawa(phi, n) + alpha * (nonzonal_phi - nonzonal_n) - kappa * DDZ(phi);
 
     ddt(vort) = -bracket_arakawa(phi, vort) + alpha * (nonzonal_phi - nonzonal_n);
 
