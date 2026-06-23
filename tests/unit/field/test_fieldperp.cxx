@@ -1569,6 +1569,33 @@ TEST_F(FieldPerpTest, PowFieldPerpFieldPerp) {
   EXPECT_TRUE(IsFieldEqual(c, 64.0));
 }
 
+TEST_F(FieldPerpTest, PowExpressionUsesBinaryExpr) {
+  FieldPerp field;
+  field.setIndex(0);
+
+  field = 2.0;
+  const auto expr = field + 1.0;
+
+  EXPECT_TRUE((std::is_same_v<
+               std::decay_t<decltype(pow(field, 2.0))>,
+               BinaryExpr<FieldPerp, FieldPerp, Constant<BoutReal>, bout::op::Pow>>));
+  EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(pow(expr, 2.0))>,
+                              BinaryExpr<FieldPerp, std::decay_t<decltype(expr)>,
+                                         Constant<BoutReal>, bout::op::Pow>>));
+  EXPECT_TRUE(IsFieldEqual(pow(expr, 2.0), 9.0));
+}
+
+TEST_F(FieldPerpTest, PowRegionLimitedExpressionConstructsFieldPerp) {
+  FieldPerp field;
+  field.setIndex(0);
+
+  field = 2.0;
+
+  FieldPerp result = pow(field, 2.0, "RGN_NOBNDRY");
+
+  EXPECT_TRUE(IsFieldEqual(result, 4.0, "RGN_NOBNDRY"));
+}
+
 TEST_F(FieldPerpTest, Sqrt) {
   FieldPerp field;
   field.setIndex(0);

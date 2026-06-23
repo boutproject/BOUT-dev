@@ -539,53 +539,127 @@ inline BoutReal mean(const BinaryExpr<ResT, L, R, Func>& f, bool allpe = false,
   return bout::reduce::Mean::finalize(state);
 }
 
+class Field3DParallel;
+class FieldPerp;
+
+namespace bout::detail {
+template <typename T>
+struct expression_result {
+  using type = std::decay_t<T>;
+};
+
+template <typename ResT, typename L, typename R, typename Func>
+struct expression_result<BinaryExpr<ResT, L, R, Func>> {
+  using type = ResT;
+};
+
+template <typename T>
+using expression_result_t = typename expression_result<std::decay_t<T>>::type;
+
+template <typename T>
+inline constexpr bool is_expression_field_v =
+    is_expr_field2d_v<T> || is_expr_field3d_v<T> || is_expr_fieldperp_v<T>;
+
+template <typename L, typename R>
+inline constexpr bool is_same_expression_rank_v =
+    (is_expr_field2d_v<L> && is_expr_field2d_v<R>)
+    || (is_expr_field3d_v<L> && is_expr_field3d_v<R>)
+    || (is_expr_fieldperp_v<L> && is_expr_fieldperp_v<R>);
+
+template <typename T>
+std::optional<int> getPerpYIndex(const T& value) {
+  if constexpr (std::is_same_v<std::decay_t<T>, ::FieldPerp>) {
+    return value.getIndex();
+  } else {
+    return std::nullopt;
+  }
+}
+
+template <typename ResT, typename L, typename R, typename Func>
+std::optional<int> getPerpYIndex(const BinaryExpr<ResT, L, R, Func>& expr) {
+  if constexpr (std::is_same_v<ResT, ::FieldPerp>) {
+    return expr.getIndex();
+  } else {
+    return std::nullopt;
+  }
+}
+
+template <typename Expr>
+std::optional<size_t> getExpressionRegionID(const Expr& expr,
+                                            const std::string& region_name) {
+  std::optional<size_t> region_id{};
+  if (expr.getMesh()->hasRegion3D(region_name)) {
+    region_id = expr.getMesh()->getRegionID(region_name);
+  }
+  return expr.getMesh()->getCommonRegion(region_id, expr.getRegionID());
+}
+
+template <typename L, typename R>
+std::optional<size_t> getExpressionRegionID(const L& lhs, const R& rhs,
+                                            const std::string& region_name) {
+  return lhs.getMesh()->getCommonRegion(getExpressionRegionID(lhs, region_name),
+                                        rhs.getRegionID());
+}
+} // namespace bout::detail
+
 /// Exponent: pow(lhs, lhs) is \p lhs raised to the power of \p rhs
 ///
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument)
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-template <typename T, typename = bout::utils::EnableIfField<T>>
-T pow(const T& lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
+template <typename L, typename R, typename ResT = bout::detail::expression_result_t<L>,
+          typename = std::enable_if_t<bout::detail::is_same_expression_rank_v<L, R>>>
+auto pow(const L& lhs, const R& rhs, const std::string& rgn = "RGN_ALL") {
 
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  if constexpr (bout::utils::is_Field_v<std::decay_t<L>>
+                && bout::utils::is_Field_v<std::decay_t<R>>) {
+    ASSERT1(areFieldsCompatible(lhs, rhs));
+  } else {
+    ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  }
 
-  T result{emptyFrom(lhs)};
-
-  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
-
-  checkData(result);
-  return result;
+  return BinaryExpr<ResT, L, R, bout::op::Pow>{
+      static_cast<typename L::View>(lhs),
+      static_cast<typename R::View>(rhs),
+      bout::op::Pow{},
+      lhs.getMesh(),
+      lhs.getLocation(),
+      lhs.getDirections(),
+      bout::detail::getExpressionRegionID(lhs, rhs, rgn),
+      lhs.getMesh()->template getRegion<ResT>(rgn),
+      bout::detail::getPerpYIndex(lhs)};
 }
 
-template <typename T, typename = bout::utils::EnableIfField<T>>
-T pow(const T& lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL") {
+template <typename T, typename ResT = bout::detail::expression_result_t<T>,
+          typename = std::enable_if_t<bout::detail::is_expression_field_v<T>>>
+auto pow(const T& lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL") {
 
-  // Check if the inputs are allocated
-  checkData(lhs);
-  checkData(rhs);
-
-  T result{emptyFrom(lhs)};
-
-  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs); }
-
-  checkData(result);
-  return result;
+  return BinaryExpr<ResT, T, Constant<BoutReal>, bout::op::Pow>{
+      static_cast<typename T::View>(lhs),
+      static_cast<typename Constant<BoutReal>::View>(rhs),
+      bout::op::Pow{},
+      lhs.getMesh(),
+      lhs.getLocation(),
+      lhs.getDirections(),
+      bout::detail::getExpressionRegionID(lhs, rgn),
+      lhs.getMesh()->template getRegion<ResT>(rgn),
+      bout::detail::getPerpYIndex(lhs)};
 }
 
-template <typename T, typename = bout::utils::EnableIfField<T>>
-T pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
+template <typename T, typename ResT = bout::detail::expression_result_t<T>,
+          typename = std::enable_if_t<bout::detail::is_expression_field_v<T>>>
+auto pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
 
-  // Check if the inputs are allocated
-  checkData(lhs);
-  checkData(rhs);
-
-  // Define and allocate the output result
-  T result{emptyFrom(rhs)};
-
-  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs, rhs[i]); }
-
-  checkData(result);
-  return result;
+  return BinaryExpr<ResT, Constant<BoutReal>, T, bout::op::Pow>{
+      static_cast<typename Constant<BoutReal>::View>(lhs),
+      static_cast<typename T::View>(rhs),
+      bout::op::Pow{},
+      rhs.getMesh(),
+      rhs.getLocation(),
+      rhs.getDirections(),
+      bout::detail::getExpressionRegionID(rhs, rgn),
+      rhs.getMesh()->template getRegion<ResT>(rgn),
+      bout::detail::getPerpYIndex(rhs)};
 }
 
 /*!
@@ -604,29 +678,6 @@ T pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
  * result for non-finite numbers
  *
  */
-class Field3DParallel;
-class FieldPerp;
-
-namespace bout::detail {
-template <typename T>
-std::optional<int> getPerpYIndex(const T& value) {
-  if constexpr (std::is_same_v<std::decay_t<T>, ::FieldPerp>) {
-    return value.getIndex();
-  } else {
-    return std::nullopt;
-  }
-}
-
-template <typename ResT, typename L, typename R, typename Func>
-std::optional<int> getPerpYIndex(const BinaryExpr<ResT, L, R, Func>& expr) {
-  if constexpr (std::is_same_v<ResT, ::FieldPerp>) {
-    return expr.getIndex();
-  } else {
-    return std::nullopt;
-  }
-}
-} // namespace bout::detail
-
 #ifdef FIELD_FUNC
 #error This macro has already been defined
 #else

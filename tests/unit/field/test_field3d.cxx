@@ -1942,6 +1942,32 @@ TEST_F(Field3DTest, PowField3DField3D) {
   EXPECT_TRUE(IsFieldEqual(c, 64.0));
 }
 
+TEST_F(Field3DTest, PowExpressionUsesBinaryExpr) {
+  Field3D field;
+
+  field = 2.0;
+  const auto expr = field + 1.0;
+
+  EXPECT_TRUE(
+      (std::is_same_v<std::decay_t<decltype(pow(field, 2.0))>,
+                      BinaryExpr<Field3D, Field3D, Constant<BoutReal>, bout::op::Pow>>));
+  EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(pow(expr, 2.0))>,
+                              BinaryExpr<Field3D, std::decay_t<decltype(expr)>,
+                                         Constant<BoutReal>, bout::op::Pow>>));
+  EXPECT_TRUE(IsFieldEqual(pow(expr, 2.0), 9.0));
+}
+
+TEST_F(Field3DTest, PowRegionArgumentSetsRegionID) {
+  Field3D field;
+
+  field = 2.0;
+  const auto expr = pow(field, 2.0, "RGN_NOBNDRY");
+
+  ASSERT_TRUE(expr.getRegionID().has_value());
+  EXPECT_EQ(expr.getRegionID().value(), field.getMesh()->getRegionID("RGN_NOBNDRY"));
+  EXPECT_TRUE(IsFieldEqual(expr, 4.0, "RGN_NOBNDRY"));
+}
+
 TEST_F(Field3DTest, Sqrt) {
   Field3D field;
 

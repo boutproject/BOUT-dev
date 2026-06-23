@@ -900,7 +900,24 @@ inline auto operator-(const Field3D& f) {
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-Field3D pow(const Field3D& lhs, const Field2D& rhs, const std::string& rgn = "RGN_ALL");
+template <typename L, typename R>
+std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>,
+                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
+pow(const L& lhs, const R& rhs, const std::string& rgn = "RGN_ALL") {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  auto regionID = bout::detail::getExpressionRegionID(lhs, rhs, rgn);
+  int mesh_nz = lhs.getMesh()->LocalNz;
+  return BinaryExpr<Field3D, L, R, bout::op::Pow>{
+      static_cast<typename L::View>(lhs),
+      static_cast<typename R::View>(rhs).setScale(1, mesh_nz),
+      bout::op::Pow{},
+      lhs.getMesh(),
+      lhs.getLocation(),
+      lhs.getDirections(),
+      regionID,
+      (regionID.has_value() ? lhs.getMesh()->getRegion(regionID.value())
+                            : lhs.getMesh()->getRegion(rgn))};
+}
 FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs,
               const std::string& rgn = "RGN_ALL");
 
