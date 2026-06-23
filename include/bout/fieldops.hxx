@@ -24,6 +24,10 @@ class Field3DParallel;
 class Field2D;
 class FieldPerp;
 
+namespace bout::detail {
+const Region<Ind3D>& getField3DRegion(const Mesh* mesh, std::optional<size_t> regionID);
+}
+
 template <typename T>
 struct is_expr_field2d : std::false_type {};
 
@@ -410,10 +414,26 @@ struct BinaryExpr {
     cudaStreamSynchronize(stream);
     streams.put(stream);
 #else
-    int e = size();
-    for (int i = 0; i < e; ++i) {
-      int idx = regionIdx(i);
-      data[idx] = operator()(idx); // single‐pass fusion
+    if constexpr (std::is_same_v<ResT, Field3D>) {
+      const auto& region = bout::detail::getField3DRegion(mesh, regionID);
+      for (auto block = region.getBlocks().cbegin(), end = region.getBlocks().cend();
+           block < end; ++block) {
+        const int block_begin = block->first.ind;
+        const int block_end = block->second.ind;
+
+        BOUT_ASSUME(block_begin >= 0);
+        BOUT_ASSUME(block_begin <= block_end);
+
+        for (int idx = block_begin; idx < block_end; ++idx) {
+          data[idx] = operator()(idx);
+        }
+      }
+    } else {
+      int e = size();
+      for (int i = 0; i < e; ++i) {
+        int idx = regionIdx(i);
+        data[idx] = operator()(idx); // single‐pass fusion
+      }
     }
 #endif
   }

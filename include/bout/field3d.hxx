@@ -52,6 +52,10 @@ class Mesh;
 class Options;
 class Field3DParallel;
 
+namespace bout::detail {
+const Region<Ind3D>& getField3DRegion(const Mesh* mesh, std::optional<size_t> regionID);
+}
+
 #include "bout/fieldops.hxx"
 
 /// Class for 3D X-Y-Z scalar fields

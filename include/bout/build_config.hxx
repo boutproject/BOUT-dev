@@ -70,4 +70,23 @@ constexpr auto use_msgstack = static_cast<bool>(BOUT_USE_MSGSTACK);
 #define BOUT_FORCEINLINE inline
 #endif
 
+#if defined(_MSC_VER)
+#define BOUT_ASSUME(condition) __assume(condition)
+#elif defined(__clang__)
+#if __has_builtin(__builtin_assume)
+#define BOUT_ASSUME(condition) __builtin_assume(condition)
+#else
+#define BOUT_ASSUME(condition) ((void)0)
+#endif
+#elif defined(__GNUC__)
+#define BOUT_ASSUME(condition) \
+  do {                         \
+    if (!(condition)) {        \
+      __builtin_unreachable(); \
+    }                          \
+  } while (false)
+#else
+#define BOUT_ASSUME(condition) ((void)0)
+#endif
+
 #endif // BOUT_BUILD_OPTIONS_HXX
