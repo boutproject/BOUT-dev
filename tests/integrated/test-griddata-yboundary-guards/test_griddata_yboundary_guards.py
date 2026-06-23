@@ -19,7 +19,6 @@ def test_griddata_yboundary_guards(topology, n_yguards):
     blocksize = ny // 6
     nproc = 6
 
-
     datadir = Path(f"data-{topology}-{n_yguards}")
     datadir.mkdir(parents=True, exist_ok=True)
 
@@ -102,7 +101,7 @@ def test_griddata_yboundary_guards(topology, n_yguards):
 
     if topology == "doublenull":
         if n_yguards == 0:
-                # output has 2 y-guard cells, but grid file did not
+            # output has 2 y-guard cells, but grid file did not
             myg = 2
             checkfield = list(numpy.zeros(myg))
             checkfield += list(numpy.arange(ny // 2))
@@ -118,7 +117,7 @@ def test_griddata_yboundary_guards(topology, n_yguards):
             checkfield += list(numpy.arange(n_yguards) + checkfield[-1] + 1)
     else:  # singlenull
         if n_yguards == 0:
-                # output has 2 y-guard cells, but grid file did not
+            # output has 2 y-guard cells, but grid file did not
             myg = 2
             checkfield = list(numpy.zeros(myg))
             checkfield += list(numpy.arange(ny))
