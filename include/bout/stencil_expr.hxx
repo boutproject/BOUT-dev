@@ -232,14 +232,19 @@ DDZ_Dispatch(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
              const std::string& region = "RGN_NOBNDRY") {
   checkData(f);
 
+  const auto resolved_outloc = (outloc == CELL_DEFAULT) ? f.getLocation() : outloc;
+  const auto stagger =
+      f.getMesh()->getStagger(f.getLocation(), resolved_outloc, CELL_ZLOW);
+
+  if (method == DIFF_DEFAULT) {
+    method = f.getMesh()->getDefaultMethod(DIRECTION::Z, DERIV::Standard, stagger);
+  }
+
   if ((method != DIFF_C2) && (method != DIFF_C4)) {
     throw BoutException("DDZ_Dispatch only supports DIFF_C2 and DIFF_C4, got {:s}",
                         toString(method));
   }
 
-  const auto resolved_outloc = (outloc == CELL_DEFAULT) ? f.getLocation() : outloc;
-  const auto stagger =
-      f.getMesh()->getStagger(f.getLocation(), resolved_outloc, CELL_ZLOW);
   const auto region_id = f.getMesh()->getRegionID(region);
 
   return bout::stencil::DDZDispatchExpr{

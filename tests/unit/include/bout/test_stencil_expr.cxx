@@ -7,6 +7,7 @@
 
 #include <string>
 
+#include "fake_mesh.hxx"
 #include "fake_mesh_fixture.hxx"
 
 namespace {
@@ -73,6 +74,20 @@ TEST_F(DDZDispatchExprTest, UsesRequestedRegion) {
 TEST_F(DDZDispatchExprTest, RejectsUnsupportedMethods) {
   auto input = makeTestField(mesh_staggered, CELL_CENTRE);
 
-  EXPECT_THROW((void)DDZ_Dispatch(input, CELL_DEFAULT, DIFF_DEFAULT), BoutException);
   EXPECT_THROW((void)DDZ_Dispatch(input, CELL_DEFAULT, DIFF_FFT), BoutException);
+}
+
+TEST_F(DDZDispatchExprTest, ResolvesDefaultMethodFromMesh) {
+  auto input = makeTestField(mesh_staggered, CELL_CENTRE);
+
+  Options diff_options{{"ddz", {{"first", "C4"}}}, {"ddzstag", {{"first", "C2"}}}};
+  static_cast<FakeMesh*>(mesh_staggered)->initDerivs(&diff_options);
+
+  const auto centre_actual = Field3D{DDZ_Dispatch(input, CELL_CENTRE, DIFF_DEFAULT)};
+  const auto centre_expected = DDZ(input, CELL_CENTRE, toString(DIFF_C4));
+  EXPECT_TRUE(IsFieldEqual(centre_actual, centre_expected, "RGN_NOBNDRY"));
+
+  const auto staggered_actual = Field3D{DDZ_Dispatch(input, CELL_ZLOW, DIFF_DEFAULT)};
+  const auto staggered_expected = DDZ(input, CELL_ZLOW, toString(DIFF_C2));
+  EXPECT_TRUE(IsFieldEqual(staggered_actual, staggered_expected, "RGN_NOBNDRY"));
 }

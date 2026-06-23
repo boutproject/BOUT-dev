@@ -59,6 +59,7 @@ class Mesh;
 #include "bout/sys/range.hxx" // RangeIterator
 #include "bout/unused.hxx"
 
+#include <array>
 #include <map>
 #include <memory>
 #include <optional>
@@ -95,6 +96,94 @@ using comm_handle = void*;
 
 class Mesh {
 public:
+  struct DerivativeDefaults {
+    static constexpr int num_directions = 3;
+    static constexpr int num_staggers = 3;
+    static constexpr int num_deriv_kinds = 5;
+
+    std::array<DIFF_METHOD, num_directions * num_staggers * num_deriv_kinds> values{};
+
+    DerivativeDefaults() {
+      for (auto direction : {DIRECTION::X, DIRECTION::Y, DIRECTION::Z}) {
+        for (auto stagger : {STAGGER::None, STAGGER::C2L, STAGGER::L2C}) {
+          for (auto deriv : {DERIV::Standard, DERIV::StandardSecond,
+                             DERIV::StandardFourth, DERIV::Upwind, DERIV::Flux}) {
+            set(direction, deriv, builtinDefaultMethod(deriv), stagger);
+          }
+        }
+      }
+    }
+
+    static DIFF_METHOD builtinDefaultMethod(DERIV deriv) {
+      switch (deriv) {
+      case DERIV::Standard:
+      case DERIV::StandardSecond:
+      case DERIV::StandardFourth:
+        return DIFF_C2;
+      case DERIV::Upwind:
+      case DERIV::Flux:
+        return DIFF_U1;
+      }
+      throw BoutException("Unhandled derivative kind in builtinDefaultMethod");
+    }
+
+    static int directionIndex(DIRECTION direction) {
+      switch (direction) {
+      case DIRECTION::X:
+        return 0;
+      case DIRECTION::Y:
+      case DIRECTION::YOrthogonal:
+      case DIRECTION::YAligned:
+        return 1;
+      case DIRECTION::Z:
+        return 2;
+      }
+      throw BoutException("Unhandled direction in DerivativeDefaults");
+    }
+
+    static int staggerIndex(STAGGER stagger) {
+      switch (stagger) {
+      case STAGGER::None:
+        return 0;
+      case STAGGER::C2L:
+        return 1;
+      case STAGGER::L2C:
+        return 2;
+      }
+      throw BoutException("Unhandled stagger in DerivativeDefaults");
+    }
+
+    static int derivIndex(DERIV deriv) {
+      switch (deriv) {
+      case DERIV::Standard:
+        return 0;
+      case DERIV::StandardSecond:
+        return 1;
+      case DERIV::StandardFourth:
+        return 2;
+      case DERIV::Upwind:
+        return 3;
+      case DERIV::Flux:
+        return 4;
+      }
+      throw BoutException("Unhandled derivative kind in DerivativeDefaults");
+    }
+
+    DIFF_METHOD get(DIRECTION direction, DERIV deriv,
+                    STAGGER stagger = STAGGER::None) const {
+      return values[(directionIndex(direction) * num_staggers + staggerIndex(stagger))
+                        * num_deriv_kinds
+                    + derivIndex(deriv)];
+    }
+
+    void set(DIRECTION direction, DERIV deriv, DIFF_METHOD method,
+             STAGGER stagger = STAGGER::None) {
+      values[(directionIndex(direction) * num_staggers + staggerIndex(stagger))
+                 * num_deriv_kinds
+             + derivIndex(deriv)] = method;
+    }
+  };
+
   /// Constructor for a "bare", uninitialised Mesh
   /// Only useful for testing
   Mesh() : source(nullptr), options(nullptr), include_corner_cells(true) {}
@@ -718,6 +807,14 @@ public:
 
   /// Fraction of modes to filter. This is set in derivs_init from option "ddz:fft_filter"
   BoutReal fft_derivs_filter{0.0};
+
+  /// Concrete default methods initialised from options in derivs_init
+  DerivativeDefaults derivative_defaults{};
+
+  DIFF_METHOD getDefaultMethod(DIRECTION direction, DERIV deriv,
+                               STAGGER stagger = STAGGER::None) const {
+    return derivative_defaults.get(direction, deriv, stagger);
+  }
 
   /// Determines the resultant output stagger location in derivatives
   /// given the input and output location. Also checks that the
