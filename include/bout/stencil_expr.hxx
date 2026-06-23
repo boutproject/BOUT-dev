@@ -2,11 +2,17 @@
 #ifndef BOUT_STENCIL_EXPR_HXX
 #define BOUT_STENCIL_EXPR_HXX
 
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/build_config.hxx"
 #include "bout/coordinates_accessor.hxx"
+#include "bout/field.hxx"
 #include "bout/field3d.hxx"
 #include "bout/fieldops.hxx"
 #include "bout/mesh.hxx"
 #include "bout/single_index_ops.hxx"
+
+#include <string>
 
 namespace bout::stencil {
 
@@ -44,10 +50,12 @@ struct DDZ_C4_Op {
 struct DDZ_Dispatch_Op {
   CoordinatesAccessor coords;
   int nz{0};
+  STAGGER stagger{STAGGER::None};
   DIFF_METHOD method{DIFF_DEFAULT};
 
   template <typename LView>
-  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal apply_c2(int idx, const LView& lhs) const {
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal apply_c2_none(int idx,
+                                                           const LView& lhs) const {
     const int izp = i_zp(idx, nz);
     const int izm = i_zm(idx, nz);
 
@@ -55,7 +63,8 @@ struct DDZ_Dispatch_Op {
   }
 
   template <typename LView>
-  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal apply_c4(int idx, const LView& lhs) const {
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal apply_c4_none(int idx,
+                                                           const LView& lhs) const {
     const int izp = i_zp(idx, nz);
     const int izm = i_zm(idx, nz);
     const int izp2 = i_zp(izp, nz);
@@ -63,6 +72,70 @@ struct DDZ_Dispatch_Op {
 
     return (-lhs(izp2) + 8.0 * lhs(izp) - 8.0 * lhs(izm) + lhs(izm2))
            / (12.0 * coords.dz(idx));
+  }
+
+  template <typename LView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal apply_c2_c2l(int idx,
+                                                          const LView& lhs) const {
+    const int izm = i_zm(idx, nz);
+
+    return (lhs(idx) - lhs(izm)) / coords.dz(idx);
+  }
+
+  template <typename LView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal apply_c4_c2l(int idx,
+                                                          const LView& lhs) const {
+    const int izm = i_zm(idx, nz);
+    const int izp = i_zp(idx, nz);
+    const int izm2 = i_zm(izm, nz);
+
+    return (27.0 * (lhs(idx) - lhs(izm)) - (lhs(izp) - lhs(izm2)))
+           / (24.0 * coords.dz(idx));
+  }
+
+  template <typename LView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal apply_c2_l2c(int idx,
+                                                          const LView& lhs) const {
+    const int izp = i_zp(idx, nz);
+
+    return (lhs(izp) - lhs(idx)) / coords.dz(idx);
+  }
+
+  template <typename LView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal apply_c4_l2c(int idx,
+                                                          const LView& lhs) const {
+    const int izp = i_zp(idx, nz);
+    const int izm = i_zm(idx, nz);
+    const int izp2 = i_zp(izp, nz);
+
+    return (27.0 * (lhs(izp) - lhs(idx)) - (lhs(izp2) - lhs(izm)))
+           / (24.0 * coords.dz(idx));
+  }
+
+  template <typename LView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal apply_c2(int idx, const LView& lhs) const {
+    switch (stagger) {
+    case STAGGER::None:
+      return apply_c2_none(idx, lhs);
+    case STAGGER::C2L:
+      return apply_c2_c2l(idx, lhs);
+    case STAGGER::L2C:
+      return apply_c2_l2c(idx, lhs);
+    }
+    return 0.0;
+  }
+
+  template <typename LView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal apply_c4(int idx, const LView& lhs) const {
+    switch (stagger) {
+    case STAGGER::None:
+      return apply_c4_none(idx, lhs);
+    case STAGGER::C2L:
+      return apply_c4_c2l(idx, lhs);
+    case STAGGER::L2C:
+      return apply_c4_l2c(idx, lhs);
+    }
+    return 0.0;
   }
 
   template <typename LView, typename RView>
@@ -153,7 +226,10 @@ inline bout::stencil::DDZExprC4 DDZ_C4(const Field3D& f) {
       f.getMesh()->getRegion("RGN_NOBNDRY")};
 }
 
-inline bout::stencil::DDZDispatchExpr DDZ_Dispatch(const Field3D& f, DIFF_METHOD method) {
+inline bout::stencil::DDZDispatchExpr
+DDZ_Dispatch(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+             DIFF_METHOD method = DIFF_DEFAULT,
+             const std::string& region = "RGN_NOBNDRY") {
   checkData(f);
 
   if ((method != DIFF_C2) && (method != DIFF_C4)) {
@@ -161,18 +237,22 @@ inline bout::stencil::DDZDispatchExpr DDZ_Dispatch(const Field3D& f, DIFF_METHOD
                         toString(method));
   }
 
-  const auto region_id = f.getMesh()->getRegionID("RGN_NOBNDRY");
+  const auto resolved_outloc = (outloc == CELL_DEFAULT) ? f.getLocation() : outloc;
+  const auto stagger =
+      f.getMesh()->getStagger(f.getLocation(), resolved_outloc, CELL_ZLOW);
+  const auto region_id = f.getMesh()->getRegionID(region);
 
   return bout::stencil::DDZDispatchExpr{
       static_cast<Field3D::View>(f),
       static_cast<Field3D::View>(f),
-      bout::stencil::DDZ_Dispatch_Op{CoordinatesAccessor{f.getCoordinates()}, f.getNz(),
-                                     method},
+      bout::stencil::DDZ_Dispatch_Op{
+          CoordinatesAccessor{f.getCoordinates(resolved_outloc)}, f.getNz(), stagger,
+          method},
       f.getMesh(),
-      f.getLocation(),
+      resolved_outloc,
       f.getDirections(),
       region_id,
-      f.getMesh()->getRegion("RGN_NOBNDRY")};
+      f.getMesh()->getRegion(region)};
 }
 
 inline bout::stencil::BracketArakawaExpr bracket_arakawa(const Field3D& f,
