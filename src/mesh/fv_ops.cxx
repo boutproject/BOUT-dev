@@ -1,4 +1,5 @@
 #include "bout/fv_ops.hxx"
+#include "bout/fv_ops_impl.hxx"
 
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
@@ -562,5 +563,73 @@ Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc) {
 
   return result;
 }
+
+//  BOUT_ENUM_CLASS(FluxLimiter, Upwind, Fromm, MinMod, MC, Superbee, VanAlbada, WENO3);
+
+template Field3D Div_par_fvv<Upwind>(const Field3D& f_in, const Field3D& v_in,
+                                     const Field3D& wave_speed_in, bool fixflux = true);
+template Field3D Div_par<Upwind>(const Field3D& f_in, const Field3D& v_in,
+                                 const Field3D& wave_speed_in, bool fixflux = true);
+template Field3D Div_f_v<Upwind>(const Field3D& n_in, const Vector3D& v, bool bndry_flux);
+template Field3D Div_par_mod<Upwind>(const Field3D& f_in, const Field3D& v_in,
+                                     const Field3D& wave_speed_in, Field3D& flow_ylow,
+                                     bool fixflux = true);
+
+template Field3D Div_par_fvv<Fromm>(const Field3D& f_in, const Field3D& v_in,
+                                    const Field3D& wave_speed_in, bool fixflux = true);
+template Field3D Div_par<Fromm>(const Field3D& f_in, const Field3D& v_in,
+                                const Field3D& wave_speed_in, bool fixflux = true);
+template Field3D Div_f_v<Fromm>(const Field3D& n_in, const Vector3D& v, bool bndry_flux);
+template Field3D Div_par_mod<Fromm>(const Field3D& f_in, const Field3D& v_in,
+                                    const Field3D& wave_speed_in, Field3D& flow_ylow,
+                                    bool fixflux = true);
+
+template Field3D Div_par_fvv<MinMod>(const Field3D& f_in, const Field3D& v_in,
+                                     const Field3D& wave_speed_in, bool fixflux = true);
+template Field3D Div_par<MinMod>(const Field3D& f_in, const Field3D& v_in,
+                                 const Field3D& wave_speed_in, bool fixflux = true);
+template Field3D Div_f_v<MinMod>(const Field3D& n_in, const Vector3D& v, bool bndry_flux);
+template Field3D Div_par_mod<MinMod>(const Field3D& f_in, const Field3D& v_in,
+                                     const Field3D& wave_speed_in, Field3D& flow_ylow,
+                                     bool fixflux = true);
+
+template Field3D Div_par_fvv<MC>(const Field3D& f_in, const Field3D& v_in,
+                                 const Field3D& wave_speed_in, bool fixflux = true);
+template Field3D Div_par<MC>(const Field3D& f_in, const Field3D& v_in,
+                             const Field3D& wave_speed_in, bool fixflux = true);
+template Field3D Div_f_v<MC>(const Field3D& n_in, const Vector3D& v, bool bndry_flux);
+template Field3D Div_par_mod<MC>(const Field3D& f_in, const Field3D& v_in,
+                                 const Field3D& wave_speed_in, Field3D& flow_ylow,
+                                 bool fixflux = true);
+
+template Field3D Div_par_fvv<Superbee>(const Field3D& f_in, const Field3D& v_in,
+                                       const Field3D& wave_speed_in, bool fixflux = true);
+template Field3D Div_par<Superbee>(const Field3D& f_in, const Field3D& v_in,
+                                   const Field3D& wave_speed_in, bool fixflux = true);
+template Field3D Div_f_v<Superbee>(const Field3D& n_in, const Vector3D& v,
+                                   bool bndry_flux);
+template Field3D Div_par_mod<Superbee>(const Field3D& f_in, const Field3D& v_in,
+                                       const Field3D& wave_speed_in, Field3D& flow_ylow,
+                                       bool fixflux = true);
+
+template Field3D Div_par_fvv<VanAlbada>(const Field3D& f_in, const Field3D& v_in,
+                                        const Field3D& wave_speed_in,
+                                        bool fixflux = true);
+template Field3D Div_par<VanAlbada>(const Field3D& f_in, const Field3D& v_in,
+                                    const Field3D& wave_speed_in, bool fixflux = true);
+template Field3D Div_f_v<VanAlbada>(const Field3D& n_in, const Vector3D& v,
+                                    bool bndry_flux);
+template Field3D Div_par_mod<VanAlbada>(const Field3D& f_in, const Field3D& v_in,
+                                        const Field3D& wave_speed_in, Field3D& flow_ylow,
+                                        bool fixflux = true);
+
+template Field3D Div_par_fvv<WENO3>(const Field3D& f_in, const Field3D& v_in,
+                                    const Field3D& wave_speed_in, bool fixflux = true);
+template Field3D Div_par<WENO3>(const Field3D& f_in, const Field3D& v_in,
+                                const Field3D& wave_speed_in, bool fixflux = true);
+template Field3D Div_f_v<WENO3>(const Field3D& n_in, const Vector3D& v, bool bndry_flux);
+template Field3D Div_par_mod<WENO3>(const Field3D& f_in, const Field3D& v_in,
+                                    const Field3D& wave_speed_in, Field3D& flow_ylow,
+                                    bool fixflux = true);
 
 } // Namespace FV
