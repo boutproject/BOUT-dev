@@ -43,6 +43,7 @@ struct Stencil1D {
 /*!
    * First order upwind for testing
    */
+// NB: The templates need to be explicitly instantiated in fv_ops.cxx
 struct Upwind {
   void operator()(Stencil1D& n) { n.L = n.R = n.c; }
 };
@@ -50,6 +51,7 @@ struct Upwind {
 /*!
    * Fromm method
    */
+// NB: The templates need to be explicitly instantiated in fv_ops.cxx
 struct Fromm {
   void operator()(Stencil1D& n) {
     n.L = n.c - (0.25 * (n.p - n.m));
@@ -65,6 +67,7 @@ struct Fromm {
    * or minimum slope set to zero, i.e. reverts
    * to first order upwinding
    */
+// NB: The templates need to be explicitly instantiated in fv_ops.cxx
 struct MinMod {
   void operator()(Stencil1D& n) {
     // Choose the gradient within the cell
@@ -102,6 +105,7 @@ private:
    * 2*right. If any of these slopes have different signs
    * then the slope reverts to zero (i.e. 1st-order upwinding).
    */
+// NB: The templates need to be explicitly instantiated in fv_ops.cxx
 struct MC {
   void operator()(Stencil1D& n) {
     const BoutReal slope = minmod(2. * (n.p - n.c),  // 2*right difference
@@ -149,6 +153,7 @@ private:
 ///   gL = n.c - n.m
 ///   gR = n.p - n.c
 ///
+// NB: The templates need to be explicitly instantiated in fv_ops.cxx
 struct Superbee {
   void operator()(Stencil1D& n) {
     const BoutReal gL = n.c - n.m;
@@ -185,6 +190,7 @@ struct Superbee {
    *
    * where `pos(x)` is a smooth approximation to `max(x, 0)`.
    */
+// NB: The templates need to be explicitly instantiated in fv_ops.cxx
 struct VanAlbada {
   void operator()(Stencil1D& n) {
     const BoutReal dl = n.c - n.m;
@@ -220,6 +226,7 @@ struct VanAlbada {
    * Uses only the three-point stencil (`m`, `c`, `p`), so it is a drop-in
    * replacement anywhere `Stencil1D` is populated with those values.
    */
+// NB: The templates need to be explicitly instantiated in fv_ops.cxx
 struct WENO3 {
   void operator()(Stencil1D& n) {
     // Right face (between c and p): value from cell c (left state at i+1/2)
