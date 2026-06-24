@@ -25,8 +25,11 @@ class Field2D;
 class FieldPerp;
 
 namespace bout::detail {
+// This is defined in field3d.cxx
+// It is used because Mesh is an incomplete type so methods cannot be called
+// in the template functions in this header file.
 const Region<Ind3D>& getField3DRegion(const Mesh* mesh, std::optional<size_t> regionID);
-}
+} // namespace bout::detail
 
 template <typename T>
 struct is_expr_field2d : std::false_type {};
@@ -415,12 +418,15 @@ struct BinaryExpr {
     streams.put(stream);
 #else
     if constexpr (std::is_same_v<ResT, Field3D>) {
+      // Optimize common case of Field3D on CPUs.
+      // Get the Region without directly using incomplete Mesh type
       const auto& region = bout::detail::getField3DRegion(mesh, regionID);
       for (auto block = region.getBlocks().cbegin(), end = region.getBlocks().cend();
            block < end; ++block) {
         const int block_begin = block->first.ind;
         const int block_end = block->second.ind;
 
+        // Help optimizer establish loop bounds
         BOUT_ASSUME(block_begin >= 0);
         BOUT_ASSUME(block_begin <= block_end);
 

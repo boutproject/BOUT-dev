@@ -52,9 +52,6 @@ class Mesh;
 class Options;
 class Field3DParallel;
 
-namespace bout::detail {
-}
-
 #include "bout/fieldops.hxx"
 
 /// Class for 3D X-Y-Z scalar fields
