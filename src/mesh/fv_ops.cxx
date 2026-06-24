@@ -564,8 +564,7 @@ Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc) {
   return result;
 }
 
-//  BOUT_ENUM_CLASS(FluxLimiter, Upwind, Fromm, MinMod, MC, Superbee, VanAlbada, WENO3);
-
+// Explicit instantiations of flux-limited finite volume methods
 template Field3D Div_par_fvv<Upwind>(const Field3D& f_in, const Field3D& v_in,
                                      const Field3D& wave_speed_in, bool fixflux = true);
 template Field3D Div_par<Upwind>(const Field3D& f_in, const Field3D& v_in,

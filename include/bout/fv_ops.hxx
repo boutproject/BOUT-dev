@@ -77,7 +77,7 @@ Field3D D4DY4(const Field3D& d, const Field3D& f);
    */
 Field3D D4DY4_Index(const Field3D& f, bool bndry_flux = true);
 
-// FluxLimiter
+// Forward declarations of flux limiters
 class Upwind;
 class Fromm;
 class MinMod;
@@ -166,7 +166,5 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
 template <typename CellEdges = MC>
 Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
                     const Field3D& wave_speed_in, bool fixflux = true);
-// extern template Field3D Div_par_fvv<MC>(const Field3D& f_in, const Field3D& v_in,
-// 				const Field3D& wave_speed_in, bool fixflux = true);
 } // namespace FV
 #endif // BOUT_FV_OPS_H
