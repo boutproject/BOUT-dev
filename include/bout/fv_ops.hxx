@@ -78,6 +78,8 @@ Field3D D4DY4(const Field3D& d, const Field3D& f);
 Field3D D4DY4_Index(const Field3D& f, bool bndry_flux = true);
 
 // Forward declarations of flux limiters
+// If you want to use your own flux limiter, you need to
+// #include <bout/fv_ops_impl.hxx> to instantiate the templates.
 class Upwind;
 class Fromm;
 class MinMod;
