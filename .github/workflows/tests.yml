@@ -42,7 +42,9 @@ jobs:
         config:
           - name: "PETSc unreleased, ADIOS2, 3D metrics"
             os: ubuntu-24.04
-            cmake_options: "-DBUILD_SHARED_LIBS=ON
+            cmake_options: "-DCHECK=2
+                            -DCMAKE_BUILD_TYPE=Debug
+                            -DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_METRIC_3D=ON
                             -DBOUT_ENABLE_OPENMP=ON
                             -DBOUT_USE_PETSC=ON
@@ -109,7 +111,9 @@ jobs:
 
           - name: "Shared, OpenMP, 3D metrics"
             os: ubuntu-latest
-            cmake_options: "-DBUILD_SHARED_LIBS=ON
+            cmake_options: "-DCHECK=2
+                            -DCMAKE_BUILD_TYPE=Debug
+                            -DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_METRIC_3D=ON
                             -DBOUT_ENABLE_OPENMP=ON
                             -DBOUT_USE_PETSC=ON
@@ -153,7 +157,7 @@ jobs:
                  libparpack2-dev
                  libhypre-dev
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: true
 
@@ -187,7 +191,7 @@ jobs:
         run: BUILD_PETSC=${{ matrix.config.build_petsc }} ./.build_petsc_for_ci.sh ${{ matrix.config.build_petsc_branch }}
 
       - name: Build ADIOS2
-        run: BUILD_ADIOS2=${{ matrix.config.build_adios2 }} ./.build_adios2_for_ci.sh 
+        run: BUILD_ADIOS2=${{ matrix.config.build_adios2 }} ./.build_adios2_for_ci.sh
 
       - name: Build BOUT++
         run: UNIT_ONLY=${{ matrix.config.unit_only }} ./.ci_with_cmake.sh ${{ matrix.config.cmake_options }}
@@ -200,7 +204,7 @@ jobs:
     env:
       BOUT_TEST_DOWNLOAD_FLAGS: --retry-on-http-error=502,503,504 --tries 3
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: true
 

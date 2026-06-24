@@ -44,7 +44,7 @@
 #include <optional>
 
 Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in,
-                 std::optional<size_t> UNUSED(regionID))
+                 [[maybe_unused]] std::optional<size_t> regionID)
     : Field(localmesh, location_in, directions_in) {
 
   if (fieldmesh) {
@@ -314,8 +314,9 @@ void Field2D::setBoundaryTo(const Field2D& f2d) {
   allocate(); // Make sure data allocated
 
   /// Loop over boundary regions
-  for (const auto& reg : fieldmesh->getBoundaries()) {
+  for (const auto& regnew : fieldmesh->getBoundaries()) {
     /// Loop within each region
+    auto* reg = regnew->getLegacyPointer();
     for (reg->first(); !reg->isDone(); reg->next()) {
       // Get value half-way between cells
       BoutReal val =
@@ -326,10 +327,9 @@ void Field2D::setBoundaryTo(const Field2D& f2d) {
   }
 }
 
-////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
+void Field2D::swapData(Field2D& other) { std::swap(data, other.data); }
 
-// Unary minus
-Field2D operator-(const Field2D& f) { return -1.0 * f; }
+////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 

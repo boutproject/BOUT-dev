@@ -1,10 +1,33 @@
 #!/usr/bin/env python
 
-# Create grids for a rotating ellipse stellarator, based on curvilinear grids
-
+import argparse
 import numpy as np
-
 import zoidberg
+
+parser = argparse.ArgumentParser(
+    prog="RotatingEllipse",
+    description="Create grids for a rotating ellipse stellarator, based on curvilinear grids.",
+)
+parser.add_argument(
+    "-nx", type=int, default=20, help="Number of radial (x) cells including boundaries"
+)
+parser.add_argument(
+    "-ny", "--nslices", type=int, default=8, help="Number of parallel (y) slices"
+)
+parser.add_argument("-nz", type=int, default=20, help="Number of poloidal (z) cells")
+parser.add_argument(
+    "-ns",
+    "--nsamples-per-dim",
+    type=int,
+    default=1,
+    help="Number of samples per dimension",
+)
+parser.add_argument("-pb", "--partial-boundaries", action="store_true", default=True)
+parser.add_argument("-o", "--output", type=str, default="")
+args = parser.parse_args()
+
+if args.output == "":
+    args.output = f"rotating-ellipse-{args.nx}x{args.nslices}x{args.nz}-s{args.nsamples_per_dim}{'-npb' if not args.partial_boundaries else ''}.fci.nc"
 
 #############################################################################
 # Define the magnetic field
@@ -30,8 +53,7 @@ magnetic_field = zoidberg.field.RotatingEllipse(
 start_r = xcentre + 0.4
 start_z = 0.0
 
-nslices = 8  # Number of poloidal slices
-ycoords = np.linspace(0, yperiod, nslices)
+ycoords = np.linspace(0, yperiod, args.nslices, endpoint=False)
 npoints = 20  # Points per poloidal slice
 
 rzcoord, ycoords = zoidberg.fieldtracer.trace_poincare(
@@ -39,7 +61,7 @@ rzcoord, ycoords = zoidberg.fieldtracer.trace_poincare(
 )
 
 inner_lines = []
-for i in range(nslices):
+for i in range(args.nslices):
     r = rzcoord[:, i, 0, 0]
     z = rzcoord[:, i, 0, 1]
     line = zoidberg.rzline.line_from_points(r, z)
@@ -59,11 +81,8 @@ outer_line = zoidberg.rzline.circle(R0=xcentre, r=0.6)
 # Now have inner and outer boundaries for each poloidal grid
 # Generate a grid on each poloidal slice using the elliptic grid generator
 
-nx = 20
-nz = 20
-
 pol_grids = [
-    zoidberg.poloidal_grid.grid_elliptic(inner_line, outer_line, nx, nz)
+    zoidberg.poloidal_grid.grid_elliptic(outer_line, inner_line, args.nx, args.nz)
     for inner_line in inner_lines
 ]
 
@@ -72,31 +91,14 @@ pol_grids = [
 
 grid = zoidberg.grid.Grid(pol_grids, ycoords, yperiod, yperiodic=True)
 
-samples_per_dim = 5  # Sub-sampling in each cell
+maps = zoidberg.make_maps(grid, magnetic_field, samples_per_dim=args.nsamples_per_dim)
 
-maps = zoidberg.make_maps(grid, magnetic_field, samples_per_dim=samples_per_dim)
-
-#############################################################################
-# Interpolation weights
-
-weight_vars = zoidberg.weights.calculate_parallel_map_operators(maps)
-maps.update(weight_vars)
-# Remove sub-sampled maps from output
-for var in [
-    "forward_xt_primes",
-    "forward_zt_primes",
-    "backward_xt_primes",
-    "backward_zt_primes",
-    "subcell_weights",
-]:
-    maps.pop(var, None)
+maps = zoidberg.weights.modify_maps(maps, partial_boundaries=args.partial_boundaries)
 
 #############################################################################
 # Write grid file
 
-filename = f"rotating-ellipse-{nx}x{nslices}x{nz}-s{samples_per_dim}.fci.nc"
-
-print(f"Writing to grid file '{filename}'")
+print(f"Writing to grid file '{args.output}'")
 zoidberg.write_maps(
-    grid, magnetic_field, maps, gridfile=filename, new_names=False, metric2d=False
+    grid, magnetic_field, maps, gridfile=args.output, new_names=False, metric2d=False
 )

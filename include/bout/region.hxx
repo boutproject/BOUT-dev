@@ -49,6 +49,7 @@
 #include <utility>
 #include <vector>
 
+#include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
@@ -594,17 +595,28 @@ public:
 
   const ContiguousBlocks& getBlocks() const { return blocks; };
   const RegionIndices& getIndices() const { return indices; };
+  const Array<int>& getLinearIndices() const {
+    if (linearIndices.empty()) {
+      linearIndices = Array<int>(indices.size());
+      for (size_type i = 0; i < indices.size(); ++i) {
+        linearIndices[i] = indices[i].ind;
+      }
+    }
+    return linearIndices;
+  }
 
   /// Set the indices and ensure blocks updated
   void setIndices(RegionIndices& indicesIn, int maxregionblocksize = MAXREGIONBLOCKSIZE) {
     indices = indicesIn;
     blocks = getContiguousBlocks(maxregionblocksize);
+    invalidateLinearIndices();
   };
 
   /// Set the blocks and ensure indices updated
   void setBlocks(ContiguousBlocks& blocksIn) {
     blocks = blocksIn;
     indices = getRegionIndices();
+    invalidateLinearIndices();
   };
 
   /// Return a new Region that has the same indices as this one but
@@ -828,10 +840,13 @@ public:
   // sorted this would prevent this usage.
 
 private:
-  RegionIndices indices;   //< Flattened indices
-  ContiguousBlocks blocks; //< Contiguous sections of flattened indices
-  int ny = -1;             //< Size of y dimension
-  int nz = -1;             //< Size of z dimension
+  RegionIndices indices;            //< Flattened indices
+  ContiguousBlocks blocks;          //< Contiguous sections of flattened indices
+  int ny = -1;                      //< Size of y dimension
+  int nz = -1;                      //< Size of z dimension
+  mutable Array<int> linearIndices; //< Cached flattened integer indices
+
+  void invalidateLinearIndices() const { linearIndices.clear(); }
 
   /// Helper function to create a RegionIndices, given the start and end
   /// points in x, y, z, and the total y, z lengths

@@ -284,7 +284,22 @@ if(BOUT_USE_ADIOS2)
   else()
     find_package(ADIOS2 REQUIRED)
   endif()
-  target_link_libraries(bout++ PUBLIC adios2::cxx11_mpi MPI::MPI_C)
+
+  foreach(_adios2_candidate adios2::cxx_mpi adios2::cxx20_mpi adios2::cxx17_mpi
+                            adios2::cxx11_mpi
+  )
+    if(TARGET ${_adios2_candidate})
+      set(_adios2_target ${_adios2_candidate})
+      break()
+    endif()
+  endforeach()
+
+  if(NOT DEFINED _adios2_target)
+    message(FATAL_ERROR "Could not find a usable ADIOS2 CXX CMake target. ")
+  endif()
+  message(STATUS "Using ADIOS2 CMake target: ${_adios2_target}")
+
+  target_link_libraries(bout++ PUBLIC ${_adios2_target} MPI::MPI_C)
 endif()
 message(STATUS "ADIOS2 support: ${BOUT_USE_ADIOS2}")
 set(BOUT_HAS_ADIOS2 ${BOUT_USE_ADIOS2})
@@ -338,6 +353,7 @@ cmake_dependent_option(
   BOUT_USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF
   "NOT BOUT_DOWNLOAD_SUNDIALS" ON
 )
+set(BOUT_HAS_SUNDIALS_MANYVECTOR OFF)
 if(BOUT_USE_SUNDIALS)
   enable_language(C)
   if(BOUT_DOWNLOAD_SUNDIALS)
@@ -391,6 +407,14 @@ if(BOUT_USE_SUNDIALS)
     set(SUNDIALS_ROOT "${SUNDIALS_DIR}")
   endif()
   target_link_libraries(bout++ PUBLIC SUNDIALS::nvecparallel)
+  if(TARGET SUNDIALS::nvecmanyvector)
+    target_link_libraries(bout++ PUBLIC SUNDIALS::nvecmanyvector)
+    set(BOUT_HAS_SUNDIALS_MANYVECTOR ON)
+  else()
+    message(
+      STATUS "SUNDIALS ManyVector support not found; custom N_Vector disabled"
+    )
+  endif()
   target_link_libraries(bout++ PUBLIC SUNDIALS::cvode)
   target_link_libraries(bout++ PUBLIC SUNDIALS::ida)
   target_link_libraries(bout++ PUBLIC SUNDIALS::arkode)

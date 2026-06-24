@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bout/boundary_region.hxx>
+#include <bout/boundary_region_iter.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
@@ -19,6 +20,7 @@
 #include <iterator>
 #include <memory>
 #include <numeric>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -95,10 +97,11 @@ public:
 
   // Use this if the FakeMesh needs x- and y-boundaries
   void createBoundaries() {
-    addBoundary(new BoundaryRegionXIn("core", ystart, yend, this));
-    addBoundary(new BoundaryRegionXOut("sol", ystart, yend, this));
-    addBoundary(new BoundaryRegionYUp("upper_target", xstart, xend, this));
-    addBoundary(new BoundaryRegionYDown("lower_target", xstart, xend, this));
+    addBoundary(bout::boundary::NewBoundaryRegionXIn("core", ystart, yend, this));
+    addBoundary(bout::boundary::NewBoundaryRegionXOut("sol", ystart, yend, this));
+    addBoundary(bout::boundary::NewBoundaryRegionYUp("upper_target", xstart, xend, this));
+    addBoundary(
+        bout::boundary::NewBoundaryRegionYDown("lower_target", xstart, xend, this));
   }
 
   comm_handle send(FieldGroup& UNUSED(g)) override { return nullptr; }
@@ -121,6 +124,7 @@ public:
                    [[maybe_unused]] int Z) const override {
     return 0;
   }
+  std::set<std::string> getPossibleBoundaries() const override { return {}; }
   bool firstX() const override { return true; }
   bool lastX() const override { return true; }
   int sendXOut(BoutReal* UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) override {
@@ -171,11 +175,11 @@ public:
   RangeIterator iterateBndryUpperInnerY() const override { return RangeIterator(); }
   bool hasBndryLowerY() const override { return false; }
   bool hasBndryUpperY() const override { return false; }
-  void addBoundary(BoundaryRegion* region) override { boundaries.push_back(region); }
-  std::vector<BoundaryRegion*> getBoundaries() override { return boundaries; }
-  std::vector<std::shared_ptr<BoundaryRegionPar>>
-  getBoundariesPar(BoundaryParType UNUSED(type)) override {
-    return std::vector<std::shared_ptr<BoundaryRegionPar>>();
+  void addBoundary(BoundaryRegionBase* region) override { boundaries.push_back(region); }
+  std::vector<BoundaryRegionBase*> getBoundaries() override { return boundaries; }
+  std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>
+  getBoundariesPar(BoundaryParType UNUSED(type)) const override {
+    return std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>();
   }
   BoutReal GlobalX(int jx) const override { return jx; }
   BoutReal GlobalY(int jy) const override { return jy; }
@@ -264,7 +268,7 @@ public:
   using Mesh::msg_len;
 
 private:
-  std::vector<BoundaryRegion*> boundaries;
+  std::vector<BoundaryRegionBase*> boundaries;
 };
 
 /// FakeGridDataSource provides a non-null GridDataSource* source to use with FakeMesh, to

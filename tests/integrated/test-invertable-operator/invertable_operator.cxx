@@ -19,7 +19,7 @@ private:
       Field3D result = A * input + D * Delp2(input);
 
       // Ensure boundary points are set appropriately as given by the input field.
-      result.setBoundaryTo(input);
+      result.setBoundaryTo(input, true, true);
 
       return result;
     };

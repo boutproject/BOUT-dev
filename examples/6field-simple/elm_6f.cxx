@@ -16,6 +16,7 @@
 #include "bout/msg_stack.hxx"
 #include "bout/physicsmodel.hxx"
 #include "bout/sourcex.hxx"
+#include "bout/tokamak_coordinates.hxx"
 
 #include <cmath>
 
@@ -235,9 +236,7 @@ class Elm_6f : public PhysicsModel {
   int damp_width;        // Width of inner damped region
   BoutReal damp_t_const; // Timescale of damping
 
-  // Metric coefficients
-  Field2D Rxy, Bpxy, Btxy, B0, hthe;
-  Field2D I;         // Shear factor
+  Field2D B0;        // Magnetic field
   BoutReal LnLambda; // ln(Lambda)
 
   /// Ion mass
@@ -374,37 +373,9 @@ protected:
   int init(bool restarting) override {
     bool noshear;
 
-    // Get the metric tensor
-    Coordinates* coord = mesh->getCoordinates();
-
     output.write("Solving high-beta flute reduced equations\n");
     output.write("\tFile    : {:s}\n", __FILE__);
     output.write("\tCompiled: {:s} at {:s}\n", __DATE__, __TIME__);
-
-    //////////////////////////////////////////////////////////////
-    // Load data from the grid
-
-    // Load 2D profiles
-    mesh->get(J0, "Jpar0");    // A / m^2
-    mesh->get(P0, "pressure"); // Pascals
-
-    // Load curvature term
-    b0xcv.covariant = false;  // Read contravariant components
-    mesh->get(b0xcv, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
-
-    // Load metrics
-    if (mesh->get(Rxy, "Rxy")) { // m
-      output_error.write("Error: Cannot read Rxy from grid\n");
-      return 1;
-    }
-    if (mesh->get(Bpxy, "Bpxy")) { // T
-      output_error.write("Error: Cannot read Bpxy from grid\n");
-      return 1;
-    }
-    mesh->get(Btxy, "Btxy"); // T
-    mesh->get(B0, "Bxy");    // T
-    mesh->get(hthe, "hthe"); // m
-    mesh->get(I, "sinty");   // m^-2 T^-1
 
     //////////////////////////////////////////////////////////////
     // Read parameters from the options file
@@ -681,19 +652,43 @@ protected:
     phi_curv = options["phi_curv"].doc("Compressional ExB terms").withDefault(true);
     g = options["gamma"].doc("Ratio of specific heats").withDefault(5.0 / 3.0);
 
-    if (!include_curvature) {
+    //////////////////////////////////////////////////////////////
+    // Load data from the grid
+
+    // Load 2D profiles
+    mesh->get(P0, "pressure"); // Pascals
+
+    // Typical magnetic field
+    mesh->get(Bbar, "bmag", 1.0);
+    // Typical length scale
+    mesh->get(Lbar, "rmag", 1.0);
+
+    // Read, normalise, and set coordinates
+    const auto tokamak_coords =
+        bout::set_tokamak_coordinates(*mesh, Lbar, Bbar, noshear or mesh->IncIntShear);
+    const auto& Rxy = tokamak_coords.Rxy;
+    const auto& Bpxy = tokamak_coords.Bpxy;
+    const auto& Btxy = tokamak_coords.Btxy;
+    const auto& hthe = tokamak_coords.hthe;
+    const auto& I = tokamak_coords.I_unnormalised;
+    // Needed in rhs too
+    B0 = tokamak_coords.Bxy;
+
+    if (include_curvature) {
+      // Load curvature term
+      b0xcv.covariant = false;  // Read contravariant components
+      mesh->get(b0xcv, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
+      if (noshear) {
+        b0xcv.z += I * b0xcv.x;
+      }
+    } else {
       b0xcv = 0.0;
     }
 
-    if (!include_jpar0) {
+    if (include_jpar0) {
+      mesh->get(J0, "Jpar0"); // A / m^2
+    } else {
       J0 = 0.0;
-    }
-
-    if (noshear) {
-      if (include_curvature) {
-        b0xcv.z += I * b0xcv.x;
-      }
-      I = 0.0;
     }
 
     //////////////////////////////////////////////////////////////
@@ -701,25 +696,16 @@ protected:
 
     if (mesh->IncIntShear) {
       // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-      coord->IntShiftTorsion = I;
-
+      mesh->getCoordinates()->IntShiftTorsion = I;
     } else {
       // Dimits style, using local coordinate system
       if (include_curvature) {
         b0xcv.z += I * b0xcv.x;
       }
-      I = 0.0; // I disappears from metric
     }
 
     //////////////////////////////////////////////////////////////
     // NORMALISE QUANTITIES
-
-    if (mesh->get(Bbar, "bmag")) { // Typical magnetic field
-      Bbar = 1.0;
-    }
-    if (mesh->get(Lbar, "rmag")) { // Typical length scale
-      Lbar = 1.0;
-    }
 
     if (mesh->get(Tibar, "Ti_x")) { // Typical ion temperature scale
       Tibar = 1.0;
@@ -857,14 +843,6 @@ protected:
     b0xcv.x /= Bbar;
     b0xcv.y *= Lbar * Lbar;
     b0xcv.z *= Lbar * Lbar;
-
-    Rxy /= Lbar;
-    Bpxy /= Bbar;
-    Btxy /= Bbar;
-    B0 /= Bbar;
-    hthe /= Lbar;
-    coord->dx /= Lbar * Lbar * Bbar;
-    I *= Lbar * Lbar * Bbar;
 
     if ((!T0_fake_prof) && n0_fake_prof) {
       N0 = N0tanh(n0_height * Nbar, n0_ave * Nbar, n0_width, n0_center, n0_bottom_x);
@@ -1044,27 +1022,6 @@ protected:
       eta_spitzer = 0.;
       dump.add(eta, "eta", 0);
     }
-
-    /**************** CALCULATE METRICS ******************/
-
-    coord->g11 = SQ(Rxy * Bpxy);
-    coord->g22 = 1.0 / SQ(hthe);
-    coord->g33 = SQ(I) * coord->g11 + SQ(B0) / coord->g11;
-    coord->g12 = 0.0;
-    coord->g13 = -I * coord->g11;
-    coord->g23 = -Btxy / (hthe * Bpxy * Rxy);
-
-    coord->J = hthe / Bpxy;
-    coord->Bxy = B0;
-
-    coord->g_11 = 1.0 / coord->g11 + SQ(I * Rxy);
-    coord->g_22 = SQ(B0 * hthe / Bpxy);
-    coord->g_33 = Rxy * Rxy;
-    coord->g_12 = Btxy * hthe * I * Rxy / Bpxy;
-    coord->g_13 = I * Rxy * Rxy;
-    coord->g_23 = Btxy * hthe * Rxy / Bpxy;
-
-    coord->geometry(); // Calculate quantities from metric tensor
 
     // Set B field vector
 

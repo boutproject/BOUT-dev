@@ -38,6 +38,7 @@
  *
  **************************************************************************/
 
+#include "bout/boutexception.hxx"
 class Mesh;
 
 #ifndef BOUT_MESH_H
@@ -67,7 +68,9 @@ class Mesh;
 #include <vector>
 
 class BoundaryRegion;
-class BoundaryRegionPar;
+namespace bout::boundary {
+class BoundaryRegionFCI;
+}
 class GridDataSource;
 
 class MeshFactory : public Factory<Mesh, MeshFactory, GridDataSource*, Options*> {
@@ -483,13 +486,17 @@ public:
   // Boundary regions
 
   /// Return a vector containing all the boundary regions on this processor
-  virtual std::vector<BoundaryRegion*> getBoundaries() = 0;
+  virtual std::vector<BoundaryRegionBase*> getBoundaries() = 0;
 
   /// Get the set of all possible boundaries in this configuration
-  virtual std::set<std::string> getPossibleBoundaries() const { return {}; }
+  virtual std::set<std::string> getPossibleBoundaries() const {
+    throw BoutException("Not implemented for this mesh");
+  };
 
   /// Add a boundary region to this processor
-  virtual void addBoundary(BoundaryRegion* UNUSED(bndry)) {}
+  virtual void addBoundary(BoundaryRegionBase* UNUSED(bndry)) {
+    throw BoutException("This has never been implemented");
+  };
 
   /// Get the list of parallel boundary regions. The option specifies with
   /// region to get. Default is to get all regions. All possible options are
@@ -499,12 +506,13 @@ public:
   /// mesh->getBoundariesPar(Mesh::BoundaryParType::all)
   /// get only xout:
   /// mesh->getBoundariesPar(Mesh::BoundaryParType::xout)
-  virtual std::vector<std::shared_ptr<BoundaryRegionPar>>
-  getBoundariesPar(BoundaryParType type = BoundaryParType::all) = 0;
+  virtual std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>
+  getBoundariesPar(BoundaryParType type = BoundaryParType::all) const = 0;
 
   /// Add a parallel(Y) boundary to this processor
-  virtual void addBoundaryPar(std::shared_ptr<BoundaryRegionPar> UNUSED(bndry),
-                              BoundaryParType UNUSED(type)) {}
+  virtual void
+  addBoundaryPar(std::shared_ptr<bout::boundary::BoundaryRegionFCI> UNUSED(bndry),
+                 BoundaryParType UNUSED(type)) {}
 
   virtual BoutReal GlobalX(int jx) const = 0;      ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(int jy) const = 0;      ///< Continuous Y index (0 -> 1)
@@ -783,6 +791,12 @@ public:
   Ind3D indPerpto3D(const IndPerp& indPerp, int jy = 0) {
     int jz = indPerp.z();
     return {(indPerp.ind - jz) * LocalNy + LocalNz * jy + jz, LocalNy, LocalNz};
+  }
+
+  BOUT_HOST_DEVICE int flatIndPerpto3D(const int& flatIndPerp, const int nz,
+                                       int jy = 0) const {
+    int jz = flatIndPerp % nz;
+    return (flatIndPerp - jz) * LocalNy + LocalNz * jy + jz;
   }
 
   /// Converts an Ind3D to an Ind2D representing a 2D index using a lookup -- to be used with care

@@ -32,10 +32,11 @@
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define SUNDIALS_VERSION_AT_LEAST(major, minor, patch) \
-  ((major) < SUNDIALS_VERSION_MAJOR                      \
-   || ((major) == SUNDIALS_VERSION_MAJOR                 \
-       && ((minor) < SUNDIALS_VERSION_MINOR              \
-           || ((minor) == SUNDIALS_VERSION_MINOR && (patch) <= SUNDIALS_VERSION_PATCH))))
+  ((major) < SUNDIALS_VERSION_MAJOR                    \
+   || ((major) == SUNDIALS_VERSION_MAJOR               \
+       && ((minor) < SUNDIALS_VERSION_MINOR            \
+           || ((minor) == SUNDIALS_VERSION_MINOR       \
+               && (patch) <= SUNDIALS_VERSION_PATCH))))
 #define SUNDIALS_VERSION_LESS_THAN(major, minor, patch) \
   (!SUNDIALS_VERSION_AT_LEAST(major, minor, patch))
 // NOLINTEND(cppcoreguidelines-macro-usage)
@@ -77,13 +78,13 @@ inline sundials::Context createSUNContext([[maybe_unused]] MPI_Comm& comm) {
 #endif
 }
 
-template <typename Func, typename... Args>
-inline decltype(auto) callWithSUNContext(Func f, [[maybe_unused]] sundials::Context& ctx,
+template <typename Func, typename Ctx, typename... Args>
+inline decltype(auto) callWithSUNContext(Func f, [[maybe_unused]] Ctx&& ctx,
                                          Args&&... args) {
 #if SUNDIALS_VERSION_LESS_THAN(6, 0, 0)
   return f(std::forward<Args>(args)...);
 #else
-  return f(std::forward<Args>(args)..., ctx);
+  return f(std::forward<Args>(args)..., std::forward<Ctx>(ctx));
 #endif
 }
 

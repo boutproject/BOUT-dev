@@ -3,68 +3,92 @@
 GPU support
 ===========
 
-This section describes work in progress to develop GPU support in
-BOUT++ models.  It includes both configuration and compilation on GPU
-systems, but also ways to write physics models which are designed to
-give higher performance. These methods may also be beneficial for CPU
-architectures, but have fewer safety checks, less functionality and
-run-time flexibility than the field operators.
+This section describes the main ways to run BOUT++ work efficiently on
+GPUs or other accelerator-style backends.
 
-To use the single index operators and the ``BOUT_FOR_RAJA`` loop macro::
+There are now two complementary levels of optimization:
+
+1. Write ordinary field algebra and let BOUT++ keep many algebraic
+   expressions lazy until assignment or reduction.
+2. Drop down to explicit `RAJA` loops and single-index operators when
+   you want complete control over loop fusion and kernel structure.
+
+The first approach is usually the best starting point. The second is for
+hot loops where you want to manually combine derivative operators,
+accessors, and run-time captures in one kernel.
+
+Automatic fusion with field expressions
+---------------------------------------
+
+Many algebraic operations on fields can now be represented as lazy
+expressions. This keeps user code close to the familiar field-based
+style while reducing temporary fields and extra passes over memory.
+
+Typical examples are:
+
+.. code-block:: cpp
+
+   Field3D rhs = sqrt(SQ(n) + SQ(T));
+   ddt(n) = source * profile - sink * n;
+   BoutReal max_error = max(abs(lhs - rhs), true);
+
+This is the highest-level route to better execution behavior, and it is
+usually the most maintainable. See :ref:`sec-field-expressions` for the
+details of what stays lazy and when evaluation happens.
+
+Lazy expressions mainly help with *algebraic* fusion. If your hot path
+is dominated by differential operators and you need to fuse those
+operators into a single explicit loop, use the lower-level approach
+described below.
+
+Manual fusion with RAJA loops
+-----------------------------
+
+To use the single-index operators and the ``BOUT_FOR_RAJA`` loop macro::
 
   #include "bout/single_index_ops.hxx"
   #include "bout/rajalib.hxx"
 
-To run parts of a physics model RHS function on a GPU, the basic
-outline of the code is to (optionally) first copy any class member
-variables which will be used in the loop into local variables
-(see below for an alternative method)::
+To run part of a physics-model RHS on a GPU, start by copying any class
+member variables needed inside the loop into local variables, or capture
+them explicitly::
 
-  auto _setting = setting; // Create a local variable to capture
+  auto _setting = setting;
 
-Then create a `FieldAccessor` to efficiently access field and
-coordinate system data inside the loop::
+Then create `FieldAccessor` objects to read and write field data inside
+the loop::
 
   auto n_acc = FieldAccessor<>(n);
   auto phi_acc = FieldAccessor<>(phi);
 
-There are also ``Field2DAccessor``s for accessing ``Field2D``
-types. If fields are staggered, then the expected location should be
-passed as a template parameter::
+There are also ``Field2DAccessor`` objects for `Field2D`. If fields are
+staggered, the expected location can be supplied as a template
+parameter::
 
   auto Jpar_acc = FieldAccessor<CELL_YLOW>(Jpar);
 
-which enables the cell location to be checked in the operators at
-compile time rather than run time.
+Finally the loop itself can be written as::
 
-Finally the loop itself can be written something like::
+  Field3D result;
+  auto result_acc = FieldAccessor<>(result);
 
   BOUT_FOR_RAJA(i, region) {
-    ddt(n_acc)[i] = -bracket(phi_acc, n_acc, i) - 2 * DDZ(n_acc, i);
-    /* ... */
+    result_acc[i] = -bracket(phi_acc, n_acc, i) - 2.0 * DDZ(n_acc, i);
   };
 
 Note the semicolon after the closing brace, which is needed because
-this is the body of a lambda function. Inside the body of the loop,
-the operators like ``bracket`` and ``DDZ`` calculate the derivatives
-at a single index ``i``. These are "single index operators` and are
-defined in ``bout/single_index_ops.hxx``.
+this is the body of a lambda function. Inside the loop, operators such
+as ``bracket`` and ``DDZ`` act at a single index ``i``. These are the
+single-index operators defined in ``bout/single_index_ops.hxx``.
 
-Any class member variables which are used inside the loop must be captured
-as a local variable. If this is not done, then the code will probably compile,
-but may produce an illegal memory access error at runtime on the GPU. To
-capture the class member, you can copy any class member variables which
-will be used in the loop into local variables::
-
-  auto _setting = setting; // Create a local variable to capture
-
-and then use ``_setting`` rather than ``setting`` inside the loop.
-Alternatively, add variables to be captured to a CAPTURE argument to
-the ``BOUT_FOR_RAJA`` loop::
+Any class member variables used inside the loop must be captured
+carefully. Otherwise the code may compile but fail at run time on the
+GPU. Instead of using ``this`` implicitly, either shadow members with
+local variables or add them to the capture list::
 
   BOUT_FOR_RAJA(i, region, CAPTURE(setting)) {
     ddt(n_acc)[i] = -bracket(phi_acc, n_acc, i) - 2 * DDZ(n_acc, i);
-    /* ... code which uses `setting` ... */
+    /* ... code that uses `setting` ... */
   };
 
 If RAJA is not available, the ``BOUT_FOR_RAJA`` macro will revert to
@@ -75,9 +99,25 @@ Note: An important difference between ``BOUT_FOR`` and
 ``BOUT_FOR_RAJA`` (apart from the closing semicolon) is that the type
 of the index ``i`` is different inside the loop: ``BOUT_FOR`` uses
 ``SpecificInd`` types (typically ``Ind3D``), but ``BOUT_FOR_RAJA``
-uses ``int``.  ``SpecificInd`` can be explicitly cast to ``int`` so
+uses ``int``. ``SpecificInd`` can be explicitly cast to ``int`` so
 use ``static_cast<int>(i)`` to ensure that it's an integer both with
 and without RAJA. This might (hopefully) change in future versions.
+
+Choosing between the two approaches
+-----------------------------------
+
+Use lazy field expressions when:
+
+- the code is mostly algebraic combinations of existing fields
+- readability matters more than extracting the last bit of performance
+- you want a clear default path that still maps well to accelerator
+  backends
+
+Use explicit RAJA loops and single-index operators when:
+
+- a hot loop is dominated by derivatives
+- you want to combine many operations into one kernel manually
+- you need direct control over captures, data access, or loop structure
 
 Examples
 --------
@@ -115,8 +155,12 @@ Notes:
 CMake configuration
 -------------------
 
-To compile BOUT++ components into GPU kernels a few different pieces need to be configured to work together:
-RAJA, Umpire, and a CUDA compiler.
+To compile BOUT++ components into GPU kernels, a few different pieces
+need to work together: RAJA, Umpire, and a CUDA-capable compiler.
+
+The generated eager field-operator code also selects a loop backend at
+configure time. If RAJA is enabled it uses RAJA loops, otherwise it
+falls back to OpenMP or serial loops depending on the build.
 
 
 .. _tab-gpusupport-cmake:
@@ -135,6 +179,25 @@ RAJA, Umpire, and a CUDA compiler.
    +----------------------+-----------------------------------------+------------------------+
    | BOUT_ENABLE_WARNINGS | nvcc has incompatible warning flags     | On (turn Off for CUDA) |
    +----------------------+-----------------------------------------+------------------------+
+
+Shifted metric on GPUs
+----------------------
+
+When BOUT++ is built with CUDA, the shifted-metric parallel transform
+has a CUDA implementation of its toroidal ``shiftZ`` work used while
+calculating parallel slices during communication.
+
+This is most relevant when using:
+
+.. code-block:: cfg
+
+   [mesh:paralleltransform]
+   type = shifted
+   calcParallelSlices_on_communicate = true
+
+The current implementation is specialized for supported power-of-two
+``LocalNz`` values. If parallel slices are disabled on communicate, as in
+the aligned-transform workflow, this precomputed-slice path is not used.
 
 Single index operators
 ----------------------
@@ -263,7 +326,7 @@ likely that the results might be architecture dependent.
 
 To minimise the number of times this data needs to be copied from
 individual fields into the single array, and then copied from CPU to
-GPU, ``CoordinatesAccessor``s are cached. A map (``coords_store``
+GPU, ``CoordinatesAccessor``\ s are cached. A map (``coords_store``
 defined in ``coordinates_accessor.cxx``) associates
 ``Array<BoutReal>`` objects (containing the array of data) to
 ``Coordinates`` pointers. If a ``CoordinatesAccessor`` is constructed
@@ -314,10 +377,10 @@ This is a `good talk by John Lakos [ACCU 2017] on memory allocators
 Future work
 -----------
 
-Indices
-~~~~~~~
-
-Setting up a RAJA loop to run on a GPU is still cumbersome and inefficient
+The GPU path is still evolving. The main long-term direction is to let
+more of ordinary field code map efficiently onto accelerator backends,
+so that manual kernel construction is only needed for the most
+performance-critical cases.
 due to the need to transform CPU data structures into a form which can
 be passed to and used on the GPU. In the ``bout/rajalib.hxx`` header there
 is code like::
@@ -332,7 +395,7 @@ is code like::
      auto _ob_i_ind_raw = &_ob_i_ind[0];
 
 which is creating a raw pointer (``_ob_i_ind_raw``) to an array of
-``int``s which are allocated using Umpire. The original ``indices``
+``int``\ s which are allocated using Umpire. The original ``indices``
 are allocated using ``new`` and are inside a C++ ``std::vector``.  The
 RAJA loop then uses this array like this::
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef BOUT_PETSC_OPERATORS_H
-#define BOUT_PETSC_OPERATORS_H
+#ifndef BOUT_PETSC_OPERATORS
+#define BOUT_PETSC_OPERATORS
 
 #include "bout/build_defines.hxx"
 
@@ -750,7 +750,7 @@ private:
   /// @param weights CSR nonzero-value array.
   void assembleFromCSR(const Array<int>& rows, const Array<int>& cols,
                        const Array<BoutReal>& weights) {
-    UniqueMat temp{new Mat{nullptr}};
+    const UniqueMat temp{new Mat{nullptr}};
     BOUT_DO_PETSC(MatCreate(BoutComm::get(), temp.get()));
     BOUT_DO_PETSC(MatSetType(*temp, MATMPIAIJ));
     BOUT_DO_PETSC(MatSetSizes(*temp, out_mapping->localSize(), PETSC_DECIDE,
@@ -1083,4 +1083,4 @@ PetscCellOperator makeNeumannOperator(const PetscCellMappingPtr& mapping,
 
 #endif // BOUT_HAS_PETSC
 
-#endif //BOUT_PETSC_OPERATORS_H
+#endif // BOUT_PETSC_OPERATORS

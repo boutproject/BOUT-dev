@@ -41,12 +41,15 @@ class FieldData;
 
 class BoundaryOp;
 class BoundaryOpPar;
+namespace bout::boundary {
+class BoundaryRegionFCI;
+}
 class Coordinates;
 class Mesh;
 
 #include "bout/boundary_region.hxx"
 class BoundaryRegionPar;
-enum class BndryLoc;
+enum class BndryLoc : std::int8_t;
 
 #include "bout/sys/expressionparser.hxx"
 

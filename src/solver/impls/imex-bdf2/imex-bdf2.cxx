@@ -748,7 +748,7 @@ int IMEXBDF2::run() {
 
   int internalCounter = 0; // Cumulative number of successful internal iterations
 
-  for (int s = 0; s < getNumberOutputSteps(); s++) {
+  for (int s = 1; s <= getNumberOutputSteps(); s++) {
     BoutReal cumulativeTime = 0.;
     int counter = 0; // How many iterations in this output step
 

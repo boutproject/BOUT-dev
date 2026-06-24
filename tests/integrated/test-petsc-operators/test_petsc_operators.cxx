@@ -5,7 +5,9 @@
 #include "bout/field_factory.hxx"
 #include "bout/globals.hxx"
 #include "bout/options.hxx"
+#include "bout/options_io.hxx"
 #include "bout/petsc_operators.hxx"
+#include "bout/region.hxx"
 
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
@@ -57,6 +59,7 @@ int main(int argc, char** argv) {
 
     bout::writeDefaultOutputFile(dump);
   }
+
   BoutFinalise();
   return 0;
 }

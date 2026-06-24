@@ -658,21 +658,27 @@ void Mesh::createDefaultRegions() {
   addRegion3D("RGN_NOZ", Region<Ind3D>(0, LocalNx - 1, 0, LocalNy - 1, zstart, zend,
                                        LocalNy, LocalNz, maxregionblocksize));
   addRegion3D("RGN_GUARDS", mask(getRegion3D("RGN_ALL"), getRegion3D("RGN_NOBNDRY")));
+  addRegion3D("RGN_XGUARDS_IN", Region<Ind3D>(0, xstart - 1, ystart, yend, zstart, zend,
+                                              LocalNy, LocalNz, maxregionblocksize));
+  addRegion3D("RGN_XGUARDS_OUT",
+              Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, zstart, zend, LocalNy,
+                            LocalNz, maxregionblocksize));
   addRegion3D("RGN_XGUARDS",
-              Region<Ind3D>(0, xstart - 1, ystart, yend, zstart, zend, LocalNy, LocalNz,
-                            maxregionblocksize)
-                  + Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, zstart, zend,
-                                  LocalNy, LocalNz, maxregionblocksize));
+              getRegion3D("RGN_XGUARDS_IN") + getRegion3D("RGN_XGUARDS_OUT"));
+  addRegion3D("RGN_YGUARDS_IN", Region<Ind3D>(xstart, xend, 0, ystart - 1, zstart, zend,
+                                              LocalNy, LocalNz, maxregionblocksize));
+  addRegion3D("RGN_YGUARDS_OUT",
+              Region<Ind3D>(xstart, xend, yend + 1, LocalNy - 1, zstart, zend, LocalNy,
+                            LocalNz, maxregionblocksize));
   addRegion3D("RGN_YGUARDS",
-              Region<Ind3D>(xstart, xend, 0, ystart - 1, zstart, zend, LocalNy, LocalNz,
-                            maxregionblocksize)
-                  + Region<Ind3D>(xstart, xend, yend + 1, LocalNy - 1, zstart, zend,
-                                  LocalNy, LocalNz, maxregionblocksize));
+              getRegion3D("RGN_YGUARDS_IN") + getRegion3D("RGN_YGUARDS_OUT"));
+  addRegion3D("RGN_ZGUARDS_IN", Region<Ind3D>(xstart, xend, ystart, yend, 0, zstart - 1,
+                                              LocalNy, LocalNz, maxregionblocksize));
+  addRegion3D("RGN_ZGUARDS_OUT",
+              Region<Ind3D>(xstart, xend, ystart, yend, zend + 1, LocalNz - 1, LocalNy,
+                            LocalNz, maxregionblocksize));
   addRegion3D("RGN_ZGUARDS",
-              Region<Ind3D>(xstart, xend, ystart, yend, 0, zstart - 1, LocalNy, LocalNz,
-                            maxregionblocksize)
-                  + Region<Ind3D>(xstart, xend, ystart, yend, zend + 1, LocalNz - 1,
-                                  LocalNy, LocalNz, maxregionblocksize));
+              getRegion3D("RGN_ZGUARDS_IN") + getRegion3D("RGN_ZGUARDS_OUT"));
   addRegion3D("RGN_NOCORNERS", (getRegion3D("RGN_NOBNDRY") + getRegion3D("RGN_XGUARDS")
                                 + getRegion3D("RGN_YGUARDS") + getRegion3D("RGN_ZGUARDS"))
                                    .unique());

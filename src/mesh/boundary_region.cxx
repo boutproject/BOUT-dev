@@ -1,4 +1,6 @@
 
+#include "bout/assert.hxx"
+#include "bout/boutexception.hxx"
 #include <bout/boundary_region.hxx>
 #include <bout/globals.hxx>
 #include <bout/mesh.hxx>
@@ -7,6 +9,16 @@
 #include <utility>
 using std::swap;
 
+BoundaryRegion* BoundaryRegionBase::getLegacyPointer() {
+  if (legacy == nullptr) {
+    throw BoutException("Legacy region not supported");
+  }
+  ASSERT3(legacy->location == location);
+  ASSERT3(legacy->label == label);
+  ASSERT3(legacy->localmesh == localmesh);
+  return legacy;
+}
+BoundaryRegionBase::~BoundaryRegionBase() { delete legacy; };
 BoundaryRegionXIn::BoundaryRegionXIn(std::string name, int ymin, int ymax, Mesh* passmesh)
     : BoundaryRegion(std::move(name), -1, 0, passmesh), ys(ymin), ye(ymax) {
   location = BNDRY_XIN;
