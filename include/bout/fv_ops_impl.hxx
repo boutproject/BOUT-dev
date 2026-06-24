@@ -28,9 +28,9 @@ namespace FV {
    */
 struct Stencil1D {
   /// Cell centre values
-  BoutReal c;
-  BoutReal m;
-  BoutReal p;
+  BoutReal c{};
+  BoutReal m{};
+  BoutReal p{};
   BoutReal mm = BoutNaN;
   BoutReal pp = BoutNaN;
 
@@ -190,20 +190,20 @@ struct VanAlbada {
     const BoutReal dl = n.c - n.m;
     const BoutReal dr = n.p - n.c;
 
-    const BoutReal denom = dl * dl + dr * dr;
+    const BoutReal denom = (dl * dl) + (dr * dr);
 
     // Smoothness parameters:
     // - keep division well-defined when dl=dr=0
     // - provide a differentiable approximation to max(dl*dr, 0)
-    const BoutReal eps = 1e-12 * denom + 1e-30;
+    const BoutReal eps = (1e-12 * denom) + 1e-30;
 
     const BoutReal ab = dl * dr;
-    const BoutReal ab_pos = 0.5 * (ab + sqrt(ab * ab + eps * eps));
+    const BoutReal ab_pos = 0.5 * (ab + sqrt((ab * ab) + (eps * eps)));
 
     const BoutReal slope = (ab_pos * (dl + dr)) / (denom + eps);
 
-    n.L = n.c - 0.5 * slope;
-    n.R = n.c + 0.5 * slope;
+    n.L = n.c - (0.5 * slope);
+    n.R = n.c + (0.5 * slope);
   }
 };
 
@@ -237,7 +237,7 @@ struct WENO3 {
     const BoutReal beta1_l = beta0_r;
 
     // Smoothness parameter (scaled to local variation)
-    const BoutReal eps = 1e-12 * (beta0_r + beta1_r) + 1e-30;
+    const BoutReal eps = (1e-12 * (beta0_r + beta1_r)) + 1e-30;
 
     // Linear weights for WENO3-JS
     constexpr BoutReal d0 = 1.0 / 3.0;
@@ -257,8 +257,8 @@ struct WENO3 {
     const BoutReal w0_l = a0_l / wsum_l;
     const BoutReal w1_l = a1_l / wsum_l;
 
-    n.R = w0_r * p0_r + w1_r * p1_r;
-    n.L = w0_l * p0_l + w1_l * p1_l;
+    n.R = (w0_r * p0_r) + (w1_r * p1_r);
+    n.L = (w0_l * p0_l) + (w1_l * p1_l);
   }
 };
 
