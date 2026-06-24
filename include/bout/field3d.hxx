@@ -31,6 +31,7 @@ class Field3D;
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/build_config.hxx"
 #include "bout/field.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field_data.hxx"
@@ -43,12 +44,15 @@ class Field3D;
 #include <optional>
 #include <ostream>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 class Mesh;
 class Options;
 class Field3DParallel;
+
+#include "bout/fieldops.hxx"
 
 /// Class for 3D X-Y-Z scalar fields
 /*!
@@ -195,8 +199,15 @@ public:
   Field3D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
           DirectionTypes directions_in = {YDirectionType::Standard,
                                           ZDirectionType::Standard});
+  template <typename L, typename R, typename Func,
+            typename = std::enable_if_t<is_expr_field3d_v<L> || is_expr_field3d_v<R>>>
+  Field3D(const BinaryExpr<Field3D, L, R, Func>& expr)
+      : Field3D(evaluateBinaryExpr(expr), expr.getMesh(), expr.getLocation(),
+                expr.getDirections()) {
+    setRegion(expr.getRegionID());
+  }
   /// Destructor
-  ~Field3D() override;
+  ~Field3D() override { delete deriv; }
 
   /// Data type stored in this field
   using value_type = BoutReal;
@@ -444,39 +455,111 @@ public:
     return &data[(jx * ny + jy) * nz];
   }
 
+  struct View {
+    BoutReal* data;
+    int mul = 1;
+    int div = 1;
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx) const {
+      return data[(idx * mul) / div];
+    }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal& operator[](int idx) const {
+      return data[(idx * mul) / div];
+    }
+
+    View& setScale(int mul, int div) {
+      this->mul = mul;
+      this->div = div;
+      return *this;
+    }
+  };
+  operator View() { return View{&data[0]}; }
+  operator View() const { return View{const_cast<BoutReal*>(&data[0])}; }
+  //operator View() const { return View{&data[0]}; }
+
   /////////////////////////////////////////////////////////
   // Operators
 
   /// Assignment operators
   ///@{
   Field3D& operator=(const Field3D& rhs);
-  Field3D& operator=(Field3D&& rhs) noexcept;
+  Field3D& operator=(Field3D&& rhs) noexcept {
+    track(rhs, "operator=");
+
+    // Move parallel slices or delete existing ones.
+    yup_fields = std::move(rhs.yup_fields);
+    ydown_fields = std::move(rhs.ydown_fields);
+
+    // Move the data and data sizes
+    nx = rhs.nx;
+    ny = rhs.ny;
+    nz = rhs.nz;
+    regionID = rhs.regionID;
+
+    data = std::move(rhs.data);
+
+    // Move base slice last
+    Field::operator=(std::move(rhs));
+
+    return *this;
+  }
   Field3D& operator=(const Field2D& rhs);
   /// return void, as only part initialised
   void operator=(const FieldPerp& rhs);
   Field3D& operator=(BoutReal val);
+  template <typename ResT, typename L, typename R, typename Func>
+  std::enable_if_t<is_expr_field3d_v<L>, Field3D&>
+  operator=(const BinaryExpr<ResT, L, R, Func>& expr) {
+    if (!isAllocated() || getMesh() != expr.getMesh()) {
+      *this = Field3D{expr};
+      return *this;
+    }
+
+    clearParallelSlices();
+    setRegion(expr.getRegionID());
+    setLocation(expr.getLocation());
+    setDirections(expr.getDirections());
+    allocate();
+    expr.evaluate(&data[0]);
+    return *this;
+  }
+
   ///@}
 
-  /// Addition operators
-  ///@{
-  Field3D& operator+=(const Field3D& rhs);
-  Field3D& operator+=(const Field2D& rhs);
-  Field3D& operator+=(BoutReal rhs);
+#define FIELD3D_OP_EQUALS(OP_SYM)                                                      \
+  template <typename R>                                                                \
+  std::enable_if_t<                                                                    \
+      is_expr_field3d_v<R> || is_expr_field2d_v<R> || is_expr_constant_v<R>, Field3D&> \
+  operator OP_SYM## = (const R& rhs) {                                                 \
+    if (data.unique()) {                                                               \
+      clearParallelSlices();                                                           \
+      auto expr = (*this)OP_SYM rhs;                                                   \
+      expr.evaluate(&data[0]);                                                         \
+    } else {                                                                           \
+      (*this) = (*this)OP_SYM rhs;                                                     \
+    }                                                                                  \
+    return *this;                                                                      \
+  }
+
+  FIELD3D_OP_EQUALS(+)
+  FIELD3D_OP_EQUALS(-)
+  FIELD3D_OP_EQUALS(*)
+  FIELD3D_OP_EQUALS(/)
+
   ///@}
 
-  /// Subtraction operators
-  ///@{
-  Field3D& operator-=(const Field3D& rhs);
-  Field3D& operator-=(const Field2D& rhs);
-  Field3D& operator-=(BoutReal rhs);
-  ///@}
-
-  /// Multiplication operators
-  ///@{
   Field3D& operator*=(const Field3D& rhs);
+  Field3D& operator+=(const Field3D& rhs);
+  Field3D& operator-=(const Field3D& rhs);
+  Field3D& operator*=(const Field3DParallel& rhs);
+  Field3D& operator/=(const Field3DParallel& rhs);
+  Field3D& operator+=(const Field3DParallel& rhs);
+  Field3D& operator-=(const Field3DParallel& rhs);
   Field3D& operator*=(const Field2D& rhs);
+  Field3D& operator+=(const Field2D& rhs);
+  Field3D& operator-=(const Field2D& rhs);
   Field3D& operator*=(BoutReal rhs);
-  ///@}
+  Field3D& operator+=(BoutReal rhs);
+  Field3D& operator-=(BoutReal rhs);
 
   /// Division operators
   ///@{
@@ -536,6 +619,7 @@ public:
   void applyParallelBoundary(const std::string& region, const std::string& condition,
                              Field3D* f);
 
+  void swapData(Field3D& other);
   friend void swap(Field3D& first, Field3D& second) noexcept;
 
   int size() const override { return nx * ny * nz; };
@@ -581,9 +665,22 @@ protected:
   template <typename T, typename = bout::utils::EnableIfField<T>>
   void _track(const T& change, std::string operation);
   void _track(const BoutReal& change, std::string operation);
+
+  template <typename L, typename R, typename Func>
+  static Array<BoutReal> evaluateBinaryExpr(const BinaryExpr<Field3D, L, R, Func>& expr) {
+    const auto* mesh = expr.getMesh();
+    ASSERT1(mesh != nullptr);
+
+    Array<BoutReal> data{mesh->LocalNx * mesh->LocalNy * mesh->LocalNz};
+    expr.evaluate(&data[0]);
+    return data;
+  }
 };
 
 // Non-member overloaded operators
+
+template <typename T>
+constexpr bool always_false = false;
 
 // Binary operators
 FieldPerp operator+(const Field3D& lhs, const FieldPerp& rhs);
@@ -591,25 +688,166 @@ FieldPerp operator-(const Field3D& lhs, const FieldPerp& rhs);
 FieldPerp operator*(const Field3D& lhs, const FieldPerp& rhs);
 FieldPerp operator/(const Field3D& lhs, const FieldPerp& rhs);
 
-Field3D operator+(const Field3D& lhs, const Field3D& rhs);
-Field3D operator-(const Field3D& lhs, const Field3D& rhs);
-Field3D operator*(const Field3D& lhs, const Field3D& rhs);
-Field3D operator/(const Field3D& lhs, const Field3D& rhs);
+#define FIELD3D_FIELD3D_FIELD3D_OP(OP_SYM, OP_TYPE)                                    \
+  template <typename L, typename R,                                                    \
+            typename = std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>>> \
+  BinaryExpr<Field3D, L, R, bout::op::OP_TYPE> operator OP_SYM(const L& lhs,           \
+                                                               const R& rhs) {         \
+    ASSERT1_EXPR_COMPATIBLE(lhs, rhs);                                                 \
+    auto regionID =                                                                    \
+        lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());          \
+    return BinaryExpr<Field3D, L, R, bout::op::OP_TYPE>{                               \
+        static_cast<typename L::View>(lhs),                                            \
+        static_cast<typename R::View>(rhs),                                            \
+        bout::op::OP_TYPE{},                                                           \
+        lhs.getMesh(),                                                                 \
+        lhs.getLocation(),                                                             \
+        lhs.getDirections(),                                                           \
+        regionID,                                                                      \
+        (regionID.has_value() ? lhs.getMesh()->getRegion(regionID.value())             \
+                              : lhs.getMesh()->getRegion("RGN_ALL"))};                 \
+  }
 
-Field3D operator+(const Field3D& lhs, const Field2D& rhs);
-Field3D operator-(const Field3D& lhs, const Field2D& rhs);
-Field3D operator*(const Field3D& lhs, const Field2D& rhs);
-Field3D operator/(const Field3D& lhs, const Field2D& rhs);
+FIELD3D_FIELD3D_FIELD3D_OP(+, Add)
+FIELD3D_FIELD3D_FIELD3D_OP(-, Sub)
+FIELD3D_FIELD3D_FIELD3D_OP(*, Mul)
+FIELD3D_FIELD3D_FIELD3D_OP(/, Div)
 
-Field3D operator+(const Field3D& lhs, BoutReal rhs);
-Field3D operator-(const Field3D& lhs, BoutReal rhs);
-Field3D operator*(const Field3D& lhs, BoutReal rhs);
-Field3D operator/(const Field3D& lhs, BoutReal rhs);
+#define FIELD3D_FIELD3D_FIELD2D_OP(OP_SYM, OP_TYPE)              \
+  template <typename L, typename R>                              \
+  std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>, \
+                   BinaryExpr<Field3D, L, R, bout::op::OP_TYPE>> \
+  operator OP_SYM(const L& lhs, const R& rhs) {                  \
+    ASSERT1_EXPR_COMPATIBLE(lhs, rhs);                           \
+    auto regionID = lhs.getRegionID();                           \
+    int mesh_nz = lhs.getMesh()->LocalNz;                        \
+    return BinaryExpr<Field3D, L, R, bout::op::OP_TYPE>{         \
+        static_cast<typename L::View>(lhs),                      \
+        static_cast<typename R::View>(rhs).setScale(1, mesh_nz), \
+        bout::op::OP_TYPE{},                                     \
+        lhs.getMesh(),                                           \
+        lhs.getLocation(),                                       \
+        lhs.getDirections(),                                     \
+        regionID,                                                \
+        lhs.getMesh()->getRegion("RGN_ALL")};                    \
+  }
 
-Field3D operator+(BoutReal lhs, const Field3D& rhs);
-Field3D operator-(BoutReal lhs, const Field3D& rhs);
-Field3D operator*(BoutReal lhs, const Field3D& rhs);
-Field3D operator/(BoutReal lhs, const Field3D& rhs);
+FIELD3D_FIELD3D_FIELD2D_OP(+, Add)
+FIELD3D_FIELD3D_FIELD2D_OP(-, Sub)
+FIELD3D_FIELD3D_FIELD2D_OP(*, Mul)
+FIELD3D_FIELD3D_FIELD2D_OP(/, Div)
+
+#define FIELD3D_FIELD3D_BOUTREAL_OP(OP_SYM, OP_TYPE)                       \
+  template <typename L, typename R>                                        \
+  std::enable_if_t<is_expr_field3d_v<L> && is_expr_constant_v<R>,          \
+                   BinaryExpr<Field3D, L, Constant<R>, bout::op::OP_TYPE>> \
+  operator OP_SYM(const L& lhs, R rhs) {                                   \
+    auto regionID = lhs.getRegionID();                                     \
+    return BinaryExpr<Field3D, L, Constant<R>, bout::op::OP_TYPE>{         \
+        static_cast<typename L::View>(lhs),                                \
+        static_cast<typename Constant<R>::View>(rhs),                      \
+        bout::op::OP_TYPE{},                                               \
+        lhs.getMesh(),                                                     \
+        lhs.getLocation(),                                                 \
+        lhs.getDirections(),                                               \
+        regionID,                                                          \
+        lhs.getMesh()->getRegion("RGN_ALL")};                              \
+  }
+
+FIELD3D_FIELD3D_BOUTREAL_OP(+, Add)
+FIELD3D_FIELD3D_BOUTREAL_OP(-, Sub)
+FIELD3D_FIELD3D_BOUTREAL_OP(*, Mul)
+FIELD3D_FIELD3D_BOUTREAL_OP(/, Div)
+
+#define FIELD3D_BOUTREAL_FIELD3D_OP(OP_SYM, OP_TYPE)                       \
+  template <typename L, typename R>                                        \
+  std::enable_if_t<is_expr_constant_v<L> && is_expr_field3d_v<R>,          \
+                   BinaryExpr<Field3D, Constant<L>, R, bout::op::OP_TYPE>> \
+  operator OP_SYM(const L& lhs, const R& rhs) {                            \
+    auto regionID = rhs.getRegionID();                                     \
+    return BinaryExpr<Field3D, Constant<L>, R, bout::op::OP_TYPE>{         \
+        static_cast<typename Constant<L>::View>(lhs),                      \
+        static_cast<typename R::View>(rhs),                                \
+        bout::op::OP_TYPE{},                                               \
+        rhs.getMesh(),                                                     \
+        rhs.getLocation(),                                                 \
+        rhs.getDirections(),                                               \
+        regionID,                                                          \
+        rhs.getMesh()->getRegion("RGN_ALL")};                              \
+  }
+
+FIELD3D_BOUTREAL_FIELD3D_OP(+, Add)
+FIELD3D_BOUTREAL_FIELD3D_OP(-, Sub)
+FIELD3D_BOUTREAL_FIELD3D_OP(*, Mul)
+FIELD3D_BOUTREAL_FIELD3D_OP(/, Div)
+
+template <typename L, typename R,
+          typename = std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>>>
+BinaryExpr<Field3D, L, R, bout::op::IfElse> if_else(bool condition, const L& lhs,
+                                                    const R& rhs) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
+  return BinaryExpr<Field3D, L, R, bout::op::IfElse>{
+      static_cast<typename L::View>(lhs),
+      static_cast<typename R::View>(rhs),
+      bout::op::IfElse{condition},
+      lhs.getMesh(),
+      lhs.getLocation(),
+      lhs.getDirections(),
+      regionID,
+      (regionID.has_value() ? lhs.getMesh()->getRegion(regionID.value())
+                            : lhs.getMesh()->getRegion("RGN_ALL"))};
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>,
+                 BinaryExpr<Field3D, L, R, bout::op::IfElse>>
+if_else(bool condition, const L& lhs, const R& rhs) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  auto regionID = lhs.getRegionID();
+  int mesh_nz = lhs.getMesh()->LocalNz;
+  return BinaryExpr<Field3D, L, R, bout::op::IfElse>{
+      static_cast<typename L::View>(lhs),
+      static_cast<typename R::View>(rhs).setScale(1, mesh_nz),
+      bout::op::IfElse{condition},
+      lhs.getMesh(),
+      lhs.getLocation(),
+      lhs.getDirections(),
+      regionID,
+      lhs.getMesh()->getRegion("RGN_ALL")};
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_field3d_v<L> && is_expr_constant_v<R>,
+                 BinaryExpr<Field3D, L, Constant<R>, bout::op::IfElse>>
+if_else(bool condition, const L& lhs, R rhs) {
+  auto regionID = lhs.getRegionID();
+  return BinaryExpr<Field3D, L, Constant<R>, bout::op::IfElse>{
+      static_cast<typename L::View>(lhs),
+      static_cast<typename Constant<R>::View>(rhs),
+      bout::op::IfElse{condition},
+      lhs.getMesh(),
+      lhs.getLocation(),
+      lhs.getDirections(),
+      regionID,
+      lhs.getMesh()->getRegion("RGN_ALL")};
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_constant_v<L> && is_expr_field3d_v<R>,
+                 BinaryExpr<Field3D, Constant<L>, R, bout::op::IfElse>>
+if_else(bool condition, const L& lhs, const R& rhs) {
+  auto regionID = rhs.getRegionID();
+  return BinaryExpr<Field3D, Constant<L>, R, bout::op::IfElse>{
+      static_cast<typename Constant<L>::View>(lhs),
+      static_cast<typename R::View>(rhs),
+      bout::op::IfElse{condition},
+      rhs.getMesh(),
+      rhs.getLocation(),
+      rhs.getDirections(),
+      regionID,
+      rhs.getMesh()->getRegion("RGN_ALL")};
+}
 
 Field3DParallel operator+(const Field3D& lhs, const Field3DParallel& rhs);
 Field3DParallel operator-(const Field3D& lhs, const Field3DParallel& rhs);
@@ -640,7 +878,18 @@ Field3DParallel operator/(const Field3DParallel& lhs, BoutReal rhs);
  * Unary minus. Returns the negative of given field,
  * iterates over whole domain including guard/boundary cells.
  */
-Field3D operator-(const Field3D& f);
+inline auto operator-(const Field3D& f) {
+  auto regionID = f.getRegionID();
+  return BinaryExpr<Field3D, Constant<BoutReal>, Field3D, bout::op::Mul>{
+      static_cast<typename Constant<BoutReal>::View>(-1.0),
+      static_cast<Field3D::View>(f),
+      bout::op::Mul{},
+      f.getMesh(),
+      f.getLocation(),
+      f.getDirections(),
+      regionID,
+      f.getRegion("RGN_ALL")};
+}
 
 // Non-member functions
 
@@ -842,31 +1091,36 @@ Field3DParallel Field3D::asField3DParallel() {
 }
 Field3DParallel Field3D::asField3DParallel() const { return Field3DParallel(*this); }
 
-inline Field3D operator+(const Field2D& lhs, const Field3DParallel& rhs) {
-  return lhs + rhs.asField3D();
-}
-inline Field3D operator-(const Field2D& lhs, const Field3DParallel& rhs) {
-  return lhs + rhs.asField3D();
-}
-inline Field3D operator*(const Field2D& lhs, const Field3DParallel& rhs) {
-  return lhs + rhs.asField3D();
-}
-inline Field3D operator/(const Field2D& lhs, const Field3DParallel& rhs) {
-  return lhs + rhs.asField3D();
+inline Field3D& Field3D::operator*=(const Field3DParallel& rhs) {
+  return (*this) *= rhs.asField3D();
 }
 
-inline Field3D operator+(const Field3DParallel& lhs, const Field2D& rhs) {
-  return lhs.asField3D() + rhs;
+inline Field3D& Field3D::operator/=(const Field3DParallel& rhs) {
+  return (*this) /= rhs.asField3D();
 }
-inline Field3D operator-(const Field3DParallel& lhs, const Field2D& rhs) {
-  return lhs.asField3D() - rhs;
+
+inline Field3D& Field3D::operator+=(const Field3DParallel& rhs) {
+  return (*this) += rhs.asField3D();
 }
-inline Field3D operator*(const Field3DParallel& lhs, const Field2D& rhs) {
-  return lhs.asField3D() * rhs;
+
+inline Field3D& Field3D::operator-=(const Field3DParallel& rhs) {
+  return (*this) -= rhs.asField3D();
 }
-inline Field3D operator/(const Field3DParallel& lhs, const Field2D& rhs) {
-  return lhs.asField3D() / rhs;
-}
+
+template <typename ResT, typename L, typename R, typename Fun>
+struct is_expr_field3d<BinaryExpr<ResT, L, R, Fun>>
+    : std::integral_constant<bool, is_expr_field3d<std::decay_t<L>>::value
+                                       || is_expr_field3d_v<std::decay_t<R>>> {};
+
+Field3D operator+(const Field2D& lhs, const Field3DParallel& rhs);
+Field3D operator-(const Field2D& lhs, const Field3DParallel& rhs);
+Field3D operator*(const Field2D& lhs, const Field3DParallel& rhs);
+Field3D operator/(const Field2D& lhs, const Field3DParallel& rhs);
+
+Field3D operator+(const Field3DParallel& lhs, const Field2D& rhs);
+Field3D operator-(const Field3DParallel& lhs, const Field2D& rhs);
+Field3D operator*(const Field3DParallel& lhs, const Field2D& rhs);
+Field3D operator/(const Field3DParallel& lhs, const Field2D& rhs);
 
 inline Field3DParallel
 filledFrom(const Field3DParallel& f,

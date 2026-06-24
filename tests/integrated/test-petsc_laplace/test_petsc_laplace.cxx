@@ -99,7 +99,7 @@ void check_laplace(int test_num, std::string_view test_name, Laplacian& invert,
 template <class T>
 Field3D forward_laplace(const Field3D& field, const T& acoef, const T& ccoef,
                         const T& dcoef) {
-  auto bcoef =
+  Field3D bcoef =
       dcoef * Delp2(field) + Grad_perp(ccoef) * Grad_perp(field) / ccoef + acoef * field;
   apply_flat_boundary(bcoef);
   return bcoef;

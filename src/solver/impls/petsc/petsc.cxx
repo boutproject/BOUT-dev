@@ -64,10 +64,10 @@
 
 class ColoringStencil {
 private:
-  bool static isInSquare(int const i, int const j, int const n_square) {
+  bool static isInSquare(const int i, const int j, const int n_square) {
     return std::abs(i) <= n_square && std::abs(j) <= n_square;
   }
-  bool static isInCross(int const i, int const j, int const n_cross) {
+  bool static isInCross(const int i, const int j, const int n_cross) {
     if (i == 0) {
       return std::abs(j) <= n_cross;
     }
@@ -76,7 +76,7 @@ private:
     }
     return false;
   }
-  bool static isInTaxi(int const i, int const j, int const n_taxi) {
+  bool static isInTaxi(const int i, const int j, const int n_taxi) {
     return std::abs(i) + std::abs(j) <= n_taxi;
   }
 
@@ -234,7 +234,7 @@ PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, vo
     s->load_vars(const_cast<BoutReal*>(x));
     PetscCall(VecRestoreArrayRead(interpolatedX, &x));
 
-    if (s->call_monitors(output_time, i++, s->getNumberOutputSteps()) != 0) {
+    if (s->call_monitors(output_time, ++i, s->getNumberOutputSteps()) != 0) {
       PetscFunctionReturn(1);
     }
 
@@ -614,7 +614,7 @@ int PetscSolver::init() {
         n_taxi = 2;
       }
 
-      auto const xy_offsets = ColoringStencil::getOffsets(n_square, n_taxi, n_cross);
+      const auto xy_offsets = ColoringStencil::getOffsets(n_square, n_taxi, n_cross);
       {
         // This is ugly but can't think of a better and robust way to
         // count the non-zeros for some arbitrary stencil
@@ -734,7 +734,7 @@ int PetscSolver::init() {
       // Mark non-zero entries
 
       output_progress.write("Marking non-zero Jacobian entries\n");
-      PetscScalar const val = 1.0;
+      const PetscScalar val = 1.0;
       for (int x = mesh->xstart; x <= mesh->xend; x++) {
         for (int y = mesh->ystart; y <= mesh->yend; y++) {
 
@@ -753,21 +753,21 @@ int PetscSolver::init() {
                 continue;
               }
 
-              int const ind2 = ROUND(index(xi, yi, 0));
+              const int ind2 = ROUND(index(xi, yi, 0));
               if (ind2 < 0) {
                 continue; // A boundary point
               }
 
               // Depends on all variables on this cell
               for (int j = 0; j < n2d; j++) {
-                PetscInt const col = ind2 + j;
+                const PetscInt col = ind2 + j;
                 PetscCall(MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES));
               }
             }
           }
           // 3D fields
           for (int z = mesh->zstart; z <= mesh->zend; z++) {
-            int const ind = ROUND(index(x, y, z));
+            const int ind = ROUND(index(x, y, z));
 
             for (int i = 0; i < n3d; i++) {
               PetscInt row = ind + i;
@@ -777,7 +777,7 @@ int PetscSolver::init() {
 
               // Depends on 2D fields
               for (int j = 0; j < n2d; j++) {
-                PetscInt const col = ind0 + j;
+                const PetscInt col = ind0 + j;
                 PetscCall(MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES));
               }
 
@@ -802,7 +802,7 @@ int PetscSolver::init() {
 
                   // 3D fields on this cell
                   for (int j = 0; j < n3d; j++) {
-                    PetscInt const col = ind2 + j;
+                    const PetscInt col = ind2 + j;
                     int ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
 
                     if (ierr != 0) {

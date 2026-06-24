@@ -355,7 +355,7 @@ int AdamsBashforthSolver::run() {
   [[maybe_unused]] int nwasted = 0;
   [[maybe_unused]] int nwasted_following_fail = 0;
 
-  for (int s = 0; s < getNumberOutputSteps(); s++) {
+  for (int s = 1; s <= getNumberOutputSteps(); s++) {
     BoutReal target = simtime + getOutputTimestep();
 
     bool running = true;

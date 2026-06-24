@@ -2,10 +2,8 @@
  * Interface to ARKODE solver
  * NOTE: ARKode is currently in beta testing so use with cautious optimism
  *
- * NOTE: Only one solver can currently be compiled in
- *
  **************************************************************************
- * Copyright 2010-2024 BOUT++ contributors
+ * Copyright 2010-2026 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -41,6 +39,7 @@ RegisterUnavailableSolver
 
 #else
 
+#include "../../sundials_nvector_interface.hxx"
 #include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/region.hxx"
@@ -122,12 +121,12 @@ public:
   BoutReal run(BoutReal tout);
 
   // These functions used internally (but need to be public)
-  void rhs_e(BoutReal t, BoutReal* udata, BoutReal* dudata);
-  void rhs_i(BoutReal t, BoutReal* udata, BoutReal* dudata);
-  void rhs(BoutReal t, BoutReal* udata, BoutReal* dudata);
-  void pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udata, BoutReal* rvec,
-           BoutReal* zvec);
-  void jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata);
+  void rhs_e(BoutReal t, N_Vector u, N_Vector du);
+  void rhs_i(BoutReal t, N_Vector u, N_Vector du);
+  void rhs(BoutReal t, N_Vector u, N_Vector du);
+  void pre(BoutReal t, BoutReal gamma, BoutReal delta, N_Vector u, N_Vector rvec,
+           N_Vector zvec);
+  void jac(BoutReal t, N_Vector y, N_Vector v, N_Vector Jv);
 
 private:
   BoutReal hcur; //< Current internal timestep
@@ -181,6 +180,8 @@ private:
   bool rightprec;
   /// Use user-supplied Jacobian function
   bool use_jacobian;
+  /// N_Vector backend to use
+  NVectorType nvector_type;
 #if ARKODE_OPTIMAL_PARAMS_SUPPORT
   /// Use ARKode optimal parameters
   bool optimize;
@@ -199,6 +200,10 @@ private:
   void loop_abstol_values_op(Ind2D i2d, BoutReal* abstolvec_data, int& p,
                              std::vector<BoutReal>& f2dtols,
                              std::vector<BoutReal>& f3dtols, bool bndry);
+
+  SundialsNVectorInterface nvector_backend() {
+    return SundialsNVectorInterface(*this, suncontext, nvector_type);
+  }
 
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};

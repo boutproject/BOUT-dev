@@ -355,7 +355,7 @@ public:
       ASSERT2(positions.size() == weights.size());
 #if CHECK > 2
       for (const auto val : weights) {
-        ASSERT3(finite(val));
+        ASSERT3(std::isfinite(val));
       }
 #endif
       if (positions.empty()) {
@@ -376,25 +376,25 @@ public:
       if (this == &other) {
         return *this;
       }
-      ASSERT3(finite(static_cast<BoutReal>(other)));
+      ASSERT3(std::isfinite(static_cast<BoutReal>(other)));
       *this = static_cast<BoutReal>(other);
       return *this;
     }
     Element& operator=(BoutReal val) {
 
-      ASSERT3(finite(val));
+      ASSERT3(std::isfinite(val));
       value = val;
       setValues(val, INSERT_VALUES);
       return *this;
     }
     Element& operator+=(BoutReal val) {
 
-      ASSERT3(finite(val));
+      ASSERT3(std::isfinite(val));
       auto columnPosition = std::find(positions.begin(), positions.end(), petscCol);
       if (columnPosition != positions.end()) {
         const int index = std::distance(positions.begin(), columnPosition);
         value += weights[index] * val;
-        ASSERT3(finite(value));
+        ASSERT3(std::isfinite(value));
       }
       setValues(val, ADD_VALUES);
       return *this;
