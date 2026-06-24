@@ -53,7 +53,6 @@ class Options;
 class Field3DParallel;
 
 namespace bout::detail {
-const Region<Ind3D>& getField3DRegion(const Mesh* mesh, std::optional<size_t> regionID);
 }
 
 #include "bout/fieldops.hxx"
@@ -469,7 +468,7 @@ public:
     }
 
     template <typename Mul, typename Div>
-    View& setScale(Mul, Div) {
+    View& setScale(Mul /*unused*/, Div /*unused*/) {
       static_assert(!std::is_same_v<Mul, Mul>,
                     "Field3D::View does not support setScale()");
       return *this;

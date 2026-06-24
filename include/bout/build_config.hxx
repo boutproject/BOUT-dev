@@ -70,7 +70,13 @@ constexpr auto use_msgstack = static_cast<bool>(BOUT_USE_MSGSTACK);
 #define BOUT_FORCEINLINE inline
 #endif
 
-#if defined(_MSC_VER)
+#ifdef __has_cpp_attribute
+#if __has_cpp_attribute(assume) >= 202207L
+#define BOUT_ASSUME(condition) [[assume(condition)]]
+#endif
+#endif
+#else
+#ifdef _MSC_VER
 #define BOUT_ASSUME(condition) __assume(condition)
 #elif defined(__clang__)
 #if __has_builtin(__builtin_assume)
