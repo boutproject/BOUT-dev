@@ -2590,5 +2590,32 @@ TEST_F(Field3DTest, Field3DParallel) {
   EXPECT_TRUE(IsFieldEqual(field3, 6.0));
 }
 
+TEST_F(Field3DTest, EvalIntoStreamChainsBinaryExprs) {
+  Field3D a{
+      mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+  Field3D b{a};
+  Field3D c{a};
+  Field3D d{a};
+
+  a = 1.0;
+  b = 2.0;
+  c = 3.0;
+  d = 4.0;
+
+  Field3D first;
+  Field3D second;
+  first = 0.0;
+  first.splitParallelSlices();
+
+  eval_into(first, a + b * c).eval_into(second, b + d).stream();
+
+  EXPECT_TRUE(IsFieldEqual(first, 7.0));
+  EXPECT_TRUE(IsFieldEqual(second, 6.0));
+  EXPECT_EQ(first.getLocation(), a.getLocation());
+  EXPECT_EQ(first.getDirectionY(), a.getDirectionY());
+  EXPECT_EQ(first.getDirectionZ(), a.getDirectionZ());
+  EXPECT_FALSE(first.hasParallelSlices());
+}
+
 // Restore compiler warnings
 #pragma GCC diagnostic pop

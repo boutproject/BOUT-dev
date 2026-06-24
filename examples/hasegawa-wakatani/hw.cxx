@@ -1,5 +1,7 @@
 
 #include <bout/derivs.hxx>
+#include <bout/field3d.hxx>
+#include <bout/fieldops.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/physicsmodel.hxx>
 #include <bout/smoothing.hxx>
@@ -109,10 +111,13 @@ protected:
       nonzonal_phi -= averageY(DC(phi));
     }
 
-    ddt(n) =
-        -bracket(phi, n, bm) + alpha * (nonzonal_phi - nonzonal_n) - kappa * DDZ(phi);
-
-    ddt(vort) = -bracket(phi, vort, bm) + alpha * (nonzonal_phi - nonzonal_n);
+    // Two kernels can be evaluated asynchronously
+    eval_into(ddt(n), // Density equation
+              -bracket(phi, n, bm) + alpha * (nonzonal_phi - nonzonal_n)
+                  - kappa * DDZ(phi))
+        .eval_into(ddt(vort), // Vorticity equation
+                   -bracket(phi, vort, bm) + alpha * (nonzonal_phi - nonzonal_n))
+        .stream();
 
     return 0;
   }
