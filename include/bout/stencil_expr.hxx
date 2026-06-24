@@ -289,7 +289,7 @@ inline bout::stencil::DDZDispatchExpr DDZ(const Field3D& f,
   }
 
   if ((method != DIFF_C2) && (method != DIFF_C4)) {
-    throw BoutException("DDZ_Dispatch only supports DIFF_C2 and DIFF_C4, got {:s}",
+    throw BoutException("DDZ only supports DIFF_C2 and DIFF_C4, got {:s}",
                         toString(method));
   }
 
