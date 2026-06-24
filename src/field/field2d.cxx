@@ -327,10 +327,9 @@ void Field2D::setBoundaryTo(const Field2D& f2d) {
   }
 }
 
-////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
+void Field2D::swapData(Field2D& other) { std::swap(data, other.data); }
 
-// Unary minus
-Field2D operator-(const Field2D& f) { return -1.0 * f; }
+////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 

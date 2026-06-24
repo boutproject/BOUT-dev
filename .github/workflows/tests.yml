@@ -157,7 +157,7 @@ jobs:
                  libparpack2-dev
                  libhypre-dev
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: true
 
@@ -204,7 +204,7 @@ jobs:
     env:
       BOUT_TEST_DOWNLOAD_FLAGS: --retry-on-http-error=502,503,504 --tries 3
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: true
 

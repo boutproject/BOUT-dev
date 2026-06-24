@@ -35,6 +35,8 @@
 
 class SNESSolver;
 
+#include <vector>
+
 #include "mpi.h"
 
 #include <bout/bout_enum_class.hxx>
@@ -114,6 +116,10 @@ private:
   PetscErrorCode FDJinitialise();         ///< Finite Difference Jacobian initialise
   PetscErrorCode FDJpruneJacobian();      ///< Remove small elements from the Jacobian
   PetscErrorCode FDJrestoreFromPruning(); ///< Restore Jacobian to original pattern
+
+  /// Rescale state (snes_x) so that all quantities are around 1. If
+  /// quantities are near zero then RTOL is used.
+  PetscErrorCode rescale(int& saved_jacobian_lag);
 
   /// Call the physics model RHS function
   ///
@@ -202,8 +208,8 @@ private:
   BoutReal kI; ///< (0.2 - 0.4) Integral parameter (smooths history of changes)
   BoutReal kD; ///< (0.1 - 0.3) Derivative (dampens oscillation - optional)
   bool pid_consider_failures; ///< Reduce timestep increases if recent solves have failed
-  BoutReal recent_failure_rate;            ///< Rolling average of recent failure rate
-  BoutReal last_failure_weight;            ///< 1 / number of recent solves
+  BoutReal recent_failure_rate; ///< Rolling average of recent failure rate
+  BoutReal last_failure_weight; ///< 1 / number of recent solves
 
   BoutReal nl_its_prev;
   BoutReal nl_its_prev2;
@@ -218,10 +224,13 @@ private:
 
   PetscLib lib; ///< Handles initialising, finalising PETSc
   Vec snes_f;   ///< Used by SNES to store function
-  Vec snes_x;   ///< Result of SNES
-  Vec x0;       ///< Solution at start of current timestep
-  Vec delta_x;  ///< Change in solution
+  Vec deriv; ///< Time derivative; only used if diagnose = true, otherwise will store in snes_f
+  Vec snes_x;  ///< Result of SNES
+  Vec x0;      ///< Solution at start of current timestep
+  Vec f0;      ///< Residual at start of current timestep (only stored if diagnose = true)
+  Vec delta_x; ///< Change in solution
   Vec output_x; ///< Solution to output. Used if interpolating.
+  Vec output_f; ///< Residual to output, if diagnose == true. Used if interpolating.
 
   bool predictor;       ///< Use linear predictor?
   Vec x1;               ///< Previous solution
@@ -245,7 +254,7 @@ private:
   bool matrix_free_operator; ///< Use matrix free Jacobian in the operator?
   int lag_jacobian;          ///< Re-use Jacobian
   bool jacobian_persists; ///< Re-use Jacobian and preconditioner across nonlinear solves
-  bool use_coloring;         ///< Use matrix coloring
+  bool use_coloring;      ///< Use matrix coloring
 
   bool jacobian_recalculated; ///< Flag set when Jacobian is recalculated
   bool prune_jacobian;        ///< Remove small elements in the Jacobian?
@@ -259,12 +268,20 @@ private:
   Vec rhs_scaling_factors; ///< Factors to multiply RHS function
   Vec jac_row_inv_norms;   ///< 1 / Norm of the rows of the Jacobian
 
-  bool scale_vars;         ///< Scale individual variables?
+  bool scale_vars;    ///< Scale individual variables?
+  int rescale_period; ///< How many time-steps before rescaling variables
+  BoutReal
+      rescale_threshold; //< How much change in the state there should be before rescaling
   Vec var_scaling_factors; ///< Factors to multiply variables when passing to user
   Vec scaled_x;            ///< The values passed to the user RHS
 
   bool asinh_vars; ///< Evolve asinh(vars) to compress magnitudes while preserving signs
   const BoutReal asinh_scale = 1e-5; // Scale below which asinh response becomes ~linear
+
+  std::vector<Field2D>
+      resid_2d; ///< Storage for residuals of SNES solve, unpacked from snes_f
+  std::vector<Field3D>
+      resid_3d; ///< Storage for residuals of SNES solve, unpacked from snes_f
 };
 
 #else

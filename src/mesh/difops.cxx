@@ -2,9 +2,9 @@
  * Various differential operators defined on BOUT grid
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -26,10 +26,16 @@
 #include "bout/build_defines.hxx"
 
 #include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/coordinates.hxx>
 #include <bout/derivs.hxx>
 #include <bout/difops.hxx>
 #include <bout/fft.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
 #include <bout/globals.hxx>
+#include <bout/mesh.hxx>
 #include <bout/solver.hxx>
 #include <bout/utils.hxx>
 #include <bout/vecops.hxx>
@@ -284,7 +290,8 @@ Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc,
   auto Bxy_floc = f.getCoordinates()->Bxy;
 
   if (!f.hasParallelSlices()) {
-    return metric->Bxy * FDDY(v, f / Bxy_floc, outloc, method) / sqrt(metric->g_22);
+    Field3D f_B = f / Bxy_floc;
+    return metric->Bxy * FDDY(v, f_B, outloc, method) / sqrt(metric->g_22);
   }
 
   // Need to modify yup and ydown fields
@@ -799,7 +806,7 @@ Field3D bracket(const Field2D& f, const Field3D& g, BRACKET_METHOD method,
     break;
   case BRACKET_SIMPLE: {
     // Use a subset of terms for comparison to BOUT-06
-    result = VDDZ(-DDX(f, outloc), g, outloc);
+    result = VDDZ(Field3D{-DDX(f, outloc)}, g, outloc);
     break;
   }
   default: {
