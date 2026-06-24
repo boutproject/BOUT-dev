@@ -754,24 +754,12 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
         // face values on this cell
 
         // Reconstruct f at the cell faces
-        // TODO(peter): We can remove this #ifdef guard after switching to C++20
-#if __cpp_designated_initializers >= 201707L
         Stencil1D s{.c = f(i, j, k), .m = f(i, j - 1, k), .p = f(i, j + 1, k)};
-#else
-        Stencil1D s{f(i, j, k), f(i, j - 1, k), f(i, j + 1, k), BoutNaN,
-                    BoutNaN,    BoutNaN,        BoutNaN};
-#endif
         cellboundary(s); // Calculate s.R and s.L
 
         ////////////////////////////////////////////
         // Reconstruct v at the cell faces
-        // TODO(peter): We can remove this #ifdef guard after switching to C++20
-#if __cpp_designated_initializers >= 201707L
         Stencil1D sv{.c = v(i, j, k), .m = v(i, j - 1, k), .p = v(i, j + 1, k)};
-#else
-        Stencil1D sv{v(i, j, k), v(i, j - 1, k), v(i, j + 1, k), BoutNaN,
-                     BoutNaN,    BoutNaN,        BoutNaN};
-#endif
         cellboundary(sv); // Calculate sv.R and sv.L
 
         ////////////////////////////////////////////
@@ -967,23 +955,12 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
         // face values on this cell
 
         // Reconstruct f at the cell faces
-#if __cpp_designated_initializers >= 201707L
         Stencil1D s{.c = f(i, j, k), .m = f(i, j - 1, k), .p = f(i, j + 1, k)};
-#else
-        Stencil1D s{f(i, j, k), f(i, j - 1, k), f(i, j + 1, k), BoutNaN,
-                    BoutNaN,    BoutNaN,        BoutNaN};
-#endif
         cellboundary(s); // Calculate s.R and s.L
 
         ////////////////////////////////////////////
         // Reconstruct v at the cell faces
-        // TODO(peter): We can remove this #ifdef guard after switching to C++20
-#if __cpp_designated_initializers >= 201707L
         Stencil1D sv{.c = v(i, j, k), .m = v(i, j - 1, k), .p = v(i, j + 1, k)};
-#else
-        Stencil1D sv{v(i, j, k), v(i, j - 1, k), v(i, j + 1, k), BoutNaN,
-                     BoutNaN,    BoutNaN,        BoutNaN};
-#endif
         cellboundary(sv);
 
         ////////////////////////////////////////////
