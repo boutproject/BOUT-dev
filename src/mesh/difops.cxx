@@ -35,7 +35,9 @@
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
 #include <bout/globals.hxx>
+#include <bout/index_derivs_interface.hxx>
 #include <bout/mesh.hxx>
+#include <bout/region.hxx>
 #include <bout/solver.hxx>
 #include <bout/utils.hxx>
 #include <bout/vecops.hxx>
