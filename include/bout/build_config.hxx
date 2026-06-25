@@ -30,6 +30,7 @@ constexpr auto has_uuid_system_generator =
     static_cast<bool>(BOUT_HAS_UUID_SYSTEM_GENERATOR);
 constexpr auto has_slepc = static_cast<bool>(BOUT_HAS_SLEPC);
 constexpr auto has_sundials = static_cast<bool>(BOUT_HAS_SUNDIALS);
+constexpr auto has_sundials_manyvector = static_cast<bool>(BOUT_HAS_SUNDIALS_MANYVECTOR);
 constexpr auto use_backtrace = static_cast<bool>(BOUT_USE_BACKTRACE);
 constexpr auto use_color = static_cast<bool>(BOUT_USE_COLOR);
 constexpr auto use_openmp = static_cast<bool>(BOUT_USE_OPENMP);
@@ -51,10 +52,22 @@ constexpr auto use_msgstack = static_cast<bool>(BOUT_USE_MSGSTACK);
 #define BOUT_HOST_DEVICE __host__ __device__
 #define BOUT_HOST __host__
 #define BOUT_DEVICE __device__
+#define BOUT_FORCEINLINE __forceinline__
+#elif defined(_MSC_VER)
+#define BOUT_HOST_DEVICE
+#define BOUT_HOST
+#define BOUT_DEVICE
+#define BOUT_FORCEINLINE __forceinline
+#elif defined(__clang__) || defined(__GNUC__)
+#define BOUT_HOST_DEVICE
+#define BOUT_HOST
+#define BOUT_DEVICE
+#define BOUT_FORCEINLINE inline __attribute__((always_inline))
 #else
 #define BOUT_HOST_DEVICE
 #define BOUT_HOST
 #define BOUT_DEVICE
+#define BOUT_FORCEINLINE inline
 #endif
 
 #endif // BOUT_BUILD_OPTIONS_HXX

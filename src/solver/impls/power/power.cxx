@@ -45,7 +45,7 @@ int PowerSolver::run() {
   // Make sure that f0 has a norm of 1
   divide(f0, norm(f0));
 
-  for (int s = 0; s < getNumberOutputSteps(); s++) {
+  for (int s = 1; s <= getNumberOutputSteps(); s++) {
 
     load_vars(std::begin(f0));
     run_rhs(curtime);

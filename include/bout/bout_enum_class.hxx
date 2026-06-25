@@ -2,7 +2,7 @@
  * Copyright 2019 B.D.Dudson, J.T.Omotani, P.Hill
  *
  * Contact Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -26,8 +26,9 @@
 #include "bout/macro_for_each.hxx"
 #include "bout/options.hxx" // IWYU pragma: keep
 
-#include <map>    // IWYU pragma: keep
-#include <string> // IWYU pragma: keep
+#include <cstdint> // IWYU pragma: keep
+#include <map>     // IWYU pragma: keep
+#include <string>  // IWYU pragma: keep
 
 /// Create some macro magic similar to bout/macro_for_each.hxx, but allowing for the enum
 /// class name to be passed through to each _call
@@ -66,7 +67,7 @@
 /// Create an enum class with toString and <enum name>FromString functions, and an
 /// Options::as<enum> overload to read the enum
 #define BOUT_ENUM_CLASS(enumname, ...)                                         \
-  enum class enumname { __VA_ARGS__ };                                         \
+  enum class enumname : std::int8_t { __VA_ARGS__ };                           \
                                                                                \
   inline std::string toString(enumname e) {                                    \
                                                                                \

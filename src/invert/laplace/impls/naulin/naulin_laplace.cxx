@@ -18,9 +18,9 @@
  * =========
  *
  **************************************************************************
- * Copyright 2018 B.D.Dudson, M. Loiten, J. Omotani
+ * Copyright 2018 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, benjamin.dudson@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *

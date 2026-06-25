@@ -5,7 +5,7 @@ ZMIN = 0.0
 ZMAX = 0.15915494309189535# dz = 2*pi(zmax-zmin)/(mz-1)in fraction of 2 \pi:  2*pi*1.59 = 1
 
 #number of guard cells
-MYG = 1  #noy comm for now
+MYG = 0  #noy comm for now
 MXG = 1
 
 [mesh]
