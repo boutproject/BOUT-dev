@@ -928,6 +928,11 @@ int CvodeSolver::petscPSetup(BoutReal t, N_Vector yy, N_Vector UNUSED(yp),
   s->petsc_t = t;
   s->petsc_gamma = gamma;
 
+  if (s->nvector_type == NVectorType::ManyVector) {
+    throw BoutException("solver:cvode_precon_method=petsc is not supported with "
+                        "solver:nvector=manyvector");
+  }
+
   auto* ydata = N_VGetArrayPointer(yy);
 
   PetscErrorCode ierr = VecPlaceArray(s->petsc_x, ydata);
