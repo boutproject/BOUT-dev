@@ -87,7 +87,10 @@ given in table :numref:`tab-solveropts`.
    +--------------------------+--------------------------------------------+-------------------------------------+
    | adaptive                 | Adapt timestep? (Y/N)                      | rk4, imexbdf2                       |
    +--------------------------+--------------------------------------------+-------------------------------------+
-   | use\_precon              | Use a preconditioner? (Y/N)                | pvode, cvode, ida, imexbdf2         |
+   | use\_precon              | Use a preconditioner? (Y/N)                | pvode, ida, imexbdf2                |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | cvode\_precon\_method    | CVODE preconditioner: none, auto, user,   | cvode                               |
+   |                          | petsc, or bbd                              |                                     |
    +--------------------------+--------------------------------------------+-------------------------------------+
    | mudq, mldq               | BBD preconditioner settings                | pvode, cvode, ida                   |
    +--------------------------+--------------------------------------------+-------------------------------------+
@@ -1246,7 +1249,7 @@ then in the ``BOUT.inp`` settings file switch on the preconditioner
 
     [solver]
     type = cvode          # Need CVODE or PETSc
-    use_precon = true     # Use preconditioner
+    cvode_precon_method = user   # Use user-supplied preconditioner
     rightprec = false     # Use Right preconditioner (default left)
 
 Jacobian function
