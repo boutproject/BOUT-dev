@@ -171,20 +171,10 @@ CvodeSolver::CvodeSolver(Options* opts)
   canReset = true;
 
   if ((*options)["use_precon"].isSet()) {
-    output_warn << "WARNING: solver:use_precon is deprecated for CVODE and is now "
-                   "ignored. Use solver:cvode_precon_method=none to disable "
-                   "preconditioning.\n";
+    throw BoutException("solver:use_precon is deprecated for CVODE and is now "
+                        "ignored. Use solver:cvode_precon_method=none to disable "
+                        "preconditioning.\n");
   }
-
-#if BOUT_HAS_PETSC
-  // This is a temporary fix to initialise PetscLib early, working
-  // around a bug in Hermes-3 braginskii_conduction that creates a
-  // "petsc:type" subsection.
-  if (precon_method == CvodePreconMethod::petsc
-      || ((precon_method == CvodePreconMethod::Auto) && !this->hasPreconditioner())) {
-    petsc_lib = std::make_unique<PetscLib>();
-  }
-#endif
 
   // Add diagnostics to output
   // Needs to be in constructor not init() because init() is called after
@@ -408,12 +398,10 @@ int CvodeSolver::init() {
     if (selected_precon == CvodePreconMethod::Auto) {
       if (hasPreconditioner()) {
         selected_precon = CvodePreconMethod::user;
-      } else {
-#if BOUT_HAS_PETSC
+      } else if (bout::build::has_petsc) {
         selected_precon = CvodePreconMethod::petsc;
-#else
+      } else {
         selected_precon = CvodePreconMethod::bbd;
-#endif
       }
     }
 
