@@ -358,6 +358,7 @@ set(BOUT_SOURCES
     ./src/solver/impls/snes/snes.hxx
     ./src/solver/impls/split-rk/split-rk.cxx
     ./src/solver/impls/split-rk/split-rk.hxx
+    ./src/solver/petsc_preconditioner.cxx
     ./src/solver/solver.cxx
     ./src/sys/adios_object.cxx
     ./src/sys/bout_types.cxx
