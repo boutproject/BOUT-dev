@@ -143,32 +143,34 @@ public:
   void setValid(signed char valid) { bndry_position->valid = valid; }
 
   // extrapolate a given point to the boundary
-  BoutReal extrapolate_sheath_o1(const Field3D& f) const { return ythis(f); }
-  BoutReal extrapolate_sheath_o2(const Field3D& f) const {
+  BoutReal extrapolate_boundary_o1(const Field3D& f) const { return ythis(f); }
+  BoutReal extrapolate_boundary_o2(const Field3D& f) const {
     ASSERT3(valid() >= 0);
     if (valid() < 1) {
-      return extrapolate_sheath_o1(f);
+      return extrapolate_boundary_o1(f);
     }
     return ythis(f) * (1 + length(f.getLocation())) - yprev(f) * length(f.getLocation());
   }
-  BoutReal
-  extrapolate_sheath_o1(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
+  BoutReal extrapolate_boundary_o1(
+      const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
     return ythis(f);
   }
-  BoutReal extrapolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
-                                 CELL_LOC loc = CELL_CENTRE) const {
+  BoutReal
+  extrapolate_boundary_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
+                          CELL_LOC loc = CELL_CENTRE) const {
     ASSERT3(valid() >= 0);
     if (valid() < 1) {
-      return extrapolate_sheath_o1(f);
+      return extrapolate_boundary_o1(f);
     }
     return ythis(f) * (1 + length(loc)) - yprev(f) * length(loc);
   }
 
-  BoutReal interpolate_sheath_o2(const Field3D& f) const {
+  BoutReal interpolate_boundary_o2(const Field3D& f) const {
     return ythis(f) * (1 - length(f.getLocation())) + ynext(f) * length(f.getLocation());
   }
-  BoutReal interpolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
-                                 CELL_LOC loc = CELL_CENTRE) const {
+  BoutReal
+  interpolate_boundary_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
+                          CELL_LOC loc = CELL_CENTRE) const {
     return ythis(f) * (1 - length(loc)) + ynext(f) * length(loc);
   }
 
@@ -298,7 +300,7 @@ public:
     }
   }
 
-  BoutReal extrapolate_sheath_free(const Field3D& f, SheathLimitMode mode) const {
+  BoutReal extrapolate_boundary_free(const Field3D& f, SheathLimitMode mode) const {
     const auto fac = valid() > 0 ? limitFreeScale(yprev(f), ythis(f), mode)
                                  : (mode == SheathLimitMode::linear_free ? 0 : 1);
     auto val = ythis(f);

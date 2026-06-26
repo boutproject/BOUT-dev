@@ -44,7 +44,7 @@ public:
 
   BoutReal extrapolate_grad_o2(const Field3D& f) const { return f[ind()] - yprev(f); }
 
-  BoutReal extrapolate_sheath_o2(const Field3D& f) const {
+  BoutReal extrapolate_boundary_o2(const Field3D& f) const {
     return (f[ind()] * 3 - yprev(f)) * 0.5;
   }
 
@@ -57,21 +57,21 @@ public:
     return (2 * f(0, ind())) - f(0, ind().yp(-_by).xp(-_bx));
   }
 
-  BoutReal interpolate_sheath_o2(const Field3D& f) const {
+  BoutReal interpolate_boundary_o2(const Field3D& f) const {
     return (f[ind()] + ynext(f)) * 0.5;
   }
 
-  BoutReal
-  interpolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
+  BoutReal interpolate_boundary_o2(
+      const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
     return (f(0, ind()) + f(0, ind().yp(-_by).xp(-_bx))) * 0.5;
   }
 
-  BoutReal
-  extrapolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
+  BoutReal extrapolate_boundary_o2(
+      const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
     return 0.5 * (3 * f(0, ind()) - f(0, ind().yp(-_by).xp(-_bx)));
   }
 
-  BoutReal extrapolate_sheath_free(const Field3D& f, SheathLimitMode mode) const {
+  BoutReal extrapolate_boundary_free(const Field3D& f, SheathLimitMode mode) const {
     const BoutReal fac =
         bout::parallel_boundary_region::limitFreeScale(yprev(f), ythis(f), mode);
     const BoutReal val = ythis(f);
