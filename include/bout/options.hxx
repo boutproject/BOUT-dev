@@ -441,6 +441,13 @@ public:
     return inputvalue;
   }
 
+  template <typename ResT, typename L, typename R, typename Func>
+  ResT operator=(const BinaryExpr<ResT, L, R, Func>& expr) {
+    ResT value{expr};
+    assign<ResT>(value);
+    return value;
+  }
+
   /// Assign a value to the option.
   /// This will throw an exception if already has a value
   ///

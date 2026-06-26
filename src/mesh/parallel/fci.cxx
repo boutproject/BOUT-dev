@@ -471,7 +471,7 @@ void FCITransform::outputVars(Options& output_options) {
 void FCITransform::loadParallelMetrics([[maybe_unused]] Coordinates* coords) {
 #if BOUT_USE_METRIC_3D
   output_info.write("\tLoading parallel metrics\n");
-  const auto JB0 = coords->J * coords->Bxy;
+  const Coordinates::FieldMetric JB0 = coords->J * coords->Bxy;
   coords->J.splitParallelSlices();
   coords->J.disallowCalcParallelSlices();
   coords->J.resetRegionParallel(true);

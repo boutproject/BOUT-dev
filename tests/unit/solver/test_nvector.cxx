@@ -130,7 +130,7 @@ TYPED_TEST(BoutNVectorTest, LinearAndPointwiseOperations) {
   auto vz = makeNVector(BoutNVector::create(this->sunctx, z, true));
 
   N_VLinearSum(2.0, vx.get(), -1.0, vy.get(), vz.get());
-  auto expected = 2.0 * x - y;
+  TypeParam expected = 2.0 * x - y;
   EXPECT_TRUE(IsFieldEqual(z, expected));
 
   N_VProd(vx.get(), vy.get(), vz.get());

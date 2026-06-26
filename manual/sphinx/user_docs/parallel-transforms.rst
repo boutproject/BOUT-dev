@@ -120,6 +120,21 @@ Note that here :math:`\theta_0` does not need to be constant in X
 (radius), since it is only the relative shifts between Y locations
 which matters.
 
+When BOUT++ is built with CUDA, the shifted-metric implementation also
+has a GPU path for the ``shiftZ`` work used to calculate parallel
+slices during communication. This is most useful in the standard
+shifted-metric workflow with
+
+.. code-block:: cfg
+
+   [mesh:paralleltransform]
+   type = shifted
+   calcParallelSlices_on_communicate = true
+
+If ``calcParallelSlices_on_communicate = false`` is used, BOUT++ is in
+the aligned-transform mode described below, so those precomputed
+parallel slices are not generated on communicate.
+
 Special handling is needed for parallel boundary conditions, see
 :ref:`sec-parallel-bc-shifted-metric`.
 

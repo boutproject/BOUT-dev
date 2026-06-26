@@ -29,12 +29,11 @@
 #ifndef BOUT_UTILS_H
 #define BOUT_UTILS_H
 
-#include "bout/build_config.hxx"
-
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/build_config.hxx"
 #include "bout/region.hxx"
 #include "bout/unused.hxx"
 
@@ -46,6 +45,11 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <tuple>
+#include <type_traits>
+#include <vector>
+
+class Field;
 
 #ifdef _MSC_VER
 // finite is not actually standard C++, it's a BSD extention for C
@@ -436,15 +440,13 @@ inline BoutReal randomu() {
  * Calculate the square of a variable \p t
  * i.e. t * t
  */
-template <typename T>
-inline T SQ(const T& t) {
+template <typename T,
+          typename = std::enable_if_t<!std::is_base_of_v<Field, std::decay_t<T>>>>
+inline auto SQ(const T& t) {
   return t * t;
 }
 
-template <>
-BOUT_HOST_DEVICE inline BoutReal SQ(const BoutReal& t) {
-  return t * t;
-}
+BOUT_HOST_DEVICE inline BoutReal SQ(const BoutReal& t) { return t * t; }
 
 /*!
  * Round \p x to the nearest integer

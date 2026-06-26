@@ -60,6 +60,7 @@ set(serial_tests_source
     ./field/test_field3d.cxx
     ./field/test_field_factory.cxx
     ./field/test_fieldgroup.cxx
+    ./field/test_if_else.cxx
     ./field/test_fieldperp.cxx
     ./field/test_initialprofiles.cxx
     ./field/test_vector2d.cxx

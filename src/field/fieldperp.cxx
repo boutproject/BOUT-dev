@@ -2,7 +2,7 @@
  * Class for 2D X-Z slices
  *
  **************************************************************************
- * Copyright 2010 - 2025 BOUT++ developers
+ * Copyright 2010 - 2026 BOUT++ developers
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -149,9 +149,6 @@ FieldPerp fromFieldAligned(const FieldPerp& f, const std::string& region) {
 }
 
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
-
-// Unary minus
-FieldPerp operator-(const FieldPerp& f) { return -1.0 * f; }
 
 /////////////////////////////////////////////////
 // functions
