@@ -83,6 +83,7 @@ set(serial_tests_source
     ./include/bout/test_stencil.cxx
     ./include/bout/test_template_combinations.cxx
     ./include/bout/test_traits.cxx
+    ./include/bout/test_yboundary.cxx
     ./include/test_cyclic_reduction.cxx
     ./include/test_derivs.cxx
     ./include/test_mask.cxx
