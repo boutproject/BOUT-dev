@@ -32,7 +32,7 @@ Preconditioning
 
 The preconditioner can be enabled by adding another flag (or setting in BOUT.inp)
 
-    $ ./diffusion-nl solver:use_precon=true
+    $ ./diffusion-nl solver:cvode_precon_method=user
 
 which then greatly reduces the number of iterations needed by CVODE:
 
@@ -59,4 +59,3 @@ can be calculated using finite differences. This uses coloring to improve effici
     1.000e+00          2               26       3.10e-03    31.9    0.0    5.9    7.8   54.4
     2.000e+00          2               23       2.24e-03    35.7    0.0    7.0    7.9   49.4
     3.000e+00          2               18       2.04e-03    35.0    0.0    6.2    8.5   50.4
-

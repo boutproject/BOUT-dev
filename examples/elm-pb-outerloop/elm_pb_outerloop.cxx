@@ -1008,7 +1008,8 @@ public:
     vacuum_trans *= pnorm;
 
     // Transitions from 0 in core to 1 in vacuum
-    vac_mask = (1.0 - tanh((P0 - vacuum_pressure) / vacuum_trans)) / 2.0;
+    Field2D tanh_res = tanh((P0 - vacuum_pressure) / vacuum_trans);
+    vac_mask = (1.0 - tanh_res) / 2.0;
 
     if (spitzer_resist) {
       // Use Spitzer resistivity
@@ -1169,7 +1170,7 @@ public:
       // Only if not restarting: Check initial perturbation
 
       // Set U to zero where P0 < vacuum_pressure
-      U = where(P0 - vacuum_pressure, U, 0.0);
+      U = where(Field2D{P0 - vacuum_pressure}, U, 0.0);
 
       if (constn0) {
         ubyn = U;
@@ -1796,7 +1797,8 @@ public:
       ddt(U) -= 0.5 * Upara2 * bracket(Pi0, Dperp2Phi, bm_exb) / B0;
       Field3D B0phi = B0 * phi;
       mesh->communicate(B0phi);
-      Field3D B0phi0 = B0 * phi0;
+      Field2D res = B0 * phi0;
+      Field3D B0phi0 = res;
       mesh->communicate(B0phi0);
       ddt(U) += 0.5 * Upara2 * bracket(B0phi, Dperp2Pi0, bm_exb) / B0;
       ddt(U) += 0.5 * Upara2 * bracket(B0phi0, Dperp2Pi, bm_exb) / B0;

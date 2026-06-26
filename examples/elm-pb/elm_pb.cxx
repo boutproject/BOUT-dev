@@ -6,9 +6,14 @@
  *******************************************************************************/
 
 #include <bout/bout.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
 #include <bout/derivs.hxx>
 #include <bout/difops.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
 #include <bout/field_factory.hxx>
 #include <bout/fv_ops.hxx>
 #include <bout/initialprofiles.hxx>
@@ -16,6 +21,7 @@
 #include <bout/invert/laplacexy.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/invert_parderiv.hxx>
+#include <bout/output.hxx>
 #include <bout/sourcex.hxx>
 #include <bout/tokamak_coordinates.hxx>
 #include <bout/utils.hxx>
@@ -246,8 +252,8 @@ private:
   std::unique_ptr<Laplacian> phiSolver{nullptr};
   std::unique_ptr<Laplacian> aparSolver{nullptr};
 
-  const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width,
-                       BoutReal n0_center, BoutReal n0_bottom_x) {
+  Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width,
+                 BoutReal n0_center, BoutReal n0_bottom_x) {
     Field2D result;
     result.allocate();
 
@@ -1138,7 +1144,7 @@ protected:
       // Only if not restarting: Check initial perturbation
 
       // Set U to zero where P0 < vacuum_pressure
-      U = where(P0 - vacuum_pressure, U, 0.0);
+      U = where(Field2D{P0 - vacuum_pressure}, U, 0.0);
 
       if (constn0) {
         ubyn = U;
@@ -1202,7 +1208,7 @@ protected:
     // Perform communications
     mesh->communicate(comms);
 
-    Coordinates* metric = mesh->getCoordinates();
+    const Coordinates* metric = mesh->getCoordinates();
 
     ////////////////////////////////////////////
     // Transitions from 0 in core to 1 in vacuum
@@ -1698,10 +1704,10 @@ protected:
       // Vacuum solution
       if (relax_j_vac) {
         // Calculate the J and Psi profile we're aiming for
-        Field3D Jtarget = Jpar * (1.0 - vac_mask); // Zero in vacuum
+        const Field3D Jtarget = Jpar * (1.0 - vac_mask); // Zero in vacuum
 
         // Invert laplacian for Psi
-        Field3D Psitarget = aparSolver->solve(Jtarget);
+        const Field3D Psitarget = aparSolver->solve(Jtarget);
 
         // Add a relaxation term in the vacuum
         ddt(Psi) =
@@ -1832,7 +1838,7 @@ protected:
       ddt(U) -= 0.5 * Upara2 * bracket(Pi0, Dperp2Phi, bm_exb) / B0;
       Field3D B0phi = B0 * phi;
       mesh->communicate(B0phi);
-      Field3D B0phi0 = B0 * phi0;
+      Field2D B0phi0 = B0 * phi0;
       mesh->communicate(B0phi0);
       ddt(U) += 0.5 * Upara2 * bracket(B0phi, Dperp2Pi0, bm_exb) / B0;
       ddt(U) += 0.5 * Upara2 * bracket(B0phi0, Dperp2Pi, bm_exb) / B0;

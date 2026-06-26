@@ -579,7 +579,7 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
   static bool first = true;
   if (eigenValOnly && first) {
     first = false;
-    resetIterationCounter();
+    resetIterationCounter(1);
   }
 
   // Temporary eigenvalues, converted from the SLEPc eigenvalues
@@ -701,7 +701,7 @@ void SlepcSolver::analyseResults() {
   output << "Converged eigenvalues :\n"
             "\tIndex\tSlepc eig (mag.)\t\t\tBOUT eig (mag.)\n";
 
-  resetIterationCounter();
+  resetIterationCounter(1);
 
   // Declare and create vectors to store eigenfunctions
   Vec vecReal, vecImag;

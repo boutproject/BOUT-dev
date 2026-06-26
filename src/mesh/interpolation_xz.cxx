@@ -24,15 +24,19 @@
  **************************************************************************/
 
 #include "parallel/fci_comm.hxx"
+#include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
 #include <bout/globals.hxx>
 #include <bout/interpolation_xz.hxx>
+#include <bout/mesh.hxx>
 #include <bout/output.hxx>
 #include <bout/unused.hxx>
+#include <bout/utils.hxx>
 
 void printLocation(const Field3D& var) { output << toString(var.getLocation()); }
 void printLocation(const Field2D& var) { output << toString(var.getLocation()); }
-
-const char* strLocation(CELL_LOC loc) { return toString(loc).c_str(); }
 
 const Field3D interpolate(const Field3D& f, const Field3D& delta_x,
                           const Field3D& delta_z) {
@@ -46,7 +50,7 @@ const Field3D interpolate(const Field2D& f, const Field3D& delta_x,
 }
 
 const Field3D interpolate(const Field2D& f, const Field3D& delta_x) {
-  Mesh* mesh = f.getMesh();
+  const Mesh* mesh = f.getMesh();
   ASSERT1(mesh == delta_x.getMesh());
   Field3D result{emptyFrom(delta_x)};
 

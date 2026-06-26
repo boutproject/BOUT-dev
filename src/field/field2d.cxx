@@ -331,9 +331,6 @@ void Field2D::swapData(Field2D& other) { std::swap(data, other.data); }
 
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
 
-// Unary minus
-Field2D operator-(const Field2D& f) { return -1.0 * f; }
-
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
 namespace {
