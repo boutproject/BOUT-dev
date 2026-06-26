@@ -332,20 +332,20 @@ PetscOperators::Parallel PetscOperators::getParallel() const {
   auto* coords = mesh->getCoordinates();
 
   // Parallel spacing in cell space
-  auto dl = coords->dy * sqrt(coords->g_22);
+  Coorinates::FieldMetric dl = coords->dy * sqrt(coords->g_22);
   dl.splitParallelSlices();
   dl.yup() = 0.0;
   dl.ydown() = 0.0;
   dl.applyParallelBoundary("parallel_neumann_o1");
 
   // Cell volume
-  auto dV = coords->J * coords->dx * coords->dy * coords->dz;
+  Coorinates::FieldMetric dV = coords->J * coords->dx * coords->dy * coords->dz;
   dV.splitParallelSlices();
   dV.yup() = 0.0;
   dV.ydown() = 0.0;
   dV.applyParallelBoundary("parallel_neumann_o1");
 
-  auto neg_inv_dV = -1.0 / dV;
+  Coorinates::FieldMetric neg_inv_dV = -1.0 / dV;
   neg_inv_dV.splitParallelSlices();
   neg_inv_dV.yup() = 0.0;
   neg_inv_dV.ydown() = 0.0;
