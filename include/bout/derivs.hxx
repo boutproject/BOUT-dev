@@ -35,6 +35,7 @@
 #include "bout/vector3d.hxx"
 
 #include "bout/bout_types.hxx"
+#include <type_traits>
 
 ////////// FIRST DERIVATIVES //////////
 
