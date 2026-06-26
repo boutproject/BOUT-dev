@@ -334,41 +334,24 @@ Field3D Div_par(const Field3D& f_in, const Field3D& v_in, const Field3D& wave_sp
       // Pre-calculate factors which multiply fluxes
 #if not(BOUT_USE_METRIC_3D)
       // For right cell boundaries
-      BoutReal common_factor = (coord->J(i, j) + coord->J(i, j + 1))
-                               / (sqrt(coord->g_22(i, j)) + sqrt(coord->g_22(i, j + 1)));
-
-      const BoutReal flux_factor_rc = common_factor / (coord->dy(i, j) * coord->J(i, j));
-      const BoutReal flux_factor_rp =
-          common_factor / (coord->dy(i, j + 1) * coord->J(i, j + 1));
-
+      const BoutReal area_r = coord->cell_area_yhigh()(i, j);
+      const BoutReal flux_factor_rc = area_r / coord->cell_volume()(i, j);
+      const BoutReal flux_factor_rp = area_r / coord->cell_volume()(i, j + 1);
       // For left cell boundaries
-      common_factor = (coord->J(i, j) + coord->J(i, j - 1))
-                      / (sqrt(coord->g_22(i, j)) + sqrt(coord->g_22(i, j - 1)));
-
-      const BoutReal flux_factor_lc = common_factor / (coord->dy(i, j) * coord->J(i, j));
-      const BoutReal flux_factor_lm =
-          common_factor / (coord->dy(i, j - 1) * coord->J(i, j - 1));
+      const BoutReal area_l = coord->cell_area_ylow()(i, j);
+      const BoutReal flux_factor_lc = area_l / coord->cell_volume()(i, j);
+      const BoutReal flux_factor_lm = area_l / coord->cell_volume()(i, j - 1);
 #endif
       for (int k = mesh->zstart; k <= mesh->zend; k++) {
 #if BOUT_USE_METRIC_3D
         // For right cell boundaries
-        BoutReal common_factor =
-            (coord->J(i, j, k) + coord->J(i, j + 1, k))
-            / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j + 1, k)));
-
-        BoutReal flux_factor_rc =
-            common_factor / (coord->dy(i, j, k) * coord->J(i, j, k));
-        BoutReal flux_factor_rp =
-            common_factor / (coord->dy(i, j + 1, k) * coord->J(i, j + 1, k));
-
+        const BoutReal area_r = coord->cell_area_yhigh()(i, j, k);
+        const BoutReal flux_factor_rc = area_r / coord->cell_volume()(i, j, k);
+        const BoutReal flux_factor_rp = area_r / coord->cell_volume()(i, j + 1, k);
         // For left cell boundaries
-        common_factor = (coord->J(i, j, k) + coord->J(i, j - 1, k))
-                        / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j - 1, k)));
-
-        BoutReal flux_factor_lc =
-            common_factor / (coord->dy(i, j, k) * coord->J(i, j, k));
-        BoutReal flux_factor_lm =
-            common_factor / (coord->dy(i, j - 1, k) * coord->J(i, j - 1, k));
+        const BoutReal area_l = coord->cell_area_ylow()(i, j, k);
+        const BoutReal flux_factor_lc = area_l / coord->cell_volume()(i, j, k);
+        const BoutReal flux_factor_lm = area_l / coord->cell_volume()(i, j - 1, k);
 #endif
 
         ////////////////////////////////////////////
@@ -656,12 +639,10 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
       const auto iym = i.ym();
 
       result[i] = (0.25 * (f_in[i] + f_up[iyp]) * (v_in[i] + v_up[iyp])
-                       * (coord->J[i] + coord->J.yup()[iyp])
-                       / (sqrt(coord->g_22[i]) + sqrt(coord->g_22.yup()[iyp]))
+                       * coord->cell_area_yhigh()[i]
                    - 0.25 * (f_in[i] + f_down[iym]) * (v_in[i] + v_down[iym])
-                         * (coord->J[i] + coord->J.ydown()[iym])
-                         / (sqrt(coord->g_22[i]) + sqrt(coord->g_22.ydown()[iym])))
-                  / (coord->dy[i] * coord->J[i]);
+                         * coord->cell_area_ylow()[i])
+                  / coord->cell_volume()[i];
     }
     return result;
   }
@@ -702,57 +683,30 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
       // Pre-calculate factors which multiply fluxes
 #if not(BOUT_USE_METRIC_3D)
       // For right cell boundaries
-      const BoutReal common_factor_r =
-          (coord->J(i, j) + coord->J(i, j + 1))
-          / (sqrt(coord->g_22(i, j)) + sqrt(coord->g_22(i, j + 1)));
+      const BoutReal area_rp = coord->cell_area_yhigh()(i, j);
 
-      const BoutReal flux_factor_rc =
-          common_factor_r / (coord->dy(i, j) * coord->J(i, j));
-      const BoutReal flux_factor_rp =
-          common_factor_r / (coord->dy(i, j + 1) * coord->J(i, j + 1));
-
-      const BoutReal area_rp =
-          common_factor_r * coord->dx(i, j + 1) * coord->dz(i, j + 1);
+      const BoutReal flux_factor_rc = area_rp / coord->cell_volume()(i, j);
+      const BoutReal flux_factor_rp = area_rp / coord->cell_volume()(i, j + 1);
 
       // For left cell boundaries
-      const BoutReal common_factor_l =
-          (coord->J(i, j) + coord->J(i, j - 1))
-          / (sqrt(coord->g_22(i, j)) + sqrt(coord->g_22(i, j - 1)));
+      const BoutReal area_lc = coord->cell_area_ylow()(i, j);
 
-      const BoutReal flux_factor_lc =
-          common_factor_l / (coord->dy(i, j) * coord->J(i, j));
-      const BoutReal flux_factor_lm =
-          common_factor_l / (coord->dy(i, j - 1) * coord->J(i, j - 1));
-
-      const BoutReal area_lc = common_factor_l * coord->dx(i, j) * coord->dz(i, j);
+      const BoutReal flux_factor_lc = area_lc / coord->cell_volume()(i, j);
+      const BoutReal flux_factor_lm = area_lc / coord->cell_volume()(i, j - 1);
 #endif
       for (int k = 0; k < mesh->LocalNz; k++) {
 #if BOUT_USE_METRIC_3D
         // For right cell boundaries
-        const BoutReal common_factor_r =
-            (coord->J(i, j, k) + coord->J(i, j + 1, k))
-            / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j + 1, k)));
+        const BoutReal area_rp = coord->cell_area_yhigh()(i, j, k);
 
-        const BoutReal flux_factor_rc =
-            common_factor_r / (coord->dy(i, j, k) * coord->J(i, j, k));
-        const BoutReal flux_factor_rp =
-            common_factor_r / (coord->dy(i, j + 1, k) * coord->J(i, j + 1, k));
-
-        const BoutReal area_rp =
-            common_factor_r * coord->dx(i, j + 1, k) * coord->dz(i, j + 1, k);
+        const BoutReal flux_factor_rc = area_rp / coord->cell_volume()(i, j, k);
+        const BoutReal flux_factor_rp = area_rp / coord->cell_volume()(i, j + 1, k);
 
         // For left cell boundaries
-        const BoutReal common_factor_l =
-            (coord->J(i, j, k) + coord->J(i, j - 1, k))
-            / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j - 1, k)));
+        const BoutReal area_lc = coord->cell_area_ylow()(i, j, k);
 
-        const BoutReal flux_factor_lc =
-            common_factor_l / (coord->dy(i, j, k) * coord->J(i, j, k));
-        const BoutReal flux_factor_lm =
-            common_factor_l / (coord->dy(i, j - 1, k) * coord->J(i, j - 1, k));
-
-        const BoutReal area_lc =
-            common_factor_l * coord->dx(i, j, k) * coord->dz(i, j, k);
+        const BoutReal flux_factor_lc = area_lc / coord->cell_volume()(i, j, k);
+        const BoutReal flux_factor_lm = area_lc / coord->cell_volume()(i, j - 1, k);
 #endif
 
         ////////////////////////////////////////////
@@ -937,24 +891,16 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
 
       for (int k = 0; k < mesh->LocalNz; k++) {
         // For right cell boundaries
-        const BoutReal common_factor_r =
-            (coord->J(i, j, k) + coord->J(i, j + 1, k))
-            / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j + 1, k)));
+        const BoutReal area_r = coord->cell_area_yhigh()(i, j, k);
 
-        const BoutReal flux_factor_rc =
-            common_factor_r / (coord->dy(i, j, k) * coord->J(i, j, k));
-        const BoutReal flux_factor_rp =
-            common_factor_r / (coord->dy(i, j + 1, k) * coord->J(i, j + 1, k));
+        const BoutReal flux_factor_rc = area_r / coord->cell_volume()(i, j, k);
+        const BoutReal flux_factor_rp = area_r / coord->cell_volume()(i, j + 1, k);
 
         // For left cell boundaries
-        const BoutReal common_factor_l =
-            (coord->J(i, j, k) + coord->J(i, j - 1, k))
-            / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j - 1, k)));
+        const BoutReal area_l = coord->cell_area_ylow()(i, j, k);
 
-        const BoutReal flux_factor_lc =
-            common_factor_l / (coord->dy(i, j, k) * coord->J(i, j, k));
-        const BoutReal flux_factor_lm =
-            common_factor_l / (coord->dy(i, j - 1, k) * coord->J(i, j - 1, k));
+        const BoutReal flux_factor_lc = area_l / coord->cell_volume()(i, j, k);
+        const BoutReal flux_factor_lm = area_l / coord->cell_volume()(i, j - 1, k);
 
         ////////////////////////////////////////////
         // Reconstruct f at the cell faces
