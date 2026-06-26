@@ -134,7 +134,7 @@ private:
   BoutReal output_residual_ratio; ///< Trigger an output when residual falls by this ratio
 
   BoutReal timestep;     ///< Internal timestep
-  BoutReal dt;           ///< Current timestep used in snes_function.
+  BoutReal dt{0.0};      ///< Current timestep used in snes_function.
   BoutReal dt_min_reset; ///< If dt falls below this, reset solve
   BoutReal max_timestep; ///< Maximum timestep
 
@@ -173,12 +173,12 @@ private:
   /// Calculate per-cell and global residuals
   /// given an input system state `x`
   PetscErrorCode updateResiduals(Vec x);
-  Field3D local_residual;         ///< Residual of Field3D quantities in each cell
-  Field2D local_residual_2d;      ///< Residual of Field2D quantities in each cell
-  BoutReal global_residual;       ///< Global residual measure
-  Field3D local_residual_prev;    ///< Previous Field3D local residuals
-  Field2D local_residual_2d_prev; ///< Previous Field2D local residuals
-  BoutReal global_residual_prev;  ///< Previous global residual
+  Field3D local_residual{0.0};         ///< Residual of Field3D quantities in each cell
+  Field2D local_residual_2d{0.0};      ///< Residual of Field2D quantities in each cell
+  BoutReal global_residual{0.0};       ///< Global residual measure
+  Field3D local_residual_prev{0.0};    ///< Previous Field3D local residuals
+  Field2D local_residual_2d_prev{0.0}; ///< Previous Field2D local residuals
+  BoutReal global_residual_prev{0.0};  ///< Previous global residual
 
   /// Initialize the Pseudo-Transient Continuation method
   PetscErrorCode initPseudoTimestepping();
