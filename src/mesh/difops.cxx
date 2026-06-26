@@ -36,6 +36,7 @@
 #include <bout/field3d.hxx>
 #include <bout/globals.hxx>
 #include <bout/mesh.hxx>
+#include <bout/region.hxx>
 #include <bout/solver.hxx>
 #include <bout/utils.hxx>
 #include <bout/vecops.hxx>
@@ -375,8 +376,6 @@ Field3D Div_par_K_Grad_par(const Field3D& kY, const Field3D& f, CELL_LOC outloc)
 
 Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& flow_ylow,
                                bool bndry_flux) {
-  TRACE("FV::Div_par_K_Grad_par_mod");
-
   ASSERT2(Kin.getLocation() == fin.getLocation());
 
   const Mesh* mesh = Kin.getMesh();

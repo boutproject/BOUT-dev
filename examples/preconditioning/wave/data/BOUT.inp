@@ -12,7 +12,7 @@ first = c2
 
 [solver]
 type = cvode          # Need CVODE or PETSc
-use_precon = true     # Use preconditioner
+cvode_precon_method = user  # Use user-supplied preconditioner
 use_jacobian = false  # Use user-supplied preconditioner?
 rightprec = false     # Use Right preconditioner (default left)
 diagnose = true       # Print additional diagnostics

@@ -140,6 +140,7 @@ set(BOUT_SOURCES
     ./include/bout/fieldgroup.hxx
     ./include/bout/fieldperp.hxx
     ./include/bout/fv_ops.hxx
+    ./include/bout/fv_ops_impl.hxx
     ./include/bout/generic_factory.hxx
     ./include/bout/globalfield.hxx
     ./include/bout/globalindexer.hxx
@@ -357,6 +358,7 @@ set(BOUT_SOURCES
     ./src/solver/impls/snes/snes.hxx
     ./src/solver/impls/split-rk/split-rk.cxx
     ./src/solver/impls/split-rk/split-rk.hxx
+    ./src/solver/petsc_preconditioner.cxx
     ./src/solver/solver.cxx
     ./src/sys/adios_object.cxx
     ./src/sys/bout_types.cxx

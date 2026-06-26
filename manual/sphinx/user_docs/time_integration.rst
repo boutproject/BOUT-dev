@@ -87,7 +87,10 @@ given in table :numref:`tab-solveropts`.
    +--------------------------+--------------------------------------------+-------------------------------------+
    | adaptive                 | Adapt timestep? (Y/N)                      | rk4, imexbdf2                       |
    +--------------------------+--------------------------------------------+-------------------------------------+
-   | use\_precon              | Use a preconditioner? (Y/N)                | pvode, cvode, ida, imexbdf2         |
+   | use\_precon              | Use a preconditioner? (Y/N)                | pvode, ida, imexbdf2                |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | cvode\_precon\_method    | CVODE preconditioner: none, auto, user,   | cvode                               |
+   |                          | petsc, or bbd                              |                                     |
    +--------------------------+--------------------------------------------+-------------------------------------+
    | mudq, mldq               | BBD preconditioner settings                | pvode, cvode, ida                   |
    +--------------------------+--------------------------------------------+-------------------------------------+
@@ -170,6 +173,31 @@ many iterations are needed to solve the linear system. If the number of
 iterations becomes large, this may be an indication that the system is
 poorly conditioned, and a preconditioner might help improve performance.
 See :ref:`sec-preconditioning`.
+
+CVODE preconditioning is controlled using ``solver:cvode_precon_method``:
+
+- ``none`` (default): Disable preconditioning.
+- ``auto``: Prefer a user-supplied preconditioner if provided, then PETSc
+  coloring if PETSc is available, otherwise use BBD.
+- ``user``: Require a user-supplied preconditioner.
+- ``petsc``: Require PETSc and use PETSc coloring.
+- ``bbd``: Force the built-in BBD preconditioner.
+
+For ``cvode_precon_method = petsc``, PETSc options for the internal KSP/PC can be
+set with the prefix ``cvode_petscpre_`` (either on the command line, or by putting
+prefixed keys into the ``[petsc]`` section). For example::
+
+    [petsc]
+    cvode_petscpre_ksp_type = preonly
+    cvode_petscpre_pc_type = hypre
+
+Two CVODE heuristics that control when the linear solver setup routine is called,
+and when the Jacobian/preconditioner are recomputed, can be adjusted with:
+
+- ``cvode_lsetup_frequency`` (default ``0``): Passed to ``CVodeSetLSetupFrequency``.
+  ``0`` uses the SUNDIALS default.
+- ``cvode_jac_eval_frequency`` (default ``0``): Passed to ``CVodeSetJacEvalFrequency``.
+  ``0`` uses the SUNDIALS default.
 
 CVODE can set constraints to keep some quantities positive, non-negative,
 negative or non-positive. These constraints can be activated by setting the
@@ -1221,7 +1249,7 @@ then in the ``BOUT.inp`` settings file switch on the preconditioner
 
     [solver]
     type = cvode          # Need CVODE or PETSc
-    use_precon = true     # Use preconditioner
+    cvode_precon_method = user   # Use user-supplied preconditioner
     rightprec = false     # Use Right preconditioner (default left)
 
 Jacobian function
