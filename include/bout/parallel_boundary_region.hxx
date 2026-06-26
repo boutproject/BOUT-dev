@@ -26,7 +26,7 @@
  *
  */
 
-BOUT_ENUM_CLASS(SheathLimitMode, limit_free, exponential_free, linear_free);
+BOUT_ENUM_CLASS(BoundaryLimitMode, limit_free, exponential_free, linear_free);
 
 namespace bout {
 namespace parallel_boundary_region {
@@ -73,8 +73,8 @@ using IndicesIterConst = IndicesVec::const_iterator;
 ///         ^ boundary
 ///
 /// exp( 2*log(fc) - log(fm) )
-inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc, SheathLimitMode mode) {
-  if ((fm < fc) && (mode == SheathLimitMode::limit_free)) {
+inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc, BoundaryLimitMode mode) {
+  if ((fm < fc) && (mode == BoundaryLimitMode::limit_free)) {
     return fc; // Neumann rather than increasing into boundary
   }
   if (fm < 1e-10) {
@@ -83,11 +83,11 @@ inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc, SheathLimitMode mode) {
 
   BoutReal fp = 0;
   switch (mode) {
-  case SheathLimitMode::limit_free:
-  case SheathLimitMode::exponential_free:
+  case BoundaryLimitMode::limit_free:
+  case BoundaryLimitMode::exponential_free:
     fp = SQ(fc) / fm; // Exponential
     break;
-  case SheathLimitMode::linear_free:
+  case BoundaryLimitMode::linear_free:
     fp = (2.0 * fc) - fm; // Linear
     break;
   }
@@ -300,19 +300,19 @@ public:
     }
   }
 
-  BoutReal extrapolate_boundary_free(const Field3D& f, SheathLimitMode mode) const {
+  BoutReal extrapolate_boundary_free(const Field3D& f, BoundaryLimitMode mode) const {
     const auto fac = valid() > 0 ? limitFreeScale(yprev(f), ythis(f), mode)
-                                 : (mode == SheathLimitMode::linear_free ? 0 : 1);
+                                 : (mode == BoundaryLimitMode::linear_free ? 0 : 1);
     auto val = ythis(f);
-    BoutReal next = mode == SheathLimitMode::linear_free ? val + fac : val * fac;
+    BoutReal next = mode == BoundaryLimitMode::linear_free ? val + fac : val * fac;
     return val * length(f.getLocation()) + next * (1 - length(f.getLocation()));
   }
 
-  void set_free(Field3D& f, SheathLimitMode mode) const {
+  void set_free(Field3D& f, BoundaryLimitMode mode) const {
     const auto fac = valid() > 0 ? limitFreeScale(yprev(f), ythis(f), mode)
-                                 : (mode == SheathLimitMode::linear_free ? 0 : 1);
+                                 : (mode == BoundaryLimitMode::linear_free ? 0 : 1);
     auto val = ythis(f);
-    if (mode == SheathLimitMode::linear_free) {
+    if (mode == BoundaryLimitMode::linear_free) {
       ITER() {
         val += fac;
         getAt(f, i) = val;

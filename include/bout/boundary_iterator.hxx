@@ -71,19 +71,19 @@ public:
     return 0.5 * (3 * f(0, ind()) - f(0, ind().yp(-_by).xp(-_bx)));
   }
 
-  BoutReal extrapolate_boundary_free(const Field3D& f, SheathLimitMode mode) const {
+  BoutReal extrapolate_boundary_free(const Field3D& f, BoundaryLimitMode mode) const {
     const BoutReal fac =
         bout::parallel_boundary_region::limitFreeScale(yprev(f), ythis(f), mode);
     const BoutReal val = ythis(f);
-    const BoutReal next = mode == SheathLimitMode::linear_free ? val + fac : val * fac;
+    const BoutReal next = mode == BoundaryLimitMode::linear_free ? val + fac : val * fac;
     return 0.5 * (val + next);
   }
 
-  void set_free(Field3D& f, SheathLimitMode mode) const {
+  void set_free(Field3D& f, BoundaryLimitMode mode) const {
     const BoutReal fac =
         bout::parallel_boundary_region::limitFreeScale(yprev(f), ythis(f), mode);
     BoutReal val = ythis(f);
-    if (mode == SheathLimitMode::linear_free) {
+    if (mode == BoundaryLimitMode::linear_free) {
       for (int i = 1; i <= localmesh->ystart; ++i) {
         val += fac;
         f[ind().yp(_by * i).xp(_bx * i)] = val;
