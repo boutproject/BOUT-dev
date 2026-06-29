@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
 
 #include "bout/boutexception.hxx"
-//#include "bout/boundary_region_iter.hxx"
 #include "bout/yboundary_regions.hxx"
 
 #include "fake_mesh_fixture.hxx"
