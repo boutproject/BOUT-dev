@@ -38,8 +38,12 @@ protected:
 public:
   BoundaryRegionIter& operator*() { return *this; }
 
+  void dirichlet_o1(Field3D& f, BoutReal value) const { ynext(f) = value; }
   void dirichlet_o2(Field3D& f, BoutReal value) const {
     ynext(f) = bout::parallel_stencil::dirichlet_o2(1, f[ind()], 0.5, value);
+  }
+  void dirichlet_o3(Field3D& f, BoutReal value) const {
+    ynext(f) = bout::parallel_stencil::dirichlet_o3(2, yprev(f), 1, f[ind()], 0.5, value);
   }
 
   BoutReal extrapolate_grad_o2(const Field3D& f) const { return f[ind()] - yprev(f); }
