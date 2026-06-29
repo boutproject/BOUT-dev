@@ -110,3 +110,9 @@ TEST_F(YBTest, extrapolate_grad_o2_square) {
   YBoundary sheath(YBndryType::all, nullptr, *mesh);
   sheath.iter([&](auto& point) { EXPECT_DOUBLE_EQ(point.extrapolate_grad_o2(test), 1); });
 }
+
+TEST_F(YBTest, extrapolate_next_o2_square) {
+  Field3D test = makeField<Field3D>([&](auto& i) { return SQ(i.y() - 2); }, mesh);
+  YBoundary sheath(YBndryType::all, nullptr, *mesh);
+  sheath.iter([&](auto& point) { EXPECT_DOUBLE_EQ(point.extrapolate_next_o2(test), 2); });
+}
