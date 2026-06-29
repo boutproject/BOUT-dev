@@ -518,8 +518,8 @@ public:
     return f.ynext(_off)[_ind().yp(_off)];
   }
   template <bool check = true>
-  BoutReal getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
-                 int off) const {
+  BoutReal _getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
+                  int off) const {
     if constexpr (check) {
       ASSERT3(valid() > -off - 2);
     }
@@ -638,8 +638,8 @@ public:
     }
   }
   template <bool check = true>
-  BoutReal getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
-                 int off) const {
+  BoutReal _getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
+                  int off) const {
     if constexpr (check) {
       ASSERT3(_valid() > -off - 2);
     }
