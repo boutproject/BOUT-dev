@@ -43,6 +43,7 @@ class SNESSolver;
 #include <bout/bout_types.hxx>
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
+#include <bout/petsc_preconditioner.hxx>
 #include <bout/petsclib.hxx>
 
 #include <petsc.h>
@@ -107,7 +108,7 @@ public:
   /// and update the internal RHS scaling factors
   /// This is called by SNESComputeJacobianScaledColor with the
   /// finite difference approximated Jacobian.
-  PetscErrorCode scaleJacobian(Mat B);
+  PetscErrorCode scaleJacobian(Mat Jac_new);
 
   /// Save diagnostics to output
   void outputVars(Options& output_options, bool save_repeat = true) override;
@@ -133,7 +134,7 @@ private:
   BoutReal output_residual_ratio; ///< Trigger an output when residual falls by this ratio
 
   BoutReal timestep;     ///< Internal timestep
-  BoutReal dt;           ///< Current timestep used in snes_function.
+  BoutReal dt{0.0};      ///< Current timestep used in snes_function.
   BoutReal dt_min_reset; ///< If dt falls below this, reset solve
   BoutReal max_timestep; ///< Maximum timestep
 
@@ -172,12 +173,12 @@ private:
   /// Calculate per-cell and global residuals
   /// given an input system state `x`
   PetscErrorCode updateResiduals(Vec x);
-  Field3D local_residual;         ///< Residual of Field3D quantities in each cell
-  Field2D local_residual_2d;      ///< Residual of Field2D quantities in each cell
-  BoutReal global_residual;       ///< Global residual measure
-  Field3D local_residual_prev;    ///< Previous Field3D local residuals
-  Field2D local_residual_2d_prev; ///< Previous Field2D local residuals
-  BoutReal global_residual_prev;  ///< Previous global residual
+  Field3D local_residual{0.0};         ///< Residual of Field3D quantities in each cell
+  Field2D local_residual_2d{0.0};      ///< Residual of Field2D quantities in each cell
+  BoutReal global_residual{0.0};       ///< Global residual measure
+  Field3D local_residual_prev{0.0};    ///< Previous Field3D local residuals
+  Field2D local_residual_2d_prev{0.0}; ///< Previous Field2D local residuals
+  BoutReal global_residual_prev{0.0};  ///< Previous global residual
 
   /// Initialize the Pseudo-Transient Continuation method
   PetscErrorCode initPseudoTimestepping();
@@ -190,7 +191,7 @@ private:
                                                  BoutReal current_residual);
   BoutReal updatePseudoTimestep_history_based(BoutReal previous_timestep,
                                               BoutReal previous_residual,
-                                              BoutReal current_residual);
+                                              BoutReal current_residual) const;
 
   Field3D pseudo_timestep;
 
@@ -236,11 +237,11 @@ private:
   Vec x1;               ///< Previous solution
   BoutReal time1{-1.0}; ///< Time of previous solution
 
-  SNES snes;                         ///< SNES context
-  Mat Jmf;                           ///< Matrix Free Jacobian
-  Mat Jfd;                           ///< Finite Difference Jacobian
-  MatFDColoring fdcoloring{nullptr}; ///< Matrix coloring context
-                                     ///< Jacobian evaluation
+  SNES snes; ///< SNES context
+  Mat Jmf;   ///< Matrix Free Jacobian
+  Mat Jfd;   ///< Finite Difference Jacobian (brute-force, when not using coloring)
+  PetscPreconditioner
+      petsc_preconditioner; ///< Coloring-based FD Jacobian + MatFDColoring
 
   bool use_precon;                ///< Use preconditioner
   std::string ksp_type;           ///< Linear solver type
@@ -262,7 +263,6 @@ private:
   BoutReal prune_fraction;    ///< Prune if fraction of small elements is larger than this
   bool jacobian_pruned{false}; ///< Has the Jacobian been pruned?
   Mat Jfd_original;            ///< Used to reset the Jacobian if over-pruned
-  void updateColoring();       ///< Updates the coloring using Jfd
 
   bool scale_rhs;          ///< Scale time derivatives?
   Vec rhs_scaling_factors; ///< Factors to multiply RHS function

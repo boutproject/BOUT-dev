@@ -7,7 +7,9 @@
 
 using bout::generator::Context;
 
-bool GridFromOptions::hasVar(const std::string& name) { return options->isSet(name); }
+bool GridFromOptions::hasVar(const std::string& name) const {
+  return options->isSet(name);
+}
 
 namespace {
 /// Return value of \p name in \p options, using \p def as a default

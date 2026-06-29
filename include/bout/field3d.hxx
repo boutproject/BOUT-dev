@@ -465,18 +465,17 @@ public:
 
   struct View {
     BoutReal* data;
-    int mul = 1;
-    int div = 1;
     BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx) const {
-      return data[(idx * mul) / div];
+      return data[idx];
     }
     BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal& operator[](int idx) const {
-      return data[(idx * mul) / div];
+      return data[idx];
     }
 
-    View& setScale(int mul, int div) {
-      this->mul = mul;
-      this->div = div;
+    template <typename Mul, typename Div>
+    View& setScale(Mul /*unused*/, Div /*unused*/) {
+      static_assert(!std::is_same_v<Mul, Mul>,
+                    "Field3D::View does not support setScale()");
       return *this;
     }
   };
