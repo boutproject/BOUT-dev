@@ -7,7 +7,6 @@
 
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
-#include "bout/boutexception.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/coordinates.hxx"
 #include "bout/field.hxx"
@@ -18,8 +17,6 @@
 #include "bout/region.hxx"
 #include "bout/utils.hxx"
 #include "bout/vector2d.hxx"
-
-#include <cmath>
 
 namespace FV {
 /*!

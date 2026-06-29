@@ -7,7 +7,6 @@
 #include "bout/globals.hxx"
 #include "bout/options.hxx"
 #include "bout/options_io.hxx"
-#include "bout/utils.hxx"
 
 #include <fmt/format.h>
 
