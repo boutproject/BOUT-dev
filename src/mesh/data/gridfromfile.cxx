@@ -32,7 +32,7 @@ GridFile::GridFile(std::string gridfilename)
  * Tests whether a variable exists in the file
  *
  */
-bool GridFile::hasVar(const std::string& name) { return data.isSet(name); }
+bool GridFile::hasVar(const std::string& name) const { return data.isSet(name); }
 
 /*!
  * Read a string from file. If the string is not
