@@ -28,12 +28,15 @@ class GridDataSource;
 #ifndef BOUT_GRIDDATA_H
 #define BOUT_GRIDDATA_H
 
-#include "mesh.hxx"
-#include "bout/bout_types.hxx"
-#include "bout/options.hxx"
-
+#include <bout/bout_types.hxx>
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
+#include <bout/mesh.hxx>
+#include <bout/options.hxx>
+#include <bout/unused.hxx>
+
+#include <string>
+#include <vector>
 
 /// Interface class to serve grid data
 /*!
@@ -46,8 +49,8 @@ public:
   GridDataSource(const bool source_is_file = false) : is_file(source_is_file) {}
   virtual ~GridDataSource() = default;
 
-  virtual bool
-  hasVar(const std::string& name) = 0; ///< Test if source can supply a variable
+  /// Test if source can supply a variable
+  virtual bool hasVar(const std::string& name) const = 0;
 
   /// Get a string
   virtual bool get(Mesh* m, std::string& sval, const std::string& name,
@@ -95,9 +98,9 @@ class GridFile : public GridDataSource {
 public:
   GridFile() = delete;
   GridFile(std::string gridfilename);
-  ~GridFile() = default;
+  ~GridFile() override = default;
 
-  bool hasVar(const std::string& name) override;
+  bool hasVar(const std::string& name) const override;
 
   /// Get a string
   bool get(Mesh* m, std::string& sval, const std::string& name,
@@ -178,7 +181,7 @@ public:
   /*!
    * Checks if the options has a given variable
    */
-  bool hasVar(const std::string& name) override;
+  bool hasVar(const std::string& name) const override;
 
   /*!
    * Reads strings from options. Uses Options::get to handle

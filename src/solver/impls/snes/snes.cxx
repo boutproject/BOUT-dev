@@ -21,8 +21,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <set>
-#include <utility>
 #include <vector>
 
 #include "petscerror.h"
@@ -32,45 +30,6 @@
 #include "petscsys.h"
 #include "petscsystypes.h"
 #include "petscvec.h"
-
-class ColoringStencil {
-private:
-  bool static isInSquare(const int i, const int j, const int n_square) {
-    return std::abs(i) <= n_square && std::abs(j) <= n_square;
-  }
-  bool static isInCross(const int i, const int j, const int n_cross) {
-    if (i == 0) {
-      return std::abs(j) <= n_cross;
-    }
-    if (j == 0) {
-      return std::abs(i) <= n_cross;
-    }
-    return false;
-  }
-  bool static isInTaxi(const int i, const int j, const int n_taxi) {
-    return std::abs(i) + std::abs(j) <= n_taxi;
-  }
-
-public:
-  auto static getOffsets(int n_square, int n_taxi, int n_cross) {
-    ASSERT2(n_square >= 0 && n_cross >= 0 && n_taxi >= 0
-            && n_square + n_cross + n_taxi > 0);
-    auto inside = [&](int i, int j) {
-      return isInSquare(i, j, n_square) || isInTaxi(i, j, n_taxi)
-             || isInCross(i, j, n_cross);
-    };
-    std::vector<std::pair<int, int>> xy_offsets;
-    auto loop_bound = std::max({n_square, n_taxi, n_cross});
-    for (int i = -loop_bound; i <= loop_bound; ++i) {
-      for (int j = -loop_bound; j <= loop_bound; ++j) {
-        if (inside(i, j)) {
-          xy_offsets.emplace_back(i, j);
-        }
-      }
-    }
-    return xy_offsets;
-  }
-};
 
 namespace {
 /*
@@ -109,300 +68,34 @@ PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
 
   PetscFunctionReturn(s->precon(x, y));
 }
+
+PetscErrorCode ComputeJacobianScaledColor(SNES snes, Vec x1, Mat Jac, Mat Jac_new,
+                                          void* ctx);
 } // namespace
 
 PetscErrorCode SNESSolver::FDJinitialise() {
   if (use_coloring) {
-    // Use matrix coloring.
-    // This greatly reduces the number of times the rhs() function
-    // needs to be evaluated when calculating the Jacobian.
-
-    // Use global mesh for now
-    Mesh* mesh = bout::globals::mesh;
-
-    //////////////////////////////////////////////////
-    // Get the local indices by starting at 0
     Field3D index = globalIndex(0);
-
-    //////////////////////////////////////////////////
-    // Pre-allocate PETSc storage
-
-    output_progress.write("Setting Jacobian matrix sizes\n");
-
-    const int n2d = f2d.size();
-    const int n3d = f3d.size();
-
-    // Set size of Matrix on each processor to nlocal x nlocal
-    MatCreate(BoutComm::get(), &Jfd);
-    MatSetOption(Jfd, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
-    MatSetSizes(Jfd, nlocal, nlocal, PETSC_DETERMINE, PETSC_DETERMINE);
-    MatSetFromOptions(Jfd);
-    // Determine which row/columns of the matrix are locally owned
-    int Istart, Iend;
-    MatGetOwnershipRange(Jfd, &Istart, &Iend);
-    // Convert local into global indices
-    // Note: Not in the boundary cells, to keep -1 values
-    for (const auto& i : mesh->getRegion3D("RGN_NOBNDRY")) {
-      index[i] += Istart;
-    }
-    // Now communicate to fill guard cells
-    mesh->communicate(index);
-
-    // Non-zero elements on this processor
-    std::vector<PetscInt> d_nnz;
-    std::vector<PetscInt> o_nnz;
-    auto n_square = (*options)["stencil:square"]
-                        .doc("Extent of stencil (square)")
-                        .withDefault<int>(0);
-    auto n_cross =
-        (*options)["stencil:cross"].doc("Extent of stencil (cross)").withDefault<int>(0);
-    // Set n_taxi 2 if nothing else is set
-    auto n_taxi = (*options)["stencil:taxi"]
-                      .doc("Extent of stencil (taxi-cab norm)")
-                      .withDefault<int>((n_square == 0 && n_cross == 0) ? 2 : 0);
-
-    const auto xy_offsets = ColoringStencil::getOffsets(n_square, n_taxi, n_cross);
-    {
-      // This is ugly but can't think of a better and robust way to
-      // count the non-zeros for some arbitrary stencil
-      // effectively the same loop as the one that sets the non-zeros below
-      std::vector<std::set<int>> d_nnz_map2d(nlocal);
-      std::vector<std::set<int>> o_nnz_map2d(nlocal);
-      std::vector<std::set<int>> d_nnz_map3d(nlocal);
-      std::vector<std::set<int>> o_nnz_map3d(nlocal);
-      // Loop over every element in 2D to count the *unique* non-zeros
-      for (int x = mesh->xstart; x <= mesh->xend; x++) {
-        for (int y = mesh->ystart; y <= mesh->yend; y++) {
-
-          const int ind0 = ROUND(index(x, y, 0)) - Istart;
-
-          // 2D fields
-          for (int i = 0; i < n2d; i++) {
-            const PetscInt row = ind0 + i;
-            // Loop through each point in the stencil
-            for (const auto& [x_off, y_off] : xy_offsets) {
-              const int xi = x + x_off;
-              const int yi = y + y_off;
-              if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
-                  || (yi >= mesh->LocalNy)) {
-                continue;
-              }
-
-              const int ind2 = ROUND(index(xi, yi, 0));
-              if (ind2 < 0) {
-                continue; // A boundary point
-              }
-
-              // Depends on all variables on this cell
-              for (int j = 0; j < n2d; j++) {
-                const PetscInt col = ind2 + j;
-                if (col >= Istart && col < Iend) {
-                  d_nnz_map2d[row].insert(col);
-                } else {
-                  o_nnz_map2d[row].insert(col);
-                }
-              }
-            }
-          }
-          // 3D fields
-          for (int z = mesh->zstart; z <= mesh->zend; z++) {
-            const int ind = ROUND(index(x, y, z)) - Istart;
-
-            for (int i = 0; i < n3d; i++) {
-              PetscInt row = ind + i;
-              if (z == 0) {
-                row += n2d;
-              }
-
-              // Depends on 2D fields
-              for (int j = 0; j < n2d; j++) {
-                const PetscInt col = ind0 + j;
-                if (col >= Istart && col < Iend) {
-                  d_nnz_map2d[row].insert(col);
-                } else {
-                  o_nnz_map2d[row].insert(col);
-                }
-              }
-
-              // Star pattern
-              for (const auto& [x_off, y_off] : xy_offsets) {
-                const int xi = x + x_off;
-                const int yi = y + y_off;
-
-                if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
-                    || (yi >= mesh->LocalNy)) {
-                  continue;
-                }
-
-                int ind2 = ROUND(index(xi, yi, 0));
-                if (ind2 < 0) {
-                  continue; // Boundary point
-                }
-
-                if (z == 0) {
-                  ind2 += n2d;
-                }
-
-                // 3D fields on this cell
-                for (int j = 0; j < n3d; j++) {
-                  const PetscInt col = ind2 + j;
-                  if (col >= Istart && col < Iend) {
-                    d_nnz_map3d[row].insert(col);
-                  } else {
-                    o_nnz_map3d[row].insert(col);
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-
-      d_nnz.reserve(nlocal);
-      d_nnz.reserve(nlocal);
-
-      for (int i = 0; i < nlocal; ++i) {
-        // Assume all elements in the z direction are potentially coupled
-        d_nnz.emplace_back((d_nnz_map3d[i].size() * mesh->LocalNz)
-                           + d_nnz_map2d[i].size());
-        o_nnz.emplace_back((o_nnz_map3d[i].size() * mesh->LocalNz)
-                           + o_nnz_map2d[i].size());
-      }
-    }
-
-    output_progress.write("Pre-allocating Jacobian\n");
-    // Pre-allocate
-    MatMPIAIJSetPreallocation(Jfd, 0, d_nnz.data(), 0, o_nnz.data());
-    MatSeqAIJSetPreallocation(Jfd, 0, d_nnz.data());
-    MatSetUp(Jfd);
-    MatSetOption(Jfd, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
-
-    //////////////////////////////////////////////////
-    // Mark non-zero entries
-
-    output_progress.write("Marking non-zero Jacobian entries\n");
-    const PetscScalar val = 1.0;
-    for (int x = mesh->xstart; x <= mesh->xend; x++) {
-      for (int y = mesh->ystart; y <= mesh->yend; y++) {
-
-        const int ind0 = ROUND(index(x, y, 0));
-
-        // 2D fields
-        for (int i = 0; i < n2d; i++) {
-          const PetscInt row = ind0 + i;
-
-          // Loop through each point in the stencil
-          for (const auto& [x_off, y_off] : xy_offsets) {
-            const int xi = x + x_off;
-            const int yi = y + y_off;
-            if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx) || (yi >= mesh->LocalNy)) {
-              continue;
-            }
-
-            const int ind2 = ROUND(index(xi, yi, 0));
-            if (ind2 < 0) {
-              continue; // A boundary point
-            }
-
-            // Depends on all variables on this cell
-            for (int j = 0; j < n2d; j++) {
-              const PetscInt col = ind2 + j;
-              PetscCall(MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES));
-            }
-          }
-        }
-        // 3D fields
-        for (int z = mesh->zstart; z <= mesh->zend; z++) {
-          const int ind = ROUND(index(x, y, z));
-
-          for (int i = 0; i < n3d; i++) {
-            PetscInt row = ind + i;
-            if (z == 0) {
-              row += n2d;
-            }
-
-            // Depends on 2D fields
-            for (int j = 0; j < n2d; j++) {
-              const PetscInt col = ind0 + j;
-              PetscCall(MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES));
-            }
-
-            // Star pattern
-            for (const auto& [x_off, y_off] : xy_offsets) {
-              int xi = x + x_off;
-              int yi = y + y_off;
-
-              if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
-                  || (yi >= mesh->LocalNy)) {
-                continue;
-              }
-              for (int zi = mesh->zstart; zi <= mesh->zend; ++zi) {
-                int ind2 = ROUND(index(xi, yi, zi));
-                if (ind2 < 0) {
-                  continue; // Boundary point
-                }
-
-                if (z == 0) {
-                  ind2 += n2d;
-                }
-
-                // 3D fields on this cell
-                for (int j = 0; j < n3d; j++) {
-                  const PetscInt col = ind2 + j;
-                  const PetscErrorCode ierr =
-                      MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
-
-                  if (ierr != PETSC_SUCCESS) {
-                    output.write("ERROR: {} {} : ({}, {}) -> ({}, {}) : {} -> {}\n", row,
-                                 col, x, y, xi, yi, ind2, ind2 + n3d - 1);
-                  }
-                  CHKERRQ(ierr);
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // Finished marking non-zero entries
-
-    output_progress.write("Assembling Jacobian matrix\n");
-
-    // Assemble Matrix
-    MatAssemblyBegin(Jfd, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(Jfd, MAT_FINAL_ASSEMBLY);
-
-    {
-      // Test if the matrix is symmetric
-      // Values are 0 or 1 so tolerance (1e-5) shouldn't matter
-      PetscBool symmetric;
-      PetscCall(MatIsSymmetric(Jfd, 1e-5, &symmetric));
-      if (!static_cast<bool>(symmetric)) {
-        output_warn.write("Jacobian pattern is not symmetric\n");
-      }
-    }
-
-    // The above can miss entries around the X-point branch cut:
-    // The diagonal terms are complicated because moving in X then Y
-    // is different from moving in Y then X at the X-point.
-    // Making sure the colouring matrix is symmetric does not
-    // necessarily give the correct stencil but may help.
-    if ((*options)["force_symmetric_coloring"]
-            .doc("Modifies coloring matrix to force it to be symmetric")
-            .withDefault<bool>(false)) {
-      Mat Jfd_T;
-      MatCreateTranspose(Jfd, &Jfd_T);
-      MatAXPY(Jfd, 1, Jfd_T, DIFFERENT_NONZERO_PATTERN);
-    }
-
+    PetscCall(petsc_preconditioner.createJacobianPattern(
+        index, *options, nlocal, n2Dvars(), n3Dvars(), BoutComm::get()));
     output_progress.write("Creating Jacobian coloring\n");
-    updateColoring();
+    PetscCall(petsc_preconditioner.updateColoring(FormFunctionForColoring, this));
+
+    if (matrix_free_operator) {
+      PetscCall(SNESSetJacobian(snes, Jmf, petsc_preconditioner.jacobian(),
+                                ComputeJacobianScaledColor,
+                                petsc_preconditioner.coloring()));
+    } else {
+      PetscCall(SNESSetJacobian(
+          snes, petsc_preconditioner.jacobian(), petsc_preconditioner.jacobian(),
+          ComputeJacobianScaledColor, petsc_preconditioner.coloring()));
+    }
 
     if (prune_jacobian) {
       // Will remove small elements from the Jacobian.
       // Save a copy to recover from over-pruning
-      PetscCall(MatDuplicate(Jfd, MAT_SHARE_NONZERO_PATTERN, &Jfd_original));
+      PetscCall(MatDuplicate(petsc_preconditioner.jacobian(), MAT_SHARE_NONZERO_PATTERN,
+                             &Jfd_original));
     }
   } else {
     // Brute force calculation
@@ -430,6 +123,11 @@ PetscErrorCode SNESSolver::FDJinitialise() {
 
 PetscErrorCode SNESSolver::FDJpruneJacobian() {
 #if PETSC_VERSION_GE(3, 20, 0)
+  if (!use_coloring) {
+    throw BoutException("Jacobian pruning requires solver:use_coloring=true");
+  }
+
+  Mat Jfd = petsc_preconditioner.jacobian();
 
   // Remove small elements from the Jacobian and recompute the coloring
   // Only do this if there are a significant number of small elements.
@@ -463,7 +161,16 @@ PetscErrorCode SNESSolver::FDJpruneJacobian() {
     PetscCall(MatFilter(Jfd, prune_abstol, PETSC_TRUE, PETSC_TRUE));
 
     // Update the coloring from Jfd matrix
-    updateColoring();
+    PetscCall(petsc_preconditioner.updateColoring(FormFunctionForColoring, this));
+    if (matrix_free_operator) {
+      PetscCall(SNESSetJacobian(snes, Jmf, petsc_preconditioner.jacobian(),
+                                ComputeJacobianScaledColor,
+                                petsc_preconditioner.coloring()));
+    } else {
+      PetscCall(SNESSetJacobian(
+          snes, petsc_preconditioner.jacobian(), petsc_preconditioner.jacobian(),
+          ComputeJacobianScaledColor, petsc_preconditioner.coloring()));
+    }
 
     // Mark the Jacobian as pruned. This is so that it is only restored if pruned.
     jacobian_pruned = true;
@@ -473,10 +180,25 @@ PetscErrorCode SNESSolver::FDJpruneJacobian() {
 }
 
 PetscErrorCode SNESSolver::FDJrestoreFromPruning() {
+  if (!use_coloring) {
+    throw BoutException("Jacobian pruning requires solver:use_coloring=true");
+  }
+
+  Mat Jfd = petsc_preconditioner.jacobian();
+
   // Restore pruned non-zero elements
   PetscCall(MatCopy(Jfd_original, Jfd, DIFFERENT_NONZERO_PATTERN));
   // The non-zero pattern has changed, so update coloring
-  updateColoring();
+  PetscCall(petsc_preconditioner.updateColoring(FormFunctionForColoring, this));
+  if (matrix_free_operator) {
+    PetscCall(SNESSetJacobian(snes, Jmf, petsc_preconditioner.jacobian(),
+                              ComputeJacobianScaledColor,
+                              petsc_preconditioner.coloring()));
+  } else {
+    PetscCall(SNESSetJacobian(snes, petsc_preconditioner.jacobian(),
+                              petsc_preconditioner.jacobian(), ComputeJacobianScaledColor,
+                              petsc_preconditioner.coloring()));
+  }
   jacobian_pruned = false; // Reset flag. Will be set after pruning.
   return PETSC_SUCCESS;
 }
@@ -1645,7 +1367,7 @@ BoutReal SNESSolver::updatePseudoTimestep_inverse_residual(BoutReal previous_tim
 // Strategy based on history of residuals
 BoutReal SNESSolver::updatePseudoTimestep_history_based(BoutReal previous_timestep,
                                                         BoutReal previous_residual,
-                                                        BoutReal current_residual) {
+                                                        BoutReal current_residual) const {
   const BoutReal converged_threshold = 10 * atol;
   const BoutReal transition_threshold = 100 * atol;
 
@@ -1925,6 +1647,7 @@ PetscErrorCode SNESSolver::scaleJacobian(Mat Jac_new) {
   return PETSC_SUCCESS;
 }
 
+namespace {
 ///
 /// Input Parameters:
 ///   snes - nonlinear solver object
@@ -1935,8 +1658,8 @@ PetscErrorCode SNESSolver::scaleJacobian(Mat Jac_new) {
 ///   Jac - Jacobian matrix (not altered in this routine)
 ///   Jac_new - newly computed Jacobian matrix to use with preconditioner (generally the same as
 ///   Jac)
-static PetscErrorCode ComputeJacobianScaledColor(SNES snes, Vec x1, Mat Jac, Mat Jac_new,
-                                                 void* ctx) {
+PetscErrorCode ComputeJacobianScaledColor(SNES snes, Vec x1, Mat Jac, Mat Jac_new,
+                                          void* ctx) {
   PetscErrorCode err = SNESComputeJacobianDefaultColor(snes, x1, Jac, Jac_new, ctx);
   CHKERRQ(err);
 
@@ -1953,39 +1676,7 @@ static PetscErrorCode ComputeJacobianScaledColor(SNES snes, Vec x1, Mat Jac, Mat
   // Call the SNESSolver function
   return fctx->scaleJacobian(Jac_new);
 }
-
-void SNESSolver::updateColoring() {
-  // Re-calculate the coloring
-  MatColoring coloring = NULL;
-  MatColoringCreate(Jfd, &coloring);
-  // MatColoringSetType(coloring, MATCOLORINGSL);  // Serial algorithm. Better for smale-to-medium size problems.
-  MatColoringSetType(
-      coloring, MATCOLORINGGREEDY); // Parallel algorith. Better for large parallel runs
-  // MatColoringSetType(coloring, MATCOLORINGJP);  // This didn't work
-  MatColoringSetFromOptions(coloring);
-
-  // Calculate new index sets
-  ISColoring iscoloring = NULL;
-  MatColoringApply(coloring, &iscoloring);
-  MatColoringDestroy(&coloring);
-
-  // Replace the old coloring with the new one
-  MatFDColoringDestroy(&fdcoloring);
-  MatFDColoringCreate(Jfd, iscoloring, &fdcoloring);
-  MatFDColoringSetFunction(fdcoloring,
-                           bout::cast_MatFDColoringFn(FormFunctionForColoring), this);
-  MatFDColoringSetFromOptions(fdcoloring);
-  MatFDColoringSetUp(Jfd, iscoloring, fdcoloring);
-  ISColoringDestroy(&iscoloring);
-
-  // Replace the CTX pointer in SNES Jacobian
-  if (matrix_free_operator) {
-    // Use matrix-free calculation for operator, finite difference for preconditioner
-    SNESSetJacobian(snes, Jmf, Jfd, ComputeJacobianScaledColor, fdcoloring);
-  } else {
-    SNESSetJacobian(snes, Jfd, Jfd, ComputeJacobianScaledColor, fdcoloring);
-  }
-}
+} // namespace
 
 BoutReal SNESSolver::pid(BoutReal timestep, int nl_its, BoutReal max_dt) {
 

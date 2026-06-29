@@ -149,7 +149,7 @@ jobs:
               libparpack2-dev \
               libhypre-dev
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: true
 
@@ -177,14 +177,14 @@ jobs:
           echo "VIRTUAL_ENV=$GITHUB_WORKSPACE/.venv" >> $GITHUB_ENV
 
       - name: Cache Zenodo test data
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: build/tests/integrated/test-fci-mpi/grid.fci.nc
           # If we update the test, invalidate the cache
           key: zenodo-data-${{ hashFiles('tests/integrated/test-fci-mpi/CMakeLists.txt') }}
 
       - name: Cache SUNDIALS build
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: /home/runner/local
           key: bout-sundials-${{ matrix.config.os }}${{ matrix.config.build_petsc }}
@@ -211,12 +211,12 @@ jobs:
     env:
       BOUT_TEST_DOWNLOAD_FLAGS: --retry-on-http-error=502,503,504 --tries 3
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: true
 
       - name: Cache Zenodo test data
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: build/tests/integrated/test-fci-mpi/grid.fci.nc
           # If we update the test, invalidate the cache

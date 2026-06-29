@@ -176,7 +176,7 @@ public:
   bool hasBndryLowerY() const override { return false; }
   bool hasBndryUpperY() const override { return false; }
   void addBoundary(BoundaryRegionBase* region) override { boundaries.push_back(region); }
-  std::vector<BoundaryRegionBase*> getBoundaries() override { return boundaries; }
+  std::vector<BoundaryRegionBase*> getBoundaries() const override { return boundaries; }
   std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>
   getBoundariesPar(BoundaryParType UNUSED(type)) const override {
     return std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>();
@@ -284,7 +284,7 @@ public:
   /// Take an rvalue (e.g. initializer list), convert to lvalue and delegate constructor
   FakeGridDataSource(Options&& values) : FakeGridDataSource(values) {}
 
-  bool hasVar(const std::string& UNUSED(name)) override { return false; }
+  bool hasVar(const std::string& name) const override { return values.isSet(name); }
 
   bool get([[maybe_unused]] Mesh* m, std::string& sval, const std::string& name,
            const std::string& def = "") override {

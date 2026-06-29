@@ -927,6 +927,19 @@ std::ostream& operator<<(std::ostream& out, const Field3D& value) {
   return out;
 }
 
+namespace bout::detail {
+
+const Region<Ind3D>& getField3DRegion(const Mesh* mesh, std::optional<size_t> regionID) {
+  ASSERT1(mesh != nullptr);
+
+  if (regionID.has_value()) {
+    return mesh->getRegion(regionID.value());
+  }
+  return mesh->getRegion("RGN_ALL");
+}
+
+} // namespace bout::detail
+
 void swap(Field3D& first, Field3D& second) noexcept {
   using std::swap;
 
