@@ -66,6 +66,31 @@ TEST_F(YBTest, dirichlet_o3) {
   });
 }
 
+TEST_F(YBTest, extrapolate_boundary_free) {
+  Field3D test = makeField<Field3D>([&](auto& i) { return SQ(i.y() - 2) + 1; }, mesh);
+  YBoundary sheath(YBndryType::all, nullptr, *mesh);
+  sheath.iter([&](auto& point) {
+    EXPECT_DOUBLE_EQ(point.extrapolate_boundary_free(
+                         test, bout::boundary::BoundaryFreeExtrapolation::limited),
+                     3);
+    EXPECT_DOUBLE_EQ(point.extrapolate_boundary_free(
+                         test, bout::boundary::BoundaryFreeExtrapolation::linear),
+                     3.5);
+    EXPECT_DOUBLE_EQ(point.extrapolate_boundary_free(
+                         test, bout::boundary::BoundaryFreeExtrapolation::exponential),
+                     5);
+  });
+}
+
+TEST_F(YBTest, set_free) {
+  Field3D test = makeField<Field3D>([&](auto& i) { return SQ(i.y() - 2) + 1; }, mesh);
+  YBoundary sheath(YBndryType::all, nullptr, *mesh);
+  sheath.iter([&](auto& point) {
+    point.set_free(test, bout::boundary::BoundaryFreeExtrapolation::limited);
+    EXPECT_DOUBLE_EQ(point.interpolate_boundary_o2(test), 3);
+  });
+}
+
 TEST_F(YBTest, interpolate_boundary_o2_square) {
   Field3D test = makeField<Field3D>([&](auto& i) { return SQ(i.y() - 2); }, mesh);
   YBoundary sheath(YBndryType::all, nullptr, *mesh);
