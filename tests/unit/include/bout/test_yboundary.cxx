@@ -39,3 +39,30 @@ TEST_F(YBTest, extrapolate_boundary_o2) {
   sheath.iter(
       [&](auto& point) { EXPECT_DOUBLE_EQ(point.extrapolate_boundary_o2(test), 1.0); });
 }
+
+TEST_F(YBTest, dirichlet_o1) {
+  Field3D test = 1.0;
+  YBoundary sheath(YBndryType::all, nullptr, *mesh);
+  sheath.iter([&](auto& point) {
+    point.dirichlet_o1(test, 2.0);
+    EXPECT_DOUBLE_EQ(point.interpolate_boundary_o2(test), 1.5);
+  });
+}
+
+TEST_F(YBTest, dirichlet_o2) {
+  Field3D test = 1.0;
+  YBoundary sheath(YBndryType::all, nullptr, *mesh);
+  sheath.iter([&](auto& point) {
+    point.dirichlet_o2(test, 2.0);
+    EXPECT_DOUBLE_EQ(point.interpolate_boundary_o2(test), 2.0);
+  });
+}
+
+TEST_F(YBTest, dirichlet_o3) {
+  Field3D test = 1.0;
+  YBoundary sheath(YBndryType::all, nullptr, *mesh);
+  sheath.iter([&](auto& point) {
+    point.dirichlet_o3(test, 2.0);
+    EXPECT_DOUBLE_EQ(point.interpolate_boundary_o2(test), 7. / 3.);
+  });
+}
