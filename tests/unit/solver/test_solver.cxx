@@ -4,6 +4,7 @@
 #include "test_extras.hxx"
 #include "test_fakesolver.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/physicsmodel.hxx"
@@ -968,6 +969,26 @@ TEST_F(SolverTest, BasicSolve) {
 
   EXPECT_TRUE(solver.init_called);
   EXPECT_TRUE(solver.run_called);
+}
+
+TEST_F(SolverTest, SolveCleansUpMonitorsAtFinalIteration) {
+  Options options;
+  options["call_final_monitor"] = true;
+  FakeSolver solver{&options};
+
+  StrictMock<MockMonitor> monitor;
+  solver.addMonitor(&monitor);
+
+  NiceMock<MockPhysicsModel> model{};
+  solver.setModel(&model);
+
+  Options::cleanup();
+
+  EXPECT_CALL(monitor, call(_, _, 0, nout));
+  EXPECT_CALL(monitor, call(_, _, nout, nout));
+  EXPECT_CALL(monitor, cleanup());
+
+  solver.solve(nout, timestep);
 }
 
 TEST_F(SolverTest, GetRunID) {

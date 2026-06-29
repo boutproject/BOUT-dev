@@ -23,11 +23,13 @@
  *
  **************************************************************************/
 
+#include <bout/assert.hxx>
 #include <bout/output.hxx>
-#include <bout/utils.hxx>
-#include <cstdarg>
-#include <cstdio>
-#include <cstring>
+
+#include <fmt/format.h> // NOLINT(misc-include-cleaner)
+
+#include <iostream>
+#include <string>
 
 void Output::enable() {
   add(std::cout);
@@ -68,7 +70,7 @@ void Output::close() {
 }
 
 void Output::write(const std::string& message) {
-  multioutbuf_init::buf()->sputn(message.c_str(), message.length());
+  multioutbuf_init::buf()->sputn(message.c_str(), static_cast<long>(message.length()));
 }
 
 void Output::print(const std::string& message) {
@@ -98,6 +100,7 @@ void ConditionalOutput::print(const std::string& message) {
   }
 }
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 #ifdef BOUT_USE_OUTPUT_DEBUG
 ConditionalOutput output_debug(Output::getInstance());
 #else
@@ -109,3 +112,4 @@ ConditionalOutput output_progress(Output::getInstance());
 ConditionalOutput output_error(Output::getInstance());
 ConditionalOutput output_verbose(Output::getInstance(), false);
 ConditionalOutput output(Output::getInstance());
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)

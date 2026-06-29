@@ -55,9 +55,7 @@ public:
 
   // Note: All methods must implement clone, except for modifiers (see below)
   virtual BoundaryOp* clone(BoundaryRegion* UNUSED(region),
-                            const std::list<std::string>& UNUSED(args)) {
-    throw BoutException("BoundaryOp::clone not implemented");
-  }
+                            const std::list<std::string>& UNUSED(args)) = 0;
 
   /// Clone using positional args and keywords
   /// If not implemented, check if keywords are passed, then call two-argument version
@@ -88,6 +86,10 @@ public:
   BoundaryModifier() = default;
   BoundaryModifier(BoundaryOp* operation) : BoundaryOp(operation->bndry), op(operation) {}
   virtual BoundaryOp* cloneMod(BoundaryOp* op, const std::list<std::string>& args) = 0;
+  BoundaryOp* clone(BoundaryRegion* UNUSED(region),
+                    const std::list<std::string>& UNUSED(args)) override {
+    throw BoutException("This must not be used!");
+  }
 
 protected:
   BoundaryOp* op{nullptr};

@@ -42,6 +42,7 @@ RegisterUnavailableSolver
 
 #else
 
+#include "../../sundials_nvector_interface.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/sundials_backports.hxx"
 
@@ -64,9 +65,9 @@ public:
   BoutReal run(BoutReal tout);
 
   // These functions used internally (but need to be public)
-  void res(BoutReal t, BoutReal* udata, BoutReal* dudata, BoutReal* rdata);
-  void pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal* udata, BoutReal* rvec,
-           BoutReal* zvec);
+  void res(BoutReal t, N_Vector u, N_Vector du, N_Vector rr);
+  void pre(BoutReal t, BoutReal cj, BoutReal delta, N_Vector u, N_Vector rvec,
+           N_Vector zvec);
 
 private:
   /// Absolute tolerance
@@ -79,6 +80,8 @@ private:
   bool use_precon;
   /// Correct the initial values
   bool correct_start;
+  /// N_Vector backend to use
+  NVectorType nvector_type;
 
   N_Vector uvec{nullptr};  // Values
   N_Vector duvec{nullptr}; // Time-derivatives
@@ -87,6 +90,10 @@ private:
 
   BoutReal pre_Wtime{0.0}; // Time in preconditioner
   int pre_ncalls{0};       // Number of calls to preconditioner
+
+  SundialsNVectorInterface nvector_backend() {
+    return SundialsNVectorInterface(*this, suncontext, nvector_type);
+  }
 
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};

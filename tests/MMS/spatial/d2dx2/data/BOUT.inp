@@ -5,7 +5,7 @@ MXG = 1
 
 MYG = 1  # No guard cells in Y
 
-input = sin(0.5*pi*x)
+input_field = sin(0.5*pi*x)
 solution = -sin(0.5*pi*x) * 0.25*pi*pi
 
 [mesh]

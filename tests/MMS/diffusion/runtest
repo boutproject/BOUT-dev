@@ -15,7 +15,6 @@ from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log
 
-
 build_and_log("MMS diffusion test")
 
 # List of NX values to use

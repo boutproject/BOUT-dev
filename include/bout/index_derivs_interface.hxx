@@ -29,6 +29,8 @@
 #ifndef __INDEX_DERIVS_INTERFACE_HXX__
 #define __INDEX_DERIVS_INTERFACE_HXX__
 
+#include "bout/boutexception.hxx"
+#include "bout/field3d.hxx"
 #include "bout/traits.hxx"
 #include <bout/bout_types.hxx>
 #include <bout/deriv_store.hxx>
@@ -45,7 +47,6 @@ namespace index {
 template <typename T, DIRECTION direction, DERIV derivType>
 T flowDerivative(const T& vel, const T& f, CELL_LOC outloc, const std::string& method,
                  const std::string& region) {
-  AUTO_TRACE();
 
   // Checks
   static_assert(bout::utils::is_Field2D_v<T> || bout::utils::is_Field3D_v<T>,
@@ -110,7 +111,6 @@ T flowDerivative(const T& vel, const T& f, CELL_LOC outloc, const std::string& m
 template <typename T, DIRECTION direction, DERIV derivType>
 T standardDerivative(const T& f, CELL_LOC outloc, const std::string& method,
                      const std::string& region) {
-  AUTO_TRACE();
 
   // Checks
   static_assert(bout::utils::is_Field2D_v<T> || bout::utils::is_Field3D_v<T>,
@@ -150,8 +150,8 @@ T standardDerivative(const T& f, CELL_LOC outloc, const std::string& method,
   }
 
   // Lookup the method
-  auto derivativeMethod = DerivativeStore<T>::getInstance().getStandardDerivative(
-      method, direction, stagger, derivType);
+  auto derivativeMethod =
+      getStore<T>().getStandardDerivative(method, direction, stagger, derivType);
 
   // Create the result field
   T result{emptyFrom(f).setLocation(outloc)};
@@ -174,14 +174,20 @@ T standardDerivative(const T& f, CELL_LOC outloc, const std::string& method,
 template <typename T>
 T DDX(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
       const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   return standardDerivative<T, DIRECTION::X, DERIV::Standard>(f, outloc, method, region);
+}
+
+inline Field3D DDX(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
+                   const std::string& method = "DEFAULT",
+                   const std::string& region = "RGN_NOBNDRY") {
+  return DDX(f.asField3D(), outloc, method, region);
 }
 
 template <typename T>
 T D2DX2(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
         const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   return standardDerivative<T, DIRECTION::X, DERIV::StandardSecond>(f, outloc, method,
                                                                     region);
 }
@@ -189,7 +195,7 @@ T D2DX2(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = 
 template <typename T>
 T D4DX4(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
         const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   return standardDerivative<T, DIRECTION::X, DERIV::StandardFourth>(f, outloc, method,
                                                                     region);
 }
@@ -199,24 +205,33 @@ T D4DX4(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = 
 template <typename T>
 T DDY(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
       const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
-  if (f.hasParallelSlices()) {
+
+  if (f.isFci() or f.hasParallelSlices()) {
     ASSERT1(f.getDirectionY() == YDirectionType::Standard);
+    if (!f.hasParallelSlices()) {
+      throw BoutException(
+          "parallel slices needed for parallel derivatives. Make sure to communicate and "
+          "apply parallel boundary conditions before calling derivative");
+    }
     return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::Standard>(f, outloc,
                                                                           method, region);
-  } else {
-    const bool is_unaligned = (f.getDirectionY() == YDirectionType::Standard);
-    const T f_aligned = is_unaligned ? toFieldAligned(f, "RGN_NOX") : f;
-    T result = standardDerivative<T, DIRECTION::Y, DERIV::Standard>(f_aligned, outloc,
-                                                                    method, region);
-    return is_unaligned ? fromFieldAligned(result, region) : result;
   }
+  const bool is_unaligned = (f.getDirectionY() == YDirectionType::Standard);
+  const T f_aligned = is_unaligned ? toFieldAligned(f, "RGN_NOX") : f;
+  T result = standardDerivative<T, DIRECTION::Y, DERIV::Standard>(f_aligned, outloc,
+                                                                  method, region);
+  return is_unaligned ? fromFieldAligned(result, region) : result;
+}
+inline Field3D DDY(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
+                   const std::string& method = "DEFAULT",
+                   const std::string& region = "RGN_NOBNDRY") {
+  return DDY(f.asField3D(), outloc, method, region);
 }
 
 template <typename T>
 T D2DY2(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
         const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   if (f.hasParallelSlices()) {
     ASSERT1(f.getDirectionY() == YDirectionType::Standard);
     return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::StandardSecond>(
@@ -233,7 +248,7 @@ T D2DY2(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = 
 template <typename T>
 T D4DY4(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
         const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   if (f.hasParallelSlices()) {
     ASSERT1(f.getDirectionY() == YDirectionType::Standard);
     return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::StandardFourth>(
@@ -251,14 +266,20 @@ T D4DY4(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = 
 template <typename T>
 T DDZ(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
       const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   return standardDerivative<T, DIRECTION::Z, DERIV::Standard>(f, outloc, method, region);
+}
+
+inline Field3D DDZ(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
+                   const std::string& method = "DEFAULT",
+                   const std::string& region = "RGN_NOBNDRY") {
+  return DDZ(f.asField3D(), outloc, method, region);
 }
 
 template <typename T>
 T D2DZ2(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
         const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   return standardDerivative<T, DIRECTION::Z, DERIV::StandardSecond>(f, outloc, method,
                                                                     region);
 }
@@ -266,7 +287,7 @@ T D2DZ2(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = 
 template <typename T>
 T D4DZ4(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
         const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   return standardDerivative<T, DIRECTION::Z, DERIV::StandardFourth>(f, outloc, method,
                                                                     region);
 }
@@ -291,14 +312,14 @@ T D4DZ4(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = 
 template <typename T>
 T VDDX(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
        const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   return flowDerivative<T, DIRECTION::X, DERIV::Upwind>(vel, f, outloc, method, region);
 }
 
 template <typename T>
 T FDDX(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
        const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   return flowDerivative<T, DIRECTION::X, DERIV::Flux>(vel, f, outloc, method, region);
 }
 
@@ -307,7 +328,6 @@ T FDDX(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
 template <typename T>
 T VDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
        const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
 
   // Note the following chunk is copy+pasted from flowDerivative
   // above. Not pulled out as a separate function due the number of
@@ -359,11 +379,16 @@ T VDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
     return are_unaligned ? fromFieldAligned(result, region) : result;
   }
 }
+inline Field3D VDDY(const Field3D& v, const Field3DParallel& f,
+                    CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
+                    const std::string& region = "RGN_NOBNDRY") {
+  return VDDY(v, f.asField3D(), outloc, method, region);
+}
 
 template <typename T>
 T FDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
        const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   const bool fHasParallelSlices = (f.hasParallelSlices());
   const bool velHasParallelSlices = (vel.hasParallelSlices());
   if (fHasParallelSlices && velHasParallelSlices) {
@@ -383,20 +408,25 @@ T FDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
     return are_unaligned ? fromFieldAligned(result, region) : result;
   }
 }
+inline Field3D FDDY(const Field3D& v, const Field3DParallel& f,
+                    CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
+                    const std::string& region = "RGN_NOBNDRY") {
+  return FDDY(v, f.asField3D(), outloc, method, region);
+}
 
 ////////////// Z DERIVATIVE /////////////////
 
 template <typename T>
 T VDDZ(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
        const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   return flowDerivative<T, DIRECTION::Z, DERIV::Upwind>(vel, f, outloc, method, region);
 }
 
 template <typename T>
 T FDDZ(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
        const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   return flowDerivative<T, DIRECTION::Z, DERIV::Flux>(vel, f, outloc, method, region);
 }
 

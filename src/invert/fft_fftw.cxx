@@ -27,8 +27,10 @@
 
 #include "bout/build_defines.hxx"
 
+#include <bout/coordinates.hxx>
 #include <bout/fft.hxx>
 #include <bout/globals.hxx>
+#include <bout/mesh.hxx>
 #include <bout/options.hxx>
 #include <bout/unused.hxx>
 
@@ -36,7 +38,6 @@
 #include <bout/constants.hxx>
 #include <bout/openmpwrap.hxx>
 
-#include <cmath>
 #include <fftw3.h>
 
 #if BOUT_USE_OPENMP
@@ -45,6 +46,12 @@
 #else
 #include <bout/boutexception.hxx>
 #endif // BOUT_HAS_FFTW
+
+#if BOUT_CHECK_LEVEL > 0
+#include <bout/boutexception.hxx>
+
+#include <string_view>
+#endif
 
 namespace bout {
 namespace fft {
@@ -527,5 +534,14 @@ Array<BoutReal> irfft(const Array<dcomplex>& in, int length) {
   return out;
 }
 
+#if BOUT_CHECK_LEVEL > 0
+void assertZSerial(const Mesh& mesh, std::string_view name) {
+  if (mesh.getNZPE() != 1) {
+    throw BoutException("{} uses FFTs which are currently incompatible with multiple "
+                        "processors in Z (using {})",
+                        name, mesh.getNZPE());
+  }
+}
+#endif
 } // namespace fft
 } // namespace bout

@@ -1,7 +1,26 @@
-/**************************************************************************
- * Copyright 2018 B.D.Dudson, M. Loiten, J. Omotani
+// clang-format off
+/*!
+ * \file naulin_laplace.cxx
  *
- * Contact: Ben Dudson, benjamin.dudson@york.ac.uk
+ * \brief Iterative solver to handle non-constant-in-z coefficients
+ *
+ * Scheme suggested by Volker Naulin: solve
+ * Delp2(phi[i+1]) + 1/DC(C1*D)*Grad_perp(DC(C2))*Grad_perp(phi[i+1]) + DC(A/D)*phi[i+1]
+ *   = rhs(phi[i]) + 1/DC(C1*D)*Grad_perp(DC(C2))*Grad_perp(phi[i]) + DC(A/D)*phi[i]
+ * using standard FFT-based solver, iterating to include other terms by
+ * evaluating them on rhs using phi from previous iteration.
+ * DC part (i.e. Field2D part) of C1*D, C2 and A/D is kept in the FFT inversion
+ * to improve convergence by including as much as possible in the direct solve
+ * and so that all Neumann boundary conditions can be used at least when
+ * DC(A/D)!=0.
+ *
+ * CHANGELOG
+ * =========
+ *
+ **************************************************************************
+ * Copyright 2018 - 2026 BOUT++ contributors
+ *
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -20,11 +39,16 @@
  *
  */
 
+#include "bout/build_defines.hxx"
+
+#if not BOUT_USE_METRIC_3D
+
 #include <bout/boutexception.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/derivs.hxx>
 #include <bout/difops.hxx>
 #include <bout/globals.hxx>
+#include <bout/invert_laplace.hxx>
 #include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
 
@@ -85,7 +109,7 @@ LaplaceNaulin::LaplaceNaulin(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   ASSERT0(underrelax_recovery >= 1.);
   delp2solver = create(opt->getSection("delp2solver"), location, localmesh);
   std::string delp2type;
-  opt->getSection("delp2solver")->get("type", delp2type, "cyclic");
+  opt->getSection("delp2solver")->get("type", delp2type, LaplaceFactory::default_type);
   // Check delp2solver is using an FFT scheme, otherwise it will not exactly
   // invert Delp2 and we will not converge
   ASSERT0(delp2type == "cyclic" || delp2type == "spt" || delp2type == "tri");
@@ -284,7 +308,7 @@ void LaplaceNaulin::copy_x_boundaries(Field3D& x, const Field3D& x0, Mesh* local
   if (localmesh->firstX()) {
     for (int i = localmesh->xstart - 1; i >= 0; --i) {
       for (int j = localmesh->ystart; j <= localmesh->yend; ++j) {
-        for (int k = 0; k < localmesh->LocalNz; ++k) {
+        for (int k = localmesh->zstart; k <= localmesh->zend; ++k) {
           x(i, j, k) = x0(i, j, k);
         }
       }
@@ -293,7 +317,7 @@ void LaplaceNaulin::copy_x_boundaries(Field3D& x, const Field3D& x0, Mesh* local
   if (localmesh->lastX()) {
     for (int i = localmesh->xend + 1; i < localmesh->LocalNx; ++i) {
       for (int j = localmesh->ystart; j <= localmesh->yend; ++j) {
-        for (int k = 0; k < localmesh->LocalNz; ++k) {
+        for (int k = localmesh->zstart; k <= localmesh->zend; ++k) {
           x(i, j, k) = x0(i, j, k);
         }
       }
@@ -308,3 +332,5 @@ void LaplaceNaulin::outputVars(Options& output_options,
   output_options[fmt::format("{}_mean_underrelax_counts", getPerformanceName())]
       .assignRepeat(naulinsolver_mean_underrelax_counts, time_dimension);
 }
+
+#endif

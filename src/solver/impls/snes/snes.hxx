@@ -4,7 +4,7 @@
  * using PETSc for the SNES interface
  *
  **************************************************************************
- * Copyright 2015-2024 BOUT++ contributors
+ * Copyright 2015-2026 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -35,10 +35,15 @@
 
 class SNESSolver;
 
+#include <vector>
+
 #include "mpi.h"
 
 #include <bout/bout_enum_class.hxx>
 #include <bout/bout_types.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
+#include <bout/petsc_preconditioner.hxx>
 #include <bout/petsclib.hxx>
 
 #include <petsc.h>
@@ -52,12 +57,27 @@ RegisterSolver<SNESSolver> registersolverbeuler("beuler");
 BOUT_ENUM_CLASS(BoutSnesEquationForm, pseudo_transient, rearranged_backward_euler,
                 backward_euler, direct_newton);
 
+BOUT_ENUM_CLASS(BoutPTCStrategy,
+                inverse_residual, ///< dt = pseudo_alpha / residual
+                history_based,    ///< Grow/shrink dt based on residual decrease/increase
+                hybrid); ///< Combine inverse_residual and history_based strategies
+
+BOUT_ENUM_CLASS(BoutSnesTimestep,
+                pid_nonlinear_its,       ///< PID controller on nonlinear iterations
+                threshold_nonlinear_its, ///< Use thresholds on nonlinear iterations
+                residual_ratio,          ///< Use ratio of previous and current residual
+                fixed);                  ///< Fixed timestep (no adaptation)
+
+BOUT_ENUM_CLASS(BoutSnesOutput,
+                fixed_time_interval, ///< Output at fixed time intervals
+                residual_ratio);     ///< When the residual is reduced by a given ratio
+
 /// Uses PETSc's SNES interface to find a steady state solution to a
 /// nonlinear ODE by integrating in time with Backward Euler
 class SNESSolver : public Solver {
 public:
   explicit SNESSolver(Options* opts = nullptr);
-  ~SNESSolver() = default;
+  ~SNESSolver() override = default;
 
   int init() override;
   int run() override;
@@ -67,6 +87,8 @@ public:
   /// time integration this function calculates:
   ///
   ///     f = (x - gamma*G(x)) - rhs
+  ///
+  /// The form depends on equation_form
   ///
   ///
   /// @param[in] x  The state vector
@@ -86,21 +108,114 @@ public:
   /// and update the internal RHS scaling factors
   /// This is called by SNESComputeJacobianScaledColor with the
   /// finite difference approximated Jacobian.
-  PetscErrorCode scaleJacobian(Mat B);
+  PetscErrorCode scaleJacobian(Mat Jac_new);
+
+  /// Save diagnostics to output
+  void outputVars(Options& output_options, bool save_repeat = true) override;
 
 private:
+  PetscErrorCode FDJinitialise();         ///< Finite Difference Jacobian initialise
+  PetscErrorCode FDJpruneJacobian();      ///< Remove small elements from the Jacobian
+  PetscErrorCode FDJrestoreFromPruning(); ///< Restore Jacobian to original pattern
+
+  /// Rescale state (snes_x) so that all quantities are around 1. If
+  /// quantities are near zero then RTOL is used.
+  PetscErrorCode rescale(int& saved_jacobian_lag);
+
+  /// Call the physics model RHS function
+  ///
+  /// @param[in] x       The state vector. Will be scaled if scale_vars=true
+  /// @param[out] f      The vector for the result f(x)
+  /// @param[in] linear  Specifies that the SNES solver is in a linear (KSP) inner loop
+  PetscErrorCode rhs_function(Vec x, Vec f, bool linear);
+
+  BoutSnesOutput output_trigger; ///< Sets when outputs are written
+
+  BoutReal output_residual_ratio; ///< Trigger an output when residual falls by this ratio
+
   BoutReal timestep;     ///< Internal timestep
-  BoutReal dt;           ///< Current timestep used in snes_function
+  BoutReal dt{0.0};      ///< Current timestep used in snes_function.
   BoutReal dt_min_reset; ///< If dt falls below this, reset solve
   BoutReal max_timestep; ///< Maximum timestep
+
+  /// Form of the equation to solve
+  BoutSnesEquationForm equation_form;
 
   std::string snes_type;
   BoutReal atol; ///< Absolute tolerance
   BoutReal rtol; ///< Relative tolerance
   BoutReal stol; ///< Convergence tolerance
+  int maxf; ///< Maximum number of function evaluations allowed in the solver (default: 10000)
 
   int maxits;               ///< Maximum nonlinear iterations
   int lower_its, upper_its; ///< Limits on iterations for timestep adjustment
+
+  int max_snes_failures; ///< Maximum number of consecutive SNES failures before abort.
+
+  BoutReal timestep_factor_on_failure;
+  BoutReal timestep_factor_on_upper_its;
+  BoutReal timestep_factor_on_lower_its;
+
+  // Pseudo-Transient Continuation (PTC) variables
+  // These are used if equation_form = pseudo_transient
+  BoutPTCStrategy pseudo_strategy;  ///< Strategy to use when setting timesteps
+  BoutReal pseudo_alpha;            ///< dt = alpha / residual
+  BoutReal pseudo_alpha_minimum;    ///< Minimum value of alpha
+  BoutReal pseudo_growth_factor;    ///< Timestep increase 1.1 - 1.2
+  BoutReal pseudo_reduction_factor; ///< Timestep decrease 0.5
+  BoutReal pseudo_max_ratio;        ///< Maximum timestep ratio between neighboring cells
+  Vec dt_vec;                       ///< Each quantity can have its own timestep
+
+  /// Adjust the global timestep
+  BoutReal updateGlobalTimestep(BoutReal timestep, int nl_its,
+                                BoutReal recent_failure_rate, BoutReal max_dt);
+
+  /// Calculate per-cell and global residuals
+  /// given an input system state `x`
+  PetscErrorCode updateResiduals(Vec x);
+  Field3D local_residual{0.0};         ///< Residual of Field3D quantities in each cell
+  Field2D local_residual_2d{0.0};      ///< Residual of Field2D quantities in each cell
+  BoutReal global_residual{0.0};       ///< Global residual measure
+  Field3D local_residual_prev{0.0};    ///< Previous Field3D local residuals
+  Field2D local_residual_2d_prev{0.0}; ///< Previous Field2D local residuals
+  BoutReal global_residual_prev{0.0};  ///< Previous global residual
+
+  /// Initialize the Pseudo-Transient Continuation method
+  PetscErrorCode initPseudoTimestepping();
+  /// Update dt_vec based on residuals
+  PetscErrorCode updatePseudoTimestepping();
+  /// Decide the next pseudo-timestep. Called by updatePseudoTimestepping
+  BoutReal updatePseudoTimestep(BoutReal previous_timestep, BoutReal previous_residual,
+                                BoutReal current_residual);
+  BoutReal updatePseudoTimestep_inverse_residual(BoutReal previous_timestep,
+                                                 BoutReal current_residual);
+  BoutReal updatePseudoTimestep_history_based(BoutReal previous_timestep,
+                                              BoutReal previous_residual,
+                                              BoutReal current_residual) const;
+
+  Field3D pseudo_timestep;
+
+  /// Timestep controller method
+  BoutSnesTimestep timestep_control;
+
+  /// When using BoutSnesTimestep::residual_ratio
+  BoutReal timestep_factor; ///< Multiply timestep by this each step
+
+  /// Target number of nonlinear iterations for the PID controller.
+  /// This can be non-integer to push timestep more aggressively
+  BoutReal target_its;
+
+  BoutReal kP; ///< (0.6 - 0.8) Proportional parameter (main response to current step)
+  BoutReal kI; ///< (0.2 - 0.4) Integral parameter (smooths history of changes)
+  BoutReal kD; ///< (0.1 - 0.3) Derivative (dampens oscillation - optional)
+  bool pid_consider_failures; ///< Reduce timestep increases if recent solves have failed
+  BoutReal recent_failure_rate; ///< Rolling average of recent failure rate
+  BoutReal last_failure_weight; ///< 1 / number of recent solves
+
+  BoutReal nl_its_prev;
+  BoutReal nl_its_prev2;
+
+  BoutReal pid(BoutReal timestep, int nl_its, BoutReal max_dt); ///< Updates the timestep
 
   bool diagnose;          ///< Output additional diagnostics
   bool diagnose_failures; ///< Print diagnostics on SNES failures
@@ -108,24 +223,25 @@ private:
   int nlocal; ///< Number of variables on local processor
   int neq;    ///< Number of variables in total
 
-  /// Form of the equation to solve
-  BoutSnesEquationForm equation_form;
-
   PetscLib lib; ///< Handles initialising, finalising PETSc
   Vec snes_f;   ///< Used by SNES to store function
-  Vec snes_x;   ///< Result of SNES
-  Vec x0;       ///< Solution at start of current timestep
-  Vec delta_x;  ///< Change in solution
+  Vec deriv; ///< Time derivative; only used if diagnose = true, otherwise will store in snes_f
+  Vec snes_x;  ///< Result of SNES
+  Vec x0;      ///< Solution at start of current timestep
+  Vec f0;      ///< Residual at start of current timestep (only stored if diagnose = true)
+  Vec delta_x; ///< Change in solution
+  Vec output_x; ///< Solution to output. Used if interpolating.
+  Vec output_f; ///< Residual to output, if diagnose == true. Used if interpolating.
 
   bool predictor;       ///< Use linear predictor?
   Vec x1;               ///< Previous solution
   BoutReal time1{-1.0}; ///< Time of previous solution
 
-  SNES snes;                ///< SNES context
-  Mat Jmf;                  ///< Matrix Free Jacobian
-  Mat Jfd;                  ///< Finite Difference Jacobian
-  MatFDColoring fdcoloring{nullptr}; ///< Matrix coloring context
-                                     ///< Jacobian evaluation
+  SNES snes; ///< SNES context
+  Mat Jmf;   ///< Matrix Free Jacobian
+  Mat Jfd;   ///< Finite Difference Jacobian (brute-force, when not using coloring)
+  PetscPreconditioner
+      petsc_preconditioner; ///< Coloring-based FD Jacobian + MatFDColoring
 
   bool use_precon;                ///< Use preconditioner
   std::string ksp_type;           ///< Linear solver type
@@ -135,10 +251,11 @@ private:
   std::string pc_hypre_type;      ///< Hypre preconditioner type
   std::string line_search_type;   ///< Line search type
 
-  bool matrix_free;               ///< Use matrix free Jacobian
-  bool matrix_free_operator;      ///< Use matrix free Jacobian in the operator?
-  int lag_jacobian;               ///< Re-use Jacobian
-  bool use_coloring;              ///< Use matrix coloring
+  bool matrix_free;          ///< Use matrix free Jacobian
+  bool matrix_free_operator; ///< Use matrix free Jacobian in the operator?
+  int lag_jacobian;          ///< Re-use Jacobian
+  bool jacobian_persists; ///< Re-use Jacobian and preconditioner across nonlinear solves
+  bool use_coloring;      ///< Use matrix coloring
 
   bool jacobian_recalculated; ///< Flag set when Jacobian is recalculated
   bool prune_jacobian;        ///< Remove small elements in the Jacobian?
@@ -146,15 +263,25 @@ private:
   BoutReal prune_fraction;    ///< Prune if fraction of small elements is larger than this
   bool jacobian_pruned{false}; ///< Has the Jacobian been pruned?
   Mat Jfd_original;            ///< Used to reset the Jacobian if over-pruned
-  void updateColoring();       ///< Updates the coloring using Jfd
 
   bool scale_rhs;          ///< Scale time derivatives?
   Vec rhs_scaling_factors; ///< Factors to multiply RHS function
   Vec jac_row_inv_norms;   ///< 1 / Norm of the rows of the Jacobian
 
-  bool scale_vars;         ///< Scale individual variables?
+  bool scale_vars;    ///< Scale individual variables?
+  int rescale_period; ///< How many time-steps before rescaling variables
+  BoutReal
+      rescale_threshold; //< How much change in the state there should be before rescaling
   Vec var_scaling_factors; ///< Factors to multiply variables when passing to user
   Vec scaled_x;            ///< The values passed to the user RHS
+
+  bool asinh_vars; ///< Evolve asinh(vars) to compress magnitudes while preserving signs
+  const BoutReal asinh_scale = 1e-5; // Scale below which asinh response becomes ~linear
+
+  std::vector<Field2D>
+      resid_2d; ///< Storage for residuals of SNES solve, unpacked from snes_f
+  std::vector<Field3D>
+      resid_3d; ///< Storage for residuals of SNES solve, unpacked from snes_f
 };
 
 #else

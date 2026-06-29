@@ -4,9 +4,9 @@
  * NOTE: Only one solver can currently be compiled in
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -28,8 +28,10 @@
 #ifndef BOUT_SUNDIAL_SOLVER_H
 #define BOUT_SUNDIAL_SOLVER_H
 
+#include "bout/bout_enum_class.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/solver.hxx"
+#include <memory>
 
 #if not BOUT_HAS_CVODE
 
@@ -40,9 +42,18 @@ RegisterUnavailableSolver
 
 #else
 
+#include "../../sundials_nvector_interface.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/region.hxx"
 #include "bout/sundials_backports.hxx"
+
+#if BOUT_HAS_PETSC
+#include "bout/petsc_preconditioner.hxx"
+#include "bout/petsclib.hxx"
+
+#include <petscksp.h>
+#include <petscvec.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -53,6 +64,16 @@ class Options;
 namespace {
 RegisterSolver<CvodeSolver> registersolvercvode("cvode");
 }
+
+// Preconditioner selection for CVODE.
+// Note: String comparisons are case-insensitive so "Auto" avoids conflict with keyword
+BOUT_ENUM_CLASS(CvodePreconMethod, none, Auto, user, petsc, bbd);
+
+#if SUNDIALS_VERSION_AT_LEAST(6, 0, 0)
+using CvodeBool = sunbooleantype;
+#else
+using CvodeBool = booleantype;
+#endif
 
 class CvodeSolver : public Solver {
 public:
@@ -68,12 +89,23 @@ public:
   void resetInternalFields() override;
 
   // These functions are used internally (but need to be public)
-  void rhs(BoutReal t, BoutReal* udata, BoutReal* dudata, bool linear);
-  void pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udata, BoutReal* rvec,
-           BoutReal* zvec);
-  void jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata);
+  void rhs(BoutReal t, N_Vector u, N_Vector du, bool linear);
+  /// This version will copy data to/from a linear vector into BOUT++ fields
+  void rhs(BoutReal t, BoutReal* u, BoutReal* du, bool linear);
+  void pre(BoutReal t, BoutReal gamma, BoutReal delta, N_Vector u, N_Vector rvec,
+           N_Vector zvec);
+  void jac(BoutReal t, N_Vector y, N_Vector v, N_Vector Jv);
 
 private:
+#if BOUT_HAS_PETSC
+  static PetscErrorCode petscFormFunction(void* dummy, Vec x, Vec f, void* ctx);
+  static int petscPSetup(BoutReal t, N_Vector yy, N_Vector yp, CvodeBool jok,
+                         CvodeBool* jcurPtr, BoutReal gamma, void* user_data);
+  static int petscPSolve(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec,
+                         N_Vector zvec, BoutReal gamma, BoutReal delta, int lr,
+                         void* user_data);
+#endif
+
   BoutReal hcur; //< Current internal timestep
 
   bool diagnose{false}; //< Output additional diagnostics
@@ -111,17 +143,21 @@ private:
   /// reducing timestep. CVODE default (used if this option is
   /// negative) is 3
   int max_nonlinear_iterations;
+  /// Max number of steps between calls to linear solver setup
+  long int lsetup_frequency;
+  /// Max number of steps between Jacobian/preconditioner evaluations
+  long int jac_eval_frequency;
   /// Use CVODE function CVodeSetConstraints to constrain variables -
   /// the constraint to be applied is set by the positivity_constraint
   /// option in the subsection for each variable
   bool apply_positivity_constraints;
   /// Maximum number of linear iterations
   int maxl;
-  /// Use preconditioner?
-  bool use_precon;
   /// Use right preconditioner? Otherwise use left.
   bool rightprec;
   bool use_jacobian;
+  CvodePreconMethod precon_method;
+  NVectorType nvector_type;
   BoutReal cvode_nonlinear_convergence_coef;
   BoutReal cvode_linear_convergence_coef;
 
@@ -139,13 +175,12 @@ private:
 
   bool cvode_initialised{false};
 
-  void set_vector_option_values(BoutReal* option_data, std::vector<BoutReal>& f2dtols,
-                                std::vector<BoutReal>& f3dtols);
-  void loop_vector_option_values_op(Ind2D i2d, BoutReal* option_data, int& p,
-                                    std::vector<BoutReal>& f2dtols,
-                                    std::vector<BoutReal>& f3dtols, bool bndry);
   template <class FieldType>
   std::vector<BoutReal> create_constraints(const std::vector<VarStr<FieldType>>& fields);
+
+  SundialsNVectorInterface nvector_backend() {
+    return SundialsNVectorInterface(*this, suncontext, nvector_type);
+  }
 
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};
@@ -153,6 +188,21 @@ private:
   SUNNonlinearSolver nonlinear_solver{nullptr};
   /// Context for SUNDIALS memory allocations
   sundials::Context suncontext;
+
+#if BOUT_HAS_PETSC
+  // PETSc-coloring-based preconditioning for CVODE
+  std::unique_ptr<PetscLib> petsc_lib;
+  PetscPreconditioner petsc_preconditioner;
+  KSP petsc_ksp{nullptr};
+  Vec petsc_r{nullptr};
+  Vec petsc_z{nullptr};
+  Vec petsc_x{nullptr};
+  Vec petsc_f{nullptr};
+  PetscInt petsc_global_N{0};
+  BoutReal petsc_gamma{0.0};
+  BoutReal petsc_t{0.0};
+  std::vector<BoutReal> petsc_rhs_tmp;
+#endif
 };
 
 #endif // BOUT_HAS_CVODE

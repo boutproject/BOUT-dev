@@ -12,7 +12,7 @@
 * options and allows access to all sub-sections
 *
 **************************************************************************
-* Copyright 2010-2024 BOUT++ contributors
+* Copyright 2010-2025 BOUT++ contributors
 *
 * Contact: Ben Dudson, dudson2@llnl.gov
 *
@@ -39,6 +39,7 @@ class Options;
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+#include "bout/array.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
@@ -51,6 +52,7 @@ class Options;
 #include "bout/utils.hxx"
 
 #include <fmt/core.h>
+#include <fmt/format.h>
 
 #include <cmath>
 #include <functional>
@@ -72,19 +74,19 @@ class Options;
  * which can be used as a map.
  *
  *     Options options;
- *     
+ *
  *     // Set values
  *     options["key"] = 1.0;
  *
  *     // Get values. Throws BoutException if not found
- *     int val = options["key"]; // Sets val to 1 
+ *     int val = options["key"]; // Sets val to 1
  *
  *     // Return as specified type. Throws BoutException if not found
  *     BoutReal var = options["key"].as<BoutReal>();
  *
  *     // A default value can be used if key is not found
  *     BoutReal value = options["pi"].withDefault(3.14);
- *    
+ *
  *     // Assign value with source label. Throws if already has a value from same source
  *     options["newkey"].assign(1.0, "some source");
  *
@@ -92,7 +94,7 @@ class Options;
  *     options["newkey"].force(2.0, "some source");
  *
  * A legacy interface is also supported:
- * 
+ *
  *     options.set("key", 1.0, "code"); // Sets a key from source "code"
  *
  *     int val;
@@ -117,9 +119,9 @@ class Options;
  *
  * Each Options object can also contain any number of sections, which are
  * themselves Options objects.
- * 
+ *
  *     Options &section = options["section"];
- * 
+ *
  * which can be nested:
  *
  *     options["section"]["subsection"]["value"] = 3;
@@ -132,13 +134,13 @@ class Options;
  *
  * e.g.
  *     options->getSection("section")->getSection("subsection")->set("value", 3);
- * 
+ *
  * Options also know about their parents:
  *
  *     Options &parent = section.parent();
- *     
+ *
  * or
- * 
+ *
  *     Options *parent = section->getParent();
  *
  * Root options object
@@ -148,8 +150,8 @@ class Options;
  * there is a global singleton Options object which can be accessed with a static function
  *
  *    Options &root = Options::root();
- * 
- * or 
+ *
+ * or
  *
  *    Options *root = Options::getRoot();
  *
@@ -191,7 +193,7 @@ public:
   /// @param[in] parent        Parent object
   /// @param[in] sectionName   Name of the section, including path from the root
   Options(Options* parent_instance, std::string full_name)
-      : parent_instance(parent_instance), full_name(std::move(full_name)){};
+      : parent_instance(parent_instance), full_name(std::move(full_name)) {};
 
   /// Initialise with a value
   /// These enable Options to be constructed using initializer lists
@@ -203,7 +205,16 @@ public:
   /// The type used to store values
   using ValueType =
       bout::utils::variant<bool, int, BoutReal, std::string, Field2D, Field3D, FieldPerp,
-                           Array<BoutReal>, Matrix<BoutReal>, Tensor<BoutReal>>;
+                           Array<BoutReal>, Array<int>, Matrix<BoutReal>, Matrix<int>,
+                           Tensor<BoutReal>, Tensor<int>>;
+
+  /// Methods to iterate over `Options`
+  auto begin() { return std::begin(children); }
+  auto end() { return std::end(children); }
+  auto begin() const { return std::begin(children); }
+  auto end() const { return std::end(children); }
+  auto cbegin() const { return std::cbegin(children); }
+  auto cend() const { return std::cend(children); }
 
   /// A tree representation with leaves containing ValueType.
   /// Used to construct Options from initializer lists.
@@ -430,6 +441,13 @@ public:
     return inputvalue;
   }
 
+  template <typename ResT, typename L, typename R, typename Func>
+  ResT operator=(const BinaryExpr<ResT, L, R, Func>& expr) {
+    ResT value{expr};
+    assign<ResT>(value);
+    return value;
+  }
+
   /// Assign a value to the option.
   /// This will throw an exception if already has a value
   ///
@@ -616,8 +634,8 @@ public:
       // Option not found. Copy the value from the default.
       this->_set_no_check(def.value, DEFAULT_SOURCE);
 
-      output_info << _("\tOption ") << full_name << " = " << def.full_name << " ("
-                  << DEFAULT_SOURCE << ")\n";
+      output_info.write("{}{} = {}({})\n", _("\tOption "), full_name, def.full_name,
+                        DEFAULT_SOURCE);
     } else {
       // Check if this was previously set as a default option
       if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
@@ -901,8 +919,8 @@ private:
                       << ")\n";
         } else {
           throw BoutException(
-              _("Options: Setting a value from same source ({:s}) to new value "
-                "'{:s}' - old value was '{:s}'."),
+              _f("Options: Setting a value from same source ({:s}) to new value "
+                 "'{:s}' - old value was '{:s}'."),
               source, toString(val), bout::utils::variantToString(value));
         }
       }
@@ -955,9 +973,15 @@ Options& Options::assign<>(FieldPerp val, std::string source);
 template <>
 Options& Options::assign<>(Array<BoutReal> val, std::string source);
 template <>
+Options& Options::assign<>(Array<int> val, std::string source);
+template <>
 Options& Options::assign<>(Matrix<BoutReal> val, std::string source);
 template <>
+Options& Options::assign<>(Matrix<int> val, std::string source);
+template <>
 Options& Options::assign<>(Tensor<BoutReal> val, std::string source);
+template <>
+Options& Options::assign<>(Tensor<int> val, std::string source);
 
 /// Specialised similar comparison methods
 template <>
@@ -967,28 +991,37 @@ inline bool Options::similar<BoutReal>(BoutReal lhs, BoutReal rhs) const {
 
 /// Specialised as routines
 template <>
-std::string Options::as<std::string>(const std::string& similar_to) const;
+auto Options::as(const std::string& similar_to) const -> std::string;
 template <>
-int Options::as<int>(const int& similar_to) const;
+auto Options::as(const int& similar_to) const -> int;
 template <>
-BoutReal Options::as<BoutReal>(const BoutReal& similar_to) const;
+auto Options::as(const BoutReal& similar_to) const -> BoutReal;
 template <>
-bool Options::as<bool>(const bool& similar_to) const;
+auto Options::as(const bool& similar_to) const -> bool;
 template <>
-Field2D Options::as<Field2D>(const Field2D& similar_to) const;
+auto Options::as(const Field2D& similar_to) const -> Field2D;
 template <>
-Field3D Options::as<Field3D>(const Field3D& similar_to) const;
+auto Options::as(const Field3D& similar_to) const -> Field3D;
 template <>
-FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const;
+auto Options::as(const FieldPerp& similar_to) const -> FieldPerp;
 template <>
-Array<BoutReal> Options::as<Array<BoutReal>>(const Array<BoutReal>& similar_to) const;
+auto Options::as(const Array<BoutReal>& similar_to) const -> Array<BoutReal>;
 template <>
-Matrix<BoutReal> Options::as<Matrix<BoutReal>>(const Matrix<BoutReal>& similar_to) const;
+auto Options::as(const Array<int>& similar_to) const -> Array<int>;
 template <>
-Tensor<BoutReal> Options::as<Tensor<BoutReal>>(const Tensor<BoutReal>& similar_to) const;
+auto Options::as(const Matrix<BoutReal>& similar_to) const -> Matrix<BoutReal>;
+template <>
+auto Options::as(const Matrix<int>& similar_to) const -> Matrix<int>;
+template <>
+auto Options::as(const Tensor<BoutReal>& similar_to) const -> Tensor<BoutReal>;
+template <>
+auto Options::as(const Tensor<int>& similar_to) const -> Tensor<int>;
 
 /// Convert \p value to string
 std::string toString(const Options& value);
+
+/// Save the parallel fields
+void saveParallel(Options& opt, const std::string& name, const Field3D& tosave);
 
 /// Output a stringified \p value to a stream
 ///
@@ -1021,7 +1054,40 @@ namespace details {
 /// so that we can put the function definitions in the .cxx file,
 /// avoiding lengthy recompilation if we change it
 struct OptionsFormatterBase {
-  auto parse(fmt::format_parse_context& ctx) -> fmt::format_parse_context::iterator;
+  constexpr auto parse(fmt::format_parse_context& ctx) {
+    const auto* it = ctx.begin();
+    const auto* const end = ctx.end();
+
+    while (it != end and *it != '}') {
+      switch (*it) {
+      case 'd':
+        docstrings = true;
+        ++it;
+        break;
+      case 'i':
+        inline_section_names = true;
+        ++it;
+        break;
+      case 'k':
+        key_only = true;
+        ++it;
+        break;
+      case 's':
+        source = true;
+        ++it;
+        break;
+      case 'u':
+        unused = true;
+        ++it;
+        break;
+      default:
+        throw fmt::format_error("invalid format for 'Options'");
+      }
+    }
+
+    return it;
+  }
+
   auto format(const Options& options, fmt::format_context& ctx) const
       -> fmt::format_context::iterator;
 
@@ -1038,8 +1104,6 @@ private:
   bool key_only{false};
   /// Include the 'source' attribute, if present
   bool source{false};
-  /// Format string to passed down to subsections
-  std::string format_string;
 };
 } // namespace details
 } // namespace bout

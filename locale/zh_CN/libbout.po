@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BOUT++ 4.2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-09-12 09:17+0100\n"
+"POT-Creation-Date: 2025-08-13 23:37+0100\n"
 "PO-Revision-Date: 2018-10-22 22:56+0100\n"
 "Last-Translator:  <benjamin.dudson@york.ac.uk>\n"
 "Language-Team: Chinese (simplified)\n"
@@ -16,109 +16,131 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:191
+#: ../src/mesh/impls/bout/boutmesh.cxx:182
 #, c++-format
 msgid ""
 "\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must be a multiple "
 "of MYSUB ({:d})\n"
 msgstr ""
+"\t -> Core 区域 jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) 必须是 MYSUB ({:d}) 的整数倍\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:224
+#: ../src/mesh/impls/bout/boutmesh.cxx:215
 #, c++-format
 msgid ""
 "\t -> Core region jyseps2_2-jyseps1_1 ({:d}-{:d} = {:d}) must be a multiple "
 "of MYSUB ({:d})\n"
 msgstr ""
+"\t -> Core 区域 jyseps2_2-jyseps1_1 ({:d}-{:d} = {:d}) 必须是 MYSUB ({:d}) 的整数倍\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:199
+#: ../src/mesh/impls/bout/boutmesh.cxx:190
 #, c++-format
 msgid ""
 "\t -> Core region jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) must be a multiple "
 "of MYSUB ({:d})\n"
 msgstr ""
+"\t -> Core 区域 jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) 必须是 MYSUB ({:d}) 的整数倍\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:309
+#: ../src/mesh/impls/bout/boutmesh.cxx:300
 msgid "\t -> Good value\n"
 msgstr ""
+"\t -> 有效值\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:180
+#: ../src/mesh/impls/bout/boutmesh.cxx:171
 #, c++-format
 msgid ""
 "\t -> Leg region jyseps1_1+1 ({:d}) must be a multiple of MYSUB ({:d})\n"
 msgstr ""
+"\t -> Leg 区域 jyseps1_1+1 ({:d}) 必须是 MYSUB ({:d}) 的整数倍\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:215
+#: ../src/mesh/impls/bout/boutmesh.cxx:206
 #, c++-format
 msgid ""
 "\t -> leg region jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) must be a "
 "multiple of MYSUB ({:d})\n"
 msgstr ""
+"\t -> leg 区域 jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) 必须是 MYSUB ({:d}) 的整数倍\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:232
+#: ../src/mesh/impls/bout/boutmesh.cxx:223
 #, c++-format
 msgid ""
 "\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a multiple of "
 "MYSUB ({:d})\n"
 msgstr ""
+"\t -> leg 区域 ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) 必须是 MYSUB ({:d}) 的整数倍\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:208
+#: ../src/mesh/impls/bout/boutmesh.cxx:199
 #, c++-format
 msgid ""
 "\t -> leg region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must be a "
 "multiple of MYSUB ({:d})\n"
 msgstr ""
+"\t -> leg 区域 ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) 必须是 MYSUB ({:d}) 的整数倍\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:175
+#: ../src/mesh/impls/bout/boutmesh.cxx:166
 #, c++-format
 msgid "\t -> ny/NYPE ({:d}/{:d} = {:d}) must be >= MYG ({:d})\n"
 msgstr ""
+"\t -> ny/NYPE ({:d}/{:d} = {:d}) 必须 >= MYG ({:d})\n"
 
 #: ../src/bout++.cxx:575
 #, c++-format
+msgid "\tADIOS2 support {}\n"
+msgstr ""
+"\tADIOS2 支持 {}\n"
+
+#: ../src/bout++.cxx:583
+#, c++-format
 msgid "\tBacktrace in exceptions {}\n"
 msgstr ""
+"\t异常中的回溯 {}\n"
 
 #. Loop over all possibilities
 #. Processors divide equally
 #. Mesh in X divides equally
 #. Mesh in Y divides equally
-#: ../src/mesh/impls/bout/boutmesh.cxx:297
+#: ../src/mesh/impls/bout/boutmesh.cxx:288
 #, c++-format
 msgid "\tCandidate value: {:d}\n"
 msgstr ""
+"\t候选值：{:d}\n"
 
-#: ../src/bout++.cxx:576
+#: ../src/bout++.cxx:584
 #, c++-format
 msgid "\tColour in logs {}\n"
 msgstr ""
+"\t日志着色 {}\n"
 
-#: ../src/bout++.cxx:594
+#: ../src/bout++.cxx:599
 msgid "\tCommand line options for this run : "
-msgstr ""
+msgstr "\t本次运行的命令行选项："
 
 #. The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
 #. which could cause problems (e.g. terminate strings).
-#: ../src/bout++.cxx:590
+#: ../src/bout++.cxx:595
 #, c++-format
 msgid "\tCompiled with flags : {:s}\n"
 msgstr ""
+"\t编译标志：{:s}\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:324
+#: ../src/mesh/impls/bout/boutmesh.cxx:315
 #, c++-format
 msgid ""
 "\tDomain split (NXPE={:d}, NYPE={:d}) into domains (localNx={:d}, "
 "localNy={:d})\n"
 msgstr ""
+"\t域已拆分为 (NXPE={:d}, NYPE={:d})，局部域为 (localNx={:d}, localNy={:d})\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:364
+#: ../src/mesh/impls/bout/boutmesh.cxx:357
 #, c++-format
 msgid "\tERROR: Cannot split {:d} Y points equally between {:d} processors\n"
 msgstr ""
+"\t错误：无法将 {:d} 个 Y 点平均分给 {:d} 个处理器\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:372
+#: ../src/mesh/impls/bout/boutmesh.cxx:365
 #, c++-format
 msgid "\tERROR: Cannot split {:d} Z points equally between {:d} processors\n"
 msgstr ""
+"\t错误：无法将 {:d} 个 Z 点平均分给 {:d} 个处理器\n"
 
 #: ../src/sys/options/options_ini.cxx:200
 #, c++-format
@@ -126,39 +148,46 @@ msgid ""
 "\tEmpty key\n"
 "\tLine: {:s}"
 msgstr ""
+"\t空键\n"
+"\t行：{:s}"
 
 #: ../src/sys/optionsreader.cxx:127
 #, c++-format
 msgid "\tEmpty key or value in command line '{:s}'\n"
 msgstr ""
+"\t命令行中存在空键或空值 '{:s}'\n"
 
-#: ../src/bout++.cxx:582
+#: ../src/bout++.cxx:587
 #, c++-format
 msgid "\tExtra debug output {}\n"
 msgstr ""
+"\t额外调试输出 {}\n"
 
-#: ../src/bout++.cxx:561
+#: ../src/bout++.cxx:568
 #, c++-format
 msgid "\tFFT support {}\n"
 msgstr ""
+"\tFFT 支持 {}\n"
 
-#: ../src/bout++.cxx:585
+#: ../src/bout++.cxx:590
 #, c++-format
 msgid "\tField name tracking {}\n"
 msgstr ""
+"\t字段名跟踪 {}\n"
 
-#: ../src/bout++.cxx:583
+#: ../src/bout++.cxx:588
 #, c++-format
 msgid "\tFloating-point exceptions {}\n"
 msgstr ""
+"\t浮点异常 {}\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:440
+#: ../src/mesh/impls/bout/boutmesh.cxx:476
 msgid "\tGrid size: "
-msgstr ""
+msgstr "\t网格大小："
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:463
+#: ../src/mesh/impls/bout/boutmesh.cxx:499
 msgid "\tGuard cells (x,y,z): "
-msgstr ""
+msgstr "\t保护单元 (x,y,z)："
 
 #: ../src/sys/options/options_ini.cxx:204
 #, c++-format
@@ -166,139 +195,159 @@ msgid ""
 "\tKey must not contain ':' character\n"
 "\tLine: {:s}"
 msgstr ""
+"\t键中不能包含字符 ':'\n"
+"\t行：{:s}"
 
-#: ../src/bout++.cxx:563
+#: ../src/bout++.cxx:570
 #, c++-format
 msgid "\tLAPACK support {}\n"
 msgstr ""
+"\tLAPACK 支持 {}\n"
 
-#: ../src/bout++.cxx:586
+#: ../src/bout++.cxx:591
 #, c++-format
 msgid "\tMessage stack {}\n"
 msgstr ""
+"\t消息栈 {}\n"
 
-#: ../src/bout++.cxx:560
+#: ../src/bout++.cxx:567
 #, c++-format
 msgid "\tMetrics mode is {}\n"
 msgstr ""
+"\t度量模式为 {}\n"
 
 #: ../src/sys/optionsreader.cxx:111
 #, c++-format
 msgid "\tMultiple '=' in command-line argument '{:s}'\n"
 msgstr ""
+"\t命令行参数 '{:s}' 中包含多个 '='\n"
 
-#: ../src/bout++.cxx:562
+#: ../src/bout++.cxx:569
 #, c++-format
 msgid "\tNatural language support {}\n"
 msgstr ""
+"\t自然语言支持 {}\n"
 
-#: ../src/bout++.cxx:567
+#: ../src/bout++.cxx:574
 #, c++-format
 msgid "\tNetCDF support {}{}\n"
 msgstr ""
+"\tNetCDF 支持 {}{}\n"
 
-#: ../src/bout++.cxx:577
+#: ../src/bout++.cxx:585
 #, c++-format
-msgid "\tOpenMP parallelisation {}"
+msgid "\tOpenMP parallelisation {}, using {} threads\n"
 msgstr ""
+"\tOpenMP 并行化 {}，使用 {} 个线程\n"
 
 #. Mark the option as used
 #. Option not found
-#: ../src/sys/options.cxx:311 ../src/sys/options.cxx:380
-#: ../src/sys/options.cxx:415 ../src/sys/options.cxx:457
-#: ../src/sys/options.cxx:717 ../src/sys/options.cxx:744
-#: ../src/sys/options.cxx:771 ../include/bout/options.hxx:516
-#: ../include/bout/options.hxx:549 ../include/bout/options.hxx:573
-#: ../include/bout/options.hxx:820
+#: ../include/bout/options.hxx:586 ../include/bout/options.hxx:619
+#: ../include/bout/options.hxx:643 ../include/bout/options.hxx:896
 msgid "\tOption "
 msgstr "\t选项 "
 
-#: ../src/sys/options.cxx:447
+#: ../src/sys/options.cxx:369
 #, c++-format
-msgid "\tOption '{:s}': Boolean expected. Got '{:s}'\n"
-msgstr ""
+msgid "\tOption {} = {}"
+msgstr "\t选项 {} = {}"
 
 #: ../src/sys/options/options_ini.cxx:70
 #, c++-format
 msgid "\tOptions file '{:s}' not found\n"
 msgstr ""
+"\t未找到选项文件 '{:s}'\n"
 
-#: ../src/bout++.cxx:568
+#: ../src/bout++.cxx:576
 #, c++-format
 msgid "\tPETSc support {}\n"
 msgstr ""
+"\tPETSc 支持 {}\n"
 
-#: ../src/bout++.cxx:571
+#: ../src/bout++.cxx:579
 #, c++-format
 msgid "\tPVODE support {}\n"
 msgstr ""
+"\tPVODE 支持 {}\n"
 
-#: ../src/bout++.cxx:557
+#: ../src/bout++.cxx:564
 msgid "\tParallel NetCDF support disabled\n"
 msgstr ""
+"\t并行 NetCDF 支持已禁用\n"
 
-#: ../src/bout++.cxx:555
+#: ../src/bout++.cxx:562
 msgid "\tParallel NetCDF support enabled\n"
 msgstr ""
+"\t并行 NetCDF 支持已启用\n"
 
-#: ../src/bout++.cxx:569
+#: ../src/bout++.cxx:577
 #, c++-format
 msgid "\tPretty function name support {}\n"
 msgstr ""
+"\t详细函数名支持 {}\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:437
+#: ../src/mesh/impls/bout/boutmesh.cxx:473
 msgid "\tRead nz from input grid file\n"
 msgstr ""
+"\t已从输入网格文件读取 nz\n"
 
-#: ../src/mesh/mesh.cxx:238
+#: ../src/mesh/mesh.cxx:249
 msgid "\tReading contravariant vector "
-msgstr ""
+msgstr "\t正在读取逆变向量 "
 
-#: ../src/mesh/mesh.cxx:231 ../src/mesh/mesh.cxx:252
+#: ../src/mesh/mesh.cxx:242 ../src/mesh/mesh.cxx:263
 msgid "\tReading covariant vector "
-msgstr ""
+msgstr "\t正在读取协变向量 "
 
-#: ../src/bout++.cxx:548
+#: ../src/bout++.cxx:555
 #, c++-format
 msgid "\tRuntime error checking {}"
-msgstr ""
+msgstr "\t运行时错误检查 {}"
 
-#: ../src/bout++.cxx:573
+#: ../src/bout++.cxx:581
 #, c++-format
 msgid "\tSLEPc support {}\n"
 msgstr ""
+"\tSLEPc 支持 {}\n"
 
-#: ../src/bout++.cxx:574
+#: ../src/bout++.cxx:582
 #, c++-format
 msgid "\tSUNDIALS support {}\n"
 msgstr ""
+"\tSUNDIALS 支持 {}\n"
 
-#: ../src/bout++.cxx:572
+#: ../src/bout++.cxx:580
 #, c++-format
 msgid "\tScore-P support {}\n"
 msgstr ""
+"\tScore-P 支持 {}\n"
 
-#: ../src/bout++.cxx:584
-#, fuzzy, c++-format
+#: ../src/bout++.cxx:589
+#, c++-format
 msgid "\tSignal handling support {}\n"
-msgstr "\t测试关掉\n"
+msgstr ""
+"\t信号处理支持 {}\n"
 
 #: ../src/solver/impls/split-rk/split-rk.cxx:76
 #, c++-format
 msgid "\tUsing a timestep {:e}\n"
 msgstr ""
+"\t使用时间步长 {:e}\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:577
+#: ../src/mesh/impls/bout/boutmesh.cxx:613
 msgid "\tdone\n"
 msgstr ""
+"\t完成\n"
 
 #: ../src/solver/impls/split-rk/split-rk.cxx:41
 msgid ""
 "\n"
 "\tSplit Runge-Kutta-Legendre and SSP-RK3 solver\n"
 msgstr ""
+"\n"
+"\tSplit Runge-Kutta-Legendre 与 SSP-RK3 求解器\n"
 
-#: ../src/bout++.cxx:371
+#: ../src/bout++.cxx:378
 msgid ""
 "\n"
 "  -d <data directory>\t\tLook in <data directory> for input/output files\n"
@@ -308,37 +357,47 @@ msgid ""
 "  -v, --verbose\t\t\tIncrease verbosity\n"
 "  -q, --quiet\t\t\tDecrease verbosity\n"
 msgstr ""
+"\n"
+"  -d <数据目录>\t\t在 <数据目录> 中查找输入/输出文件\n"
+"  -f <选项文件名>\t\t使用 <选项文件名> 中给出的 OPTIONS\n"
+"  -o <设置文件名>\t将已使用的 OPTIONS 保存到 <选项文件名>\n"
+"  -l, --log <日志文件名>\t将日志输出到 <日志文件名>\n"
+"  -v, --verbose\t\t\t提高详细程度\n"
+"  -q, --quiet\t\t\t降低详细程度\n"
 
-#: ../src/sys/expressionparser.cxx:302
+#: ../src/sys/expressionparser.cxx:341
 #, c++-format
 msgid ""
 "\n"
 "  {1: ^{2}}{0}\n"
 "  Did you mean '{0}'?"
 msgstr ""
+"\n"
+"  {1: ^{2}}{0}\n"
+"  您是不是想写 '{0}'？"
 
-#: ../src/solver/solver.cxx:580
-#, fuzzy, c++-format
+#: ../src/solver/solver.cxx:586
+#, c++-format
 msgid ""
 "\n"
 "Run finished at  : {:s}\n"
 msgstr ""
 "\n"
-"计算结束于 {:s}\n"
+"运行结束时间：{:s}\n"
 
-#: ../src/solver/solver.cxx:532
-#, fuzzy, c++-format
+#: ../src/solver/solver.cxx:540
+#, c++-format
 msgid ""
 "\n"
 "Run started at  : {:s}\n"
 msgstr ""
 "\n"
-"计算从 {:s} 开始\n"
+"运行开始时间：{:s}\n"
 
 #. Raw string to help with the formatting of the message, and a
 #. separate variable so clang-format doesn't barf on the
 #. exception
-#: ../src/sys/options.cxx:1102
+#: ../src/sys/options.cxx:1158
 msgid ""
 "\n"
 "There were unused input options:\n"
@@ -365,8 +424,30 @@ msgid ""
 "\n"
 "{}"
 msgstr ""
+"\n"
+"发现未使用的输入选项：\n"
+"-----\n"
+"{:i}\n"
+"-----\n"
+"有些选项可能被误拼写了。BOUT++ 的输入参数现在区分大小写，\n"
+"并且其中一些名称已经改变。您可以尝试运行\n"
+"\n"
+"    <BOUT++ directory>/bin/bout-v5-input-file-upgrader.py {}/{}\n"
+"\n"
+"以自动修复最常见的问题。如果上面的这些选项有时会根据其他\n"
+"选项而被使用，您可以调用 `Options::setConditionallyUsed()`，例如：\n"
+"\n"
+"    Options::root()[\"{}\"].setConditionallyUsed();\n"
+"\n"
+"将某个节或值标记为依赖于其他值，从而在这项检查中忽略它。或者，\n"
+"如果您确信以上输入并非错误，可以设置\n"
+"'input:error_on_unused_options=false' 来关闭这项未使用选项检查。\n"
+"您也始终可以设置 'input:validate=true'，在不运行完整模拟的情况下\n"
+"检查输入。\n"
+"\n"
+"{}"
 
-#: ../src/bout++.cxx:382
+#: ../src/bout++.cxx:389
 #, c++-format
 msgid ""
 "  --print-config\t\tPrint the compile-time configuration\n"
@@ -398,117 +479,148 @@ msgid ""
 "For all possible input parameters, see the user manual and/or the physics "
 "model source (e.g. {:s}.cxx)\n"
 msgstr ""
+"  --print-config\t\t显示编译时配置\n"
+"  --list-solvers\t\t列出可用的时间求解器\n"
+"  --help-solver <solver>\t显示指定时间求解器的帮助\n"
+"  --list-laplacians\t\t列出可用的拉普拉斯反演求解器\n"
+"  --help-laplacian <laplacian>\t显示指定拉普拉斯反演求解器的帮助\n"
+"  --list-laplacexz\t\t列出可用的 LaplaceXZ 反演求解器\n"
+"  --help-laplacexz <laplacexz>\t显示指定 LaplaceXZ 反演求解器的帮助\n"
+"  --list-invertpars\t\t列出可用的 InvertPar 求解器\n"
+"  --help-invertpar <invertpar>\t显示指定 InvertPar 求解器的帮助\n"
+"  --list-rkschemes\t\t列出可用的 Runge-Kutta 格式\n"
+"  --help-rkscheme <rkscheme>\t显示指定 Runge-Kutta 格式的帮助\n"
+"  --list-meshes\t\t\t列出可用的 Mesh\n"
+"  --help-mesh <mesh>\t\t显示指定 Mesh 的帮助\n"
+"  --list-xzinterpolations\t列出可用的 XZInterpolation\n"
+"  --help-xzinterpolation <xzinterpolation>\t显示指定 XZInterpolation 的帮助\n"
+"  --list-zinterpolations\t列出可用的 ZInterpolation\n"
+"  --help-zinterpolation <zinterpolation>\t显示指定 ZInterpolation 的帮助\n"
+"  -h, --help\t\t\t此消息\n"
+"  restart [append]\t\t重新启动模拟。若指定 append，则追加到现有输出文件，否则覆盖它们\n"
+"  VAR=VALUE\t\t\t为输入参数 VAR 指定一个 VALUE\n"
+"\n"
+"有关所有可能的输入参数，请参阅用户手册和/或物理模型源码（例如 {:s}.cxx）\n"
 
-#: ../src/bout++.cxx:379
+#: ../src/bout++.cxx:386
 msgid "  -c, --color\t\t\tColor output using bout-log-color\n"
 msgstr ""
+"  -c, --color\t\t\t使用 bout-log-color 输出彩色日志\n"
 
-#: ../include/bout/options.hxx:823
+#: ../include/bout/options.hxx:899
 msgid ") overwritten with:"
-msgstr ""
+msgstr ") 被覆盖为："
 
-#: ../src/bout++.cxx:550
+#: ../src/bout++.cxx:557
 #, c++-format
 msgid ", level {}"
-msgstr ""
-
-#: ../src/bout++.cxx:579
-#, c++-format
-msgid ", using {} threads"
-msgstr ""
+msgstr ", 级别 {}"
 
 #: ../tests/unit/src/test_bout++.cxx:352
 msgid "4 of 8"
-msgstr ""
+msgstr "4 / 8"
 
-#: ../src/sys/options.cxx:868
+#: ../src/sys/options.cxx:895
 msgid "All options used\n"
 msgstr ""
+"所有选项均已使用\n"
 
-#: ../src/bout++.cxx:528
+#: ../src/bout++.cxx:535
 #, c++-format
 msgid "BOUT++ version {:s}\n"
 msgstr ""
+"BOUT++ 版本 {:s}\n"
 
-#: ../src/bout++.cxx:143
+#: ../src/bout++.cxx:147
 msgid "Bad command line arguments:\n"
 msgstr ""
+"错误的命令行参数：\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:559
+#: ../src/sys/expressionparser.cxx:192
+#, c++-format
+msgid "Boolean operator argument {:e} is not a bool"
+msgstr "布尔运算符参数 {:e} 不是布尔值"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:595
 msgid "Boundary regions in this processor: "
-msgstr ""
+msgstr "该处理器中的边界区域："
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:355
+#: ../src/mesh/impls/bout/boutmesh.cxx:348
 #, c++-format
 msgid "Cannot split {:d} X points equally between {:d} processors\n"
 msgstr ""
+"无法将 {:d} 个 X 点平均分配给 {:d} 个处理器\n"
 
-#: ../src/bout++.cxx:818
+#: ../src/bout++.cxx:829
 msgid "Check if a file exists, and exit if it does."
-msgstr ""
+msgstr "检查文件是否存在，若存在则退出。"
 
-#: ../src/bout++.cxx:533
-#, fuzzy, c++-format
+#: ../src/bout++.cxx:540
+#, c++-format
 msgid ""
 "Code compiled on {:s} at {:s}\n"
 "\n"
 msgstr ""
-"代码于 {:s} {:s} 编译\n"
+"代码编译于 {:s}，时间 {:s}\n"
 "\n"
 
 #: ../src/sys/optionsreader.cxx:130
 msgid "Command line"
-msgstr ""
+msgstr "命令行"
 
-#: ../src/bout++.cxx:544 ../tests/unit/src/test_bout++.cxx:358
+#: ../src/bout++.cxx:551 ../tests/unit/src/test_bout++.cxx:358
 msgid "Compile-time options:\n"
 msgstr ""
+"编译时选项：\n"
 
 #: ../tests/unit/src/test_bout++.cxx:362
 msgid "Compiled with flags"
-msgstr ""
+msgstr "编译标志"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:568
+#: ../src/mesh/impls/bout/boutmesh.cxx:604
 msgid "Constructing default regions"
-msgstr ""
+msgstr "正在构建默认区域"
 
-#: ../src/bout++.cxx:520
+#: ../src/bout++.cxx:527
 #, c++-format
 msgid "Could not create PID file {:s}"
-msgstr ""
+msgstr "无法创建 PID 文件 {:s}"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:318
+#: ../src/mesh/impls/bout/boutmesh.cxx:309
 msgid ""
 "Could not find a valid value for NXPE. Try a different number of processors."
-msgstr ""
+msgstr "无法为 NXPE 找到有效值。请尝试使用不同数量的处理器。"
 
 #: ../src/sys/options/options_ini.cxx:160
 #, c++-format
 msgid "Could not open output file '{:s}'\n"
 msgstr ""
+"无法打开输出文件 '{:s}'\n"
 
-#: ../src/bout++.cxx:652
+#: ../src/bout++.cxx:657
 #, c++-format
 msgid "Could not open {:s}/{:s}.{:d} for writing"
-msgstr ""
+msgstr "无法打开 {:s}/{:s}.{:d} 进行写入"
 
 #. Error reading
-#: ../src/mesh/mesh.cxx:532
+#: ../src/mesh/mesh.cxx:543
 #, c++-format
 msgid "Could not read integer array '{:s}'\n"
 msgstr ""
+"无法读取整数数组 '{:s}'\n"
 
 #. Failed . Probably not important enough to stop the simulation
-#: ../src/bout++.cxx:632
+#: ../src/bout++.cxx:637
 msgid "Could not run bout-log-color. Make sure it is in your PATH\n"
 msgstr ""
+"无法运行 bout-log-color。请确认它在您的 PATH 中\n"
 
-#: ../src/solver/solver.cxx:765
+#: ../src/solver/solver.cxx:772
 #, c++-format
 msgid "Couldn't add Monitor: {:g} is not a multiple of {:g}!"
-msgstr ""
+msgstr "无法添加监视器：{:g} 不是 {:g} 的整数倍！"
 
-#: ../src/sys/expressionparser.cxx:273
+#: ../src/sys/expressionparser.cxx:312
 #, c++-format
 msgid ""
 "Couldn't find generator '{}'. BOUT++ expressions are now case-sensitive, so "
@@ -516,195 +628,216 @@ msgid ""
 "may need to change your input file.\n"
 "{}"
 msgstr ""
+"无法找到生成器 '{}'。BOUT++ 表达式现在区分大小写，因此\n"
+"您可能需要修改输入文件。\n"
+"{}"
 
-#: ../src/mesh/mesh.cxx:568
+#: ../src/mesh/mesh.cxx:587
 #, c++-format
 msgid "Couldn't find region {:s} in regionMap2D"
-msgstr ""
+msgstr "无法在 regionMap2D 中找到区域 {:s}"
 
-#: ../src/mesh/mesh.cxx:560
+#: ../src/mesh/mesh.cxx:571 ../src/mesh/mesh.cxx:579
 #, c++-format
 msgid "Couldn't find region {:s} in regionMap3D"
-msgstr ""
+msgstr "无法在 regionMap3D 中找到区域 {:s}"
 
-#: ../src/mesh/mesh.cxx:576
+#: ../src/mesh/mesh.cxx:595
 #, c++-format
 msgid "Couldn't find region {:s} in regionMapPerp"
-msgstr ""
+msgstr "无法在 regionMapPerp 中找到区域 {:s}"
 
 #. Convert any exceptions to something a bit more useful
-#: ../src/sys/options.cxx:336
+#: ../src/sys/options.cxx:361
 #, c++-format
 msgid "Couldn't get {} from option {:s} = '{:s}': {}"
-msgstr ""
+msgstr "无法从选项 {1:s} = '{2:s}' 获取 {0}：{3}"
 
-#: ../src/bout++.cxx:508
-#, fuzzy, c++-format
+#: ../src/bout++.cxx:515
+#, c++-format
 msgid "DataDir \"{:s}\" does not exist or is not accessible\n"
-msgstr "\"{:s}\" 不存在或不可访问\n"
+msgstr ""
+"数据目录 \"{:s}\" 不存在或不可访问\n"
 
-#: ../src/bout++.cxx:505
-#, fuzzy, c++-format
+#: ../src/bout++.cxx:512
+#, c++-format
 msgid "DataDir \"{:s}\" is not a directory\n"
-msgstr "\"{:s}\" 不是目录\n"
+msgstr ""
+"数据目录 \"{:s}\" 不是目录\n"
 
-#: ../src/solver/solver.cxx:665
+#: ../src/solver/solver.cxx:671
 msgid "ERROR: Solver is already initialised\n"
 msgstr ""
+"错误：求解器已经初始化\n"
 
-#: ../src/bout++.cxx:209
-#, fuzzy, c++-format
+#: ../src/bout++.cxx:216
+#, c++-format
 msgid "Error encountered during initialisation: {:s}\n"
-msgstr "启动时遇到错误 : {:s}\n"
-
-#: ../src/bout++.cxx:744
-msgid "Error whilst writing settings"
 msgstr ""
+"初始化期间发生错误：{:s}\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:332
+#: ../src/bout++.cxx:751
+msgid "Error whilst writing settings"
+msgstr "写入设置时发生错误"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:323
 #, c++-format
 msgid "Error: nx must be greater than 2 times MXG (2 * {:d})"
-msgstr ""
+msgstr "错误：nx 必须大于 2 倍 MXG（2 * {:d}）"
 
-#: ../src/solver/solver.cxx:512
+#: ../src/solver/solver.cxx:520
 msgid "Failed to initialise solver-> Aborting\n"
 msgstr ""
+"求解器初始化失败 -> 中止\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:290
+#: ../src/mesh/impls/bout/boutmesh.cxx:281
 #, c++-format
 msgid "Finding value for NXPE (ideal = {:f})\n"
 msgstr ""
+"正在查找 NXPE 的值（理想值 = {:f}）\n"
 
-#: ../src/solver/solver.cxx:668
+#: ../src/solver/solver.cxx:674
 msgid "Initialising solver\n"
 msgstr ""
+"正在初始化求解器\n"
 
-#: ../src/bout++.cxx:494
+#: ../src/bout++.cxx:501
 msgid ""
 "Input and output file for settings must be different.\n"
 "Provide -o <settings file> to avoid this issue.\n"
 msgstr ""
+"设置的输入文件和输出文件必须不同。\n"
+"请提供 -o <settings file> 以避免此问题。\n"
 
 #: ../src/sys/optionsreader.cxx:76
 msgid "Invalid command line option '-' found - maybe check whitespace?"
-msgstr ""
+msgstr "发现无效的命令行选项 '-'，也许应检查空白字符？"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:400
+#: ../src/mesh/impls/bout/boutmesh.cxx:436
 msgid "Loading mesh"
-msgstr ""
+msgstr "正在加载网格"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:415
+#: ../src/mesh/impls/bout/boutmesh.cxx:451
 msgid "Mesh must contain nx"
-msgstr ""
+msgstr "网格必须包含 nx"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:419
+#: ../src/mesh/impls/bout/boutmesh.cxx:455
 msgid "Mesh must contain ny"
-msgstr ""
+msgstr "网格必须包含 ny"
 
 #. Not found
-#: ../src/mesh/mesh.cxx:536
+#: ../src/mesh/mesh.cxx:547
 #, c++-format
 msgid "Missing integer array {:s}\n"
 msgstr ""
+"缺少整数数组 {:s}\n"
 
-#: ../src/solver/solver.cxx:905
+#: ../src/solver/solver.cxx:911
 #, c++-format
 msgid "Monitor signalled to quit (exception {})\n"
 msgstr ""
+"监视器发出退出信号（异常 {}）\n"
 
-#: ../src/solver/solver.cxx:883
+#: ../src/solver/solver.cxx:889
 #, c++-format
 msgid "Monitor signalled to quit (return code {})"
-msgstr ""
+msgstr "监视器发出退出信号（返回码 {}）"
 
-#: ../src/bout++.cxx:823
+#: ../src/bout++.cxx:834
 msgid "Name of file whose existence triggers a stop"
-msgstr ""
+msgstr "触发停止的文件名"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:565
+#: ../src/mesh/impls/bout/boutmesh.cxx:601
 msgid "No boundary regions in this processor"
-msgstr ""
+msgstr "该处理器中没有边界区域"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:550
+#: ../src/mesh/impls/bout/boutmesh.cxx:586
 msgid "No boundary regions; domain is periodic\n"
 msgstr ""
+"没有边界区域；区域是周期性的\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:254
+#: ../src/mesh/impls/bout/boutmesh.cxx:245
 #, c++-format
 msgid ""
 "Number of processors ({:d}) not divisible by NPs in x direction ({:d})\n"
 msgstr ""
+"处理器数量 ({:d}) 不能被 x 方向上的 NP 数 ({:d}) 整除\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:267
+#: ../src/mesh/impls/bout/boutmesh.cxx:258
 #, c++-format
 msgid ""
 "Number of processors ({:d}) not divisible by NPs in y direction ({:d})\n"
 msgstr ""
+"处理器数量 ({:d}) 不能被 y 方向上的 NP 数 ({:d}) 整除\n"
 
 #. Less than 2 time-steps left
-#: ../src/bout++.cxx:896
+#: ../src/bout++.cxx:908
 #, c++-format
 msgid "Only {:e} seconds ({:.2f} steps) left. Quitting\n"
 msgstr ""
+"只剩 {:e} 秒（{:.2f} 步）。正在退出\n"
 
-#: ../src/sys/options.cxx:303 ../src/sys/options.cxx:345
-#: ../src/sys/options.cxx:393 ../src/sys/options.cxx:428
-#: ../src/sys/options.cxx:703 ../src/sys/options.cxx:730
-#: ../src/sys/options.cxx:757
+#: ../src/sys/options.cxx:382 ../src/sys/options.cxx:398
+#: ../src/sys/options.cxx:441 ../src/sys/options.cxx:471
+#: ../src/sys/options.cxx:745 ../src/sys/options.cxx:767
+#: ../src/sys/options.cxx:789
 #, c++-format
 msgid "Option {:s} has no value"
-msgstr ""
+msgstr "选项 {:s} 没有值"
 
 #. Doesn't exist
-#: ../src/sys/options.cxx:159
+#: ../src/sys/options.cxx:172
 #, c++-format
 msgid "Option {:s}:{:s} does not exist"
-msgstr ""
+msgstr "选项 {:s}:{:s} 不存在"
 
-#: ../include/bout/options.hxx:828
+#: ../include/bout/options.hxx:904
 #, c++-format
 msgid ""
 "Options: Setting a value from same source ({:s}) to new value '{:s}' - old "
 "value was '{:s}'."
-msgstr ""
+msgstr "选项：正在将来自同一来源 ({:s}) 的值设置为新值 '{:s}'，旧值为 '{:s}'。"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:552
+#: ../src/mesh/impls/bout/boutmesh.cxx:588
 msgid "Possible boundary regions are: "
-msgstr ""
+msgstr "可能的边界区域有："
 
-#: ../src/bout++.cxx:538
+#: ../src/bout++.cxx:545
 #, c++-format
 msgid ""
 "Processor number: {:d} of {:d}\n"
 "\n"
 msgstr ""
+"处理器编号：{:d} / {:d}\n"
+"\n"
 
-#: ../src/mesh/mesh.cxx:609
+#: ../src/mesh/mesh.cxx:642
 #, c++-format
 msgid "Registered region 2D {:s}"
-msgstr ""
+msgstr "已注册 2D 区域 {:s}"
 
-#: ../src/mesh/mesh.cxx:599
+#: ../src/mesh/mesh.cxx:632
 #, c++-format
 msgid "Registered region 3D {:s}"
-msgstr ""
+msgstr "已注册 3D 区域 {:s}"
 
-#: ../src/mesh/mesh.cxx:619
+#: ../src/mesh/mesh.cxx:652
 #, c++-format
 msgid "Registered region Perp {:s}"
-msgstr ""
+msgstr "已注册 Perp 区域 {:s}"
 
-#: ../src/bout++.cxx:529
+#: ../src/bout++.cxx:536
 #, c++-format
 msgid "Revision: {:s}\n"
 msgstr ""
+"修订版本：{:s}\n"
 
-#: ../src/solver/solver.cxx:581
+#: ../src/solver/solver.cxx:587
 msgid "Run time : "
 msgstr "计算时间"
 
 #. / Run the solver
-#: ../src/solver/solver.cxx:525
+#: ../src/solver/solver.cxx:533
 msgid ""
 "Running simulation\n"
 "\n"
@@ -714,66 +847,73 @@ msgstr ""
 
 #: ../tests/unit/src/test_bout++.cxx:359
 msgid "Signal"
-msgstr ""
+msgstr "信号"
 
-#: ../src/bout++.cxx:865
+#: ../src/bout++.cxx:876
 msgid ""
 "Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n"
 "\n"
 msgstr ""
+"模拟时间 | RHS 次数 | 墙钟时间 | 计算 反演 通信 I/O 求解器\n"
+"\n"
 
-#: ../src/bout++.cxx:868
+#: ../src/bout++.cxx:879
 msgid ""
 "Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv   "
 "Comm    I/O   SOLVER\n"
 "\n"
 msgstr ""
+"模拟时间 | RHS_e 次数 | RHS_I 次数 | 墙钟时间 | 计算 反演 通信 I/O 求解器\n"
+"\n"
 
-#: ../src/solver/solver.cxx:506
+#: ../src/solver/solver.cxx:514
 #, c++-format
 msgid "Solver running for {:d} outputs with monitor timestep of {:e}\n"
 msgstr ""
+"求解器正在运行 {:d} 个输出，监视步长为 {:e}\n"
 
-#: ../src/solver/solver.cxx:502
+#: ../src/solver/solver.cxx:510
 #, c++-format
 msgid "Solver running for {:d} outputs with output timestep of {:e}\n"
 msgstr ""
+"求解器正在运行 {:d} 个输出，输出步长为 {:e}\n"
 
-#: ../src/solver/solver.cxx:781
+#: ../src/solver/solver.cxx:788
 #, c++-format
 msgid ""
 "Solver::addMonitor: Cannot reduce timestep (from {:g} to {:g}) after init is "
 "called!"
-msgstr ""
+msgstr "Solver::addMonitor：在调用 init 之后无法将时间步长从 {:g} 减少到 {:g}！"
 
-#: ../src/solver/solver.cxx:1281
+#: ../src/solver/solver.cxx:1289
 #, c++-format
 msgid ""
 "Time derivative at wrong location - Field is at {:s}, derivative is at {:s} "
 "for field '{:s}'\n"
 msgstr ""
+"时间导数位于错误位置 - 字段位于 {:s}，导数位于 {:s}，对应字段 '{:s}'\n"
 
-#: ../src/solver/solver.cxx:1480
+#: ../src/solver/solver.cxx:1494
 #, c++-format
 msgid "Time derivative for variable '{:s}' not set"
-msgstr ""
+msgstr "变量 '{:s}' 的时间导数尚未设置"
 
-#: ../src/mesh/mesh.cxx:605
+#: ../src/mesh/mesh.cxx:638
 #, c++-format
 msgid "Trying to add an already existing region {:s} to regionMap2D"
-msgstr ""
+msgstr "试图将已存在的区域 {:s} 添加到 regionMap2D"
 
-#: ../src/mesh/mesh.cxx:595
+#: ../src/mesh/mesh.cxx:614
 #, c++-format
 msgid "Trying to add an already existing region {:s} to regionMap3D"
-msgstr ""
+msgstr "试图将已存在的区域 {:s} 添加到 regionMap3D"
 
-#: ../src/mesh/mesh.cxx:616
+#: ../src/mesh/mesh.cxx:649
 #, c++-format
 msgid "Trying to add an already existing region {:s} to regionMapPerp"
-msgstr ""
+msgstr "试图将已存在的区域 {:s} 添加到 regionMapPerp"
 
-#: ../src/sys/options.cxx:99 ../src/sys/options.cxx:138
+#: ../src/sys/options.cxx:112 ../src/sys/options.cxx:151
 #, c++-format
 msgid ""
 "Trying to index Option '{0}' with '{1}', but '{0}' is a value, not a "
@@ -781,156 +921,179 @@ msgid ""
 "This is likely the result of clashing input options, and you may have to "
 "rename one of them.\n"
 msgstr ""
+"正在尝试用 '{1}' 索引选项 '{0}'，但 '{0}' 是一个值，而不是一个节。\n"
+"这很可能是输入选项冲突导致的，您可能需要重命名其中之一。\n"
 
-#: ../src/mesh/coordinates.cxx:1462
+#: ../src/mesh/coordinates.cxx:1464
 msgid ""
 "Unrecognised paralleltransform option.\n"
 "Valid choices are 'identity', 'shifted', 'fci'"
 msgstr ""
+"无法识别的 paralleltransform 选项。\n"
+"有效选项为 'identity'、'shifted'、'fci'"
 
-#: ../src/sys/options.cxx:872
+#: ../src/sys/options.cxx:899
 msgid "Unused options:\n"
 msgstr ""
+"未使用的选项：\n"
 
-#: ../src/bout++.cxx:439
+#: ../src/bout++.cxx:446
 #, c++-format
 msgid "Usage is {:s} -d <data directory>\n"
 msgstr ""
+"用法：{:s} -d <数据目录>\n"
 
-#: ../src/bout++.cxx:448
+#: ../src/bout++.cxx:455
 #, c++-format
 msgid "Usage is {:s} -f <options filename>\n"
 msgstr ""
+"用法：{:s} -f <选项文件名>\n"
 
-#: ../src/bout++.cxx:466
+#: ../src/bout++.cxx:473
 #, c++-format
 msgid "Usage is {:s} -l <log filename>\n"
 msgstr ""
+"用法：{:s} -l <日志文件名>\n"
 
-#: ../src/bout++.cxx:457
+#: ../src/bout++.cxx:464
 #, c++-format
 msgid "Usage is {:s} -o <settings filename>\n"
 msgstr ""
+"用法：{:s} -o <设置文件名>\n"
 
-#: ../src/bout++.cxx:353
+#: ../src/bout++.cxx:360
 #, c++-format
 msgid "Usage is {} {} <name>\n"
 msgstr ""
+"用法：{} {} <名称>\n"
 
 #: ../tests/unit/src/test_bout++.cxx:32 ../tests/unit/src/test_bout++.cxx:46
 msgid "Usage:"
-msgstr ""
+msgstr "用法："
 
 #. Print help message -- note this will be displayed once per processor as we've not
 #. started MPI yet.
-#: ../src/bout++.cxx:367
+#: ../src/bout++.cxx:374
 #, c++-format
 msgid ""
 "Usage: {:s} [-d <data directory>] [-f <options filename>] [restart [append]] "
 "[VAR=VALUE]\n"
 msgstr ""
+"用法：{:s} [-d <数据目录>] [-f <选项文件名>] [restart [append]] [VAR=VALUE]\n"
 
 #. restart file should be written by physics model
-#: ../src/solver/solver.cxx:921
+#: ../src/solver/solver.cxx:927
 msgid "User signalled to quit. Returning\n"
 msgstr ""
+"用户发出退出信号。正在返回\n"
 
-#: ../src/sys/options.cxx:373
+#: ../src/sys/options.cxx:486
+#, c++-format
+msgid "Value for option {:s} = {:e} is not a bool"
+msgstr "选项 {:s} = {:e} 的值不是布尔值"
+
+#: ../src/sys/options.cxx:426
 #, c++-format
 msgid "Value for option {:s} = {:e} is not an integer"
-msgstr ""
+msgstr "选项 {:s} = {:e} 的值不是整数"
 
-#: ../src/sys/options.cxx:408
+#: ../src/sys/options.cxx:456
 #, c++-format
 msgid "Value for option {:s} cannot be converted to a BoutReal"
-msgstr ""
+msgstr "选项 {:s} 的值无法转换为 BoutReal"
 
-#: ../src/sys/options.cxx:581
+#: ../src/sys/options.cxx:623
 #, c++-format
 msgid "Value for option {:s} cannot be converted to a Field2D"
-msgstr ""
+msgstr "选项 {:s} 的值无法转换为 Field2D"
 
-#: ../src/sys/options.cxx:529
+#: ../src/sys/options.cxx:571
 #, c++-format
 msgid "Value for option {:s} cannot be converted to a Field3D"
-msgstr ""
+msgstr "选项 {:s} 的值无法转换为 Field3D"
 
-#: ../src/sys/options.cxx:663
+#: ../src/sys/options.cxx:705
 #, c++-format
 msgid "Value for option {:s} cannot be converted to a FieldPerp"
-msgstr ""
+msgstr "选项 {:s} 的值无法转换为 FieldPerp"
 
-#: ../src/sys/options.cxx:451
+#: ../src/sys/options.cxx:491
 #, c++-format
 msgid "Value for option {:s} cannot be converted to a bool"
-msgstr ""
+msgstr "选项 {:s} 的值无法转换为 bool"
 
-#: ../src/sys/options.cxx:709
+#: ../src/sys/options.cxx:751
 #, c++-format
 msgid "Value for option {:s} cannot be converted to an Array<BoutReal>"
-msgstr ""
+msgstr "选项 {:s} 的值无法转换为 Array<BoutReal>"
 
-#: ../src/sys/options.cxx:736
+#: ../src/sys/options.cxx:773
 #, c++-format
 msgid "Value for option {:s} cannot be converted to an Matrix<BoutReal>"
-msgstr ""
+msgstr "选项 {:s} 的值无法转换为 Matrix<BoutReal>"
 
-#: ../src/sys/options.cxx:763
+#: ../src/sys/options.cxx:795
 #, c++-format
 msgid "Value for option {:s} cannot be converted to an Tensor<BoutReal>"
-msgstr ""
+msgstr "选项 {:s} 的值无法转换为 Tensor<BoutReal>"
 
 #. Another type which can't be converted
-#: ../src/sys/options.cxx:365
+#: ../src/sys/options.cxx:418
 #, c++-format
 msgid "Value for option {:s} is not an integer"
-msgstr ""
+msgstr "选项 {:s} 的值不是整数"
 
-#: ../src/solver/solver.cxx:1232 ../src/solver/solver.cxx:1238
+#: ../src/solver/solver.cxx:1240 ../src/solver/solver.cxx:1246
 #, c++-format
 msgid "Variable '{:s}' not initialised"
-msgstr ""
+msgstr "变量 '{:s}' 尚未初始化"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:431
+#: ../src/mesh/impls/bout/boutmesh.cxx:467
 #, c++-format
 msgid ""
 "WARNING: Number of toroidal points should be 2^n for efficient FFT "
 "performance -- consider changing MZ ({:d}) if using FFTs\n"
 msgstr ""
+"警告：为了获得高效的 FFT 性能，环向点数应为 2^n；如果使用 FFT，请考虑修改 MZ ({:d})\n"
 
-#: ../src/mesh/coordinates.cxx:633
+#: ../src/mesh/coordinates.cxx:635
 msgid "WARNING: extrapolating input mesh quantities into x-boundary cells\n"
 msgstr ""
+"警告：正在将输入网格量外推到 x 边界单元\n"
 
-#: ../src/mesh/coordinates.cxx:410
+#: ../src/mesh/coordinates.cxx:412
 msgid ""
 "WARNING: extrapolating input mesh quantities into x-boundary cells. Set "
 "option extrapolate_x=false to disable this.\n"
 msgstr ""
+"警告：正在将输入网格量外推到 x 边界单元。设置选项 extrapolate_x=false 可禁用此行为。\n"
 
-#: ../src/mesh/coordinates.cxx:638
+#: ../src/mesh/coordinates.cxx:640
 msgid "WARNING: extrapolating input mesh quantities into y-boundary cells\n"
 msgstr ""
+"警告：正在将输入网格量外推到 y 边界单元\n"
 
-#: ../src/mesh/coordinates.cxx:415
+#: ../src/mesh/coordinates.cxx:417
 msgid ""
 "WARNING: extrapolating input mesh quantities into y-boundary cells. Set "
 "option extrapolate_y=false to disable this.\n"
 msgstr ""
+"警告：正在将输入网格量外推到 y 边界单元。设置选项 extrapolate_y=false 可禁用此行为。\n"
 
-#: ../src/bout++.cxx:814
+#: ../src/bout++.cxx:825
 msgid "Wall time limit in hours. By default (< 0), no limit"
-msgstr ""
+msgstr "墙钟时间限制（小时）。默认值（< 0）表示不限制"
 
 #: ../src/sys/optionsreader.cxx:42
 #, c++-format
 msgid "Writing options to file {:s}\n"
 msgstr ""
+"正在将选项写入文件 {:s}\n"
 
 #. / The source label given to default values
-#: ../src/sys/options.cxx:15
+#: ../src/sys/options.cxx:34
 msgid "default"
-msgstr ""
+msgstr "默认"
 
 #~ msgid "\tChecking disabled\n"
 #~ msgstr "\t测试关掉\n"
@@ -938,10 +1101,6 @@ msgstr ""
 #, fuzzy
 #~ msgid "\tChecking enabled, level {:d}\n"
 #~ msgstr "\t测试打开,级别 {:d}\n"
-
-#, fuzzy
-#~ msgid "Option {:s} is not a section"
-#~ msgstr "\"{:s}\" 不是目录\n"
 
 #~ msgid "Error encountered during initialisation\n"
 #~ msgstr "启动时遇到错误\n"

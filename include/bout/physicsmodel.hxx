@@ -47,6 +47,9 @@ class PhysicsModel;
 #include "bout/unused.hxx"
 #include "bout/utils.hxx"
 
+#include <chrono>
+#include <cstddef>
+#include <thread>
 #include <type_traits>
 #include <vector>
 
@@ -376,6 +379,9 @@ protected:
     PhysicsModel* model;
   };
 
+  /// Set timestep counter for flushing file
+  void setFlushCounter(std::size_t iteration) { flush_counter = iteration; }
+
 private:
   /// State for outputs
   Options output_options;
@@ -399,6 +405,10 @@ private:
   bool initialised{false};
   /// write restarts and pass outputMonitor method inside a Monitor subclass
   PhysicsModelMonitor modelMonitor{this};
+  /// How often to flush to disk
+  std::size_t flush_frequency{1};
+  /// Current timestep counter
+  std::size_t flush_counter{0};
 };
 
 /*!
@@ -417,14 +427,14 @@ private:
  */
 #define BOUTMAIN(ModelClass)                                       \
   int main(int argc, char** argv) {                                \
-    int init_err = BoutInitialise(argc, argv);                     \
-    if (init_err < 0) {                                            \
-      return 0;                                                    \
-    }                                                              \
-    if (init_err > 0) {                                            \
-      return init_err;                                             \
-    }                                                              \
     try {                                                          \
+      int init_err = BoutInitialise(argc, argv);                   \
+      if (init_err < 0) {                                          \
+        return 0;                                                  \
+      }                                                            \
+      if (init_err > 0) {                                          \
+        return init_err;                                           \
+      }                                                            \
       auto model = bout::utils::make_unique<ModelClass>();         \
       auto solver = Solver::create();                              \
       solver->setModel(model.get());                               \
@@ -432,8 +442,8 @@ private:
       solver->addMonitor(bout_monitor.get(), Solver::BACK);        \
       solver->solve();                                             \
     } catch (const BoutException& e) {                             \
-      output << "Error encountered: " << e.what();                 \
-      output << e.getBacktrace() << endl;                          \
+      output.write("Error encountered: {}\n", e.what());           \
+      std::this_thread::sleep_for(std::chrono::milliseconds(100)); \
       MPI_Abort(BoutComm::get(), 1);                               \
     }                                                              \
     BoutFinalise();                                                \

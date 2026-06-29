@@ -332,10 +332,13 @@ The default build configuration options try to be sensible for new
 users and developers, but there are a few you probably want to set
 manually for production runs or for debugging:
 
-* ``CMAKE_BUILD_TYPE``: The default is ``RelWithDebInfo``, which
-  builds an optimised executable with debug symbols included. Change
-  this to ``Release`` to remove the debug symbols, or ``Debug`` for an
-  unoptimised build, but better debug experience
+* ``CMAKE_BUILD_TYPE``: The default is ``RelWithDebInfo``, which builds an
+  optimised executable with debug symbols included. This is generally the most
+  useful, except for developers, who may wish to use ``Debug`` for an
+  unoptimised build, but better debug experience. There are a couple of other
+  choices (``Release`` and ``MinSizeRel``) which also produce optimised
+  executables, but without debug symbols, which is only really useful for
+  producing smaller binaries.
 
 * ``CHECK``: This sets the level of internal runtime checking done in
   the BOUT++ library, and ranges from 0 to 4 (inclusive). By default,
@@ -380,16 +383,32 @@ to read and write this high-performance parallel file format.
 Bundled Dependencies
 ~~~~~~~~~~~~~~~~~~~~
 
-BOUT++ bundles some dependencies, currently `mpark.variant
-<https://github.com/mpark/variant>`_, `fmt <https://fmt.dev>`_ and
-`googletest <https://github.com/google/googletest>`_. If you wish to
-use an existing installation of ``mpark.variant``, you can set
-``-DBOUT_USE_SYSTEM_MPARK_VARIANT=ON``, and supply the installation
-path using ``mpark_variant_ROOT`` via the command line or environment
-variable if it is installed in a non standard loction. Similarly for
-``fmt``, using ``-DBOUT_USE_SYSTEM_FMT=ON`` and ``fmt_ROOT``
-respectively. To turn off both, you can set
-``-DBOUT_USE_GIT_SUBMODULE=OFF``.
+BOUT++ bundles some dependencies, currently:
+
+- `mpark.variant <https://github.com/mpark/variant>`_
+- `fmt <https://fmt.dev>`_
+- `cpptrace <https://github.com/jeremy-rifkin/cpptrace>`_
+- ``googletest <https://github.com/google/googletest>`_ (for unit tests)
+
+Aside from ``googletest``, the others are required dependencies and can either
+be built as part of the BOUT++ build, or provided externally. If you wish to use
+existing installations of some of these, set the following flags:
+
++--------------------+-----------------------------------+------------------------+
+| Name               | Flag for external installation    | Library path           |
++====================+===================================+========================+
+| ``mpark.variant``  | ``BOUT_USE_SYSTEM_MPARK_VARIANT`` | ``mpark_variant_ROOT`` |
++--------------------+-----------------------------------+------------------------+
+| ``fmt``            | ``BOUT_USE_SYSTEM_FMT``           | ``fmt_ROOT``           |
++--------------------+-----------------------------------+------------------------+
+| ``cpptrace``       | ``BOUT_USE_SYSTEM_CPPTRACE``      | ``cpptrace_ROOT``      |
++--------------------+-----------------------------------+------------------------+
+
+You can also set ``-DBOUT_USE_GIT_SUBMODULE=OFF`` to not use any of the bundled
+versions.
+
+If the libraries are in non-standard locations, you may also need to supply the
+relevant library path flags.
 
 The recommended way to use ``googletest`` is to compile it at the same
 time as your project, therefore there is no option to use an external

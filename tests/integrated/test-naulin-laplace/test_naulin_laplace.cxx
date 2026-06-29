@@ -175,14 +175,14 @@ int main(int argc, char** argv) {
   // make field to pass in boundary conditions
   Field3D x0 = 0.;
   if (mesh->firstX()) {
-    for (int k = 0; k < mesh->LocalNz; k++) {
+    for (int k = mesh->zstart; k <= mesh->zend; k++) {
       x0(mesh->xstart - 1, mesh->ystart, k) =
           0.5
           * (f3(mesh->xstart - 1, mesh->ystart, k) + f3(mesh->xstart, mesh->ystart, k));
     }
   }
   if (mesh->lastX()) {
-    for (int k = 0; k < mesh->LocalNz; k++) {
+    for (int k = mesh->zstart; k <= mesh->zend; k++) {
       x0(mesh->xend + 1, mesh->ystart, k) =
           0.5 * (f3(mesh->xend + 1, mesh->ystart, k) + f3(mesh->xend, mesh->ystart, k));
     }
@@ -242,7 +242,7 @@ int main(int argc, char** argv) {
   // make field to pass in boundary conditions
   x0 = 0.;
   if (mesh->firstX()) {
-    for (int k = 0; k < mesh->LocalNz; k++) {
+    for (int k = mesh->zstart; k <= mesh->zend; k++) {
       x0(mesh->xstart - 1, mesh->ystart, k) =
           (f4(mesh->xstart, mesh->ystart, k) - f4(mesh->xstart - 1, mesh->ystart, k))
           / mesh->getCoordinates()->dx(mesh->xstart, mesh->ystart, k)
@@ -250,7 +250,7 @@ int main(int argc, char** argv) {
     }
   }
   if (mesh->lastX()) {
-    for (int k = 0; k < mesh->LocalNz; k++) {
+    for (int k = mesh->zstart; k <= mesh->zend; k++) {
       x0(mesh->xend + 1, mesh->ystart, k) =
           (f4(mesh->xend + 1, mesh->ystart, k) - f4(mesh->xend, mesh->ystart, k))
           / mesh->getCoordinates()->dx(mesh->xend, mesh->ystart, k)
@@ -315,7 +315,7 @@ BoutReal max_error_at_ystart(const Field3D& error) {
   BoutReal local_max_error = error(mesh->xstart, mesh->ystart, 0);
 
   for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
-    for (int jz = 0; jz < mesh->LocalNz; jz++) {
+    for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
       if (local_max_error < error(jx, mesh->ystart, jz)) {
         local_max_error = error(jx, mesh->ystart, jz);
       }

@@ -29,18 +29,20 @@ class Output;
 #ifndef BOUT_OUTPUT_H
 #define BOUT_OUTPUT_H
 
-#include "bout/multiostream.hxx"
 #include <fstream>
-#include <functional>
 #include <iostream>
 #include <string>
 
 #include "bout/assert.hxx"
-#include "bout/boutexception.hxx"
-#include "bout/sys/gettext.hxx" // for gettext _() macro
+#include "bout/build_defines.hxx"
+#include "bout/multiostream.hxx"
+#include "bout/sys/gettext.hxx" // IWYU pragma: keep for gettext _() macro
 #include "bout/unused.hxx"
 
-#include "fmt/core.h"
+#include <fmt/base.h>
+#include <fmt/core.h>
+
+#include <utility>
 
 using std::endl;
 
@@ -60,13 +62,18 @@ using std::endl;
 class Output : private multioutbuf_init<char, std::char_traits<char>>,
                public std::basic_ostream<char, std::char_traits<char>> {
 
-  using _Tr = std::char_traits<char>;
-  using multioutbuf_init = ::multioutbuf_init<char, _Tr>;
+  using Tr = std::char_traits<char>;
+  using multioutbuf_init = ::multioutbuf_init<char, Tr>;
 
 public:
-  Output() : multioutbuf_init(), std::basic_ostream<char, _Tr>(multioutbuf_init::buf()) {
+  Output() : multioutbuf_init(), std::basic_ostream<char, Tr>(multioutbuf_init::buf()) {
     Output::enable();
   }
+
+  Output(const Output&) = delete;
+  Output(Output&&) = delete;
+  Output& operator=(const Output&) = delete;
+  Output& operator=(Output&&) = delete;
 
   /// Specify a log file to open
   Output(const std::string& filename) {
@@ -74,8 +81,10 @@ public:
     open(filename);
   }
 
-  template <class S, class... Args>
-  Output(const S& format, const Args&... args) : Output(fmt::format(format, args...)) {}
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  Output(fmt::format_string<Args...> format, Args&&... args)
+      : Output(fmt::vformat(format, fmt::make_format_args(args...))) {}
 
   ~Output() override { close(); }
 
@@ -85,9 +94,10 @@ public:
   /// Open an output log file
   int open(const std::string& filename);
 
-  template <class S, class... Args>
-  int open(const S& format, const Args&... args) {
-    return open(fmt::format(format, args...));
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  int open(fmt::format_string<Args...> format, Args&&... args) {
+    return open(fmt::vformat(format, fmt::make_format_args(args...)));
   }
 
   /// Close the log file
@@ -96,25 +106,25 @@ public:
   /// Write a string using fmt format
   virtual void write(const std::string& message);
 
-  template <class S, class... Args>
-  void write(const S& format, const Args&... args) {
-    write(fmt::format(format, args...));
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  void write(fmt::format_string<Args...> format, Args&&... args) {
+    write(fmt::vformat(format, fmt::make_format_args(args...)));
   }
   /// Same as write, but only to screen
   virtual void print(const std::string& message);
 
-  template <class S, class... Args>
-  void print(const S& format, const Args&... args) {
-    print(fmt::format(format, args...));
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  void print(fmt::format_string<Args...> format, Args&&... args) {
+    print(fmt::vformat(format, fmt::make_format_args(args...)));
   }
 
   /// Add an output stream. All output will be sent to all streams
-  void add(std::basic_ostream<char, _Tr>& str) { multioutbuf_init::buf()->add(str); }
+  void add(std::basic_ostream<char, Tr>& str) { multioutbuf_init::buf()->add(str); }
 
   /// Remove an output stream
-  void remove(std::basic_ostream<char, _Tr>& str) {
-    multioutbuf_init::buf()->remove(str);
-  }
+  void remove(std::basic_ostream<char, Tr>& str) { multioutbuf_init::buf()->remove(str); }
 
   static Output* getInstance(); ///< Return pointer to instance
 
@@ -125,7 +135,7 @@ protected:
 
 private:
   std::ofstream file; ///< Log file stream
-  bool enabled;       ///< Whether output to stdout is enabled
+  bool enabled{};     ///< Whether output to stdout is enabled
 };
 
 /// Class which behaves like Output, but has no effect.
@@ -135,14 +145,14 @@ private:
 class DummyOutput : public Output {
 public:
   template <class S, class... Args>
-  void write([[maybe_unused]] const S& format, [[maybe_unused]] const Args&... args){};
+  void write([[maybe_unused]] const S& format, [[maybe_unused]] Args&&... args) {};
   template <class S, class... Args>
-  void print([[maybe_unused]] const S& format, [[maybe_unused]] const Args&... args){};
-  void write([[maybe_unused]] const std::string& message) override{};
-  void print([[maybe_unused]] const std::string& message) override{};
-  void enable() override{};
-  void disable() override{};
-  void enable([[maybe_unused]] bool enable){};
+  void print([[maybe_unused]] const S& format, [[maybe_unused]] Args&&... args) {};
+  void write([[maybe_unused]] const std::string& message) override {};
+  void print([[maybe_unused]] const std::string& message) override {};
+  void enable() override {};
+  void disable() override {};
+  void enable([[maybe_unused]] bool enable) {};
   bool isEnabled() override { return false; }
 };
 
@@ -168,11 +178,12 @@ public:
   /// This string is then sent to log file and stdout (on processor 0)
   void write(const std::string& message) override;
 
-  template <class S, class... Args>
-  void write(const S& format, const Args&... args) {
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  void write(fmt::format_string<Args...> format, Args&&... args) {
     if (enabled) {
       ASSERT1(base != nullptr);
-      base->write(fmt::format(format, args...));
+      base->write(fmt::vformat(format, fmt::make_format_args(args...)));
     }
   }
 
@@ -180,11 +191,12 @@ public:
   /// note: unlike write, this is not also sent to log files
   void print(const std::string& message) override;
 
-  template <class S, class... Args>
-  void print(const S& format, const Args&... args) {
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  void print(fmt::format_string<Args...> format, Args&&... args) {
     if (enabled) {
       ASSERT1(base != nullptr);
-      base->print(fmt::format(format, args...));
+      base->print(fmt::vformat(format, fmt::make_format_args(args...)));
     }
   }
 
@@ -215,8 +227,6 @@ private:
   /// The lower-level Output to send output to
   Output* base;
 
-protected:
-  friend class WithQuietOutput;
   /// Does this instance output anything?
   bool enabled;
 };
@@ -275,18 +285,23 @@ ConditionalOutput& operator<<(ConditionalOutput& out, const T* t) {
 ///     // output now enabled
 class WithQuietOutput {
 public:
-  explicit WithQuietOutput(ConditionalOutput& output_in) : output(output_in) {
-    state = output.enabled;
-    output.disable();
+  WithQuietOutput(const WithQuietOutput&) = delete;
+  WithQuietOutput(WithQuietOutput&&) = delete;
+  WithQuietOutput& operator=(const WithQuietOutput&) = delete;
+  WithQuietOutput& operator=(WithQuietOutput&&) = delete;
+  explicit WithQuietOutput(ConditionalOutput& output_in)
+      : output(&output_in), state(output->isEnabled()) {
+    output->disable();
   }
 
-  ~WithQuietOutput() { output.enable(state); }
+  ~WithQuietOutput() { output->enable(state); }
 
 private:
-  ConditionalOutput& output;
+  ConditionalOutput* output;
   bool state;
 };
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 /// To allow statements like "output.write(...)" or "output << ..."
 /// Output for debugging
 #ifdef BOUT_USE_OUTPUT_DEBUG
@@ -302,5 +317,6 @@ extern ConditionalOutput output_verbose;  ///< less interesting messages
 
 /// Generic output, given the same level as output_progress
 extern ConditionalOutput output;
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 #endif // BOUT_OUTPUT_H

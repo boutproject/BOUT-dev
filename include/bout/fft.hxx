@@ -28,10 +28,15 @@
 #ifndef BOUT_FFT_H
 #define BOUT_FFT_H
 
-#include "bout/dcomplex.hxx"
+#include "bout/build_defines.hxx"
+
 #include <bout/array.hxx>
 #include <bout/bout_enum_class.hxx>
+#include <bout/dcomplex.hxx>
 
+#include <string_view>
+
+class Mesh;
 class Options;
 
 BOUT_ENUM_CLASS(FFT_MEASUREMENT_FLAG, estimate, measure, exhaustive);
@@ -111,6 +116,16 @@ Array<dcomplex> rfft(const Array<BoutReal>& in);
 /// Expects that `in.size() == (length / 2) + 1`
 Array<BoutReal> irfft(const Array<dcomplex>& in, int length);
 
+/// Check simulation is using 1 processor in Z, throw exception if not
+///
+/// Generally, FFTs must be done over the full Z domain. Currently, most
+/// methods using FFTs don't handle parallelising in Z
+#if BOUT_CHECK_LEVEL > 0
+void assertZSerial(const Mesh& mesh, std::string_view name);
+#else
+inline void assertZSerial([[maybe_unused]] const Mesh& mesh,
+                          [[maybe_unused]] std::string_view name) {}
+#endif
 } // namespace fft
 } // namespace bout
 

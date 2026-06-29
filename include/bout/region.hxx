@@ -49,6 +49,7 @@
 #include <utility>
 #include <vector>
 
+#include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
@@ -139,7 +140,7 @@ class BoutMask;
   BOUT_FOR_OMP(index, (region), for schedule(BOUT_OPENMP_SCHEDULE) nowait)
 // NOLINTEND(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
 
-enum class IND_TYPE { IND_3D = 0, IND_2D = 1, IND_PERP = 2 };
+enum class IND_TYPE { IND_3D = 0, IND_2D = 1, IND_PERP = 2, IND_GLOBAL_3D = 3 };
 
 /// Indices base class for Fields -- Regions are dereferenced into these
 ///
@@ -170,8 +171,8 @@ struct SpecificInd {
   int ny = -1, nz = -1; ///< Sizes of y and z dimensions
 
   SpecificInd() = default;
-  SpecificInd(int i, int ny, int nz) : ind(i), ny(ny), nz(nz){};
-  explicit SpecificInd(int i) : ind(i){};
+  SpecificInd(int i, int ny, int nz) : ind(i), ny(ny), nz(nz) {};
+  explicit SpecificInd(int i) : ind(i) {};
 
   /// Allow explicit conversion to an int
   explicit operator int() const { return ind; }
@@ -386,6 +387,7 @@ inline SpecificInd<N> operator-(SpecificInd<N> lhs, const SpecificInd<N>& rhs) {
 using Ind3D = SpecificInd<IND_TYPE::IND_3D>;
 using Ind2D = SpecificInd<IND_TYPE::IND_2D>;
 using IndPerp = SpecificInd<IND_TYPE::IND_PERP>;
+using IndG3D = SpecificInd<IND_TYPE::IND_GLOBAL_3D>;
 
 /// Get string representation of Ind3D
 inline std::string toString(const Ind3D& i) {
@@ -490,10 +492,9 @@ template <typename T = Ind3D>
 class Region {
   // Following prevents a Region being created with anything other
   // than Ind2D, Ind3D or IndPerp as template type
-  static_assert(
-      std::is_base_of_v<
-          Ind2D, T> || std::is_base_of_v<Ind3D, T> || std::is_base_of_v<IndPerp, T>,
-      "Region must be templated with one of IndPerp, Ind2D or Ind3D");
+  static_assert(std::is_base_of_v<Ind2D, T> || std::is_base_of_v<Ind3D, T>
+                    || std::is_base_of_v<IndPerp, T>,
+                "Region must be templated with one of IndPerp, Ind2D or Ind3D");
 
 public:
   using data_type = T;
@@ -569,7 +570,7 @@ public:
   };
 
   Region(RegionIndices& indices, int maxregionblocksize = MAXREGIONBLOCKSIZE)
-      : indices(indices), blocks(getContiguousBlocks(maxregionblocksize)){};
+      : indices(indices), blocks(getContiguousBlocks(maxregionblocksize)) {};
 
   // We need to first set the blocks, and only after that call getRegionIndices.
   // Do not put in the member initialisation
@@ -594,17 +595,28 @@ public:
 
   const ContiguousBlocks& getBlocks() const { return blocks; };
   const RegionIndices& getIndices() const { return indices; };
+  const Array<int>& getLinearIndices() const {
+    if (linearIndices.empty()) {
+      linearIndices = Array<int>(indices.size());
+      for (size_type i = 0; i < indices.size(); ++i) {
+        linearIndices[i] = indices[i].ind;
+      }
+    }
+    return linearIndices;
+  }
 
   /// Set the indices and ensure blocks updated
   void setIndices(RegionIndices& indicesIn, int maxregionblocksize = MAXREGIONBLOCKSIZE) {
     indices = indicesIn;
     blocks = getContiguousBlocks(maxregionblocksize);
+    invalidateLinearIndices();
   };
 
   /// Set the blocks and ensure indices updated
   void setBlocks(ContiguousBlocks& blocksIn) {
     blocks = blocksIn;
     indices = getRegionIndices();
+    invalidateLinearIndices();
   };
 
   /// Return a new Region that has the same indices as this one but
@@ -828,10 +840,13 @@ public:
   // sorted this would prevent this usage.
 
 private:
-  RegionIndices indices;   //< Flattened indices
-  ContiguousBlocks blocks; //< Contiguous sections of flattened indices
-  int ny = -1;             //< Size of y dimension
-  int nz = -1;             //< Size of z dimension
+  RegionIndices indices;            //< Flattened indices
+  ContiguousBlocks blocks;          //< Contiguous sections of flattened indices
+  int ny = -1;                      //< Size of y dimension
+  int nz = -1;                      //< Size of z dimension
+  mutable Array<int> linearIndices; //< Cached flattened integer indices
+
+  void invalidateLinearIndices() const { linearIndices.clear(); }
 
   /// Helper function to create a RegionIndices, given the start and end
   /// points in x, y, z, and the total y, z lengths
@@ -970,6 +985,12 @@ Region<T> operator+(const Region<T>& lhs, const Region<T>& rhs) {
   auto indicesRhs = rhs.getIndices();
   indices.insert(std::end(indices), std::begin(indicesRhs), std::end(indicesRhs));
   return Region<T>(indices);
+}
+
+template <typename T>
+Region<T> operator+(Region<T>&& lhs, const Region<T>& rhs) {
+  lhs += rhs;
+  return std::move(lhs);
 }
 
 /// Returns a new region based on input but with indices offset by

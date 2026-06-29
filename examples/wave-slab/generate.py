@@ -51,7 +51,7 @@ Bpxy = ndarray([nx, ny])
 for x in range(nx):
     Bpxy[x, :] = Bpx[x]
 
-Bxy = sqrt(Bpxy ** 2 + Bt ** 2)
+Bxy = sqrt(Bpxy**2 + Bt**2)
 
 # Calculate change in poloidal flux
 dr = Lx / nx  # Constant mesh spacing in radius
