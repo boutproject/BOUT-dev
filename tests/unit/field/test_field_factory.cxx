@@ -1131,6 +1131,17 @@ TEST_F(FieldFactoryFieldVariableTest, NoMeshFile) {
   EXPECT_THROW((FieldFactory(mesh, &options)), BoutException);
 }
 
+TEST_F(FieldFactoryFieldVariableTest, NoMeshAvailable) {
+  auto* old_mesh = bout::globals::mesh;
+  bout::globals::mesh = nullptr;
+
+  Options options{{"input", {{"grid_variables", {{"rho", "field3d"}}}}}};
+
+  EXPECT_THROW((FieldFactory(nullptr, &options)), BoutException);
+
+  bout::globals::mesh = old_mesh;
+}
+
 TEST_F(FieldFactoryFieldVariableTest, MissingVariable) {
   const bout::testing::TempFile filename;
 

@@ -93,23 +93,30 @@ private:
 };
 
 // Read variables from the grid file and make them available in expressions
-template <class T>
 auto add_grid_variable(FieldFactory& factory, Mesh& mesh, const std::string& name) {
   factory.addGenerator(fmt::format("gridvar:{}", name),
-                       std::make_shared<GridVariable<T>>(&mesh, name));
+                       std::make_shared<GridVariable>(&mesh, name));
 }
 
-auto read_grid_variables(FieldFactory& factory, Mesh& mesh, Options& options) {
+auto read_grid_variables(FieldFactory& factory, Mesh* mesh, Options& options) {
   auto& field_variables = options["input"]["grid_variables"].doc(
       "Variables to read from the grid file and make available in expressions");
 
+  if (field_variables.cbegin() == field_variables.cend()) {
+    return;
+  }
+
+  if (mesh == nullptr) {
+    throw BoutException("A mesh is required for `input:grid_variables`");
+  }
+
   for (const auto& [name, value] : field_variables) {
-    if (not mesh.isDataSourceGridFile()) {
+    if (not mesh->isDataSourceGridFile()) {
       throw BoutException(
           "A grid file ('mesh:file') is required for `input:grid_variables`");
     }
 
-    if (not mesh.sourceHasVar(name)) {
+    if (not mesh->sourceHasVar(name)) {
       const auto filename = Options::root()["mesh"]["file"].as<std::string>();
       throw BoutException(
           "Grid file '{}' missing `{}` specified in `input:grid_variables`", filename,
@@ -119,14 +126,12 @@ auto read_grid_variables(FieldFactory& factory, Mesh& mesh, Options& options) {
     const auto func = value.as<GridVariableFunction>();
     switch (func) {
     case GridVariableFunction::field3d:
-      add_grid_variable<Field3D>(factory, mesh, name);
-      break;
     case GridVariableFunction::field2d:
-      add_grid_variable<Field2D>(factory, mesh, name);
+      add_grid_variable(factory, *mesh, name);
       break;
     case GridVariableFunction::boutreal:
       BoutReal var{};
-      mesh.get(var, name);
+      mesh->get(var, name);
       factory.addGenerator(name, std::make_shared<FieldValue>(var));
       break;
     }
@@ -233,7 +238,7 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   addGenerator("is_periodic_y", std::make_shared<FieldPeriodicY>());
 
   // Variables from the grid file
-  read_grid_variables(*this, *fieldmesh, nonconst_options);
+  read_grid_variables(*this, fieldmesh, nonconst_options);
 }
 
 Field2D FieldFactory::create2D(const std::string& value, const Options* opt,
