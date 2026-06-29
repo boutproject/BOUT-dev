@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include "bout/boundary_common.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/field2d.hxx"
 #include "bout/region.hxx"
@@ -25,8 +26,6 @@
  * inside the boundary.
  *
  */
-
-BOUT_ENUM_CLASS(BoundaryLimitMode, limit_free, exponential_free, linear_free);
 
 namespace bout {
 namespace parallel_boundary_region {
@@ -64,58 +63,6 @@ inline bool operator<(const Indices& lhs, const Ind3D& rhs) { return lhs.index <
 using IndicesVec = std::vector<Indices>;
 using IndicesIter = IndicesVec::iterator;
 using IndicesIterConst = IndicesVec::const_iterator;
-
-/// Limited free gradient of log of a quantity
-/// This ensures that the guard cell values remain positive
-/// while also ensuring that the quantity never increases
-///
-///  fm  fc | fp
-///         ^ boundary
-///
-/// exp( 2*log(fc) - log(fm) )
-inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc, BoundaryLimitMode mode) {
-  if ((fm < fc) && (mode == BoundaryLimitMode::limit_free)) {
-    return fc; // Neumann rather than increasing into boundary
-  }
-  if (fm < 1e-10) {
-    return fc; // Low / no density condition
-  }
-
-  BoutReal fp = 0;
-  switch (mode) {
-  case BoundaryLimitMode::limit_free:
-  case BoundaryLimitMode::exponential_free:
-    fp = SQ(fc) / fm; // Exponential
-    break;
-  case BoundaryLimitMode::linear_free:
-    fp = (2.0 * fc) - fm; // Linear
-    break;
-  }
-
-#if CHECKLEVEL >= 2
-  if (!std::isfinite(fp)) {
-    throw BoutException("SheathBoundary limitFree: {}, {} -> {}", fm, fc, fp);
-  }
-#endif
-
-  return fp;
-}
-
-inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc) {
-  if (fm < fc) {
-    return 1; // Neumann rather than increasing into boundary
-  }
-  if (fm < 1e-10) {
-    return 1; // Low / no density condition
-  }
-  BoutReal fp = fc / fm;
-#if CHECKLEVEL >= 2
-  if (!std::isfinite(fp)) {
-    throw BoutException("SheathBoundaryParallel limitFree: {}, {} -> {}", fm, fc, fp);
-  }
-#endif
-  return fp;
-}
 
 template <class IndicesVec, class IndicesIter>
 class BoundaryRegionParIterBase {
@@ -300,19 +247,24 @@ public:
     }
   }
 
-  BoutReal extrapolate_boundary_free(const Field3D& f, BoundaryLimitMode mode) const {
-    const auto fac = valid() > 0 ? limitFreeScale(yprev(f), ythis(f), mode)
-                                 : (mode == BoundaryLimitMode::linear_free ? 0 : 1);
+  BoutReal
+  extrapolate_boundary_free(const Field3D& f,
+                            bout::boundary::BoundaryFreeExtrapolation mode) const {
+    const auto fac =
+        valid() > 0 ? limitFreeScale(yprev(f), ythis(f), mode)
+                    : (mode == bout::boundary::BoundaryFreeExtrapolation::linear ? 0 : 1);
     auto val = ythis(f);
-    BoutReal next = mode == BoundaryLimitMode::linear_free ? val + fac : val * fac;
+    BoutReal next =
+        mode == bout::boundary::BoundaryFreeExtrapolation::linear ? val + fac : val * fac;
     return val * length(f.getLocation()) + next * (1 - length(f.getLocation()));
   }
 
-  void set_free(Field3D& f, BoundaryLimitMode mode) const {
-    const auto fac = valid() > 0 ? limitFreeScale(yprev(f), ythis(f), mode)
-                                 : (mode == BoundaryLimitMode::linear_free ? 0 : 1);
+  void set_free(Field3D& f, bout::boundary::BoundaryFreeExtrapolation mode) const {
+    const auto fac =
+        valid() > 0 ? limitFreeScale(yprev(f), ythis(f), mode)
+                    : (mode == bout::boundary::BoundaryFreeExtrapolation::linear ? 0 : 1);
     auto val = ythis(f);
-    if (mode == BoundaryLimitMode::linear_free) {
+    if (mode == bout::boundary::BoundaryFreeExtrapolation::linear) {
       ITER() {
         val += fac;
         getAt(f, i) = val;

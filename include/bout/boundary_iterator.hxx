@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bout/assert.hxx"
+#include "bout/boundary_common.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
@@ -75,19 +76,20 @@ public:
     return 0.5 * (3 * f(0, ind()) - f(0, ind().yp(-_by).xp(-_bx)));
   }
 
-  BoutReal extrapolate_boundary_free(const Field3D& f, BoundaryLimitMode mode) const {
-    const BoutReal fac =
-        bout::parallel_boundary_region::limitFreeScale(yprev(f), ythis(f), mode);
+  BoutReal
+  extrapolate_boundary_free(const Field3D& f,
+                            bout::boundary::BoundaryFreeExtrapolation mode) const {
+    const BoutReal fac = bout::boundary::limitFreeScale(yprev(f), ythis(f), mode);
     const BoutReal val = ythis(f);
-    const BoutReal next = mode == BoundaryLimitMode::linear_free ? val + fac : val * fac;
+    const BoutReal next =
+        mode == bout::boundary::BoundaryFreeExtrapolation::linear ? val + fac : val * fac;
     return 0.5 * (val + next);
   }
 
-  void set_free(Field3D& f, BoundaryLimitMode mode) const {
-    const BoutReal fac =
-        bout::parallel_boundary_region::limitFreeScale(yprev(f), ythis(f), mode);
+  void set_free(Field3D& f, bout::boundary::BoundaryFreeExtrapolation mode) const {
+    const BoutReal fac = bout::boundary::limitFreeScale(yprev(f), ythis(f), mode);
     BoutReal val = ythis(f);
-    if (mode == BoundaryLimitMode::linear_free) {
+    if (mode == bout::boundary::BoundaryFreeExtrapolation::linear) {
       for (int i = 1; i <= localmesh->ystart; ++i) {
         val += fac;
         f[ind().yp(_by * i).xp(_bx * i)] = val;
@@ -101,8 +103,8 @@ public:
   }
 
   void limitFree(Field3D& f) const {
-    const BoutReal fac =
-        bout::parallel_boundary_region::limitFreeScale(yprev(f), ythis(f));
+    const BoutReal fac = bout::boundary::limitFreeScale(
+        yprev(f), ythis(f), bout::boundary::BoundaryFreeExtrapolation::limited);
     BoutReal val = ythis(f);
     for (int i = 1; i <= localmesh->ystart; ++i) {
       val *= fac;

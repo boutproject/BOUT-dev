@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "bout/assert.hxx"
+#include "bout/boundary_common.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/field_data.hxx"
 #include "bout/utils.hxx"
@@ -33,17 +34,6 @@ enum class BndryType : std::int8_t {
   all,
   num
 };
-
-/// Types of free boundary condition
-/// ================== ===================================================
-/// Name               Description
-/// ================== ===================================================
-/// ``limited``        use exponential if decreasing, otherwise Neumanm
-/// ``exponential``    use exponential extrapolation
-/// ``linear``         use linear extrapolation
-/// ================== ===================================================
-enum class BoundaryFreeExtrapolation : std::int8_t { limited, exponential, linear };
-//BOUT_ENUM_CLASS(BoundaryFreeExtrapolation, limited, exponential, linear);
 
 template <typename impl>
 class BoundaryRegionIterBase {
