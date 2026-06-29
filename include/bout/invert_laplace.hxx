@@ -7,14 +7,14 @@
  * \f[
  *   d \nabla^2_\perp x + (1/c)\nabla_\perp c\cdot\nabla_\perp x + a x = b
  * \f]
- * 
+ *
  * Where a, c and d are functions of x and y only (not z)
  */
 /**************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify

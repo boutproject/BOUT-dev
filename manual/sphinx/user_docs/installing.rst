@@ -501,7 +501,7 @@ or conda::
 
     $ conda install numpy scipy matplotlib sympy netcdf4 future importlib-metadata
 
-They may also be available from your Linux system's package manager. 
+They may also be available from your Linux system's package manager.
 
 For example on Fedora::
 

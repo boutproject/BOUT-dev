@@ -165,13 +165,13 @@ class ConditionalOutput : public Output {
 public:
   /// @param[in] base    The Output object which will be written to if enabled
   /// @param[in] enabled Should this be enabled by default?
-  ConditionalOutput(Output* base, bool enabled = true) : base(base), enabled(enabled){};
+  ConditionalOutput(Output* base, bool enabled = true) : base(base), enabled(enabled) {};
 
   /// Constuctor taking ConditionalOutput. This allows several layers of conditions
   ///
   /// @param[in] base    A ConditionalOutput which will be written to if enabled
   ///
-  ConditionalOutput(ConditionalOutput* base) : base(base), enabled(base->enabled){};
+  ConditionalOutput(ConditionalOutput* base) : base(base), enabled(base->enabled) {};
 
   /// If enabled, writes a string using fmt formatting
   /// by calling base->write
@@ -236,7 +236,7 @@ private:
 ///    output_debug << "debug message";
 /// compile but have no effect if BOUT_USE_OUTPUT_DEBUG is false
 template <typename T>
-DummyOutput& operator<<(DummyOutput& out, T const& UNUSED(t)) {
+DummyOutput& operator<<(DummyOutput& out, const T& UNUSED(t)) {
   return out;
 }
 
@@ -260,7 +260,7 @@ inline ConditionalOutput& operator<<(ConditionalOutput& out, stream_manipulator 
 }
 
 template <typename T>
-ConditionalOutput& operator<<(ConditionalOutput& out, T const& t) {
+ConditionalOutput& operator<<(ConditionalOutput& out, const T& t) {
   if (out.isEnabled()) {
     *out.getBase() << t;
   }

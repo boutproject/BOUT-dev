@@ -124,7 +124,7 @@
  * Copyright 2018 B.D.Dudson, M. Loiten, J. Omotani
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -167,7 +167,7 @@ const RegisterLaplace<LaplaceNaulin> registerlaplacenaulin(LAPLACE_NAULIN);
 
 /// Solves the 2D Laplacian equation
 /*!
- * 
+ *
  */
 class LaplaceNaulin : public Laplacian {
 public:
