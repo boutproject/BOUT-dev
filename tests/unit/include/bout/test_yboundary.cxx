@@ -32,3 +32,10 @@ TEST_F(YBTest, interpolate_boundary_o2) {
   sheath.iter(
       [&](auto& point) { EXPECT_DOUBLE_EQ(point.interpolate_boundary_o2(test), 1.0); });
 }
+
+TEST_F(YBTest, extrapolate_boundary_o2) {
+  Field3D test = 1.0;
+  YBoundary sheath(YBndryType::all, nullptr, *mesh);
+  sheath.iter(
+      [&](auto& point) { EXPECT_DOUBLE_EQ(point.extrapolate_boundary_o2(test), 1.0); });
+}
