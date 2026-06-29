@@ -16,9 +16,11 @@
 #include <bout/unused.hxx>
 
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <list>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <utility>
 
@@ -382,29 +384,35 @@ public:
   }
 };
 
-/// A `Field3D` or `Field2D` that can be used in expressions
+/// A grid file variable that can be used in expressions
 ///
 /// The variable is read from Mesh when first used and shared between
 /// clones. This is to avoid circular dependencies in construction.
-template <class T, typename = bout::utils::EnableIfField<T>>
 class GridVariable : public FieldGenerator {
 private:
   struct LazyLoaded {
-    LazyLoaded(Mesh* mesh, std::string name) : mesh(mesh), name(std::move(name)) {}
+    LazyLoaded(Mesh* mesh, std::string name)
+        : mesh(mesh), name(std::move(name)), var(mesh) {}
 
-    Field3D get() {
-      if (!var.isAllocated()) {
-        // Read variable from mesh
-        if (this->mesh->get(this->var, this->name) != 0) {
-          throw BoutException("Couldn't read GridVariable '{}'", this->name);
+    const Field3D& get() {
+      if (!is_loaded.load(std::memory_order_acquire)) {
+        std::lock_guard<std::mutex> guard(load_mutex);
+        if (!is_loaded.load(std::memory_order_relaxed)) {
+          // Read and convert the variable once, then share it between all clones.
+          if (mesh->get(var, name) != 0) {
+            throw BoutException("Couldn't read GridVariable '{}'", name);
+          }
+          is_loaded.store(true, std::memory_order_release);
         }
       }
-      return this->var;
+      return var;
     }
 
     Mesh* mesh;
     std::string name;
-    T var{};
+    Field3D var;
+    std::atomic<bool> is_loaded{false};
+    std::mutex load_mutex;
   };
 
   std::shared_ptr<LazyLoaded> variable;
@@ -424,7 +432,7 @@ public:
       throw ParseException("Variable '{}' takes no arguments but got {:d}",
                            variable->name, args.size());
     }
-    return std::make_shared<GridVariable<T>>(variable);
+    return std::make_shared<GridVariable>(variable);
   }
 
   std::string str() const override { return variable->name; }
