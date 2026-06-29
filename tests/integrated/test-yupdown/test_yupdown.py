@@ -33,10 +33,11 @@ def run_case(shift_type, variable):
     return False
 
 
-@pytest.mark.parametrize("shift_type, variable", list(zip(shift_types, variables)))
+@pytest.mark.parametrize("shift_type", shift_types)
+@pytest.mark.parametrize("variable", variables)
 def test_case(shift_type, variable):
     # MPI oversubscribe
     os.environ["OMPI_MCA_rmaps_base_oversubscribe"] = "1"  # Allows 18 procs
 
     success = run_case(shift_type, variable)
-    assert success, f"Test failed for shift_type={shift_type}: , variable={variable}"
+    assert success, f"Test failed for shift_type={shift_type}, variable={variable}"
