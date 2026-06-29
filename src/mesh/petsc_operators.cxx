@@ -1,21 +1,22 @@
 #include "bout/build_defines.hxx"
-#include "bout/field2d.hxx"
-#include "bout/petsc_interface.hxx"
-#include "bout/petsclib.hxx"
-#include <cmath>
 
 #if BOUT_HAS_PETSC
 
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/output_bout_types.hxx"
+#include "bout/petsc_interface.hxx"
 #include "bout/petsc_operators.hxx"
+#include "bout/petsclib.hxx"
 #include "bout/region.hxx"
 #include "bout/utils.hxx"
 
 #include <algorithm>
+#include <cmath>
 #include <memory>
 #include <string>
 #include <utility>
@@ -332,14 +333,14 @@ PetscOperators::Parallel PetscOperators::getParallel() const {
   auto* coords = mesh->getCoordinates();
 
   // Parallel spacing in cell space
-  Field3D dl = coords->dy * sqrt(coords->g_22);
+  Field3D dl = Coordinates::FieldMetric{coords->dy * sqrt(coords->g_22)};
   dl.splitParallelSlices();
   dl.yup() = 0.0;
   dl.ydown() = 0.0;
   dl.applyParallelBoundary("parallel_neumann_o1");
 
   // Cell volume
-  Field3D dV = coords->J * coords->dx * coords->dy * coords->dz;
+  Field3D dV = Coordinates::FieldMetric{coords->J * coords->dx * coords->dy * coords->dz};
   dV.splitParallelSlices();
   dV.yup() = 0.0;
   dV.ydown() = 0.0;

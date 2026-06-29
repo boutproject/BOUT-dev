@@ -189,10 +189,16 @@ int Mesh::get(bool& bval, const std::string& name, bool def) {
 }
 
 int Mesh::get(Array<int>& var, const std::string& name) {
+  if (source == nullptr) {
+    return 1;
+  }
   return source->get(var, name) ? 0 : 1;
 }
 
 int Mesh::get(Array<BoutReal>& var, const std::string& name) {
+  if (source == nullptr) {
+    return 1;
+  }
   return source->get(var, name) ? 0 : 1;
 }
 
