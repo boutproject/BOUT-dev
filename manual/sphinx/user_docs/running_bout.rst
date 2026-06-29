@@ -673,4 +673,3 @@ then the BOUT++ restart will fail.
 **Note** It is a good idea to set ``nxpe`` in the ``BOUT.inp`` file to be consistent with
 what you set here. If it is inconsistent then the restart will fail, but the error message may
 not be particularly enlightening.
-

@@ -1,6 +1,6 @@
 /*!\file
  * Perpendicular Laplacian inversion in serial or parallel
- * 
+ *
  * Simplified version of serial_tri and spt algorithms. Uses FFTs and
  * the cyclic reduction class to solve tridiagonal systems.
  */
@@ -8,7 +8,7 @@
  * Copyright 2013 B.D.Dudson
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify

@@ -131,4 +131,3 @@ The layout of the ``src/`` directory is as follows:
   - General purpose utilities used throughout the library, such as
     `BoutException`, wrappers for C libraries like ``PETSc`` and
     ``HYPRE``, screen and file input and output.
-

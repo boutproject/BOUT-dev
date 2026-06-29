@@ -847,7 +847,7 @@ subdomain using the Thomas algorithm.
 
 **Constraints.** This method requires that:
 
-* ``NXPE`` is a power of 2. 
+* ``NXPE`` is a power of 2.
 * ``NXPE > 2^(max_levels+1)``
 
 .. _sec-LaplaceXY:
