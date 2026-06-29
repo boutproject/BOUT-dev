@@ -53,11 +53,6 @@ FieldData::FieldData(Mesh* localmesh, CELL_LOC location_in)
           location_in, fieldmesh)) { // Need to check for nullptr again, because the
                                      // fieldmesh might still be
   // nullptr if the global mesh hasn't been initialized yet
-  if (fieldmesh != nullptr) {
-    // sets fieldCoordinates by getting Coordinates for our location from
-    // fieldmesh
-    getCoordinates();
-  }
 }
 
 FieldData::FieldData(const FieldData& other) {

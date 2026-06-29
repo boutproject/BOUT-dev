@@ -3,6 +3,7 @@
 #include <bout/griddata.hxx>
 
 #include <bout/array.hxx>
+#include <bout/assert.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/fft.hxx>
@@ -197,7 +198,10 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
   ///Ghost region widths.
   const int mxg = (m->LocalNx - (m->xend - m->xstart + 1)) / 2;
   const int myg = (m->LocalNy - (m->yend - m->ystart + 1)) / 2;
-  ///Check that ghost region widths are in fact integers
+  // Check grid has cells
+  ASSERT1(m->LocalNx > 0);
+  ASSERT1(m->LocalNy > 0);
+  // Check that ghost region widths are in fact integers
   ASSERT1((m->LocalNx - (m->xend - m->xstart + 1)) % 2 == 0);
   ASSERT1((m->LocalNy - (m->yend - m->ystart + 1)) % 2 == 0);
 
