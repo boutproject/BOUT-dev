@@ -7,11 +7,11 @@
 #include "fake_mesh_fixture.hxx"
 #include "test_extras.hxx"
 
-using YBTest = FakeMeshFixture;
+using YBTest = FakeMeshFixture_tmpl<3, 5, 7>;
 
 using bout::globals::mesh;
 
-TEST_F(YBTest, dirichlet_o2) {
+TEST_F(YBTest, dirichlet_o2_rgn) {
   Field3D test = 1.0;
   YBoundary sheath(YBndryType::all, nullptr, *mesh);
   sheath.iter([&](auto& point) { point.dirichlet_o2(test, 2); });
