@@ -85,13 +85,12 @@ public:
         }
       }
     } else {
-      if (lower_y) {
-        boundary_regions.push_back(
-            std::make_shared<NewBoundaryRegionY>(mesh, true, mesh.iterateBndryLowerY()));
-      }
-      if (upper_y) {
-        boundary_regions.push_back(
-            std::make_shared<NewBoundaryRegionY>(mesh, false, mesh.iterateBndryUpperY()));
+      for (auto* bndry : mesh.getBoundaries()) {
+        if ((lower_y && bndry->location == BndryLoc::ydown)
+            or (upper_y && bndry->location == BndryLoc::yup)) {
+          boundary_regions.push_back(
+              dynamic_cast<bout::boundary::BoundaryRegionY*>(bndry));
+        }
       }
     }
     // Cache boundary regions
@@ -139,7 +138,7 @@ private:
     }
   }
   std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>> boundary_regions_par;
-  std::vector<std::shared_ptr<NewBoundaryRegionY>> boundary_regions;
+  std::vector<bout::boundary::BoundaryRegionY*> boundary_regions;
 
   std::vector<BoutMask> _contains;
 };
