@@ -115,7 +115,8 @@ def test_griddata_yboundary_guards(topology, n_yguards):
                 numpy.arange(ny // 2) + checkfield[-1] + 1 + 2 * n_yguards
             )
             checkfield += list(numpy.arange(n_yguards) + checkfield[-1] + 1)
-    else:  # singlenull
+    else:
+        assert topology == "singlenull"
         if n_yguards == 0:
             # output has 2 y-guard cells, but grid file did not
             myg = 2
