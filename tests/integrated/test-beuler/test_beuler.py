@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
-# requires: petsc
-
-from boututils.run_wrapper import shell_safe
+from boututils.run_wrapper import launch_safe
 
 
 def test_beuler():
     print("Running solver test")
-    status, out = shell_safe("./test_beuler", pipe=True)
+    status, out = launch_safe("./test_beuler", nproc=1, mthread=1, pipe=True)
     with open("run.log", "w") as f:
         f.write(out)
 
