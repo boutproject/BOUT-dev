@@ -46,8 +46,8 @@ def test_interpolate_z():
         for nx in nxlist:
             dx = 1.0 / (nx)
 
-            args = " mesh:nx={nx4} mesh:dx={dx} MZ={nx} zinterpolation:type={method}".format(
-                nx4=nx + 4, dx=dx, nx=nx, method=method
+            args = (
+                f" mesh:nx={nx + 4} mesh:dx={dx} MZ={nx} zinterpolation:type={method}"
             )
 
             cmd = "./test_interpolate" + args
