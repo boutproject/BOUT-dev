@@ -52,7 +52,7 @@ class LaplaceSerialTri : public Laplacian {
 public:
   LaplaceSerialTri(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
                    Mesh* mesh_in = nullptr, Solver* solver = nullptr);
-  ~LaplaceSerialTri(){};
+  ~LaplaceSerialTri() {};
 
   using Laplacian::setCoefA;
   void setCoefA(const Field2D& val) override {
