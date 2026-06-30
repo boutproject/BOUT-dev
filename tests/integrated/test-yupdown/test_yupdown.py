@@ -8,7 +8,11 @@ from numpy import max, abs
 shift_types = ["shifted", "shiftedinterp"]
 
 
-def run_case(shift_type):
+@pytest.mark.parametrize("shift_type", shift_types)
+def test_case(shift_type):
+
+    os.environ["OMPI_MCA_rmaps_base_oversubscribe"] = "1"  # MPI oversubscribe
+
     s, out = launch_safe(
         "./test_yupdown mesh:paralleltransform:type=" + shift_type,
         nproc=1,
@@ -19,7 +23,7 @@ def run_case(shift_type):
     with open("run.log", "w") as f:
         f.write(out)
 
-    ret = True
+    errors = []
     for v, v_check in [("ddy", "ddy_check"), ("ddy2", "ddy_check")]:
         print("Testing %s and %s ... " % (v, v_check))
         ddy = collect(v, path="data", xguards=False, yguards=False, info=False)
@@ -29,16 +33,8 @@ def run_case(shift_type):
 
         diff = max(abs(ddy - ddy_check))
 
-        print(f"shifttype: {shift_type} Max difference {diff}")
+        print(f"shifttype: {shift_type} | {v} Max difference {diff}")
         if diff >= 2e-5:
-            ret = False
-    return ret
+            errors.append(f"{v} exceeded tolerance (diff: {diff})")
 
-
-@pytest.mark.parametrize("shift_type", shift_types)
-def test_case(shift_type):
-    # MPI oversubscribe
-    os.environ["OMPI_MCA_rmaps_base_oversubscribe"] = "1"
-
-    success = run_case(shift_type)
-    assert success, f"Test failed for shift_type={shift_type}"
+    assert not errors, f"Failures for {shift_type}:\n" + "\n".join(errors)
