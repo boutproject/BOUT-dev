@@ -8,7 +8,7 @@ from numpy import max, abs
 shift_types = ["shifted", "shiftedinterp"]
 
 
-def run_case(shift_type, variable):
+def run_case(shift_type):
     s, out = launch_safe(
         "./test_yupdown mesh:paralleltransform:type=" + shift_type,
         nproc=1,
@@ -36,9 +36,9 @@ def run_case(shift_type, variable):
 
 
 @pytest.mark.parametrize("shift_type", shift_types)
-def test_case(shift_type, variable):
+def test_case(shift_type):
     # MPI oversubscribe
     os.environ["OMPI_MCA_rmaps_base_oversubscribe"] = "1"
 
-    success = run_case(shift_type, variable)
+    success = run_case(shift_type)
     assert success, f"Test failed for shift_type={shift_type}"
