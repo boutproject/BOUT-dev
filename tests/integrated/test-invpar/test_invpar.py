@@ -49,14 +49,7 @@ def test_invpar():
             s, _ = launch(cmd + " -q -q -q " + f, nproc=nproc, mthread=1)
 
             code += s
-
-            if s == 0:
-                print("PASSED")
-            else:
-                print("FAILED")
-            assert s == 0, f"Test failed for flag={f}"
-
-    if code == 0:
-        print(" => All inversion tests passed")
-    else:
-        print(" => Some failed tests")
+            print(
+                "Run with flags {f} and {nproc} cores {'PASSED' if s == 0 else 'FAILED'}"
+            )
+    assert code == 0, "Some tests failed"
