@@ -389,6 +389,7 @@ set(BOUT_SOURCES
     ./src/sys/timer.cxx
     ./src/sys/type_name.cxx
     ./src/sys/utils.cxx
+    ./include/bout/git_metadata.hxx
     ${CMAKE_CURRENT_BINARY_DIR}/include/bout/revision.hxx
     ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
 )
@@ -520,8 +521,26 @@ add_custom_command(
   MAIN_DEPENDENCY "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateDateTimeFile.cmake"
 )
 
-add_library(bout++ ${BOUT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/bout++-time.cxx)
+set(BOUT_GIT_METADATA_SOURCE ${CMAKE_CURRENT_BINARY_DIR}/git_metadata.cxx)
+set_source_files_properties(
+  ${BOUT_GIT_METADATA_SOURCE} PROPERTIES GENERATED TRUE
+)
+add_custom_target(
+  bout++-git-metadata
+  COMMAND
+    ${CMAKE_COMMAND} -DOUTPUT_FILE=${BOUT_GIT_METADATA_SOURCE}
+    -DSOURCE_DIR=${PROJECT_SOURCE_DIR} -DGIT_EXECUTABLE=${GIT_EXECUTABLE} -P
+    "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateGitMetadata.cmake"
+  BYPRODUCTS ${BOUT_GIT_METADATA_SOURCE}
+  COMMENT "Generating git metadata source"
+)
+
+add_library(
+  bout++ ${BOUT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/bout++-time.cxx
+         ${BOUT_GIT_METADATA_SOURCE}
+)
 add_library(bout++::bout++ ALIAS bout++)
+add_dependencies(bout++ bout++-git-metadata)
 target_link_libraries(bout++ PUBLIC MPI::MPI_CXX)
 target_include_directories(
   bout++
@@ -566,6 +585,7 @@ set(BOUT_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(BOUT_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 
 # Get the git commit
+find_package(Git QUIET)
 include(GetGitRevisionDescription)
 get_git_head_revision(GIT_REFSPEC BOUT_REVISION)
 if(BOUT_REVISION STREQUAL "GITDIR-NOTFOUND")

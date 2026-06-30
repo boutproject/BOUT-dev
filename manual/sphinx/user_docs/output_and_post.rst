@@ -135,7 +135,7 @@ is the ``BoutData`` class.
     >>> from boutdata.data import BoutData
     >>> d = BoutData(path=".")
 
-where the path is optional, and should point to the directory containing the BOUT.inp 
+where the path is optional, and should point to the directory containing the BOUT.inp
 (input) and BOUT.dmp.* (output) files. This will return a dictionary with keys
 "path" (the given path to the data), "options" (the input options) and "outputs" (the output data).
 The tree of options can be printed:
@@ -152,7 +152,7 @@ The tree of options can be printed:
        |   |- bndry_all = neumann
        |   |- scale = 0.0
        |- phisolver
-       |   |- fourth_order = true        
+       |   |- fourth_order = true
        ...
 
 and accessed as a tree of dictionaries:
@@ -177,7 +177,7 @@ In a similar way the outputs are available as dictionary keys:
     ...
     >>> d["outputs"]["rho_s"]
     0.00092165524660235405
-    
+
 There are several modules available for reading NetCDF files, so to
 provide a consistent interface, file access is wrapped into a class
 DataFile. This provides a simple interface for reading and writing files
@@ -257,7 +257,7 @@ To plot data, a convenient wrapper around matplotlib is ``plotdata``
 
     from boutdata import collect
     n = collect("n") # Read data as NumPy array [t,x,y,z]
-    
+
     from boututils.plotdata import plotdata
     plotdata(n[-1,:,0,:])
 
@@ -272,7 +272,7 @@ It is sometimes useful to see an animation of a simulation. To do this there is
 
     from boutdata import collect
     n = collect("n") # Read data as NumPy array [t,x,y,z]
-    
+
     from boututils.showdata import showdata
     showdata(n[:,:,0,:])
 
@@ -642,6 +642,24 @@ data, BOUT++ saves some metadata into output files.
    +---------------------------------------------------------------------------+
    | Variables                                                                 |
    +=============================+=============================================+
+   | `BOUT_VERSION`              | BOUT++ version as a double.                 |
+   +-----------------------------+---------------------------------------------+
+   | `bout_git_hash`             | Git hash of the BOUT++ version that the     |
+   |                             | code was compiled with.                     |
+   +-----------------------------+---------------------------------------------+
+   | `bout_git_diff`             | Git diff of tracked changes in the BOUT++   |
+   |                             | source tree when the code was built. Empty  |
+   |                             | for a clean tree or when git metadata is    |
+   |                             | unavailable.                                |
+   +-----------------------------+---------------------------------------------+
+   | `bout_git_diff_available`   | True if BOUT++ could inspect the source     |
+   |                             | tree with git at build time. False for      |
+   |                             | release tarballs or builds without git.     |
+   +-----------------------------+---------------------------------------------+
+   | `bout_git_dirty`            | True if the source tree had tracked         |
+   |                             | uncommitted changes when the code was       |
+   |                             | built.                                      |
+   +-----------------------------+---------------------------------------------+
    | `run_id`                    | Unique identifier (UUID) for a run          |
    +-----------------------------+---------------------------------------------+
    | `run_restart_from`          | If the run was restarted, the `run_id` of   |
