@@ -2,8 +2,6 @@
 
 # Test enabling/disabling exception backtrace from environment variable
 
-# requires all_tests
-
 from boututils.run_wrapper import shell
 import os
 

@@ -4,9 +4,6 @@
 # Run the test, compare results against the benchmark
 #
 
-# requires: hypre
-# cores: 8
-
 import pytest
 from boutdata.collect import collect
 from boututils.run_wrapper import launch_safe, shell

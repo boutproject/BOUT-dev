@@ -4,9 +4,6 @@
 # Run the test, check it completed successfully
 #
 
-# Requires: netcdf
-# Cores: 4
-
 from boututils.run_wrapper import shell, launch
 from sys import stdout
 

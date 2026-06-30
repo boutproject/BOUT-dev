@@ -4,10 +4,6 @@
 # Run the test, compare results against the benchmark
 #
 
-# requires: all_tests
-# requires: petsc
-# cores: 4
-
 import pytest
 from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect

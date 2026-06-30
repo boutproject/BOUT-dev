@@ -4,11 +4,6 @@
 # Run the test, compare results
 #
 
-# Requires: all_tests
-# Requires: netcdf
-# Requires: not metric_3d
-# Cores: 4
-
 import pytest
 from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect

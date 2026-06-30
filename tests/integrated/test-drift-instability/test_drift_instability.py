@@ -4,8 +4,6 @@
 # Run the test, compare results against the benchmark
 #
 
-# Requires: not metric_3d
-
 import pytest
 import numpy as np
 

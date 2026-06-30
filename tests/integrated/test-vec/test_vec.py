@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-# Cores: 4
-
 from boututils.run_wrapper import launch_safe
 
 

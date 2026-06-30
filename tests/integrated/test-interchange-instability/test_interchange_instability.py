@@ -3,11 +3,6 @@
 #
 # Run the test, compare results against the benchmark
 #
-
-# requires: not metric_3d
-# requires: netcdf
-# cores: 2
-
 import numpy as np
 from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect

@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-# requires: slepc
-
 from boutdata.collect import collect
 from boututils.run_wrapper import launch_safe
 import numpy.testing as npt

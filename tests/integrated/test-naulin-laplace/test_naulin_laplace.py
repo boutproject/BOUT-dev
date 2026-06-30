@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-# requires: not metric_3d
-# Cores: 3
-
 import pytest
 from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
