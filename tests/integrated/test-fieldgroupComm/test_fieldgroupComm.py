@@ -26,7 +26,7 @@ def test_fieldgroupcomm(nproc):
     shell(["rm -f data/BOUT.dmp.*.nc"])
 
     print(f"Running FieldGroup comm test on {nproc} processor(s)...")
-    s, out = launch_safe(cmd, nproc=nproc, pipe=True)
+    _, out = launch_safe(cmd, nproc=nproc, pipe=True)
     with open(f"run.log.{nproc}", "w") as f:
         f.write(out)
 

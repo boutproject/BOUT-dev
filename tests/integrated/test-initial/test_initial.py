@@ -177,7 +177,7 @@ def test_initial(nproc):
     for coord in ["var_x", "var_y", "var_z"]:
         varlist.remove(coord)
 
-    status, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
+    _, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
     with open(f"run.log.{nproc}", "w") as f:
         f.write(out)
 
