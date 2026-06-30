@@ -20,9 +20,7 @@ def test_interchange_instability():
     shell("rm data_10/BOUT.dmp.*")
 
     def growth_rate(path, nproc, log=False):
-        pipe = False
-        if log:
-            pipe = True
+        pipe = bool(log)
         s, out = launch_safe(
             "./2fluid -d " + path, nproc=nproc, mthread=nthreads, pipe=pipe
         )
