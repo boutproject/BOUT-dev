@@ -68,15 +68,16 @@ The documentation is divided into the following sections:
 
    user_docs/time_integration
    user_docs/parallel-transforms
-   user_docs/laplacian
    user_docs/differential_operators
-   user_docs/field_expressions
+   user_docs/parallel_operators
    user_docs/algebraic_operators
+   user_docs/field_expressions
    user_docs/staggered_grids
-   user_docs/eigenvalue_solver
-   user_docs/nonlocal
+   user_docs/laplacian
    user_docs/invertable_operator
    user_docs/petsc
+   user_docs/eigenvalue_solver
+   user_docs/nonlocal
 
 .. toctree::
    :maxdepth: 2

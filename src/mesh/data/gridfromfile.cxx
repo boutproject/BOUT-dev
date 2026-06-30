@@ -1,21 +1,23 @@
 
-#include "bout/traits.hxx"
-#include <bout/griddata.hxx>
-
 #include <bout/array.hxx>
 #include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/fft.hxx>
+#include <bout/griddata.hxx>
 #include <bout/options_io.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
+#include <bout/traits.hxx>
 #include <bout/unused.hxx>
 #include <bout/utils.hxx>
 
 #include <algorithm>
 #include <iterator>
+#include <string>
 #include <utility>
+#include <vector>
 
 GridFile::GridFile(std::string gridfilename)
     : GridDataSource(true), data(bout::OptionsIO::create(gridfilename)->read()),
@@ -462,6 +464,22 @@ void GridFile::readField(Mesh* m, const std::string& name, int UNUSED(ys), int U
       }
     }
   }
+}
+
+bool GridFile::get(Array<int>& var, const std::string& name) {
+  if (not data.isSet(name)) {
+    return false;
+  }
+  var = data[name].as<Array<int>>();
+  return true;
+}
+
+bool GridFile::get(Array<BoutReal>& var, const std::string& name) {
+  if (not data.isSet(name)) {
+    return false;
+  }
+  var = data[name].as<Array<BoutReal>>();
+  return true;
 }
 
 bool GridFile::get([[maybe_unused]] Mesh* m, [[maybe_unused]] std::vector<int>& var,

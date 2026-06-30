@@ -1,9 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "bout/array.hxx"
-#include "bout/boutexception.hxx"
 
-#include <iostream>
 #include <numeric>
 
 // In order to keep these tests independent, they need to use
@@ -19,7 +17,7 @@ public:
 };
 
 TEST_F(ArrayTest, ArraySize) {
-  Array<double> a(5);
+  const Array<double> a(5);
 
   ASSERT_FALSE(a.empty());
   EXPECT_EQ(a.size(), 5);
@@ -36,7 +34,7 @@ TEST_F(ArrayTest, ArrayValues) {
 }
 
 TEST_F(ArrayTest, CopyArrayConstructor) {
-  Array<double> a{15};
+  Array<double> a(15);
 
   std::iota(a.begin(), a.end(), 0);
 
@@ -53,7 +51,7 @@ TEST_F(ArrayTest, CopyArrayConstructor) {
 }
 
 TEST_F(ArrayTest, CopyArrayOperator) {
-  Array<double> a{15};
+  Array<double> a(15);
 
   std::iota(a.begin(), a.end(), 0);
 
@@ -71,7 +69,7 @@ TEST_F(ArrayTest, CopyArrayOperator) {
 }
 
 TEST_F(ArrayTest, CopyArrayNonMemberFunction) {
-  Array<double> a{15};
+  Array<double> a(15);
 
   std::iota(a.begin(), a.end(), 0);
 
@@ -86,11 +84,11 @@ TEST_F(ArrayTest, CopyArrayNonMemberFunction) {
 }
 
 TEST_F(ArrayTest, SwapArray) {
-  Array<double> a{15};
+  Array<double> a(15);
 
   std::iota(a.begin(), a.end(), 0);
 
-  Array<double> b{10};
+  Array<double> b(10);
 
   std::iota(b.begin(), b.end(), 5);
 
@@ -108,7 +106,7 @@ TEST_F(ArrayTest, SwapArray) {
 }
 
 TEST_F(ArrayTest, MoveArrayConstructor) {
-  Array<double> a{15};
+  Array<double> a(15);
 
   std::iota(a.begin(), a.end(), 0);
 
@@ -123,7 +121,7 @@ TEST_F(ArrayTest, MoveArrayConstructor) {
 }
 
 TEST_F(ArrayTest, Reallocate) {
-  Array<double> a{};
+  Array<double> a;
 
   ASSERT_TRUE(a.empty());
 
@@ -235,7 +233,7 @@ TEST_F(ArrayTest, RetrieveData) {
 
 TEST_F(ArrayTest, Assignment) {
   Array<double> a(35);
-  Array<double> b(35);
+  const Array<double> b(35);
   // Assign
   a = b;
 
@@ -251,3 +249,12 @@ TEST_F(ArrayTest, OutOfBoundsThrow) {
   EXPECT_THROW(a[-1] = 1.0, BoutException);
 }
 #endif
+
+TEST_F(ArrayTest, FromValues) {
+  const auto a = Array<int>::fromValues({3, 1, 4, 2});
+  ASSERT_EQ(4, a.size());
+  EXPECT_EQ(3, a[0]);
+  EXPECT_EQ(1, a[1]);
+  EXPECT_EQ(4, a[2]);
+  EXPECT_EQ(2, a[3]);
+}
