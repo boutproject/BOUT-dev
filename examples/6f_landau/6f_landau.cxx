@@ -3486,6 +3486,9 @@ protected:
 
     // phi.applyBoundary();
     mesh->communicate(phi);
+    if (!sheath_boundaries) {
+      SBC_Dirichlet(phi, zero, PF_limit, PF_limit_range);
+    }
 
     if (emass) {
       Field2D acoeff = -delta_e_inv * N0 * N0;
