@@ -25,9 +25,8 @@ def test_interchange_instability():
             "./2fluid -d " + path, nproc=nproc, mthread=nthreads, pipe=pipe
         )
         if pipe:
-            f = open(log, "w")
-            f.write(out)
-            f.close()
+            with open(log, "w") as f:
+                f.write(out)
         # Get time base
         tarr = collect("t_array", path=path)
         nt = len(tarr)
