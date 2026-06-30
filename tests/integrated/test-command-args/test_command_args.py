@@ -8,7 +8,9 @@ import unittest
 import platform
 
 
-OUTPUT_FILE = Path("stdout.log") if platform.system() == "FreeBSD" else "stderr.log"
+OUTPUT_FILE = (
+    Path("stdout.log") if platform.system() == "FreeBSD" else Path("stderr.log")
+)
 
 
 class TestCommandLineArgs(unittest.TestCase):
