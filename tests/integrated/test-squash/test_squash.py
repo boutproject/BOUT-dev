@@ -3,7 +3,6 @@
 import itertools
 import time
 import numpy as np
-import argparse
 import re
 from boututils.datafile import DataFile
 from boututils.run_wrapper import launch_safe, shell_safe
@@ -80,16 +79,7 @@ def verify(f1, f2):
 
 
 def test_squash():
-    parser = argparse.ArgumentParser(description="Test the bout-squashoutput wrapper")
-    parser.add_argument(
-        "executable",
-        help="Path to bout-squashoutput",
-        default="../../../bin",
-        nargs="?",
-    )
-    args = parser.parse_args()
-
-    bout_squashoutput = Path(args.executable + "/bout-squashoutput")
+    bout_squashoutput = Path("../../../bin/bout-squashoutput")
 
     if not Path.exists(bout_squashoutput):
         bout_squashoutput = "bout-squashoutput"
