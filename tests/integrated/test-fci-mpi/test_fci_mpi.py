@@ -32,17 +32,17 @@ def test_fci_mpi():
     def test_case(nxpe: int, nype: int, mthread: int, ref: dict) -> bool:
         run_case(nxpe, nype, mthread)
 
-        failures = []
+        failures = ""
 
         for name, val in ref.items():
             try:
                 npt.assert_allclose(val, collect(name, **COLLECT_KW))
             except AssertionError as e:
-                failures.append((nxpe, nype, name, e))
+                failures += f"\ncase {nxpe=} {nype=} {name=}\n{e}"
 
         return failures
 
-    failures = []
+    failures = ""
 
     for implementation in ["hermitespline", "monotonichermitespline"]:
         for nslice in NSLICES:
@@ -66,13 +66,7 @@ def test_fci_mpi():
 
                 mthread = MAXCORES // (nxpe * nype)
                 failures_ = test_case(nxpe, nype, mthread, ref)
-                failures.extend(failures_)
+                failures += failures_
 
         success = len(failures) == 0
-
-        assert success, "\nSome tests failed:"
-
-        if not success:
-            for nxpe, nype, name, error in failures:
-                print("----------")
-                print(f"case {nxpe=} {nype=} {name=}\n{error}")
+        assert success, "\nSome tests failed:\n" + failures
