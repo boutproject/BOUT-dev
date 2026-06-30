@@ -209,5 +209,8 @@ backward_zt_prime(x,y,z).
 Tools for calculating these mappings include Zoidberg, a Python tool
 which carries out field-line tracing and generates FCI inputs.
 
+For PETSc-based support-operator discretisations built from these FCI mappings,
+see :ref:`sec-parallel-operators-petsc-fci`.
+
 Special handling is needed for parallel boundary conditions, see
 :ref:`sec-parallel-bc-fci`.
