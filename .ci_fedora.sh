@@ -64,4 +64,4 @@ test . != ".$1" && mpi="$1" || mpi=openmpi
 	 -DBOUT_USE_SYSTEM_CPPTRACE=ON
 
     time make -C build build-check -j 2
-    cd build && time ctest --output-on-failure --timeout 300
+    cd build && time cmake --build . --target check
