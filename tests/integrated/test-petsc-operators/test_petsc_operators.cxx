@@ -50,7 +50,6 @@ int main(int argc, char** argv) {
     dump["div_par_op"] = parallel.Div_par(f);
 
     auto* coords = bout::globals::mesh->getCoordinates();
-    bout::globals::mesh->communicate(coords->Bxy);
     coords->Bxy.applyParallelBoundary("parallel_neumann_o1");
     dump["div_par_yud"] = Div_par(f);
 
