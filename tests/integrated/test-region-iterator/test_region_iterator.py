@@ -4,9 +4,6 @@
 # Run the test, check it completed successfully
 #
 
-# requires: netcdf
-# cores: 2
-
 from boututils.run_wrapper import launch_safe
 
 

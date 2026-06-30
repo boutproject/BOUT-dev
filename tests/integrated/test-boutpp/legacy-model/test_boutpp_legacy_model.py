@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 import boutpp
 
-# requires boutpp
-# requires not make
-
 
 def test_boutpp_legacy_model(run_isolated):
 

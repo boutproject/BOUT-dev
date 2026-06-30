@@ -2,9 +2,6 @@
 import boutpp
 import numpy as np
 
-# requires boutpp
-# requires not make
-
 
 def test_boutpp_mms_ddz(run_isolated):
 

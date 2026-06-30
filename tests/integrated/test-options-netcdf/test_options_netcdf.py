@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 # Note: This test requires NCDF4, whereas on Travis NCDF is used
-# requires: netcdf
-# requires: not legacy_netcdf
 
 from boututils.datafile import DataFile
 from boututils.run_wrapper import shell, launch_safe as launch

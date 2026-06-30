@@ -4,10 +4,6 @@
 # Run the test, compare results against the benchmark
 #
 
-# requires: not metric_3d
-# requires: petsc
-# cores: 8
-
 import pytest
 from boututils.run_wrapper import shell, launch, launch_safe
 from boutdata.collect import collect

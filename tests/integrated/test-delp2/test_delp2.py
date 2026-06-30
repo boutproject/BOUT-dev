@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-# requires: fftw
-# cores: 4
 
 import pytest
 import numpy as np

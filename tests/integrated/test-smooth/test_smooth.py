@@ -4,9 +4,6 @@
 # Run the test, compare results against the benchmark
 #
 
-# Requires: netcdf
-# Cores: 4
-
 import pytest
 import numpy as np
 import itertools

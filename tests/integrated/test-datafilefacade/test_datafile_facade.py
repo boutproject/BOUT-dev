@@ -2,8 +2,6 @@
 #
 # Test the DataFileFacade interface by writing to dump files using the SAVE_ONCE macro
 #
-# requires: netcdf
-# cores: 2
 
 import pytest
 import numpy

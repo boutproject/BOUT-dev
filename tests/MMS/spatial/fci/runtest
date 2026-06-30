@@ -3,9 +3,6 @@
 # Python script to run and analyse MMS test
 #
 
-# Cores: 2
-# requires: zoidberg
-
 import argparse
 import json
 import pathlib

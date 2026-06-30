@@ -3,9 +3,6 @@ import boutpp as bc
 import numpy as np
 from boutdata import collect
 
-# requires boutpp
-# requires not make
-
 
 def test_boutpp_collect(run_isolated):
 

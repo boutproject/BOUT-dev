@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-# Cores: 6
-# Requires: netcdf
-
 import pytest
 import numpy
 from pathlib import Path

@@ -4,10 +4,6 @@
 # Run the test, check it completed successfully
 #
 
-# requires: not metric_3d
-# Requires: netcdf
-# Cores: 4
-
 from boututils.run_wrapper import shell, launch
 
 

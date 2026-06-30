@@ -14,10 +14,6 @@ from pathlib import Path
 from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 
-# requires not make
-# requires scipy
-# cores: 4
-
 ########################################
 # Implementations of BOUT++ functions
 

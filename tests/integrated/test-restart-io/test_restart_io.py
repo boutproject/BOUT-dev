@@ -2,8 +2,6 @@
 #
 # Test file I/O by loading from restart files and writing to dump files
 #
-# requires: netcdf
-# cores: 4
 
 from boutdata import restart
 from boutdata.collect import collect

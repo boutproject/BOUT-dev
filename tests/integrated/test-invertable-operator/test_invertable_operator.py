@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-
-# requires: petsc
-# requires: not metric_3d
-# cores: 2
-
 #
 # Run the test, compare results against expected value
 #

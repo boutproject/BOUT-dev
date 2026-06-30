@@ -5,9 +5,6 @@ import numpy.testing as npt
 from boututils.datafile import DataFile
 from boututils.run_wrapper import shell, launch_safe
 
-# Cores: 18
-# Requires: netcdf
-
 # Note, the expected values for the communicated cells, which are used to test the
 # results, are shown in corner_communication_diagram.ods
 

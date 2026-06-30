@@ -5,10 +5,6 @@ from pathlib import Path
 # Run the test, compare results against the benchmark
 #
 
-# requires: not metric_3d
-# Requires: netcdf
-# Cores: 4
-
 import pytest
 import numpy.testing as npt
 from boututils.run_wrapper import shell, launch_safe

@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-# requires boutpp
-# requires not make
 import numpy as np
 import numpy.testing as npt
 import boutpp as bc

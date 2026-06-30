@@ -8,10 +8,6 @@ from boututils.datafile import DataFile
 from boututils.run_wrapper import launch_safe, shell_safe
 from pathlib import Path
 
-# requires: all_tests
-# requires: netcdf
-# cores: 4
-
 IGNORED_VARS_PATTERN = re.compile(
     "(wtime|ncalls|arkode|cvode|run_id|run_restart_from|M.?SUB|N.?PE|iteration|wall_time|has_legacy_netcdf|hist_hi|openmp_threads).*"
 )

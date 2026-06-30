@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-# requires: not metric_3d
-# requires: petsc
-
 #
 # Run the test, compare results against the benchmark
 #

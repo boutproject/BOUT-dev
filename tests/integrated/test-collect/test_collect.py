@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-# requires: all_tests
-
 from boututils.run_wrapper import shell_safe
 
 from boutdata import collect
