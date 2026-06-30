@@ -1,5 +1,5 @@
 /**************************************************************************
- * Perpendicular Laplacian inversion. 
+ * Perpendicular Laplacian inversion.
  *                           Using Geometrical Multigrid Solver
  *
  * Equation solved is:
@@ -9,7 +9,7 @@
  * Copyright 2016 K.S. Kang
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -32,8 +32,11 @@
 
 #if not BOUT_USE_METRIC_3D
 
+#include <bout/assert.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
+#include <bout/output.hxx>
 
 #if BOUT_USE_OPENMP
 #include <omp.h>
@@ -107,11 +110,7 @@ LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_
   }
   Nz_global = localmesh->GlobalNz;
   Nz_local = Nz_global; // No parallelization in z-direction (for now)
-  //
-  //else {
-  //  Nz_local = localmesh->zend - localmesh->zstart + 1; // excluding guard cells
-  //  Nz_global = localmesh->GlobalNz - 2*localmesh->zstart; // excluding guard cells
-  // }
+
   if (mgcount == 0) {
     output << "Nz=" << Nz_global << "(" << Nz_local << ")" << endl;
   }
@@ -214,7 +213,9 @@ LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_
     }
     BOUT_OMP_SAFE(parallel)
     BOUT_OMP_SAFE(master)
-    { output << "Num threads = " << omp_get_num_threads() << endl; }
+    {
+      output << "Num threads = " << omp_get_num_threads() << endl;
+    }
   }
 }
 
@@ -384,11 +385,9 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
   }
 
   if ((pcheck == 3) && (mgcount == 0)) {
-    FILE* outf;
-    char outfile[256];
-    sprintf(outfile, "test_matF_%d.mat", kMG->rProcI);
+    std::string outfile = fmt::format("test_matF_{:d}.mat", kMG->rProcI);
     output << "Out file= " << outfile << endl;
-    outf = fopen(outfile, "w");
+    FILE* outf = fopen(outfile.c_str(), "w");
     int dim = (lxx + 2) * (lzz + 2);
     fprintf(outf, "dim = %d (%d, %d)\n", dim, lxx, lzz);
 
@@ -411,11 +410,9 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       output << i << "dimension= " << kMG->lnx[i - 1] << "(" << kMG->gnx[i - 1] << "),"
              << kMG->lnz[i - 1] << endl;
 
-      FILE* outf;
-      char outfile[256];
-      sprintf(outfile, "test_matC%1d_%d.mat", i, kMG->rProcI);
+      std::string outfile = fmt::format("test_matC{:1d}_{:d}.mat", i, kMG->rProcI);
       output << "Out file= " << outfile << endl;
-      outf = fopen(outfile, "w");
+      FILE* outf = fopen(outfile.c_str(), "w");
       int dim = (kMG->lnx[i - 1] + 2) * (kMG->lnz[i - 1] + 2);
       fprintf(outf, "dim = %d (%d,%d)\n", dim, kMG->lnx[i - 1], kMG->lnz[i - 1]);
 

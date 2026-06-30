@@ -1,16 +1,16 @@
 /**************************************************************************
- * Perpendicular Laplacian inversion. 
+ * Perpendicular Laplacian inversion.
  *                           PARALLEL CODE - SIMPLE ALGORITHM
- * 
+ *
  * I'm just calling this Simple Parallel Tridag. Naive parallelisation of
  * the serial code. For use as a reference case.
- * 
+ *
  * Overlap calculation / communication of poloidal slices to achieve some
  * parallelism.
  *
  * Changelog
  * ---------
- * 
+ *
  * 2014-06  Ben Dudson <benjamin.dudson@york.ac.uk>
  *     * Removed static variables in functions, changing to class members.
  *
@@ -18,7 +18,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -142,8 +142,8 @@ private:
     Array<BoutReal> buffer;
   };
 
-  int ys, ye;         // Range of Y indices
-  SPT_data slicedata; // Used to solve for a single FieldPerp
+  int ys, ye;              // Range of Y indices
+  SPT_data slicedata;      // Used to solve for a single FieldPerp
   Array<SPT_data> alldata; // Used to solve a Field3D
 
   Array<dcomplex> dc1d; ///< 1D in Z for taking FFTs
