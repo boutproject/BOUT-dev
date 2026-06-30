@@ -18,9 +18,6 @@ def test_twistshift_staggered():
     test_aligned = collect("test_aligned", path=datapath, yguards=True, info=False)
     check = collect("check", path=datapath, yguards=True, info=False)
 
-    # from boututils.showdata import showdata
-    # showdata([test, test_aligned, check], titles=['test', 'test_aligned', 'check'])
-
     success = True
 
     # Check test_aligned is *not* periodic in y
