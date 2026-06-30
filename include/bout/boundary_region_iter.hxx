@@ -704,7 +704,7 @@ inline BoundaryRegionX* NewBoundaryRegionXOut(const std::string& name, int ymin,
 inline BoundaryRegionY* NewBoundaryRegionYUp(const std::string& name, int xmin, int xmax,
                                              Mesh* mesh) {
   auto* pointer = new BoundaryRegionY(
-      name, -1, mesh,
+      name, 1, mesh,
       Region<Ind3D>(xmin, xmax, mesh->yend, mesh->yend, mesh->zstart, mesh->zend,
                     mesh->LocalNy, mesh->LocalNz, mesh->maxregionblocksize));
   pointer->legacy = new ::BoundaryRegionYUp(name, xmin, xmax, mesh);
@@ -714,7 +714,7 @@ inline BoundaryRegionY* NewBoundaryRegionYUp(const std::string& name, int xmin, 
 inline BoundaryRegionY* NewBoundaryRegionYDown(const std::string& name, int xmin,
                                                int xmax, Mesh* mesh) {
   auto* pointer = new BoundaryRegionY(
-      name, 1, mesh,
+      name, -1, mesh,
       Region<Ind3D>(xmin, xmax, mesh->ystart, mesh->ystart, mesh->zstart, mesh->zend,
                     mesh->LocalNy, mesh->LocalNz, mesh->maxregionblocksize));
   pointer->legacy = new ::BoundaryRegionYDown(name, xmin, xmax, mesh);
