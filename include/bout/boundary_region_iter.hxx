@@ -146,23 +146,20 @@ public:
   /// off = 1 is the last point in the domain
   /// off = 2 is the second to last point in the domain
   template <bool check = true>
-  BoutReal& getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& func,
-                  int off) const {
+  BoutReal getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& func,
+                 int off) const {
     return static_cast<const impl*>(this)->template _getAt<check>(func, off);
   }
   /// Get the first point in the boundary
-  const BoutReal&
-  next(const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
+  BoutReal next(const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
     return static_cast<const impl*>(this)->_getAt(func, 0);
   }
   /// Get the last point in the domain
-  const BoutReal&
-  current(const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
+  BoutReal current(const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
     return static_cast<const impl*>(this)->_getAt(func, 1);
   }
   /// Get the second to last point in the domain - this may not be valid and thus throw
-  const BoutReal&
-  prev(const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
+  BoutReal prev(const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
     return static_cast<const impl*>(this)->_getAt(func, 2);
   }
 
