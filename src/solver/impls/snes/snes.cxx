@@ -78,6 +78,7 @@ PetscErrorCode SNESSolver::FDJinitialise() {
     Field3D index = globalIndex(0);
     PetscCall(petsc_preconditioner.createJacobianPattern(
         index, *options, nlocal, n2Dvars(), n3Dvars(), BoutComm::get()));
+    applyQueuedJacobianPatterns(petsc_preconditioner.jacobian());
     output_progress.write("Creating Jacobian coloring\n");
     PetscCall(petsc_preconditioner.updateColoring(FormFunctionForColoring, this));
 

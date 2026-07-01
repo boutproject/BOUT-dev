@@ -78,9 +78,16 @@ class SNESSolver : public Solver {
 public:
   explicit SNESSolver(Options* opts = nullptr);
   ~SNESSolver() override = default;
+  using Solver::addJacobianPattern;
 
   int init() override;
   int run() override;
+#if BOUT_HAS_PETSC
+  bool addJacobianPattern(const PetscCellOperator& op, VarRef out_var,
+                          VarRef in_var) override {
+    return queueJacobianPattern(op, out_var, in_var);
+  }
+#endif
 
   /// Nonlinear function. This is called by PETSc SNES object
   /// via a static C-style function. For implicit

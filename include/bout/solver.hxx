@@ -72,6 +72,10 @@ using TimestepMonitorFunc = int (*)(Solver* solver, BoutReal simtime, BoutReal l
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/generic_factory.hxx"
+#if BOUT_HAS_PETSC
+#include "bout/petsc_interface.hxx"
+#include "bout/petsc_operators.hxx"
+#endif
 #include "bout/vector2d.hxx"
 #include "bout/vector3d.hxx"
 
@@ -81,6 +85,7 @@ using TimestepMonitorFunc = int (*)(Solver* solver, BoutReal simtime, BoutReal l
 
 #include <list>
 #include <string>
+#include <string_view>
 
 using SolverType = std::string;
 constexpr auto SOLVERCVODE = "cvode";
@@ -210,6 +215,29 @@ using RegisterUnavailableSolver = SolverFactory::RegisterUnavailableInFactory;
  */
 class Solver {
 public:
+  class VarRef {
+  public:
+    static constexpr int AllValue = -1;
+    static constexpr int InvalidValue = -2;
+
+    constexpr VarRef() = default;
+
+    static constexpr VarRef All() { return VarRef(AllValue); }
+    static constexpr VarRef Invalid() { return VarRef(InvalidValue); }
+
+    constexpr bool isAll() const { return value == AllValue; }
+    constexpr bool isInvalid() const { return value == InvalidValue; }
+    constexpr bool isConcrete() const { return value >= 0; }
+    constexpr bool isValid() const { return isAll() || isConcrete(); }
+    constexpr int index() const { return value; }
+
+  private:
+    explicit constexpr VarRef(int value) : value(value) {}
+
+    int value{InvalidValue};
+    friend class Solver;
+  };
+
   Solver(Options* opts = nullptr);
   virtual ~Solver() = default;
 
@@ -264,6 +292,21 @@ public:
                    const std::string& description = "");
   virtual void add(Vector3D& v, const std::string& name,
                    const std::string& description = "");
+
+  /// Get the solver-variable reference for a scalar field/component by name.
+  VarRef getVarRef(std::string_view name) const;
+
+#if BOUT_HAS_PETSC
+  /// Register a Jacobian sparsity contribution for all variable blocks.
+  bool addJacobianPattern(const PetscCellOperator& op);
+
+  /// Register a Jacobian sparsity contribution for one or more variable blocks.
+  ///
+  /// Either variable reference may be VarRef::All(), which expands when the
+  /// Jacobian matrix is created during solver initialisation.
+  virtual bool addJacobianPattern(const PetscCellOperator& op, VarRef out_var,
+                                  VarRef in_var);
+#endif
 
   /// Returns true if constraints available
   virtual bool constraints() { return has_constraints; }
@@ -688,6 +731,26 @@ private:
   /// Physics model being evolved
   PhysicsModel* model{nullptr};
 
+protected:
+#if BOUT_HAS_PETSC
+  struct DeferredJacobianPattern {
+    bout::petsc::UniqueMat submatrix{new Mat{nullptr}};
+    VarRef out_var{};
+    VarRef in_var{};
+  };
+
+  /// Queue a Jacobian-pattern contribution for PETSc-preconditioner-based solvers.
+  bool queueJacobianPattern(const PetscCellOperator& op, VarRef out_var, VarRef in_var);
+
+  /// Insert any queued Jacobian-pattern contributions into an existing Jacobian matrix.
+  void applyQueuedJacobianPatterns(Mat Jfd) const;
+
+  /// Check whether the current solver variable layout is compatible with
+  /// addOperatorSparsity().
+  bool canApplyQueuedJacobianPatterns() const;
+#endif
+
+private:
   /// Should non-split physics models be treated as diffusive?
   bool is_nonsplit_model_diffusive{true};
 
@@ -703,6 +766,10 @@ private:
   std::list<MonitorInfo> monitors;
   /// List of timestep monitor functions
   std::list<TimestepMonitorFunc> timestep_monitors;
+
+#if BOUT_HAS_PETSC
+  std::vector<DeferredJacobianPattern> deferred_jacobian_patterns;
+#endif
 
   /// Should be run before user RHS is called
   void pre_rhs(BoutReal t);

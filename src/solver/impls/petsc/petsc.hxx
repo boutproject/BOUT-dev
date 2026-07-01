@@ -63,9 +63,14 @@ class PetscSolver : public Solver {
 public:
   PetscSolver(Options* opts = nullptr);
   ~PetscSolver();
+  using Solver::addJacobianPattern;
 
   int init() override;
   int run() override;
+  bool addJacobianPattern(const PetscCellOperator& op, VarRef out_var,
+                          VarRef in_var) override {
+    return queueJacobianPattern(op, out_var, in_var);
+  }
 
   // These functions used internally (but need to be public)
 

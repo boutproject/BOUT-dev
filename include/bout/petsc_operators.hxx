@@ -709,6 +709,16 @@ public:
   /// low-level callers that need direct PETSc access.
   Mat raw() const { return *this->mat_operator; }
 
+  /// @brief Return the shared mapping for the operator's output (row) space.
+  const std::shared_ptr<const PetscIndexMapping>& getOutMapping() const {
+    return out_mapping;
+  }
+
+  /// @brief Return the shared mapping for the operator's input (column) space.
+  const std::shared_ptr<const PetscIndexMapping>& getInMapping() const {
+    return in_mapping;
+  }
+
   /// @brief Construct a diagonal operator from a vector of diagonal entries.
   ///
   /// Only available when @p OutSpaceTag == @p InSpaceTag (square, same-space

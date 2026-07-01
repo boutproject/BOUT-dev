@@ -47,6 +47,10 @@
 #include "bout/vector2d.hxx"
 #include "bout/vector3d.hxx"
 
+#if BOUT_HAS_PETSC
+#include "bout/petsc_jacobian.hxx"
+#endif
+
 #include <fmt/format.h>
 
 #include <cmath>
@@ -349,6 +353,111 @@ void Solver::add(Vector3D& v, const std::string& name, const std::string& descri
   v.applyBoundary(true);
   v3d.emplace_back(std::move(d));
 }
+
+Solver::VarRef Solver::getVarRef(std::string_view name) const {
+  int index = 0;
+  for (const auto& field : f2d) {
+    if (field.name == name) {
+      return VarRef(index);
+    }
+    ++index;
+  }
+  for (const auto& field : f3d) {
+    if (field.name == name) {
+      return VarRef(index);
+    }
+    ++index;
+  }
+  return VarRef::Invalid();
+}
+
+#if BOUT_HAS_PETSC
+bool Solver::addJacobianPattern(const PetscCellOperator& op) {
+  return addJacobianPattern(op, VarRef::All(), VarRef::All());
+}
+
+bool Solver::addJacobianPattern(const PetscCellOperator& UNUSED(op),
+                                VarRef UNUSED(out_var), VarRef UNUSED(in_var)) {
+  return false;
+}
+
+bool Solver::queueJacobianPattern(const PetscCellOperator& op, VarRef out_var,
+                                  VarRef in_var) {
+  if (initialised || !out_var.isValid() || !in_var.isValid()) {
+    return false;
+  }
+
+  auto out_mapping =
+      std::dynamic_pointer_cast<const PetscCellMapping>(op.getOutMapping());
+  auto in_mapping = std::dynamic_pointer_cast<const PetscCellMapping>(op.getInMapping());
+  if (!out_mapping || !in_mapping || (out_mapping != in_mapping)) {
+    return false;
+  }
+
+  DeferredJacobianPattern pattern;
+  *pattern.submatrix = out_mapping->extractEvolvingSubmatrix(op);
+  pattern.out_var = out_var;
+  pattern.in_var = in_var;
+  deferred_jacobian_patterns.emplace_back(std::move(pattern));
+  return true;
+}
+
+bool Solver::canApplyQueuedJacobianPatterns() const {
+  if (deferred_jacobian_patterns.empty()) {
+    return true;
+  }
+
+  if (n2Dvars() != 0 || n3Dvars() == 0) {
+    return false;
+  }
+
+  const auto evolve_boundary = [](const auto& field) { return field.evolve_bndry; };
+  return std::none_of(f2d.begin(), f2d.end(), evolve_boundary)
+         && std::none_of(f3d.begin(), f3d.end(), evolve_boundary);
+}
+
+void Solver::applyQueuedJacobianPatterns(Mat Jfd) const {
+  if (deferred_jacobian_patterns.empty()) {
+    return;
+  }
+
+  if (!canApplyQueuedJacobianPatterns()) {
+    throw BoutException(
+        "Queued Jacobian patterns require a uniform evolving-cell layout with only "
+        "Field3D variables and no evolving boundary cells");
+  }
+
+  const int nvars = n2Dvars() + n3Dvars();
+  ASSERT1(nvars > 0);
+
+  BOUT_DO_PETSC(MatSetOption(Jfd, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE));
+
+  for (const auto& pattern : deferred_jacobian_patterns) {
+    if (pattern.out_var.isAll() && pattern.in_var.isAll()) {
+      addOperatorSparsity(Jfd, *pattern.submatrix);
+      continue;
+    }
+    if (pattern.out_var.isAll()) {
+      for (int out_var = 0; out_var < nvars; ++out_var) {
+        addOperatorSparsity(Jfd, *pattern.submatrix, out_var, pattern.in_var.index());
+      }
+      continue;
+    }
+    if (pattern.in_var.isAll()) {
+      for (int in_var = 0; in_var < nvars; ++in_var) {
+        addOperatorSparsity(Jfd, *pattern.submatrix, pattern.out_var.index(), in_var);
+      }
+      continue;
+    }
+    addOperatorSparsity(Jfd, *pattern.submatrix, pattern.out_var.index(),
+                        pattern.in_var.index());
+  }
+
+  BOUT_DO_PETSC(MatAssemblyBegin(Jfd, MAT_FINAL_ASSEMBLY));
+  BOUT_DO_PETSC(MatAssemblyEnd(Jfd, MAT_FINAL_ASSEMBLY));
+  BOUT_DO_PETSC(MatSetOption(Jfd, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE));
+}
+#endif
 
 /**************************************************************************
  * Constraints
