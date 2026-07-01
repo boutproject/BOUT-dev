@@ -230,8 +230,9 @@ BoundaryFactory::create(const string& name,
   return nullptr;
 }
 
-BoundaryOpBase* BoundaryFactory::create(const char* name,
-                                        std::shared_ptr<BoundaryRegionBase> region) {
+BoundaryOpBase*
+BoundaryFactory::create(const char* name,
+                        const std::shared_ptr<BoundaryRegionBase>& region) {
   return create(string(name), region);
 }
 
@@ -364,7 +365,7 @@ BoundaryFactory::createFromOptions(const string& varname,
 
 BoundaryOpBase*
 BoundaryFactory::createFromOptions(const char* varname,
-                                   std::shared_ptr<BoundaryRegionBase> region) {
+                                   const std::shared_ptr<BoundaryRegionBase>& region) {
   return createFromOptions(string(varname), region);
 }
 

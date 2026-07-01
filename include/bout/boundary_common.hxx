@@ -2,6 +2,8 @@
 
 #include <bout/bout_types.hxx>
 
+#include <cstdint>
+
 namespace bout {
 namespace boundary {
 /// Types of free boundary condition

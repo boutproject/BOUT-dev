@@ -73,13 +73,14 @@ public:
   /// Create a boundary operation object
   BoundaryOpBase* create(const std::string& name,
                          const std::shared_ptr<BoundaryRegionBase>& region);
-  BoundaryOpBase* create(const char* name, std::shared_ptr<BoundaryRegionBase> region);
+  BoundaryOpBase* create(const char* name,
+                         const std::shared_ptr<BoundaryRegionBase>& region);
 
   /// Create a boundary object using the options file
   BoundaryOpBase* createFromOptions(const std::string& varname,
                                     const std::shared_ptr<BoundaryRegionBase>& region);
   BoundaryOpBase* createFromOptions(const char* varname,
-                                    std::shared_ptr<BoundaryRegionBase> region);
+                                    const std::shared_ptr<BoundaryRegionBase>& region);
 
   /*!
    * Add available boundary conditions and modifiers
