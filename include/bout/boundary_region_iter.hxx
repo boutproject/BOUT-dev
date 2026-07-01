@@ -559,7 +559,7 @@ public:
       location = dir == 1 ? BNDRY_XOUT : BNDRY_XIN;
     } else {
       this->isY = true;
-      location = dir == 1 ? BNDRY_YDOWN : BNDRY_YUP;
+      location = dir == 1 ? BNDRY_YUP : BNDRY_YDOWN;
     }
   }
   int dir() { return _dir; }
