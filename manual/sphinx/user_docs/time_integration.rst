@@ -721,6 +721,14 @@ The default and recommended approach for most problems:
 The coloring algorithm exploits the sparse structure of the Jacobian to reduce
 the number of function evaluations needed for finite differencing.
 
+If the default solver stencil is too narrow for part of the physics, PETSc
+cell-space operators can add extra sparsity information before coloring is set
+up. Register those contributions during model setup with
+``solver->addJacobianPattern(...)``. This is particularly useful for
+``PetscCellOperator`` stencils assembled from the FCI support-operator tools in
+:ref:`sec-parallel-operators-petsc-fci`. See :ref:`sec-preconditioning` for the
+full solver-side behavior and current limitations.
+
 Jacobian coloring stencil
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -997,263 +1005,42 @@ Finally, delete the model and solver when finished::
 **Note:** If an ODE needs to be solved multiple times, at the moment it
 is recommended to delete the solver, and create a new one each time.
 
-.. _sec-preconditioning:
-
 Preconditioning
 ---------------
 
-At every time step, an implicit scheme such as BDF has to solve a
-non-linear problem to find the next solution. This is usually done using
-Newton’s method, each step of which involves solving a linear (matrix)
-problem. For :math:`N` evolving variables is an :math:`N\times N` matrix
-and so can be very large. By default matrix-free methods are used, in
-which the Jacobian :math:`\mathcal{J}` is approximated by finite
-differences (see next subsection), and so this matrix never needs to be
-explicitly calculated. Finding a solution to this matrix can still be
-difficult, particularly as :math:`\delta t` gets large compared with
-some time-scales in the system (i.e. a stiff problem).
+Implicit solvers repeatedly solve linearised systems of the form
+:math:`(I - \gamma J)\,x = b`. Preconditioning improves the convergence of
+those inner solves by applying a cheap approximate inverse, while
+matrix-free or finite-difference Jacobian information controls how the solver
+models the couplings in :math:`J`.
 
-A preconditioner is a function which quickly finds an approximate
-solution to this matrix, speeding up convergence to a solution. A
-preconditioner does not need to include all the terms in the problem
-being solved, as the preconditioner only affects the convergence rate
-and not the final solution. A good preconditioner can therefore
-concentrate on solving the parts of the problem with the fastest
-time-scales.
+For most models, the relevant entry points are:
 
-A simple example  [1]_ is a coupled wave equation, solved in the
-``test-precon`` example code:
+- ``solver->setPrecon(...)`` for a user-supplied preconditioner
+- ``solver->setJacobian(...)`` for a Jacobian-vector product
+- ``matrix_free = false`` and ``use_coloring = true`` for PETSc-backed
+  finite-difference Jacobians
+- ``solver->addJacobianPattern(...)`` when a ``PetscCellOperator`` provides a
+  better sparsity pattern than the default solver stencil
 
-.. math::
+The detailed discussion, worked example, and implementation notes are in
+:ref:`sec-preconditioning`. This section keeps the focus on solver options and
+setup.
 
-   \frac{\partial u}{\partial t} = \partial_{||}v \qquad \frac{\partial
-   v}{\partial t} = \partial_{||} u
+Jacobian-vector function
+------------------------
 
-First, calculate the Jacobian of this set of equations by taking
-partial derivatives of the time-derivatives with respect to each of the
-evolving variables
+If the physics model can apply the Jacobian to a vector directly, it can provide
+that routine through ``solver->setJacobian(...)`` during ``PhysicsModel::init``.
+This is mainly useful in matrix-free workflows, where the solver needs
+Jacobian-vector products but does not assemble a full sparse matrix.
 
-.. math::
-
-   \mathcal{J} = (\begin{array}{cc}
-   \frac{\partial}{\partial u}\frac{\partial u}{\partial t} &
-   \frac{\partial}{\partial v}\frac{\partial u}{\partial t}\\
-   \frac{\partial}{\partial u}\frac{\partial v}{\partial t} &
-   \frac{\partial}{\partial v}\frac{\partial v}{\partial t}
-   \end{array}
-   ) = (\begin{array}{cc}
-   0 & \partial_{||} \\
-   \partial_{||} & 0
-   \end{array}
-   )
-
-In this case :math:`\frac{\partial u}{\partial t}` doesn’t depend on
-:math:`u` nor :math:`\frac{\partial v}{\partial t}` on :math:`v`, so the
-diagonal is empty. Since the equations are linear, the Jacobian doesn’t
-depend on :math:`u` or :math:`v` and so
-
-.. math::
-
-   \frac{\partial}{\partial t}(\begin{array}{c} u \\
-   v \end{array}) = \mathcal{J} (\begin{array}{c} u \\
-   v \end{array} )
-
-In general for non-linear functions :math:`\mathcal{J}` gives the
-change in time-derivatives in response to changes in the state variables
-:math:`u` and :math:`v`.
-
-In implicit time stepping, the preconditioner needs to solve an equation
-
-.. math::
-
-   \mathcal{I} - \gamma \mathcal{J}
-
-where :math:`\mathcal{I}` is the identity matrix, and :math:`\gamma`
-depends on the time step and method (e.g. :math:`\gamma = \delta t` for
-backwards Euler method). For the simple wave equation problem, this is
-
-.. math::
-
-   \mathcal{I} - \gamma \mathcal{J} = (\begin{array}{cc}
-   1 & -\gamma\partial_{||} \\
-   -\gamma\partial_{||} & 1
-   \end{array}
-   )
-
-This matrix can be block inverted using Schur factorisation  [2]_
-
-.. math::
-
-   (\begin{array}{cc}
-     {\mathbf{E}} & {\mathbf{U}} \\
-     {\mathbf{L}} & {\mathbf{D}}
-   \end{array})^{-1}
-    = (\begin{array}{cc}
-     {\mathbf{I}} & -{\mathbf{E}}^{-1}{\mathbf{U}} \\
-     0 & {\mathbf{I}}
-   \end{array}
-   )(\begin{array}{cc}
-     {\mathbf{E}}^{-1} & 0 \\
-     0 & {\mathbf{P}}_{Schur}^{-1}
-   \end{array}
-   )(\begin{array}{cc}
-     {\mathbf{I}} & 0 \\
-     -{\mathbf{L}}{\mathbf{E}}^{-1} & {\mathbf{I}}
-   \end{array}
-   )
-
-where
-:math:`{\mathbf{P}}_{Schur} = {\mathbf{D}} - {\mathbf{L}}{\mathbf{E}}^{-1}{\mathbf{U}}`
-Using this, the wave problem becomes:
-
-.. math::
-   :label: precon
-
-   (\begin{array}{cc} 1 & -\gamma\partial_{||} \\
-   -\gamma\partial_{||} & 1 \end{array})^{-1} = (\begin{array}{cc} 1 & \gamma\partial_{||}\\
-   0 & 1 \end{array} )(\begin{array}{cc} 1 & 0 \\
-   0 & (1 -\gamma^2\partial^2_{||})^{-1} \end{array} )(\begin{array}{cc} 1 & 0\\
-   \gamma\partial_{||} & 1 \end{array} )
-
-The preconditioner is implemented by defining a function of the form
-
-::
-
-    int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
-      ...
-    }
-
-which takes as input the current time, the :math:`\gamma` factor
-appearing above, and :math:`\delta` which is only important for
-constrained problems (not discussed here... yet). The current state of
-the system is stored in the state variables (here ``u`` and ``v`` ),
-whilst the vector to be preconditioned is stored in the time derivatives
-(here ``ddt(u)`` and ``ddt(v)`` ). At the end of the preconditioner the
-result should be in the time derivatives. A preconditioner which is just
-the identity matrix and so does nothing is therefore::
-
-    int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
-    }
-
-To implement the preconditioner in equation :eq:`precon`, first apply the
-rightmost matrix to the given vector:
-
-.. math::
-
-   (\begin{array}{c}
-   \texttt{ddt(u)} \\
-   \texttt{ddt(v)}
-   \end{array}
-   ) = (\begin{array}{cc}
-   1 & 0 \\
-   \gamma\partial_{||} & 1
-   \end{array}
-   )(\begin{array}{c}
-   \texttt{ddt(u)} \\
-   \texttt{ddt(v)}
-   \end{array}
-   )
-
-::
-
-    int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
-      mesh->communicate(ddt(u));
-      //ddt(u) = ddt(u);
-      ddt(v) = gamma*Grad_par(ddt(u)) + ddt(v);
-
-note that since the preconditioner is linear, it doesn’t depend on
-:math:`u` or :math:`v`. As in the RHS function, since we are taking a
-differential of ``ddt(u)``, it first needs to be communicated to
-exchange guard cell values.
-
-The second matrix
-
-.. math::
-
-   (\begin{array}{c}
-   \texttt{ddt(u)} \\
-   \texttt{ddt(v)}
-   \end{array}
-   ) \rightarrow (\begin{array}{cc}
-   1 & 0 \\
-   0 & (1 - \gamma^2\partial^2_{||})^{-1}
-   \end{array}
-   )(\begin{array}{c}
-   \texttt{ddt(u)} \\
-   \texttt{ddt(v)}
-   \end{array}
-   )
-
-doesn’t alter :math:`u`, but solves a parabolic equation in the
-parallel direction. There is a solver class to do this called
-`InvertPar` which solves the equation :math:`(A + B\partial_{||}^2)x =
-b` where :math:`A` and :math:`B` are `Field2D` or constants [3]_. In
-`PhysicsModel::init` we create one of these solvers::
-
-    InvertPar *inv; // Parallel inversion class
-    int init(bool restarting) {
-       ...
-       inv = InvertPar::Create();
-       inv->setCoefA(1.0);
-       ...
-    }
-
-In the preconditioner we then use this solver to update :math:`v`::
-
-      inv->setCoefB(-SQ(gamma));
-      ddt(v) = inv->solve(ddt(v));
-
-which solves
-:math:`ddt(v) \rightarrow (1 - \gamma^2\partial_{||}^2)^{-1} ddt(v)`.
-The final matrix just updates :math:`u` using this new solution for
-:math:`v`
-
-.. math::
-
-   (\begin{array}{c}
-   \texttt{ddt(u)} \\
-   \texttt{ddt(v)}
-   \end{array}
-   ) \rightarrow (\begin{array}{cc}
-   1 & \gamma\partial_{||} \\
-   0 & 1
-   \end{array}
-   )(\begin{array}{c}
-   \texttt{ddt(u)} \\
-   \texttt{ddt(v)}
-   \end{array}
-   )
-
-::
-
-      mesh->communicate(ddt(v));
-      ddt(u) = ddt(u) + gamma*Grad_par(ddt(v));
-
-Finally, boundary conditions need to be imposed, which should be
-consistent with the conditions used in the RHS::
-
-      ddt(u).applyBoundary("dirichlet");
-      ddt(v).applyBoundary("dirichlet");
-
-To use the preconditioner, pass the function to the solver in
-`PhysicsModel::init`::
-
-    int init(bool restarting) {
-      solver->setPrecon(precon);
-      ...
-    }
-
-then in the ``BOUT.inp`` settings file switch on the preconditioner
-
-.. code-block:: bash
-
-    [solver]
-    type = cvode          # Need CVODE or PETSc
-    cvode_precon_method = user   # Use user-supplied preconditioner
-    rightprec = false     # Use Right preconditioner (default left)
-
-Jacobian function
------------------
+When a PETSc-backed implicit solver is configured with
+``matrix_free = false``, BOUT++ can instead assemble an explicit sparse
+Jacobian by finite differences. In that case, the coloring options described
+below determine how the sparsity pattern is used, and
+``solver->addJacobianPattern(...)`` can add extra block structure from
+``PetscCellOperator`` stencils before the colored finite differencing is set up.
 
 DAE constraint equations
 ------------------------
@@ -1458,73 +1245,80 @@ here:\ https://computation.llnl.gov/casc/sundials/support/notes.html).
 This may in some cases be less efficient.
 
 
-Implementation internals
-------------------------
+Solver interface
+----------------
 
-The solver is the interface between BOUT++ and the time-integration
-code such as SUNDIALS. All solvers implement the `Solver`
-class interface (see ``src/solver/generic_solver.hxx``).
+The solver is the interface between BOUT++ and the time-integration library.
+All time integrators implement the ``Solver`` interface, and most user-facing
+setup happens during ``PhysicsModel::init`` before ``solver->init()`` is called.
 
-First all the fields which are to be evolved need to be added to the
-solver. These are always done in pairs, the first specifying the field,
-and the second the time-derivative::
+The main setup methods are:
 
-    void add(Field2D &v, Field2D &F_v, const char* name);
+.. code-block:: C++
 
-This is normally called in the `PhysicsModel::init` initialisation routine.
-Some solvers (e.g. IDA) can support constraints, which need to be added
-in the same way as evolving fields::
+   void add(Field2D& v, const std::string& name,
+            const std::string& description = "");
+   void add(Field3D& v, const std::string& name,
+            const std::string& description = "");
+   void add(Vector2D& v, const std::string& name,
+            const std::string& description = "");
+   void add(Vector3D& v, const std::string& name,
+            const std::string& description = "");
 
-    bool constraints();
-    void constraint(Field2D &v, Field2D &C_v, const char* name);
+   bool constraints();
+   void constraint(Field3D& v, Field3D& residual, std::string name);
 
-The ``constraints()`` function tests whether or not the current solver
-supports constraints. The format of ``constraint(...)`` is the same as
-``add``, except that now the solver will attempt to make ``C_v`` zero.
-If ``constraint`` is called when the solver doesn’t support them then an
-error should occur.
+   typedef int (*PhysicsPrecon)(BoutReal t, BoutReal gamma, BoutReal delta);
+   void setPrecon(PhysicsPrecon f);
 
-If the physics model implements a preconditioner or Jacobian-vector
-multiplication routine, these can be passed to the solver during
-initialisation::
+   typedef int (*Jacobian)(BoutReal t);
+   void setJacobian(Jacobian j);
 
-    typedef int (*PhysicsPrecon)(BoutReal t, BoutReal gamma, BoutReal delta);
-    void setPrecon(PhysicsPrecon f); // Specify a preconditioner
-    typedef int (*Jacobian)(BoutReal t);
-    void setJacobian(Jacobian j); // Specify a Jacobian
+#if BOUT_HAS_PETSC
+   Solver::VarRef getVarRef(std::string_view name) const;
+   bool addJacobianPattern(const PetscCellOperator& op);
+   bool addJacobianPattern(const PetscCellOperator& op, Solver::VarRef out_var,
+                           Solver::VarRef in_var);
+#endif
 
-If the solver doesn’t support these functions then the calls will just
-be ignored.
+``add(...)`` registers evolving variables. ``constraint(...)`` registers DAE
+constraints for solvers that support them. ``setPrecon(...)`` and
+``setJacobian(...)`` register optional callbacks used by implicit solvers.
 
-Once the problem to be solved has been specified, the solver can be
-initialised using::
+``getVarRef(...)`` resolves the solver's internal variable numbering from the
+name used when the variable or component was added. Those references can then be
+used with ``addJacobianPattern(...)`` to target one Jacobian block, one row or
+column of blocks, or all blocks via ``Solver::VarRef::All()``.
+
+For example:
+
+.. code-block:: C++
+
+   #if BOUT_HAS_PETSC
+   auto n = solver->getVarRef("n");
+   auto T = solver->getVarRef("T");
+
+   solver->addJacobianPattern(op);
+   solver->addJacobianPattern(op, n, T);
+   #endif
+
+These Jacobian-pattern registrations are designed to be called during model or
+component setup, before the solver knows the final matrix size. BOUT++ therefore
+queues them and applies them later when a supported PETSc-backed solver creates
+its Jacobian structure.
+
+Behavior depends on the solver:
+
+- ``setPrecon(...)`` and ``setJacobian(...)`` are ignored by solvers that do
+  not use those callbacks
+- ``addJacobianPattern(...)`` is only available in PETSc-enabled builds
+- even with PETSc, ``addJacobianPattern(...)`` may return ``false`` if the
+  chosen solver does not use the PETSc preconditioner/Jacobian path
+
+Once the problem has been specified, the solver is initialised with::
 
     int init();
 
-which returns an error code (0 on success). This is currently called in
-:doc:`bout++.cxx<../_breathe_autogen/file/bout_09_09_8cxx>`::
+and then run in the usual way::
 
-    if (solver.init()) {
-      output.write("Failed to initialise solver. Aborting\n");
-      return(1);
-    }
-
-which passes the (physics module) RHS function `PhysicsModel::rhs` to the
-solver along with the number and size of the output steps.
-
-::
-
-    typedef int (*MonitorFunc)(BoutReal simtime, int iter, int NOUT);
-    int run(MonitorFunc f);
-
-.. [1]
-   Taken from a talk by L.Chacon available here
-   https://bout2011.llnl.gov/pdf/talks/Chacon_bout2011.pdf
-
-.. [2]
-   See paper https://arxiv.org/abs/1209.2054 for an application to
-   2-fluid equations
-
-.. [3] This `InvertPar` class can handle cases with closed
-   field-lines and twist-shift boundary conditions for tokamak
-   simulations
+    int run();
