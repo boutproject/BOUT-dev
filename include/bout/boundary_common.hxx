@@ -1,7 +1,6 @@
 #pragma once
 
 #include <bout/bout_types.hxx>
-#include <bout/build_config.hxx>
 
 namespace bout {
 namespace boundary {

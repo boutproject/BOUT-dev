@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -722,7 +723,7 @@ NewBoundaryRegionYDown(const std::string& name, int xmin, int xmax, Mesh* mesh) 
 }
 
 template <class Func>
-void iter_boundary(std::shared_ptr<const BoundaryRegionBase> bndrybase,
+void iter_boundary(const std::shared_ptr<const BoundaryRegionBase>& bndrybase,
                    const Func& func) {
   if (bndrybase->isX) {
     const auto* const bndry = dynamic_cast<const BoundaryRegionX*>(bndrybase.get());

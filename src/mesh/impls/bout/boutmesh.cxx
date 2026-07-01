@@ -1170,10 +1170,11 @@ std::set<std::string> BoutMesh::getPossibleBoundaries() const {
 
         // Get the boundaries and shove their names into the set
         auto boundaries = mesh_copy.getBoundaries();
-        std::transform(
-            boundaries.begin(), boundaries.end(),
-            std::inserter(all_boundaries, all_boundaries.begin()),
-            [](std::shared_ptr<BoundaryRegionBase> boundary) { return boundary->label; });
+        std::transform(boundaries.begin(), boundaries.end(),
+                       std::inserter(all_boundaries, all_boundaries.begin()),
+                       [](const std::shared_ptr<BoundaryRegionBase>& boundary) {
+                         return boundary->label;
+                       });
       };
 
   // This is sufficient to get the SOL boundary, if it exists

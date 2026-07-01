@@ -11,6 +11,7 @@
 #include <array>
 #include <list>
 #include <map>
+#include <memory>
 #include <string>
 using std::list;
 using std::string;
@@ -85,8 +86,9 @@ void BoundaryFactory::cleanup() {
   instance = nullptr;
 }
 
-BoundaryOpBase* BoundaryFactory::create(const string& name,
-                                        std::shared_ptr<BoundaryRegionBase> region) {
+BoundaryOpBase*
+BoundaryFactory::create(const string& name,
+                        const std::shared_ptr<BoundaryRegionBase>& region) {
 
   // Search for a string of the form: modifier(operation)
   auto pos = name.find('(');
@@ -235,7 +237,7 @@ BoundaryOpBase* BoundaryFactory::create(const char* name,
 
 BoundaryOpBase*
 BoundaryFactory::createFromOptions(const string& varname,
-                                   std::shared_ptr<BoundaryRegionBase> region) {
+                                   const std::shared_ptr<BoundaryRegionBase>& region) {
   if (region == nullptr) {
     return nullptr;
   }
