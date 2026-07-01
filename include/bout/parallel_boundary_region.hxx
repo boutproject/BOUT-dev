@@ -12,7 +12,6 @@
 #include <string>
 #include <vector>
 
-#include "bout/boundary_common.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/field2d.hxx"
 #include "bout/region.hxx"

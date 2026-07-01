@@ -1,6 +1,5 @@
 #pragma once
 
-#include "bout/boundary_common.hxx"
 #include "bout/boundary_region_iter.hxx"
 
 #include "bout/assert.hxx"
