@@ -242,21 +242,20 @@ BoutMeshParameters createDisconnectedDoubleNull(const BoutMeshGridInfo& grid) {
 ////////////////////////////////////////////////////////////
 // Start of tests
 
-TEST(BoutMeshTest, NullOptionsCheck) {
+struct BoutMeshTest : public ::testing::Test {
+  WithQuietOutput debug{output_debug};
   WithQuietOutput info{output_info};
   WithQuietOutput warn{output_warn};
+  WithQuietOutput progress{output_progress};
+};
 
+TEST_F(BoutMeshTest, NullOptionsCheck) {
   EXPECT_NO_THROW(BoutMesh mesh(new FakeGridDataSource, nullptr));
 }
 
 // Not a great test as it's not specific to the thing we want to test,
 // and can also take a whopping ~300ms!
-TEST(BoutMeshTest, SingleCoreDecomposition) {
-  WithQuietOutput debug{output_debug};
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
-  WithQuietOutput progress{output_progress};
-
+TEST_F(BoutMeshTest, SingleCoreDecomposition) {
   Options options{};
   options["ny"] = 1;
   options["nx"] = 4;
@@ -327,8 +326,7 @@ TEST_P(BoutMeshSetYDecompositionTest, BasicTest) {
   EXPECT_EQ(mesh.numberOfXPoints, params.number_of_X_points);
 }
 
-TEST(BoutMeshTest, SetYDecompositionIndicesJyseps22LowInconsistent) {
-  WithQuietOutput warn{output_warn};
+TEST_F(BoutMeshTest, SetYDecompositionIndicesJyseps22LowInconsistent) {
   BoutMeshExposer mesh(1, 24, 1, 1, 1);
 
   EXPECT_THROW(mesh.setYDecompositionIndices({3, 7, 32, 8, 12}), BoutException);
@@ -466,8 +464,7 @@ TEST_P(BadBoutMeshDecompositionTest, BadSingleCoreYDecomposition) {
   EXPECT_THAT(result.reason, HasSubstr(params.expected_message));
 }
 
-TEST(BoutMeshTest, ChooseProcessorSplitBadNXPE) {
-  WithQuietOutput info{output_info};
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPETooManyXProcs) {
   Options options{{"NXPE", 3}};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1, 8);
@@ -475,8 +472,7 @@ TEST(BoutMeshTest, ChooseProcessorSplitBadNXPE) {
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
 
-TEST(BoutMeshTest, ChooseProcessorSplitBadNYPE) {
-  WithQuietOutput info{output_info};
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPETooManyYProcs) {
   Options options{{"NYPE", 7}};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1, 8);
@@ -484,11 +480,46 @@ TEST(BoutMeshTest, ChooseProcessorSplitBadNYPE) {
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
 
-TEST(BoutMeshTest, ChooseProcessorSplitNXPE) {
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPENotDivisible_0) {
   WithQuietOutput info{output_info};
+  Options options{{"NXPE", 5}};
+
+  BoutMeshExposer mesh(5, 24, 1, 1, 1, 8);
+
+  EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
+}
+
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisible_0) {
+  WithQuietOutput info{output_info};
+  Options options{{"NYPE", 5}};
+
+  BoutMeshExposer mesh(5, 5, 1, 1, 1, 8);
+
+  EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
+}
+
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPENotDivisible_1) {
+  WithQuietOutput info{output_info};
+  Options options{{"NXPE", 5}};
+
+  BoutMeshExposer mesh(5, 24, 1, 1, 1, 8);
+
+  EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
+}
+
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisible_1) {
+  WithQuietOutput info{output_info};
+  Options options{{"NYPE", 5}};
+
+  BoutMeshExposer mesh(5, 5, 1, 1, 1, 8);
+
+  EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
+}
+
+TEST_F(BoutMeshTest, ChooseProcessorSplitNXPE) {
   Options options{{"NXPE", 4}};
 
-  BoutMeshExposer mesh(1, 24, 1, 1, 1, 8);
+  BoutMeshExposer mesh(6, 24, 1, 1, 1, 8);
 
   EXPECT_NO_THROW(mesh.chooseProcessorSplit(options));
 
@@ -496,8 +527,7 @@ TEST(BoutMeshTest, ChooseProcessorSplitNXPE) {
   EXPECT_EQ(mesh.getNYPE(), 2);
 }
 
-TEST(BoutMeshTest, ChooseProcessorSplitBadNXPENotEnoughGuards) {
-  WithQuietOutput info{output_info};
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPENotEnoughGuards) {
   Options options{{"NXPE", 4}};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 13, 8);
@@ -505,8 +535,7 @@ TEST(BoutMeshTest, ChooseProcessorSplitBadNXPENotEnoughGuards) {
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
 
-TEST(BoutMeshTest, ChooseProcessorSplitNYPE) {
-  WithQuietOutput info{output_info};
+TEST_F(BoutMeshTest, ChooseProcessorSplitNYPE) {
   Options options{{"NYPE", 4}};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1, 8);
@@ -688,7 +717,7 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(BoutMeshProcNumTest, ProcNum) {
   WithQuietOutput info{output_info};
-  BoutMeshExposer mesh(4, 4, 1, 1, 1, 4);
+  BoutMeshExposer mesh(6, 4, 1, 1, 1, 4);
 
   const auto params = GetParam();
   Options options{{"NXPE", params.nxpe}};
@@ -698,9 +727,7 @@ TEST_P(BoutMeshProcNumTest, ProcNum) {
   EXPECT_EQ(result, params.expected_result);
 }
 
-TEST(BoutMeshTest, YProc) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
+TEST_F(BoutMeshTest, YProc) {
   // 2x2 processors, 3x3x1 (not including guards) on each processor
   BoutMeshExposer mesh(5, 3, 1, 2, 2, 0, 0);
 
@@ -716,9 +743,7 @@ TEST(BoutMeshTest, YProc) {
   EXPECT_EQ(mesh.YPROC(7), -1);
 }
 
-TEST(BoutMeshTest, XProc) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
+TEST_F(BoutMeshTest, XProc) {
   // 2x2 processors, 3x3x1 (not including guards) on each processor
   BoutMeshExposer mesh(5, 3, 1, 2, 2, 0, 0);
 
@@ -735,9 +760,7 @@ TEST(BoutMeshTest, XProc) {
   // one example, so probably fine
 }
 
-TEST(BoutMeshTest, GetGlobalXIndex) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
+TEST_F(BoutMeshTest, GetGlobalXIndex) {
   // 2x2 processors, 3x3x1 (not including guards) on each processor
 
   // Boundaries are included in the global index
@@ -781,9 +804,7 @@ TEST(BoutMeshTest, GetGlobalXIndex) {
   EXPECT_EQ(mesh11.getGlobalXIndex(4), 7);
 }
 
-TEST(BoutMeshTest, GetGlobalXIndexNoBoundaries) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
+TEST_F(BoutMeshTest, GetGlobalXIndexNoBoundaries) {
   // 2x2 processors, 3x3x1 (not including guards) on each processor
 
   // Global indices start counting from the first non-boundary point
@@ -827,10 +848,7 @@ TEST(BoutMeshTest, GetGlobalXIndexNoBoundaries) {
   EXPECT_EQ(mesh11.getGlobalXIndexNoBoundaries(4), 6);
 }
 
-TEST(BoutMeshTest, GlobalXIntSymmetricX) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
-
+TEST_F(BoutMeshTest, GlobalXIntSymmetricX) {
   BoutMeshExposer mesh01(4, 3, 1, 2, 2, 0, 1);
   EXPECT_EQ(mesh01.GlobalX(0), -0.125);
   EXPECT_EQ(mesh01.GlobalX(1), 0.125);
@@ -839,10 +857,7 @@ TEST(BoutMeshTest, GlobalXIntSymmetricX) {
   EXPECT_EQ(mesh01.GlobalX(4), 0.875);
 }
 
-TEST(BoutMeshTest, GlobalXIntAsymmetricX) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
-
+TEST_F(BoutMeshTest, GlobalXIntAsymmetricX) {
   BoutMeshExposer mesh01(4, 3, 1, 2, 2, 0, 1, false, false);
   EXPECT_EQ(mesh01.GlobalX(0), 0.);
   EXPECT_EQ(mesh01.GlobalX(1), 0.25);
@@ -851,10 +866,7 @@ TEST(BoutMeshTest, GlobalXIntAsymmetricX) {
   EXPECT_EQ(mesh01.GlobalX(4), 1.0);
 }
 
-TEST(BoutMeshTest, GlobalXRealSymmetricX) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
-
+TEST_F(BoutMeshTest, GlobalXRealSymmetricX) {
   BoutMeshExposer mesh01(4, 3, 1, 2, 2, 0, 1);
   EXPECT_EQ(mesh01.GlobalX(0.5), 0.);
   EXPECT_EQ(mesh01.GlobalX(1.5), 0.25);
@@ -863,10 +875,7 @@ TEST(BoutMeshTest, GlobalXRealSymmetricX) {
   EXPECT_EQ(mesh01.GlobalX(4.5), 1.0);
 }
 
-TEST(BoutMeshTest, GlobalXRealAsymmetricX) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
-
+TEST_F(BoutMeshTest, GlobalXRealAsymmetricX) {
   BoutMeshExposer mesh01(4, 3, 1, 2, 2, 0, 1, false, false);
   EXPECT_EQ(mesh01.GlobalX(0.5), 0.125);
   EXPECT_EQ(mesh01.GlobalX(1.5), 0.375);
@@ -875,9 +884,7 @@ TEST(BoutMeshTest, GlobalXRealAsymmetricX) {
   EXPECT_EQ(mesh01.GlobalX(4.5), 1.125);
 }
 
-TEST(BoutMeshTest, GetLocalXIndex) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
+TEST_F(BoutMeshTest, GetLocalXIndex) {
   // 2x2 processors, 3x3x1 (not including guards) on each processor
 
   // Boundaries are included in the local index
@@ -921,9 +928,7 @@ TEST(BoutMeshTest, GetLocalXIndex) {
   EXPECT_EQ(mesh11.getLocalXIndex(7), 4);
 }
 
-TEST(BoutMeshTest, GetLocalXIndexNoBoundaries) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
+TEST_F(BoutMeshTest, GetLocalXIndexNoBoundaries) {
   // 2x2 processors, 3x3x1 (not including guards) on each processor
 
   // Local indices start counting from the first non-boundary point
@@ -967,9 +972,7 @@ TEST(BoutMeshTest, GetLocalXIndexNoBoundaries) {
   EXPECT_EQ(mesh11.getLocalXIndexNoBoundaries(6), 4);
 }
 
-TEST(BoutMeshTest, GetGlobalYIndexSingleNull) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
+TEST_F(BoutMeshTest, GetGlobalYIndexSingleNull) {
   // 2x2 processors, 3x3x1 (not including guards) on each processor
 
   // Boundaries are included in the global index
@@ -1013,9 +1016,7 @@ TEST(BoutMeshTest, GetGlobalYIndexSingleNull) {
   EXPECT_EQ(mesh11.getGlobalYIndex(4), 7);
 }
 
-TEST(BoutMeshTest, GetGlobalYIndexDoubleNull) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
+TEST_F(BoutMeshTest, GetGlobalYIndexDoubleNull) {
   // 2x2 processors, 3x3x1 (not including guards) on each processor
 
   // Boundaries are included in the global index
@@ -1064,9 +1065,7 @@ TEST(BoutMeshTest, GetGlobalYIndexDoubleNull) {
   EXPECT_EQ(mesh11.getGlobalYIndex(4), 9);
 }
 
-TEST(BoutMeshTest, GetGlobalYIndexNoBoundaries) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
+TEST_F(BoutMeshTest, GetGlobalYIndexNoBoundaries) {
   // 2x2 processors, 3x3x1 (not including guards) on each processor
 
   // Global indices start counting from the first non-boundary point
@@ -1110,9 +1109,7 @@ TEST(BoutMeshTest, GetGlobalYIndexNoBoundaries) {
   EXPECT_EQ(mesh11.getGlobalYIndexNoBoundaries(4), 6);
 }
 
-TEST(BoutMeshTest, GetLocalYIndexSingleNull) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
+TEST_F(BoutMeshTest, GetLocalYIndexSingleNull) {
   // 2x2 processors, 3x3x1 (not including guards) on each processor
 
   // Boundaries are included in the local index
@@ -1156,9 +1153,7 @@ TEST(BoutMeshTest, GetLocalYIndexSingleNull) {
   EXPECT_EQ(mesh11.getLocalYIndex(7), 4);
 }
 
-TEST(BoutMeshTest, GetLocalYIndexDoubleNull) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
+TEST_F(BoutMeshTest, GetLocalYIndexDoubleNull) {
   // 2x2 processors, 3x3x1 (not including guards) on each processor
 
   // Boundaries are included in the global index
@@ -1207,9 +1202,7 @@ TEST(BoutMeshTest, GetLocalYIndexDoubleNull) {
   EXPECT_EQ(mesh11.getLocalYIndex(9), 4);
 }
 
-TEST(BoutMeshTest, GetLocalYIndexNoBoundaries) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
+TEST_F(BoutMeshTest, GetLocalYIndexNoBoundaries) {
   // 2x2 processors, 3x3x1 (not including guards) on each processor
 
   // Local indices start counting from the first non-boundary point
@@ -1253,10 +1246,7 @@ TEST(BoutMeshTest, GetLocalYIndexNoBoundaries) {
   EXPECT_EQ(mesh11.getLocalYIndexNoBoundaries(6), 4);
 }
 
-TEST(BoutMeshTest, GlobalYIntSymmetricY) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
-
+TEST_F(BoutMeshTest, GlobalYIntSymmetricY) {
   BoutMeshExposer mesh_inner_pf(createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 0}));
   EXPECT_EQ(mesh_inner_pf.GlobalY(0), -0.5625);
   EXPECT_EQ(mesh_inner_pf.GlobalY(1), -0.4375);
@@ -1284,10 +1274,7 @@ TEST(BoutMeshTest, GlobalYIntSymmetricY) {
   EXPECT_EQ(mesh_outer_pf.GlobalY(3), 1.3125);
 }
 
-TEST(BoutMeshTest, GlobalYIntAsymmetricY) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
-
+TEST_F(BoutMeshTest, GlobalYIntAsymmetricY) {
   auto grid_inner_pf = createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 0});
   grid_inner_pf.grid.symmetric_Y = false;
   BoutMeshExposer mesh_inner_pf(grid_inner_pf);
@@ -1321,10 +1308,7 @@ TEST(BoutMeshTest, GlobalYIntAsymmetricY) {
   EXPECT_EQ(mesh_outer_pf.GlobalY(3), 1);
 }
 
-TEST(BoutMeshTest, GlobalYRealSymmetricY) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
-
+TEST_F(BoutMeshTest, GlobalYRealSymmetricY) {
   BoutMeshExposer mesh_inner_pf(createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 0}));
   EXPECT_EQ(mesh_inner_pf.GlobalY(0.5), -0.5);
   EXPECT_EQ(mesh_inner_pf.GlobalY(1.5), -0.375);
@@ -1352,10 +1336,7 @@ TEST(BoutMeshTest, GlobalYRealSymmetricY) {
   EXPECT_EQ(mesh_outer_pf.GlobalY(3.5), 1.375);
 }
 
-TEST(BoutMeshTest, GlobalYRealAsymmetricY) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
-
+TEST_F(BoutMeshTest, GlobalYRealAsymmetricY) {
   auto grid_inner_pf = createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 0});
   grid_inner_pf.grid.symmetric_Y = false;
   BoutMeshExposer mesh_inner_pf(grid_inner_pf);
@@ -1389,9 +1370,7 @@ TEST(BoutMeshTest, GlobalYRealAsymmetricY) {
   EXPECT_EQ(mesh_outer_pf.GlobalY(3.5), 1);
 }
 
-TEST(BoutMeshTest, GetGlobalZIndex) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
+TEST_F(BoutMeshTest, GetGlobalZIndex) {
   // 2x2 processors, 3x3x1 (not including guards) on each processor
 
   // Boundaries are included in the global index
@@ -1427,9 +1406,7 @@ TEST(BoutMeshTest, GetGlobalZIndex) {
   EXPECT_EQ(mesh11.getGlobalZIndex(4), 4);
 }
 
-TEST(BoutMeshTest, GetGlobalZIndexNoBoundaries) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
+TEST_F(BoutMeshTest, GetGlobalZIndexNoBoundaries) {
   // 2x2 processors, 3x3x1 (not including guards) on each processor
 
   BoutMeshExposer mesh00(5, 3, 4, 2, 2, 0, 0);
@@ -1461,9 +1438,7 @@ TEST(BoutMeshTest, GetGlobalZIndexNoBoundaries) {
   EXPECT_EQ(mesh11.getGlobalZIndexNoBoundaries(4), 4);
 }
 
-TEST(BoutMeshTest, GetLocalZIndex) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
+TEST_F(BoutMeshTest, GetLocalZIndex) {
   // 2x2 processors, 3x3x1 (not including guards) on each processor
 
   // Boundaries are included in the local index
@@ -1507,9 +1482,7 @@ TEST(BoutMeshTest, GetLocalZIndex) {
   EXPECT_EQ(mesh11.getLocalZIndex(4), 4);
 }
 
-TEST(BoutMeshTest, GetLocalZIndexNoBoundaries) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
+TEST_F(BoutMeshTest, GetLocalZIndexNoBoundaries) {
   // 2x2 processors, 3x3x1 (not including guards) on each processor
 
   // Local indices start counting from the first non-boundary point
@@ -1553,10 +1526,7 @@ TEST(BoutMeshTest, GetLocalZIndexNoBoundaries) {
   EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(4), 4);
 }
 
-TEST(BoutMeshTest, FirstX) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
-
+TEST_F(BoutMeshTest, FirstX) {
   BoutMeshExposer mesh00(5, 3, 4, 3, 3, 0, 0);
   EXPECT_TRUE(mesh00.firstX());
   BoutMeshExposer mesh10(5, 3, 4, 3, 3, 1, 0);
@@ -1577,10 +1547,7 @@ TEST(BoutMeshTest, FirstX) {
   EXPECT_FALSE(mesh22.firstX());
 }
 
-TEST(BoutMeshTest, LastX) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
-
+TEST_F(BoutMeshTest, LastX) {
   BoutMeshExposer mesh00(5, 3, 4, 3, 3, 0, 0);
   EXPECT_FALSE(mesh00.lastX());
   BoutMeshExposer mesh10(5, 3, 4, 3, 3, 1, 0);
@@ -1601,10 +1568,7 @@ TEST(BoutMeshTest, LastX) {
   EXPECT_TRUE(mesh22.lastX());
 }
 
-TEST(BoutMeshTest, FirstY) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
-
+TEST_F(BoutMeshTest, FirstY) {
   BoutMeshExposer mesh00(5, 3, 4, 3, 3, 0, 0);
   EXPECT_TRUE(mesh00.firstY());
   BoutMeshExposer mesh10(5, 3, 4, 3, 3, 1, 0);
@@ -1625,10 +1589,7 @@ TEST(BoutMeshTest, FirstY) {
   EXPECT_FALSE(mesh22.firstY());
 }
 
-TEST(BoutMeshTest, LastY) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
-
+TEST_F(BoutMeshTest, LastY) {
   BoutMeshExposer mesh00(5, 3, 4, 3, 3, 0, 0);
   EXPECT_FALSE(mesh00.lastY());
   BoutMeshExposer mesh10(5, 3, 4, 3, 3, 1, 0);
@@ -1666,8 +1627,7 @@ void checkRegionSizes(const BoutMeshExposer& mesh, std::array<int, 3> rgn_lower_
 // These next few tests check both default_connections and the Region
 // creation, as these are quite tightly linked.
 
-TEST(BoutMeshTest, DefaultConnectionsCore1x1) {
-  WithQuietOutput info{output_info};
+TEST_F(BoutMeshTest, DefaultConnectionsCore1x1) {
   // 5x3x1 grid on 1 processor, 1 boundary point. Boundaries should be
   // simple 1D rectangles, with 4 boundaries on this processor
   BoutMeshExposer mesh00(5, 3, 1, 1, 1, 0, 0, false);
@@ -1685,9 +1645,7 @@ TEST(BoutMeshTest, DefaultConnectionsCore1x1) {
   checkRegionSizes(mesh00, {5, 0, 5}, {0, 5, 5}, {3, 3});
 }
 
-TEST(BoutMeshTest, TopologySOL2x2) {
-  WithQuietOutput info{output_info};
-
+TEST_F(BoutMeshTest, TopologySOL2x2) {
   {
     SCOPED_TRACE("TopologySOL2x2, mesh00");
     BoutMeshExposer mesh00(createSOL({3, 3, 1, 1, 2, 2, 0, 0}));
@@ -1725,9 +1683,7 @@ TEST(BoutMeshTest, TopologySOL2x2) {
   }
 }
 
-TEST(BoutMeshTest, TopologySOLPeriodicX2x2) {
-  WithQuietOutput info{output_info};
-
+TEST_F(BoutMeshTest, TopologySOLPeriodicX2x2) {
   {
     SCOPED_TRACE("TopologySOLPeriodicX2x2, mesh00");
 
@@ -1766,9 +1722,7 @@ TEST(BoutMeshTest, TopologySOLPeriodicX2x2) {
   }
 }
 
-TEST(BoutMeshTest, TopologySingleNull2x3) {
-  WithQuietOutput info{output_info};
-
+TEST_F(BoutMeshTest, TopologySingleNull2x3) {
   {
     SCOPED_TRACE("TopologySingleNull2x3, mesh00");
     BoutMeshExposer mesh00(createSingleNull({3, 3, 1, 1, 2, 3, 0, 0}));
@@ -1824,9 +1778,7 @@ TEST(BoutMeshTest, TopologySingleNull2x3) {
   }
 }
 
-TEST(BoutMeshTest, TopologyDisconnectedDoubleNull1x6) {
-  WithQuietOutput info{output_info};
-
+TEST_F(BoutMeshTest, TopologyDisconnectedDoubleNull1x6) {
   {
     SCOPED_TRACE("TopologyDisconnectedDoubleNull1x6, mesh00"); // Inner lower leg
     BoutMeshExposer mesh00(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 0}));
@@ -1882,8 +1834,7 @@ TEST(BoutMeshTest, TopologyDisconnectedDoubleNull1x6) {
   }
 }
 
-TEST(BoutMeshTest, SetDerivedGridSizes) {
-  WithQuietOutput info{output_info};
+TEST_F(BoutMeshTest, SetDerivedGridSizes) {
   BoutMeshGridInfo grid{12, 3, 1, 2, 3, 6, 2, 2};
   BoutMeshExposer mesh(createDisconnectedDoubleNull(grid));
 
@@ -1911,8 +1862,7 @@ TEST(BoutMeshTest, SetDerivedGridSizes) {
   EXPECT_EQ(mesh.zend, 0);
 }
 
-TEST(BoutMeshTest, CreateXBoundariesPeriodicX) {
-  WithQuietOutput info{output_info};
+TEST_F(BoutMeshTest, CreateXBoundariesPeriodicX) {
   // Periodic in X, so no boundaries
   BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 1, 3, 6, 1, 0}));
   mesh.periodicX = true;
@@ -1922,8 +1872,7 @@ TEST(BoutMeshTest, CreateXBoundariesPeriodicX) {
   EXPECT_TRUE(boundaries.empty());
 }
 
-TEST(BoutMeshTest, CreateXBoundariesNoGuards) {
-  WithQuietOutput info{output_info};
+TEST_F(BoutMeshTest, CreateXBoundariesNoGuards) {
   // No guards in X, so no boundaries
   BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 0, 1, 3, 6, 1, 0}));
   mesh.createXBoundaries();
@@ -1932,8 +1881,7 @@ TEST(BoutMeshTest, CreateXBoundariesNoGuards) {
   EXPECT_TRUE(boundaries.empty());
 }
 
-TEST(BoutMeshTest, CreateXBoundariesDoubleNullInsidePF) {
-  WithQuietOutput info{output_info};
+TEST_F(BoutMeshTest, CreateXBoundariesDoubleNullInsidePF) {
   // Three cores in X, inside core, one boundary
   BoutMeshExposer mesh_inside(createDisconnectedDoubleNull({12, 3, 1, 1, 3, 6, 0, 0}));
   mesh_inside.createXBoundaries();
@@ -1943,8 +1891,7 @@ TEST(BoutMeshTest, CreateXBoundariesDoubleNullInsidePF) {
   EXPECT_EQ(boundaries_inside[0]->label, "pf");
 }
 
-TEST(BoutMeshTest, CreateXBoundariesDoubleNullMiddlePF) {
-  WithQuietOutput info{output_info};
+TEST_F(BoutMeshTest, CreateXBoundariesDoubleNullMiddlePF) {
   // Three cores in X, middle core, so no boundaries
   BoutMeshExposer mesh_middle(createDisconnectedDoubleNull({12, 3, 1, 1, 3, 6, 1, 0}));
   mesh_middle.createXBoundaries();
@@ -1953,8 +1900,7 @@ TEST(BoutMeshTest, CreateXBoundariesDoubleNullMiddlePF) {
   EXPECT_TRUE(boundaries_middle.empty());
 }
 
-TEST(BoutMeshTest, CreateXBoundariesDoubleNullOutsidePF) {
-  WithQuietOutput info{output_info};
+TEST_F(BoutMeshTest, CreateXBoundariesDoubleNullOutsidePF) {
   // Three cores in X, outside core, one boundary
   BoutMeshExposer mesh_inside(createDisconnectedDoubleNull({12, 3, 1, 1, 3, 6, 0, 0}));
   mesh_inside.createXBoundaries();
@@ -1964,8 +1910,7 @@ TEST(BoutMeshTest, CreateXBoundariesDoubleNullOutsidePF) {
   EXPECT_EQ(boundaries_inside[0]->label, "pf");
 }
 
-TEST(BoutMeshTest, CreateXBoundariesDoubleNullInsideOutsideCore) {
-  WithQuietOutput info{output_info};
+TEST_F(BoutMeshTest, CreateXBoundariesDoubleNullInsideOutsideCore) {
   // One core in X, so we expect two boundaries
   BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 1}));
   mesh.createXBoundaries();
@@ -1976,9 +1921,7 @@ TEST(BoutMeshTest, CreateXBoundariesDoubleNullInsideOutsideCore) {
   EXPECT_EQ(boundaries[1]->label, "sol");
 }
 
-TEST(BoutMeshTest, CreateYBoundariesNoGuards) {
-  WithQuietOutput info{output_info};
-
+TEST_F(BoutMeshTest, CreateYBoundariesNoGuards) {
   BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 0, 1, 6, 0, 0}));
   mesh.createYBoundaries();
 
@@ -1986,10 +1929,7 @@ TEST(BoutMeshTest, CreateYBoundariesNoGuards) {
   EXPECT_TRUE(boundaries.empty());
 }
 
-TEST(BoutMeshTest, CreateYBoundariesClosedFieldLines) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
-
+TEST_F(BoutMeshTest, CreateYBoundariesClosedFieldLines) {
   BoutMeshExposer mesh(createCore({4, 4, 2, 2, 4, 4}));
   mesh.createYBoundaries();
 
@@ -1997,9 +1937,7 @@ TEST(BoutMeshTest, CreateYBoundariesClosedFieldLines) {
   EXPECT_TRUE(boundaries.empty());
 }
 
-TEST(BoutMeshTest, CreateYBoundariesInnerLower) {
-  WithQuietOutput info{output_info};
-
+TEST_F(BoutMeshTest, CreateYBoundariesInnerLower) {
   BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 0}));
   mesh.createYBoundaries();
 
@@ -2008,9 +1946,7 @@ TEST(BoutMeshTest, CreateYBoundariesInnerLower) {
   EXPECT_EQ(boundaries[0]->label, "lower_target");
 }
 
-TEST(BoutMeshTest, CreateYBoundariesInnerUpper) {
-  WithQuietOutput info{output_info};
-
+TEST_F(BoutMeshTest, CreateYBoundariesInnerUpper) {
   BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 2}));
   mesh.createYBoundaries();
 
@@ -2019,9 +1955,7 @@ TEST(BoutMeshTest, CreateYBoundariesInnerUpper) {
   EXPECT_EQ(boundaries[0]->label, "upper_target");
 }
 
-TEST(BoutMeshTest, CreateYBoundariesOuterUpper) {
-  WithQuietOutput info{output_info};
-
+TEST_F(BoutMeshTest, CreateYBoundariesOuterUpper) {
   BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 5}));
   mesh.createYBoundaries();
 
@@ -2030,9 +1964,7 @@ TEST(BoutMeshTest, CreateYBoundariesOuterUpper) {
   EXPECT_EQ(boundaries[0]->label, "upper_target");
 }
 
-TEST(BoutMeshTest, CreateYBoundariesOuterLower) {
-  WithQuietOutput info{output_info};
-
+TEST_F(BoutMeshTest, CreateYBoundariesOuterLower) {
   BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 3}));
   mesh.createYBoundaries();
 
@@ -2041,9 +1973,7 @@ TEST(BoutMeshTest, CreateYBoundariesOuterLower) {
   EXPECT_EQ(boundaries[0]->label, "lower_target");
 }
 
-TEST(BoutMestTest, PeriodicY) {
-  WithQuietOutput info{output_info};
-
+TEST_F(BoutMeshTest, PeriodicY) {
   BoutMeshExposer mesh00(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 0}));
   EXPECT_FALSE(mesh00.periodicY(2));
   EXPECT_FALSE(mesh00.periodicY(10));
@@ -2053,9 +1983,7 @@ TEST(BoutMestTest, PeriodicY) {
   EXPECT_FALSE(mesh01.periodicY(10));
 }
 
-TEST(BoutMestTest, PeriodicYWithShiftAngle) {
-  WithQuietOutput info{output_info};
-
+TEST_F(BoutMeshTest, PeriodicYWithShiftAngle) {
   const std::vector<BoutReal> shift_angle = {-1., 11., 10., 9., 8., 7., 6.,
                                              5.,  4.,  3.,  2., 1., 0., -1.};
 
@@ -2076,9 +2004,7 @@ TEST(BoutMestTest, PeriodicYWithShiftAngle) {
   EXPECT_EQ(twist_shift01, 0.);
 }
 
-TEST(BoutMeshTest, NumberOfYBoundaries) {
-  WithQuietOutput info{output_info};
-
+TEST_F(BoutMeshTest, NumberOfYBoundaries) {
   BoutMeshExposer mesh_SOL(createSOL({3, 3, 1, 1, 2, 2, 1, 1}));
   EXPECT_EQ(mesh_SOL.numberOfYBoundaries(), 1);
 
@@ -2086,9 +2012,7 @@ TEST(BoutMeshTest, NumberOfYBoundaries) {
   EXPECT_EQ(mesh_DND.numberOfYBoundaries(), 2);
 }
 
-TEST(BoutMeshTest, HasBranchCutLower) {
-  WithQuietOutput info{output_info};
-
+TEST_F(BoutMeshTest, HasBranchCutLower) {
   BoutMeshExposer mesh_SOL(createSOL({3, 3, 1, 1, 2, 2, 1, 1}));
   EXPECT_EQ(mesh_SOL.hasBranchCutLower(2), std::make_pair(false, 0.));
 
@@ -2103,9 +2027,7 @@ TEST(BoutMeshTest, HasBranchCutLower) {
   EXPECT_EQ(mesh_DND04.hasBranchCutLower(2), std::make_pair(false, 0.));
 }
 
-TEST(BoutMeshTest, HasBranchCutUpper) {
-  WithQuietOutput info{output_info};
-
+TEST_F(BoutMeshTest, HasBranchCutUpper) {
   BoutMeshExposer mesh_SOL(createSOL({3, 3, 1, 1, 2, 2, 1, 1}));
   EXPECT_EQ(mesh_SOL.hasBranchCutUpper(2), std::make_pair(false, 0.));
 
@@ -2120,10 +2042,7 @@ TEST(BoutMeshTest, HasBranchCutUpper) {
   EXPECT_EQ(mesh_DND04.hasBranchCutUpper(2), std::make_pair(true, 10.));
 }
 
-TEST(BoutMeshTest, GetPossibleBoundariesCore) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
-
+TEST_F(BoutMeshTest, GetPossibleBoundariesCore) {
   BoutMeshExposer mesh_core_1x1(createCore({12, 3, 1, 1, 1, 1, 0, 0}));
   BoutMeshExposer mesh_core_32x64(createCore({12, 3, 1, 1, 32, 64, 7, 4}));
 
@@ -2133,10 +2052,7 @@ TEST(BoutMeshTest, GetPossibleBoundariesCore) {
   EXPECT_EQ(mesh_core_32x64.getPossibleBoundaries(), boundaries);
 }
 
-TEST(BoutMeshTest, GetPossibleBoundariesCorePeriodicX) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
-
+TEST_F(BoutMeshTest, GetPossibleBoundariesCorePeriodicX) {
   BoutMeshExposer mesh_core_1x1(createCore({12, 3, 1, 1, 1, 1, 0, 0}), true);
   BoutMeshExposer mesh_core_32x64(createCore({12, 3, 1, 1, 32, 64, 7, 4}), true);
 
@@ -2144,10 +2060,7 @@ TEST(BoutMeshTest, GetPossibleBoundariesCorePeriodicX) {
   EXPECT_TRUE(mesh_core_32x64.getPossibleBoundaries().empty());
 }
 
-TEST(BoutMeshTest, GetPossibleBoundariesDND) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
-
+TEST_F(BoutMeshTest, GetPossibleBoundariesDND) {
   BoutMeshExposer mesh_DND_1x6(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 1}));
   BoutMeshExposer mesh_DND_32x64(
       createDisconnectedDoubleNull({12, 3, 1, 1, 32, 64, 0, 4}));

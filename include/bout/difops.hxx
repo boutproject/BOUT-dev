@@ -1,11 +1,11 @@
 /*!******************************************************************************
  * \file difops.hxx
- * 
+ *
  * Differential operators
  *
  * Changelog:
  *
- * 2009-01 Ben Dudson <bd512@york.ac.uk> 
+ * 2009-01 Ben Dudson <bd512@york.ac.uk>
  *    * Added two optional parameters which can be put in any order
  *      These determine the method to use (DIFF_METHOD)
  *      and CELL_LOC location of the result.
@@ -15,7 +15,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -30,7 +30,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *******************************************************************************/
 
 #ifndef BOUT_DIFOPS_H
@@ -40,7 +40,9 @@
 #include "bout/field3d.hxx"
 
 #include "bout/bout_types.hxx"
-#include "bout/solver.hxx"
+#include "bout/coordinates.hxx"
+
+class Solver;
 
 /*!
  * Parallel derivative (central differencing) in Y
@@ -79,7 +81,7 @@ Field3D Grad_parP(const Field3D& apar, const Field3D& f);
  * \f[
  *    v\mathbf{b}_0 \cdot \nabla f
  * \f]
- * 
+ *
  *
  * @param[in] v  The velocity in y direction
  * @param[in] f  The scalar field to be differentiated
@@ -173,7 +175,7 @@ inline Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method)
 
 /*!
  * Parallel divergence of diffusive flux, K*Grad_par
- * 
+ *
  * \f[
  *    \nabla \cdot ( \mathbf{b}_0 kY (\mathbf{b}_0 \cdot \nabla) f )
  * \f]
@@ -197,8 +199,8 @@ Field3D Div_par_K_Grad_par(const Field3D& kY, const Field3D& f,
  * Perpendicular Laplacian operator
  *
  * This version only includes terms in X and Z, dropping
- * derivatives in Y. This is the inverse operation to 
- * the Laplacian inversion class. 
+ * derivatives in Y. This is the inverse operation to
+ * the Laplacian inversion class.
  *
  * For the full perpendicular Laplacian, use Laplace_perp
  */
@@ -210,7 +212,7 @@ FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT 
 /*!
  * Perpendicular Laplacian, keeping y derivatives
  *
- * 
+ *
  */
 Coordinates::FieldMetric
 Laplace_perp(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
@@ -244,18 +246,18 @@ Field2D Laplace_perpXY(const Field2D& A, const Field2D& f);
 
 /*!
  * Terms of form b0 x Grad(phi) dot Grad(A)
- * 
+ *
  */
 Coordinates::FieldMetric b0xGrad_dot_Grad(const Field2D& phi, const Field2D& A,
                                           CELL_LOC outloc = CELL_DEFAULT);
 
 /*!
- * Terms of form 
+ * Terms of form
  *
  * \f[
  *   \mathbf{b}_0 \times \nabla \phi \cdot \nabla A
  * \f]
- * 
+ *
  * @param[in] phi The scalar potential
  * @param[in] A   The field being advected
  * @param[in] outloc  The cell location where the result is defined. By default the same as A.
@@ -271,18 +273,16 @@ Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field3D& A,
  * Poisson bracket methods
  */
 enum class BRACKET_METHOD {
-  standard,   ///< Use b0xGrad_dot_Grad
-  simple,     ///< Keep only terms in X-Z
-  arakawa,    ///< Arakawa method in X-Z (optimised)
-  ctu,        ///< Corner Transport Upwind (CTU) method. Explicit method only, needs the
-              ///  timestep from the solver
-  arakawa_old ///< Older version, for regression testing of optimised version.
+  standard, ///< Use b0xGrad_dot_Grad
+  simple,   ///< Keep only terms in X-Z
+  arakawa,  ///< Arakawa method in X-Z
+  ctu,      ///< Corner Transport Upwind (CTU) method. Explicit method only, needs the
+            ///  timestep from the solver
 };
 constexpr BRACKET_METHOD BRACKET_STD = BRACKET_METHOD::standard;
 constexpr BRACKET_METHOD BRACKET_SIMPLE = BRACKET_METHOD::simple;
 constexpr BRACKET_METHOD BRACKET_ARAKAWA = BRACKET_METHOD::arakawa;
 constexpr BRACKET_METHOD BRACKET_CTU = BRACKET_METHOD::ctu;
-constexpr BRACKET_METHOD BRACKET_ARAKAWA_OLD = BRACKET_METHOD::arakawa_old;
 
 /*!
  * Compute advection operator terms, which can be cast as
@@ -291,13 +291,13 @@ constexpr BRACKET_METHOD BRACKET_ARAKAWA_OLD = BRACKET_METHOD::arakawa_old;
  * \f[
  *   [f, g] = (1/B) \mathbf{b}_0 \times \nabla f  \cdot \nabla g
  * \f]
- * 
+ *
  * @param[in] f  The potential
  * @param[in] g  The field being advected
  * @param[in] method   The method to use
  * @param[in] outloc   The cell location where the result is defined. Default is the same as g
  * @param[in] solver   Pointer to the time integration solver
- * 
+ *
  */
 Coordinates::FieldMetric bracket(const Field2D& f, const Field2D& g,
                                  BRACKET_METHOD method = BRACKET_STD,

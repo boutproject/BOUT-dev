@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <tuple>
 #include <vector>
 
 #if BOUT_USE_OPENMP
@@ -67,6 +68,7 @@ struct ArrayData {
     auto& rm = umpire::ResourceManager::getInstance();
 #if BOUT_HAS_CUDA
     auto allocator = rm.getAllocator(umpire::resource::Pinned);
+    //auto allocator = rm.getAllocator(umpire::resource::Unified);
 #else
     auto allocator = rm.getAllocator("HOST");
 #endif
@@ -227,6 +229,12 @@ public:
   }
 
   /*!
+   * Change shape of the container.
+   * Invalidates contents.
+   */
+  void reshape(std::tuple<size_type> new_shape) { reallocate(std::get<0>(new_shape)); }
+
+  /*!
    * Holds a static variable which controls whether
    * memory blocks (dataBlock) are put into a store
    * or new/deleted each time.
@@ -282,6 +290,9 @@ public:
     // practice, it is so this shouldn't matter
     return ptr->size();
   }
+
+  /// Return shape of the array (the `size()` in a length-1 tuple)
+  std::tuple<size_type> shape() const { return std::make_tuple(size()); };
 
   /*!
    * Returns true if the data is unique to this Array.

@@ -33,6 +33,8 @@
 
 #if BOUT_HAS_IDA
 
+#include "../../sundials_nvector_interface.hxx"
+
 #include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
@@ -51,7 +53,6 @@
 #include <ida/ida_bbdpre.h>
 #include <ida/ida_ls.h>
 
-#include <algorithm>
 #include <iterator>
 #include <numeric>
 #include <vector>
@@ -80,6 +81,9 @@ IdaSolver::IdaSolver(Options* opts)
       correct_start((*options)["correct_start"]
                         .doc("Correct the initial values")
                         .withDefault(true)),
+      nvector_type((*options)["nvector"]
+                       .doc("N_Vector backend to use: sundials or manyvector")
+                       .withDefault(NVectorType::Sundials)),
       suncontext(createSUNContext(BoutComm::get())) {
   has_constraints = true; // This solver has constraints
 }
@@ -99,10 +103,10 @@ IdaSolver::~IdaSolver() {
  **************************************************************************/
 
 int IdaSolver::init() {
-
-  TRACE("Initialising IDA solver");
+  const auto backend = nvector_backend();
 
   Solver::init();
+  backend.ensure_manyvector_available();
 
   output.write("Initialising IDA solver\n");
 
@@ -121,32 +125,21 @@ int IdaSolver::init() {
 
   output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n", n3d, n2d,
                neq, local_N);
+  output.write("\tUsing {} N_Vector backend\n", backend.backend_name());
 
   // Allocate memory
-  uvec = callWithSUNContext(N_VNew_Parallel, suncontext, BoutComm::get(), local_N, neq);
-  if (uvec == nullptr) {
-    throw BoutException("SUNDIALS memory allocation failed\n");
-  }
-  duvec = N_VClone(uvec);
-  if (duvec == nullptr) {
-    throw BoutException("SUNDIALS memory allocation failed\n");
-  }
-  id = N_VClone(uvec);
-  if (id == nullptr) {
-    throw BoutException("SUNDIALS memory allocation failed\n");
-  }
-
-  // Put the variables into uvec
-  save_vars(N_VGetArrayPointer(uvec));
+  uvec = backend.create_state_vector(local_N, neq);
+  duvec = backend.clone_vector_like(uvec, "SUNDIALS memory allocation failed");
+  id = backend.clone_vector_like(uvec, "SUNDIALS memory allocation failed");
 
   // Get the starting time derivative
   run_rhs(simtime);
 
   // Put the time-derivatives into duvec
-  save_derivs(N_VGetArrayPointer(duvec));
+  backend.copy_deriv_to_vector(duvec);
 
   // Set the equation type in id(Differential or Algebraic. This is optional)
-  set_id(N_VGetArrayPointer(id));
+  backend.fill_id_vector(id);
 
   // Call IDACreate to initialise
   idamem = callWithSUNContext(IDACreate, suncontext);
@@ -233,13 +226,12 @@ int IdaSolver::init() {
  **************************************************************************/
 
 int IdaSolver::run() {
-  TRACE("IDA IdaSolver::run()");
 
   if (!initialised) {
     throw BoutException("IdaSolver not initialised\n");
   }
 
-  for (int i = 0; i < getNumberOutputSteps(); i++) {
+  for (int i = 1; i <= getNumberOutputSteps(); i++) {
 
     /// Run the solver for one output timestep
     simtime = run(simtime + getOutputTimestep());
@@ -261,6 +253,7 @@ int IdaSolver::run() {
 
 BoutReal IdaSolver::run(BoutReal tout) {
   TRACE("Running solver: solver::run({:e})", tout);
+  const auto backend = nvector_backend();
 
   if (!initialised) {
     throw BoutException("Running IDA solver without initialisation\n");
@@ -272,7 +265,7 @@ BoutReal IdaSolver::run(BoutReal tout) {
   const int flag = IDASolve(idamem, tout, &simtime, uvec, duvec, IDA_NORMAL);
 
   // Copy variables
-  load_vars(N_VGetArrayPointer(uvec));
+  backend.copy_state_from_vector(uvec);
 
   // Call rhs function to get extra variables at this time
   run_rhs(simtime);
@@ -290,55 +283,50 @@ BoutReal IdaSolver::run(BoutReal tout) {
  * Residual function F(t, u, du)
  **************************************************************************/
 
-void IdaSolver::res(BoutReal t, BoutReal* udata, BoutReal* dudata, BoutReal* rdata) {
+void IdaSolver::res(BoutReal t, N_Vector u, N_Vector du, N_Vector rr) {
   TRACE("Running RHS: IdaSolver::res({:e})", t);
+  const auto backend = nvector_backend();
 
   // Load state from udata
-  load_vars(udata);
+  backend.copy_state_from_vector(u);
 
   // Call RHS function
   run_rhs(t);
 
   // Save derivatives to rdata (residual)
-  save_derivs(rdata);
-
-  // If a differential equation, subtract dudata
-  const auto length = N_VGetLocalLength_Parallel(id);
-  const BoutReal* idd = N_VGetArrayPointer(id);
-  for (int i = 0; i < length; i++) {
-    if (idd[i] > 0.5) { // 1 -> differential, 0 -> algebraic
-      rdata[i] -= dudata[i];
-    }
-  }
+  backend.copy_state_to_vector(u);
+  backend.copy_deriv_to_vector(rr);
+  backend.subtract_differential_term(rr, du, id);
 }
 
 /**************************************************************************
  * Preconditioner function
  **************************************************************************/
 
-void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal* udata,
-                    BoutReal* rvec, BoutReal* zvec) {
+void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, N_Vector u, N_Vector rvec,
+                    N_Vector zvec) {
   TRACE("Running preconditioner: IdaSolver::pre({:e})", t);
+  const auto backend = nvector_backend();
 
   const BoutReal tstart = bout::globals::mpi->MPI_Wtime();
 
   if (!hasPreconditioner()) {
     // Identity (but should never happen)
-    const auto length = N_VGetLocalLength_Parallel(id);
-    std::copy(rvec, rvec + length, zvec);
+    N_VScale(1.0, rvec, zvec);
     return;
   }
 
   // Load state from udata (as with res function)
-  load_vars(udata);
+  backend.copy_state_from_vector(u);
 
   // Load vector to be inverted into F_vars
-  load_derivs(rvec);
+  backend.copy_deriv_from_vector(rvec);
 
   runPreconditioner(t, cj, delta);
 
   // Save the solution from F_vars
-  save_derivs(zvec);
+  backend.copy_state_to_vector(u);
+  backend.copy_deriv_to_vector(zvec);
 
   pre_Wtime += bout::globals::mpi->MPI_Wtime() - tstart;
   pre_ncalls++;
@@ -351,14 +339,10 @@ void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal* udata,
 // NOLINTBEGIN(readability-identifier-length)
 namespace {
 int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void* user_data) {
-  BoutReal* udata = N_VGetArrayPointer(u);
-  BoutReal* dudata = N_VGetArrayPointer(du);
-  BoutReal* rdata = N_VGetArrayPointer(rr);
-
   auto* s = static_cast<IdaSolver*>(user_data);
 
   // Calculate residuals
-  s->res(t, udata, dudata, rdata);
+  s->res(t, u, du, rr);
 
   return 0;
 }
@@ -372,14 +356,10 @@ int ida_bbd_res(sunindextype UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vector du
 // Preconditioner function
 int ida_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector UNUSED(rr),
             N_Vector rvec, N_Vector zvec, BoutReal cj, BoutReal delta, void* user_data) {
-  BoutReal* udata = N_VGetArrayPointer(yy);
-  BoutReal* rdata = N_VGetArrayPointer(rvec);
-  BoutReal* zdata = N_VGetArrayPointer(zvec);
-
   auto* s = static_cast<IdaSolver*>(user_data);
 
   // Calculate residuals
-  s->pre(t, cj, delta, udata, rdata, zdata);
+  s->pre(t, cj, delta, yy, rvec, zvec);
 
   return 0;
 }

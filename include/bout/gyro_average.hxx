@@ -1,17 +1,17 @@
 /*!************************************************************
  * \file gyro_average.hxx
- * 
+ *
  * Gyro-averaging operators
  *
  *
  * 2010-09-03 Ben Dudson <bd512@york.ac.uk>
  *    * Initial version, simple averaging operator
- * 
+ *
  **************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify

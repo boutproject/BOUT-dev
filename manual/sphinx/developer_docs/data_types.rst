@@ -255,9 +255,9 @@ parallelise and vectorise. Some tuning of this is possible, see below
 for details. It replaces the C-style triple-nested loop::
 
    Field3D f(0.0);
-   for (int i = mesh->xstart; i < mesh->xend; ++i) {
-     for (int j = mesh->ystart; j < mesh->yend; ++j) {
-       for (int k = 0; k < mesh->LocalNz; ++k) {
+   for (int i = mesh->xstart; i <= mesh->xend; ++i) {
+     for (int j = mesh->ystart; j <= mesh->yend; ++j) {
+       for (int k = mesh->zstart; k <= mesh->zend; ++k) {
          f(i,j,k) = a(i,j,k) + b(i,j,k)
        }
      }
@@ -280,7 +280,7 @@ The region to iterate over can be over ``Field2D``, ``Field3D``, or
 -  `RGN_NOY`, which skips the y boundaries and guard cells
 
 New regions can be created and modified, see section below.
-   
+
 A standard C++ range for loop can also be used, but this is unlikely
 to OpenMP parallelise or vectorise::
 
@@ -306,7 +306,7 @@ For loops inside parallel regions, there is ``BOUT_FOR_INNER``::
       }
       ...
     }
-    
+
 If a more general OpenMP directive is needed, there is
 ``BOUT_FOR_OMP``::
 
@@ -314,7 +314,7 @@ If a more general OpenMP directive is needed, there is
     BOUT_FOR_OMP(i, region, parallel for reduction(max:result)) {
       result = f[i] > result ? f[i] : result;
     }
-  
+
 The iterator provides access to the x, y, z indices::
 
     Field3D f(0.0);
@@ -385,14 +385,14 @@ good performance on typical x86_64 hardware. Some simple diagnostics
 are printed at the start of the BOUT++ output which may help. For
 example the ``blob2d`` example prints::
 
-  Registered region 3D RGN_ALL: 
-	Total blocks : 1040, min(count)/max(count) : 64 (1040)/ 64 (1040), Max imbalance : 1, Small block count : 0
+  Registered region 3D RGN_ALL:
+    Total blocks : 1040, min(count)/max(count) : 64 (1040)/ 64 (1040), Max imbalance : 1, Small block count : 0
 
 In this case all blocks are the same size, so the ``Max imbalance``
 (ratio of maximum to minimum block size) is 1. The ``Small block
 count`` is currently defined as the number of blocks with a size less
 than half the maximum block size. Ideally all blocks should be a
-similar size, so that work is evenly balanced between threads. 
+similar size, so that work is evenly balanced between threads.
 
 Creating new regions
 ~~~~~~~~~~~~~~~~~~~~
@@ -422,7 +422,7 @@ in the mask (i.e. set subtraction)::
 or::
 
   auto region = mask(mesh->getRegion2D("RGN_ALL"), mesh->getRegion2D("RGN_GUARDS"));
-  
+
 The above example would produce a region containing all the indices in
 ``RGN_ALL`` which are not in ``RGN_GUARDS``.
 
@@ -444,7 +444,7 @@ In the current implementation overwriting a region, by attempting to
 add a region which already exists, is not allowed, and will result in
 a ``BoutException`` being thrown. This restriction may be removed in
 future.
-  
+
 .. _sec-rangeiterator:
 
 Iterating over ranges
@@ -493,33 +493,73 @@ initialised in the constructor.
 
 .. _sec-fieldops:
 
-Field2D/Field3D Arithmetic Operators
-------------------------------------
+Field expressions and generated operators
+-----------------------------------------
 
-The arithmetic operators (``+``, ``-``, ``/``, ``*``) for `Field2D`
-and `Field3D` are generated automatically using the `Jinja`_
-templating system. This requires Python 3 (2.7 may work, but only 3 is
-supported).
+At user level, field algebra now looks more uniform than it used to:
+ordinary arithmetic and many unary algebraic operators can be combined
+into lazy expressions and only materialized when a concrete field or
+scalar result is needed.
 
-Because this is fairly low-level code, and we don't expect it to
-change very much, the generated code is kept in the git
-repository. This has the benefit that Python and Jinja are not needed
-to build BOUT++, only to change the ``Field`` operator code.
+This implementation is split into two layers.
 
-.. warning:: You should not modify the generated code
-             directly. Instead, modify the template and re-generate
-             the code. If you commit changes to the template and/or
-             driver, make sure to re-generate the code and commit it
-             as well
+``BinaryExpr`` and views
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Jinja template is in ``src/field/gen_fieldops.jinja``, and the
-driver is ``src/field/gen_fieldops.py``. The driver loops over every
-combination of `BoutReal`, `Field2D`, `Field3D` (collectively just
-"fields" here) with the arithmetic operators, and uses the template to
-generate the appropriate code. There is some logic in the template to
-handle certain combinations of the input fields: for example, for the
-binary infix operators, only check the two arguments are on identical
-meshes if neither is `BoutReal`.
+The lazy-expression layer lives in ``include/bout/fieldops.hxx``. The
+central type is ``BinaryExpr``, which stores:
+
+- views of the left and right expression operands
+- the operation functor
+- mesh and metadata needed to check compatibility and materialize the
+  result
+- a cached list of linear region indices describing where the
+  expression is valid
+
+`Field2D`, `Field3D`, and `FieldPerp` act as expression leaves by
+providing lightweight ``View`` types. Those views are the device- and
+backend-friendly objects used by the expression evaluator.
+
+Materialization happens when a field is constructed or assigned from an
+expression, when an expression is stored in `Options`, or when a scalar
+reduction such as ``min`` or ``mean`` is requested. The same mechanism
+is also used to propagate metadata such as mesh, staggered location,
+directions, and `FieldPerp` y-index.
+
+The unary algebraic helpers in ``include/bout/field.hxx`` build on the
+same mechanism. Functions such as ``sqrt``, ``abs``, ``SQ``,
+``if_else``, ``if_else_zero``, ``min``, ``max``, and ``mean`` can all
+operate directly on lazy expressions.
+
+Generated eager operators
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The eager arithmetic operators and in-place update paths are still
+generated automatically using the `Jinja`_ templating system. The main
+files are:
+
+- ``src/field/gen_fieldops.jinja``
+- ``src/field/gen_fieldops.py``
+- ``src/field/generated_fieldops.cxx``
+
+The generated code handles the broad matrix of combinations between
+`BoutReal`, `Field2D`, `Field3D`, `Field3DParallel`, and `FieldPerp`,
+including several mixed-rank and in-place cases where hand-maintaining
+all overloads would be error-prone.
+
+The generated loops now also depend on the configured execution backend.
+At configure time, the generator is told whether to emit RAJA-based,
+OpenMP-based, or serial loop bodies for the eager paths.
+
+Because this is low-level code, the generated source is kept in the git
+repository. Python and Jinja are therefore only needed when changing the
+operator generator itself, not for an ordinary build.
+
+.. warning::
+
+   Do not edit ``generated_fieldops.cxx`` directly. Instead, modify the
+   template or generator, then regenerate the file and commit both the
+   source change and the regenerated output.
 
 To install Jinja:
 
@@ -527,16 +567,17 @@ To install Jinja:
 
    $ pip3 install --user Jinja2
 
-To re-generate the code, there is a ``make`` target for
-``gen_fieldops.cxx`` in ``src/field/makefile``. This also tries to
-apply ``clang-format`` in order to keep to a consistent code style.
+To regenerate the code, use the target for ``gen_fieldops.cxx`` in
+``src/field/makefile`` or the corresponding CMake-driven generation
+path. This also applies ``clang-format`` to keep the output consistent.
 
-.. note:: ``clang-format`` is bundled with ``clang``. This should be
-          available through your system package manager. If you do not
-          have sufficient privileges on your system, you can install
-          it from the source `clang`_. One of the BOUT++ maintainers
-          can help apply it for you too.
+.. note::
+
+   ``clang-format`` is bundled with ``clang``. This should be available
+   through your system package manager. If you do not have sufficient
+   privileges on your system, you can install it from the source
+   `clang`_. One of the BOUT++ maintainers can also help apply it for
+   you.
 
 .. _Jinja: http://jinja.pocoo.org/
 .. _clang: https://clang.llvm.org/
-

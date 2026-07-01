@@ -18,6 +18,12 @@ public:
     testboundary->keywords = keywords;
     return testboundary;
   }
+  BoundaryOp* clone(BoundaryRegion* UNUSED(region),
+                    const std::list<std::string>& args) override {
+    auto* testboundary = new TestBoundary();
+    testboundary->args = args;
+    return testboundary;
+  }
   std::list<std::string> args;
   std::map<std::string, std::string> keywords;
 

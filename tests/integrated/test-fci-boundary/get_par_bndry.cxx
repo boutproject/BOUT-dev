@@ -1,31 +1,61 @@
 #include "bout/bout.hxx"
-#include "bout/derivs.hxx"
+#include "bout/field3d.hxx"
 #include "bout/field_factory.hxx"
+#include "bout/globals.hxx"
+#include "bout/options.hxx"
+#include "bout/options_io.hxx"
+#include "bout/output.hxx"
 #include "bout/parallel_boundary_region.hxx"
+#include "bout/yboundary_regions.hxx"
+
+#include <fmt/format.h>
+
+#include <vector>
 
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
   using bout::globals::mesh;
 
-  std::vector<Field3D> fields;
-  fields.resize(static_cast<int>(BoundaryParType::SIZE));
+  std::vector<Field3D> fields(static_cast<int>(BoundaryParType::SIZE), Field3D{0.0});
+
   Options dump;
   for (int i = 0; i < fields.size(); i++) {
-    fields[i] = Field3D{0.0};
+    fields[i].allocate();
+    const auto boundary = static_cast<BoundaryParType>(i);
+    const auto boundary_name = toString(boundary);
     mesh->communicate(fields[i]);
-    for (const auto& bndry_par :
-         mesh->getBoundariesPar(static_cast<BoundaryParType>(i))) {
+    for (auto& bndry_par : mesh->getBoundariesPar(static_cast<BoundaryParType>(i))) {
       output.write("{:s} region\n", toString(static_cast<BoundaryParType>(i)));
-      for (bndry_par->first(); !bndry_par->isDone(); bndry_par->next()) {
-        fields[i][bndry_par->ind()] += 1;
+      for (const auto& pnt : *bndry_par) {
+        fields[i][pnt.ind()] += 1;
         output.write("{:s} increment\n", toString(static_cast<BoundaryParType>(i)));
       }
     }
-    output.write("{:s} done\n", toString(static_cast<BoundaryParType>(i)));
+    output.write("{:s} done\n", boundary_name);
 
-    dump[fmt::format("field_{:s}", toString(static_cast<BoundaryParType>(i)))] =
-        fields[i];
+    dump[fmt::format("field_{:s}", boundary_name)] = fields[i];
+  }
+  for (const auto& name : {"forward_xt_prime", "backward_xt_prime"}) {
+    Field3D tmp;
+    mesh->get(tmp, name);
+    dump[name] = tmp;
+  }
+
+  {
+    const Options dummy;
+    auto ybndry = getYBoundary(mesh->getCoordinates());
+
+    std::vector<Field3D> fields((mesh->ystart * 2) + 1, Field3D{0.0});
+    for (auto& field : fields) {
+      field.allocate();
+    }
+    ybndry->iter(
+        [&](const auto& pnt) { fields[pnt.dir() + mesh->ystart][pnt.ind()] += 1; });
+
+    for (int i = -mesh->ystart; i <= mesh->ystart; ++i) {
+      dump[fmt::format("ybndry_{}", i)] = fields[i + mesh->ystart];
+    }
   }
 
   bout::writeDefaultOutputFile(dump);

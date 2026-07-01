@@ -30,6 +30,7 @@ constexpr auto has_uuid_system_generator =
     static_cast<bool>(BOUT_HAS_UUID_SYSTEM_GENERATOR);
 constexpr auto has_slepc = static_cast<bool>(BOUT_HAS_SLEPC);
 constexpr auto has_sundials = static_cast<bool>(BOUT_HAS_SUNDIALS);
+constexpr auto has_sundials_manyvector = static_cast<bool>(BOUT_HAS_SUNDIALS_MANYVECTOR);
 constexpr auto use_backtrace = static_cast<bool>(BOUT_USE_BACKTRACE);
 constexpr auto use_color = static_cast<bool>(BOUT_USE_COLOR);
 constexpr auto use_openmp = static_cast<bool>(BOUT_USE_OPENMP);
@@ -47,14 +48,50 @@ constexpr auto use_msgstack = static_cast<bool>(BOUT_USE_MSGSTACK);
 #undef STRINGIFY1
 #undef STRINGIFY
 
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
+// These defines are used to provide compiler-specific flags
 #if BOUT_HAS_CUDA && defined(__CUDACC__)
 #define BOUT_HOST_DEVICE __host__ __device__
 #define BOUT_HOST __host__
 #define BOUT_DEVICE __device__
+#define BOUT_FORCEINLINE __forceinline__
+#elif defined(_MSC_VER)
+#define BOUT_HOST_DEVICE
+#define BOUT_HOST
+#define BOUT_DEVICE
+#define BOUT_FORCEINLINE __forceinline
+#elif defined(__clang__) || defined(__GNUC__)
+#define BOUT_HOST_DEVICE
+#define BOUT_HOST
+#define BOUT_DEVICE
+#define BOUT_FORCEINLINE inline __attribute__((always_inline))
 #else
 #define BOUT_HOST_DEVICE
 #define BOUT_HOST
 #define BOUT_DEVICE
+#define BOUT_FORCEINLINE inline
 #endif
+
+#if defined(__has_cpp_attribute) && __has_cpp_attribute(assume) >= 202207L
+#define BOUT_ASSUME(condition) [[assume(condition)]]
+#elif defined(_MSC_VER)
+#define BOUT_ASSUME(condition) __assume(condition)
+#elif defined(__clang__)
+#if __has_builtin(__builtin_assume)
+#define BOUT_ASSUME(condition) __builtin_assume(condition)
+#else
+#define BOUT_ASSUME(condition) ((void)0)
+#endif
+#elif defined(__GNUC__)
+#define BOUT_ASSUME(condition) \
+  do {                         \
+    if (!(condition)) {        \
+      __builtin_unreachable(); \
+    }                          \
+  } while (false)
+#else
+#define BOUT_ASSUME(condition) ((void)0)
+#endif
+// NOLINTEND(cppcoreguidelines-macro-usage)
 
 #endif // BOUT_BUILD_OPTIONS_HXX

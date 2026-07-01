@@ -6,9 +6,9 @@
  * up a linear system.
  *
  **************************************************************************
- * Copyright 2019 C. MacMackin
+ * Copyright 2019 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -40,18 +40,27 @@
 #include <type_traits>
 #include <vector>
 
+#include <bout/array.hxx>
+#include <bout/assert.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/globalindexer.hxx>
 #include <bout/mesh.hxx>
+#include <bout/openmpwrap.hxx>
 #include <bout/operatorstencil.hxx>
 #include <bout/paralleltransform.hxx>
 #include <bout/petsclib.hxx>
 #include <bout/region.hxx>
 #include <bout/traits.hxx>
 
+#include <petscmat.h>
+#include <petscsys.h>
 #include <petscsystypes.h>
 #include <petscvec.h>
+#include <petscversion.h>
+
+#include <utility>
 
 /*!
  * A class which wraps PETSc vector objects, allowing them to be
@@ -70,7 +79,7 @@ inline MPI_Comm getComm([[maybe_unused]] const T& field) {
 
 template <>
 inline MPI_Comm getComm([[maybe_unused]] const FieldPerp& field) {
-  return field.getMesh()->getXcomm();
+  return field.getMesh()->getXZcomm();
 }
 
 template <class T>
@@ -284,7 +293,7 @@ public:
   PetscMatrix(IndexerPtr<T> indConverter, bool preallocate = true)
       : matrix(new Mat()), indexConverter(indConverter),
         pt(&indConverter->getMesh()->getCoordinates()->getParallelTransform()) {
-    MPI_Comm comm = std::is_same_v<T, FieldPerp> ? indConverter->getMesh()->getXcomm()
+    MPI_Comm comm = std::is_same_v<T, FieldPerp> ? indConverter->getMesh()->getXZcomm()
                                                  : BoutComm::get();
     const int size = indexConverter->size();
 
@@ -346,7 +355,7 @@ public:
       ASSERT2(positions.size() == weights.size());
 #if CHECK > 2
       for (const auto val : weights) {
-        ASSERT3(finite(val));
+        ASSERT3(std::isfinite(val));
       }
 #endif
       if (positions.empty()) {
@@ -363,29 +372,29 @@ public:
       }
     }
     Element& operator=(const Element& other) {
-      AUTO_TRACE();
+
       if (this == &other) {
         return *this;
       }
-      ASSERT3(finite(static_cast<BoutReal>(other)));
+      ASSERT3(std::isfinite(static_cast<BoutReal>(other)));
       *this = static_cast<BoutReal>(other);
       return *this;
     }
     Element& operator=(BoutReal val) {
-      AUTO_TRACE();
-      ASSERT3(finite(val));
+
+      ASSERT3(std::isfinite(val));
       value = val;
       setValues(val, INSERT_VALUES);
       return *this;
     }
     Element& operator+=(BoutReal val) {
-      AUTO_TRACE();
-      ASSERT3(finite(val));
+
+      ASSERT3(std::isfinite(val));
       auto columnPosition = std::find(positions.begin(), positions.end(), petscCol);
       if (columnPosition != positions.end()) {
         const int index = std::distance(positions.begin(), columnPosition);
         value += weights[index] * val;
-        ASSERT3(finite(value));
+        ASSERT3(std::isfinite(value));
       }
       setValues(val, ADD_VALUES);
       return *this;
@@ -394,7 +403,6 @@ public:
 
   private:
     void setValues(BoutReal val, InsertMode mode) {
-      TRACE("PetscMatrix setting values at ({}, {})", petscRow, petscCol);
       ASSERT3(positions.size() > 0);
       std::vector<PetscScalar> values;
       std::transform(weights.begin(), weights.end(), std::back_inserter(values),
@@ -405,7 +413,8 @@ public:
       status = MatSetValues(*petscMatrix, 1, &petscRow, positions.size(),
                             positions.data(), values.data(), mode);
       if (status != 0) {
-        throw BoutException("Error when setting elements of a PETSc matrix.");
+        throw BoutException("Error when setting elements of a PETSc matrix at ({}, {})",
+                            petscRow, petscCol);
       }
     }
     Mat* petscMatrix;
@@ -565,6 +574,26 @@ PetscVector<T> operator*(const PetscMatrix<T>& mat, const PetscVector<T>& vec) {
   ASSERT2(err == 0);
   return PetscVector<T>(vec, result);
 }
+
+// Compatibility wrappers
+// For < 3.24
+#if PETSC_VERSION_GE(3, 24, 0) \
+    || (PETSC_VERSION_GE(3, 23, 0) && PETSC_VERSION_RELEASE == 0)
+namespace bout {
+template <class T>
+constexpr auto cast_MatFDColoringFn(T func) {
+  return reinterpret_cast<MatFDColoringFn*>(func); // NOLINT(*-reinterpret-cast)
+}
+} // namespace bout
+#else
+using MatFDColoringFn = PetscErrorCode (*)();
+namespace bout {
+template <class T>
+constexpr auto cast_MatFDColoringFn(T func) {
+  return reinterpret_cast<MatFDColoringFn>(func); // NOLINT(*-reinterpret-cast)
+}
+} // namespace bout
+#endif
 
 #endif // BOUT_HAS_PETSC
 

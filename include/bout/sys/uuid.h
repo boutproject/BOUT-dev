@@ -30,6 +30,7 @@
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <cstdint>
 #include <cstring>
 #include <functional>
 #include <iomanip>
@@ -76,7 +77,7 @@ namespace uuids {
 
 namespace detail {
 template <typename TChar>
-constexpr inline unsigned char hex2char(TChar const ch) {
+constexpr unsigned char hex2char(const TChar ch) {
   if (ch >= static_cast<TChar>('0') && ch <= static_cast<TChar>('9'))
     return ch - static_cast<TChar>('0');
   if (ch >= static_cast<TChar>('a') && ch <= static_cast<TChar>('f'))
@@ -87,14 +88,14 @@ constexpr inline unsigned char hex2char(TChar const ch) {
 }
 
 template <typename TChar>
-constexpr inline bool is_hex(TChar const ch) {
+constexpr bool is_hex(const TChar ch) {
   return (ch >= static_cast<TChar>('0') && ch <= static_cast<TChar>('9'))
          || (ch >= static_cast<TChar>('a') && ch <= static_cast<TChar>('f'))
          || (ch >= static_cast<TChar>('A') && ch <= static_cast<TChar>('F'));
 }
 
 template <typename TChar>
-constexpr inline unsigned char hexpair2char(TChar const a, TChar const b) {
+constexpr unsigned char hexpair2char(const TChar a, const TChar b) {
   return (hex2char(a) << 4) | hex2char(b);
 }
 
@@ -105,7 +106,7 @@ public:
 
   static constexpr unsigned int block_bytes = 64;
 
-  inline static uint32_t left_rotate(uint32_t value, size_t const count) {
+  static uint32_t left_rotate(uint32_t value, const size_t count) {
     return (value << count) ^ (value >> (32 - count));
   }
 
@@ -130,7 +131,7 @@ public:
     }
   }
 
-  void process_block(void const* const start, void const* const end) {
+  void process_block(const void* const start, const void* const end) {
     const uint8_t* begin = static_cast<const uint8_t*>(start);
     const uint8_t* finish = static_cast<const uint8_t*>(end);
     while (begin != finish) {
@@ -139,13 +140,13 @@ public:
     }
   }
 
-  void process_bytes(void const* const data, size_t const len) {
+  void process_bytes(const void* const data, const size_t len) {
     const uint8_t* block = static_cast<const uint8_t*>(data);
     process_block(block, block + len);
   }
 
-  uint32_t const* get_digest(digest32_t digest) {
-    size_t const bitCount = this->m_byteCount * 8;
+  const uint32_t* get_digest(digest32_t digest) {
+    const size_t bitCount = this->m_byteCount * 8;
     process_byte(0x80);
     if (this->m_blockByteIndex > 56) {
       while (m_blockByteIndex != 0) {
@@ -166,13 +167,13 @@ public:
     process_byte(static_cast<unsigned char>((bitCount >> 24) & 0xFF));
     process_byte(static_cast<unsigned char>((bitCount >> 16) & 0xFF));
     process_byte(static_cast<unsigned char>((bitCount >> 8) & 0xFF));
-    process_byte(static_cast<unsigned char>((bitCount)&0xFF));
+    process_byte(static_cast<unsigned char>((bitCount) & 0xFF));
 
     memcpy(digest, m_digest, 5 * sizeof(uint32_t));
     return digest;
   }
 
-  uint8_t const* get_digest_bytes(digest8_t digest) {
+  const uint8_t* get_digest_bytes(digest8_t digest) {
     digest32_t d32;
     get_digest(d32);
     size_t di = 0;
@@ -344,13 +345,13 @@ class uuid {
 public:
   using value_type = uint8_t;
 
-  constexpr uuid() noexcept : data({}){};
+  constexpr uuid() noexcept : data({}) {};
 
   uuid(value_type (&arr)[16]) noexcept {
     std::copy(std::cbegin(arr), std::cend(arr), std::begin(data));
   }
 
-  uuid(std::array<value_type, 16> const& arr) noexcept {
+  uuid(const std::array<value_type, 16>& arr) noexcept {
     std::copy(std::cbegin(arr), std::cend(arr), std::begin(data));
   }
 
@@ -395,12 +396,10 @@ public:
 
   void swap(uuid& other) noexcept { data.swap(other.data); }
 
-  inline char const* as_bytes() const {
-    return reinterpret_cast<char const*>(data.data());
-  }
+  const char* as_bytes() const { return reinterpret_cast<const char*>(data.data()); }
 
   template <class CharT = char>
-  static bool is_valid_uuid(CharT const* str) noexcept {
+  static bool is_valid_uuid(const CharT* str) noexcept {
     bool firstDigit = true;
     int hasBraces = 0;
     size_t index = 0;
@@ -455,12 +454,12 @@ public:
   template <class CharT = char, class Traits = std::char_traits<CharT>,
             class Allocator = std::allocator<CharT>>
   static bool
-  is_valid_uuid(std::basic_string<CharT, Traits, Allocator> const& str) noexcept {
+  is_valid_uuid(const std::basic_string<CharT, Traits, Allocator>& str) noexcept {
     return is_valid_uuid(str.c_str());
   }
 
   template <class CharT = char>
-  static uuid from_string(CharT const* str) noexcept {
+  static uuid from_string(const CharT* str) noexcept {
     CharT digit = 0;
     bool firstDigit = true;
     int hasBraces = 0;
@@ -512,40 +511,40 @@ public:
   template <class CharT = char, class Traits = std::char_traits<CharT>,
             class Allocator = std::allocator<CharT>>
   static uuid
-  from_string(std::basic_string<CharT, Traits, Allocator> const& str) noexcept {
+  from_string(const std::basic_string<CharT, Traits, Allocator>& str) noexcept {
     return from_string(str.c_str());
   }
 
 private:
   std::array<value_type, 16> data{{0}};
 
-  friend bool operator==(uuid const& lhs, uuid const& rhs) noexcept;
-  friend bool operator<(uuid const& lhs, uuid const& rhs) noexcept;
+  friend bool operator==(const uuid& lhs, const uuid& rhs) noexcept;
+  friend bool operator<(const uuid& lhs, const uuid& rhs) noexcept;
 
   template <class Elem, class Traits>
   friend std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& s,
-                                                      uuid const& id);
+                                                      const uuid& id);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
 // operators and non-member functions
 // --------------------------------------------------------------------------------------------------------------------------
 
-inline bool operator==(uuid const& lhs, uuid const& rhs) noexcept {
+inline bool operator==(const uuid& lhs, const uuid& rhs) noexcept {
   return lhs.data == rhs.data;
 }
 
-inline bool operator!=(uuid const& lhs, uuid const& rhs) noexcept {
+inline bool operator!=(const uuid& lhs, const uuid& rhs) noexcept {
   return !(lhs == rhs);
 }
 
-inline bool operator<(uuid const& lhs, uuid const& rhs) noexcept {
+inline bool operator<(const uuid& lhs, const uuid& rhs) noexcept {
   return lhs.data < rhs.data;
 }
 
 template <class Elem, class Traits>
 std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& s,
-                                             uuid const& id) {
+                                             const uuid& id) {
   // save current flags
   std::ios_base::fmtflags f(s.flags());
 
@@ -568,7 +567,7 @@ std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& s
 
 template <class CharT = char, class Traits = std::char_traits<CharT>,
           class Allocator = std::allocator<CharT>>
-inline std::basic_string<CharT, Traits, Allocator> to_string(uuid const& id) {
+inline std::basic_string<CharT, Traits, Allocator> to_string(const uuid& id) {
   std::basic_stringstream<CharT, Traits, Allocator> sstr;
   sstr << id;
   return sstr.str();
@@ -692,11 +691,11 @@ using uuid_random_generator = basic_uuid_random_generator<std::mt19937>;
 
 class uuid_name_generator {
 public:
-  explicit uuid_name_generator(uuid const& namespace_uuid) noexcept
+  explicit uuid_name_generator(const uuid& namespace_uuid) noexcept
       : nsuuid(namespace_uuid) {}
 
   template <class CharT = char>
-  uuid operator()(CharT const* name) {
+  uuid operator()(const CharT* name) {
     size_t size = 0;
     if (std::is_same<CharT, char>::value)
       size = strlen(name);
@@ -710,7 +709,7 @@ public:
 
   template <class CharT = char, class Traits = std::char_traits<CharT>,
             class Allocator = std::allocator<CharT>>
-  uuid operator()(std::basic_string<CharT, Traits, Allocator> const& name) {
+  uuid operator()(const std::basic_string<CharT, Traits, Allocator>& name) {
     reset();
     process_characters(name.data(), name.size());
     return make_uuid();
@@ -727,7 +726,7 @@ private:
 
   template <typename char_type,
             typename = std::enable_if_t<std::is_integral<char_type>::value>>
-  void process_characters(char_type const* const characters, size_t const count) {
+  void process_characters(const char_type* const characters, const size_t count) {
     for (size_t i = 0; i < count; i++) {
       uint32_t c = characters[i];
       hasher.process_byte(static_cast<unsigned char>((c >> 0) & 0xFF));
@@ -737,7 +736,7 @@ private:
     }
   }
 
-  void process_characters(const char* const characters, size_t const count) {
+  void process_characters(const char* const characters, const size_t count) {
     hasher.process_bytes(characters, count);
   }
 
@@ -847,7 +846,7 @@ struct hash<uuids::uuid> {
   using argument_type = uuids::uuid;
   using result_type = std::size_t;
 
-  result_type operator()(argument_type const& uuid) const {
+  result_type operator()(const argument_type& uuid) const {
     std::hash<std::string> hasher;
     return static_cast<result_type>(hasher(uuids::to_string(uuid)));
   }

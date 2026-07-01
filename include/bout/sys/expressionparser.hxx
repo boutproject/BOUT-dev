@@ -29,7 +29,8 @@
 
 #include "bout/unused.hxx"
 
-#include "fmt/core.h"
+#include <fmt/base.h>
+#include <fmt/core.h>
 
 #include <exception>
 #include <list>
@@ -64,12 +65,6 @@ public:
     return nullptr;
   }
 
-  [[deprecated("This will be removed in a future version. Implementations should "
-               "override the Context version of this function.")]] virtual double
-  generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) {
-    return generate(bout::generator::Context().set("x", x, "y", y, "z", z, "t", t));
-  }
-
   /// Generate a value at the given coordinates (x,y,z,t)
   /// This should be deterministic, always returning the same value given the same inputs
   ///
@@ -78,7 +73,7 @@ public:
   /// them or an infinite recursion results.  This is for backward
   /// compatibility for users and implementors.  In a future version
   /// this function will be made pure virtual.
-  virtual double generate(const bout::generator::Context& ctx);
+  virtual double generate(const bout::generator::Context& ctx) = 0;
 
   /// Create a string representation of the generator, for debugging output
   virtual std::string str() const { return std::string("?"); }
@@ -245,11 +240,16 @@ private:
 
 class ParseException : public std::exception {
 public:
+  ParseException(const ParseException&) = default;
+  ParseException(ParseException&&) = delete;
+  ParseException& operator=(const ParseException&) = default;
+  ParseException& operator=(ParseException&&) = delete;
   ParseException(const std::string& message_) : message(message_) {}
 
-  template <class S, class... Args>
-  ParseException(const S& format, const Args&... args)
-      : message(fmt::format(format, args...)) {}
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  ParseException(fmt::format_string<Args...> format, Args&&... args)
+      : message(fmt::vformat(format, fmt::make_format_args(args...))) {}
 
   ~ParseException() override = default;
 

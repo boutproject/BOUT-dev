@@ -4,9 +4,9 @@
  *                           Using PETSc Solvers
  *
  **************************************************************************
- * Copyright 2013 J. Buchanan, J.Omotani
+ * Copyright 2013 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -120,39 +120,64 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
 
   // Set up boundary conditions in operator
   const bool inner_X_neumann = isInnerBoundaryFlagSet(INVERT_AC_GRAD);
-  const auto inner_X_BC = inner_X_neumann ? -1. / coords->dx / sqrt(coords->g_11) : 0.5;
-  const auto inner_X_BC_plus = inner_X_neumann ? -inner_X_BC : 0.5;
-
-  BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
-    operator3D(i, i) = inner_X_BC[i];
-    operator3D(i, i.xp()) = inner_X_BC_plus[i];
+  if (inner_X_neumann) {
+    // This is a BinaryExpr that is only evaluated when needed
+    const auto inner_X_BC = -1. / coords->dx / sqrt(coords->g_11);
+    BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
+      const BoutReal bc = inner_X_BC[i];
+      operator3D(i, i) = bc;
+      operator3D(i, i.xp()) = -bc;
+    }
+  } else {
+    BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
+      operator3D(i, i) = 0.5;
+      operator3D(i, i.xp()) = 0.5;
+    }
   }
 
   const bool outer_X_neumann = isOuterBoundaryFlagSet(INVERT_AC_GRAD);
-  const auto outer_X_BC = outer_X_neumann ? 1. / coords->dx / sqrt(coords->g_11) : 0.5;
-  const auto outer_X_BC_minus = outer_X_neumann ? -outer_X_BC : 0.5;
-
-  BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
-    operator3D(i, i) = outer_X_BC[i];
-    operator3D(i, i.xm()) = outer_X_BC_minus[i];
+  if (outer_X_neumann) {
+    const auto outer_X_BC = 1. / coords->dx / sqrt(coords->g_11);
+    BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
+      const BoutReal bc = outer_X_BC[i];
+      operator3D(i, i) = bc;
+      operator3D(i, i.xm()) = -bc;
+    }
+  } else {
+    BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
+      operator3D(i, i) = 0.5;
+      operator3D(i, i.xm()) = 0.5;
+    }
   }
 
   const bool lower_Y_neumann = flagSet(lower_boundary_flags, INVERT_AC_GRAD);
-  const auto lower_Y_BC = lower_Y_neumann ? -1. / coords->dy / sqrt(coords->g_22) : 0.5;
-  const auto lower_Y_BC_plus = lower_Y_neumann ? -lower_Y_BC : 0.5;
-
-  BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
-    operator3D(i, i) = lower_Y_BC[i];
-    operator3D(i, i.yp()) = lower_Y_BC_plus[i];
+  if (lower_Y_neumann) {
+    const auto lower_Y_BC = -1. / coords->dy / sqrt(coords->g_22);
+    BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
+      const BoutReal bc = lower_Y_BC[i];
+      operator3D(i, i) = bc;
+      operator3D(i, i.yp()) = -bc;
+    }
+  } else {
+    BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
+      operator3D(i, i) = 0.5;
+      operator3D(i, i.yp()) = 0.5;
+    }
   }
 
   const bool upper_Y_neumann = flagSet(upper_boundary_flags, INVERT_AC_GRAD);
-  const auto upper_Y_BC = upper_Y_neumann ? 1. / coords->dy / sqrt(coords->g_22) : 0.5;
-  const auto upper_Y_BC_minus = upper_Y_neumann ? -upper_Y_BC : 0.5;
-
-  BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
-    operator3D(i, i) = upper_Y_BC[i];
-    operator3D(i, i.ym()) = upper_Y_BC_minus[i];
+  if (upper_Y_neumann) {
+    const auto upper_Y_BC = 1. / coords->dy / sqrt(coords->g_22);
+    BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
+      const BoutReal bc = upper_Y_BC[i];
+      operator3D(i, i) = bc;
+      operator3D(i, i.ym()) = -bc;
+    }
+  } else {
+    BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
+      operator3D(i, i) = 0.5;
+      operator3D(i, i.ym()) = 0.5;
+    }
   }
 }
 
@@ -174,7 +199,6 @@ void setBC(PetscVector<Field3D>& rhs, const Field3D& b_in,
 }
 
 Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
-  AUTO_TRACE();
 
   // Timing reported in the log files. Includes any matrix construction.
   // The timing for just the solve phase can be retrieved from the "petscsolve"
@@ -275,7 +299,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   const Field3D dc_dx = issetC ? DDX(C2) : Field3D();
   const Field3D dc_dy = issetC ? DDY(C2) : Field3D();
   const Field3D dc_dz = issetC ? DDZ(C2) : Field3D();
-  const auto dJ_dy = DDY(coords->J / coords->g_22);
+  const auto dJ_dy = DDY(Coordinates::FieldMetric{coords->J / coords->g_22});
 
   // Set up the matrix for the internal points on the grid.
   // Boundary conditions were set in the constructor.
@@ -360,7 +384,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   // Must add these (rather than assign) so that elements used in
   // interpolation don't overwrite each other.
   BOUT_FOR_SERIAL(l, indexer->getRegionNobndry()) {
-    BoutReal C_df_dy = (coords->G2[l] - dJ_dy[l] / coords->J[l]);
+    BoutReal C_df_dy = coords->G2[l] - (dJ_dy[l] / coords->J[l]);
     if (issetD) {
       C_df_dy *= D[l];
     }
@@ -371,7 +395,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
           / C1[l];
     }
 
-    BoutReal C_d2f_dy2 = (coords->g22[l] - 1.0 / coords->g_22[l]);
+    BoutReal C_d2f_dy2 = coords->g22[l] - (1.0 / coords->g_22[l]);
     if (issetD) {
       C_d2f_dy2 *= D[l];
     }

@@ -24,31 +24,39 @@
  **************************************************************************/
 
 #include <bout/bout.hxx>
-#include <bout/constants.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/derivs.hxx>
+#include <bout/difops.hxx>
+#include <bout/field2d.hxx>
+#include <bout/globals.hxx>
 #include <bout/initialprofiles.hxx>
 #include <bout/invert/laplacexy.hxx>
 #include <bout/options.hxx>
+#include <bout/options_io.hxx>
+#include <bout/output.hxx>
+#include <bout/vecops.hxx>
+
+#include <cstdlib>
 
 int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
 
   using bout::globals::mesh;
-  auto coords = mesh->getCoordinates();
+  auto* coords = mesh->getCoordinates();
 
   auto& opt = Options::root();
 
-  LaplaceXY laplacexy;
+  auto laplacexy = LaplaceXY::create();
 
   bool include_y_derivs = opt["laplacexy"]["include_y_derivs"];
 
   // Solving equations of the form
   // Div(A Grad_perp(f)) + B*f = rhs
   // A*Laplace_perp(f) + Grad_perp(A).Grad_perp(f) + B*f = rhs
-  Field2D f, a, b, sol;
-  Field2D error, absolute_error; //Absolute value of relative error: abs((f - sol)/f)
-  BoutReal max_error;            //Output of test
+  Field2D f;
+  Field2D a;
+  Field2D b;
 
   initial_profile("f", f);
   initial_profile("a", a);
@@ -61,7 +69,8 @@ int main(int argc, char** argv) {
 
   ////////////////////////////////////////////////////////////////////////////////////////
 
-  Field2D rhs, rhs_check;
+  Field2D rhs;
+  Field2D rhs_check;
   if (include_y_derivs) {
     rhs = a * DC(Laplace_perp(f)) + DC(Grad_perp(a) * Grad_perp(f)) + b * f;
   } else {
@@ -69,14 +78,14 @@ int main(int argc, char** argv) {
         a * DC(Delp2(f, CELL_DEFAULT, false)) + DC(coords->g11 * DDX(a) * DDX(f)) + b * f;
   }
 
-  laplacexy.setCoefs(a, b);
+  laplacexy->setCoefs(a, b);
 
-  sol = laplacexy.solve(rhs, 0.);
-  error = (f - sol) / f;
-  absolute_error = f - sol;
-  max_error = max(abs(absolute_error), true);
+  auto sol = laplacexy->solve(rhs, 0.);
+  const auto error = (f - sol) / f;
+  const auto absolute_error = f - sol;
+  const auto max_error = max(abs(absolute_error), true);
 
-  output << "Magnitude of maximum absolute error is " << max_error << endl;
+  output.write("Magnitude of maximum absolute error is {}\n", max_error);
 
   mesh->communicate(sol);
   if (include_y_derivs) {

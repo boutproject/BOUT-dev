@@ -111,6 +111,51 @@ TEST_F(RegionTest, regionFromIndices) {
   }
 }
 
+TEST_F(RegionTest, getLinearIndices) {
+  Region<Ind3D> region(0, mesh->LocalNx - 1, 0, mesh->LocalNy - 1, 0, mesh->LocalNz - 1,
+                       mesh->LocalNy, mesh->LocalNz);
+
+  const auto& indices = region.getIndices();
+  const auto& linearIndices = region.getLinearIndices();
+
+  ASSERT_EQ(linearIndices.size(), indices.size());
+  for (int i = 0; i < linearIndices.size(); ++i) {
+    EXPECT_EQ(linearIndices[i], indices[i].ind);
+  }
+}
+
+TEST_F(RegionTest, getLinearIndicesUpdatedAfterSetIndices) {
+  Region<Ind3D>::RegionIndices indicesIn{{0, 1, 1}, {2, 1, 1}, {4, 1, 1}};
+  Region<Ind3D> region(indicesIn);
+
+  const auto& initialLinearIndices = region.getLinearIndices();
+  ASSERT_EQ(initialLinearIndices.size(), 3);
+  EXPECT_EQ(initialLinearIndices[0], 0);
+  EXPECT_EQ(initialLinearIndices[1], 2);
+  EXPECT_EQ(initialLinearIndices[2], 4);
+
+  Region<Ind3D>::RegionIndices newIndices{{1, 1, 1}, {3, 1, 1}};
+  region.setIndices(newIndices);
+
+  const auto& updatedLinearIndices = region.getLinearIndices();
+  ASSERT_EQ(updatedLinearIndices.size(), 2);
+  EXPECT_EQ(updatedLinearIndices[0], 1);
+  EXPECT_EQ(updatedLinearIndices[1], 3);
+}
+
+TEST_F(RegionTest, getLinearIndicesUpdatedAfterSetBlocks) {
+  Region<Ind3D>::ContiguousBlocks blocks{{Ind3D{1, 1, 1}, Ind3D{3, 1, 1}},
+                                         {Ind3D{5, 1, 1}, Ind3D{6, 1, 1}}};
+  Region<Ind3D> region;
+  region.setBlocks(blocks);
+
+  const auto& linearIndices = region.getLinearIndices();
+  ASSERT_EQ(linearIndices.size(), 3);
+  EXPECT_EQ(linearIndices[0], 1);
+  EXPECT_EQ(linearIndices[1], 2);
+  EXPECT_EQ(linearIndices[2], 5);
+}
+
 TEST_F(RegionTest, regionFromBlocks) {
   Region<Ind3D> region(0, mesh->LocalNx - 1, 0, mesh->LocalNy - 1, 0, mesh->LocalNz - 1,
                        mesh->LocalNy, mesh->LocalNz);
@@ -211,8 +256,8 @@ TEST_F(RegionTest, regionLoopNoBndry) {
   BOUT_FOR(i, region) { a[i] = 1.0; }
 
   const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
-  const int ninner =
-      (mesh->LocalNz * (1 + mesh->xend - mesh->xstart) * (1 + mesh->yend - mesh->ystart));
+  const int ninner = ((1 + mesh->zend - mesh->zstart) * (1 + mesh->xend - mesh->xstart)
+                      * (1 + mesh->yend - mesh->ystart));
   int numExpectNotMatching = nmesh - ninner;
 
   int numNotMatching = 0;
@@ -249,8 +294,8 @@ TEST_F(RegionTest, regionLoopNoBndrySerial) {
   int count = 0;
   BOUT_FOR_SERIAL(i, region) { ++count; }
 
-  const int ninner =
-      (mesh->LocalNz * (1 + mesh->xend - mesh->xstart) * (1 + mesh->yend - mesh->ystart));
+  const int ninner = ((1 + mesh->zend - mesh->zstart) * (1 + mesh->xend - mesh->xstart)
+                      * (1 + mesh->yend - mesh->ystart));
 
   EXPECT_EQ(count, ninner);
 }
@@ -300,8 +345,8 @@ TEST_F(RegionTest, regionLoopNoBndrySection) {
     }
   }
 
-  const int ninner =
-      (mesh->LocalNz * (1 + mesh->xend - mesh->xstart) * (1 + mesh->yend - mesh->ystart));
+  const int ninner = ((1 + mesh->zend - mesh->zstart) * (1 + mesh->xend - mesh->xstart)
+                      * (1 + mesh->yend - mesh->ystart));
 
   EXPECT_EQ(count, ninner);
 }
@@ -334,8 +379,8 @@ TEST_F(RegionTest, regionLoopNoBndryInner) {
   }
 
   const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
-  const int ninner =
-      (mesh->LocalNz * (1 + mesh->xend - mesh->xstart) * (1 + mesh->yend - mesh->ystart));
+  const int ninner = ((1 + mesh->zend - mesh->zstart) * (1 + mesh->xend - mesh->xstart)
+                      * (1 + mesh->yend - mesh->ystart));
   int numExpectNotMatching = nmesh - ninner;
 
   int numNotMatching = 0;

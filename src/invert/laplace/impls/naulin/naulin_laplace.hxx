@@ -124,7 +124,7 @@
  * Copyright 2018 B.D.Dudson, M. Loiten, J. Omotani
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -147,16 +147,27 @@ class LaplaceNaulin;
 #ifndef BOUT_LAP_NAULIN_H
 #define BOUT_LAP_NAULIN_H
 
+#include <bout/build_defines.hxx>
 #include <bout/invert_laplace.hxx>
+
+#if BOUT_USE_METRIC_3D
+
+namespace {
+const RegisterUnavailableLaplace
+    registerlaplacenaulin(LAPLACE_NAULIN, "BOUT++ was configured with 3D metrics");
+}
+
+#else
+
 #include <bout/options.hxx>
 
 namespace {
-RegisterLaplace<LaplaceNaulin> registerlaplacenaulin(LAPLACE_NAULIN);
+const RegisterLaplace<LaplaceNaulin> registerlaplacenaulin(LAPLACE_NAULIN);
 }
 
 /// Solves the 2D Laplacian equation
 /*!
- * 
+ *
  */
 class LaplaceNaulin : public Laplacian {
 public:
@@ -316,5 +327,7 @@ private:
   /// These may be used to set non-zero-value boundary conditions
   void copy_x_boundaries(Field3D& x, const Field3D& x0, Mesh* mesh);
 };
+
+#endif // BOUT_USE_METRIC_3D
 
 #endif // BOUT_LAP_NAULIN_H

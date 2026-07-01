@@ -7,12 +7,12 @@
  *
  * 2015-03-09 Ben Dudson <bd512@york.ac.uk>
  *    o Removed, redefined in terms of std::complex
- * 
+ *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -27,7 +27,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 #ifndef BOUT_DCOMPLEX_H
 #define BOUT_DCOMPLEX_H

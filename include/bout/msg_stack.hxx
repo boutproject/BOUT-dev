@@ -31,26 +31,13 @@ class MsgStack;
 
 #include "bout/build_defines.hxx"
 
-#include "bout/unused.hxx"
-
+#include "fmt/base.h"
 #include "fmt/core.h"
 
-#include <cstdarg>
+#include <cstddef>
 #include <exception>
 #include <string>
 #include <vector>
-
-/// The __PRETTY_FUNCTION__ variable is defined by GCC (and some other families) but is
-/// not a part of the standard. The __func__ variable *is* a part of the c++11 standard so
-/// we'd like to fall back to this if possible. However as these are variables/constants
-/// and not macros we can't just check if __PRETTY_FUNCITON__ is defined or not. Instead
-/// we need to say if we support this or not by defining BOUT_HAS_PRETTY_FUNCTION (to be
-/// implemented in configure)
-#if BOUT_HAS_PRETTY_FUNCTION
-#define __thefunc__ __PRETTY_FUNCTION__
-#else
-#define __thefunc__ __func__
-#endif
 
 /*!
  * Message stack
@@ -74,9 +61,10 @@ public:
   int push(std::string message);
   int push() { return push(""); }
 
-  template <class S, class... Args>
-  int push(const S& format, const Args&... args) {
-    return push(fmt::format(format, args...));
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  int push(fmt::format_string<Args...> format, Args&&... args) {
+    return push(fmt::vformat(format, fmt::make_format_args(args...)));
   }
 
   void pop();       ///< Remove the last message
@@ -88,18 +76,22 @@ public:
 #else
   /// Dummy functions which should be optimised out
   int push(const std::string&) { return 0; }
-  template <class S, class... Args>
-  int push(const S&, const Args&...) {
+  template <class... Args>
+  int push([[maybe_unused]] fmt::format_string<Args...> format,
+           [[maybe_unused]] const Args&... args) {
     return 0;
   }
 
   void pop() {}
-  void pop(int UNUSED(id)) {}
+  void pop([[maybe_unused]] int id) {}
   void clear() {}
 
   void dump() {}
   std::string getDump() { return ""; }
 #endif
+
+  /// Current stack size
+  std::size_t size() const { return position; }
 
 private:
   std::vector<std::string> stack;                  ///< Message stack;
@@ -143,10 +135,13 @@ public:
   MsgStackItem(const std::string& file, int line, const char* msg)
       : point(msg_stack.push("{:s} on line {:d} of '{:s}'", msg, line, file)) {}
 
-  template <class S, class... Args>
-  MsgStackItem(const std::string& file, int line, const S& msg, const Args&... args)
-      : point(msg_stack.push("{:s} on line {:d} of '{:s}'", fmt::format(msg, args...),
-                             line, file)) {}
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  MsgStackItem(const std::string& file, int line, fmt::format_string<Args...> msg,
+               Args&&... args)
+      : point(msg_stack.push("{:s} on line {:d} of '{:s}'",
+                             fmt::vformat(msg, fmt::make_format_args(args...)), line,
+                             file)) {}
   ~MsgStackItem() {
     // If an exception has occurred, don't pop the message
     if (exception_count == std::uncaught_exceptions()) {
@@ -192,24 +187,5 @@ private:
 #else
 #define TRACE(...)
 #endif
-
-/*!
- * The AUTO_TRACE macro provides a convenient way to put messages onto the msg_stack
- * It pushes a message onto the stack, and pops it when the scope ends
- * The message is automatically derived from the function signature
- * as identified by the compiler. This will be PRETTY_FUNCTION if available
- * else it will be the mangled form.
- *
- * This is implemented as a use of the TRACE macro with specific arguments.
- *
- * Example
- * -------
- *
- * {
- *   AUTO_TRACE();
- *
- * } // Scope ends, message popped
- */
-#define AUTO_TRACE() TRACE(__thefunc__) // NOLINT
 
 #endif // BOUT_MSG_STACK_H

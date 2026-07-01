@@ -34,10 +34,12 @@ protected:
     static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr);
     mesh->createDefaultRegions();
 
-    mesh->addBoundary(new BoundaryRegionXIn("core", 1, ny - 2, mesh));
-    mesh->addBoundary(new BoundaryRegionXOut("sol", 1, ny - 2, mesh));
-    mesh->addBoundary(new BoundaryRegionYUp("upper_target", 1, nx - 2, mesh));
-    mesh->addBoundary(new BoundaryRegionYDown("lower_target", 1, nx - 2, mesh));
+    mesh->addBoundary(bout::boundary::NewBoundaryRegionXIn("core", 1, ny - 2, mesh));
+    mesh->addBoundary(bout::boundary::NewBoundaryRegionXOut("sol", 1, ny - 2, mesh));
+    mesh->addBoundary(
+        bout::boundary::NewBoundaryRegionYUp("upper_target", 1, nx - 2, mesh));
+    mesh->addBoundary(
+        bout::boundary::NewBoundaryRegionYDown("lower_target", 1, nx - 2, mesh));
 
     static_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<Coordinates>(
         mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
@@ -98,12 +100,6 @@ TEST_F(Vector3DTest, ApplyBoundaryString) {
 
   // Middle cell not changed
   EXPECT_DOUBLE_EQ(v.x(2, 2, 1), 0.0);
-}
-
-TEST_F(Vector3DTest, Is3D) {
-  Vector3D vector;
-
-  EXPECT_TRUE(vector.is3D());
 }
 
 TEST_F(Vector3DTest, BoutRealSize) {

@@ -1,8 +1,8 @@
-#include "gtest/gtest.h"
+#include <bout/build_defines.hxx>
 
-#include "bout/boutexception.hxx"
 #if not(BOUT_USE_METRIC_3D)
 #include "test_extras.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/mesh.hxx"
 #include "bout/mpi_wrapper.hxx"
 #include "bout/output.hxx"
@@ -10,6 +10,8 @@
 #include "bout/vector3d.hxx"
 
 #include "fake_mesh.hxx"
+
+#include "gtest/gtest.h"
 
 // The unit tests use the global mesh
 using namespace bout::globals;
@@ -35,10 +37,12 @@ protected:
     static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr);
     mesh->createDefaultRegions();
 
-    mesh->addBoundary(new BoundaryRegionXIn("core", 1, ny - 2, mesh));
-    mesh->addBoundary(new BoundaryRegionXOut("sol", 1, ny - 2, mesh));
-    mesh->addBoundary(new BoundaryRegionYUp("upper_target", 1, nx - 2, mesh));
-    mesh->addBoundary(new BoundaryRegionYDown("lower_target", 1, nx - 2, mesh));
+    mesh->addBoundary(bout::boundary::NewBoundaryRegionXIn("core", 1, ny - 2, mesh));
+    mesh->addBoundary(bout::boundary::NewBoundaryRegionXOut("sol", 1, ny - 2, mesh));
+    mesh->addBoundary(
+        bout::boundary::NewBoundaryRegionYUp("upper_target", 1, nx - 2, mesh));
+    mesh->addBoundary(
+        bout::boundary::NewBoundaryRegionYDown("lower_target", 1, nx - 2, mesh));
 
     static_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<Coordinates>(
         mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
@@ -93,12 +97,6 @@ TEST_F(Vector2DTest, ApplyBoundaryString) {
 
   // Middle cell not changed
   EXPECT_DOUBLE_EQ(v.x(2, 2), 0.0);
-}
-
-TEST_F(Vector2DTest, Is3D) {
-  Vector2D vector;
-
-  EXPECT_FALSE(vector.is3D());
 }
 
 TEST_F(Vector2DTest, BoutRealSize) {

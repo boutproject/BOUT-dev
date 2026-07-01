@@ -7,14 +7,14 @@
  * \f[
  *   d \nabla^2_\perp x + (1/c)\nabla_\perp c\cdot\nabla_\perp x + a x = b
  * \f]
- * 
+ *
  * Where a, c and d are functions of x and y only (not z)
  */
 /**************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -43,6 +43,7 @@ class Laplacian;
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 #endif
 
+#include "bout/bout_types.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/fieldperp.hxx"
@@ -53,6 +54,8 @@ class Laplacian;
 
 #include "bout/dcomplex.hxx"
 
+class DSTTransform;
+class FFTTransform;
 class Solver;
 
 constexpr auto LAPLACE_SPT = "spt";
@@ -141,7 +144,11 @@ public:
   static constexpr auto type_name = "Laplacian";
   static constexpr auto section_name = "laplace";
   static constexpr auto option_name = "type";
+#if BOUT_USE_METRIC_3D
+  static constexpr auto default_type = LAPLACE_PETSC;
+#else
   static constexpr auto default_type = LAPLACE_CYCLIC;
+#endif
 
   ReturnType create(Options* options = nullptr, CELL_LOC loc = CELL_CENTRE,
                     Mesh* mesh = nullptr, Solver* solver = nullptr) {
@@ -261,7 +268,7 @@ public:
   /// Coefficients in tridiagonal inversion
   void tridagCoefs(int jx, int jy, int jz, dcomplex& a, dcomplex& b, dcomplex& c,
                    const Field2D* ccoef = nullptr, const Field2D* d = nullptr,
-                   CELL_LOC loc = CELL_DEFAULT);
+                   CELL_LOC loc = CELL_DEFAULT) const;
 
   /*!
    * Create a new Laplacian solver
@@ -304,6 +311,10 @@ public:
   void savePerformance(Solver& solver, const std::string& name);
 
 protected:
+  // Give access for tridagMatrix
+  friend class DSTTransform;
+  friend class FFTTransform;
+
   bool async_send; ///< If true, use asyncronous send in parallel algorithms
 
   int maxmode; ///< The maximum Z mode to solve for
@@ -335,23 +346,24 @@ protected:
 
   void tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomplex& b, dcomplex& c,
                    const Field2D* ccoef = nullptr, const Field2D* d = nullptr,
-                   CELL_LOC loc = CELL_DEFAULT) {
+                   CELL_LOC loc = CELL_DEFAULT) const {
     tridagCoefs(jx, jy, kwave, a, b, c, ccoef, ccoef, d, loc);
   }
   void tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomplex& b, dcomplex& c,
                    const Field2D* c1coef, const Field2D* c2coef, const Field2D* d,
-                   CELL_LOC loc = CELL_DEFAULT);
+                   CELL_LOC loc = CELL_DEFAULT) const;
 
   void tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dcomplex* bk, int jy,
                     int kz, BoutReal kwave, const Field2D* a, const Field2D* ccoef,
-                    const Field2D* d, bool includeguards = true, bool zperiodic = true) {
+                    const Field2D* d, bool includeguards = true,
+                    bool zperiodic = true) const {
     tridagMatrix(avec, bvec, cvec, bk, jy, kz, kwave, a, ccoef, ccoef, d, includeguards,
                  zperiodic);
   }
   void tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dcomplex* bk, int jy,
                     int kz, BoutReal kwave, const Field2D* a, const Field2D* c1coef,
                     const Field2D* c2coef, const Field2D* d, bool includeguards = true,
-                    bool zperiodic = true);
+                    bool zperiodic = true) const;
   CELL_LOC location;   ///< staggered grid location of this solver
   Mesh* localmesh;     ///< Mesh object for this solver
   Coordinates* coords; ///< Coordinates object, so we only have to call

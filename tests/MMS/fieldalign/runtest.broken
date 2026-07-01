@@ -18,7 +18,6 @@ from os.path import join
 
 import time
 
-
 build_and_log("MMS test")
 
 # nxlist = [256, 128, 64, 32, 16, 8] # do in reverse order to save disk space

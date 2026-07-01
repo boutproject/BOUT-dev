@@ -100,7 +100,7 @@ A number of functions are defined, listed in table
 is that if a number comes before a symbol or an opening bracket (``(``)
 then a multiplication is assumed: ``2x+3y^2`` is the same as
 ``2*x + 3*y^2``, which with the usual precedence rules is the same as
-``(2*x) + (3*(y^2))``. 
+``(2*x) + (3*(y^2))``.
 
 Expressions can span more than one line, which can make long expressions
 easier to read:
@@ -176,7 +176,7 @@ Special symbols in Option names
 If option names start with numbers or ``.`` or contain symbols such as
 ``+`` and ``-`` then these symbols need to be escaped in expressions
 or they will be treated as arithmetic operators like addition or
-subtraction. To escape a single character 
+subtraction. To escape a single character
 ``\`` (backslash) can be used, for example ``plasma\-density * 10``
 would read the option ``plasma-density`` and multiply it
 by 10 e.g
@@ -247,13 +247,13 @@ combinations of the format codes::
 
   // [section1]
   // value1 = 42
-  // value2 = hello		# doc: This says hello
+  // value2 = hello            # doc: This says hello
   //
   // [section2]
   // value5 = 3
   //
   // [section2:subsection1]
-  // value3 = true		# type: bool, doc: This is a bool
+  // value3 = true             # type: bool, doc: This is a bool
   // value4 = 3.2
 
   // Only keys, inline sections, and 'doc', 'type', and 'source' attributes.
@@ -261,9 +261,9 @@ combinations of the format codes::
   output.write("{:kids}", options);
 
   // section1:value1
-  // section1:value2		# doc: This says hello
+  // section1:value2           # doc: This says hello
   // section2:value5
-  // section2:subsection1:value3		# type: bool, doc: This is a bool, source: a test
+  // section2:subsection1:value3       # type: bool, doc: This is a bool, source: a test
   // section2:subsection1:value4
 
 
@@ -554,42 +554,42 @@ may be useful anyway. See :ref:`sec-output` for more details.
 Input and Output
 ----------------
 
-The output (dump) files with time-history are controlled by settings
-in a section called “output”. Restart files contain a single
-time-slice, and are controlled by a section called “restart”. The
-options available are listed in table :numref:`tab-outputopts`.
+The output (dump) files with time-history are controlled by settings in a
+section called ``"output"``. Restart files contain a single time-slice, and are
+controlled by a section called ``"restart"``. The options available are listed
+in table :numref:`tab-outputopts`.
 
 .. _tab-outputopts:
 .. table:: Output file options
-	   
-   +-------------+----------------------------------------------------+--------------+
-   | Option      | Description                                        | Default      |
-   |             |                                                    | value        |
-   +-------------+----------------------------------------------------+--------------+
-   | enabled     | Writing is enabled                                 | true         |
-   +-------------+----------------------------------------------------+--------------+
-   | type        | File type e.g. "netcdf" or "adios"                 | "netcdf"     |
-   +-------------+----------------------------------------------------+--------------+
-   | prefix      | File name prefix                                   | "BOUT.dmp"   |
-   +-------------+----------------------------------------------------+--------------+
-   | path        | Directory to write the file into                   | ``datadir``  |
-   +-------------+----------------------------------------------------+--------------+
-   | floats      | Write floats rather than doubles                   | false        |
-   +-------------+----------------------------------------------------+--------------+
-   | flush       | Flush the file to disk after each write            | true         |
-   +-------------+----------------------------------------------------+--------------+
-   | guards      | Output guard cells                                 | true         |
-   +-------------+----------------------------------------------------+--------------+
-   | openclose   | Re-open the file for each write, and close after   | true         |
-   +-------------+----------------------------------------------------+--------------+
+
+   +----------------------+-----------------------------------------+----------------+
+   | Option               | Description                             | Default value  |
+   +======================+=========================================+================+
+   | ``append``           | Append to existing file if true,        | ``false``      |
+   |                      | otherwise overwrite                     |                |
+   +----------------------+-----------------------------------------+----------------+
+   | ``enabled``          | Writing is enabled                      | ``true``       |
+   +----------------------+-----------------------------------------+----------------+
+   | ``flush_frequency``  | How many output timesteps between       | ``1``          |
+   |                      | writing output to disk (NetCDF only)    |                |
+   +----------------------+-----------------------------------------+----------------+
+   | ``prefix``           | File name prefix                        | ``"BOUT.dmp"`` |
+   +----------------------+-----------------------------------------+----------------+
+   | ``path``             | Directory to write the file into        | ``datadir``    |
+   +----------------------+-----------------------------------------+----------------+
+   | ``type``             | File type, either ``"netcdf"`` or       | ``"netcdf"``   |
+   |                      | ``"adios"``                             |                |
+   +----------------------+-----------------------------------------+----------------+
 
 |
 
-**enabled** is useful mainly for doing performance or scaling tests, where you
-want to exclude I/O from the timings. **floats** can be used to reduce the size
-of the output files: files are stored as double by default, but setting
-**floats = true** changes the output to single-precision floats.
-
+- ``enabled`` is useful mainly for doing performance or scaling tests, where you
+  want to exclude I/O from the timings.
+- If you find that IO is taking more and more time as your simulation goes on,
+  try setting ``flush_frequency`` to a larger value such as ``10``. This can
+  workaround an issue with NetCDF where subsequent writes take longer and
+  longer. However, larger values risk losing more data in the event of a crash
+  or the simulation being killed early.
 
 Implementation
 --------------
@@ -597,7 +597,7 @@ Implementation
 To control the behaviour of BOUT++ a set of options is used, with
 options organised into sections which can be nested. To represent this
 tree structure there is the `Options` class defined in
-``bout++/include/options.hxx``. 
+``bout++/include/options.hxx``.
 
 To access the options, there is a static function (singleton)::
 
@@ -610,7 +610,7 @@ assigning, treating options as a map or dictionary::
 
     options["nout"] = 10;    // Integer
     options["restart"] = true;  // bool
-    
+
 Internally these values are stored in a variant type, which supports commonly
 used types including strings, integers, real numbers and fields (2D and
 3D). Since strings can be stored, any type can be assigned, so long as it can be
@@ -783,7 +783,7 @@ currently supported, but use of the newer interface above is
 encouraged.
 
 To access the options, there is a static function (singleton)::
-  
+
     Options *options = Options::getRoot();
 
 which gives the top-level (root) options class. Setting options is done
@@ -889,7 +889,7 @@ Fields can also be stored and written::
   Options fields;
   fields["f2d"] = Field2D(1.0);
   fields["f3d"] = Field3D(2.0);
-  bout::OptionsIO::create("fields.nc").write(fields);
+  bout::OptionsIO::create("fields.nc")->write(fields);
 
 This allows the input settings and evolving variables to be
 combined into a single tree (see above on joining trees) and written
@@ -909,10 +909,10 @@ Note that by default reading as ``Field2D`` or ``Field3D`` will use the global
 pass a field which the result should be similar to::
 
   Field3D example = ... // Some existing field
-  
+
   Field3D f3d = fields_in["f3d"].as<Field3D>(example);
 
-Meta data like ``Mesh`` pointer, will be taken from ``example``. 
+Meta data like ``Mesh`` pointer, will be taken from ``example``.
 
 Currently converting from ``Matrix`` or ``Tensor`` types only works if
 the data in the ``Matrix`` or ``Tensor`` is the same size as the
@@ -938,19 +938,19 @@ automatically set the ``"time_dimension"`` attribute::
   data["scalar"] = 1.0;
   // You can set the attribute manually like so:
   data["scalar"].attributes["time_dimension"] = "t";
-  
+
   // Or use `assignRepeat` to do it automatically:
   data["field"].assignRepeat(Field3D(2.0));
-  
+
   bout::OptionsIO::create("time.nc")->write(data);
-  
+
   // Update time-dependent values. This can be done without `force` if the time_dimension
   // attribute is set
   data["scalar"] = 2.0;
   data["field"] = Field3D(3.0);
-  
+
   // Append data to file
-  bout::OptionsIO({{"file", "time.nc"}, {"append", true}})->write(data);
+  bout::OptionsIO::create({{"file", "time.nc"}, {"append", true}})->write(data);
 
 .. note:: By default, `bout::OptionsIO::write` will only write variables
           with a ``"time_dimension"`` of ``"t"``. You can write

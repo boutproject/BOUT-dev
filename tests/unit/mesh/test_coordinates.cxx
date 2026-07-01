@@ -14,7 +14,9 @@ using bout::globals::mesh;
 class CoordinatesTest : public FakeMeshFixture {
 public:
   using FieldMetric = Coordinates::FieldMetric;
-  CoordinatesTest() : FakeMeshFixture() {}
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  WithQuietOutput progress{output_progress};
 };
 
 constexpr BoutReal default_dz{TWOPI / CoordinatesTest::nz};
@@ -34,7 +36,7 @@ TEST_F(CoordinatesTest, ZLength) {
                      FieldMetric{0.0},  // g23
                      FieldMetric{1.0},  // g_11
                      FieldMetric{1.0},  // g_22
-                     FieldMetric{1.0},  // g_23
+                     FieldMetric{1.0},  // g_33
                      FieldMetric{0.0},  // g_12
                      FieldMetric{0.0},  // g_13
                      FieldMetric{0.0},  // g_23
@@ -67,7 +69,7 @@ TEST_F(CoordinatesTest, ZLength3D) {
                      FieldMetric{0.0},  // g23
                      FieldMetric{1.0},  // g_11
                      FieldMetric{1.0},  // g_22
-                     FieldMetric{1.0},  // g_23
+                     FieldMetric{1.0},  // g_33
                      FieldMetric{0.0},  // g_12
                      FieldMetric{0.0},  // g_13
                      FieldMetric{0.0},  // g_23
@@ -94,7 +96,7 @@ TEST_F(CoordinatesTest, Jacobian) {
                      FieldMetric{0.0},  // g23
                      FieldMetric{1.0},  // g_11
                      FieldMetric{1.0},  // g_22
-                     FieldMetric{1.0},  // g_23
+                     FieldMetric{1.0},  // g_33
                      FieldMetric{0.0},  // g_12
                      FieldMetric{0.0},  // g_13
                      FieldMetric{0.0},  // g_23
@@ -125,7 +127,7 @@ TEST_F(CoordinatesTest, CalcContravariant) {
                      FieldMetric{0.0},  // g23
                      FieldMetric{0.0},  // g_11
                      FieldMetric{0.0},  // g_22
-                     FieldMetric{0.0},  // g_23
+                     FieldMetric{0.0},  // g_33
                      FieldMetric{0.0},  // g_12
                      FieldMetric{0.0},  // g_13
                      FieldMetric{0.0},  // g_23
@@ -133,9 +135,7 @@ TEST_F(CoordinatesTest, CalcContravariant) {
                      FieldMetric{0.0}}; // IntShiftTorsion
   // No call to Coordinates::geometry() needed here
 
-  output_info.disable();
   coords.calcCovariant();
-  output_info.enable();
 
   EXPECT_TRUE(IsFieldEqual(coords.g_11, 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.g_22, 1.0));
@@ -160,7 +160,7 @@ TEST_F(CoordinatesTest, CalcCovariant) {
                      FieldMetric{0.0},  // g23
                      FieldMetric{1.0},  // g_11
                      FieldMetric{1.0},  // g_22
-                     FieldMetric{1.0},  // g_23
+                     FieldMetric{1.0},  // g_33
                      FieldMetric{0.0},  // g_12
                      FieldMetric{0.0},  // g_13
                      FieldMetric{0.0},  // g_23
@@ -168,9 +168,7 @@ TEST_F(CoordinatesTest, CalcCovariant) {
                      FieldMetric{0.0}}; // IntShiftTorsion
   // No call to Coordinates::geometry() needed here
 
-  output_info.disable();
   coords.calcContravariant();
-  output_info.enable();
 
   EXPECT_TRUE(IsFieldEqual(coords.g11, 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.g22, 1.0));
@@ -182,11 +180,7 @@ TEST_F(CoordinatesTest, CalcCovariant) {
 // #endif
 
 TEST_F(CoordinatesTest, DefaultConstructor) {
-  output_info.disable();
-  output_warn.disable();
   Coordinates coords(mesh);
-  output_warn.enable();
-  output_info.enable();
 
   EXPECT_TRUE(IsFieldEqual(coords.dx, 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.dy, 1.0));
@@ -208,11 +202,7 @@ TEST_F(CoordinatesTest, ConstructWithMeshSpacing) {
   static_cast<FakeMesh*>(bout::globals::mesh)
       ->setGridDataSource(new FakeGridDataSource({{"dx", 2.0}, {"dy", 3.2}, {"dz", 42}}));
 
-  output_info.disable();
-  output_warn.disable();
   Coordinates coords(mesh);
-  output_warn.enable();
-  output_info.enable();
 
   EXPECT_TRUE(IsFieldEqual(coords.dx, 2.0));
   EXPECT_TRUE(IsFieldEqual(coords.dy, 3.2));
@@ -233,12 +223,8 @@ TEST_F(CoordinatesTest, SmallMeshSpacing) {
   static_cast<FakeMesh*>(bout::globals::mesh)
       ->setGridDataSource(new FakeGridDataSource({{"dx", 1e-9}}));
 
-  output_info.disable();
-  output_warn.disable();
   Coordinates coords(mesh);
   EXPECT_THROW(coords.geometry(), BoutException);
-  output_warn.enable();
-  output_info.enable();
 }
 
 TEST_F(CoordinatesTest, ConstructWithDiagonalContravariantMetric) {
@@ -247,11 +233,7 @@ TEST_F(CoordinatesTest, ConstructWithDiagonalContravariantMetric) {
       ->setGridDataSource(
           new FakeGridDataSource({{"g11", 2.0}, {"g22", 3.2}, {"g33", 42}}));
 
-  output_info.disable();
-  output_warn.disable();
   Coordinates coords(mesh);
-  output_warn.enable();
-  output_info.enable();
 
   // Didn't specify grid spacing, so default to 1
   EXPECT_TRUE(IsFieldEqual(coords.dx, 1.0));
@@ -280,20 +262,115 @@ TEST_F(CoordinatesTest, NegativeJacobian) {
   static_cast<FakeMesh*>(bout::globals::mesh)
       ->setGridDataSource(new FakeGridDataSource({{"J", -1.0}}));
 
-  output_info.disable();
-  output_warn.disable();
   EXPECT_THROW(Coordinates coords(mesh), BoutException);
-  output_warn.enable();
-  output_info.enable();
 }
 
 TEST_F(CoordinatesTest, NegativeB) {
   static_cast<FakeMesh*>(bout::globals::mesh)
       ->setGridDataSource(new FakeGridDataSource({{"Bxy", -1.0}}));
 
-  output_info.disable();
-  output_warn.disable();
   EXPECT_THROW(Coordinates coords(mesh), BoutException);
-  output_warn.enable();
-  output_info.enable();
+}
+
+TEST_F(CoordinatesTest, CellAreas) {
+
+  Coordinates coords{mesh,
+                     FieldMetric{1.0},  // dx
+                     FieldMetric{1.0},  // dy
+                     FieldMetric{1.0},  // dz
+                     FieldMetric{6.0},  // J
+                     FieldMetric{1.0},  // Bxy
+                     FieldMetric{1.0},  // g11
+                     FieldMetric{1.0},  // g22
+                     FieldMetric{1.0},  // g33
+                     FieldMetric{0.0},  // g12
+                     FieldMetric{0.0},  // g13
+                     FieldMetric{0.0},  // g23
+                     FieldMetric{4.0},  // g_11
+                     FieldMetric{1.0},  // g_22
+                     FieldMetric{9.0},  // g_33
+                     FieldMetric{0.0},  // g_12
+                     FieldMetric{0.0},  // g_13
+                     FieldMetric{0.0},  // g_23
+                     FieldMetric{0.0},  // ShiftTorsion
+                     FieldMetric{0.0}}; // IntShiftTorsion
+  // No call to Coordinates::geometry() needed here
+
+  EXPECT_TRUE(IsFieldEqual(coords.dx, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.dy, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.dz, 1.0));
+
+  EXPECT_TRUE(IsFieldEqual(coords.g_11, 4.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_22, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_33, 9.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_12, 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_13, 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_23, 0.0));
+
+  EXPECT_TRUE(IsFieldEqual(coords.J, 6.0));
+  EXPECT_TRUE(IsFieldEqual(coords.Bxy, 1.0));
+
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_xlow(), 3.0, "RGN_NOX"));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_xhigh(), 3.0, "RGN_NOX"));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_ylow(), 6.0, "RGN_NOY"));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_yhigh(), 6.0, "RGN_NOY"));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_zlow(), 2.0, "RGN_NOZ"));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_zhigh(), 2.0, "RGN_NOZ"));
+
+  EXPECT_TRUE(IsFieldEqual(coords.cell_volume(), 6.0));
+}
+
+TEST_F(CoordinatesTest, CellAreasUpdate) {
+  Coordinates coords{mesh,
+                     FieldMetric{1.0},  // dx
+                     FieldMetric{1.0},  // dy
+                     FieldMetric{1.0},  // dz
+                     FieldMetric{1.0},  // J
+                     FieldMetric{1.0},  // Bxy
+                     FieldMetric{1.0},  // g11
+                     FieldMetric{1.0},  // g22
+                     FieldMetric{1.0},  // g33
+                     FieldMetric{0.0},  // g12
+                     FieldMetric{0.0},  // g13
+                     FieldMetric{0.0},  // g23
+                     FieldMetric{1.0},  // g_11
+                     FieldMetric{1.0},  // g_22
+                     FieldMetric{1.0},  // g_33
+                     FieldMetric{0.0},  // g_12
+                     FieldMetric{0.0},  // g_13
+                     FieldMetric{0.0},  // g_23
+                     FieldMetric{0.0},  // ShiftTorsion
+                     FieldMetric{0.0}}; // IntShiftTorsion
+  // No call to Coordinates::geometry() needed here
+
+  EXPECT_TRUE(IsFieldEqual(coords.dx, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.dy, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.dz, 1.0));
+
+  EXPECT_TRUE(IsFieldEqual(coords.g_11, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_22, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_33, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_12, 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_13, 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_23, 0.0));
+
+  EXPECT_TRUE(IsFieldEqual(coords.J, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.Bxy, 1.0));
+
+  coords.cell_area_xlow() *= 2;
+  coords.cell_area_xhigh() *= 3;
+  coords.cell_area_ylow() *= 4;
+  coords.cell_area_yhigh() *= 5;
+  coords.cell_area_zlow() *= 6;
+  coords.cell_area_zhigh() *= 7;
+  coords.cell_volume() *= 8;
+
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_xlow(), 2.0, "RGN_NOX"));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_xhigh(), 3.0, "RGN_NOX"));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_ylow(), 4.0, "RGN_NOY"));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_yhigh(), 5.0, "RGN_NOY"));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_zlow(), 6.0, "RGN_NOZ"));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_zhigh(), 7.0, "RGN_NOZ"));
+
+  EXPECT_TRUE(IsFieldEqual(coords.cell_volume(), 8.0));
 }
