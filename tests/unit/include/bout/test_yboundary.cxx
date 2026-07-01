@@ -19,6 +19,30 @@ TEST_F(YBTest, dirichlet_o2_rgn) {
   EXPECT_TRUE(IsFieldEqual(test, 3.0, "RGN_YGUARDS"));
 }
 
+TEST_F(YBTest, neumann_o1_rgn) {
+  dynamic_cast<FakeMesh*>(mesh)->createBoundaries();
+  Field3D test = 1.0;
+  YBoundary sheath(YBndryType::all, nullptr, *mesh);
+  sheath.iter([&](auto& point) { point.neumann_o1(test, 1); });
+  EXPECT_TRUE(IsFieldEqual(test, 2.0, "RGN_YGUARDS"));
+}
+
+TEST_F(YBTest, neumann_o2_rgn) {
+  dynamic_cast<FakeMesh*>(mesh)->createBoundaries();
+  Field3D test = 1.0;
+  YBoundary sheath(YBndryType::all, nullptr, *mesh);
+  sheath.iter([&](auto& point) { point.neumann_o2(test, 1); });
+  EXPECT_TRUE(IsFieldEqual(test, 3.0, "RGN_YGUARDS"));
+}
+
+TEST_F(YBTest, neumann_o3_rgn) {
+  dynamic_cast<FakeMesh*>(mesh)->createBoundaries();
+  Field3D test = 1.0;
+  YBoundary sheath(YBndryType::all, nullptr, *mesh);
+  sheath.iter([&](auto& point) { point.neumann_o3(test, 1); });
+  EXPECT_TRUE(IsFieldEqual(test, 0.0, "RGN_YGUARDS"));
+}
+
 TEST_F(YBTest, bndry_size) {
   dynamic_cast<FakeMesh*>(mesh)->createBoundaries();
   YBoundary sheath(YBndryType::all, nullptr, *mesh);
@@ -29,6 +53,13 @@ TEST_F(YBTest, bndry_size) {
 
 TEST_F(YBTest, interpolate_boundary_o2) {
   Field3D test = 1.0;
+  YBoundary sheath(YBndryType::all, nullptr, *mesh);
+  sheath.iter(
+      [&](auto& point) { EXPECT_DOUBLE_EQ(point.interpolate_boundary_o2(test), 1.0); });
+}
+
+TEST_F(YBTest, interpolate_boundary_o2_const) {
+  const Field3D test = 1.0;
   YBoundary sheath(YBndryType::all, nullptr, *mesh);
   sheath.iter(
       [&](auto& point) { EXPECT_DOUBLE_EQ(point.interpolate_boundary_o2(test), 1.0); });
@@ -100,11 +131,13 @@ TEST_F(YBTest, interpolate_boundary_o2_square) {
       [&](auto& point) { EXPECT_DOUBLE_EQ(point.interpolate_boundary_o2(test), 2.5); });
 }
 
-TEST_F(YBTest, extrapolate_boundary_o2_square) {
-  Field3D test = makeField<Field3D>([&](auto& i) { return SQ(i.y() - 2); }, mesh);
+TEST_F(YBTest, limit_at_least) {
+  Field3D test = 1.0;
   YBoundary sheath(YBndryType::all, nullptr, *mesh);
-  sheath.iter(
-      [&](auto& point) { EXPECT_DOUBLE_EQ(point.extrapolate_boundary_o2(test), 1.5); });
+  sheath.iter([&](auto& point) {
+    point.limit_at_least(test, 2.0);
+    EXPECT_DOUBLE_EQ(point.interpolate_boundary_o2(test), 1.5);
+  });
 }
 
 TEST_F(YBTest, extrapolate_grad_o2_square) {
@@ -139,6 +172,24 @@ TEST_F(YBTest, current_square) {
 
 TEST_F(YBTest, prev_square) {
   Field3D test = makeField<Field3D>([&](auto& i) { return SQ(i.y() - 2); }, mesh);
+  YBoundary sheath(YBndryType::all, nullptr, *mesh);
+  sheath.iter([&](auto& point) { EXPECT_DOUBLE_EQ(point.prev(test), 0); });
+}
+
+TEST_F(YBTest, next_const) {
+  const Field3D test = makeField<Field3D>([&](auto& i) { return SQ(i.y() - 2); }, mesh);
+  YBoundary sheath(YBndryType::all, nullptr, *mesh);
+  sheath.iter([&](auto& point) { EXPECT_DOUBLE_EQ(point.next(test), 4); });
+}
+
+TEST_F(YBTest, current_const) {
+  const Field3D test = makeField<Field3D>([&](auto& i) { return SQ(i.y() - 2); }, mesh);
+  YBoundary sheath(YBndryType::all, nullptr, *mesh);
+  sheath.iter([&](auto& point) { EXPECT_DOUBLE_EQ(point.current(test), 1); });
+}
+
+TEST_F(YBTest, prev_const) {
+  const Field3D test = makeField<Field3D>([&](auto& i) { return SQ(i.y() - 2); }, mesh);
   YBoundary sheath(YBndryType::all, nullptr, *mesh);
   sheath.iter([&](auto& point) { EXPECT_DOUBLE_EQ(point.prev(test), 0); });
 }
