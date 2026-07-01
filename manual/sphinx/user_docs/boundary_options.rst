@@ -275,6 +275,9 @@ and ``bndry_down = none`` to skip unnecessary operations on y-boundary
 cells of the base variable. For example, for an evolving variable
 ``f``, put a section in the ``BOUT.inp`` input file like
 
+The PETSc FCI operators described in :ref:`sec-parallel-operators-petsc-fci`
+use the same parallel boundary data and application order.
+
 .. code-block:: cfg
 
     [f]

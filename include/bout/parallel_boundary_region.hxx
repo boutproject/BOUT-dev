@@ -73,6 +73,8 @@ public:
       : bndry_points(bndry_points), bndry_position(bndry_position), _dir(dir),
         localmesh(localmesh) {};
 
+  std::size_t size() { return this->bndry_points.size(); }
+
   // getter
   Ind3D ind() const { return bndry_position->index; }
   BoutReal s_x() const { return bndry_position->intersection.s_x; }

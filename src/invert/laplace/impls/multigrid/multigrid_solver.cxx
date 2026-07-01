@@ -1,5 +1,5 @@
 /**************************************************************************
- * Perpendicular Laplacian inversion. 
+ * Perpendicular Laplacian inversion.
  *                           Using Geometrical Multigrid Solver
  *
  * Equation solved is:
@@ -9,7 +9,7 @@
  * Copyright 2015 K.S. Kang
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -34,6 +34,9 @@
 #include "multigrid_laplace.hxx"
 #include "bout/unused.hxx"
 #include <bout/openmpwrap.hxx>
+
+#include <cstdio>
+#include <string>
 
 Multigrid1DP::Multigrid1DP(int level, int lx, int lz, int gx, int dl, int merge,
                            MPI_Comm comm, int check)
@@ -195,11 +198,9 @@ void Multigrid1DP::setMultigridC(int UNUSED(plag)) {
 
     if (pcheck == 2) {
       for (int i = level; i >= 0; i--) {
-        FILE* outf;
-        char outfile[256];
-        sprintf(outfile, "2DP_matC%1d_%d.mat", i, rMG->rProcI);
+        std::string outfile = fmt::format("2DP_matC{:1d}_{:d}.mat", i, rMG->rProcI);
         output << "Out file= " << outfile << endl;
-        outf = fopen(outfile, "w");
+        FILE* outf = fopen(outfile.c_str(), "w");
         int dim = (rMG->lnx[i] + 2) * (rMG->lnz[i] + 2);
         fprintf(outf, "dim = %d (%d, %d)\n", dim, rMG->lnx[i], rMG->lnz[i]);
 
@@ -222,11 +223,9 @@ void Multigrid1DP::setMultigridC(int UNUSED(plag)) {
     }
     if (pcheck == 3) {
       for (int i = level; i >= 0; i--) {
-        FILE* outf;
-        char outfile[256];
-        sprintf(outfile, "S1D_matC%1d_%d.mat", i, sMG->rProcI);
+        std::string outfile = fmt::format("S1D_matC{:1d}_{:d}.mat", i, sMG->rProcI);
         output << "Out file= " << outfile << endl;
-        outf = fopen(outfile, "w");
+        FILE* outf = fopen(outfile.c_str(), "w");
         int dim = (sMG->lnx[i] + 2) * (sMG->lnz[i] + 2);
         fprintf(outf, "dim = %d\n", dim);
 
@@ -456,11 +455,9 @@ void Multigrid1DP::convertMatrixF2D(int level) {
     }
   }
   if (pcheck == 3) {
-    FILE* outf;
-    char outfile[256];
-    sprintf(outfile, "2DP_CP_%d.mat", rProcI);
+    std::string outfile = fmt::format("2DP_CP_{}.mat", rProcI);
     output << "Out file= " << outfile << endl;
-    outf = fopen(outfile, "w");
+    FILE* outf = fopen(outfile.c_str(), "w");
     fprintf(outf, "dim = (%d, %d)\n", ggx, gnz[0]);
 
     for (int ii = 0; ii < dim; ii++) {
@@ -476,11 +473,10 @@ void Multigrid1DP::convertMatrixF2D(int level) {
                                     MPI_SUM, comm2D);
 
   if (pcheck == 3) {
-    FILE* outf;
-    char outfile[256];
-    sprintf(outfile, "2DP_Conv_%d.mat", rProcI);
+
+    std::string outfile = fmt::format("2DP_Conv_{}.mat", rProcI);
     output << "Out file= " << outfile << endl;
-    outf = fopen(outfile, "w");
+    FILE* outf = fopen(outfile.c_str(), "w");
     fprintf(outf, "dim = (%d, %d)\n", ggx, gnz[0]);
 
     for (int ii = 0; ii < dim; ii++) {
@@ -625,10 +621,8 @@ void Multigrid2DPf1D::setMultigridC(int UNUSED(plag)) {
     }
     if (pcheck == 2) {
       for (int i = level; i >= 0; i--) {
-        FILE* outf;
-        char outfile[256];
-        sprintf(outfile, "S2D_matC%1d_%d.mat", i, sMG->rProcI);
-        outf = fopen(outfile, "w");
+        std::string outfile = fmt::format("S2D_matC{:1d}_{:d}.mat", i, sMG->rProcI);
+        FILE* outf = fopen(outfile.c_str(), "w");
         output << "Out file= " << outfile << endl;
         int dim = (sMG->lnx[i] + 2) * (sMG->lnz[i] + 2);
         fprintf(outf, "dim = %d\n", dim);
