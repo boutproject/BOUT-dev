@@ -528,11 +528,11 @@ Here is a short summary of some members of ``point``, where ``f`` is a :
 
    * - Function
      - Description
-   * - ``point.ythis(f)``
+   * - ``point.current(f)``
      - Returns the value at the last point in the domain
-   * - ``point.ynext(f)``
+   * - ``point.next(f)``
      - Returns the value at the first point in the boundary, i.e. one beyond the domain.
-   * - ``point.yprev(f)``
+   * - ``point.prev(f)``
      - Returns the value at the second to last point in the domain, if it is
        valid. NB: this point may not be valid.
    * - ``point.interpolate_boundary_o2(f)``
