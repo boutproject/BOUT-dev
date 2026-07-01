@@ -12,7 +12,7 @@ namespace boundary {
 /// ``exponential``    use exponential extrapolation
 /// ``linear``         use linear extrapolation
 /// ================== ===================================================
-enum class BoundaryFreeExtrapolation : std::int8_t { limited, exponential, linear };
+enum class BoundaryFreeExtrapolation : std::uint8_t { limited, exponential, linear };
 
 // Limited free gradient of log of a quantity
 // This ensures that the guard cell values remain positive
