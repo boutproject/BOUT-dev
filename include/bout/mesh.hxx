@@ -482,7 +482,7 @@ public:
   // Boundary regions
 
   /// Return a vector containing all the boundary regions on this processor
-  virtual std::vector<BoundaryRegionBase*> getBoundaries() const = 0;
+  virtual std::vector<std::shared_ptr<BoundaryRegionBase>> getBoundaries() const = 0;
 
   /// Get the set of all possible boundaries in this configuration
   virtual std::set<std::string> getPossibleBoundaries() const {
@@ -490,7 +490,7 @@ public:
   };
 
   /// Add a boundary region to this processor
-  virtual void addBoundary(BoundaryRegionBase* UNUSED(bndry)) {
+  virtual void addBoundary(std::shared_ptr<BoundaryRegionBase> UNUSED(bndry)) {
     throw BoutException("This has never been implemented");
   };
 

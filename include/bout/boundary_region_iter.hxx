@@ -681,9 +681,9 @@ using BoundaryRegionY = BoundaryRegionXY<false>;
 using BoundaryRegionIterX = BoundaryRegionIterXY<true>;
 using BoundaryRegionIterY = BoundaryRegionIterXY<false>;
 
-inline BoundaryRegionX* NewBoundaryRegionXIn(const std::string& name, int ymin, int ymax,
-                                             Mesh* mesh) {
-  auto* pointer = new BoundaryRegionX(
+inline std::shared_ptr<BoundaryRegionX>
+NewBoundaryRegionXIn(const std::string& name, int ymin, int ymax, Mesh* mesh) {
+  auto pointer = std::make_shared<BoundaryRegionX>(
       name, -1, mesh,
       Region<Ind3D>(mesh->xstart, mesh->xstart, ymin, ymax, mesh->zstart, mesh->zend,
                     mesh->LocalNy, mesh->LocalNz, mesh->maxregionblocksize));
@@ -691,9 +691,9 @@ inline BoundaryRegionX* NewBoundaryRegionXIn(const std::string& name, int ymin, 
   return pointer;
 }
 
-inline BoundaryRegionX* NewBoundaryRegionXOut(const std::string& name, int ymin, int ymax,
-                                              Mesh* mesh) {
-  auto* pointer = new BoundaryRegionX(
+inline std::shared_ptr<BoundaryRegionX>
+NewBoundaryRegionXOut(const std::string& name, int ymin, int ymax, Mesh* mesh) {
+  auto pointer = std::make_shared<BoundaryRegionX>(
       name, 1, mesh,
       Region<Ind3D>(mesh->xend, mesh->xend, ymin, ymax, mesh->zstart, mesh->zend,
                     mesh->LocalNy, mesh->LocalNz, mesh->maxregionblocksize));
@@ -701,9 +701,9 @@ inline BoundaryRegionX* NewBoundaryRegionXOut(const std::string& name, int ymin,
   return pointer;
 }
 
-inline BoundaryRegionY* NewBoundaryRegionYUp(const std::string& name, int xmin, int xmax,
-                                             Mesh* mesh) {
-  auto* pointer = new BoundaryRegionY(
+inline std::shared_ptr<BoundaryRegionY>
+NewBoundaryRegionYUp(const std::string& name, int xmin, int xmax, Mesh* mesh) {
+  auto pointer = std::make_shared<BoundaryRegionY>(
       name, 1, mesh,
       Region<Ind3D>(xmin, xmax, mesh->yend, mesh->yend, mesh->zstart, mesh->zend,
                     mesh->LocalNy, mesh->LocalNz, mesh->maxregionblocksize));
@@ -711,9 +711,9 @@ inline BoundaryRegionY* NewBoundaryRegionYUp(const std::string& name, int xmin, 
   return pointer;
 }
 
-inline BoundaryRegionY* NewBoundaryRegionYDown(const std::string& name, int xmin,
-                                               int xmax, Mesh* mesh) {
-  auto* pointer = new BoundaryRegionY(
+inline std::shared_ptr<BoundaryRegionY>
+NewBoundaryRegionYDown(const std::string& name, int xmin, int xmax, Mesh* mesh) {
+  auto pointer = std::make_shared<BoundaryRegionY>(
       name, -1, mesh,
       Region<Ind3D>(xmin, xmax, mesh->ystart, mesh->ystart, mesh->zstart, mesh->zend,
                     mesh->LocalNy, mesh->LocalNz, mesh->maxregionblocksize));
@@ -722,17 +722,18 @@ inline BoundaryRegionY* NewBoundaryRegionYDown(const std::string& name, int xmin
 }
 
 template <class Func>
-void iter_boundary(const BoundaryRegionBase* bndrybase, const Func& func) {
+void iter_boundary(std::shared_ptr<const BoundaryRegionBase> bndrybase,
+                   const Func& func) {
   if (bndrybase->isX) {
-    const auto* const bndry = dynamic_cast<const BoundaryRegionX*>(bndrybase);
+    const auto* const bndry = dynamic_cast<const BoundaryRegionX*>(bndrybase.get());
     return iter_boundary(*bndry, func);
   }
   if (bndrybase->isY) {
-    const auto* const bndry = dynamic_cast<const BoundaryRegionY*>(bndrybase);
+    const auto* const bndry = dynamic_cast<const BoundaryRegionY*>(bndrybase.get());
     return iter_boundary(*bndry, func);
   }
   if (bndrybase->isParallel) {
-    const auto* const bndry = dynamic_cast<const BoundaryRegionFCI*>(bndrybase);
+    const auto* const bndry = dynamic_cast<const BoundaryRegionFCI*>(bndrybase.get());
     return iter_boundary(*bndry, func);
   }
   throw BoutException("{} is of unknown type - probably a legacy iterator",

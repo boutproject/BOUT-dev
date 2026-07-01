@@ -154,7 +154,7 @@ void FieldData::setBoundary(const std::string& name) {
   /// Get the mesh boundary regions
   /// Loop over the mesh parallel boundary regions
   for (const auto& reg : mesh->getBoundariesPar()) {
-    auto* op = dynamic_cast<BoundaryOpPar*>(bfact->createFromOptions(name, reg.get()));
+    auto* op = dynamic_cast<BoundaryOpPar*>(bfact->createFromOptions(name, reg));
     if (op != nullptr) {
       bndry_op_par.push_back(op);
     }
