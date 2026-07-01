@@ -756,7 +756,34 @@ private:
     BOUT_DO_PETSC(MatSetSizes(*temp, out_mapping->localSize(), PETSC_DECIDE,
                               out_mapping->globalSize(), in_mapping->globalSize()));
 
+    PetscInt col_start{0};
+    PetscInt col_end{0};
+    BOUT_DO_PETSC(MatGetOwnershipRangeColumn(*temp, &col_start, &col_end));
+
     const auto& local_rows = out_mapping->localStoredIndices();
+    std::vector<PetscInt> d_nnz(local_rows.size(), 0);
+    std::vector<PetscInt> o_nnz(local_rows.size(), 0);
+    for (PetscInt local_row = 0; local_row < static_cast<PetscInt>(local_rows.size());
+         ++local_row) {
+      const int stored_row = local_rows[local_row];
+      if (stored_row < 0 || stored_row + 1 >= static_cast<int>(rows.size())) {
+        continue;
+      }
+      const int start = rows[stored_row];
+      const int end = rows[stored_row + 1];
+      for (int index = start; index < end; ++index) {
+        const PetscInt stored_col = cols[index];
+        if (col_start <= stored_col && stored_col < col_end) {
+          ++d_nnz[local_row];
+        } else {
+          ++o_nnz[local_row];
+        }
+      }
+    }
+    BOUT_DO_PETSC(MatMPIAIJSetPreallocation(*temp, 0,
+                                            d_nnz.empty() ? nullptr : d_nnz.data(), 0,
+                                            o_nnz.empty() ? nullptr : o_nnz.data()));
+
     for (PetscInt local_row = 0; local_row < static_cast<PetscInt>(local_rows.size());
          ++local_row) {
       const int stored_row = local_rows[local_row];

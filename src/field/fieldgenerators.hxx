@@ -7,11 +7,22 @@
 #ifndef BOUT_FIELDGENERATORS_H
 #define BOUT_FIELDGENERATORS_H
 
+#include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/field_factory.hxx>
+#include <bout/sys/expressionparser.hxx>
+#include <bout/sys/generator_context.hxx>
+#include <bout/traits.hxx>
 #include <bout/unused.hxx>
 
+#include <algorithm>
+#include <atomic>
 #include <cmath>
+#include <list>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <utility>
 
 //////////////////////////////////////////////////////////
 // Generators from values
@@ -39,7 +50,7 @@ template <single_arg_op Op>
 class FieldGenOneArg : public FieldGenerator { ///< Template for single-argument function
 public:
   FieldGenOneArg(FieldGeneratorPtr g, const std::string& name = "function")
-      : gen(g), name(name) {}
+      : gen(std::move(g)), name(name) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() != 1) {
       throw ParseException("Incorrect number of arguments to {:s}. Expecting 1, got {:d}",
@@ -66,7 +77,7 @@ class FieldGenTwoArg : public FieldGenerator { ///< Template for two-argument fu
 public:
   FieldGenTwoArg(FieldGeneratorPtr a, FieldGeneratorPtr b,
                  const std::string& name = "function")
-      : A(a), B(b), name(name) {}
+      : A(std::move(a)), B(std::move(b)), name(name) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() != 2) {
       throw ParseException("Incorrect number of arguments to {:s}. Expecting 2, got {:d}",
@@ -89,11 +100,13 @@ private:
 /// Arc (Inverse) tangent. Either one or two argument versions
 class FieldATan : public FieldGenerator {
 public:
-  FieldATan(FieldGeneratorPtr a, FieldGeneratorPtr b = nullptr) : A(a), B(b) {}
+  FieldATan(FieldGeneratorPtr a, FieldGeneratorPtr b = nullptr)
+      : A(std::move(a)), B(std::move(b)) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() == 1) {
       return std::make_shared<FieldATan>(args.front());
-    } else if (args.size() == 2) {
+    }
+    if (args.size() == 2) {
       return std::make_shared<FieldATan>(args.front(), args.back());
     }
     throw ParseException(
@@ -144,7 +157,7 @@ public:
   FieldMin() = default;
   FieldMin(const std::list<FieldGeneratorPtr> args) : input(args) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
-    if (args.size() == 0) {
+    if (args.empty()) {
       throw ParseException("min function must have some inputs");
     }
     return std::make_shared<FieldMin>(args);
@@ -153,10 +166,7 @@ public:
     auto it = input.begin();
     BoutReal result = (*it)->generate(pos);
     for (; it != input.end(); it++) {
-      BoutReal val = (*it)->generate(pos);
-      if (val < result) {
-        result = val;
-      }
+      result = std::min(result, (*it)->generate(pos));
     }
     return result;
   }
@@ -171,7 +181,7 @@ public:
   FieldMax() = default;
   FieldMax(const std::list<FieldGeneratorPtr> args) : input(args) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
-    if (args.size() == 0) {
+    if (args.empty()) {
       throw ParseException("max function must have some inputs");
     }
     return std::make_shared<FieldMax>(args);
@@ -180,10 +190,7 @@ public:
     auto it = input.begin();
     BoutReal result = (*it)->generate(pos);
     for (; it != input.end(); it++) {
-      BoutReal val = (*it)->generate(pos);
-      if (val > result) {
-        result = val;
-      }
+      result = std::max(result, (*it)->generate(pos));
     }
     return result;
   }
@@ -202,7 +209,7 @@ class FieldClamp : public FieldGenerator {
 public:
   FieldClamp() = default;
   FieldClamp(FieldGeneratorPtr value, FieldGeneratorPtr low, FieldGeneratorPtr high)
-      : value(value), low(low), high(high) {}
+      : value(std::move(value)), low(std::move(low)), high(std::move(high)) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() != 3) {
       throw ParseException(
@@ -238,7 +245,7 @@ private:
 /// Generator to round to the nearest integer
 class FieldRound : public FieldGenerator {
 public:
-  FieldRound(FieldGeneratorPtr g) : gen(g) {}
+  FieldRound(FieldGeneratorPtr g) : gen(std::move(g)) {}
 
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() != 1) {
@@ -307,7 +314,7 @@ public:
   // Constructor
   FieldTanhHat(FieldGeneratorPtr xin, FieldGeneratorPtr widthin,
                FieldGeneratorPtr centerin, FieldGeneratorPtr steepnessin)
-      : X(xin), width(widthin), center(centerin), steepness(steepnessin){};
+      : X(xin), width(widthin), center(centerin), steepness(steepnessin) {};
   // Clone containing the list of arguments
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
   BoutReal generate(const bout::generator::Context& pos) override;
@@ -322,7 +329,7 @@ private:
 class FieldWhere : public FieldGenerator {
 public:
   FieldWhere(FieldGeneratorPtr test, FieldGeneratorPtr gt0, FieldGeneratorPtr lt0)
-      : test(test), gt0(gt0), lt0(lt0){};
+      : test(test), gt0(gt0), lt0(lt0) {};
 
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() != 3) {
@@ -375,6 +382,60 @@ public:
     }
     return 0.0;
   }
+};
+
+/// A grid file variable that can be used in expressions
+///
+/// The variable is read from Mesh when first used and shared between
+/// clones. This is to avoid circular dependencies in construction.
+class GridVariable : public FieldGenerator {
+private:
+  struct LazyLoaded {
+    LazyLoaded(Mesh* mesh, std::string name)
+        : mesh(mesh), name(std::move(name)), var(mesh) {}
+
+    const Field3D& get() {
+      if (!is_loaded.load(std::memory_order_acquire)) {
+        std::lock_guard<std::mutex> guard(load_mutex);
+        if (!is_loaded.load(std::memory_order_relaxed)) {
+          // Read and convert the variable once, then share it between all clones.
+          if (mesh->get(var, name) != 0) {
+            throw BoutException("Couldn't read GridVariable '{}'", name);
+          }
+          is_loaded.store(true, std::memory_order_release);
+        }
+      }
+      return var;
+    }
+
+    Mesh* mesh;
+    std::string name;
+    Field3D var;
+    std::atomic<bool> is_loaded{false};
+    std::mutex load_mutex;
+  };
+
+  std::shared_ptr<LazyLoaded> variable;
+
+public:
+  GridVariable(Mesh* mesh, std::string name)
+      : variable(std::make_shared<LazyLoaded>(mesh, std::move(name))) {}
+
+  GridVariable(std::shared_ptr<LazyLoaded> variable) : variable(std::move(variable)) {}
+
+  double generate(const bout::generator::Context& ctx) override {
+    return variable->get()(ctx.ix(), ctx.jy(), ctx.kz());
+  }
+
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
+    if (!args.empty()) {
+      throw ParseException("Variable '{}' takes no arguments but got {:d}",
+                           variable->name, args.size());
+    }
+    return std::make_shared<GridVariable>(variable);
+  }
+
+  std::string str() const override { return variable->name; }
 };
 
 #endif // BOUT_FIELDGENERATORS_H

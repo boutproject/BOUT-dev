@@ -486,7 +486,7 @@ public:
   // Boundary regions
 
   /// Return a vector containing all the boundary regions on this processor
-  virtual std::vector<BoundaryRegionBase*> getBoundaries() = 0;
+  virtual std::vector<BoundaryRegionBase*> getBoundaries() const = 0;
 
   /// Get the set of all possible boundaries in this configuration
   virtual std::set<std::string> getPossibleBoundaries() const {
@@ -609,7 +609,7 @@ public:
   virtual int getLocalZIndexNoBoundaries(int zglobal) const = 0;
 
   /// Size of the mesh on this processor including guard/boundary cells
-  int LocalNx, LocalNy, LocalNz;
+  int LocalNx{0}, LocalNy{0}, LocalNz{0};
 
   /// Local ranges of data (inclusive), excluding guard cells
   int xstart, xend, ystart, yend, zstart, zend;

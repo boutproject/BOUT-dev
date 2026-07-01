@@ -619,6 +619,10 @@ The parallel diffusion operator calculates :math:`\nabla_{||}\left[k\partial_||\
 This is done by calculating the flux :math:`k\partial_{||}\left(f\right)` on cell boundaries
 using central differencing.
 
+For FCI meshes there is also a PETSc-based support-operator implementation
+which constructs sparse matrix parallel operators from grid metadata. That
+interface is documented separately in :ref:`sec-parallel-operators-petsc-fci`.
+
 
 Advection in 3D
 ~~~~~~~~~~~~~~~

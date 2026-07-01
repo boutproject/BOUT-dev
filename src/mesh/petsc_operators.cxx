@@ -1,21 +1,22 @@
 #include "bout/build_defines.hxx"
-#include "bout/field2d.hxx"
-#include "bout/petsc_interface.hxx"
-#include "bout/petsclib.hxx"
-#include <cmath>
 
 #if BOUT_HAS_PETSC
 
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/output_bout_types.hxx"
+#include "bout/petsc_interface.hxx"
 #include "bout/petsc_operators.hxx"
+#include "bout/petsclib.hxx"
 #include "bout/region.hxx"
 #include "bout/utils.hxx"
 
 #include <algorithm>
+#include <cmath>
 #include <memory>
 #include <string>
 #include <utility>
