@@ -12,6 +12,7 @@
 #include "bout/coordinates.hxx"
 #include "bout/field.hxx"
 #include "bout/field3d.hxx"
+#include "bout/fv_ops.hxx" // NOLINT(unused-includes, misc-include-cleaner)
 #include "bout/globals.hxx"
 #include "bout/mesh.hxx"
 #include "bout/output_bout_types.hxx" // NOLINT(unused-includes, misc-include-cleaner)
