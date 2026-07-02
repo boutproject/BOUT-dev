@@ -2066,7 +2066,7 @@ void Coordinates::_compute_cell_area_x() const {
   BOUT_OMP_SAFE(critical)
   {
     if (!_cell_area_xlow.has_value()) {
-      const FieldMetric area_centre = sqrt(g_22 * g_33 - SQ(g_23)) * dy * dz;
+      const FieldMetric area_centre = J / sqrt(g_11) * dy * dz;
       _cell_area_xlow.emplace(emptyFrom(area_centre));
       _cell_area_xhigh.emplace(emptyFrom(area_centre));
       // We cannot setLocation, as that would trigger the computation of staggered
@@ -2087,7 +2087,7 @@ void Coordinates::_compute_cell_area_y() const {
     if (!_cell_area_ylow.has_value()) {
       auto* mesh = Bxy.getMesh();
       if (g_11.isFci()) {
-        const FieldMetric jxz_centre = sqrt(g_11 * g_33 - SQ(g_13));
+        const FieldMetric jxz_centre = J / sqrt(g_22);
         auto jxz_ylow = emptyFrom(jxz_centre);
         auto jxz_yhigh = emptyFrom(jxz_centre);
 
@@ -2115,7 +2115,7 @@ void Coordinates::_compute_cell_area_y() const {
         _cell_area_yhigh.emplace(jxz_yhigh * dx * dz);
       } else {
         // Field aligned
-        const FieldMetric area_centre = sqrt(g_11 * g_33 - SQ(g_13)) * dx * dz;
+        const FieldMetric area_centre = J / sqrt(g_22) * dx * dz;
         _cell_area_ylow.emplace(emptyFrom(area_centre));
         _cell_area_yhigh.emplace(emptyFrom(area_centre));
         // We cannot setLocation, as that would trigger the computation of staggered
@@ -2141,7 +2141,7 @@ void Coordinates::_compute_cell_area_z() const {
   BOUT_OMP_SAFE(critical)
   {
     if (!_cell_volume.has_value()) {
-      const FieldMetric area_centre = sqrt(g_11 * g_22 - SQ(g_12)) * dx * dy;
+      const FieldMetric area_centre = J / sqrt(g_33) * dx * dy;
       _cell_area_zlow.emplace(emptyFrom(area_centre));
       _cell_area_zhigh.emplace(emptyFrom(area_centre));
       // We cannot setLocation, as that would trigger the computation of staggered
