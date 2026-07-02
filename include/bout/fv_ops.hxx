@@ -180,7 +180,7 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
 ///
 /// 1st order upwinding is used in Y.
 template <typename CellEdges = MC>
-const Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D& f);
+Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D& f);
 
 } // namespace FV
 #endif // BOUT_FV_OPS_H
