@@ -165,5 +165,22 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
 template <typename CellEdges = MC>
 Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
                     const Field3D& wave_speed_in, bool fixflux = true);
+
+/// Calculates viscous heating due to numerical momentum fluxes
+/// and flow of kinetic energy (in flow_ylow)
+template <typename CellEdges = MC>
+Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
+                            const Field3D& wave_speed_in, Field3D& flow_ylow,
+                            bool fixflux = true);
+
+/// Div ( a g Grad_perp(f) )  -- Perpendicular gradient-driven advection
+///
+/// This version uses a slope limiter to calculate cell edge values of g in X,
+/// the advects the upwind cell edge.
+///
+/// 1st order upwinding is used in Y.
+template <typename CellEdges = MC>
+const Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D& f);
+
 } // namespace FV
 #endif // BOUT_FV_OPS_H

@@ -270,12 +270,6 @@ struct WENO3 {
   }
 };
 
-/*!
-   * Communicate fluxes between processors
-   * Takes values in guard cells, and adds them to cells
-   */
-void communicateFluxes(Field3D& f);
-
 /// Finite volume parallel divergence
 ///
 /// Preserves the sum of f*J*dx*dy*dz over the domain
@@ -984,10 +978,10 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
 
 // Calculates viscous heating due to numerical momentum fluxes
 // and flow of kinetic energy (in flow_ylow)
-template <typename CellEdges = MC>
+template <typename CellEdges>
 Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
                             const Field3D& wave_speed_in, Field3D& flow_ylow,
-                            bool fixflux = true) {
+                            bool fixflux) {
 
   ASSERT1(areFieldsCompatible(f_in, v_in));
   ASSERT1(areFieldsCompatible(f_in, wave_speed_in));
@@ -1249,7 +1243,7 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
 /// the advects the upwind cell edge.
 ///
 /// 1st order upwinding is used in Y.
-template <typename CellEdges = MC>
+template <typename CellEdges>
 const Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g,
                                     const Field3D& f) {
   ASSERT2(a.getLocation() == f.getLocation());
