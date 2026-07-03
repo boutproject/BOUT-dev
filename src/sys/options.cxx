@@ -949,8 +949,7 @@ Options Options::getUnused(const std::vector<std::string>& exclude_sources) cons
       return false;
     }
     const auto source = option.attributes.at("source").as<std::string>();
-    return std::find(exclude_sources.begin(), exclude_sources.end(), source)
-           != exclude_sources.end();
+    return std::ranges::find(exclude_sources, source) != std::ranges::end(exclude_sources);
   };
 
   const auto conditionally_used = [](const Options& option) -> bool {

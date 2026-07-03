@@ -514,7 +514,7 @@ protected:
   /// Does \p vars contain a field with \p name?
   template <class T>
   bool contains(const std::vector<VarStr<T>>& vars, const std::string& name) {
-    const auto in_vars = std::find(begin(vars), end(vars), name);
+    const auto in_vars = std::ranges::find(vars, name);
     return in_vars != end(vars);
   }
 
