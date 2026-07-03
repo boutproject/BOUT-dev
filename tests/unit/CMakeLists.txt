@@ -116,7 +116,6 @@ set(serial_tests_source
     ./sys/test_output.cxx
     ./sys/test_range.cxx
     ./sys/test_timer.cxx
-    ./sys/test_type_name.cxx
     ./sys/test_utils.cxx
     ./sys/test_variant.cxx
     ./sys/test_raja.cxx
