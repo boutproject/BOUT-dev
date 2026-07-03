@@ -49,10 +49,13 @@
 
 #if BOUT_HAS_PETSC
 #include "bout/petsc_jacobian.hxx"
+#include "bout/petsc_operators.hxx"
+#include "bout/petsclib.hxx"
 #endif
 
 #include <fmt/format.h>
 
+#include <algorithm>
 #include <cmath>
 #include <ctime>
 #include <memory>

@@ -1,20 +1,10 @@
 /**************************************************************************
  * Base class for all solvers. Specifies required interface functions
  *
- * Changelog:
- *
- * 2009-08 Ben Dudson, Sean Farley
- *    * Major overhaul, and changed API. Trying to make consistent
- *      interface to PETSc and SUNDIALS solvers
- *
- * 2013-08 Ben Dudson
- *    * Added OO-style API, to allow multiple physics models to coexist
- *      For now both APIs are supported
- *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -45,7 +35,6 @@
 #include "bout/monitor.hxx"
 #include "bout/options.hxx"
 #include "bout/region.hxx"
-#include "bout/unused.hxx"
 
 #include <cstdint>
 #include <iterator>
@@ -86,6 +75,7 @@ using TimestepMonitorFunc = int (*)(Solver* solver, BoutReal simtime, BoutReal l
 #include <list>
 #include <string>
 #include <string_view>
+#include <vector>
 
 using SolverType = std::string;
 constexpr auto SOLVERCVODE = "cvode";
@@ -215,6 +205,7 @@ using RegisterUnavailableSolver = SolverFactory::RegisterUnavailableInFactory;
  */
 class Solver {
 public:
+  /// Variable reference handle
   class VarRef {
   public:
     static constexpr int AllValue = -1;
@@ -437,7 +428,7 @@ protected:
     bool covariant{false};               /// For vectors
     bool evolve_bndry{false};            /// Are the boundary regions being evolved?
     std::string name;                    /// Name of the variable
-    std::string description{""};         /// Description of what the variable is
+    std::string description;             /// Description of what the variable is
   };
 
   /// A structure for iterating over fields
@@ -735,8 +726,8 @@ protected:
 #if BOUT_HAS_PETSC
   struct DeferredJacobianPattern {
     bout::petsc::UniqueMat submatrix{new Mat{nullptr}};
-    VarRef out_var{};
-    VarRef in_var{};
+    VarRef out_var;
+    VarRef in_var;
   };
 
   /// Queue a Jacobian-pattern contribution for PETSc-preconditioner-based solvers.

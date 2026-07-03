@@ -44,10 +44,10 @@ RegisterUnavailableSolver
 
 #include "../../sundials_nvector_interface.hxx"
 #include "bout/bout_types.hxx"
-#include "bout/region.hxx"
 #include "bout/sundials_backports.hxx"
 
 #if BOUT_HAS_PETSC
+#include "bout/petsc_operators.hxx"
 #include "bout/petsc_preconditioner.hxx"
 #include "bout/petsclib.hxx"
 
