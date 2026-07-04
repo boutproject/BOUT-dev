@@ -2140,7 +2140,7 @@ void Coordinates::_compute_cell_area_y() const {
 void Coordinates::_compute_cell_area_z() const {
   BOUT_OMP_SAFE(critical)
   {
-    if (!_cell_volume.has_value()) {
+    if (!_cell_area_zlow.has_value()) {
       const FieldMetric area_centre = J / sqrt(g_33) * dx * dy;
       _cell_area_zlow.emplace(emptyFrom(area_centre));
       _cell_area_zhigh.emplace(emptyFrom(area_centre));

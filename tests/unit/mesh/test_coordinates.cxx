@@ -374,3 +374,30 @@ TEST_F(CoordinatesTest, CellAreasUpdate) {
 
   EXPECT_TRUE(IsFieldEqual(coords.cell_volume(), 8.0));
 }
+
+TEST_F(CoordinatesTest, CellAreaZComputedAfterCellVolume) {
+  Coordinates coords{mesh,
+                     FieldMetric{1.0},  // dx
+                     FieldMetric{1.0},  // dy
+                     FieldMetric{1.0},  // dz
+                     FieldMetric{6.0},  // J
+                     FieldMetric{1.0},  // Bxy
+                     FieldMetric{1.0},  // g11
+                     FieldMetric{1.0},  // g22
+                     FieldMetric{9.0},  // g33
+                     FieldMetric{0.0},  // g12
+                     FieldMetric{0.0},  // g13
+                     FieldMetric{0.0},  // g23
+                     FieldMetric{4.0},  // g_11
+                     FieldMetric{1.0},  // g_22
+                     FieldMetric{9.0},  // g_33
+                     FieldMetric{0.0},  // g_12
+                     FieldMetric{0.0},  // g_13
+                     FieldMetric{0.0},  // g_23
+                     FieldMetric{0.0},  // ShiftTorsion
+                     FieldMetric{0.0}}; // IntShiftTorsion
+
+  EXPECT_TRUE(IsFieldEqual(coords.cell_volume(), 6.0));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_zlow(), 2.0, "RGN_NOZ"));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_zhigh(), 2.0, "RGN_NOZ"));
+}
