@@ -64,7 +64,7 @@ if(GIT_EXECUTABLE)
         ERROR_QUIET
       )
       if(NOT git_cached_diff_result EQUAL 0)
-        set(git_cached_diff "")
+        set(git_cached_diff "git diff unavailable")
       endif()
 
       execute_process(
