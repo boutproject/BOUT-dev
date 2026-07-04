@@ -94,30 +94,10 @@ endif()
 escape_cxx_string("${git_diff}" git_diff_escaped)
 
 set(output_tmp "${OUTPUT_FILE}.tmp")
-file(WRITE "${output_tmp}" "#include \"bout/git_metadata.hxx\"\n\n")
-file(APPEND "${output_tmp}" "namespace bout {\n")
-file(APPEND "${output_tmp}" "namespace version {\n")
-file(APPEND "${output_tmp}" "namespace {\n")
-file(
-  APPEND "${output_tmp}"
-  "constexpr bool git_metadata_available_value = ${git_metadata_available};\n"
+
+configure_file(
+  "${CMAKE_CURRENT_LIST_DIR}/git_metadata.cxx.in" "${output_tmp}" @ONLY
 )
-file(APPEND "${output_tmp}" "constexpr bool git_dirty_value = ${git_dirty};\n")
-file(APPEND "${output_tmp}" "constexpr char git_diff_value[] =\n")
-file(APPEND "${output_tmp}" "\"${git_diff_escaped}\";\n")
-file(APPEND "${output_tmp}" "} // namespace\n\n")
-file(
-  APPEND "${output_tmp}"
-  "auto git_metadata_available() -> bool { return git_metadata_available_value; }\n"
-)
-file(APPEND "${output_tmp}"
-     "auto git_dirty() -> bool { return git_dirty_value; }\n"
-)
-file(APPEND "${output_tmp}"
-     "auto git_diff() -> std::string_view { return git_diff_value; }\n"
-)
-file(APPEND "${output_tmp}" "} // namespace version\n")
-file(APPEND "${output_tmp}" "} // namespace bout\n")
 
 execute_process(
   COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${output_tmp}"
