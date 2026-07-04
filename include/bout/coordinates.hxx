@@ -1,15 +1,8 @@
 /**************************************************************************
  * Describes coordinate systems
  *
- * ChangeLog
- * =========
- *
- * 2014-11-10 Ben Dudson <bd512@york.ac.uk>
- *    * Created by separating metric from Mesh
- *
- *
  **************************************************************************
- * Copyright 2014-2025 BOUT++ contributors
+ * Copyright 2014-2026 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
