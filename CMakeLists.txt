@@ -512,15 +512,6 @@ else()
 endif()
 set(BOUT_USE_PYTHON ${BOUT_ENABLE_PYTHON})
 
-# Ensure that the compile date/time is up-to-date when any of the sources change
-add_custom_command(
-  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bout++-time.cxx
-  COMMAND ${CMAKE_COMMAND} -P
-          "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateDateTimeFile.cmake"
-  DEPENDS ${BOUT_SOURCES}
-  MAIN_DEPENDENCY "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateDateTimeFile.cmake"
-)
-
 set(BOUT_GIT_METADATA_SOURCE ${CMAKE_CURRENT_BINARY_DIR}/git_metadata.cxx)
 set_source_files_properties(
   ${BOUT_GIT_METADATA_SOURCE} PROPERTIES GENERATED TRUE
@@ -533,6 +524,15 @@ add_custom_target(
     "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateGitMetadata.cmake"
   BYPRODUCTS ${BOUT_GIT_METADATA_SOURCE}
   COMMENT "Generating git metadata source"
+)
+
+# Ensure that the compile date/time is up-to-date when any of the sources change
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bout++-time.cxx
+  COMMAND ${CMAKE_COMMAND} -P
+          "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateDateTimeFile.cmake"
+  DEPENDS ${BOUT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/git_metadata.cxx
+  MAIN_DEPENDENCY "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateDateTimeFile.cmake"
 )
 
 add_library(
