@@ -140,6 +140,7 @@ set(BOUT_SOURCES
     ./include/bout/fieldgroup.hxx
     ./include/bout/fieldperp.hxx
     ./include/bout/fv_ops.hxx
+    ./include/bout/fv_ops_impl.hxx
     ./include/bout/generic_factory.hxx
     ./include/bout/globalfield.hxx
     ./include/bout/globalindexer.hxx

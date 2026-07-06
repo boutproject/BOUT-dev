@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include <bout/fv_ops.hxx>
+#include <bout/fv_ops_impl.hxx>
 
 TEST(FVOpsLimiterTest, VanAlbadaConstant) {
   FV::Stencil1D s{};
