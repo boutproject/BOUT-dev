@@ -986,7 +986,7 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
   ASSERT1(areFieldsCompatible(f_in, v_in));
   ASSERT1(areFieldsCompatible(f_in, wave_speed_in));
 
-  Mesh* mesh = f_in.getMesh();
+  const Mesh* mesh = f_in.getMesh();
   Coordinates* coord = f_in.getCoordinates();
   CellEdges cellboundary;
 
@@ -1138,23 +1138,23 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
           // energy losses.
           const BoutReal expected_ke = 0.5 * n_mid * v_mid * v_mid * v_mid;
 
-          BoutReal flux_mom;
+          BoutReal flux_mom = NAN;
           if (fixflux) {
             // Mid-point consistent with boundary conditions
             // but kinetic energy loss will not match expected
             // -> Adjust energy balance in pressure equation
             flux_mom = n_mid * v_mid * v_mid;
           } else {
-            flux_mom = s.R * sv.R * sv.R
-                       + BOUTMAX(wave_speed(i, j, k), fabs(sv.c), fabs(sv.p))
-                             * (s.R * sv.R - n_mid * v_mid);
+            flux_mom = (s.R * sv.R * sv.R)
+                       + (BOUTMAX(wave_speed(i, j, k), fabs(sv.c), fabs(sv.p))
+                          * (s.R * sv.R - n_mid * v_mid));
           }
 
           // Assume that particle flux is fixed to boundary value
           const BoutReal flux_part = n_mid * v_mid;
 
           // d/dt(1/2 m n v^2) = v * d/dt(mnv) - 1/2 m v^2 * dn/dt
-          const BoutReal actual_ke = sv.c * flux_mom - 0.5 * sv.c * sv.c * flux_part;
+          const BoutReal actual_ke = (sv.c * flux_mom) - (0.5 * sv.c * sv.c * flux_part);
 
           // Note: If the actual loss was higher than expected, then
           //       plasma heating is needed to compensate
@@ -1193,22 +1193,22 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
 
         if (mesh->firstY(i) && (j == mesh->ystart) && !mesh->periodicY(i)) {
           // First point in domain
-          BoutReal flux_mom;
+          BoutReal flux_mom = NAN;
           if (fixflux) {
             // Use mid-point to be consistent with boundary conditions
             flux_mom = n_mid * v_mid * v_mid;
           } else {
             // Add flux due to difference in boundary values
-            flux_mom = s.L * sv.L * sv.L
-                       - BOUTMAX(wave_speed(i, j, k), fabs(sv.c), fabs(sv.m))
-                             * (s.L * sv.L - n_mid * v_mid);
+            flux_mom = (s.L * sv.L * sv.L)
+                       - (BOUTMAX(wave_speed(i, j, k), fabs(sv.c), fabs(sv.m))
+                          * (s.L * sv.L - n_mid * v_mid));
           }
 
           // Assume that density flux is fixed to boundary value
           const BoutReal flux_part = n_mid * v_mid;
 
           // d/dt(1/2 m n v^2) = v * d/dt(mnv) - 1/2 m v^2 * dn/dt
-          const BoutReal actual_ke = -sv.c * flux_mom + 0.5 * sv.c * sv.c * flux_part;
+          const BoutReal actual_ke = (-sv.c * flux_mom) + (0.5 * sv.c * sv.c * flux_part);
 
           result(i, j, k) += (actual_ke - expected_ke) * flux_factor_lc;
 
@@ -1270,7 +1270,7 @@ Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D&
 
         // Mid-point average boundary value of 'a'
         const BoutReal aedge = 0.5 * (a(i + 1, j, k) + a(i, j, k));
-        BoutReal gedge;
+        BoutReal gedge = NAN;
         if (((i == mesh->xstart - 1) and mesh->firstX())
             or ((i == mesh->xend) and mesh->lastX())) {
           // Mid-point average boundary value of 'g'
@@ -1314,9 +1314,12 @@ Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D&
   // Y and Z fluxes require Y derivatives
 
   // Fields containing values along the magnetic field
-  Field3D fup(mesh), fdown(mesh);
-  Field3D aup(mesh), adown(mesh);
-  Field3D gup(mesh), gdown(mesh);
+  Field3D fup(mesh);
+  Field3D fdown(mesh);
+  Field3D aup(mesh);
+  Field3D adown(mesh);
+  Field3D gup(mesh);
+  Field3D gdown(mesh);
 
   // Values on this y slice (centre).
   // This is needed because toFieldAligned may modify the field
@@ -1356,16 +1359,16 @@ Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D&
 #if BOUT_USE_METRIC_3D
       for (int k = 0; k < mesh->LocalNz; k++)
 #else
-      int k = 0;
+      const int k = 0;
 #endif
       {
-        BoutReal coef_u =
+        const BoutReal coef_u =
             0.5
             * (coord->g_23(i, j, k) / SQ(coord->J(i, j, k) * coord->Bxy(i, j, k))
                + coord->g_23(i, j + 1, k)
                      / SQ(coord->J(i, j + 1, k) * coord->Bxy(i, j + 1, k)));
 
-        BoutReal coef_d =
+        const BoutReal coef_d =
             0.5
             * (coord->g_23(i, j, k) / SQ(coord->J(i, j, k) * coord->Bxy(i, j, k))
                + coord->g_23(i, j - 1, k)
@@ -1376,8 +1379,8 @@ Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D&
 #endif
         {
           // Calculate flux between j and j+1
-          int kp = (k + 1) % mesh->LocalNz;
-          int km = (k - 1 + mesh->LocalNz) % mesh->LocalNz;
+          const int kp = (k + 1) % mesh->LocalNz;
+          const int km = (k - 1 + mesh->LocalNz) % mesh->LocalNz;
 
           // Calculate Z derivative at y boundary
           BoutReal dfdz =
@@ -1389,7 +1392,7 @@ Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D&
                           / (coord->dy(i, j + 1, k) + coord->dy(i, j, k));
 
           BoutReal aedge = 0.5 * (ac(i, j, k) + aup(i, j + 1, k));
-          BoutReal gedge;
+          BoutReal gedge = NAN;
           if ((j == mesh->yend) and mesh->lastY(i)) {
             // Midpoint boundary value
             gedge = 0.5 * (gc(i, j, k) + gup(i, j + 1, k));
@@ -1445,11 +1448,11 @@ Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D&
 #if BOUT_USE_METRIC_3D
       for (int k = 0; k < mesh->LocalNz; k++)
 #else
-      int k = 0;
+      const int k = 0;
 #endif
       {
         // Coefficient in front of df/dy term
-        BoutReal coef =
+        const BoutReal coef =
             coord->g_23(i, j, k)
             / (coord->dy(i, j + 1, k) + 2. * coord->dy(i, j, k) + coord->dy(i, j - 1, k))
             / SQ(coord->J(i, j, k) * coord->Bxy(i, j, k));
@@ -1458,19 +1461,19 @@ Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D&
 #endif
         {
           // Calculate flux between k and k+1
-          int kp = (k + 1) % mesh->LocalNz;
+          const int kp = (k + 1) % mesh->LocalNz;
 
-          BoutReal gradient =
+          const BoutReal gradient =
               // df/dz
-              (fc(i, j, kp) - fc(i, j, k)) / coord->dz(i, j, k)
+              ((fc(i, j, kp) - fc(i, j, k)) / coord->dz(i, j, k))
 
               // - g_yz * df/dy / SQ(J*B)
-              - coef
-                    * (fup(i, j + 1, k) + fup(i, j + 1, kp) - fdown(i, j - 1, k)
-                       - fdown(i, j - 1, kp));
+              - (coef
+                 * (fup(i, j + 1, k) + fup(i, j + 1, kp) - fdown(i, j - 1, k)
+                    - fdown(i, j - 1, kp)));
 
-          BoutReal fout = gradient * 0.5 * (ac(i, j, kp) + ac(i, j, k))
-                          * ((gradient > 0) ? gc(i, j, kp) : gc(i, j, k));
+          const BoutReal fout = gradient * 0.5 * (ac(i, j, kp) + ac(i, j, k))
+                                * ((gradient > 0) ? gc(i, j, kp) : gc(i, j, k));
 
           yzresult(i, j, k) += fout / coord->dz(i, j, k);
           yzresult(i, j, kp) -= fout / coord->dz(i, j, kp);
