@@ -512,17 +512,16 @@ else()
 endif()
 set(BOUT_USE_PYTHON ${BOUT_ENABLE_PYTHON})
 
-set(BOUT_GIT_METADATA_SOURCE ${CMAKE_CURRENT_BINARY_DIR}/git_metadata.cxx)
 set_source_files_properties(
-  ${BOUT_GIT_METADATA_SOURCE} PROPERTIES GENERATED TRUE
+  ${CMAKE_CURRENT_BINARY_DIR}/git_metadata.cxx PROPERTIES GENERATED TRUE
 )
 add_custom_target(
   bout++-git-metadata
   COMMAND
-    ${CMAKE_COMMAND} -DOUTPUT_FILE=${BOUT_GIT_METADATA_SOURCE}
+    ${CMAKE_COMMAND} -DOUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/git_metadata.cxx
     -DSOURCE_DIR=${PROJECT_SOURCE_DIR} -DGIT_EXECUTABLE=${GIT_EXECUTABLE} -P
     "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateGitMetadata.cmake"
-  BYPRODUCTS ${BOUT_GIT_METADATA_SOURCE}
+  BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/git_metadata.cxx
   COMMENT "Generating git metadata source"
 )
 
@@ -537,7 +536,7 @@ add_custom_command(
 
 add_library(
   bout++ ${BOUT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/bout++-time.cxx
-         ${BOUT_GIT_METADATA_SOURCE}
+         ${CMAKE_CURRENT_BINARY_DIR}/git_metadata.cxx
 )
 add_library(bout++::bout++ ALIAS bout++)
 add_dependencies(bout++ bout++-git-metadata)
