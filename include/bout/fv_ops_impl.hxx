@@ -383,7 +383,7 @@ Field3D Div_par(const Field3D& f_in, const Field3D& v_in, const Field3D& wave_sp
 
         // Calculate velocity at right boundary (y+1/2)
         BoutReal vpar = 0.5 * (v(i, j, k) + v(i, j + 1, k));
-        BoutReal flux = NAN;
+        BoutReal flux = BoutNaN;
 
         if (is_last_y && (j == mesh->yend) && !is_periodic_y) {
           // Last point in domain
@@ -509,7 +509,7 @@ Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
     if ((i.x() == mesh->xend) && (mesh->lastX())) {
       // At right boundary in X
       if (bndry_flux) {
-        BoutReal flux = NAN;
+        BoutReal flux = BoutNaN;
         if (vR > 0.0) {
           // Flux to boundary
           flux = vR * s.R;
@@ -536,7 +536,7 @@ Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
       // At left boundary in X
 
       if (bndry_flux) {
-        BoutReal flux = NAN;
+        BoutReal flux = BoutNaN;
         if (vL < 0.0) {
           // Flux to boundary
           flux = vL * s.L;
@@ -935,7 +935,7 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
         const BoutReal v_mid_r = 0.5 * (sv.c + sv.p);
         // And mid-point density at right boundary
         const BoutReal n_mid_r = 0.5 * (s.c + s.p);
-        BoutReal flux = NAN;
+        BoutReal flux = BoutNaN;
 
         if (mesh->lastY(i) && (j == mesh->yend) && !mesh->periodicY(i)) {
           // Last point in domain
@@ -1156,7 +1156,7 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
           // energy losses.
           const BoutReal expected_ke = 0.5 * n_mid * v_mid * v_mid * v_mid;
 
-          BoutReal flux_mom = NAN;
+          BoutReal flux_mom = BoutNaN;
           if (fixflux) {
             // Mid-point consistent with boundary conditions
             // but kinetic energy loss will not match expected
@@ -1211,7 +1211,7 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
 
         if (mesh->firstY(i) && (j == mesh->ystart) && !mesh->periodicY(i)) {
           // First point in domain
-          BoutReal flux_mom = NAN;
+          BoutReal flux_mom = BoutNaN;
           if (fixflux) {
             // Use mid-point to be consistent with boundary conditions
             flux_mom = n_mid * v_mid * v_mid;
@@ -1288,7 +1288,7 @@ Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D&
 
         // Mid-point average boundary value of 'a'
         const BoutReal aedge = 0.5 * (a(i + 1, j, k) + a(i, j, k));
-        BoutReal gedge = NAN;
+        BoutReal gedge = BoutNaN;
         if (((i == mesh->xstart - 1) and mesh->firstX())
             or ((i == mesh->xend) and mesh->lastX())) {
           // Mid-point average boundary value of 'g'
@@ -1410,7 +1410,7 @@ Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D&
                           / (dy.up(i, j + 1, k) + dy.c(i, j, k));
 
           BoutReal aedge = 0.5 * (a_slice.c(i, j, k) + a_slice.up(i, j + 1, k));
-          BoutReal gedge = NAN;
+          BoutReal gedge = BoutNaN;
           if ((j == mesh->yend) and mesh->lastY(i)) {
             // Midpoint boundary value
             gedge = 0.5 * (g_slice.c(i, j, k) + g_slice.up(i, j + 1, k));
