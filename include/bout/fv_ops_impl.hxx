@@ -91,7 +91,7 @@ private:
       return 0.0;
     }
 
-    if (fabs(a) < fabs(b)) {
+    if (std::abs(a) < std::abs(b)) {
       return a;
     }
     return b;
@@ -126,7 +126,7 @@ private:
     }
 
     // Return the minimum absolute value
-    return SIGN(a) * BOUTMIN(fabs(a), fabs(b), fabs(c));
+    return SIGN(a) * BOUTMIN(std::abs(a), std::abs(b), std::abs(c));
   }
 };
 
@@ -167,8 +167,8 @@ struct Superbee {
       n.L = n.R = n.c;
     } else {
       const BoutReal sign = SIGN(gL);
-      const BoutReal abs_gL = fabs(gL);
-      const BoutReal abs_gR = fabs(gR);
+      const BoutReal abs_gL = std::abs(gL);
+      const BoutReal abs_gR = std::abs(gR);
       const BoutReal half_slope =
           sign * BOUTMAX(BOUTMIN(abs_gL, 0.5 * abs_gR), BOUTMIN(abs_gR, 0.5 * abs_gL));
       n.L = n.c - half_slope;
@@ -741,7 +741,7 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
         } else {
           // Maximum wave speed in the two cells
           const BoutReal amax = BOUTMAX(wave_speed(i, j, k), wave_speed(i, j + 1, k),
-                                        fabs(v(i, j, k)), fabs(v(i, j + 1, k)));
+                                        std::abs(v(i, j, k)), std::abs(v(i, j + 1, k)));
 
           flux = s.R * 0.5 * (sv.R + amax);
         }
@@ -769,7 +769,7 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
 
           // Maximum wave speed in the two cells
           const BoutReal amax = BOUTMAX(wave_speed(i, j, k), wave_speed(i, j - 1, k),
-                                        fabs(v(i, j, k)), fabs(v(i, j - 1, k)));
+                                        std::abs(v(i, j, k)), std::abs(v(i, j - 1, k)));
 
           flux = s.L * 0.5 * (sv.L - amax);
         }
@@ -825,8 +825,8 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
       const auto iym = i.ym();
 
       // Maximum local wave speed
-      const BoutReal amax =
-          BOUTMAX(wave_speed_in[i], fabs(v_in[i]), fabs(v_up[iyp]), fabs(v_down[iym]));
+      const BoutReal amax = BOUTMAX(wave_speed_in[i], std::abs(v_in[i]),
+                                    std::abs(v_up[iyp]), std::abs(v_down[iym]));
 
       const BoutReal term = (f_up[iyp] * v_up[iyp] * v_up[iyp] / B_up[iyp])
                             - (f_down[iym] * v_down[iym] * v_down[iym] / B_down[iym]);
@@ -837,7 +837,7 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
           + (amax * (f_in[i] * v_in[i] - f_down[iym] * v_down[iym])
              / (B[i] + B_down[iym]));
 
-      if (fabs(penalty) > fabs(term) and penalty * v_in[i] > 0) {
+      if (std::abs(penalty) > std::abs(term) and penalty * v_in[i] > 0) {
         if (term * penalty > 0) {
           penalty = term;
         } else {
@@ -928,14 +928,15 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
             flux = n_mid_r * v_mid_r * v_mid_r;
           } else {
             // Add flux due to difference in boundary values
-            flux = (s.R * sv.R * sv.R) // Use right cell edge values
-                   + (BOUTMAX(wave_speed(i, j, k), fabs(sv.c), fabs(sv.p)) * n_mid_r
-                      * (sv.R - v_mid_r)); // Damp differences in velocity, not flux
+            flux =
+                (s.R * sv.R * sv.R) // Use right cell edge values
+                + (BOUTMAX(wave_speed(i, j, k), std::abs(sv.c), std::abs(sv.p)) * n_mid_r
+                   * (sv.R - v_mid_r)); // Damp differences in velocity, not flux
           }
         } else {
           // Maximum wave speed in the two cells
           const BoutReal amax = BOUTMAX(wave_speed(i, j, k), wave_speed(i, j + 1, k),
-                                        fabs(sv.c), fabs(sv.p));
+                                        std::abs(sv.c), std::abs(sv.p));
 
           flux = s.R * 0.5 * (sv.R + amax) * sv.R;
         }
@@ -957,13 +958,13 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
           } else {
             // Add flux due to difference in boundary values
             flux = (s.L * sv.L * sv.L)
-                   - (BOUTMAX(wave_speed(i, j, k), fabs(sv.c), fabs(sv.m)) * n_mid_l
-                      * (sv.L - v_mid_l));
+                   - (BOUTMAX(wave_speed(i, j, k), std::abs(sv.c), std::abs(sv.m))
+                      * n_mid_l * (sv.L - v_mid_l));
           }
         } else {
           // Maximum wave speed in the two cells
           const BoutReal amax = BOUTMAX(wave_speed(i, j, k), wave_speed(i, j - 1, k),
-                                        fabs(sv.c), fabs(sv.m));
+                                        std::abs(sv.c), std::abs(sv.m));
 
           flux = s.L * 0.5 * (sv.L - amax) * sv.L;
         }
@@ -1016,8 +1017,8 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
       const auto iym = i.ym();
 
       //Maximum local wave speed
-      const BoutReal amax =
-          BOUTMAX(wave_speed_in[i], fabs(v_in[i]), fabs(v_up[iyp]), fabs(v_down[iym]));
+      const BoutReal amax = BOUTMAX(wave_speed_in[i], std::abs(v_in[i]),
+                                    std::abs(v_up[iyp]), std::abs(v_down[iym]));
 
       result[i] =
           B[i]
@@ -1146,7 +1147,7 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
             flux_mom = n_mid * v_mid * v_mid;
           } else {
             flux_mom = (s.R * sv.R * sv.R)
-                       + (BOUTMAX(wave_speed(i, j, k), fabs(sv.c), fabs(sv.p))
+                       + (BOUTMAX(wave_speed(i, j, k), std::abs(sv.c), std::abs(sv.p))
                           * (s.R * sv.R - n_mid * v_mid));
           }
 
@@ -1166,7 +1167,7 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
         } else {
           // Maximum wave speed in the two cells
           const BoutReal amax = BOUTMAX(wave_speed(i, j, k), wave_speed(i, j + 1, k),
-                                        fabs(sv.c), fabs(sv.p));
+                                        std::abs(sv.c), std::abs(sv.p));
 
           // Viscous heating due to relaxation of velocity towards midpoint
           result(i, j, k) +=
@@ -1200,7 +1201,7 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
           } else {
             // Add flux due to difference in boundary values
             flux_mom = (s.L * sv.L * sv.L)
-                       - (BOUTMAX(wave_speed(i, j, k), fabs(sv.c), fabs(sv.m))
+                       - (BOUTMAX(wave_speed(i, j, k), std::abs(sv.c), std::abs(sv.m))
                           * (s.L * sv.L - n_mid * v_mid));
           }
 
@@ -1216,7 +1217,7 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
         } else {
           // Maximum wave speed in the two cells
           const BoutReal amax = BOUTMAX(wave_speed(i, j, k), wave_speed(i, j - 1, k),
-                                        fabs(sv.c), fabs(sv.m));
+                                        std::abs(sv.c), std::abs(sv.m));
 
           // Viscous heating due to relaxation
           result(i, j, k) +=
