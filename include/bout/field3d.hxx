@@ -372,6 +372,14 @@ public:
     return std::end(getRegion("RGN_ALL"));
   };
 
+  /// Convert (x, y, z) to an Ind3D
+  /// Requires mesh size.
+  Ind3D indexAt(int x, int y, int z) const {
+    const int ny = this->getNy();
+    const int nz = this->getNz();
+    return Ind3D{(((x * ny) + y) * nz) + z, ny, nz};
+  }
+
   BoutReal& operator[](const Ind3D& d) { return data[d.ind]; }
   const BoutReal& operator[](const Ind3D& d) const { return data[d.ind]; }
 

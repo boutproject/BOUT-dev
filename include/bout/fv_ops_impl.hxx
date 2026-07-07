@@ -629,6 +629,7 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
     const auto& v_down = v_in.ydown();
 
     Field3D result{emptyFrom(f_in)};
+    flow_ylow = zeroFrom(f_in);
     BOUT_FOR(i, f_in.getRegion("RGN_NOBNDRY")) {
       const auto iyp = i.yp();
       const auto iym = i.ym();

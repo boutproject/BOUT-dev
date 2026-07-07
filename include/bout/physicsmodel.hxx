@@ -1,20 +1,20 @@
 /*!************************************************************************
  * \file physicsmodel.hxx
- * 
+ *
  * @brief Base class for Physics Models
- * 
- * 
+ *
+ *
  *
  * Changelog:
- * 
+ *
  * 2013-08 Ben Dudson <benjamin.dudson@york.ac.uk>
  *    * Initial version
- * 
+ *
  **************************************************************************
  * Copyright 2013 B.D.Dudson
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -167,9 +167,9 @@ public:
    *
    * Output
    * ------
-   * 
+   *
    * The time derivatives will be put in the ddt() variables
-   * 
+   *
    * Returns a flag: 0 indicates success, non-zero an error flag
    */
   int runRHS(BoutReal time, bool linear = false);
@@ -203,7 +203,7 @@ public:
   bool hasPrecon();
 
   /*!
-   * Run the preconditioner. The system state should be in the 
+   * Run the preconditioner. The system state should be in the
    * evolving variables, and the vector to be solved in the ddt() variables.
    * The result will be put in the ddt() variables.
    *
@@ -219,7 +219,7 @@ public:
 
   /*!
    * Run the Jacobian-vector multiplication function
-   * 
+   *
    * Note: this is usually only called by the Solver
    */
   int runJacobian(BoutReal t);
@@ -241,10 +241,10 @@ protected:
   // The init and rhs functions are implemented by user code to specify problem
   /*!
    * @brief This function is called once by the solver at the start of a simulation.
-   * 
+   *
    * A valid PhysicsModel must implement this function
-   * 
-   * Variables should be read from the inputs, and the variables to 
+   *
+   * Variables should be read from the inputs, and the variables to
    * be evolved should be specified.
    */
   virtual int init(bool restarting) = 0;
@@ -258,7 +258,7 @@ protected:
   /*!
    * @brief This function is called by the time integration solver
    * at least once per time step
-   * 
+   *
    * Variables being evolved will be set by the solver
    * before the call, and this function must calculate
    * and set the time-derivatives.
@@ -278,10 +278,10 @@ protected:
   /// Add additional variables other than the evolving variables to the restart files
   virtual void restartVars(Options& options);
 
-  /* 
+  /*
      If split operator is set to true, then
      convective() and diffusive() are called instead of rhs()
-     
+
      For implicit-explicit schemes, convective() will typically
      be treated explicitly, whilst diffusive() will be treated implicitly.
      For unsplit methods, both convective and diffusive will be called
@@ -334,7 +334,7 @@ protected:
    *
    * @param[in] var  The variable to evolve
    * @param[in] name The name to use for variable initialisation and output
-   * 
+   *
    * Note that the variable must not be destroyed (e.g. go out of scope)
    * after this call, since a pointer to \p var is stored in the solver.
    *
@@ -358,11 +358,11 @@ protected:
    * Specify a constrained variable \p var, which will be
    * adjusted to make \p F_var equal to zero.
    * If the solver does not support constraints then this will throw an exception
-   * 
+   *
    * @param[in] var  The variable the solver should modify
    * @param[in] F_var  The control variable, which the user will set
    * @param[in] name   The name to use for initialisation and output
-   * 
+   *
    */
   bool bout_constrain(Field3D& var, Field3D& F_var, const char* name);
 
@@ -491,8 +491,7 @@ private:
 
 /// Add fields to the solver.
 /// This should accept up to ten arguments
-#define SOLVE_FOR(...) \
-  { MACRO_FOR_EACH(SOLVE_FOR1, __VA_ARGS__) }
+#define SOLVE_FOR(...) {MACRO_FOR_EACH(SOLVE_FOR1, __VA_ARGS__)}
 
 /// Write this variable once to the grid file
 #define SAVE_ONCE1(var) dump.addOnce(var, #var);
@@ -532,8 +531,7 @@ private:
     dump.addOnce(var6, #var6);                         \
   }
 
-#define SAVE_ONCE(...) \
-  { MACRO_FOR_EACH(SAVE_ONCE1, __VA_ARGS__) }
+#define SAVE_ONCE(...) {MACRO_FOR_EACH(SAVE_ONCE1, __VA_ARGS__)}
 
 /// Write this variable every timestep
 #define SAVE_REPEAT1(var) dump.addRepeat(var, #var);
@@ -573,7 +571,6 @@ private:
     dump.addRepeat(var6, #var6);                         \
   }
 
-#define SAVE_REPEAT(...) \
-  { MACRO_FOR_EACH(SAVE_REPEAT1, __VA_ARGS__) }
+#define SAVE_REPEAT(...) {MACRO_FOR_EACH(SAVE_REPEAT1, __VA_ARGS__)}
 
 #endif // BOUT_PHYSICS_MODEL_H

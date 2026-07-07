@@ -42,6 +42,7 @@ class Field2D;
 #include "bout/region.hxx"
 
 #include <cstddef>
+#include <iostream>
 #include <ostream>
 #include <string>
 
