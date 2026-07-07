@@ -254,7 +254,7 @@ PetscErrorCode SNESSolver::FDJinitialise() {
       }
 
       d_nnz.reserve(nlocal);
-      d_nnz.reserve(nlocal);
+      o_nnz.reserve(nlocal);
 
       for (int i = 0; i < nlocal; ++i) {
         // Assume all elements in the z direction are potentially coupled
