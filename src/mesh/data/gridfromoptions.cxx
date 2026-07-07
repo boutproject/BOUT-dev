@@ -7,7 +7,9 @@
 
 using bout::generator::Context;
 
-bool GridFromOptions::hasVar(const std::string& name) { return options->isSet(name); }
+bool GridFromOptions::hasVar(const std::string& name) const {
+  return options->isSet(name);
+}
 
 namespace {
 /// Return value of \p name in \p options, using \p def as a default
@@ -146,8 +148,7 @@ bool GridFromOptions::get(Mesh* m, std::vector<BoutReal>& var, const std::string
   }
   case GridDataSource::Z: {
     for (int z = 0; z < len; z++) {
-      pos.set("z",
-              (TWOPI * (z - m->OffsetZ + offset)) / static_cast<BoutReal>(m->LocalNz));
+      pos.set("z", TWOPI * m->GlobalZ(z - m->OffsetZ + offset));
       var[z] = gen->generate(pos);
     }
     break;

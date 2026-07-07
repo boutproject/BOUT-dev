@@ -4,10 +4,10 @@
  * Class for 3D X-Y-Z scalar fields
  *
  **************************************************************************
- * Copyright 2010 - 2025 BOUT++ developers
+ * Copyright 2010 - 2026 BOUT++ developers
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -25,36 +25,51 @@
  *
  **************************************************************************/
 
-#include "bout/build_config.hxx"
+#include "bout/array.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/build_defines.hxx"
+#include "bout/field2d.hxx"
 
+#include "bout/index_derivs_interface.hxx"
 #include <bout/boutcomm.hxx>
 #include <bout/globals.hxx>
 
 #include <cmath>
+#include <cpptrace/cpptrace.hpp>
+#include <cstddef>
+#include <memory>
+#include <optional>
+#include <string>
+#include <utility>
 
 #include "bout/parallel_boundary_op.hxx"
 #include "bout/parallel_boundary_region.hxx"
 #include <bout/assert.hxx>
 #include <bout/boundary_factory.hxx>
 #include <bout/boundary_op.hxx>
+#include <bout/boundary_region_iter.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/dcomplex.hxx>
 #include <bout/fft.hxx>
 #include <bout/field3d.hxx>
 #include <bout/interpolation.hxx>
-#include <bout/msg_stack.hxx>
+#include <bout/mesh.hxx>
 #include <bout/output.hxx>
+#include <bout/region.hxx>
 #include <bout/utils.hxx>
 
+#include "fmt/format.h"
+
 /// Constructor
-Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
-    : Field(localmesh, location_in, directions_in) {
+Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in,
+                 std::optional<size_t> regionID)
+    : Field(localmesh, location_in, directions_in), regionID(regionID) {
 #if BOUT_USE_TRACK
   name = "<F3D>";
 #endif
 
-  if (fieldmesh) {
+  if (fieldmesh != nullptr) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
     nz = fieldmesh->LocalNz;
@@ -66,58 +81,88 @@ Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes direction
 Field3D::Field3D(const Field3D& f)
     : Field(f), data(f.data), yup_fields(f.yup_fields), ydown_fields(f.ydown_fields),
       regionID(f.regionID) {
-
-  TRACE("Field3D(Field3D&)");
-
-  if (fieldmesh) {
+  if (fieldmesh != nullptr) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
     nz = fieldmesh->LocalNz;
   }
 }
 
-Field3D::Field3D(const Field2D& f) : Field(f) {
+Field3D operator+(const Field2D& lhs, const Field3DParallel& rhs) {
+  return lhs + rhs.asField3D();
+}
 
-  TRACE("Field3D: Copy constructor from Field2D");
+Field3D operator-(const Field2D& lhs, const Field3DParallel& rhs) {
+  return lhs - rhs.asField3D();
+}
 
-  nx = fieldmesh->LocalNx;
-  ny = fieldmesh->LocalNy;
-  nz = fieldmesh->LocalNz;
+Field3D operator*(const Field2D& lhs, const Field3DParallel& rhs) {
+  return lhs * rhs.asField3D();
+}
 
+Field3D operator/(const Field2D& lhs, const Field3DParallel& rhs) {
+  return lhs / rhs.asField3D();
+}
+
+Field3D operator+(const Field3DParallel& lhs, const Field2D& rhs) {
+  return lhs.asField3D() + rhs;
+}
+
+Field3D operator-(const Field3DParallel& lhs, const Field2D& rhs) {
+  return lhs.asField3D() - rhs;
+}
+
+Field3D operator*(const Field3DParallel& lhs, const Field2D& rhs) {
+  return lhs.asField3D() * rhs;
+}
+
+Field3D operator/(const Field3DParallel& lhs, const Field2D& rhs) {
+  return lhs.asField3D() / rhs;
+}
+
+Field3D::Field3D(const Field2D& f)
+    : Field(f), nx(fieldmesh->LocalNx), ny(fieldmesh->LocalNy), nz(fieldmesh->LocalNz) {
   *this = f;
 }
 
 Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
+  *this = val;
+}
 
-  TRACE("Field3D: Copy constructor from value");
+Field3DParallel::Field3DParallel(const BoutReal val, Mesh* localmesh)
+    : Field3D(localmesh) {
 
   *this = val;
+  if (this->isFci()) {
+    splitParallelSlices();
+    for (size_t i = 0; i < numberParallelSlices(); ++i) {
+      yup(i) = val;
+      ydown(i) = val;
+    }
+  }
 }
 
 Field3D::Field3D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation,
                  DirectionTypes directions_in)
-    : Field(localmesh, datalocation, directions_in), data(std::move(data_in)) {
-  TRACE("Field3D: Copy constructor from Array and Mesh");
-
-  nx = fieldmesh->LocalNx;
-  ny = fieldmesh->LocalNy;
-  nz = fieldmesh->LocalNz;
+    : Field(localmesh, datalocation, directions_in), nx(fieldmesh->LocalNx),
+      ny(fieldmesh->LocalNy), nz(fieldmesh->LocalNz), data(std::move(data_in)) {
 
   ASSERT1(data.size() == nx * ny * nz);
 }
 
-Field3D::~Field3D() { delete deriv; }
-
 Field3D& Field3D::allocate() {
   if (data.empty()) {
-    if (!fieldmesh) {
+    if (fieldmesh == nullptr) {
       // fieldmesh was not initialized when this field was initialized, so use
       // the global mesh and set some members to default values
       fieldmesh = bout::globals::mesh;
-      nx = fieldmesh->LocalNx;
-      ny = fieldmesh->LocalNy;
-      nz = fieldmesh->LocalNz;
     }
+    nx = fieldmesh->LocalNx;
+    ny = fieldmesh->LocalNy;
+    nz = fieldmesh->LocalNz;
+    ASSERT1(nx > 0);
+    ASSERT1(ny > 0);
+    ASSERT1(nz > 0);
     data.reallocate(nx * ny * nz);
 #if CHECK > 2
     invalidateGuards(*this);
@@ -137,7 +182,6 @@ Field3D* Field3D::timeDeriv() {
 }
 
 void Field3D::splitParallelSlices() {
-  TRACE("Field3D::splitParallelSlices");
 
   if (hasParallelSlices()) {
     return;
@@ -149,10 +193,10 @@ void Field3D::splitParallelSlices() {
     yup_fields.emplace_back(fieldmesh);
     ydown_fields.emplace_back(fieldmesh);
   }
+  resetRegionParallel();
 }
 
 void Field3D::clearParallelSlices() {
-  TRACE("Field3D::clearParallelSlices");
 
   if (!hasParallelSlices()) {
     return;
@@ -234,7 +278,7 @@ const Region<Ind2D>& Field3D::getRegion2D(const std::string& region_name) const 
 }
 
 /***************************************************************
- *                         OPERATORS 
+ *                         OPERATORS
  ***************************************************************/
 
 /////////////////// ASSIGNMENT ////////////////////
@@ -245,7 +289,7 @@ Field3D& Field3D::operator=(const Field3D& rhs) {
     return (*this); // skip this assignment
   }
 
-  TRACE("Field3D: Assignment from Field3D");
+  track(rhs, "operator=");
 
   // Copy base slice
   Field::operator=(rhs);
@@ -265,29 +309,8 @@ Field3D& Field3D::operator=(const Field3D& rhs) {
   return *this;
 }
 
-Field3D& Field3D::operator=(Field3D&& rhs) {
-  TRACE("Field3D: Assignment from Field3D");
-
-  // Move parallel slices or delete existing ones.
-  yup_fields = std::move(rhs.yup_fields);
-  ydown_fields = std::move(rhs.ydown_fields);
-
-  // Move the data and data sizes
-  nx = rhs.nx;
-  ny = rhs.ny;
-  nz = rhs.nz;
-  regionID = rhs.regionID;
-
-  data = std::move(rhs.data);
-
-  // Move base slice last
-  Field::operator=(std::move(rhs));
-
-  return *this;
-}
-
 Field3D& Field3D::operator=(const Field2D& rhs) {
-  TRACE("Field3D = Field2D");
+  track(rhs, "operator=");
 
   /// Check that the data is allocated
   ASSERT1(rhs.isAllocated());
@@ -314,7 +337,6 @@ Field3D& Field3D::operator=(const Field2D& rhs) {
 }
 
 void Field3D::operator=(const FieldPerp& rhs) {
-  TRACE("Field3D = FieldPerp");
 
   ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
   /// Check that the data is allocated
@@ -333,7 +355,7 @@ void Field3D::operator=(const FieldPerp& rhs) {
 }
 
 Field3D& Field3D::operator=(const BoutReal val) {
-  TRACE("Field3D = BoutReal");
+  track(val, "operator=");
 
   // Delete existing parallel slices. We don't copy parallel slices, so any
   // that currently exist will be incorrect.
@@ -343,19 +365,41 @@ Field3D& Field3D::operator=(const BoutReal val) {
   allocate();
 
   BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = val; }
+  this->name = "BR";
 
   return *this;
 }
 
-Field3D& Field3D::calcParallelSlices() {
-  getCoordinates()->getParallelTransform().calcParallelSlices(*this);
+Field3DParallel& Field3DParallel::operator=(const BoutReal val) {
+  TRACE("Field3DParallel = BoutReal");
+  track(val, "operator=");
+
+  if (isFci()) {
+    if (!hasParallelSlices()) {
+      splitParallelSlices();
+    }
+    for (size_t i = 0; i < numberParallelSlices(); ++i) {
+      yup(i) = val;
+      ydown(i) = val;
+    }
+  }
+  resetRegion();
+
+  allocate();
+
+  BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = val; }
+
   return *this;
+}
+
+void Field3D::calcParallelSlices() {
+  ASSERT1(areCalcParallelSlicesAllowed());
+  getCoordinates()->getParallelTransform().calcParallelSlices(*this);
 }
 
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
 void Field3D::applyBoundary(bool init) {
-  TRACE("Field3D::applyBoundary()");
 
 #if CHECK > 0
   if (init) {
@@ -378,7 +422,6 @@ void Field3D::applyBoundary(bool init) {
 }
 
 void Field3D::applyBoundary(BoutReal t) {
-  TRACE("Field3D::applyBoundary()");
 
 #if CHECK > 0
   if (not isBoundarySet()) {
@@ -395,7 +438,6 @@ void Field3D::applyBoundary(BoutReal t) {
 }
 
 void Field3D::applyBoundary(const std::string& condition) {
-  TRACE("Field3D::applyBoundary(condition)");
 
   checkData(*this);
 
@@ -413,7 +455,7 @@ void Field3D::applyBoundary(const std::string& condition) {
 }
 
 void Field3D::applyBoundary(const std::string& region, const std::string& condition) {
-  TRACE("Field3D::applyBoundary(string, string)");
+
   checkData(*this);
 
   /// Get the boundary factory (singleton)
@@ -439,7 +481,6 @@ void Field3D::applyBoundary(const std::string& region, const std::string& condit
 }
 
 void Field3D::applyTDerivBoundary() {
-  TRACE("Field3D::applyTDerivBoundary()");
 
   checkData(*this);
   ASSERT1(deriv != nullptr);
@@ -450,32 +491,87 @@ void Field3D::applyTDerivBoundary() {
   }
 }
 
-void Field3D::setBoundaryTo(const Field3D& f3d) {
-  TRACE("Field3D::setBoundary(const Field3D&)");
+void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices,
+                            bool forceLegacy) {
 
   checkData(f3d);
 
   allocate(); // Make sure data allocated
 
-  /// Loop over boundary regions
-  for (const auto& reg : fieldmesh->getBoundaries()) {
-    /// Loop within each region
-    for (reg->first(); !reg->isDone(); reg->next()) {
-      for (int z = 0; z < nz; z++) {
-        // Get value half-way between cells
-        BoutReal val =
-            0.5 * (f3d(reg->x, reg->y, z) + f3d(reg->x - reg->bx, reg->y - reg->by, z));
-        // Set to this value
-        (*this)(reg->x, reg->y, z) =
-            2. * val - (*this)(reg->x - reg->bx, reg->y - reg->by, z);
+  if (isFci()) {
+    ASSERT1(f3d.hasParallelSlices());
+    if (copyParallelSlices) {
+      splitParallelSlices();
+      for (int i = 0; i < fieldmesh->ystart; ++i) {
+        yup(i) = f3d.yup(i);
+        ydown(i) = f3d.ydown(i);
+      }
+    } else {
+      // Set yup/ydown using midpoint values from f3d
+      ASSERT1(hasParallelSlices());
+
+      for (auto& region : fieldmesh->getBoundariesPar()) {
+        for (const auto& point : *region) {
+          // Interpolate midpoint value in f3d
+          const BoutReal val = point.interpolate_boundary_o2(f3d);
+          // Set the same boundary value in this field
+          point.dirichlet_o1(*this, val);
+        }
+      }
+    }
+  }
+
+  // Non-FCI.
+  // Transform to field-aligned coordinates?
+  // Loop over boundary regions
+  for (const auto& newreg : fieldmesh->getBoundaries()) {
+    if (newreg->isX) {
+      bout::boundary::iter_boundary(newreg, [&](auto& point) {
+        const BoutReal val = point.interpolate_boundary_o2(f3d);
+        point.dirichlet_o2(*this, val);
+      });
+      if (forceLegacy) {
+        // get the old, potentially wrong behaviour
+        auto* reg = newreg->getLegacyPointer();
+        if (isFci() && reg->by != 0) {
+          continue;
+        }
+        /// Loop within each region
+        for (reg->first(); !reg->isDone(); reg->next()) {
+          for (int z = 0; z < nz; z++) {
+            // Get value half-way between cells
+            const BoutReal val =
+                0.5
+                * (f3d(reg->x, reg->y, z) + f3d(reg->x - reg->bx, reg->y - reg->by, z));
+            // Set to this value
+            (*this)(reg->x, reg->y, z) =
+                ((2. * val) - (*this)(reg->x - reg->bx, reg->y - reg->by, z));
+          }
+        }
+      }
+    } else if (newreg->isY) {
+      // nothing to do
+    } else {
+      auto* reg = newreg->getLegacyPointer();
+      if (isFci() && reg->by != 0) {
+        continue;
+      }
+      /// Loop within each region
+      for (reg->first(); !reg->isDone(); reg->next()) {
+        for (int z = 0; z < nz; z++) {
+          // Get value half-way between cells
+          const BoutReal val =
+              0.5 * (f3d(reg->x, reg->y, z) + f3d(reg->x - reg->bx, reg->y - reg->by, z));
+          // Set to this value
+          (*this)(reg->x, reg->y, z) =
+              (2. * val) - (*this)(reg->x - reg->bx, reg->y - reg->by, z);
+        }
       }
     }
   }
 }
 
 void Field3D::applyParallelBoundary() {
-
-  TRACE("Field3D::applyParallelBoundary()");
 
   checkData(*this);
   if (isFci()) {
@@ -493,8 +589,6 @@ void Field3D::applyParallelBoundary() {
 
 void Field3D::applyParallelBoundary(BoutReal t) {
 
-  TRACE("Field3D::applyParallelBoundary(t)");
-
   checkData(*this);
   if (isFci()) {
     ASSERT1(hasParallelSlices());
@@ -510,8 +604,6 @@ void Field3D::applyParallelBoundary(BoutReal t) {
 }
 
 void Field3D::applyParallelBoundary(const std::string& condition) {
-
-  TRACE("Field3D::applyParallelBoundary(condition)");
 
   checkData(*this);
   if (isFci()) {
@@ -534,8 +626,6 @@ void Field3D::applyParallelBoundary(const std::string& condition) {
 
 void Field3D::applyParallelBoundary(const std::string& region,
                                     const std::string& condition) {
-
-  TRACE("Field3D::applyParallelBoundary(region, condition)");
 
   checkData(*this);
   if (isFci()) {
@@ -561,8 +651,6 @@ void Field3D::applyParallelBoundary(const std::string& region,
 
 void Field3D::applyParallelBoundary(const std::string& region,
                                     const std::string& condition, Field3D* f) {
-
-  TRACE("Field3D::applyParallelBoundary(region, condition, f)");
 
   checkData(*this);
   if (isFci()) {
@@ -590,16 +678,16 @@ void Field3D::applyParallelBoundary(const std::string& region,
   }
 }
 
+void Field3D::swapData(Field3D& other) { std::swap(data, other.data); }
+
 /***************************************************************
  *               NON-MEMBER OVERLOADED OPERATORS
  ***************************************************************/
 
-Field3D operator-(const Field3D& f) { return -1.0 * f; }
-
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
 Field3D pow(const Field3D& lhs, const Field2D& rhs, const std::string& rgn) {
-  TRACE("pow(Field3D, Field2D)");
+
   // Check if the inputs are allocated
   checkData(lhs);
   checkData(rhs);
@@ -615,7 +703,6 @@ Field3D pow(const Field3D& lhs, const Field2D& rhs, const std::string& rgn) {
 }
 
 FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs, const std::string& rgn) {
-  TRACE("pow(Field3D, FieldPerp)");
 
   checkData(lhs);
   checkData(rhs);
@@ -635,8 +722,8 @@ FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs, const std::string& rgn) 
 // Friend functions
 
 Field3D filter(const Field3D& var, int N0, const std::string& rgn) {
-  TRACE("filter(Field3D, int)");
 
+  bout::fft::assertZSerial(*var.getMesh(), "`filter`");
   checkData(var);
 
   int ncz = var.getNz();
@@ -681,8 +768,8 @@ Field3D filter(const Field3D& var, int N0, const std::string& rgn) {
 
 // Fourier filter in z with zmin
 Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal, const std::string& rgn) {
-  TRACE("lowPass(Field3D, {}, {})", zmax, keep_zonal);
 
+  bout::fft::assertZSerial(*var.getMesh(), "`lowPass`");
   checkData(var);
   int ncz = var.getNz();
 
@@ -727,11 +814,11 @@ Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal, const std::string
   return result;
 }
 
-/* 
+/*
  * Use FFT to shift by an angle in the Z direction
  */
 void shiftZ(Field3D& var, int jx, int jy, double zangle) {
-  TRACE("shiftZ");
+  bout::fft::assertZSerial(*var.getMesh(), "`shiftZ`");
   checkData(var);
   var.allocate(); // Ensure that var is unique
   Mesh* localmesh = var.getMesh();
@@ -800,7 +887,6 @@ void checkData(const Field3D& f, const std::string& region) {
 #endif
 
 Field2D DC(const Field3D& f, const std::string& rgn) {
-  TRACE("DC(Field3D)");
 
   checkData(f);
 
@@ -830,13 +916,27 @@ bool operator==(const Field3D& a, const Field3D& b) {
   if (!a.isAllocated() || !b.isAllocated()) {
     return false;
   }
-  return min(abs(a - b)) < 1e-10;
+  Field3D Sub = a - b;
+  return min(Sub) < 1e-10;
 }
 
 std::ostream& operator<<(std::ostream& out, const Field3D& value) {
   out << toString(value);
   return out;
 }
+
+namespace bout::detail {
+
+const Region<Ind3D>& getField3DRegion(const Mesh* mesh, std::optional<size_t> regionID) {
+  ASSERT1(mesh != nullptr);
+
+  if (regionID.has_value()) {
+    return mesh->getRegion(regionID.value());
+  }
+  return mesh->getRegion("RGN_ALL");
+}
+
+} // namespace bout::detail
 
 void swap(Field3D& first, Field3D& second) noexcept {
   using std::swap;
@@ -863,4 +963,106 @@ Field3D::getValidRegionWithDefault(const std::string& region_name) const {
 
 void Field3D::setRegion(const std::string& region_name) {
   regionID = fieldmesh->getRegionID(region_name);
+}
+
+void Field3D::resetRegionParallel(const bool force) {
+  if (force or isFci()) {
+    for (int i = 0; i < fieldmesh->ystart; ++i) {
+      yup_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", i + 1));
+      ydown_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", -i - 1));
+    }
+  }
+}
+
+Field3D& Field3D::enableTracking(const std::string& name,
+                                 std::weak_ptr<Options> _tracking) {
+  tracking = std::move(_tracking);
+  tracking_state = 1;
+  selfname = name;
+  return *this;
+}
+
+template <typename T, typename>
+void Field3D::_track(const T& change, std::string operation) {
+  if (tracking_state == 0) {
+    return;
+  }
+  auto locked = tracking.lock();
+  if (locked == nullptr) {
+    return;
+  }
+  const std::string outname{fmt::format("track_{:s}_{:d}", selfname, tracking_state++)};
+
+  locked->set(outname, change, "tracking");
+
+  const std::string trace = cpptrace::generate_trace().to_string();
+
+  // Workaround for bug in gcc9.4
+#if BOUT_USE_TRACK
+  const std::string changename = change.name;
+#endif
+  (*locked)[outname].setAttributes({
+      {"operation", operation},
+#if BOUT_USE_TRACK
+      {"rhs.name", changename},
+#endif
+      {"trace", trace},
+  });
+}
+
+template void
+Field3D::_track<Field3D, bout::utils::EnableIfField<Field3D>>(const Field3D&,
+                                                              std::string);
+template void Field3D::_track<Field3DParallel>(const Field3DParallel&, std::string);
+template void Field3D::_track<Field2D>(const Field2D&, std::string);
+template void Field3D::_track<>(const FieldPerp&, std::string);
+
+void Field3D::_track(const BoutReal& change, std::string operation) {
+  if (tracking_state == 0) {
+    return;
+  }
+  auto locked = tracking.lock();
+  if (locked == nullptr) {
+    return;
+  }
+  const std::string trace = cpptrace::generate_trace().to_string();
+  const std::string outname{fmt::format("track_{:s}_{:d}", selfname, tracking_state++)};
+  locked->set(outname, change, "tracking");
+  (*locked)[outname].setAttributes({
+      {"operation", operation},
+      {"rhs.name", "BoutReal"},
+      {"trace", trace},
+  });
+}
+
+void Field3DParallel::ensureFieldAligned() {
+  if (isFci()) {
+    ASSERT2(hasParallelSlices());
+    if (fieldmesh != nullptr) {
+      for (int i = 0; i < fieldmesh->ystart; ++i) {
+        ASSERT2(yup_fields[i].getRegionID().has_value());
+        ASSERT2(ydown_fields[i].getRegionID().has_value());
+      }
+    }
+    if (isAllocated()) {
+      for (int i = 0; i < fieldmesh->ystart; ++i) {
+        ASSERT2(yup_fields[i].isAllocated());
+        ASSERT2(ydown_fields[i].isAllocated());
+      }
+    }
+  }
+}
+
+Field3DParallel& Field3DParallel::allocate() {
+  Field3D::allocate();
+  if (isFci()) {
+    ASSERT2(hasParallelSlices());
+    if (fieldmesh != nullptr) {
+      for (int i = 0; i < fieldmesh->ystart; ++i) {
+        yup_fields[i].allocate();
+        ydown_fields[i].allocate();
+      }
+    }
+  }
+  return *this;
 }

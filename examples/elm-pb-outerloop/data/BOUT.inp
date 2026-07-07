@@ -49,7 +49,7 @@ fft_measurement_flag = measure  # If using FFTW, perform tests to determine fast
 atol = 1e-08 # absolute tolerance
 rtol = 1e-05  # relative tolerance
 
-use_precon = false    # Use preconditioner: User-supplied or BBD
+cvode_precon_method = none  # Disable CVODE preconditioning
 
 mxstep = 5000   # Number of internal steps between outputs
 output_step = 1       # time between outputs

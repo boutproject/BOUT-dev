@@ -3,10 +3,10 @@
  * \brief field base class definition for differencing methods
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ * Contact: Ben Dudson, dudson2@llnl.gov
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -31,18 +31,20 @@ class Field;
 
 #include <cmath>
 #include <cstdio>
+#include <optional>
 #include <string>
 
 #include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field_data.hxx"
-#include "bout/msg_stack.hxx"
 #include "bout/region.hxx"
 #include "bout/traits.hxx"
 #include "bout/utils.hxx"
 #include <bout/globals.hxx>
 #include <bout/rvec.hxx>
+
+#include "bout/fieldops.hxx"
 
 class Mesh;
 
@@ -127,6 +129,18 @@ public:
     swap(first.directions, second.directions);
   }
 
+  /// Dummy functions to increase portability
+  virtual void setRegion([[maybe_unused]] size_t regionID) {}
+  virtual void setRegion([[maybe_unused]] std::optional<size_t> regionID) {}
+  virtual void setRegion([[maybe_unused]] const std::string& region_name) {}
+  virtual void resetRegion() {}
+  virtual std::optional<size_t> getRegionID() const { return {}; }
+  virtual bool hasParallelSlices() const { return true; }
+  virtual void calcParallelSlices() {}
+  virtual void splitParallelSlices() {}
+  virtual void clearParallelSlices() {}
+  virtual size_t numberParallelSlices() const { return 0; }
+
 private:
   /// Labels for the type of coordinate system this field is defined over
   DirectionTypes directions{YDirectionType::Standard, ZDirectionType::Standard};
@@ -169,8 +183,30 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
                         #field2, toString((field2).getDirections()));                    \
   }
 
+#define ASSERT1_EXPR_COMPATIBLE(expr1, expr2)                                          \
+  if ((expr1).getLocation() != (expr2).getLocation()) {                                \
+    throw BoutException("Error in {:s}:{:d}\nFields at different position:"            \
+                        "`{:s}` at {:s}, `{:s}` at {:s}",                              \
+                        __FILE__, __LINE__, #expr1, toString((expr1).getLocation()),   \
+                        #expr2, toString((expr2).getLocation()));                      \
+  }                                                                                    \
+  if ((expr1).getMesh() != (expr2).getMesh()) {                                        \
+    throw BoutException("Error in {:s}:{:d}\nFields are on different Meshes:"          \
+                        "`{:s}` at {:p}, `{:s}` at {:p}",                              \
+                        __FILE__, __LINE__, #expr1,                                    \
+                        static_cast<void*>((expr1).getMesh()), #expr2,                 \
+                        static_cast<void*>((expr2).getMesh()));                        \
+  }                                                                                    \
+  if (!areDirectionsCompatible((expr1).getDirections(), (expr2).getDirections())) {    \
+    throw BoutException("Error in {:s}:{:d}\nFields at different directions:"          \
+                        "`{:s}` at {:s}, `{:s}` at {:s}",                              \
+                        __FILE__, __LINE__, #expr1, toString((expr1).getDirections()), \
+                        #expr2, toString((expr2).getDirections()));                    \
+  }
+
 #else
 #define ASSERT1_FIELDS_COMPATIBLE(field1, field2) ;
+#define ASSERT1_EXPR_COMPATIBLE(expr1, expr2) ;
 #endif
 
 /// Return an empty shell field of some type derived from Field, with metadata
@@ -178,7 +214,8 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
 template <typename T>
 inline T emptyFrom(const T& f) {
   static_assert(bout::utils::is_Field_v<T>, "emptyFrom only works on Fields");
-  return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()})
+  return T(f.getMesh(), f.getLocation(),
+           DirectionTypes{f.getDirectionY(), f.getDirectionZ()}, f.getRegionID())
       .allocate();
 }
 
@@ -239,7 +276,6 @@ namespace bout {
 template <typename T>
 inline void checkFinite(const T& f, const std::string& name = "field",
                         const std::string& rgn = "RGN_ALL") {
-  AUTO_TRACE();
 
   if (!f.isAllocated()) {
     throw BoutException("{:s} is not allocated", name);
@@ -263,7 +299,6 @@ inline void checkFinite(const T& f, const std::string& name = "field",
 template <typename T>
 inline void checkPositive(const T& f, const std::string& name = "field",
                           const std::string& rgn = "RGN_ALL") {
-  AUTO_TRACE();
 
   if (!f.isAllocated()) {
     throw BoutException("{:s} is not allocated", name);
@@ -285,6 +320,7 @@ inline void checkPositive(const T& f, const std::string& name = "field",
 template <typename T>
 inline T toFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
   static_assert(bout::utils::is_Field_v<T>, "toFieldAligned only works on Fields");
+  ASSERT3(f.getCoordinates() != nullptr);
   return f.getCoordinates()->getParallelTransform().toFieldAligned(f, region);
 }
 
@@ -292,6 +328,7 @@ inline T toFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
 template <typename T>
 inline T fromFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
   static_assert(bout::utils::is_Field_v<T>, "fromFieldAligned only works on Fields");
+  ASSERT3(f.getCoordinates() != nullptr);
   return f.getCoordinates()->getParallelTransform().fromFieldAligned(f, region);
 }
 
@@ -307,7 +344,6 @@ inline T fromFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
 template <typename T, typename = bout::utils::EnableIfField<T>>
 inline BoutReal min(const T& f, bool allpe = false,
                     const std::string& rgn = "RGN_NOBNDRY") {
-  AUTO_TRACE();
 
   checkData(f);
 
@@ -322,6 +358,24 @@ inline BoutReal min(const T& f, bool allpe = false,
 
   if (allpe) {
     // MPI reduce
+    BoutReal localresult = result;
+    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MIN, BoutComm::get());
+  }
+
+  return result;
+}
+
+template <typename ResT, typename L, typename R, typename Func>
+inline BoutReal min(const BinaryExpr<ResT, L, R, Func>& f, bool allpe = false,
+                    const std::string& rgn = "RGN_NOBNDRY") {
+  const auto& region = f.getMesh()->template getRegion<ResT>(rgn);
+  const auto reduction_view =
+      makeReductionView(static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),
+                        region.getLinearIndices());
+  BoutReal result =
+      bout::reduce::Min::finalize(reduceExpr<bout::reduce::Min>(reduction_view));
+
+  if (allpe) {
     BoutReal localresult = result;
     MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MIN, BoutComm::get());
   }
@@ -392,7 +446,6 @@ inline BoutReal getUniform(const T& f, [[maybe_unused]] bool allpe = false,
 template <typename T, typename = bout::utils::EnableIfField<T>>
 inline BoutReal max(const T& f, bool allpe = false,
                     const std::string& rgn = "RGN_NOBNDRY") {
-  AUTO_TRACE();
 
   checkData(f);
 
@@ -414,6 +467,24 @@ inline BoutReal max(const T& f, bool allpe = false,
   return result;
 }
 
+template <typename ResT, typename L, typename R, typename Func>
+inline BoutReal max(const BinaryExpr<ResT, L, R, Func>& f, bool allpe = false,
+                    const std::string& rgn = "RGN_NOBNDRY") {
+  const auto& region = f.getMesh()->template getRegion<ResT>(rgn);
+  const auto reduction_view =
+      makeReductionView(static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),
+                        region.getLinearIndices());
+  BoutReal result =
+      bout::reduce::Max::finalize(reduceExpr<bout::reduce::Max>(reduction_view));
+
+  if (allpe) {
+    BoutReal localresult = result;
+    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get());
+  }
+
+  return result;
+}
+
 /// Mean of \p f, excluding the boundary/guard cells by default (can
 /// be changed with \p rgn argument).
 ///
@@ -426,7 +497,6 @@ inline BoutReal max(const T& f, bool allpe = false,
 template <typename T, typename = bout::utils::EnableIfField<T>>
 inline BoutReal mean(const T& f, bool allpe = false,
                      const std::string& rgn = "RGN_NOBNDRY") {
-  AUTO_TRACE();
 
   checkData(f);
 
@@ -450,6 +520,25 @@ inline BoutReal mean(const T& f, bool allpe = false,
   return result / static_cast<BoutReal>(count);
 }
 
+template <typename ResT, typename L, typename R, typename Func>
+inline BoutReal mean(const BinaryExpr<ResT, L, R, Func>& f, bool allpe = false,
+                     const std::string& rgn = "RGN_NOBNDRY") {
+  const auto& region = f.getMesh()->template getRegion<ResT>(rgn);
+  const auto reduction_view =
+      makeReductionView(static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),
+                        region.getLinearIndices());
+  auto state = reduceExpr<bout::reduce::Mean>(reduction_view);
+
+  if (allpe) {
+    BoutReal localsum = state.sum;
+    int localcount = state.count;
+    MPI_Allreduce(&localsum, &state.sum, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get());
+    MPI_Allreduce(&localcount, &state.count, 1, MPI_INT, MPI_SUM, BoutComm::get());
+  }
+
+  return bout::reduce::Mean::finalize(state);
+}
+
 /// Exponent: pow(lhs, lhs) is \p lhs raised to the power of \p rhs
 ///
 /// This loops over the entire domain, including guard/boundary cells by
@@ -457,7 +546,6 @@ inline BoutReal mean(const T& f, bool allpe = false,
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
 template <typename T, typename = bout::utils::EnableIfField<T>>
 T pow(const T& lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
-  AUTO_TRACE();
 
   ASSERT1(areFieldsCompatible(lhs, rhs));
 
@@ -471,7 +559,6 @@ T pow(const T& lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
 
 template <typename T, typename = bout::utils::EnableIfField<T>>
 T pow(const T& lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL") {
-  AUTO_TRACE();
 
   // Check if the inputs are allocated
   checkData(lhs);
@@ -487,7 +574,6 @@ T pow(const T& lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL") {
 
 template <typename T, typename = bout::utils::EnableIfField<T>>
 T pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
-  AUTO_TRACE();
 
   // Check if the inputs are allocated
   checkData(lhs);
@@ -518,22 +604,146 @@ T pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
  * result for non-finite numbers
  *
  */
+class Field3DParallel;
+class FieldPerp;
+
+namespace bout::detail {
+template <typename T>
+std::optional<int> getPerpYIndex(const T& value) {
+  if constexpr (std::is_same_v<std::decay_t<T>, ::FieldPerp>) {
+    return value.getIndex();
+  } else {
+    return std::nullopt;
+  }
+}
+
+template <typename ResT, typename L, typename R, typename Func>
+std::optional<int> getPerpYIndex(const BinaryExpr<ResT, L, R, Func>& expr) {
+  if constexpr (std::is_same_v<ResT, ::FieldPerp>) {
+    return expr.getIndex();
+  } else {
+    return std::nullopt;
+  }
+}
+} // namespace bout::detail
+
 #ifdef FIELD_FUNC
 #error This macro has already been defined
 #else
-#define FIELD_FUNC(name, func)                                     \
-  template <typename T, typename = bout::utils::EnableIfField<T>>  \
-  inline T name(const T& f, const std::string& rgn = "RGN_ALL") {  \
-    AUTO_TRACE();                                                  \
-    /* Check if the input is allocated */                          \
-    checkData(f);                                                  \
-    /* Define and allocate the output result */                    \
-    T result{emptyFrom(f)};                                        \
-    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); } \
-    checkData(result);                                             \
-    return result;                                                 \
+#define FIELD_FUNC(name, func)                                                          \
+  namespace bout::op {                                                                  \
+  struct name {                                                                         \
+    template <typename LView, typename RView>                                           \
+    BOUT_HOST_DEVICE BoutReal operator()(int idx, const LView& L, const RView&) const { \
+      return func(L(idx));                                                              \
+    }                                                                                   \
+  };                                                                                    \
+  };                                                                                    \
+  template <typename T, typename = bout::utils::EnableIfField<T>>                       \
+  inline auto name(const T& f, const std::string& rgn = "RGN_ALL") {                    \
+    if constexpr (std::is_same_v<T, Field3DParallel>) {                                 \
+      /* Check if the input is allocated */                                             \
+      checkData(f);                                                                     \
+      /* Define and allocate the output result */                                       \
+      T result{emptyFrom(f)};                                                           \
+      BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }                    \
+      for (int i = 0; i < f.numberParallelSlices(); ++i) {                              \
+        result.yup(i) = func(f.yup(i));                                                 \
+        result.ydown(i) = func(f.ydown(i));                                             \
+      }                                                                                 \
+      result.name = std::string(#name "(") + f.name + std::string(")");                 \
+      checkData(result);                                                                \
+      return result;                                                                    \
+    } else {                                                                            \
+      return BinaryExpr<T, T, T, bout::op::name>{static_cast<typename T::View>(f),      \
+                                                 static_cast<typename T::View>(f),      \
+                                                 bout::op::name{},                      \
+                                                 f.getMesh(),                           \
+                                                 f.getLocation(),                       \
+                                                 f.getDirections(),                     \
+                                                 std::nullopt,                          \
+                                                 f.getRegion(rgn),                      \
+                                                 bout::detail::getPerpYIndex(f)};       \
+    }                                                                                   \
+  }                                                                                     \
+  template <typename ResT, typename L, typename R, typename Func>                       \
+  inline auto name(const BinaryExpr<ResT, L, R, Func>& f) {                             \
+    return BinaryExpr<ResT, BinaryExpr<ResT, L, R, Func>, BinaryExpr<ResT, L, R, Func>, \
+                      bout::op::name>{                                                  \
+        static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),                    \
+        static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),                    \
+        bout::op::name{},                                                               \
+        f.getMesh(),                                                                    \
+        f.getLocation(),                                                                \
+        f.getDirections(),                                                              \
+        f.getRegionID(),                                                                \
+        f.indices,                                                                      \
+        bout::detail::getPerpYIndex(f)};                                                \
+  }                                                                                     \
+  template <typename ResT, typename L, typename R, typename Func>                       \
+  inline auto name(const BinaryExpr<ResT, L, R, Func>& f, const std::string& rgn) {     \
+    return name(ResT{f}, rgn);                                                          \
   }
 #endif
+
+namespace bout::op {
+struct Square {
+  template <typename LView, typename RView>
+  BOUT_HOST_DEVICE BoutReal operator()(int idx, const LView& L, const RView&) const {
+    const BoutReal value = L(idx);
+    return ::SQ(value);
+  }
+};
+}; // namespace bout::op
+
+template <typename T, typename = bout::utils::EnableIfField<T>>
+inline auto SQ(const T& f, const std::string& rgn = "RGN_ALL") {
+  if constexpr (std::is_same_v<T, Field3DParallel>) {
+    checkData(f);
+    T result{emptyFrom(f)};
+    if (f.hasParallelSlices() and !result.hasParallelSlices()) {
+      result.splitParallelSlices();
+    }
+    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = ::SQ(f[d]); }
+    for (size_t i = 0; i < f.numberParallelSlices(); ++i) {
+      result.yup(i) = SQ(f.yup(i), rgn);
+      result.ydown(i) = SQ(f.ydown(i), rgn);
+    }
+    result.name = std::string("SQ(") + f.name + std::string(")");
+    checkData(result);
+    return result;
+  } else {
+    return BinaryExpr<T, T, T, bout::op::Square>{static_cast<typename T::View>(f),
+                                                 static_cast<typename T::View>(f),
+                                                 bout::op::Square{},
+                                                 f.getMesh(),
+                                                 f.getLocation(),
+                                                 f.getDirections(),
+                                                 std::nullopt,
+                                                 f.getRegion(rgn),
+                                                 bout::detail::getPerpYIndex(f)};
+  }
+}
+
+template <typename ResT, typename L, typename R, typename Func>
+inline auto SQ(const BinaryExpr<ResT, L, R, Func>& f) {
+  return BinaryExpr<ResT, BinaryExpr<ResT, L, R, Func>, BinaryExpr<ResT, L, R, Func>,
+                    bout::op::Square>{
+      static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),
+      static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),
+      bout::op::Square{},
+      f.getMesh(),
+      f.getLocation(),
+      f.getDirections(),
+      f.getRegionID(),
+      f.indices,
+      bout::detail::getPerpYIndex(f)};
+}
+
+template <typename ResT, typename L, typename R, typename Func>
+inline auto SQ(const BinaryExpr<ResT, L, R, Func>& f, const std::string& rgn) {
+  return SQ(ResT{f}, rgn);
+}
 
 /// Square root of \p f over region \p rgn
 ///
@@ -632,7 +842,6 @@ FIELD_FUNC(tanh, ::tanh)
 /// default (can be changed using the \p rgn argument
 template <typename T, typename = bout::utils::EnableIfField<T>>
 inline bool finite(const T& f, const std::string& rgn = "RGN_ALL") {
-  AUTO_TRACE();
 
   if (!f.isAllocated()) {
     return false;
@@ -656,6 +865,8 @@ T copy(const T& f) {
   return result;
 }
 
+class Field3DParallel;
+
 /// Apply a floor value \p f to a field \p var. Any value lower than
 /// the floor is set to the floor.
 ///
@@ -672,7 +883,36 @@ inline T floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
       result[d] = f;
     }
   }
-
+  if constexpr (std::is_same_v<T, Field3DParallel>) {
+    if (var.hasParallelSlices()) {
+      for (size_t i = 0; i < result.numberParallelSlices(); ++i) {
+        if (result.yup(i).isAllocated()) {
+          BOUT_FOR(d, result.yup(i).getRegion(rgn)) {
+            if (result.yup(i)[d] < f) {
+              result.yup(i)[d] = f;
+            }
+          }
+        } else {
+          if (result.isFci()) {
+            throw BoutException("Expected parallel slice to be allocated");
+          }
+        }
+        if (result.ydown(i).isAllocated()) {
+          BOUT_FOR(d, result.ydown(i).getRegion(rgn)) {
+            if (result.ydown(i)[d] < f) {
+              result.ydown(i)[d] = f;
+            }
+          }
+        } else {
+          if (result.isFci()) {
+            throw BoutException("Expected parallel slice to be allocated");
+          }
+        }
+      }
+    }
+  } else {
+    result.clearParallelSlices();
+  }
   return result;
 }
 

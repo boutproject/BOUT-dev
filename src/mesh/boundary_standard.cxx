@@ -1,12 +1,12 @@
 #include <bout/boundary_standard.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/build_defines.hxx>
 #include <bout/constants.hxx>
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
 #include <bout/globals.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/mesh.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/generator_context.hxx>
 #include <bout/utils.hxx>
@@ -29,8 +29,6 @@ using bout::generator::Context;
  */
 #if CHECK > 0
 void verifyNumPoints(BoundaryRegion* region, int ptsRequired) {
-  TRACE("Verifying number of points available for BC");
-
   int ptsAvailGlobal, ptsAvailLocal, ptsAvail;
   std::string side, gridType;
   Mesh* mesh = region->localmesh;
@@ -1990,13 +1988,13 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
   void BoundaryNeumann::apply(Field2D & f) { BoundaryNeumann::apply(f, 0.); }
 
+#if not(BOUT_USE_METRIC_3D)
   void BoundaryNeumann::apply(Field2D & f, BoutReal t) {
     // Set (at 2nd order / 3rd order) the value at the mid-point between
     // the guard cell and the grid cell to be val
     // N.B. First guard cells (closest to the grid) is 2nd order, while
     // 2nd is 3rd order
 
-#if not(BOUT_USE_METRIC_3D)
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());
     Coordinates* metric = f.getCoordinates();
@@ -2193,6 +2191,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       }
     }
 #else
+
+void BoundaryNeumann::apply([[maybe_unused]] Field2D& f, [[maybe_unused]] BoutReal t) {
   throw BoutException("Applying boundary condition 'neumann' to Field2D "
                       "not compatible with 3D metrics in all cases.");
 #endif
@@ -2428,7 +2428,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       } else {
         throw BoutException("Unrecognized location");
       }
-    } else {
+    } else { // loc == CELL_CENTRE
       for (; !bndry->isDone(); bndry->next1d()) {
 #if BOUT_USE_METRIC_3D
         for (int zk = mesh->zstart; zk <= mesh->zend; zk++) {
@@ -2894,6 +2894,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 #if not(BOUT_USE_METRIC_3D)
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());
+    bout::fft::assertZSerial(*mesh, "Zero Laplace on Field3D");
     int ncz = mesh->LocalNz;
 
     Coordinates* metric = f.getCoordinates();
@@ -2997,6 +2998,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 #if not(BOUT_USE_METRIC_3D)
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());
+    bout::fft::assertZSerial(*mesh, "Zero Laplace on Field3D");
     const int ncz = mesh->LocalNz;
 
     ASSERT0(ncz % 2 == 0); // Allocation assumes even number
@@ -3106,6 +3108,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());
+    bout::fft::assertZSerial(*mesh, "Zero Laplace on Field3D");
+
     Coordinates* metric = f.getCoordinates();
 
     int ncz = mesh->LocalNz;
@@ -3866,7 +3870,6 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   }
 
   void BoundaryRelax::apply_ddt(Field2D & f) {
-    TRACE("BoundaryRelax::apply_ddt(Field2D)");
 
     // Make a copy of f
     Field2D g = f;
@@ -3882,7 +3885,6 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   }
 
   void BoundaryRelax::apply_ddt(Field3D & f) {
-    TRACE("BoundaryRelax::apply_ddt(Field3D)");
 
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());

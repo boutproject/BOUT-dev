@@ -15,7 +15,6 @@ namespace bout {
 /// Throws if checks are enabled and trying to use a staggered
 /// location on a non-staggered mesh
 CELL_LOC normaliseLocation(CELL_LOC location, Mesh* mesh) {
-  AUTO_TRACE();
 
   // CELL_DEFAULT always means CELL_CENTRE
   if (location == CELL_DEFAULT) {
@@ -54,11 +53,6 @@ FieldData::FieldData(Mesh* localmesh, CELL_LOC location_in)
           location_in, fieldmesh)) { // Need to check for nullptr again, because the
                                      // fieldmesh might still be
   // nullptr if the global mesh hasn't been initialized yet
-  if (fieldmesh != nullptr) {
-    // sets fieldCoordinates by getting Coordinates for our location from
-    // fieldmesh
-    getCoordinates();
-  }
 }
 
 FieldData::FieldData(const FieldData& other) {
@@ -216,7 +210,6 @@ Mesh* FieldData::getMesh() const {
 }
 
 FieldData& FieldData::setLocation(CELL_LOC new_location) {
-  AUTO_TRACE();
 
   location = bout::normaliseLocation(new_location, getMesh());
 
@@ -228,10 +221,7 @@ FieldData& FieldData::setLocation(CELL_LOC new_location) {
   return *this;
 }
 
-CELL_LOC FieldData::getLocation() const {
-  AUTO_TRACE();
-  return location;
-}
+CELL_LOC FieldData::getLocation() const { return location; }
 
 Coordinates* FieldData::getCoordinates() const {
   auto fieldCoordinates_shared = fieldCoordinates.lock();

@@ -7,7 +7,6 @@ import shutil
 import unittest
 import platform
 
-
 OUTPUT_FILE = "stdout.log" if platform.system() == "FreeBSD" else "stderr.log"
 
 

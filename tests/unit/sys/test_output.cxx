@@ -1,7 +1,7 @@
 #include "test_tmpfiles.hxx"
-#include "bout/boutexception.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/output.hxx"
-#include "bout/output_bout_types.hxx"
+#include "bout/output_bout_types.hxx" // IWYU pragma: keep
 #include "gtest/gtest.h"
 
 #include <fmt/ranges.h>
@@ -332,7 +332,7 @@ TEST_F(OutputTest, FormatInd3DInvalid) {
   Ind3D ind(11, 2, 3);
 
   Output local_output;
-  EXPECT_THROW(local_output.write("{:b}", ind), fmt::format_error);
+  EXPECT_THROW(local_output.write(fmt::runtime("{:b}"), ind), fmt::format_error);
 }
 
 TEST_F(OutputTest, FormatInd2Ddefault) {

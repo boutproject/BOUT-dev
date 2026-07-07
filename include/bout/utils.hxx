@@ -5,10 +5,10 @@
  * simple but common calculations
  *
  **************************************************************************
- * Copyright 2010 - 2025 BOUT++ contributors
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -29,13 +29,11 @@
 #ifndef BOUT_UTILS_H
 #define BOUT_UTILS_H
 
-#include "bout/build_config.hxx"
-
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
-#include "bout/msg_stack.hxx"
+#include "bout/build_config.hxx"
 #include "bout/region.hxx"
 #include "bout/unused.hxx"
 
@@ -47,6 +45,11 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <tuple>
+#include <type_traits>
+#include <vector>
+
+class Field;
 
 #ifdef _MSC_VER
 // finite is not actually standard C++, it's a BSD extention for C
@@ -187,6 +190,7 @@ typename std::vector<T, Alloc>::size_type erase_if(std::vector<T, Alloc>& c, Pre
   return r;
 }
 #else
+using std::erase;
 using std::erase_if;
 #endif
 } // namespace utils
@@ -229,6 +233,14 @@ public:
     n1 = new_size_1;
     n2 = new_size_2;
     data.reallocate(new_size_1 * new_size_2);
+  }
+
+  /*!
+   * Change shape of the container.
+   * Invalidates contents.
+   */
+  void reshape(std::tuple<size_type, size_type> new_shape) {
+    reallocate(std::get<0>(new_shape), std::get<1>(new_shape));
   }
 
   Matrix& operator=(const Matrix& other) {
@@ -305,9 +317,9 @@ public:
   Tensor(Tensor&&) noexcept = default;
   Tensor& operator=(Tensor&&) noexcept = default;
   Tensor(size_type n1, size_type n2, size_type n3) : n1(n1), n2(n2), n3(n3) {
-    ASSERT2(n1 >= 0);
-    ASSERT2(n2 >= 0);
-    ASSERT2(n3 >= 0);
+    ASSERT0(n1 >= 0);
+    ASSERT0(n2 >= 0);
+    ASSERT0(n3 >= 0);
     data.reallocate(n1 * n2 * n3);
   }
   Tensor(const Tensor& other)
@@ -321,14 +333,22 @@ public:
   ///
   /// Note that this invalidates the existing data!
   void reallocate(size_type new_size_1, size_type new_size_2, size_type new_size_3) {
-    ASSERT2(new_size_1 >= 0);
-    ASSERT2(new_size_2 >= 0);
-    ASSERT2(new_size_3 >= 0);
+    ASSERT0(new_size_1 >= 0);
+    ASSERT0(new_size_2 >= 0);
+    ASSERT0(new_size_3 >= 0);
 
     n1 = new_size_1;
     n2 = new_size_2;
     n3 = new_size_3;
     data.reallocate(new_size_1 * new_size_2 * new_size_3);
+  }
+
+  /*!
+   * Change shape of the container.
+   * Invalidates contents.
+   */
+  void reshape(std::tuple<size_type, size_type, size_type> new_shape) {
+    reallocate(std::get<0>(new_shape), std::get<1>(new_shape), std::get<2>(new_shape));
   }
 
   Tensor& operator=(const Tensor& other) {
@@ -420,15 +440,13 @@ inline BoutReal randomu() {
  * Calculate the square of a variable \p t
  * i.e. t * t
  */
-template <typename T>
-inline T SQ(const T& t) {
+template <typename T,
+          typename = std::enable_if_t<!std::is_base_of_v<Field, std::decay_t<T>>>>
+inline auto SQ(const T& t) {
   return t * t;
 }
 
-template <>
-BOUT_HOST_DEVICE inline BoutReal SQ(const BoutReal& t) {
-  return t * t;
-}
+BOUT_HOST_DEVICE inline BoutReal SQ(const BoutReal& t) { return t * t; }
 
 /*!
  * Round \p x to the nearest integer
@@ -468,7 +486,7 @@ inline bool is_pow2(int x) { return x && !((x - 1) & x); }
 
 /*!
  * Return the sign of a number \p a
- * by testing if a > 0 
+ * by testing if a > 0
  */
 template <typename T>
 T SIGN(T a) { // Return +1 or -1 (0 -> +1)
@@ -495,7 +513,7 @@ inline void checkData(BoutReal f) {
 }
 #else
 /// Ignored with disabled CHECK; Throw an exception if \p f is not finite
-inline void checkData(BoutReal UNUSED(f)){};
+inline void checkData(BoutReal UNUSED(f)) {};
 #endif
 
 /*!
@@ -571,7 +589,7 @@ BoutReal stringToReal(const std::string& s);
 
 /*!
  * Convert a string to an int
- * 
+ *
  * Throws BoutException if can't be done
  */
 int stringToInt(const std::string& s);
@@ -588,7 +606,7 @@ std::list<std::string>& strsplit(const std::string& s, char delim,
 
 /*!
  * Split a string on a given delimiter
- * 
+ *
  * @param[in] s     The string to split (not modified by call)
  * @param[in] delim The delimiter to split on (single char)
  */
@@ -596,7 +614,7 @@ std::list<std::string> strsplit(const std::string& s, char delim);
 
 /*!
  * Strips leading and trailing spaces from a string
- * 
+ *
  * @param[in] s   The string to trim (not modified)
  * @param[in] c   Collection of characters to remove
  */
@@ -604,7 +622,7 @@ std::string trim(const std::string& s, const std::string& c = " \t\r");
 
 /*!
  * Strips leading spaces from a string
- * 
+ *
  * @param[in] s   The string to trim (not modified)
  * @param[in] c   Collection of characters to remove
  */
@@ -612,7 +630,7 @@ std::string trimLeft(const std::string& s, const std::string& c = " \t");
 
 /*!
  * Strips leading spaces from a string
- * 
+ *
  * @param[in] s   The string to trim (not modified)
  * @param[in] c   Collection of characters to remove
  */
@@ -620,7 +638,7 @@ std::string trimRight(const std::string& s, const std::string& c = " \t\r");
 
 /*!
  * Strips the comments from a string
- * 
+ *
  * @param[in] s   The string to trim (not modified)
  * @param[in] c   Collection of characters to remove
  */

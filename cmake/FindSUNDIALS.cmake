@@ -33,47 +33,48 @@ include(FindPackageHandleStandardArgs)
 
 find_package(SUNDIALS CONFIG QUIET)
 
-if (SUNDIALS_FOUND)
-  if (TARGET SUNDIALS::nvecparallel)
+if(SUNDIALS_FOUND)
+  if(TARGET SUNDIALS::nvecparallel)
     return()
   else()
     message(STATUS "SUNDIALS found but not SUNDIALS::nvecparallel")
   endif()
 endif()
 
-find_path(SUNDIALS_INCLUDE_DIR
-  sundials_config.h
-  HINTS
-    "${SUNDIALS_ROOT}"
-    ENV SUNDIALS_DIR
+find_path(
+  SUNDIALS_INCLUDE_DIR sundials_config.h
+  HINTS "${SUNDIALS_ROOT}" ENV SUNDIALS_DIR
   PATH_SUFFIXES include include/sundials
-  DOC "SUNDIALS Directory")
+  DOC "SUNDIALS Directory"
+)
 
-if (SUNDIALS_DEBUG)
+if(SUNDIALS_DEBUG)
   message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
-    " SUNDIALS_INCLUDE_DIR = ${SUNDIALS_INCLUDE_DIR}"
-    " SUNDIALS_ROOT = ${SUNDIALS_ROOT}")
+                 " SUNDIALS_INCLUDE_DIR = ${SUNDIALS_INCLUDE_DIR}"
+                 " SUNDIALS_ROOT = ${SUNDIALS_ROOT}"
+  )
 endif()
 
 set(SUNDIALS_INCLUDE_DIRS
-  "${SUNDIALS_INCLUDE_DIR}"
-  "${SUNDIALS_INCLUDE_DIR}/.."
-  CACHE STRING "SUNDIALS include directories")
+    "${SUNDIALS_INCLUDE_DIR}" "${SUNDIALS_INCLUDE_DIR}/.."
+    CACHE STRING "SUNDIALS include directories"
+)
 
-find_library(SUNDIALS_nvecparallel_LIBRARY
+find_library(
+  SUNDIALS_nvecparallel_LIBRARY
   NAMES sundials_nvecparallel
-  HINTS
-    "${SUNDIALS_INCLUDE_DIR}/.."
-    "${SUNDIALS_INCLUDE_DIR}/../.."
+  HINTS "${SUNDIALS_INCLUDE_DIR}/.." "${SUNDIALS_INCLUDE_DIR}/../.."
   PATH_SUFFIXES lib lib64
-  )
+)
 
-if (SUNDIALS_DEBUG)
-  message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
-    " SUNDIALS_nvecparallel_LIBRARY = ${SUNDIALS_nvecparallel_LIBRARY}")
+if(SUNDIALS_DEBUG)
+  message(
+    STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+           " SUNDIALS_nvecparallel_LIBRARY = ${SUNDIALS_nvecparallel_LIBRARY}"
+  )
 endif()
 
-if (NOT SUNDIALS_nvecparallel_LIBRARY)
+if(NOT SUNDIALS_nvecparallel_LIBRARY)
   message(FATAL_ERROR "Sundials requested but SUNDIALS nvecparallel not found.")
 endif()
 list(APPEND SUNDIALS_LIBRARIES "${SUNDIALS_nvecparallel_LIBRARY}")
@@ -81,62 +82,86 @@ mark_as_advanced(SUNDIALS_nvecparallel_LIBRARY)
 
 set(SUNDIALS_COMPONENTS arkode cvode ida)
 
-foreach (LIB ${SUNDIALS_COMPONENTS})
-  find_library(SUNDIALS_${LIB}_LIBRARY
+foreach(LIB ${SUNDIALS_COMPONENTS})
+  find_library(
+    SUNDIALS_${LIB}_LIBRARY
     NAMES sundials_${LIB}
-    HINTS
-      "${SUNDIALS_INCLUDE_DIR}/.."
-      "${SUNDIALS_INCLUDE_DIR}/../.."
+    HINTS "${SUNDIALS_INCLUDE_DIR}/.." "${SUNDIALS_INCLUDE_DIR}/../.."
     PATH_SUFFIXES lib lib64
-    )
+  )
 
-  if (SUNDIALS_DEBUG)
+  if(SUNDIALS_DEBUG)
     message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
-      " SUNDIALS_${LIB}_LIBRARY = ${SUNDIALS_${LIB}_LIBRARY}")
+                   " SUNDIALS_${LIB}_LIBRARY = ${SUNDIALS_${LIB}_LIBRARY}"
+    )
   endif()
 
-  if (NOT SUNDIALS_${LIB}_LIBRARY)
+  if(NOT SUNDIALS_${LIB}_LIBRARY)
     message(FATAL_ERROR "Sundials requested but SUNDIALS ${LIB} not found.")
   endif()
   list(APPEND SUNDIALS_LIBRARIES "${SUNDIALS_${LIB}_LIBRARY}")
   mark_as_advanced(SUNDIALS_${LIB}_LIBRARY)
 endforeach()
 
-if (SUNDIALS_INCLUDE_DIR)
+if(SUNDIALS_INCLUDE_DIR)
   file(READ "${SUNDIALS_INCLUDE_DIR}/sundials_config.h" SUNDIALS_CONFIG_FILE)
   set(SUNDIALS_VERSION_REGEX_PATTERN
-    ".*#define SUNDIALS_VERSION \"([0-9]+)\\.([0-9]+)\\.([0-9]+)\".*")
-  string(REGEX MATCH ${SUNDIALS_VERSION_REGEX_PATTERN} _ "${SUNDIALS_CONFIG_FILE}")
-  set(SUNDIALS_VERSION_MAJOR ${CMAKE_MATCH_1} CACHE STRING "")
-  set(SUNDIALS_VERSION_MINOR ${CMAKE_MATCH_2} CACHE STRING "")
-  set(SUNDIALS_VERSION_PATCH ${CMAKE_MATCH_3} CACHE STRING "")
-  set(SUNDIALS_VERSION "${SUNDIALS_VERSION_MAJOR}.${SUNDIALS_VERSION_MINOR}.${SUNDIALS_VERSION_PATCH}" CACHE STRING "SUNDIALS version")
+      ".*#define SUNDIALS_VERSION \"([0-9]+)\\.([0-9]+)\\.([0-9]+)\".*"
+  )
+  string(REGEX MATCH ${SUNDIALS_VERSION_REGEX_PATTERN} _
+               "${SUNDIALS_CONFIG_FILE}"
+  )
+  set(SUNDIALS_VERSION_MAJOR
+      ${CMAKE_MATCH_1}
+      CACHE STRING ""
+  )
+  set(SUNDIALS_VERSION_MINOR
+      ${CMAKE_MATCH_2}
+      CACHE STRING ""
+  )
+  set(SUNDIALS_VERSION_PATCH
+      ${CMAKE_MATCH_3}
+      CACHE STRING ""
+  )
+  set(SUNDIALS_VERSION
+      "${SUNDIALS_VERSION_MAJOR}.${SUNDIALS_VERSION_MINOR}.${SUNDIALS_VERSION_PATCH}"
+      CACHE STRING "SUNDIALS version"
+  )
 endif()
 
-if (SUNDIALS_DEBUG)
+if(SUNDIALS_DEBUG)
   message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
-    " SUNDIALS_VERSION = ${SUNDIALS_VERSION}")
+                 " SUNDIALS_VERSION = ${SUNDIALS_VERSION}"
+  )
 endif()
 
-find_package_handle_standard_args(SUNDIALS
+find_package_handle_standard_args(
+  SUNDIALS
   REQUIRED_VARS SUNDIALS_LIBRARIES SUNDIALS_INCLUDE_DIR SUNDIALS_INCLUDE_DIRS
   VERSION_VAR SUNDIALS_VERSION
-  )
+)
 
-set(SUNDIALS_LIBRARIES "${SUNDIALS_LIBRARIES}" CACHE STRING "SUNDIALS libraries")
+set(SUNDIALS_LIBRARIES
+    "${SUNDIALS_LIBRARIES}"
+    CACHE STRING "SUNDIALS libraries"
+)
 mark_as_advanced(SUNDIALS_LIBRARIES SUNDIALS_INCLUDE_DIR SUNDIALS_INCLUDE_DIRS)
 
-if (SUNDIALS_FOUND AND NOT TARGET SUNDIALS::SUNDIALS)
+if(SUNDIALS_FOUND AND NOT TARGET SUNDIALS::SUNDIALS)
   add_library(SUNDIALS::nvecparallel UNKNOWN IMPORTED)
-  set_target_properties(SUNDIALS::nvecparallel PROPERTIES
-    IMPORTED_LOCATION "${SUNDIALS_nvecparallel_LIBRARY}"
-    INTERFACE_INCLUDE_DIRECTORIES "${SUNDIALS_INCLUDE_DIRS}")
+  set_target_properties(
+    SUNDIALS::nvecparallel
+    PROPERTIES IMPORTED_LOCATION "${SUNDIALS_nvecparallel_LIBRARY}"
+               INTERFACE_INCLUDE_DIRECTORIES "${SUNDIALS_INCLUDE_DIRS}"
+  )
 
-  foreach (LIB ${SUNDIALS_COMPONENTS})  
+  foreach(LIB ${SUNDIALS_COMPONENTS})
     add_library(SUNDIALS::${LIB} UNKNOWN IMPORTED)
-    set_target_properties(SUNDIALS::${LIB} PROPERTIES
-      IMPORTED_LOCATION "${SUNDIALS_${LIB}_LIBRARY}"
-      INTERFACE_INCLUDE_DIRECTORIES "${SUNDIALS_INCLUDE_DIRS}"
-      INTERFACE_LINK_LIBRARIES SUNDIALS::nvecparallel)
+    set_target_properties(
+      SUNDIALS::${LIB}
+      PROPERTIES IMPORTED_LOCATION "${SUNDIALS_${LIB}_LIBRARY}"
+                 INTERFACE_INCLUDE_DIRECTORIES "${SUNDIALS_INCLUDE_DIRS}"
+                 INTERFACE_LINK_LIBRARIES SUNDIALS::nvecparallel
+    )
   endforeach()
 endif()

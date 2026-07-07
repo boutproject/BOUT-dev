@@ -12,7 +12,6 @@ from boututils.run_wrapper import build_and_log, shell, launch
 from boutdata.collect import collect
 from sys import stdout, exit
 
-
 build_and_log("parallel inversion test")
 
 flags_src = [

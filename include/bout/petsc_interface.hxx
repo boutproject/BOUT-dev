@@ -40,18 +40,57 @@
 #include <type_traits>
 #include <vector>
 
+#include <bout/array.hxx>
+#include <bout/assert.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/globalindexer.hxx>
 #include <bout/mesh.hxx>
+#include <bout/openmpwrap.hxx>
 #include <bout/operatorstencil.hxx>
 #include <bout/paralleltransform.hxx>
 #include <bout/petsclib.hxx>
 #include <bout/region.hxx>
 #include <bout/traits.hxx>
 
+#include <petscmat.h>
+#include <petscsys.h>
 #include <petscsystypes.h>
 #include <petscvec.h>
+#include <petscversion.h>
+
+#include <utility>
+
+namespace bout {
+namespace petsc {
+struct VecDeleter {
+  void operator()(Vec* vec_ptr) const {
+    VecDestroy(vec_ptr);
+    delete vec_ptr;
+  }
+};
+
+/// Unique pointer wrapper around PETSc Vec
+/// Assumes that the Vec has been allocated on the heap.
+///
+/// e.g. UniqueVec(new Vec{});
+using UniqueVec = std::unique_ptr<Vec, VecDeleter>;
+
+struct MatDeleter {
+  void operator()(Mat* mat_ptr) const {
+    MatDestroy(mat_ptr);
+    delete mat_ptr;
+  }
+};
+
+/// Unique pointer wrapper around PETSc Mat
+/// Assumes that the Mat has been allocated on the heap.
+///
+/// e.g. UniqueMat(new Mat{});
+using UniqueMat = std::unique_ptr<Mat, MatDeleter>;
+} // namespace petsc
+} // namespace bout
 
 /*!
  * A class which wraps PETSc vector objects, allowing them to be
@@ -61,7 +100,7 @@
 template <class T>
 class PetscVector;
 template <class T>
-void swap(PetscVector<T>& first, PetscVector<T>& second);
+void swap(PetscVector<T>& first, PetscVector<T>& second) noexcept;
 
 template <class T>
 inline MPI_Comm getComm([[maybe_unused]] const T& field) {
@@ -70,7 +109,7 @@ inline MPI_Comm getComm([[maybe_unused]] const T& field) {
 
 template <>
 inline MPI_Comm getComm([[maybe_unused]] const FieldPerp& field) {
-  return field.getMesh()->getXcomm();
+  return field.getMesh()->getXZcomm();
 }
 
 template <class T>
@@ -78,13 +117,6 @@ class PetscVector {
 public:
   static_assert(bout::utils::is_Field_v<T>, "PetscVector only works with Fields");
   using ind_type = typename T::ind_type;
-
-  struct VectorDeleter {
-    void operator()(Vec* vec) const {
-      VecDestroy(vec);
-      delete vec;
-    }
-  };
 
   PetscVector() : vector(new Vec{}) {}
   ~PetscVector() = default;
@@ -151,7 +183,7 @@ public:
     return *this;
   }
 
-  friend void swap<T>(PetscVector<T>& first, PetscVector<T>& second);
+  friend void swap<T>(PetscVector<T>& first, PetscVector<T>& second) noexcept;
 
   BoutReal& operator()(const ind_type& index) {
 #if CHECKLEVEL >= 1
@@ -230,36 +262,29 @@ public:
   const Vec* get() const { return vector.get(); }
 
 private:
-  PetscLib lib{};
-  std::unique_ptr<Vec, VectorDeleter> vector = nullptr;
+  PetscLib lib;
+  bout::petsc::UniqueVec vector = nullptr;
   IndexerPtr<T> indexConverter{};
   CELL_LOC location = CELL_LOC::deflt;
   bool initialised = false;
-  Array<BoutReal> vector_values{};
+  Array<BoutReal> vector_values;
 };
 
 /*!
- * A class which wraps PETSc vector objects, allowing them to be
+ * A class which wraps PETSc matrix objects, allowing them to be
  * indexed using the BOUT++ scheme. It provides the option of setting
  * a y-offset that interpolates onto field lines.
  */
 template <class T>
 class PetscMatrix;
 template <class T>
-void swap(PetscMatrix<T>& first, PetscMatrix<T>& second);
+void swap(PetscMatrix<T>& first, PetscMatrix<T>& second) noexcept;
 
 template <class T>
 class PetscMatrix {
 public:
   static_assert(bout::utils::is_Field_v<T>, "PetscMatrix only works with Fields");
   using ind_type = typename T::ind_type;
-
-  struct MatrixDeleter {
-    void operator()(Mat* mat) const {
-      MatDestroy(mat);
-      delete mat;
-    }
-  };
 
   /// Default constructor does nothing
   PetscMatrix() : matrix(new Mat()) {}
@@ -280,11 +305,11 @@ public:
   }
 
   // Construct a matrix capable of operating on the specified field,
-  // preallocating memory if requeted and possible.
+  // preallocating memory if requested and possible.
   PetscMatrix(IndexerPtr<T> indConverter, bool preallocate = true)
       : matrix(new Mat()), indexConverter(indConverter),
         pt(&indConverter->getMesh()->getCoordinates()->getParallelTransform()) {
-    MPI_Comm comm = std::is_same_v<T, FieldPerp> ? indConverter->getMesh()->getXcomm()
+    MPI_Comm comm = std::is_same_v<T, FieldPerp> ? indConverter->getMesh()->getXZcomm()
                                                  : BoutComm::get();
     const int size = indexConverter->size();
 
@@ -318,7 +343,7 @@ public:
     rhs.initialised = false;
     return *this;
   }
-  friend void swap<T>(PetscMatrix<T>& first, PetscMatrix<T>& second);
+  friend void swap<T>(PetscMatrix<T>& first, PetscMatrix<T>& second) noexcept;
 
   /*!
    * A class which is used to assign to a particular element of a PETSc
@@ -346,7 +371,7 @@ public:
       ASSERT2(positions.size() == weights.size());
 #if CHECK > 2
       for (const auto val : weights) {
-        ASSERT3(finite(val));
+        ASSERT3(std::isfinite(val));
       }
 #endif
       if (positions.empty()) {
@@ -363,29 +388,29 @@ public:
       }
     }
     Element& operator=(const Element& other) {
-      AUTO_TRACE();
+
       if (this == &other) {
         return *this;
       }
-      ASSERT3(finite(static_cast<BoutReal>(other)));
+      ASSERT3(std::isfinite(static_cast<BoutReal>(other)));
       *this = static_cast<BoutReal>(other);
       return *this;
     }
     Element& operator=(BoutReal val) {
-      AUTO_TRACE();
-      ASSERT3(finite(val));
+
+      ASSERT3(std::isfinite(val));
       value = val;
       setValues(val, INSERT_VALUES);
       return *this;
     }
     Element& operator+=(BoutReal val) {
-      AUTO_TRACE();
-      ASSERT3(finite(val));
+
+      ASSERT3(std::isfinite(val));
       auto columnPosition = std::find(positions.begin(), positions.end(), petscCol);
       if (columnPosition != positions.end()) {
         const int index = std::distance(positions.begin(), columnPosition);
         value += weights[index] * val;
-        ASSERT3(finite(value));
+        ASSERT3(std::isfinite(value));
       }
       setValues(val, ADD_VALUES);
       return *this;
@@ -394,7 +419,6 @@ public:
 
   private:
     void setValues(BoutReal val, InsertMode mode) {
-      TRACE("PetscMatrix setting values at ({}, {})", petscRow, petscCol);
       ASSERT3(positions.size() > 0);
       std::vector<PetscScalar> values;
       std::transform(weights.begin(), weights.end(), std::back_inserter(values),
@@ -405,7 +429,8 @@ public:
       status = MatSetValues(*petscMatrix, 1, &petscRow, positions.size(),
                             positions.data(), values.data(), mode);
       if (status != 0) {
-        throw BoutException("Error when setting elements of a PETSc matrix.");
+        throw BoutException("Error when setting elements of a PETSc matrix at ({}, {})",
+                            petscRow, petscCol);
       }
     }
     Mat* petscMatrix;
@@ -531,7 +556,7 @@ private:
  * vice versa.
  */
 template <class T>
-void swap(PetscVector<T>& first, PetscVector<T>& second) {
+void swap(PetscVector<T>& first, PetscVector<T>& second) noexcept {
   std::swap(first.vector, second.vector);
   std::swap(first.indexConverter, second.indexConverter);
   std::swap(first.location, second.location);
@@ -543,7 +568,7 @@ void swap(PetscVector<T>& first, PetscVector<T>& second) {
  * vice versa.
  */
 template <class T>
-void swap(PetscMatrix<T>& first, PetscMatrix<T>& second) {
+void swap(PetscMatrix<T>& first, PetscMatrix<T>& second) noexcept {
   std::swap(first.matrix, second.matrix);
   std::swap(first.indexConverter, second.indexConverter);
   std::swap(first.pt, second.pt);

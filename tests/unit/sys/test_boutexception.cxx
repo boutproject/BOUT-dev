@@ -1,5 +1,3 @@
-#include "bout/build_defines.hxx"
-
 #include "test_extras.hxx"
 #include "bout/boutexception.hxx"
 #include "gtest/gtest.h"
@@ -7,52 +5,51 @@
 #include <fmt/ranges.h>
 
 #include <string>
-#include <string_view>
 #include <vector>
 
-TEST(BoutExceptionTest, ThrowCorrect) {
+// NOLINTNEXTLINE(cppcoreguidelines-special-member-functions)
+struct BoutExceptionTest : public ::testing::Test {
+  BoutExceptionTest() { BoutException::enableBacktrace(); }
+  ~BoutExceptionTest() override { BoutException::disableBacktrace(); }
+};
+
+TEST_F(BoutExceptionTest, ThrowCorrect) {
   EXPECT_THROW(throw BoutException("test"), BoutException);
 }
 
-TEST(BoutExceptionTest, What) {
+TEST_F(BoutExceptionTest, What) {
   std::string test_message{"Test message"};
   try {
     throw BoutException(test_message);
   } catch (const BoutException& e) {
-    EXPECT_EQ(e.what(), test_message);
+    EXPECT_TRUE(IsSubString(e.what(), test_message));
   }
   try {
     throw BoutException("this is {}", "second");
   } catch (const BoutException& e) {
     std::string message(e.what());
-    EXPECT_EQ(message, "this is second");
+    EXPECT_TRUE(IsSubString(message, "this is second"));
   }
 }
 
-TEST(BoutExceptionTest, GetBacktrace) {
+TEST_F(BoutExceptionTest, GetBacktrace) {
   std::string test_message{"Test message"};
   try {
     throw BoutException(test_message);
   } catch (const BoutException& e) {
-    std::string expected_1{"[bt] #1"};
-    std::string expected_2{"serial_tests"};
-#if BOUT_USE_BACKTRACE
     // Should be able to find something about backtrace
-    EXPECT_TRUE(IsSubString(e.getBacktrace(), expected_1));
-    EXPECT_TRUE(IsSubString(e.getBacktrace(), expected_2));
-#else
-    // Should *not* be able to find something about backtrace
-    EXPECT_FALSE(IsSubString(e.getBacktrace(), expected_1));
-    EXPECT_FALSE(IsSubString(e.getBacktrace(), expected_2));
-#endif
+    EXPECT_TRUE(IsSubString(e.what(), "#2"));
+    // We should be able to see either the main source file or the executable name
+    EXPECT_TRUE(IsSubString(e.what(), "bout_test_main")
+                || IsSubString(e.what(), "serial_tests"));
   }
 }
 
-TEST(BoutExceptionTest, FmtJoin) {
+TEST_F(BoutExceptionTest, FmtJoin) {
   const std::vector things = {1, 2, 3, 4};
-  constexpr std::string_view expected = "list: 1, 2, 3, 4";
+  const std::string expected = "list: 1, 2, 3, 4";
   const BoutException exception{"list: {}", fmt::join(things, ", ")};
-  EXPECT_EQ(exception.what(), expected);
+  EXPECT_TRUE(IsSubString(std::string{exception.what()}, expected));
 }
 
 TEST(BoutRhsFailTest, ThrowCorrect) {

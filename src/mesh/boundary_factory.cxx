@@ -1,11 +1,14 @@
+#include "bout/assert.hxx"
 #include "bout/parallel_boundary_op.hxx"
 #include "bout/parallel_boundary_region.hxx"
 #include <bout/boundary_factory.hxx>
+#include <bout/boundary_region_iter.hxx>
 #include <bout/boundary_standard.hxx>
 #include <bout/globals.hxx>
 #include <bout/options.hxx>
 #include <bout/utils.hxx>
 
+#include <array>
 #include <list>
 #include <map>
 #include <string>
@@ -107,7 +110,8 @@ BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* 
       // Clone the boundary operation, passing the region to operate over,
       // an empty args list and empty keyword map
       list<string> args;
-      return pop->clone(dynamic_cast<BoundaryRegionPar*>(region), args, {});
+      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionFCI*>(region), args,
+                        {});
     } else {
       // Perpendicular boundary
       BoundaryOp* op = findBoundaryOp(trim(name));
@@ -118,7 +122,7 @@ BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* 
       // Clone the boundary operation, passing the region to operate over,
       // an empty args list and empty keyword map
       list<string> args;
-      return op->clone(dynamic_cast<BoundaryRegion*>(region), args, {});
+      return op->clone(region->getLegacyPointer(), args, {});
     }
   }
   // Contains a bracket. Find the last bracket and remove
@@ -194,19 +198,28 @@ BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* 
     return mod->cloneMod(op, arglist);
   }
 
-  if (region->isParallel) {
-    // Parallel boundary
-    BoundaryOpPar* pop = findBoundaryOpPar(trim(func));
-    if (pop != nullptr) {
-      // An operation with arguments
-      return pop->clone(dynamic_cast<BoundaryRegionPar*>(region), arglist, keywords);
+  BoundaryOpPar* pop = findBoundaryOpPar(trim(func));
+  if (pop != nullptr) {
+    // An operation with arguments
+    if (region->isParallel) {
+      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionFCI*>(region), arglist,
+                        keywords);
     }
-  } else {
-    // Perpendicular boundary
+    if (region->isX) {
+      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionX*>(region), arglist,
+                        keywords);
+    }
+    if (region->isY) {
+      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionY*>(region), arglist,
+                        keywords);
+    }
+  }
+  if (!region->isParallel) {
+    // Legacy perpendicular boundary
     BoundaryOp* op = findBoundaryOp(trim(func));
     if (op != nullptr) {
       // An operation with arguments
-      return op->clone(dynamic_cast<BoundaryRegion*>(region), arglist, keywords);
+      return op->clone(region->getLegacyPointer(), arglist, keywords);
     }
   }
 
@@ -231,45 +244,82 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string& varname,
 
   string prefix("bndry_");
 
-  string side;
+  std::array<string, 5> sides;
+  sides[0] = region->label;
+  ASSERT2(region->location != BNDRY_INVALID)
   switch (region->location) {
   case BNDRY_XIN: {
-    side = "xin";
+    sides[1] = "xin";
     break;
   }
   case BNDRY_XOUT: {
-    side = "xout";
+    sides[1] = "xout";
     break;
   }
   case BNDRY_YDOWN: {
-    side = "ydown";
+    sides[1] = "ydown";
     break;
   }
   case BNDRY_YUP: {
-    side = "yup";
+    sides[1] = "yup";
     break;
   }
   case BNDRY_PAR_FWD_XIN: {
-    side = "par_yup_xin";
+    sides[1] = "par_yup_xin";
     break;
   }
   case BNDRY_PAR_FWD_XOUT: {
-    side = "par_yup_xout";
+    sides[1] = "par_yup_xout";
     break;
   }
   case BNDRY_PAR_BKWD_XIN: {
-    side = "par_ydown_xin";
+    sides[1] = "par_ydown_xin";
     break;
   }
   case BNDRY_PAR_BKWD_XOUT: {
-    side = "par_ydown_xout";
+    sides[1] = "par_ydown_xout";
     break;
   }
   default: {
-    side = "all";
+    sides[1] = "all";
     break;
   }
   }
+
+  switch (region->location) {
+  case BNDRY_PAR_FWD_XIN:
+  case BNDRY_PAR_BKWD_XIN: {
+    sides[2] = "par_xin";
+    break;
+  }
+  case BNDRY_PAR_BKWD_XOUT:
+  case BNDRY_PAR_FWD_XOUT: {
+    sides[2] = "par_xout";
+    break;
+  }
+  default: {
+    sides[2] = "all";
+    break;
+  }
+  }
+  switch (region->location) {
+  case BNDRY_PAR_FWD_XIN:
+  case BNDRY_PAR_FWD_XOUT: {
+    sides[3] = "par_yup";
+    break;
+  }
+  case BNDRY_PAR_BKWD_XIN:
+  case BNDRY_PAR_BKWD_XOUT: {
+    sides[3] = "par_ydown";
+    break;
+  }
+  default: {
+    sides[3] = "all";
+    break;
+  }
+  }
+
+  sides[4] = region->isParallel ? "par_all" : "all";
 
   // Get options
   Options* options = Options::getRoot();
@@ -278,27 +328,10 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string& varname,
   Options* varOpts = options->getSection(varname);
   string set;
 
-  /// First try looking for (var, region)
-  if (varOpts->isSet(prefix + region->label)) {
-    varOpts->get(prefix + region->label, set, "");
-    return create(set, region);
-  }
-
-  /// Then (var, side)
-  if (varOpts->isSet(prefix + side)) {
-    varOpts->get(prefix + side, set, "");
-    return create(set, region);
-  }
-
-  /// Then (var, all)
-  if (region->isParallel) {
-    if (varOpts->isSet(prefix + "par_all")) {
-      varOpts->get(prefix + "par_all", set, "");
-      return create(set, region);
-    }
-  } else {
-    if (varOpts->isSet(prefix + "all")) {
-      varOpts->get(prefix + "all", set, "");
+  /// First try looking for (var, ...)
+  for (const auto& side : sides) {
+    if (varOpts->isSet(prefix + side)) {
+      varOpts->get(prefix + side, set, "");
       return create(set, region);
     }
   }
@@ -306,16 +339,13 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string& varname,
   // Get the "all" options
   varOpts = options->getSection("all");
 
-  /// Then (all, region)
-  if (varOpts->isSet(prefix + region->label)) {
-    varOpts->get(prefix + region->label, set, "");
-    return create(set, region);
-  }
-
-  /// Then (all, side)
-  if (varOpts->isSet(prefix + side)) {
-    varOpts->get(prefix + side, set, "");
-    return create(set, region);
+  /// First try looking for (all, ...)
+  for (const auto& side : sides) {
+    if (varOpts->isSet(prefix + side)) {
+      varOpts->get(prefix + side, set,
+                   region->isParallel ? "parallel_dirichlet_o2" : "dirichlet");
+      return create(set, region);
+    }
   }
 
   /// Then (all, all)

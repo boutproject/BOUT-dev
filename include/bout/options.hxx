@@ -52,6 +52,7 @@ class Options;
 #include "bout/utils.hxx"
 
 #include <fmt/core.h>
+#include <fmt/format.h>
 
 #include <cmath>
 #include <functional>
@@ -73,19 +74,19 @@ class Options;
  * which can be used as a map.
  *
  *     Options options;
- *     
+ *
  *     // Set values
  *     options["key"] = 1.0;
  *
  *     // Get values. Throws BoutException if not found
- *     int val = options["key"]; // Sets val to 1 
+ *     int val = options["key"]; // Sets val to 1
  *
  *     // Return as specified type. Throws BoutException if not found
  *     BoutReal var = options["key"].as<BoutReal>();
  *
  *     // A default value can be used if key is not found
  *     BoutReal value = options["pi"].withDefault(3.14);
- *    
+ *
  *     // Assign value with source label. Throws if already has a value from same source
  *     options["newkey"].assign(1.0, "some source");
  *
@@ -93,7 +94,7 @@ class Options;
  *     options["newkey"].force(2.0, "some source");
  *
  * A legacy interface is also supported:
- * 
+ *
  *     options.set("key", 1.0, "code"); // Sets a key from source "code"
  *
  *     int val;
@@ -118,9 +119,9 @@ class Options;
  *
  * Each Options object can also contain any number of sections, which are
  * themselves Options objects.
- * 
+ *
  *     Options &section = options["section"];
- * 
+ *
  * which can be nested:
  *
  *     options["section"]["subsection"]["value"] = 3;
@@ -133,13 +134,13 @@ class Options;
  *
  * e.g.
  *     options->getSection("section")->getSection("subsection")->set("value", 3);
- * 
+ *
  * Options also know about their parents:
  *
  *     Options &parent = section.parent();
- *     
+ *
  * or
- * 
+ *
  *     Options *parent = section->getParent();
  *
  * Root options object
@@ -149,8 +150,8 @@ class Options;
  * there is a global singleton Options object which can be accessed with a static function
  *
  *    Options &root = Options::root();
- * 
- * or 
+ *
+ * or
  *
  *    Options *root = Options::getRoot();
  *
@@ -192,7 +193,7 @@ public:
   /// @param[in] parent        Parent object
   /// @param[in] sectionName   Name of the section, including path from the root
   Options(Options* parent_instance, std::string full_name)
-      : parent_instance(parent_instance), full_name(std::move(full_name)){};
+      : parent_instance(parent_instance), full_name(std::move(full_name)) {};
 
   /// Initialise with a value
   /// These enable Options to be constructed using initializer lists
@@ -440,6 +441,13 @@ public:
     return inputvalue;
   }
 
+  template <typename ResT, typename L, typename R, typename Func>
+  ResT operator=(const BinaryExpr<ResT, L, R, Func>& expr) {
+    ResT value{expr};
+    assign<ResT>(value);
+    return value;
+  }
+
   /// Assign a value to the option.
   /// This will throw an exception if already has a value
   ///
@@ -626,8 +634,8 @@ public:
       // Option not found. Copy the value from the default.
       this->_set_no_check(def.value, DEFAULT_SOURCE);
 
-      output_info << _("\tOption ") << full_name << " = " << def.full_name << " ("
-                  << DEFAULT_SOURCE << ")\n";
+      output_info.write("{}{} = {}({})\n", _("\tOption "), full_name, def.full_name,
+                        DEFAULT_SOURCE);
     } else {
       // Check if this was previously set as a default option
       if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
@@ -911,8 +919,8 @@ private:
                       << ")\n";
         } else {
           throw BoutException(
-              _("Options: Setting a value from same source ({:s}) to new value "
-                "'{:s}' - old value was '{:s}'."),
+              _f("Options: Setting a value from same source ({:s}) to new value "
+                 "'{:s}' - old value was '{:s}'."),
               source, toString(val), bout::utils::variantToString(value));
         }
       }
@@ -1012,6 +1020,9 @@ auto Options::as(const Tensor<int>& similar_to) const -> Tensor<int>;
 /// Convert \p value to string
 std::string toString(const Options& value);
 
+/// Save the parallel fields
+void saveParallel(Options& opt, const std::string& name, const Field3D& tosave);
+
 /// Output a stringified \p value to a stream
 ///
 /// This is templated to avoid implict casting: anything is
@@ -1043,7 +1054,40 @@ namespace details {
 /// so that we can put the function definitions in the .cxx file,
 /// avoiding lengthy recompilation if we change it
 struct OptionsFormatterBase {
-  auto parse(fmt::format_parse_context& ctx) -> fmt::format_parse_context::iterator;
+  constexpr auto parse(fmt::format_parse_context& ctx) {
+    const auto* it = ctx.begin();
+    const auto* const end = ctx.end();
+
+    while (it != end and *it != '}') {
+      switch (*it) {
+      case 'd':
+        docstrings = true;
+        ++it;
+        break;
+      case 'i':
+        inline_section_names = true;
+        ++it;
+        break;
+      case 'k':
+        key_only = true;
+        ++it;
+        break;
+      case 's':
+        source = true;
+        ++it;
+        break;
+      case 'u':
+        unused = true;
+        ++it;
+        break;
+      default:
+        throw fmt::format_error("invalid format for 'Options'");
+      }
+    }
+
+    return it;
+  }
+
   auto format(const Options& options, fmt::format_context& ctx) const
       -> fmt::format_context::iterator;
 
@@ -1060,8 +1104,6 @@ private:
   bool key_only{false};
   /// Include the 'source' attribute, if present
   bool source{false};
-  /// Format string to passed down to subsections
-  std::string format_string;
 };
 } // namespace details
 } // namespace bout

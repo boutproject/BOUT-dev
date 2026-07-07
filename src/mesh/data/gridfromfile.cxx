@@ -1,26 +1,27 @@
 
-#include "bout/traits.hxx"
-#include <bout/griddata.hxx>
-
 #include <bout/array.hxx>
+#include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/fft.hxx>
-#include <bout/msg_stack.hxx>
+#include <bout/griddata.hxx>
 #include <bout/options_io.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
+#include <bout/traits.hxx>
 #include <bout/unused.hxx>
 #include <bout/utils.hxx>
 
 #include <algorithm>
 #include <iterator>
+#include <string>
 #include <utility>
+#include <vector>
 
 GridFile::GridFile(std::string gridfilename)
     : GridDataSource(true), data(bout::OptionsIO::create(gridfilename)->read()),
       filename(std::move(gridfilename)) {
-  TRACE("GridFile constructor");
 
   // Get number of y-boundary guard cells saved in the grid file
   grid_yguards = data["y_boundary_guards"].withDefault<int>(0);
@@ -34,7 +35,7 @@ GridFile::GridFile(std::string gridfilename)
  * Tests whether a variable exists in the file
  *
  */
-bool GridFile::hasVar(const std::string& name) { return data.isSet(name); }
+bool GridFile::hasVar(const std::string& name) const { return data.isSet(name); }
 
 /*!
  * Read a string from file. If the string is not
@@ -60,7 +61,7 @@ bool GridFile::hasVar(const std::string& name) { return data.isSet(name); }
 bool GridFile::get(Mesh* UNUSED(m), std::string& sval, const std::string& name,
                    const std::string& def) {
   Timer timer("io");
-  TRACE("GridFile::get(std::string)");
+
   const bool success = data.isSet(name);
   if (not success) {
     // Override any previously set defaults
@@ -93,7 +94,7 @@ bool GridFile::get(Mesh* UNUSED(m), std::string& sval, const std::string& name,
  */
 bool GridFile::get(Mesh* UNUSED(m), int& ival, const std::string& name, int def) {
   Timer timer("io");
-  TRACE("GridFile::get(int)");
+
   const bool success = data.isSet(name);
   if (not success) {
     // Override any previously set defaults
@@ -110,7 +111,7 @@ bool GridFile::get(Mesh* UNUSED(m), int& ival, const std::string& name, int def)
 bool GridFile::get(Mesh* UNUSED(m), BoutReal& rval, const std::string& name,
                    BoutReal def) {
   Timer timer("io");
-  TRACE("GridFile::get(BoutReal)");
+
   const bool success = data.isSet(name);
   if (not success) {
     // Override any previously set defaults
@@ -122,7 +123,7 @@ bool GridFile::get(Mesh* UNUSED(m), BoutReal& rval, const std::string& name,
 
 /*!
  * Reads a 2D, 3D or FieldPerp field variable from a file
- * 
+ *
  * Successfully reads Field2D or FieldPerp if the variable in the file is 0-D or 2-D.
  * Successfully reads Field3D if the variable in the file is 0-D, 2-D or 3-D.
  */
@@ -143,7 +144,6 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
       "templated GridFile::getField only works for Field2D, Field3D or FieldPerp");
 
   Timer timer("io");
-  AUTO_TRACE();
 
   if (not data.isSet(name)) {
     // Variable not found
@@ -200,7 +200,10 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
   ///Ghost region widths.
   const int mxg = (m->LocalNx - (m->xend - m->xstart + 1)) / 2;
   const int myg = (m->LocalNy - (m->yend - m->ystart + 1)) / 2;
-  ///Check that ghost region widths are in fact integers
+  // Check grid has cells
+  ASSERT1(m->LocalNx > 0);
+  ASSERT1(m->LocalNy > 0);
+  // Check that ghost region widths are in fact integers
   ASSERT1((m->LocalNx - (m->xend - m->xstart + 1)) % 2 == 0);
   ASSERT1((m->LocalNy - (m->yend - m->ystart + 1)) % 2 == 0);
 
@@ -210,9 +213,6 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
   // we pass
   int ys = m->OffsetY;
 
-  // Total number of y-boundary cells in grid file, used for check later.
-  // Value depends on if we are double-null or not.
-  int total_grid_yguards = 2 * grid_yguards;
   if (m->numberOfXPoints > 1) {
     ASSERT1(m->numberOfXPoints == 2);
     // Need to check if we are before or after the target in the middle of the
@@ -222,9 +222,6 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
       // Note: neither ny_inner nor OffsetY include guard cells
       ys += 2 * grid_yguards;
     }
-
-    // Add y-boundary guard cells at upper target
-    total_grid_yguards += 2 * grid_yguards;
   }
 
   // Index offsets into destination
@@ -381,7 +378,7 @@ void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd, int n
 
     for (int x = xs; x < xs + nx_to_read; ++x) {
       for (int y = ys; y < ys + ny_to_read; ++y) {
-        BoutReal const value = full_var(x, y);
+        const BoutReal value = full_var(x, y);
         for (int z = 0; z < var.getNz(); z++) {
           var(x - xs + xd, y - ys + yd, z) = value;
         }
@@ -469,11 +466,26 @@ void GridFile::readField(Mesh* m, const std::string& name, int UNUSED(ys), int U
   }
 }
 
+bool GridFile::get(Array<int>& var, const std::string& name) {
+  if (not data.isSet(name)) {
+    return false;
+  }
+  var = data[name].as<Array<int>>();
+  return true;
+}
+
+bool GridFile::get(Array<BoutReal>& var, const std::string& name) {
+  if (not data.isSet(name)) {
+    return false;
+  }
+  var = data[name].as<Array<BoutReal>>();
+  return true;
+}
+
 bool GridFile::get([[maybe_unused]] Mesh* m, [[maybe_unused]] std::vector<int>& var,
                    [[maybe_unused]] const std::string& name, [[maybe_unused]] int len,
                    [[maybe_unused]] int offset,
                    [[maybe_unused]] GridDataSource::Direction dir) {
-  TRACE("GridFile::get(vector<int>)");
 
   if (not data.isSet(name)) {
     return false;
@@ -499,7 +511,6 @@ bool GridFile::get([[maybe_unused]] Mesh* m, [[maybe_unused]] std::vector<int>& 
 
 bool GridFile::get(Mesh* UNUSED(m), std::vector<BoutReal>& var, const std::string& name,
                    int len, int offset, GridDataSource::Direction UNUSED(dir)) {
-  TRACE("GridFile::get(vector<BoutReal>)");
 
   if (not data.isSet(name)) {
     return false;

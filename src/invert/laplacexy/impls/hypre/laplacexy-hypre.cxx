@@ -1,6 +1,6 @@
 #include "bout/build_defines.hxx"
 
-#if BOUT_HAS_HYPRE
+#if BOUT_HAS_HYPRE and not BOUT_USE_METRIC_3D
 
 #include "laplacexy-hypre.hxx"
 
@@ -23,8 +23,10 @@
 #include <memory>
 
 #if BOUT_HAS_CUDA && defined(__CUDACC__)
-#define gpuErrchk(ans) \
-  { gpuAssert((ans), __FILE__, __LINE__); }
+#define gpuErrchk(ans)                    \
+  {                                       \
+    gpuAssert((ans), __FILE__, __LINE__); \
+  }
 inline void gpuAssert(cudaError_t code, const char* file, int line, bool abort = true) {
   if (code != cudaSuccess) {
     fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);

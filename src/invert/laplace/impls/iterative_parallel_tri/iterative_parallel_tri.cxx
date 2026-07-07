@@ -67,12 +67,14 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in, Solver* UNUSED
       au(ny, nmode), bu(ny, nmode), rl(nmode), ru(nmode), r1(ny, nmode), r2(ny, nmode),
       first_call(ny), x0saved(ny, 4, nmode), converged(nmode), fine_error(4, nmode) {
 
+  bout::fft::assertZSerial(*localmesh, "`ipt` inversion");
+
   A.setLocation(location);
   C.setLocation(location);
   D.setLocation(location);
 
   // Number of procs must be a factor of 2
-  const int n = localmesh->NXPE;
+  const int n = localmesh->getNXPE();
   if (!is_pow2(n)) {
     throw BoutException("LaplaceIPT error: NXPE must be a power of 2");
   }
@@ -234,7 +236,6 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
   ASSERT1(b.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
-  TRACE("LaplaceIPT::solve(const, const)");
 
   FieldPerp x{emptyFrom(b)};
 

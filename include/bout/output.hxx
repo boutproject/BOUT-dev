@@ -29,16 +29,18 @@ class Output;
 #ifndef BOUT_OUTPUT_H
 #define BOUT_OUTPUT_H
 
-#include "bout/multiostream.hxx"
 #include <fstream>
 #include <iostream>
 #include <string>
 
 #include "bout/assert.hxx"
+#include "bout/build_defines.hxx"
+#include "bout/multiostream.hxx"
 #include "bout/sys/gettext.hxx" // IWYU pragma: keep for gettext _() macro
 #include "bout/unused.hxx"
 
-#include "fmt/core.h"
+#include <fmt/base.h>
+#include <fmt/core.h>
 
 #include <utility>
 
@@ -80,9 +82,10 @@ public:
     open(filename);
   }
 
-  template <class S, class... Args>
-  Output(const S& format, Args&&... args)
-      : Output(fmt::format(format, std::forward<decltype(args)>(args)...)) {}
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  Output(fmt::format_string<Args...> format, Args&&... args)
+      : Output(fmt::vformat(format, fmt::make_format_args(args...))) {}
 
   ~Output() override { close(); }
 
@@ -92,9 +95,10 @@ public:
   /// Open an output log file
   int open(const std::string& filename);
 
-  template <class S, class... Args>
-  int open(const S& format, Args&&... args) {
-    return open(fmt::format(format, std::forward<decltype(args)>(args)...));
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  int open(fmt::format_string<Args...> format, Args&&... args) {
+    return open(fmt::vformat(format, fmt::make_format_args(args...)));
   }
 
   /// Close the log file
@@ -103,16 +107,18 @@ public:
   /// Write a string using fmt format
   virtual void write(const std::string& message);
 
-  template <class S, class... Args>
-  void write(const S& format, Args&&... args) {
-    write(fmt::format(format, std::forward<decltype(args)>(args)...));
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  void write(fmt::format_string<Args...> format, Args&&... args) {
+    write(fmt::vformat(format, fmt::make_format_args(args...)));
   }
   /// Same as write, but only to screen
   virtual void print(const std::string& message);
 
-  template <class S, class... Args>
-  void print(const S& format, Args&&... args) {
-    print(fmt::format(format, std::forward<decltype(args)>(args)...));
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  void print(fmt::format_string<Args...> format, Args&&... args) {
+    print(fmt::vformat(format, fmt::make_format_args(args...)));
   }
 
   /// Add an output stream. All output will be sent to all streams
@@ -160,24 +166,25 @@ class ConditionalOutput : public Output {
 public:
   /// @param[in] base    The Output object which will be written to if enabled
   /// @param[in] enabled Should this be enabled by default?
-  ConditionalOutput(Output* base, bool enabled = true) : base(base), enabled(enabled){};
+  ConditionalOutput(Output* base, bool enabled = true) : base(base), enabled(enabled) {};
 
   /// Constuctor taking ConditionalOutput. This allows several layers of conditions
   ///
   /// @param[in] base    A ConditionalOutput which will be written to if enabled
   ///
-  ConditionalOutput(ConditionalOutput* base) : base(base), enabled(base->enabled){};
+  ConditionalOutput(ConditionalOutput* base) : base(base), enabled(base->enabled) {};
 
   /// If enabled, writes a string using fmt formatting
   /// by calling base->write
   /// This string is then sent to log file and stdout (on processor 0)
   void write(const std::string& message) override;
 
-  template <class S, class... Args>
-  void write(const S& format, Args&&... args) {
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  void write(fmt::format_string<Args...> format, Args&&... args) {
     if (enabled) {
       ASSERT1(base != nullptr);
-      base->write(fmt::format(format, std::forward<decltype(args)>(args)...));
+      base->write(fmt::vformat(format, fmt::make_format_args(args...)));
     }
   }
 
@@ -185,11 +192,12 @@ public:
   /// note: unlike write, this is not also sent to log files
   void print(const std::string& message) override;
 
-  template <class S, class... Args>
-  void print(const S& format, Args&&... args) {
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  void print(fmt::format_string<Args...> format, Args&&... args) {
     if (enabled) {
       ASSERT1(base != nullptr);
-      base->print(fmt::format(format, std::forward<decltype(args)>(args)...));
+      base->print(fmt::vformat(format, fmt::make_format_args(args...)));
     }
   }
 
@@ -229,7 +237,7 @@ private:
 ///    output_debug << "debug message";
 /// compile but have no effect if BOUT_USE_OUTPUT_DEBUG is false
 template <typename T>
-DummyOutput& operator<<(DummyOutput& out, T const& UNUSED(t)) {
+DummyOutput& operator<<(DummyOutput& out, const T& UNUSED(t)) {
   return out;
 }
 
@@ -253,7 +261,7 @@ inline ConditionalOutput& operator<<(ConditionalOutput& out, stream_manipulator 
 }
 
 template <typename T>
-ConditionalOutput& operator<<(ConditionalOutput& out, T const& t) {
+ConditionalOutput& operator<<(ConditionalOutput& out, const T& t) {
   if (out.isEnabled()) {
     *out.getBase() << t;
   }

@@ -1,16 +1,16 @@
 /**************************************************************************
- * Perpendicular Laplacian inversion. 
+ * Perpendicular Laplacian inversion.
  *                           PARALLEL CODE - SIMPLE ALGORITHM
- * 
+ *
  * I'm just calling this Simple Parallel Tridag. Naive parallelisation of
  * the serial code. For use as a reference case.
- * 
+ *
  * Overlap calculation / communication of poloidal slices to achieve some
  * parallelism.
  *
  * Changelog
  * ---------
- * 
+ *
  * 2014-06  Ben Dudson <benjamin.dudson@york.ac.uk>
  *     * Removed static variables in functions, changing to class members.
  *
@@ -18,7 +18,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -39,10 +39,20 @@
 class LaplaceSPT;
 
 #ifndef BOUT_SPT_H
+#include "bout/build_defines.hxx"
+#include "bout/invert_laplace.hxx"
+
+#if BOUT_USE_METRIC_3D
+
+namespace {
+const RegisterUnavailableLaplace
+    registerlaplacespt(LAPLACE_SPT, "BOUT++ was configured with 3D metrics");
+}
+
+#else
 #define BOUT_SPT_H
 
 #include <bout/dcomplex.hxx>
-#include <bout/invert_laplace.hxx>
 #include <bout/mesh.hxx>
 #include <bout/options.hxx>
 #include <bout/utils.hxx>
@@ -132,8 +142,8 @@ private:
     Array<BoutReal> buffer;
   };
 
-  int ys, ye;         // Range of Y indices
-  SPT_data slicedata; // Used to solve for a single FieldPerp
+  int ys, ye;              // Range of Y indices
+  SPT_data slicedata;      // Used to solve for a single FieldPerp
   Array<SPT_data> alldata; // Used to solve a Field3D
 
   Array<dcomplex> dc1d; ///< 1D in Z for taking FFTs
@@ -153,7 +163,9 @@ private:
 namespace {
 // Note: After class definition so compiler knows that
 //       registered class is derived from Laplacian
-RegisterLaplace<LaplaceSPT> registerlaplacespt(LAPLACE_SPT);
+const RegisterLaplace<LaplaceSPT> registerlaplacespt(LAPLACE_SPT);
 } // namespace
+
+#endif // BOUT_USE_METRIC_3D
 
 #endif // BOUT_SPT_H
