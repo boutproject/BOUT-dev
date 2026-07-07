@@ -904,7 +904,6 @@ int SNESSolver::run() {
 
         if (snes_failures == max_snes_failures) {
           output.write("Too many SNES failures ({}). Aborting.", snes_failures);
-          output.write("Too many SNES failures ({}). Aborting.", snes_failures);
           return 1;
         }
 
@@ -996,11 +995,6 @@ int SNESSolver::run() {
           run_rhs(simtime);
         } catch (BoutException& e) {
           output_error.write("ERROR: BoutException thrown: {}\n", e.what());
-
-          fmt::print(stderr, "1 ERROR rank {}: BoutException: {}\n",
-                    BoutComm::rank(), e.what());
-          fflush(stderr);
-          
           // Abort simulation. There is no way to recover and
           // synchronise unless all processors throw exceptions
           // together
@@ -1148,11 +1142,6 @@ int SNESSolver::run() {
       run_rhs(output_time); // Run RHS to calculate auxilliary variables
     } catch (BoutException& e) {
       output_error.write("ERROR: BoutException thrown: {}\n", e.what());
-
-      fmt::print(stderr, "2 ERROR rank {}: BoutException: {}\n",
-                BoutComm::rank(), e.what());
-      fflush(stderr);
-
       // Abort simulation. There is no way to recover unless
       // all processors throw an exception at the same point.
       BoutComm::abort(1);
@@ -1546,11 +1535,6 @@ PetscErrorCode SNESSolver::rhs_function(Vec x, Vec f, bool linear) {
     // Simulation might fail, e.g. negative densities
     // if timestep too large
     output_warn.write("WARNING: BoutException thrown: {}\n", e.what());
-
-    fmt::print(stderr, "3 ERROR rank {}: BoutException: {}\n",
-              BoutComm::rank(), e.what());
-    fflush(stderr);
-
     // Abort simulation. Unless all processors threw an exception
     // at the same point, there is no way to synchronise again.
     BoutComm::abort(2);
