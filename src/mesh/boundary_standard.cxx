@@ -1727,13 +1727,13 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
   void BoundaryNeumann::apply(Field2D & f) { BoundaryNeumann::apply(f, 0.); }
 
+#if not(BOUT_USE_METRIC_3D)
   void BoundaryNeumann::apply(Field2D & f, BoutReal t) {
     // Set (at 2nd order / 3rd order) the value at the mid-point between
     // the guard cell and the grid cell to be val
     // N.B. First guard cells (closest to the grid) is 2nd order, while
     // 2nd is 3rd order
 
-#if not(BOUT_USE_METRIC_3D)
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());
     Coordinates* metric = f.getCoordinates();
@@ -1930,6 +1930,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       }
     }
 #else
+
+void BoundaryNeumann::apply([[maybe_unused]] Field2D& f, [[maybe_unused]] BoutReal t) {
   throw BoutException("Applying boundary condition 'neumann' to Field2D "
                       "not compatible with 3D metrics in all cases.");
 #endif

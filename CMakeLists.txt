@@ -140,6 +140,7 @@ set(BOUT_SOURCES
     ./include/bout/fieldgroup.hxx
     ./include/bout/fieldperp.hxx
     ./include/bout/fv_ops.hxx
+    ./include/bout/fv_ops_impl.hxx
     ./include/bout/generic_factory.hxx
     ./include/bout/globalfield.hxx
     ./include/bout/globalindexer.hxx
@@ -178,6 +179,7 @@ set(BOUT_SOURCES
     ./include/bout/parallel_boundary_region.hxx
     ./include/bout/paralleltransform.hxx
     ./include/bout/petsc_interface.hxx
+    ./include/bout/petsc_operators.hxx
     ./include/bout/petsclib.hxx
     ./include/bout/physicsmodel.hxx
     ./include/bout/rajalib.hxx
@@ -311,6 +313,7 @@ set(BOUT_SOURCES
     ./src/mesh/parallel/shiftedmetricinterp.hxx
     ./src/mesh/parallel_boundary_op.cxx
     ./src/mesh/parallel_boundary_region.cxx
+    ./src/mesh/petsc_operators.cxx
     ./src/mesh/surfaceiter.cxx
     ./src/mesh/tokamak_coordinates.cxx
     ./src/physics/gyro_average.cxx

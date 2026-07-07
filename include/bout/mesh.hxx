@@ -44,6 +44,7 @@ class Mesh;
 #ifndef BOUT_MESH_H
 #define BOUT_MESH_H
 
+#include "bout/array.hxx"
 #include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/coordinates.hxx" // Coordinates class
@@ -171,6 +172,9 @@ public:
   ///
   /// @returns zero if successful, non-zero on failure
   int get(bool& bval, const std::string& name, bool def = false);
+
+  int get(Array<int>& var, const std::string& name);
+  int get(Array<BoutReal>& var, const std::string& name);
 
   /// Get a Field2D from the input source
   /// including communicating guard cells
