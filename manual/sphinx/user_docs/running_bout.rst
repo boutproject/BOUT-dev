@@ -269,6 +269,7 @@ First comes the introductory blurb::
 
     BOUT++ version 4.4.0
     Revision: 7cfbc6890a82cb6b3b6c81870d8a8fca723de542
+    Git tree: clean
     Code compiled on Dec  7 2021 at 15:14:05
 
     B.Dudson (University of York), M.Umansky (LLNL) 2007
@@ -276,10 +277,12 @@ First comes the introductory blurb::
 
 The version number (4.4.0 here) gets increased occasionally after some
 major feature has been added. To help match simulations to code
-versions, the Git revision of the core BOUT++ code and the date and
-time it was compiled is recorded. This information makes it possible
-to verify precisely which version of the code was used for any given
-run.
+versions, the Git revision of the core BOUT++ code, whether the source
+tree was clean when it was built, and the date and time it was compiled
+is recorded. If BOUT++ is built from a git checkout with uncommitted
+tracked changes, the corresponding git diff is also saved in the output
+metadata. This information makes it possible to verify precisely which
+version of the code was used for any given run.
 
 The processor number comes next::
 
@@ -673,4 +676,3 @@ then the BOUT++ restart will fail.
 **Note** It is a good idea to set ``nxpe`` in the ``BOUT.inp`` file to be consistent with
 what you set here. If it is inconsistent then the restart will fail, but the error message may
 not be particularly enlightening.
-

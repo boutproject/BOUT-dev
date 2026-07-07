@@ -390,6 +390,7 @@ set(BOUT_SOURCES
     ./src/sys/timer.cxx
     ./src/sys/type_name.cxx
     ./src/sys/utils.cxx
+    ./include/bout/git_metadata.hxx
     ${CMAKE_CURRENT_BINARY_DIR}/include/bout/revision.hxx
     ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
 )
@@ -512,17 +513,34 @@ else()
 endif()
 set(BOUT_USE_PYTHON ${BOUT_ENABLE_PYTHON})
 
+set_source_files_properties(
+  ${CMAKE_CURRENT_BINARY_DIR}/git_metadata.cxx PROPERTIES GENERATED TRUE
+)
+add_custom_target(
+  bout++-git-metadata
+  COMMAND
+    ${CMAKE_COMMAND} -DOUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/git_metadata.cxx
+    -DSOURCE_DIR=${PROJECT_SOURCE_DIR} -DGIT_EXECUTABLE=${GIT_EXECUTABLE} -P
+    "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateGitMetadata.cmake"
+  BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/git_metadata.cxx
+  COMMENT "Generating git metadata source"
+)
+
 # Ensure that the compile date/time is up-to-date when any of the sources change
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bout++-time.cxx
   COMMAND ${CMAKE_COMMAND} -P
           "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateDateTimeFile.cmake"
-  DEPENDS ${BOUT_SOURCES}
+  DEPENDS ${BOUT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/git_metadata.cxx
   MAIN_DEPENDENCY "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateDateTimeFile.cmake"
 )
 
-add_library(bout++ ${BOUT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/bout++-time.cxx)
+add_library(
+  bout++ ${BOUT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/bout++-time.cxx
+         ${CMAKE_CURRENT_BINARY_DIR}/git_metadata.cxx
+)
 add_library(bout++::bout++ ALIAS bout++)
+add_dependencies(bout++ bout++-git-metadata)
 target_link_libraries(bout++ PUBLIC MPI::MPI_CXX)
 target_include_directories(
   bout++
@@ -567,6 +585,7 @@ set(BOUT_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(BOUT_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 
 # Get the git commit
+find_package(Git QUIET)
 include(GetGitRevisionDescription)
 get_git_head_revision(GIT_REFSPEC BOUT_REVISION)
 if(BOUT_REVISION STREQUAL "GITDIR-NOTFOUND")
