@@ -270,6 +270,22 @@ struct WENO3 {
   }
 };
 
+template <class T>
+struct Slices {
+  T c;
+  T up;
+  T down;
+
+  Slices(bool use_slices, const T& field)
+      : c(use_slices ? field : toFieldAligned(field)), up(use_slices ? field.yup() : c),
+        down(use_slices ? field.ydown() : c) {}
+};
+
+template <class T>
+Slices<T> makeslices(bool use_slices, const T& field) {
+  return Slices<T>(use_slices, field);
+}
+
 /// Finite volume parallel divergence
 ///
 /// Preserves the sum of f*J*dx*dy*dz over the domain
@@ -1313,44 +1329,44 @@ Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D&
     }
   }
 
-  // Y and Z fluxes require Y derivatives
+  const bool fci =
+      f.hasParallelSlices() && a.hasParallelSlices() && g.hasParallelSlices();
 
-  // Fields containing values along the magnetic field
-  Field3D fup(mesh);
-  Field3D fdown(mesh);
-  Field3D aup(mesh);
-  Field3D adown(mesh);
-  Field3D gup(mesh);
-  Field3D gdown(mesh);
+#if BOUT_USE_METRIC_3D
+  if (fci) {
+    // 3D Metric, need yup/ydown fields.
+    // Requires previous communication of metrics.
+    if (!coord->g23.hasParallelSlices() || !coord->g_23.hasParallelSlices()
+        || !coord->dy.hasParallelSlices() || !coord->dz.hasParallelSlices()
+        || !coord->Bxy.hasParallelSlices() || !coord->J.hasParallelSlices()) {
+      throw BoutException("metrics have no yup/down: Maybe communicate in init?");
+    }
+  }
+#endif
+
+  // Y and Z fluxes require Y derivatives
 
   // Values on this y slice (centre).
   // This is needed because toFieldAligned may modify the field
-  Field3D ac = a;
-  Field3D gc = g;
-  Field3D fc = f;
+  const auto f_slice = makeslices(fci, f);
+  const auto a_slice = makeslices(fci, a);
+  const auto g_slice = makeslices(fci, g);
+
+#if BOUT_USE_METRIC_3D
+  const bool metric_fci = fci;
+#else
+  constexpr bool metric_fci = false;
+#endif
+  const auto g23 = makeslices(metric_fci, coord->g23);
+  const auto g_23 = makeslices(metric_fci, coord->g_23);
+  const auto J = makeslices(metric_fci, coord->J);
+  const auto dy = makeslices(metric_fci, coord->dy);
+  const auto dz = makeslices(metric_fci, coord->dz);
+  const auto Bxy = makeslices(metric_fci, coord->Bxy);
 
   // Result of the Y and Z fluxes
-  Field3D yzresult(mesh);
-  yzresult.allocate();
-
-  if (f.hasParallelSlices() && a.hasParallelSlices() && g.hasParallelSlices()) {
-    // All inputs have yup and ydown
-
-    fup = f.yup();
-    fdown = f.ydown();
-
-    aup = a.yup();
-    adown = a.ydown();
-
-    gup = g.yup();
-    gdown = g.ydown();
-  } else {
-    // At least one input doesn't have yup/ydown fields.
-    // Need to shift to/from field aligned coordinates
-
-    fup = fdown = fc = toFieldAligned(f);
-    aup = adown = ac = toFieldAligned(a);
-    gup = gdown = gc = toFieldAligned(g);
+  Field3D yzresult(0.0, mesh);
+  if (!fci) {
     yzresult.setDirectionY(YDirectionType::Aligned);
   }
 
@@ -1366,15 +1382,14 @@ Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D&
       {
         const BoutReal coef_u =
             0.5
-            * (coord->g_23(i, j, k) / SQ(coord->J(i, j, k) * coord->Bxy(i, j, k))
-               + coord->g_23(i, j + 1, k)
-                     / SQ(coord->J(i, j + 1, k) * coord->Bxy(i, j + 1, k)));
+            * (g_23.c(i, j, k) / SQ(J.c(i, j, k) * Bxy.c(i, j, k))
+               + g_23.up(i, j + 1, k) / SQ(J.up(i, j + 1, k) * Bxy.up(i, j + 1, k)));
 
         const BoutReal coef_d =
             0.5
-            * (coord->g_23(i, j, k) / SQ(coord->J(i, j, k) * coord->Bxy(i, j, k))
-               + coord->g_23(i, j - 1, k)
-                     / SQ(coord->J(i, j - 1, k) * coord->Bxy(i, j - 1, k)));
+            * (g_23.c(i, j, k) / SQ(J.c(i, j, k) * Bxy.c(i, j, k))
+               + g_23.down(i, j - 1, k)
+                     / SQ(J.down(i, j - 1, k) * Bxy.down(i, j - 1, k)));
 
 #if not BOUT_USE_METRIC_3D
         for (int k = 0; k < mesh->LocalNz; k++)
@@ -1385,58 +1400,59 @@ Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D&
           const int km = (k - 1 + mesh->LocalNz) % mesh->LocalNz;
 
           // Calculate Z derivative at y boundary
-          BoutReal dfdz =
-              0.25 * (fc(i, j, kp) - fc(i, j, km) + fup(i, j + 1, kp) - fup(i, j + 1, km))
-              / coord->dz(i, j, k);
+          BoutReal dfdz = 0.5
+                          * (f_slice.c(i, j, kp) - f_slice.c(i, j, km)
+                             + f_slice.up(i, j + 1, kp) - f_slice.up(i, j + 1, km))
+                          / (dz.c(i, j, k) + dz.up(i, j + 1, k));
 
           // Y derivative
-          BoutReal dfdy = 2. * (fup(i, j + 1, k) - fc(i, j, k))
-                          / (coord->dy(i, j + 1, k) + coord->dy(i, j, k));
+          BoutReal dfdy = 2. * (f_slice.up(i, j + 1, k) - f_slice.c(i, j, k))
+                          / (dy.up(i, j + 1, k) + dy.c(i, j, k));
 
-          BoutReal aedge = 0.5 * (ac(i, j, k) + aup(i, j + 1, k));
+          BoutReal aedge = 0.5 * (a_slice.c(i, j, k) + a_slice.up(i, j + 1, k));
           BoutReal gedge = NAN;
           if ((j == mesh->yend) and mesh->lastY(i)) {
             // Midpoint boundary value
-            gedge = 0.5 * (gc(i, j, k) + gup(i, j + 1, k));
+            gedge = 0.5 * (g_slice.c(i, j, k) + g_slice.up(i, j + 1, k));
           } else if (dfdy > 0) {
             // Flux from (j+1) to (j)
-            gedge = gup(i, j + 1, k);
+            gedge = g_slice.up(i, j + 1, k);
           } else {
             // Flux from (j) to (j+1)
-            gedge = gc(i, j, k);
+            gedge = g_slice.c(i, j, k);
           }
 
-          BoutReal fout = aedge * gedge * 0.5
-                          * (coord->J(i, j, k) * coord->g23(i, j, k)
-                             + coord->J(i, j + 1, k) * coord->g23(i, j + 1, k))
-                          * (dfdz - coef_u * dfdy);
+          BoutReal fout =
+              aedge * gedge * 0.5
+              * (J.c(i, j, k) * g23.c(i, j, k) + J.up(i, j + 1, k) * g23.up(i, j + 1, k))
+              * (dfdz - coef_u * dfdy);
 
-          yzresult(i, j, k) = fout / (coord->dy(i, j, k) * coord->J(i, j, k));
+          yzresult(i, j, k) += fout / (dy.c(i, j, k) * J.c(i, j, k));
 
           // Calculate flux between j and j-1
-          dfdz =
-              0.25
-              * (fc(i, j, kp) - fc(i, j, km) + fdown(i, j - 1, kp) - fdown(i, j - 1, km))
-              / coord->dz(i, j, k);
+          dfdz = 0.5
+                 * (f_slice.c(i, j, kp) - f_slice.c(i, j, km) + f_slice.down(i, j - 1, kp)
+                    - f_slice.down(i, j - 1, km))
+                 / (dz.c(i, j, k) + dz.down(i, j - 1, k));
 
-          dfdy = 2. * (fc(i, j, k) - fdown(i, j - 1, k))
-                 / (coord->dy(i, j, k) + coord->dy(i, j - 1, k));
+          dfdy = 2. * (f_slice.c(i, j, k) - f_slice.down(i, j - 1, k))
+                 / (dy.c(i, j, k) + dy.down(i, j - 1, k));
 
-          aedge = 0.5 * (ac(i, j, k) + adown(i, j - 1, k));
+          aedge = 0.5 * (a_slice.c(i, j, k) + a_slice.down(i, j - 1, k));
           if ((j == mesh->ystart) and mesh->firstY(i)) {
-            gedge = 0.5 * (gc(i, j, k) + gdown(i, j - 1, k));
+            gedge = 0.5 * (g_slice.c(i, j, k) + g_slice.down(i, j - 1, k));
           } else if (dfdy > 0) {
-            gedge = gc(i, j, k);
+            gedge = g_slice.c(i, j, k);
           } else {
-            gedge = gdown(i, j - 1, k);
+            gedge = g_slice.down(i, j - 1, k);
           }
 
           fout = aedge * gedge * 0.5
-                 * (coord->J(i, j, k) * coord->g23(i, j, k)
-                    + coord->J(i, j - 1, k) * coord->g23(i, j - 1, k))
+                 * (J.c(i, j, k) * g23.c(i, j, k)
+                    + J.down(i, j - 1, k) * g23.down(i, j - 1, k))
                  * (dfdz - coef_d * dfdy);
 
-          yzresult(i, j, k) -= fout / (coord->dy(i, j, k) * coord->J(i, j, k));
+          yzresult(i, j, k) -= fout / (dy.c(i, j, k) * J.c(i, j, k));
         }
       }
     }
@@ -1455,9 +1471,9 @@ Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D&
       {
         // Coefficient in front of df/dy term
         const BoutReal coef =
-            coord->g_23(i, j, k)
-            / (coord->dy(i, j + 1, k) + 2. * coord->dy(i, j, k) + coord->dy(i, j - 1, k))
-            / SQ(coord->J(i, j, k) * coord->Bxy(i, j, k));
+            g_23.c(i, j, k)
+            / (dy.up(i, j + 1, k) + 2. * dy.c(i, j, k) + dy.down(i, j - 1, k))
+            / SQ(J.c(i, j, k) * Bxy.c(i, j, k));
 #if not BOUT_USE_METRIC_3D
         for (int k = 0; k < mesh->LocalNz; k++)
 #endif
@@ -1467,24 +1483,25 @@ Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D&
 
           const BoutReal gradient =
               // df/dz
-              ((fc(i, j, kp) - fc(i, j, k)) / coord->dz(i, j, k))
+              ((f_slice.c(i, j, kp) - f_slice.c(i, j, k)) / dz.c(i, j, k))
 
               // - g_yz * df/dy / SQ(J*B)
               - (coef
-                 * (fup(i, j + 1, k) + fup(i, j + 1, kp) - fdown(i, j - 1, k)
-                    - fdown(i, j - 1, kp)));
+                 * (f_slice.up(i, j + 1, k) + f_slice.up(i, j + 1, kp)
+                    - f_slice.down(i, j - 1, k) - f_slice.down(i, j - 1, kp)));
 
-          const BoutReal fout = gradient * 0.5 * (ac(i, j, kp) + ac(i, j, k))
-                                * ((gradient > 0) ? gc(i, j, kp) : gc(i, j, k));
+          const BoutReal fout =
+              gradient * 0.5 * (a_slice.c(i, j, kp) + a_slice.c(i, j, k))
+              * ((gradient > 0) ? g_slice.c(i, j, kp) : g_slice.c(i, j, k));
 
-          yzresult(i, j, k) += fout / coord->dz(i, j, k);
-          yzresult(i, j, kp) -= fout / coord->dz(i, j, kp);
+          yzresult(i, j, k) += fout / dz.c(i, j, k);
+          yzresult(i, j, kp) -= fout / dz.c(i, j, kp);
         }
       }
     }
   }
   // Check if we need to transform back
-  if (f.hasParallelSlices() && a.hasParallelSlices()) {
+  if (fci) {
     result += yzresult;
   } else {
     result += fromFieldAligned(yzresult);
