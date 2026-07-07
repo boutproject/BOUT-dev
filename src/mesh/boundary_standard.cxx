@@ -202,7 +202,7 @@ void BoundaryDirichlet_O1::apply(Field3D& f, BoutReal t) {
   } else {
     // Standard (non-staggered) case
     for (; !bndry->isDone(); bndry->next1d()) {
-      for (int zk = 0; zk < mesh->LocalNz; zk++) {
+      for (int zk = mesh->zstart; zk <= mesh->zend; zk++) {
         if (fg) {
           val = fg->generate(Context(bndry, zk, loc, t, mesh));
         }
@@ -214,7 +214,7 @@ void BoundaryDirichlet_O1::apply(Field3D& f, BoutReal t) {
         // Set any other guard cells using the values on the cells
         int xi = bndry->x + i * bndry->bx;
         int yi = bndry->y + i * bndry->by;
-        for (int zk = 0; zk < mesh->LocalNz; zk++) {
+        for (int zk = mesh->zstart; zk <= mesh->zend; zk++) {
           if (fg) {
             val = fg->generate(Context(bndry, zk, loc, t, mesh));
           }
@@ -238,7 +238,7 @@ void BoundaryDirichlet_O1::apply_ddt(Field3D& f) {
   Field3D* dt = f.timeDeriv();
 
   for (bndry->first(); !bndry->isDone(); bndry->next()) {
-    for (int z = 0; z < mesh->LocalNz; z++) {
+    for (int z = mesh->zstart; z <= mesh->zend; z++) {
       (*dt)(bndry->x, bndry->y, z) = 0.; // Set time derivative to zero
     }
   }
@@ -1933,13 +1933,13 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     } else {
       for (; !bndry->isDone(); bndry->next1d()) {
 #if BOUT_USE_METRIC_3D
-        for (int zk = 0; zk < mesh->LocalNz; zk++) {
+        for (int zk = mesh->zstart; zk <= mesh->zend; zk++) {
           BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, zk)
                            + bndry->by * metric->dy(bndry->x, bndry->y, zk);
 #else
       BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y)
                        + bndry->by * metric->dy(bndry->x, bndry->y);
-      for (int zk = 0; zk < mesh->LocalNz; zk++) {
+      for (int zk = mesh->zstart; zk <= mesh->zend; zk++) {
 #endif
           if (fg) {
             val = fg->generate(Context(bndry, zk, loc, t, mesh));
@@ -1967,7 +1967,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     ASSERT1(mesh == f.getMesh());
     Field3D* dt = f.timeDeriv();
     for (bndry->first(); !bndry->isDone(); bndry->next()) {
-      for (int z = 0; z < mesh->LocalNz; z++) {
+      for (int z = mesh->zstart; z <= mesh->zend; z++) {
         (*dt)(bndry->x, bndry->y, z) = 0.; // Set time derivative to zero
       }
     }
