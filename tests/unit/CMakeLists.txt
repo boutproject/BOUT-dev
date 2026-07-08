@@ -100,6 +100,9 @@ set(serial_tests_source
     ./mesh/test_mesh.cxx
     ./mesh/test_paralleltransform.cxx
     ./mesh/test_petsc_operators.cxx
+    ./mesh/test_petsc_operators_make_evolving_is.cxx
+    ./mesh/test_petsc_operators_extract_evolving_submatrix.cxx
+    ./mesh/test_petsc_jacobian.cxx
     ./solver/test_fakesolver.cxx
     ./solver/test_fakesolver.hxx
     ./solver/test_nvector.cxx

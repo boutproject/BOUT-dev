@@ -381,6 +381,39 @@ TEST_F(SolverTest, AddVector3D) {
   EXPECT_EQ(solver.listVector3DNames(), expected_names);
 }
 
+TEST_F(SolverTest, GetVarRef) {
+  Options options;
+  FakeSolver solver{&options};
+
+  Field2D field2d{};
+  Field3D field3d{};
+  Vector3D vector{};
+
+  solver.add(field2d, "phi");
+  solver.add(field3d, "n");
+  solver.add(vector, "v");
+
+  const auto phi = solver.getVarRef("phi");
+  const auto n = solver.getVarRef("n");
+  const auto vx = solver.getVarRef("v_x");
+  const auto vy = solver.getVarRef("v_y");
+  const auto vz = solver.getVarRef("v_z");
+  const auto missing = solver.getVarRef("missing");
+
+  EXPECT_TRUE(phi.isConcrete());
+  EXPECT_EQ(phi.index(), 0);
+  EXPECT_TRUE(n.isConcrete());
+  EXPECT_EQ(n.index(), 1);
+  EXPECT_TRUE(vx.isConcrete());
+  EXPECT_EQ(vx.index(), 2);
+  EXPECT_TRUE(vy.isConcrete());
+  EXPECT_EQ(vy.index(), 3);
+  EXPECT_TRUE(vz.isConcrete());
+  EXPECT_EQ(vz.index(), 4);
+  EXPECT_TRUE(missing.isInvalid());
+  EXPECT_TRUE(Solver::VarRef::All().isAll());
+}
+
 TEST_F(SolverTest, ConstraintField2D) {
   Options options;
   FakeSolver solver{&options};

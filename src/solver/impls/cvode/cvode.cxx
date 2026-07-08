@@ -491,6 +491,7 @@ int CvodeSolver::init() {
       Field3D index = globalIndex(0);
       PetscCall(petsc_preconditioner.createJacobianPattern(
           index, *options, local_N, n2Dvars(), n3Dvars(), BoutComm::get()));
+      applyQueuedJacobianPatterns(petsc_preconditioner.jacobian());
       PetscCall(
           petsc_preconditioner.updateColoring(CvodeSolver::petscFormFunction, this));
       PetscCall(MatFDColoringSetF(petsc_preconditioner.coloring(), petsc_f));

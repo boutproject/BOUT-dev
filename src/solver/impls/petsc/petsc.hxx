@@ -2,7 +2,7 @@
  * Interface to PETSc solver
  *
  **************************************************************************
- * Copyright 2010 - 2025 BOUT++ contributors
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -27,6 +27,7 @@
 #define BOUT_PETSC_SOLVER_H
 
 #include "bout/build_defines.hxx"
+#include "bout/petsc_operators.hxx"
 #include "bout/solver.hxx"
 
 #if not BOUT_HAS_PETSC
@@ -40,6 +41,7 @@ RegisterUnavailableSolver
 
 class PetscSolver;
 
+#include <bout/bout_types.hxx>
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
 #include <bout/petsc_preconditioner.hxx>
@@ -53,7 +55,7 @@ class PetscSolver;
 #include <petscsnes.h>
 #include <petscts.h>
 
-#include <vector>
+#include <string>
 
 namespace {
 RegisterSolver<PetscSolver> registersolverpetsc("petsc");
@@ -63,9 +65,14 @@ class PetscSolver : public Solver {
 public:
   PetscSolver(Options* opts = nullptr);
   ~PetscSolver();
+  using Solver::addJacobianPattern;
 
   int init() override;
   int run() override;
+  bool addJacobianPattern(const PetscCellOperator& op, VarRef out_var,
+                          VarRef in_var) override {
+    return queueJacobianPattern(op, out_var, in_var);
+  }
 
   // These functions used internally (but need to be public)
 
