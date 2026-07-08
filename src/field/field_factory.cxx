@@ -301,8 +301,7 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
   };
 
   if (transform_from_field_aligned) {
-    auto coords = result.getCoordinates();
-    if (coords == nullptr) {
+    if (auto coords = result.getCoordinates(); coords == nullptr) {
       // Should not lead to issues. If called from the coordinates
       // constructor, then this is expected, and the result will be
       // transformed. Otherwise, if the field is used untransformed,
@@ -352,8 +351,7 @@ FieldPerp FieldFactory::createPerp(FieldGeneratorPtr gen, Mesh* localmesh, CELL_
   };
 
   if (transform_from_field_aligned) {
-    auto coords = result.getCoordinates();
-    if (coords == nullptr) {
+    if (auto coords = result.getCoordinates(); coords == nullptr) {
       // Should not lead to issues. If called from the coordinates
       // constructor, then this is expected, and the result will be
       // transformed. Otherwise, if the field is used untransformed,
@@ -376,8 +374,7 @@ const Options* FieldFactory::findOption(const Options* opt, const std::string& n
   const Options* result = opt;
 
   // Check if name contains a section separator ':'
-  size_t pos = name.find(':');
-  if (pos == std::string::npos) {
+  if (auto pos = name.find(':'); pos == std::string::npos) {
     // No separator. Try this section, and then go through parents
 
     while (!result->isSet(name)) {
@@ -517,8 +514,7 @@ FieldGeneratorPtr FieldFactory::parse(const std::string& input,
     key = opt->str() + key; // Include options context in key
   }
 
-  auto it = cache.find(key);
-  if (it != cache.end()) {
+  if (auto it = cache.find(key); it != cache.end()) {
     return it->second;
   }
 
