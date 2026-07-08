@@ -1874,3 +1874,30 @@ void Coordinates::_compute_cell_volume() const {
 std::shared_ptr<YBoundary> Coordinates::makeYBoundary(YBndryType type) const {
   return std::make_shared<YBoundary>(type, localoptions, *localmesh);
 }
+
+void Coordinates::normaliseFCI(const BoutReal Bnorm, const BoutReal rho_0) {
+  g11 *= SQ(rho_s0);
+  g22 *= SQ(rho_s0);
+  g33 *= SQ(rho_s0);
+  g12 *= SQ(rho_s0);
+  g13 *= SQ(rho_s0);
+  g23 *= SQ(rho_s0);
+
+  J /= rho_s0 * rho_s0 * rho_s0;
+
+  g_11 /= SQ(rho_s0);
+  g_22 /= SQ(rho_s0);
+  g_33 /= SQ(rho_s0);
+  g_12 /= SQ(rho_s0);
+  g_13 /= SQ(rho_s0);
+  g_23 /= SQ(rho_s0);
+
+  Bxy /= Bnorm;
+
+  geometry(); // Calculate other metrics
+
+  g_22_ylow();
+  g_22_yhigh();
+  (*_g_22_ylow) /= SQ(rho_s0);
+  (*_g_22_yhigh) /= SQ(rho_s0);
+}

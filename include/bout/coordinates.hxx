@@ -103,11 +103,14 @@ public:
   /// Covariant metric tensor
   FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
 
+  /// Normalise metric for FCI
+  /// This normalises B by Bnorm and all lengths by rho_0
+  void normaliseFCI(BoutReal Bnorm, BoutReal rho_0);
+
   /// get g_22 at the cell faces;
   const FieldMetric& g_22_ylow() const;
   const FieldMetric& g_22_yhigh() const;
-  FieldMetric& g_22_ylow();
-  FieldMetric& g_22_yhigh();
+
   // Cell Areas
   const FieldMetric& cell_area_xlow() const {
     if (_cell_area_xlow.has_value()) {
