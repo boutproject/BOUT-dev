@@ -1588,7 +1588,7 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
 
       // First calculate x - x0 to minimise floating point issues
       VecWAXPY(delta_x, -1.0, x0, x); // delta_x = x - x0
-      VecAXPY(f, -1.0 / dt, delta_x);  // f <- f - delta_x / dt
+      VecAXPY(f, -1.0 / dt, delta_x); // f <- f - delta_x / dt
 
     } else {
 
@@ -1601,8 +1601,10 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
       PetscCall(VecGetSubVector(delta_x, is_diff, &delta_x_diff));
       PetscCall(VecGetSubVector(f, is_diff, &f_diff));
 
-      PetscCall(VecWAXPY(delta_x_diff, -1.0, x0_diff, x_diff)); // delta_x_diff = x_diff - x0_diff
-      PetscCall(VecAXPY(f_diff, -1.0 / dt, delta_x_diff));       // f_diff <- f_diff - delta_x / dt
+      PetscCall(VecWAXPY(delta_x_diff, -1.0, x0_diff,
+                         x_diff)); // delta_x_diff = x_diff - x0_diff
+      PetscCall(
+          VecAXPY(f_diff, -1.0 / dt, delta_x_diff)); // f_diff <- f_diff - delta_x / dt
 
       PetscCall(VecRestoreSubVector(x, is_diff, &x_diff));
       PetscCall(VecRestoreSubVector(x0, is_diff, &x0_diff));
@@ -1619,11 +1621,9 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
 
     if (!have_constraints) {
 
-
       VecWAXPY(delta_x, -1.0, x0, x);
       VecPointwiseDivide(delta_x, delta_x, dt_vec); // delta_x /= dt
-      VecAXPY(f, -1.0, delta_x);                     // f <- f - delta_x
-
+      VecAXPY(f, -1.0, delta_x);                    // f <- f - delta_x
 
     } else {
       ASSERT2(have_is_maps);
@@ -1636,13 +1636,14 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
       PetscCall(VecGetSubVector(dt_vec, is_diff, &dt_vec_diff));
 
       PetscCall(VecWAXPY(delta_x_diff, -1.0, x0_diff, x_diff));
-      PetscCall(VecPointwiseDivide(delta_x_diff, delta_x_diff, dt_vec_diff)); // delta_x /= dt
-      PetscCall(VecAXPY(f_diff, -1.0, delta_x_diff));                         // f <- f - delta_x
+      PetscCall(
+          VecPointwiseDivide(delta_x_diff, delta_x_diff, dt_vec_diff)); // delta_x /= dt
+      PetscCall(VecAXPY(f_diff, -1.0, delta_x_diff)); // f <- f - delta_x
 
       PetscCall(VecRestoreSubVector(delta_x, is_diff, &delta_x_diff));
-      PetscCall(VecRestoreSubVector(x,      is_diff, &x_diff));
-      PetscCall(VecRestoreSubVector(x0,     is_diff, &x0_diff));
-      PetscCall(VecRestoreSubVector(f,      is_diff, &f_diff));
+      PetscCall(VecRestoreSubVector(x, is_diff, &x_diff));
+      PetscCall(VecRestoreSubVector(x0, is_diff, &x0_diff));
+      PetscCall(VecRestoreSubVector(f, is_diff, &f_diff));
       PetscCall(VecRestoreSubVector(dt_vec, is_diff, &dt_vec_diff));
     }
     break;
@@ -1836,7 +1837,7 @@ BoutReal SNESSolver::pid(BoutReal timestep, int nl_its, BoutReal max_dt) {
 
   // Add slow growth when convergence is good and stable
   if (nl_its <= target_its && nl_its_prev <= target_its) {
-    fac *= 1.1;   // or 1.05 for more conservative growth
+    fac *= 1.1; // or 1.05 for more conservative growth
   }
 
   if (pid_consider_failures && (fac > 1.0)) {
