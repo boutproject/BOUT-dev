@@ -419,11 +419,6 @@ int SNESSolver::init() {
     // Call the Solver function, which sets the array
     // to one when not a constraint, zero for constraint
     set_id(std::begin(is_dae));
-
-    if (equation_form != BoutSnesEquationForm::backward_euler) {
-      throw BoutException(
-          "SNES constraints currently require equation_form=backward_euler");
-    }
   }
 
   // Initialise PETSc components
@@ -1596,19 +1591,70 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
   switch (equation_form) {
   case BoutSnesEquationForm::rearranged_backward_euler: {
     // Rearranged Backward Euler
-    // f = (x0 - x)/Δt + f
-    // First calculate x - x0 to minimise floating point issues
-    VecWAXPY(delta_x, -1.0, x0, x); // delta_x = x - x0
-    VecAXPY(f, -1. / dt, delta_x);  // f <- f - delta_x / dt
+    // F = (x0 - x)/Δt + f
+    // Algebraic:     F = G(x)  (already stored in f by rhs_function)
+
+    if (!have_constraints) {
+
+      // First calculate x - x0 to minimise floating point issues
+      VecWAXPY(delta_x, -1.0, x0, x); // delta_x = x - x0
+      VecAXPY(f, -1.0 / dt, delta_x);  // f <- f - delta_x / dt
+
+    } else {
+
+      ASSERT2(have_is_maps);
+      // Some constraints
+
+      Vec x_diff, x0_diff, delta_x_diff, f_diff;
+      PetscCall(VecGetSubVector(x, is_diff, &x_diff));
+      PetscCall(VecGetSubVector(x0, is_diff, &x0_diff));
+      PetscCall(VecGetSubVector(delta_x, is_diff, &delta_x_diff));
+      PetscCall(VecGetSubVector(f, is_diff, &f_diff));
+
+      PetscCall(VecWAXPY(delta_x_diff, -1.0, x0_diff, x_diff)); // delta_x_diff = x_diff - x0_diff
+      PetscCall(VecAXPY(f_diff, -1.0 / dt, delta_x_diff));       // f_diff <- f_diff - delta_x / dt
+
+      PetscCall(VecRestoreSubVector(x, is_diff, &x_diff));
+      PetscCall(VecRestoreSubVector(x0, is_diff, &x0_diff));
+      PetscCall(VecRestoreSubVector(delta_x, is_diff, &delta_x_diff));
+      PetscCall(VecRestoreSubVector(f, is_diff, &f_diff));
+    }
     break;
   }
   case BoutSnesEquationForm::pseudo_transient: {
     // Pseudo-transient timestepping. Same as Rearranged Backward Euler
     // except that Δt is a vector
-    // f = (x0 - x)/Δt + f
-    VecWAXPY(delta_x, -1.0, x0, x);
-    VecPointwiseDivide(delta_x, delta_x, dt_vec); // delta_x /= dt
-    VecAXPY(f, -1., delta_x);                     // f <- f - delta_x
+    // F = (x0 - x)/Δt + f
+    // Algebraic:     F = G(x)  (already stored in f by rhs_function)
+
+    if (!have_constraints) {
+
+
+      VecWAXPY(delta_x, -1.0, x0, x);
+      VecPointwiseDivide(delta_x, delta_x, dt_vec); // delta_x /= dt
+      VecAXPY(f, -1.0, delta_x);                     // f <- f - delta_x
+
+
+    } else {
+      ASSERT2(have_is_maps);
+
+      Vec x_diff, x0_diff, delta_x_diff, f_diff, dt_vec_diff;
+      PetscCall(VecGetSubVector(x, is_diff, &x_diff));
+      PetscCall(VecGetSubVector(x0, is_diff, &x0_diff));
+      PetscCall(VecGetSubVector(delta_x, is_diff, &delta_x_diff));
+      PetscCall(VecGetSubVector(f, is_diff, &f_diff));
+      PetscCall(VecGetSubVector(dt_vec, is_diff, &dt_vec_diff));
+
+      PetscCall(VecWAXPY(delta_x_diff, -1.0, x0_diff, x_diff));
+      PetscCall(VecPointwiseDivide(delta_x_diff, delta_x_diff, dt_vec_diff)); // delta_x /= dt
+      PetscCall(VecAXPY(f_diff, -1.0, delta_x_diff));                         // f <- f - delta_x
+
+      PetscCall(VecRestoreSubVector(delta_x, is_diff, &delta_x_diff));
+      PetscCall(VecRestoreSubVector(x,      is_diff, &x_diff));
+      PetscCall(VecRestoreSubVector(x0,     is_diff, &x0_diff));
+      PetscCall(VecRestoreSubVector(f,      is_diff, &f_diff));
+      PetscCall(VecRestoreSubVector(dt_vec, is_diff, &dt_vec_diff));
+    }
     break;
   }
   case BoutSnesEquationForm::backward_euler: {
@@ -1627,7 +1673,6 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
       // Some constraints
 
       Vec x_diff, x0_diff, f_diff;
-
       PetscCall(VecGetSubVector(x, is_diff, &x_diff));
       PetscCall(VecGetSubVector(x0, is_diff, &x0_diff));
       PetscCall(VecGetSubVector(f, is_diff, &f_diff));
@@ -1798,6 +1843,11 @@ BoutReal SNESSolver::pid(BoutReal timestep, int nl_its, BoutReal max_dt) {
 
   // clamp growth factor to avoid huge changes
   BoutReal fac = std::clamp(facP * facI * facD, 0.2, 5.0);
+
+  // Add slow growth when convergence is good and stable
+  if (nl_its <= target_its && nl_its_prev <= target_its) {
+    fac *= 1.1;   // or 1.05 for more conservative growth
+  }
 
   if (pid_consider_failures && (fac > 1.0)) {
     // Reduce aggressiveness if recent steps have failed often
