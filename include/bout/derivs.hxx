@@ -156,7 +156,7 @@ bout::FieldMetric DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-Vector3D DDZ(const Vector3D& f, CELL_LOC outloc = CELL_DEFAULT,
+Vector3D DDZ(const Vector3D& v, CELL_LOC outloc = CELL_DEFAULT,
              const std::string& method = "DEFAULT",
              const std::string& region = "RGN_NOBNDRY");
 
@@ -172,7 +172,7 @@ Vector3D DDZ(const Vector3D& f, CELL_LOC outloc = CELL_DEFAULT,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-Vector2D DDZ(const Vector2D& f, CELL_LOC outloc = CELL_DEFAULT,
+Vector2D DDZ(const Vector2D& v, CELL_LOC outloc = CELL_DEFAULT,
              const std::string& method = "DEFAULT",
              const std::string& region = "RGN_NOBNDRY");
 

@@ -41,7 +41,6 @@
 #include <bout/assert.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/build_defines.hxx>
-#include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
@@ -51,9 +50,7 @@
 #include <bout/index_derivs_interface.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/metric_tensor.hxx>
-#include <bout/output.hxx>
 #include <bout/unused.hxx>
-#include <bout/utils.hxx>
 
 #include <string>
 

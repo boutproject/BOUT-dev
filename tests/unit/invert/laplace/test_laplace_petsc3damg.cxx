@@ -40,8 +40,8 @@ public:
 
   const Field3D operator()(Field3D& f) {
     Field3D result = d * Laplace_perp(f, CELL_DEFAULT, "free", "RGN_NOY")
-                     + (Grad(f) * Grad(c2) - DDY(c2) * DDY(f) / coords->g_22()) / c1 + a * f
-                     + ex * DDX(f) + ez * DDZ(f);
+                     + (Grad(f) * Grad(c2) - DDY(c2) * DDY(f) / coords->g_22()) / c1
+                     + a * f + ex * DDX(f) + ez * DDZ(f);
     applyBoundaries(result, f);
     return result;
   }

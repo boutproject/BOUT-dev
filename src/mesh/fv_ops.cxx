@@ -214,11 +214,12 @@ Field3D Div_par_K_Grad_par(const Field3D& Kin, const Field3D& fin, bool bndry_fl
     if (bndry_flux || mesh->periodicY(i.x()) || !mesh->lastY(i.x())
         || (i.y() != mesh->yend)) {
 
-      const BoutReal c = 0.5 * (K[i] + Kup[iyp]);             // K at the upper boundary
+      const BoutReal c = 0.5 * (K[i] + Kup[iyp]); // K at the upper boundary
       const BoutReal J = 0.5 * (coord->J()[i] + coord->J()[iyp]); // Jacobian at boundary
       const BoutReal g_22 = 0.5 * (coord->g_22()[i] + coord->g_22()[iyp]);
 
-      const BoutReal gradient = 2. * (fup[iyp] - f[i]) / (coord->dy()[i] + coord->dy()[iyp]);
+      const BoutReal gradient =
+          2. * (fup[iyp] - f[i]) / (coord->dy()[i] + coord->dy()[iyp]);
 
       const BoutReal flux = c * J * gradient / g_22;
 
@@ -228,7 +229,7 @@ Field3D Div_par_K_Grad_par(const Field3D& Kin, const Field3D& fin, bool bndry_fl
     // Calculate flux at lower surface
     if (bndry_flux || mesh->periodicY(i.x()) || !mesh->firstY(i.x())
         || (i.y() != mesh->ystart)) {
-      const BoutReal c = 0.5 * (K[i] + Kdown[iym]);           // K at the lower boundary
+      const BoutReal c = 0.5 * (K[i] + Kdown[iym]); // K at the lower boundary
       const BoutReal J = 0.5 * (coord->J()[i] + coord->J()[iym]); // Jacobian at boundary
 
       const BoutReal g_22 = 0.5 * (coord->g_22()[i] + coord->g_22()[iym]);

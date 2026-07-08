@@ -491,10 +491,14 @@ Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
 
   BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
     // Calculate velocities
-    const BoutReal vU = 0.25 * (vz[i.zp()] + vz[i]) * (coord->J()[i.zp()] + coord->J()[i]);
-    const BoutReal vD = 0.25 * (vz[i.zm()] + vz[i]) * (coord->J()[i.zm()] + coord->J()[i]);
-    const BoutReal vL = 0.25 * (vx[i.xm()] + vx[i]) * (coord->J()[i.xm()] + coord->J()[i]);
-    const BoutReal vR = 0.25 * (vx[i.xp()] + vx[i]) * (coord->J()[i.xp()] + coord->J()[i]);
+    const BoutReal vU =
+        0.25 * (vz[i.zp()] + vz[i]) * (coord->J()[i.zp()] + coord->J()[i]);
+    const BoutReal vD =
+        0.25 * (vz[i.zm()] + vz[i]) * (coord->J()[i.zm()] + coord->J()[i]);
+    const BoutReal vL =
+        0.25 * (vx[i.xm()] + vx[i]) * (coord->J()[i.xm()] + coord->J()[i]);
+    const BoutReal vR =
+        0.25 * (vx[i.xp()] + vx[i]) * (coord->J()[i.xp()] + coord->J()[i]);
 
     // X direction
     Stencil1D s;
@@ -592,8 +596,10 @@ Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
 
   BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
     // Y velocities on y boundaries
-    const BoutReal vU = 0.25 * (vy[i] + vy[i.yp()]) * (coord->J()[i] + coord->J()[i.yp()]);
-    const BoutReal vD = 0.25 * (vy[i] + vy[i.ym()]) * (coord->J()[i] + coord->J()[i.ym()]);
+    const BoutReal vU =
+        0.25 * (vy[i] + vy[i.yp()]) * (coord->J()[i] + coord->J()[i.yp()]);
+    const BoutReal vD =
+        0.25 * (vy[i] + vy[i.ym()]) * (coord->J()[i] + coord->J()[i.ym()]);
 
     // n (advected quantity) on y boundaries
     // Note: Use unshifted n_in variable

@@ -340,7 +340,8 @@ PetscOperators::Parallel PetscOperators::getParallel() const {
   dl.applyParallelBoundary("parallel_neumann_o1");
 
   // Cell volume
-  Field3D dV = Coordinates::FieldMetric{coords->J() * coords->dx() * coords->dy() * coords->dz()};
+  Field3D dV =
+      Coordinates::FieldMetric{coords->J() * coords->dx() * coords->dy() * coords->dz()};
   dV.splitParallelSlices();
   dV.yup() = 0.0;
   dV.ydown() = 0.0;
