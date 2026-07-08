@@ -1834,6 +1834,11 @@ BoutReal SNESSolver::pid(BoutReal timestep, int nl_its, BoutReal max_dt) {
   // clamp growth factor to avoid huge changes
   BoutReal fac = std::clamp(facP * facI * facD, 0.2, 5.0);
 
+  // Add slow growth when convergence is good and stable
+  if (nl_its <= target_its && nl_its_prev <= target_its) {
+    fac *= 1.1;   // or 1.05 for more conservative growth
+  }
+
   if (pid_consider_failures && (fac > 1.0)) {
     // Reduce aggressiveness if recent steps have failed often
     fac = pow(fac, std::max(0.3, 1.0 - 2.0 * recent_failure_rate));
