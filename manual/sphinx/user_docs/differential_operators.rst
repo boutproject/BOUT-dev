@@ -530,7 +530,7 @@ cell is added to another. There are several caveats to this:
   precision.
 
 The methods can be used by including the
-:doc:`header<../_breathe_autogen/file/fv__ops_8cxx>`::
+:doc:`header<../_breathe_autogen/file/fv__ops_8hxx>`::
 
    #include "bout/fv_ops.hxx"
 

@@ -19,9 +19,11 @@
 #include "bout/vector2d.hxx"
 
 namespace FV {
-/*!
- * Div ( a Grad_perp(f) ) -- ∇⊥ ( a ⋅ ∇⊥ f) -- Vorticity
- */
+/// Vorticity:
+/// \f[
+///   \nabla (a \cdot \nabla_\perp(f))
+/// \f]
+// Div ( a Grad_perp(f) ) -- ∇⊥ ( a ⋅ ∇⊥ f) -- Vorticity
 Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f);
 
 [[deprecated("Please use Div_a_Grad_perp instead")]] inline Field3D
@@ -29,49 +31,55 @@ Div_a_Laplace_perp(const Field3D& a, const Field3D& f) {
   return Div_a_Grad_perp(a, f);
 }
 
-/*!
-   * Divergence of a parallel diffusion Div( k * Grad_par(f) )
-   */
+/// Divergence of a parallel diffusion
+/// \f[
+///   \nabla_\parallel(k \cdot \nabla_\parallel(f) )
+/// \f]
 Field3D Div_par_K_Grad_par(const Field3D& k, const Field3D& f, bool bndry_flux = true);
 
-/*!
-   * 4th-order derivative in Y, using derivatives
-   * on cell boundaries.
-   *
-   * A one-sided 3rd-order derivative, given a value
-   * at a boundary is:
-   *
-   * d3f/dx3 ~= 16/5 f_b - 6 f_0 + 4 f_1 - 6/5 f_2
-   *
-   * where f_b is the value on the boundary; f_0 is the cell
-   * to the left of the boundary; f_1 to the left of f_0 and f_2
-   * to the left of f_1
-   *
-   *    f_2 | f_1 | f_0 |
-   *                   f_b
-   *
-   * NB: Uses to/from FieldAligned coordinates
-   *
-   * No fluxes through domain boundaries
-   */
+/// 4th-order derivative in Y, using derivatives
+/// on cell boundaries.
+///
+/// A one-sided 3rd-order derivative, given a value
+/// at a boundary is:
+///
+/// \f[
+/// \frac{d^3f}{dx^3} \simeq \tfrac{16}{5} f_b - 6 f_0 + 4 f_1 - \tfrac{6}{5} f_2
+/// \f]
+///
+/// where:
+///
+/// - \f$f_b\f$ is the value on the boundary,
+/// - \f$f_0\f$ is the cell to the left of the boundary,
+/// - \f$f_1\f$ to the left of \f$f_0\f$, and
+/// - \f$f_2\f$ to the left of f_1:
+///
+/// .. code:: text
+///    f_2 | f_1 | f_0 |
+///                   f_b
+///
+/// NB: Uses to/from FieldAligned coordinates
+///
+/// No fluxes through domain boundaries
+
 Field3D D4DY4(const Field3D& d, const Field3D& f);
 
-/*!
-   * 4th-order dissipation term
-   *
-   *
-   * A one-sided 3rd-order derivative, given a value
-   * at a boundary is:
-   *
-   * d3f/dx3 ~= 16/5 f_b - 6 f_0 + 4 f_1 - 6/5 f_2
-   *
-   * where f_b is the value on the boundary; f_0 is the cell
-   * to the left of the boundary; f_1 to the left of f_0 and f_2
-   * to the left of f_1
-   *
-   *    f_2 | f_1 | f_0 |
-   *                   f_b
-   */
+/// 4th-order dissipation term
+///
+/// \f[
+/// \frac{d^3f}{dx^3} \simeq \tfrac{16}{5} f_b - 6 f_0 + 4 f_1 - \tfrac{6}{5} f_2
+/// \f]
+///
+/// where:
+///
+/// - \f$f_b\f$ is the value on the boundary,
+/// - \f$f_0\f$ is the cell to the left of the boundary,
+/// - \f$f_1\f$ to the left of \f$f_0\f$, and
+/// - \f$f_2\f$ to the left of f_1:
+///
+/// .. code:: text
+///    f_2 | f_1 | f_0 |
+///                   f_b
 Field3D D4DY4_Index(const Field3D& f, bool bndry_flux = true);
 
 // Forward declarations of flux limiters

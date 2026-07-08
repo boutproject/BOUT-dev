@@ -1,8 +1,12 @@
+/// \file
+/// Interface to PETSc solver
+/// NOTE: This class needs tidying, generalising to use FieldData interface
+
 /**************************************************************************
  * Interface to PETSc solver
  *
  **************************************************************************
- * Copyright 2010 - 2025 BOUT++ contributors
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *

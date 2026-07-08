@@ -1,3 +1,5 @@
+.. _sec-variable-init:
+
 Variable initialisation
 =======================
 
@@ -172,7 +174,7 @@ expressions.
 .. _tab-initexprfunc:
 .. table:: Initialisation expression functions
 
-   +------------------------------------------+------------------------------------------------------+ 
+   +------------------------------------------+------------------------------------------------------+
    |  Name                                    | Description                                          |
    +==========================================+======================================================+
    | ``abs(x)``                               | Absolute value :math:`|x|`                           |
@@ -238,8 +240,8 @@ In addition there are some special functions which enable control flow
 
 .. _tab-exprcontrol:
 .. table:: Control flow and special functions
-           
-   +------------------------------------------+------------------------------------------------------+ 
+
+   +------------------------------------------+------------------------------------------------------+
    |  Name                                    | Description                                          |
    +==========================================+======================================================+
    | ``where(expr, gt0, lt0)``                | If the first ``expr`` evaluates to a value greater   |
@@ -258,8 +260,8 @@ In addition there are some special functions which enable control flow
    |                                          | is evaluated before the ``expr`` expression.         |
    |                                          | Example: ``[n=2]( {n}^{n} )`` is ``2^2``.            |
    +------------------------------------------+------------------------------------------------------+
-   
-   
+
+
 For field-aligned tokamak simulations, the Y direction is along the
 field and in the core this will have a discontinuity at the twist-shift
 location where field-lines are matched onto each other. To handle this,
@@ -329,13 +331,13 @@ to ``generate`` in the ``Context`` object.
 ::
 
   Field3D shear = ...; // Value calculated in BOUT++
-  
+
   FieldFactory factory(mesh);
   auto gen = factory->parse("model:viscosity");
 
   Field3D viscosity;
   viscosity.allocate();
-  
+
   BOUT_FOR(i, viscosity.region("RGN_ALL")) {
     viscosity[i] = gen->generate(bout::generator::Context(i, CELL_CENTRE, mesh, 0.0)
                                    .set("shear", shear[i]));
@@ -366,7 +368,7 @@ call functions, as in the above example ``viscosity`` is a function of
 which uses ``{arg}`` as the input value. We could then call this function:
 
 .. code-block:: cfg
-                
+
     result = [arg = x*2](mycosh)
 
 
@@ -381,7 +383,7 @@ occur. Recursive functions can however be enabled by setting
 ``input:max_recursion_depth != 0`` e.g.:
 
 .. code-block:: cfg
-                
+
     [input]
     max_recursion_depth = 10  # 0 = none, -1 = unlimited
 
@@ -408,7 +410,7 @@ recursion is used.
 Note: Use of this facility in general is not encouraged, as it can
 easily lead to very inefficient and hard to understand code. It is
 here because occasionally it might be necessary, and because making
-the input language Turing complete was irresistible. 
+the input language Turing complete was irresistible.
 
 Initalising variables with the ``FieldFactory`` class
 -----------------------------------------------------
@@ -457,7 +459,7 @@ containing values which can be used in expressions, in particular `x`,
 `Context` object, allowing data from BOUT++ to be used in expressions.
 There are also ways to manipulate `Context` objects for more complex
 expressions and functions, see below for details.
-    
+
 All classes inheriting from `FieldGenerator` must implement
 a `FieldGenerator::generate` function, which returns the
 value at the given ``(x,y,z,t)`` position. Classes should also implement
@@ -585,9 +587,9 @@ the same value. This can be one of:
 -  -2 for a symbol (e.g. “sinh”, “x” or “pi”). This includes anything
    which starts with a letter, and contains only letters, numbers, and
    underscores. The string is stored in the variable ``string curident``
-  
+
 -  -3 for a ``Context`` parameter which appeared surrounded by braces ``{}``.
-   
+
 -  0 to mean end of input
 
 -  The character if none of the above. Since letters and numbers are
