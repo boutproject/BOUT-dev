@@ -598,14 +598,14 @@ void Coordinates::readParallelMetricComponents() {
       load_parallel_metric_component(name, component, i);
     };
 
-    read_offset("g11", covariantMetricTensor.g11_m);
-    read_offset("g22", covariantMetricTensor.g22_m);
-    read_offset("g33", covariantMetricTensor.g33_m);
-    read_offset("g13", covariantMetricTensor.g13_m);
-    read_offset("g_11", contravariantMetricTensor.g11_m);
-    read_offset("g_22", contravariantMetricTensor.g22_m);
-    read_offset("g_33", contravariantMetricTensor.g33_m);
-    read_offset("g_13", contravariantMetricTensor.g13_m);
+    read_offset("g_11", covariantMetricTensor.g11_m);
+    read_offset("g_22", covariantMetricTensor.g22_m);
+    read_offset("g_33", covariantMetricTensor.g33_m);
+    read_offset("g_13", covariantMetricTensor.g13_m);
+    read_offset("g11", contravariantMetricTensor.g11_m);
+    read_offset("g22", contravariantMetricTensor.g22_m);
+    read_offset("g33", contravariantMetricTensor.g33_m);
+    read_offset("g13", contravariantMetricTensor.g13_m);
     read_offset("dy", dy_);
     read_offset("Bxy", Bxy_);
 
