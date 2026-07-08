@@ -26,6 +26,7 @@ using namespace bout::globals;
 
 // Reuse the "standard" fixture for FakeMesh
 using Field3DTest = FakeMeshFixture;
+using Field3DTestFCI = FakeMeshFixture_tmpl<3, 5, 7, true>;
 
 TEST_F(Field3DTest, Is3D) {
   Field3D field;
@@ -1977,6 +1978,37 @@ TEST_F(Field3DTest, SQField3DParallelPreservesParallelSlices) {
   EXPECT_TRUE(IsFieldEqual(squared, 4.0));
   EXPECT_TRUE(IsFieldEqual(squared.yup(), 9.0));
   EXPECT_TRUE(IsFieldEqual(squared.ydown(), 16.0));
+}
+
+TEST_F(Field3DTestFCI, MulField3DParallelPreservesParallelSlices) {
+  Field3D field;
+  EXPECT_TRUE(field.isFci());
+
+  field = 2.0;
+  field.splitParallelSlices();
+  field.yup() = 3.0;
+  field.ydown() = 4.0;
+  field.resetRegionParallel();
+
+  Field3D rhs;
+  EXPECT_TRUE(rhs.isFci());
+  rhs = 3.0;
+  rhs.splitParallelSlices();
+  rhs.yup() = 4.0;
+  rhs.ydown() = 5.0;
+  rhs.resetRegionParallel();
+
+  const Field3D prod = field * rhs;
+
+  EXPECT_FALSE(prod.hasParallelSlices());
+  EXPECT_TRUE(IsFieldEqual(prod, 6.0));
+
+  const Field3DParallel prodpar = field.asField3DParallel() * rhs;
+  EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(prodpar)>, Field3DParallel>));
+  EXPECT_TRUE(prodpar.hasParallelSlices());
+  EXPECT_TRUE(IsFieldEqual(prodpar, 6.0));
+  EXPECT_TRUE(IsFieldEqual(prodpar.yup(), 12.0, "RGN_YPAR_+1"));
+  EXPECT_TRUE(IsFieldEqual(prodpar.ydown(), 20.0, "RGN_YPAR_-1"));
 }
 
 TEST_F(Field3DTest, Abs) {
