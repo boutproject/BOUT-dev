@@ -917,6 +917,16 @@ int Coordinates::geometry(bool recalculate_staggered,
   invSgCache.reset();
   CoordinatesAccessor::clear(this);
 
+  _g_22_ylow.reset();
+  _g_22_yhigh.reset();
+  _cell_area_xlow.reset();
+  _cell_area_xhigh.reset();
+  _cell_area_ylow.reset();
+  _cell_area_yhigh.reset();
+  _cell_area_zlow.reset();
+  _cell_area_zhigh.reset();
+  _cell_volume.reset();
+
   return 0;
 }
 
