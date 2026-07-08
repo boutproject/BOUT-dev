@@ -136,6 +136,7 @@ set(BOUT_SOURCES
     ./include/bout/field_accessor.hxx
     ./include/bout/field_data.hxx
     ./include/bout/field_factory.hxx
+    ./include/bout/fieldops.hxx
     ./include/bout/fieldgroup.hxx
     ./include/bout/fieldperp.hxx
     ./include/bout/fv_ops.hxx
@@ -177,6 +178,7 @@ set(BOUT_SOURCES
     ./include/bout/parallel_boundary_region.hxx
     ./include/bout/paralleltransform.hxx
     ./include/bout/petsc_interface.hxx
+    ./include/bout/petsc_operators.hxx
     ./include/bout/petsclib.hxx
     ./include/bout/physicsmodel.hxx
     ./include/bout/rajalib.hxx
@@ -206,6 +208,7 @@ set(BOUT_SOURCES
     ./include/bout/template_combinations.hxx
     ./include/bout/tokamak_coordinates.hxx
     ./include/bout/traits.hxx
+    ./include/bout/twiddle.hxx
     ./include/bout/unused.hxx
     ./include/bout/utils.hxx
     ./include/bout/vecops.hxx
@@ -309,6 +312,7 @@ set(BOUT_SOURCES
     ./src/mesh/parallel/shiftedmetricinterp.hxx
     ./src/mesh/parallel_boundary_op.cxx
     ./src/mesh/parallel_boundary_region.cxx
+    ./src/mesh/petsc_operators.cxx
     ./src/mesh/surfaceiter.cxx
     ./src/mesh/tokamak_coordinates.cxx
     ./src/physics/gyro_average.cxx
@@ -431,10 +435,17 @@ if(BOUT_GENERATE_FIELDOPS)
         "clang-format not found, but you have requested to generate code!"
     )
   endif()
+  if(BOUT_ENABLE_RAJA)
+    set(GEN_LOOP_EXEC "raja")
+  elseif(BOUT_ENABLE_OPENMP)
+    set(GEN_LOOP_EXEC "openmp")
+  else()
+    set(GEN_LOOP_EXEC "serial")
+  endif()
   add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/field/generated_fieldops.cxx
-    COMMAND ${Python3_EXECUTABLE} gen_fieldops.py --filename
-            generated_fieldops.cxx.tmp
+    COMMAND ${Python3_EXECUTABLE} gen_fieldops.py --loop-exec ${GEN_LOOP_EXEC}
+            --filename generated_fieldops.cxx.tmp
     COMMAND ${ClangFormat_BIN} generated_fieldops.cxx.tmp -i
     COMMAND ${CMAKE_COMMAND} -E rename generated_fieldops.cxx.tmp
             generated_fieldops.cxx

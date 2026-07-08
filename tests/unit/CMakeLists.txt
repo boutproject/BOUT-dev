@@ -60,6 +60,7 @@ set(serial_tests_source
     ./field/test_field3d.cxx
     ./field/test_field_factory.cxx
     ./field/test_fieldgroup.cxx
+    ./field/test_if_else.cxx
     ./field/test_fieldperp.cxx
     ./field/test_initialprofiles.cxx
     ./field/test_vector2d.cxx
@@ -69,6 +70,7 @@ set(serial_tests_source
     ./include/bout/test_assert.cxx
     ./include/bout/test_bout_enum_class.cxx
     ./include/bout/test_deriv_store.cxx
+    ./include/bout/test_fv_ops.cxx
     ./include/bout/test_generic_factory.cxx
     ./include/bout/test_macro_for_each.cxx
     ./include/bout/test_monitor.cxx
@@ -97,8 +99,10 @@ set(serial_tests_source
     ./mesh/test_invert3x3.cxx
     ./mesh/test_mesh.cxx
     ./mesh/test_paralleltransform.cxx
+    ./mesh/test_petsc_operators.cxx
     ./solver/test_fakesolver.cxx
     ./solver/test_fakesolver.hxx
+    ./solver/test_nvector.cxx
     ./solver/test_solver.cxx
     ./solver/test_solverfactory.cxx
     ./sys/test_boutexception.cxx

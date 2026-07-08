@@ -31,6 +31,7 @@
 #include "bout/boutexception.hxx"
 #include "bout/coordinates.hxx"
 #include "bout/region.hxx"
+#include <bout/boundary_region_iter.hxx>
 #include <bout/interpolation_xz.hxx>
 #include <bout/mask.hxx>
 #include <bout/parallel_boundary_region.hxx>
@@ -41,7 +42,6 @@
 #include <string>
 #include <vector>
 
-class BoundaryRegionPar;
 class FieldPerp;
 class Field2D;
 class Field3D;
@@ -68,8 +68,9 @@ class FCIMap {
 public:
   FCIMap() = delete;
   FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options, int offset,
-         const std::shared_ptr<BoundaryRegionPar>& inner_boundary,
-         const std::shared_ptr<BoundaryRegionPar>& outer_boundary, bool zperiodic);
+         const std::shared_ptr<bout::boundary::BoundaryRegionFCI>& inner_boundary,
+         const std::shared_ptr<bout::boundary::BoundaryRegionFCI>& outer_boundary,
+         bool zperiodic);
 
   /// Direction of map
   int offset() const { return offset_; }
@@ -124,6 +125,8 @@ public:
 
     return false;
   }
+
+  void loadParallelMetrics(Coordinates* coords) override;
 
 protected:
   void checkInputGrid() override;

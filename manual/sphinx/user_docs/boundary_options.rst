@@ -275,6 +275,9 @@ and ``bndry_down = none`` to skip unnecessary operations on y-boundary
 cells of the base variable. For example, for an evolving variable
 ``f``, put a section in the ``BOUT.inp`` input file like
 
+The PETSc FCI operators described in :ref:`sec-parallel-operators-petsc-fci`
+use the same parallel boundary data and application order.
+
 .. code-block:: cfg
 
     [f]
@@ -435,6 +438,128 @@ the upper Y boundary of a 2D variable ``var``::
 
 The `BoundaryRegion` class is defined in
 ``include/boundary_region.hxx``
+
+Y-Boundaries
+------------
+
+The sheath boundaries are often implemented in the physics model.
+Previously of they where implemented using a `RangeIterator`::
+
+    class yboundary_example_legacy {
+    public:
+      yboundary_example_legacy(Options* opt, const Field3D& N, const Field3D& V)
+          : N(N), V(V) {
+        Options& options = *opt;
+        lower_y = options["lower_y"].doc("Boundary on lower y?").withDefault<bool>(lower_y);
+        upper_y = options["upper_y"].doc("Boundary on upper y?").withDefault<bool>(upper_y);
+      }
+
+      void rhs() {
+        BoutReal totalFlux = 0;
+        if (lower_y) {
+          for (RangeIterator r = mesh->iterateBndryLowerY(); !r.isDone(); r++) {
+            for (int jz = 0; jz < mesh->LocalNz; jz++) {
+              // Calculate flux through surface [normalised m^-2 s^-1],
+              // should be positive since V < 0.0
+              BoutReal flux =
+                  -0.5 * (N(r.ind, mesh->ystart, jz) + N(r.ind, mesh->ystart - 1, jz)) * 0.5
+                  * (V(r.ind, mesh->ystart, jz) + V(r.ind, mesh->ystart - 1, jz));
+              totalFlux += flux;
+            }
+          }
+        }
+        if (upper_y) {
+          for (RangeIterator r = mesh->iterateBndryUpperY(); !r.isDone(); r++) {
+            for (int jz = 0; jz < mesh->LocalNz; jz++) {
+              // Calculate flux through surface [normalised m^-2 s^-1],
+              // should be positive since V < 0.0
+              BoutReal flux = -0.5 * (N(r.ind, mesh->yend, jz) + N(r.ind, mesh->yend + 1, jz))
+                              * 0.5
+                              * (V(r.ind, mesh->yend, jz) + V(r.ind, mesh->yend + 1, jz));
+              totalFlux += flux;
+            }
+          }
+        }
+      }
+
+    private:
+      bool lower_y{true};
+      bool upper_y{true};
+      const Field3D& N;
+      const Field3D& V;
+    }
+
+
+This can be replaced using the `YBoundary` class, which not only simplifies the
+code, but also allows to have the same code working with non-field-aligned
+geometries, as flux coordinate independent (FCI) method::
+
+    #include <bout/yboundary_regions.hxx>
+
+    class yboundary_example {
+    public:
+      yboundary_example(Options* opt, const Field3D& N, const Field3D& V) :
+      N(N), V(V) {}
+
+      void rhs() {
+        BoutReal totalFlux = 0;
+        mesh->getCoordinates()->getYBoundary()->iter_points([&](auto& point) {
+          BoutReal flux = point.interpolate_sheath_o2(N) * point.interpolate_sheath_o2(V);
+          totalFlux += flux;
+        });
+      }
+
+    private:
+      const Field3D& N;
+      const Field3D& V;
+    };
+
+
+
+There are several member functions of ``point``. ``point`` is of type
+`BoundaryRegionParIterBase` and `BoundaryRegionIter`, and both should provide
+the same interface. If they don't that is a bug, as the above code is a
+template, that gets instantiated for both types, and thus requires both
+classes to provide the same interface, one for FCI-like boundaries and one for
+field aligned boundaries.
+
+Here is a short summary of some members of ``point``, where ``f`` is a :
+
+.. list-table:: Members for boundary operation
+   :widths: 15 70
+   :header-rows: 1
+
+   * - Function
+     - Description
+   * - ``point.ythis(f)``
+     - Returns the value at the last point in the domain
+   * - ``point.ynext(f)``
+     - Returns the value at the first point in the boundary, i.e. one beyond the domain.
+   * - ``point.yprev(f)``
+     - Returns the value at the second to last point in the domain, if it is
+       valid. NB: this point may not be valid.
+   * - ``point.interpolate_sheath_o2(f)``
+     - Returns the value at the boundary, assuming the bounday value has been set
+   * - ``point.extrapolate_sheath_o1(f)``
+     - Returns the value at the boundary, extrapolating from the bulk, first order
+   * - ``point.extrapolate_sheath_o2(f)``
+     - Returns the value at the boundary, extrapolating from the bulk, second order
+   * - ``point.extrapolate_next_o{1,2}(f)``
+     - Extrapolate into the boundary from the bulk, first or second order
+   * - ``point.extrapolate_grad_o{1,2}(f)``
+     - Extrapolate the gradient into the boundary, first or second order
+   * - ``point.dirichlet_o{1,2,3}(f, v)``
+     - Apply dirichlet boundary conditions with value ``v`` and given order
+   * - ``point.neumann_o{1,2,3}(f, v)``
+     - Applies a gradient of ``v / dy`` boundary condition.
+   * - ``point.limitFree(f)``
+     - Extrapolate into the boundary using only monotonic decreasing values.
+       ``f`` needs to be positive.
+   * - ``point.dir()``
+     - The direction of the boundary.
+
+
+
 
 Boundary regions
 ----------------

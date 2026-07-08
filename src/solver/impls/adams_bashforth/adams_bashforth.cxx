@@ -352,10 +352,10 @@ void AdamsBashforthSolver::resetInternalFields() {
 int AdamsBashforthSolver::run() {
 
   // Just for developer diagnostics
-  int nwasted = 0;
-  int nwasted_following_fail = 0;
+  [[maybe_unused]] int nwasted = 0;
+  [[maybe_unused]] int nwasted_following_fail = 0;
 
-  for (int s = 0; s < getNumberOutputSteps(); s++) {
+  for (int s = 1; s <= getNumberOutputSteps(); s++) {
     BoutReal target = simtime + getOutputTimestep();
 
     bool running = true;
@@ -373,7 +373,7 @@ int AdamsBashforthSolver::run() {
 
       // Just for developer diagnostics - set to true when the previous
       // attempt at a time step failed.
-      bool previous_fail = false;
+      [[maybe_unused]] bool previous_fail = false;
 
       // Flag to indicate if we want to use a lower order method
       bool use_lower = false;
@@ -488,12 +488,14 @@ int AdamsBashforthSolver::run() {
         // Be more conservative if we've failed;
         timestep = 0.9 * dt_lim;
 
+#if CHECK > 4
         // For developers
         if (previous_fail) {
           nwasted_following_fail++;
         }
         previous_fail = true;
         nwasted++;
+#endif
       }
 
       // Ditch last history point if we have enough

@@ -27,6 +27,7 @@
 #define BOUT_ARRAY_H
 
 #include <algorithm>
+#include <initializer_list>
 #include <map>
 #include <memory>
 #include <tuple>
@@ -68,6 +69,7 @@ struct ArrayData {
     auto& rm = umpire::ResourceManager::getInstance();
 #if BOUT_HAS_CUDA
     auto allocator = rm.getAllocator(umpire::resource::Pinned);
+    //auto allocator = rm.getAllocator(umpire::resource::Unified);
 #else
     auto allocator = rm.getAllocator("HOST");
 #endif
@@ -187,9 +189,22 @@ public:
   Array() noexcept : ptr(nullptr) {}
 
   /*!
-   * Create an array of given length
+   * Create an array of given length.
    */
-  Array(size_type len) { ptr = get(len); }
+  Array(size_type len) : ptr(get(len)) {}
+
+  /*!
+   * Create an array with initializer list.
+   * This is explicit to avoid confusion with (size_type) constructor.
+   */
+  static Array fromValues(std::initializer_list<T> init) {
+    if (init.size() == 0) {
+      return Array();
+    }
+    Array array(init.size());
+    std::copy(init.begin(), init.end(), array.begin());
+    return array;
+  }
 
   /*!
    * Destructor. Releases the underlying dataBlock
@@ -199,7 +214,7 @@ public:
   /*!
    * Copy constructor
    */
-  Array(const Array& other) noexcept { ptr = other.ptr; }
+  Array(const Array& other) noexcept : ptr(other.ptr) {}
 
   /*!
    * Assignment operator

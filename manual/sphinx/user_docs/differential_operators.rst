@@ -36,7 +36,7 @@ exceptions are possible) and are divided into three categories:
       :math:`(-f_{-2} + 16f_{-1} - 30f_0 + 16f_1 - f_2)/12`
 
    -  ``S2``: 2\ :math:`^{nd}` order smoothing derivative
-      
+
    -  ``W2``: 2\ :math:`^{nd}` order CWENO
 
    -  ``W3``: 3\ :math:`^{rd}` order CWENO
@@ -46,9 +46,9 @@ exceptions are possible) and are divided into three categories:
    -  ``U1``: 1\ :math:`^{st}` order upwinding
 
    -  ``U2``: 2\ :math:`^{nd}` order upwinding
-      
+
    -  ``U3``: 3\ :math:`^{rd}` order upwinding
-      
+
    -  ``U4``: 4\ :math:`^{th}` order upwinding
 
    -  ``C2``: 2\ :math:`^{nd}` order central
@@ -75,7 +75,7 @@ Special methods :
 
 - ``SPLIT``: A flux method that splits into upwind and central terms
    :math:`\frac{d}{dx}(v_x f) = v_x\frac{df}{dx} + f\frac{dv_x}{dx}`
-  
+
 
 .. _Weighted Essentially Non-Oscillatory (WENO): https://doi.org/10.1137/S106482759732455X
 
@@ -178,7 +178,7 @@ implemented.
        return 0.5*(f.p - f.m);
    };
 
-   
+
 Here `DEFINE_STANARD_DERIV` is a macro that acts on the kernel
 ``return 0.5*(f.p - f.m);`` and produces the functor that will apply
 the differencing method over an entire field.  The macro takes several
@@ -619,6 +619,10 @@ The parallel diffusion operator calculates :math:`\nabla_{||}\left[k\partial_||\
 This is done by calculating the flux :math:`k\partial_{||}\left(f\right)` on cell boundaries
 using central differencing.
 
+For FCI meshes there is also a PETSc-based support-operator implementation
+which constructs sparse matrix parallel operators from grid metadata. That
+interface is documented separately in :ref:`sec-parallel-operators-petsc-fci`.
+
 
 Advection in 3D
 ~~~~~~~~~~~~~~~
@@ -667,6 +671,18 @@ values. Several slope limiters are defined in ``fv_ops.hxx``:
   to ``MinMod``. It has smaller dissipation than ``MinMod`` so is the
   default.
 
+* ``VanAlbada`` - A smooth (differentiable) symmetric slope limiter which
+  avoids piecewise branches at extrema. This can be useful for nonlinear
+  solvers and finite-difference Jacobian calculations.
+
+* ``WENO3`` - A third-order smooth WENO (Jiang-Shu) cell-face reconstruction
+  using a three-point stencil. This is typically less dissipative than TVD
+  slope limiters, but is not strictly monotonicity-preserving.
+
+Useful resources on slope limiters include:
+
+* `Wikipedia's Flux Limiter page <https://en.wikipedia.org/wiki/Flux_limiter>`_
+* `SU2's Slope Limiters and Shock Resolution page <https://su2code.github.io/docs_v7/Slope-Limiters-and-Shock-Resolution/>`_
 
 .. _sec-staggeredgrids:
 

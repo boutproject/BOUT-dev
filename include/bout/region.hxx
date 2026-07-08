@@ -1,9 +1,9 @@
 /**************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
  * Region class by D. Dickinson 2018
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -49,6 +49,7 @@
 #include <utility>
 #include <vector>
 
+#include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
@@ -170,8 +171,8 @@ struct SpecificInd {
   int ny = -1, nz = -1; ///< Sizes of y and z dimensions
 
   SpecificInd() = default;
-  SpecificInd(int i, int ny, int nz) : ind(i), ny(ny), nz(nz){};
-  explicit SpecificInd(int i) : ind(i){};
+  SpecificInd(int i, int ny, int nz) : ind(i), ny(ny), nz(nz) {};
+  explicit SpecificInd(int i) : ind(i) {};
 
   /// Allow explicit conversion to an int
   explicit operator int() const { return ind; }
@@ -491,10 +492,9 @@ template <typename T = Ind3D>
 class Region {
   // Following prevents a Region being created with anything other
   // than Ind2D, Ind3D or IndPerp as template type
-  static_assert(
-      std::is_base_of_v<
-          Ind2D, T> || std::is_base_of_v<Ind3D, T> || std::is_base_of_v<IndPerp, T>,
-      "Region must be templated with one of IndPerp, Ind2D or Ind3D");
+  static_assert(std::is_base_of_v<Ind2D, T> || std::is_base_of_v<Ind3D, T>
+                    || std::is_base_of_v<IndPerp, T>,
+                "Region must be templated with one of IndPerp, Ind2D or Ind3D");
 
 public:
   using data_type = T;
@@ -570,7 +570,7 @@ public:
   };
 
   Region(RegionIndices& indices, int maxregionblocksize = MAXREGIONBLOCKSIZE)
-      : indices(indices), blocks(getContiguousBlocks(maxregionblocksize)){};
+      : indices(indices), blocks(getContiguousBlocks(maxregionblocksize)) {};
 
   // We need to first set the blocks, and only after that call getRegionIndices.
   // Do not put in the member initialisation
@@ -595,17 +595,28 @@ public:
 
   const ContiguousBlocks& getBlocks() const { return blocks; };
   const RegionIndices& getIndices() const { return indices; };
+  const Array<int>& getLinearIndices() const {
+    if (linearIndices.empty()) {
+      linearIndices = Array<int>(indices.size());
+      for (size_type i = 0; i < indices.size(); ++i) {
+        linearIndices[i] = indices[i].ind;
+      }
+    }
+    return linearIndices;
+  }
 
   /// Set the indices and ensure blocks updated
   void setIndices(RegionIndices& indicesIn, int maxregionblocksize = MAXREGIONBLOCKSIZE) {
     indices = indicesIn;
     blocks = getContiguousBlocks(maxregionblocksize);
+    invalidateLinearIndices();
   };
 
   /// Set the blocks and ensure indices updated
   void setBlocks(ContiguousBlocks& blocksIn) {
     blocks = blocksIn;
     indices = getRegionIndices();
+    invalidateLinearIndices();
   };
 
   /// Return a new Region that has the same indices as this one but
@@ -829,10 +840,13 @@ public:
   // sorted this would prevent this usage.
 
 private:
-  RegionIndices indices;   //< Flattened indices
-  ContiguousBlocks blocks; //< Contiguous sections of flattened indices
-  int ny = -1;             //< Size of y dimension
-  int nz = -1;             //< Size of z dimension
+  RegionIndices indices;            //< Flattened indices
+  ContiguousBlocks blocks;          //< Contiguous sections of flattened indices
+  int ny = -1;                      //< Size of y dimension
+  int nz = -1;                      //< Size of z dimension
+  mutable Array<int> linearIndices; //< Cached flattened integer indices
+
+  void invalidateLinearIndices() const { linearIndices.clear(); }
 
   /// Helper function to create a RegionIndices, given the start and end
   /// points in x, y, z, and the total y, z lengths

@@ -192,7 +192,7 @@ PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, vo
     s->load_vars(const_cast<BoutReal*>(x));
     PetscCall(VecRestoreArrayRead(interpolatedX, &x));
 
-    if (s->call_monitors(output_time, i++, s->getNumberOutputSteps()) != 0) {
+    if (s->call_monitors(output_time, ++i, s->getNumberOutputSteps()) != 0) {
       PetscFunctionReturn(1);
     }
 

@@ -19,6 +19,13 @@ public:
     if ((*options)["throw_run"].withDefault(false)) {
       throw BoutException("Deliberate exception in FakeSolver::run");
     }
+    if ((*options)["call_final_monitor"].withDefault(false)) {
+      const int ret =
+          call_monitors(simtime, getNumberOutputSteps(), getNumberOutputSteps());
+      if (ret != 0) {
+        return ret;
+      }
+    }
     return (*options)["fail_run"].withDefault(0);
   }
   bool run_called{false};

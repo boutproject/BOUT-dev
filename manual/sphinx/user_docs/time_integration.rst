@@ -87,7 +87,10 @@ given in table :numref:`tab-solveropts`.
    +--------------------------+--------------------------------------------+-------------------------------------+
    | adaptive                 | Adapt timestep? (Y/N)                      | rk4, imexbdf2                       |
    +--------------------------+--------------------------------------------+-------------------------------------+
-   | use\_precon              | Use a preconditioner? (Y/N)                | pvode, cvode, ida, imexbdf2         |
+   | use\_precon              | Use a preconditioner? (Y/N)                | pvode, ida, imexbdf2                |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | cvode\_precon\_method    | CVODE preconditioner: none, auto, user,   | cvode                               |
+   |                          | petsc, or bbd                              |                                     |
    +--------------------------+--------------------------------------------+-------------------------------------+
    | mudq, mldq               | BBD preconditioner settings                | pvode, cvode, ida                   |
    +--------------------------+--------------------------------------------+-------------------------------------+
@@ -104,12 +107,39 @@ given in table :numref:`tab-solveropts`.
    +--------------------------+--------------------------------------------+-------------------------------------+
    | diagnose                 | Collect and print additional diagnostics   | cvode, imexbdf2, beuler             |
    +--------------------------+--------------------------------------------+-------------------------------------+
+   | nvector                  | ``N_Vector`` backend for SUNDIALS solvers: | cvode, ida, arkode                  |
+   |                          | ``sundials`` or ``manyvector``             |                                     |
+   +--------------------------+--------------------------------------------+-------------------------------------+
 
 |
 
 The most commonly changed options are the absolute and relative solver
 tolerances, ``atol`` and ``rtol`` which should be varied to check
 convergence.
+
+SUNDIALS ``N_Vector`` backends
+------------------------------
+
+The SUNDIALS-based solvers ``cvode``, ``ida``, and ``arkode`` can select
+the ``N_Vector`` backend at runtime using ``solver:nvector``:
+
+.. code-block:: cfg
+
+    [solver]
+    type = cvode
+    nvector = sundials
+
+Valid values are:
+
+- ``sundials`` uses the standard SUNDIALS parallel ``N_Vector``. This is the
+  default.
+- ``manyvector`` uses the BOUT++ field-backed custom ``N_Vector`` built on top
+  of SUNDIALS ManyVector support.
+
+The ``manyvector`` option is only available when BOUT++ was built with SUNDIALS
+ManyVector support. If ``solver:nvector=manyvector`` is selected in a build
+that does not provide this support, solver initialisation will throw an
+exception.
 
 CVODE
 -----
@@ -804,6 +834,34 @@ Setting ``solver:force_symmetric_coloring = true``, will make sure
 that the jacobian colouring matrix is symmetric.  This will often
 include a few extra non-zeros that the stencil will miss otherwise
 
+
+Variable Scaling
+~~~~~~~~~~~~~~~~
+
+There may be differences of many orders of magnitude between your
+variables or within variables across the domain. This can result in a
+particular area of the domain for a particular variable dominating the
+residual in the nonlinear solve because its residual has the largest
+absolute value, even if not the largest relative value. As a
+consequence, tighter tolerances will be needed to ensure other
+variables and parts of the domain are solved to sufficient
+accuracy. The ``scale_vars`` option can help address this by
+renormalising all variables to be of order unity across the entire
+domain.
+
+.. code-block:: ini
+
+   scale_vars = true
+   rescale_period = 30  # Maximum number of time-steps taken before rescaling the variables
+   rescale_threshold = 100.  # Approximate overall change to variables permitted before rescaling
+
+It has been found that scaling variables in this way allows
+simulations to run with much looser tolerances than would otherwise be
+possible (e.g., ``rtol = 1e-5`` and ``atol = 1e-3``). Four-times
+speedups have been observed by doing this. Once a steady-state has
+been reached the simulation can be run for a further few time-steps
+with tighter tolerances to improve the accuracy.
+
 Diagnostics and Monitoring
 ---------------------------
 
@@ -821,6 +879,10 @@ When ``equation_form = pseudo_transient``, the solver saves additional diagnosti
 
 These can be visualized to understand convergence behavior and identify
 problematic regions.
+
+The residuals from the last nonlinear solve are also saved with names
+``resid_<var name>``. Plotting these can help to understand which
+variables and parts of the domain are controlling convergence.
 
 Summary of solver options
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1246,7 +1308,7 @@ then in the ``BOUT.inp`` settings file switch on the preconditioner
 
     [solver]
     type = cvode          # Need CVODE or PETSc
-    use_precon = true     # Use preconditioner
+    cvode_precon_method = user   # Use user-supplied preconditioner
     rightprec = false     # Use Right preconditioner (default left)
 
 Jacobian function
@@ -1362,7 +1424,9 @@ implement the outputMonitor method of PhysicsModel::
     int outputMonitor(BoutReal simtime, int iter, int nout)
 
 The first input is the current simulation time, the second is the output
-number, and the last is the total number of outputs requested.
+number, and the last is the total number of outputs requested. If an initial
+dump is written, it is output number ``0``. Solver output steps are numbered
+from ``1`` to ``nout``, so ``iter == nout`` indicates the final output.
 This method is called by a monitor object PhysicsModel::modelMonitor, which
 writes the restart files at the same time. You can change the frequency at which
 the monitor is called by calling, in PhysicsModel::init::
@@ -1387,7 +1451,9 @@ returns an int::
 
 The first input is the solver object, the second is the current
 simulation time, the third is the output number, and the last is the
-total number of outputs requested. To get the solver to call this
+total number of outputs requested. As for ``outputMonitor()``, output number
+``0`` is reserved for the initial dump when it is written, and solver output
+steps are numbered from ``1`` to ``NOUT``. To get the solver to call this
 function every output time, define a `MyOutputMonitor` object as a member of your
 PhysicsModel::
 
