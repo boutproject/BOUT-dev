@@ -503,8 +503,8 @@ geometries, as flux coordinate independent (FCI) method::
 
       void rhs() {
         BoutReal totalFlux = 0;
-        mesh->getCoordinates()->getYBoundary()->iter_points([&](auto& point) {
-          BoutReal flux = point.interpolate_sheath_o2(N) * point.interpolate_sheath_o2(V);
+        mesh->getCoordinates()->getYBoundary()->iter([&](auto& point) {
+          BoutReal flux = point.interpolate_boundary_o2(N) * point.interpolate_boundary_o2(V);
           totalFlux += flux;
         });
       }
@@ -531,18 +531,18 @@ Here is a short summary of some members of ``point``, where ``f`` is a :
 
    * - Function
      - Description
-   * - ``point.ythis(f)``
+   * - ``point.current(f)``
      - Returns the value at the last point in the domain
-   * - ``point.ynext(f)``
+   * - ``point.next(f)``
      - Returns the value at the first point in the boundary, i.e. one beyond the domain.
-   * - ``point.yprev(f)``
+   * - ``point.prev(f)``
      - Returns the value at the second to last point in the domain, if it is
        valid. NB: this point may not be valid.
-   * - ``point.interpolate_sheath_o2(f)``
+   * - ``point.interpolate_boundary_o2(f)``
      - Returns the value at the boundary, assuming the bounday value has been set
-   * - ``point.extrapolate_sheath_o1(f)``
+   * - ``point.extrapolate_boundary_o1(f)``
      - Returns the value at the boundary, extrapolating from the bulk, first order
-   * - ``point.extrapolate_sheath_o2(f)``
+   * - ``point.extrapolate_boundary_o2(f)``
      - Returns the value at the boundary, extrapolating from the bulk, second order
    * - ``point.extrapolate_next_o{1,2}(f)``
      - Extrapolate into the boundary from the bulk, first or second order

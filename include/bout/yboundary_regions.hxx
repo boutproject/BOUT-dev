@@ -1,9 +1,9 @@
 #pragma once
 
-#include <bout/boundary_region_iter.hxx>
+#include "bout/boundary_region_iter.hxx"
 
-#include "./boundary_iterator.hxx"
 #include "bout/assert.hxx"
+#include "bout/boundary_iterator.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field_data.hxx"
 #include "bout/globals.hxx"
@@ -24,27 +24,17 @@
 
 class YBoundary {
 public:
+  /// Iterate over the boundary.
+  /// This function takes a lamda / templated function, that applies the boundary on the given point.
+  /// The function must take a `auto& point` as argument.
+  /// See also the documentation at ../../manual/sphinx/user_docs/boundary_options.rst
   template <class Func>
-  void iter_regions(const Func& func) {
-    for (auto& region : boundary_regions) {
-      func(*region);
-    }
-    for (auto& region : boundary_regions_par) {
-      func(*region);
-    }
-  }
-  template <class Func>
-  void iter_points(const Func& func) {
+  void iter(const Func& func) {
     iter_regions([&](auto& region) {
       for (auto& point : region) {
         func(point);
       }
     });
-  }
-
-  template <class Func>
-  void iter(const Func& func) {
-    return iter_points(func);
   }
 
   YBoundary(YBndryType type, Options* options_ptr, const Mesh& mesh) {
@@ -94,19 +84,18 @@ public:
         }
       }
     } else {
-      if (lower_y) {
-        boundary_regions.push_back(
-            std::make_shared<NewBoundaryRegionY>(mesh, true, mesh.iterateBndryLowerY()));
-      }
-      if (upper_y) {
-        boundary_regions.push_back(
-            std::make_shared<NewBoundaryRegionY>(mesh, false, mesh.iterateBndryUpperY()));
+      for (auto& bndry : mesh.getBoundaries()) {
+        if ((lower_y && bndry->location == BndryLoc::ydown)
+            or (upper_y && bndry->location == BndryLoc::yup)) {
+          boundary_regions.push_back(
+              std::dynamic_pointer_cast<bout::boundary::BoundaryRegionY>(bndry));
+        }
       }
     }
     // Cache boundary regions
     _contains.emplace_back(&mesh, false);
     _contains.emplace_back(&mesh, false);
-    iter_points([&](const auto& point) {
+    iter([&](const auto& point) {
       if (point.dir() == 1) {
         _contains[1][point.ind()] = true;
       } else if (point.dir() == -1) {
@@ -138,8 +127,17 @@ public:
   }
 
 private:
+  template <class Func>
+  void iter_regions(const Func& func) {
+    for (auto& region : boundary_regions) {
+      func(*region);
+    }
+    for (auto& region : boundary_regions_par) {
+      func(*region);
+    }
+  }
   std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>> boundary_regions_par;
-  std::vector<std::shared_ptr<NewBoundaryRegionY>> boundary_regions;
+  std::vector<std::shared_ptr<bout::boundary::BoundaryRegionY>> boundary_regions;
 
   std::vector<BoutMask> _contains;
 };

@@ -5,11 +5,13 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <string>
 #include <type_traits>
 #include <vector>
 
 #include "bout/assert.hxx"
+#include "bout/boundary_common.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/field_data.hxx"
 #include "bout/utils.hxx"
@@ -33,17 +35,6 @@ enum class BndryType : std::int8_t {
   all,
   num
 };
-
-/// Types of free boundary condition
-/// ================== ===================================================
-/// Name               Description
-/// ================== ===================================================
-/// ``limited``        use exponential if decreasing, otherwise Neumanm
-/// ``exponential``    use exponential extrapolation
-/// ``linear``         use linear extrapolation
-/// ================== ===================================================
-enum class BoundaryFreeExtrapolation : std::int8_t { limited, exponential, linear };
-//BOUT_ENUM_CLASS(BoundaryFreeExtrapolation, limited, exponential, linear);
 
 template <typename impl>
 class BoundaryRegionIterBase {
@@ -156,23 +147,20 @@ public:
   /// off = 1 is the last point in the domain
   /// off = 2 is the second to last point in the domain
   template <bool check = true>
-  BoutReal& getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& func,
-                  int off) const {
+  BoutReal getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& func,
+                 int off) const {
     return static_cast<const impl*>(this)->template _getAt<check>(func, off);
   }
   /// Get the first point in the boundary
-  const BoutReal&
-  next(const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
+  BoutReal next(const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
     return static_cast<const impl*>(this)->_getAt(func, 0);
   }
   /// Get the last point in the domain
-  const BoutReal&
-  current(const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
+  BoutReal current(const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
     return static_cast<const impl*>(this)->_getAt(func, 1);
   }
   /// Get the second to last point in the domain - this may not be valid and thus throw
-  const BoutReal&
-  prev(const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
+  BoutReal prev(const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
     return static_cast<const impl*>(this)->_getAt(func, 2);
   }
 
@@ -528,8 +516,8 @@ public:
     return f.ynext(_off)[_ind().yp(_off)];
   }
   template <bool check = true>
-  BoutReal getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
-                 int off) const {
+  BoutReal _getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
+                  int off) const {
     if constexpr (check) {
       ASSERT3(valid() > -off - 2);
     }
@@ -571,7 +559,7 @@ public:
       location = dir == 1 ? BNDRY_XOUT : BNDRY_XIN;
     } else {
       this->isY = true;
-      location = dir == 1 ? BNDRY_YDOWN : BNDRY_YUP;
+      location = dir == 1 ? BNDRY_YUP : BNDRY_YDOWN;
     }
   }
   int dir() { return _dir; }
@@ -648,8 +636,8 @@ public:
     }
   }
   template <bool check = true>
-  BoutReal getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
-                 int off) const {
+  BoutReal _getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
+                  int off) const {
     if constexpr (check) {
       ASSERT3(_valid() > -off - 2);
     }
@@ -694,9 +682,9 @@ using BoundaryRegionY = BoundaryRegionXY<false>;
 using BoundaryRegionIterX = BoundaryRegionIterXY<true>;
 using BoundaryRegionIterY = BoundaryRegionIterXY<false>;
 
-inline BoundaryRegionX* NewBoundaryRegionXIn(const std::string& name, int ymin, int ymax,
-                                             Mesh* mesh) {
-  auto* pointer = new BoundaryRegionX(
+inline std::shared_ptr<BoundaryRegionX>
+NewBoundaryRegionXIn(const std::string& name, int ymin, int ymax, Mesh* mesh) {
+  auto pointer = std::make_shared<BoundaryRegionX>(
       name, -1, mesh,
       Region<Ind3D>(mesh->xstart, mesh->xstart, ymin, ymax, mesh->zstart, mesh->zend,
                     mesh->LocalNy, mesh->LocalNz, mesh->maxregionblocksize));
@@ -704,9 +692,9 @@ inline BoundaryRegionX* NewBoundaryRegionXIn(const std::string& name, int ymin, 
   return pointer;
 }
 
-inline BoundaryRegionX* NewBoundaryRegionXOut(const std::string& name, int ymin, int ymax,
-                                              Mesh* mesh) {
-  auto* pointer = new BoundaryRegionX(
+inline std::shared_ptr<BoundaryRegionX>
+NewBoundaryRegionXOut(const std::string& name, int ymin, int ymax, Mesh* mesh) {
+  auto pointer = std::make_shared<BoundaryRegionX>(
       name, 1, mesh,
       Region<Ind3D>(mesh->xend, mesh->xend, ymin, ymax, mesh->zstart, mesh->zend,
                     mesh->LocalNy, mesh->LocalNz, mesh->maxregionblocksize));
@@ -714,20 +702,20 @@ inline BoundaryRegionX* NewBoundaryRegionXOut(const std::string& name, int ymin,
   return pointer;
 }
 
-inline BoundaryRegionY* NewBoundaryRegionYUp(const std::string& name, int xmin, int xmax,
-                                             Mesh* mesh) {
-  auto* pointer = new BoundaryRegionY(
-      name, -1, mesh,
+inline std::shared_ptr<BoundaryRegionY>
+NewBoundaryRegionYUp(const std::string& name, int xmin, int xmax, Mesh* mesh) {
+  auto pointer = std::make_shared<BoundaryRegionY>(
+      name, 1, mesh,
       Region<Ind3D>(xmin, xmax, mesh->yend, mesh->yend, mesh->zstart, mesh->zend,
                     mesh->LocalNy, mesh->LocalNz, mesh->maxregionblocksize));
   pointer->legacy = new ::BoundaryRegionYUp(name, xmin, xmax, mesh);
   return pointer;
 }
 
-inline BoundaryRegionY* NewBoundaryRegionYDown(const std::string& name, int xmin,
-                                               int xmax, Mesh* mesh) {
-  auto* pointer = new BoundaryRegionY(
-      name, 1, mesh,
+inline std::shared_ptr<BoundaryRegionY>
+NewBoundaryRegionYDown(const std::string& name, int xmin, int xmax, Mesh* mesh) {
+  auto pointer = std::make_shared<BoundaryRegionY>(
+      name, -1, mesh,
       Region<Ind3D>(xmin, xmax, mesh->ystart, mesh->ystart, mesh->zstart, mesh->zend,
                     mesh->LocalNy, mesh->LocalNz, mesh->maxregionblocksize));
   pointer->legacy = new ::BoundaryRegionYDown(name, xmin, xmax, mesh);
@@ -735,17 +723,18 @@ inline BoundaryRegionY* NewBoundaryRegionYDown(const std::string& name, int xmin
 }
 
 template <class Func>
-void iter_boundary(const BoundaryRegionBase* bndrybase, const Func& func) {
+void iter_boundary(const std::shared_ptr<const BoundaryRegionBase>& bndrybase,
+                   const Func& func) {
   if (bndrybase->isX) {
-    const auto* const bndry = dynamic_cast<const BoundaryRegionX*>(bndrybase);
+    const auto* const bndry = dynamic_cast<const BoundaryRegionX*>(bndrybase.get());
     return iter_boundary(*bndry, func);
   }
   if (bndrybase->isY) {
-    const auto* const bndry = dynamic_cast<const BoundaryRegionY*>(bndrybase);
+    const auto* const bndry = dynamic_cast<const BoundaryRegionY*>(bndrybase.get());
     return iter_boundary(*bndry, func);
   }
   if (bndrybase->isParallel) {
-    const auto* const bndry = dynamic_cast<const BoundaryRegionFCI*>(bndrybase);
+    const auto* const bndry = dynamic_cast<const BoundaryRegionFCI*>(bndrybase.get());
     return iter_boundary(*bndry, func);
   }
   throw BoutException("{} is of unknown type - probably a legacy iterator",
