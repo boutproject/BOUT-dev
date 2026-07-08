@@ -27,6 +27,7 @@ using namespace bout::globals;
 
 // Reuse the "standard" fixture for FakeMesh
 using Field3DTest = FakeMeshFixture;
+using Field3DTestFCI = FakeMeshFixture_tmpl<3, 5, 7, true>;
 
 class MockFciParallelTransform : public ParallelTransform {
 public:
@@ -2132,618 +2133,649 @@ TEST_F(Field3DTest, Field3DParallelAssignmentFromScalarExprUsesSlicesInFci) {
   EXPECT_TRUE(IsFieldEqual(result, 3.0));
   EXPECT_TRUE(IsFieldEqual(result.yup(), 4.0));
   EXPECT_TRUE(IsFieldEqual(result.ydown(), 5.0));
-}
 
-TEST_F(Field3DTest, Abs) {
-  Field3D field;
+  TEST_F(Field3DTestFCI, MulField3DParallelPreservesParallelSlices) {
+    Field3D field;
+    EXPECT_TRUE(field.isFci());
 
-  field = -31.0;
-  EXPECT_TRUE(IsFieldEqual(abs(field), 31.0));
-}
+    field = 2.0;
+    field.splitParallelSlices();
+    field.yup() = 3.0;
+    field.ydown() = 4.0;
+    field.resetRegionParallel();
 
-TEST_F(Field3DTest, AbsExpressionUsesAbsOp) {
-  Field3D field;
+    Field3D rhs;
+    EXPECT_TRUE(rhs.isFci());
+    rhs = 3.0;
+    rhs.splitParallelSlices();
+    rhs.yup() = 4.0;
+    rhs.ydown() = 5.0;
+    rhs.resetRegionParallel();
 
-  field = -2.0;
-  const auto expr = field + 1.0;
+    const Field3D prod = field * rhs;
 
-  EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(abs(expr))>,
-                              BinaryExpr<Field3D, std::decay_t<decltype(expr)>,
-                                         std::decay_t<decltype(expr)>, bout::op::abs>>));
-  EXPECT_TRUE(IsFieldEqual(abs(expr), 1.0));
-  EXPECT_TRUE(IsFieldEqual(abs(expr, "RGN_ALL"), 1.0));
-}
+    EXPECT_FALSE(prod.hasParallelSlices());
+    EXPECT_TRUE(IsFieldEqual(prod, 6.0));
 
-TEST_F(Field3DTest, RegionLimitedExpressionConstructsField3D) {
-  Field3D field;
-
-  field = -31.0;
-
-  Field3D result = abs(field, "RGN_NOBNDRY");
-
-  EXPECT_TRUE(IsFieldEqual(result, 31.0, "RGN_NOBNDRY"));
-}
-
-TEST_F(Field3DTest, Exp) {
-  Field3D field;
-
-  field = 2.5;
-  const BoutReal expected = 12.182493960703473;
-  EXPECT_TRUE(IsFieldEqual(exp(field), expected));
-}
-
-TEST_F(Field3DTest, Log) {
-  Field3D field;
-
-  field = 12.182493960703473;
-  const BoutReal expected = 2.5;
-  EXPECT_TRUE(IsFieldEqual(log(field), expected));
-}
-
-TEST_F(Field3DTest, LogExp) {
-  Field3D field;
-
-  field = 2.5;
-  const BoutReal expected = 2.5;
-  EXPECT_TRUE(IsFieldEqual(log(exp(field)), expected));
-}
-
-TEST_F(Field3DTest, Sin) {
-  Field3D field;
-
-  field = PI / 2.0;
-  EXPECT_TRUE(IsFieldEqual(sin(field), 1.0));
-
-  field = PI;
-  EXPECT_TRUE(IsFieldEqual(sin(field), 0.0));
-}
-
-TEST_F(Field3DTest, Cos) {
-  Field3D field;
-
-  field = PI / 2.0;
-  EXPECT_TRUE(IsFieldEqual(cos(field), 0.0));
-
-  field = PI;
-  EXPECT_TRUE(IsFieldEqual(cos(field), -1.0));
-}
-
-TEST_F(Field3DTest, Tan) {
-  Field3D field;
-
-  field = PI / 4.0;
-  EXPECT_TRUE(IsFieldEqual(tan(field), 1.0));
-
-  field = PI;
-  EXPECT_TRUE(IsFieldEqual(tan(field), 0.0));
-}
-
-TEST_F(Field3DTest, Sinh) {
-  Field3D field;
-
-  field = 1.0;
-  const BoutReal expected = 1.1752011936438014;
-  EXPECT_TRUE(IsFieldEqual(sinh(field), expected));
-
-  field = -1.0;
-  EXPECT_TRUE(IsFieldEqual(sinh(field), -expected));
-}
-
-TEST_F(Field3DTest, Cosh) {
-  Field3D field;
-
-  field = 1.0;
-  const BoutReal expected = 1.5430806348152437;
-  EXPECT_TRUE(IsFieldEqual(cosh(field), expected));
-
-  field = -1.0;
-  EXPECT_TRUE(IsFieldEqual(cosh(field), expected));
-}
-
-TEST_F(Field3DTest, Tanh) {
-  Field3D field;
-
-  field = 1.0;
-  const BoutReal expected = 0.761594155955764;
-  EXPECT_TRUE(IsFieldEqual(tanh(field), expected));
-
-  field = -1.0;
-  EXPECT_TRUE(IsFieldEqual(tanh(field), -expected));
-}
-
-TEST_F(Field3DTest, Floor) {
-  Field3D field;
-
-  field = 50.0;
-  field(1, 1, 1) = 49.9;
-  field(2, 3, 4) = -20;
-
-  const BoutReal floor_value = 50.0;
-
-  EXPECT_TRUE(IsFieldEqual(floor(field, floor_value), floor_value));
-}
-
-TEST_F(Field3DTest, Min) {
-  Field3D field;
-
-  field = 50.0;
-  field(0, 0, 0) = -99.0;
-  field(1, 1, 1) = 60.0;
-  field(1, 2, 2) = 40.0;
-  field(2, 4, 3) = 99.0;
-
-  // min doesn't include guard cells
-  const BoutReal min_value = 40.0;
-
-  EXPECT_EQ(min(field, false), min_value);
-  EXPECT_EQ(min(field, false, "RGN_ALL"), -99.0);
-  EXPECT_EQ(min(field, true, "RGN_ALL"), -99.0);
-}
-
-TEST_F(Field3DTest, MinBinaryExpr) {
-  Field3D field;
-
-  field = 50.0;
-  field(0, 0, 0) = -99.0;
-  field(1, 1, 1) = 60.0;
-  field(1, 2, 2) = 40.0;
-  field(2, 4, 3) = 99.0;
-
-  const auto expr = field / 2.0 - 5.0;
-
-  EXPECT_EQ(min(expr, false), 15.0);
-  EXPECT_EQ(min(expr, false, "RGN_ALL"), -54.5);
-}
-
-TEST_F(Field3DTest, Max) {
-  Field3D field;
-
-  field = 50.0;
-  field(0, 0, 0) = -99.0;
-  field(1, 1, 1) = 40.0;
-  field(1, 2, 2) = 60.0;
-  field(2, 4, 3) = 99.0;
-
-  // max doesn't include guard cells
-  const BoutReal max_value = 60.0;
-
-  EXPECT_EQ(max(field, false), max_value);
-  EXPECT_EQ(max(field, false, "RGN_ALL"), 99.0);
-  EXPECT_EQ(max(field, true, "RGN_ALL"), 99.0);
-}
-
-TEST_F(Field3DTest, MaxBinaryExpr) {
-  Field3D field;
-
-  field = 50.0;
-  field(0, 0, 0) = -99.0;
-  field(1, 1, 1) = 40.0;
-  field(1, 2, 2) = 60.0;
-  field(2, 4, 3) = 99.0;
-
-  const auto expr = field / 2.0 - 5.0;
-
-  EXPECT_EQ(max(expr, false), 25.0);
-  EXPECT_EQ(max(expr, false, "RGN_ALL"), 44.5);
-}
-
-TEST_F(Field3DTest, Mean) {
-  Field3D field;
-
-  field = 50.0;
-  field(0, 0, 0) = 1.0;
-  field(1, 1, 1) = 40.0;
-  field(1, 2, 2) = 60.0;
-  field(2, 4, 3) = 109.0;
-
-  // mean doesn't include guard cells by default
-  const int npoints_all = nx * ny * nz;
-  const BoutReal mean_value_nobndry = 50.0;
-  const BoutReal mean_value_all = 50.0 + 10.0 / npoints_all;
-
-  EXPECT_EQ(mean(field, false), mean_value_nobndry);
-  EXPECT_EQ(mean(field, false, "RGN_ALL"), mean_value_all);
-  EXPECT_EQ(mean(field, true, "RGN_ALL"), mean_value_all);
-}
-
-TEST_F(Field3DTest, MeanBinaryExpr) {
-  Field3D field;
-
-  field = 50.0;
-  field(0, 0, 0) = 1.0;
-  field(1, 1, 1) = 40.0;
-  field(1, 2, 2) = 60.0;
-  field(2, 4, 3) = 109.0;
-
-  const int npoints_all = nx * ny * nz;
-  const BoutReal mean_value_nobndry = 103.0;
-  const BoutReal mean_value_all = 103.0 + 20.0 / npoints_all;
-  const auto expr = field * 2.0 + 3.0;
-
-  EXPECT_EQ(mean(expr, false), mean_value_nobndry);
-  EXPECT_EQ(mean(expr, false, "RGN_ALL"), mean_value_all);
-}
-
-TEST_F(Field3DTest, DC) {
-  Field3D field;
-
-  field = 1.0;
-  for (const auto& i : field) {
-    field[i] = i.z();
+    const Field3DParallel prodpar = field.asField3DParallel() * rhs;
+    EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(prodpar)>, Field3DParallel>));
+    EXPECT_TRUE(prodpar.hasParallelSlices());
+    EXPECT_TRUE(IsFieldEqual(prodpar, 6.0));
+    EXPECT_TRUE(IsFieldEqual(prodpar.yup(), 12.0, "RGN_YPAR_+1"));
+    EXPECT_TRUE(IsFieldEqual(prodpar.ydown(), 20.0, "RGN_YPAR_-1"));
   }
 
-  EXPECT_TRUE(IsFieldEqual(DC(field), 3.0));
-}
+  TEST_F(Field3DTest, Abs) {
+    Field3D field;
 
-TEST_F(Field3DTest, Swap) {
-  WithQuietOutput quiet{output_info};
+    field = -31.0;
+    EXPECT_TRUE(IsFieldEqual(abs(field), 31.0));
+  }
 
-  // First field
-  Field3D first(1., mesh_staggered);
+  TEST_F(Field3DTest, AbsExpressionUsesAbsOp) {
+    Field3D field;
 
-  first.setLocation(CELL_XLOW);
+    field = -2.0;
+    const auto expr = field + 1.0;
 
-  first.splitParallelSlices();
-  first.yup() = 1.5;
-  first.ydown() = 0.5;
+    EXPECT_TRUE(
+        (std::is_same_v<std::decay_t<decltype(abs(expr))>,
+                        BinaryExpr<Field3D, std::decay_t<decltype(expr)>,
+                                   std::decay_t<decltype(expr)>, bout::op::abs>>));
+    EXPECT_TRUE(IsFieldEqual(abs(expr), 1.0));
+    EXPECT_TRUE(IsFieldEqual(abs(expr, "RGN_ALL"), 1.0));
+  }
 
-  ddt(first) = 1.1;
+  TEST_F(Field3DTest, RegionLimitedExpressionConstructsField3D) {
+    Field3D field;
 
-  // Mesh for second field
-  constexpr int second_nx = Field3DTest::nx + 2;
-  constexpr int second_ny = Field3DTest::ny + 2;
-  constexpr int second_nz = Field3DTest::nz + 2;
+    field = -31.0;
 
-  FakeMesh second_mesh{second_nx, second_ny, second_nz};
-  second_mesh.setCoordinates(nullptr);
-  second_mesh.StaggerGrids = false;
-  second_mesh.createDefaultRegions();
+    Field3D result = abs(field, "RGN_NOBNDRY");
 
-  // Second field
-  Field3D second(2., &second_mesh);
+    EXPECT_TRUE(IsFieldEqual(result, 31.0, "RGN_NOBNDRY"));
+  }
 
-  second.splitParallelSlices();
-  second.yup() = 2.2;
-  second.ydown() = 1.2;
+  TEST_F(Field3DTest, Exp) {
+    Field3D field;
 
-  ddt(second) = 2.4;
+    field = 2.5;
+    const BoutReal expected = 12.182493960703473;
+    EXPECT_TRUE(IsFieldEqual(exp(field), expected));
+  }
 
-  // Basic sanity check
-  EXPECT_TRUE(IsFieldEqual(first, 1.0));
-  EXPECT_TRUE(IsFieldEqual(second, 2.0));
+  TEST_F(Field3DTest, Log) {
+    Field3D field;
 
-  // swap is marked noexcept, so absolutely should not throw!
-  ASSERT_NO_THROW(swap(first, second));
+    field = 12.182493960703473;
+    const BoutReal expected = 2.5;
+    EXPECT_TRUE(IsFieldEqual(log(field), expected));
+  }
 
-  // Values
-  EXPECT_TRUE(IsFieldEqual(first, 2.0));
-  EXPECT_TRUE(IsFieldEqual(second, 1.0));
+  TEST_F(Field3DTest, LogExp) {
+    Field3D field;
 
-  EXPECT_TRUE(IsFieldEqual(first.yup(), 2.2));
-  EXPECT_TRUE(IsFieldEqual(first.ydown(), 1.2));
+    field = 2.5;
+    const BoutReal expected = 2.5;
+    EXPECT_TRUE(IsFieldEqual(log(exp(field)), expected));
+  }
 
-  EXPECT_TRUE(IsFieldEqual(second.yup(), 1.5));
-  EXPECT_TRUE(IsFieldEqual(second.ydown(), 0.5));
+  TEST_F(Field3DTest, Sin) {
+    Field3D field;
 
-  EXPECT_TRUE(IsFieldEqual(ddt(first), 2.4));
-  EXPECT_TRUE(IsFieldEqual(ddt(second), 1.1));
+    field = PI / 2.0;
+    EXPECT_TRUE(IsFieldEqual(sin(field), 1.0));
 
-  // Mesh properties
-  EXPECT_EQ(first.getMesh(), &second_mesh);
-  EXPECT_EQ(second.getMesh(), mesh_staggered);
+    field = PI;
+    EXPECT_TRUE(IsFieldEqual(sin(field), 0.0));
+  }
 
-  EXPECT_EQ(first.getNx(), second_nx);
-  EXPECT_EQ(first.getNy(), second_ny);
-  EXPECT_EQ(first.getNz(), second_nz);
+  TEST_F(Field3DTest, Cos) {
+    Field3D field;
 
-  EXPECT_EQ(second.getNx(), Field3DTest::nx);
-  EXPECT_EQ(second.getNy(), Field3DTest::ny);
-  EXPECT_EQ(second.getNz(), Field3DTest::nz);
+    field = PI / 2.0;
+    EXPECT_TRUE(IsFieldEqual(cos(field), 0.0));
 
-  EXPECT_EQ(first.getLocation(), CELL_CENTRE);
-  EXPECT_EQ(second.getLocation(), CELL_XLOW);
+    field = PI;
+    EXPECT_TRUE(IsFieldEqual(cos(field), -1.0));
+  }
 
-  // We don't check the boundaries, but the data is protected and
-  // there are no inquiry functions
-}
+  TEST_F(Field3DTest, Tan) {
+    Field3D field;
 
-TEST_F(Field3DTest, MoveCtor) {
-  // First field
-  Field3D first(1., mesh_staggered);
+    field = PI / 4.0;
+    EXPECT_TRUE(IsFieldEqual(tan(field), 1.0));
 
-  first.setLocation(CELL_XLOW);
+    field = PI;
+    EXPECT_TRUE(IsFieldEqual(tan(field), 0.0));
+  }
 
-  first.splitParallelSlices();
-  first.yup() = 1.5;
-  first.ydown() = 0.5;
+  TEST_F(Field3DTest, Sinh) {
+    Field3D field;
 
-  ddt(first) = 1.1;
+    field = 1.0;
+    const BoutReal expected = 1.1752011936438014;
+    EXPECT_TRUE(IsFieldEqual(sinh(field), expected));
 
-  // Second field
-  Field3D second{std::move(first)};
+    field = -1.0;
+    EXPECT_TRUE(IsFieldEqual(sinh(field), -expected));
+  }
 
-  // Values
-  EXPECT_TRUE(IsFieldEqual(second, 1.0));
+  TEST_F(Field3DTest, Cosh) {
+    Field3D field;
 
-  EXPECT_TRUE(IsFieldEqual(second.yup(), 1.5));
-  EXPECT_TRUE(IsFieldEqual(second.ydown(), 0.5));
+    field = 1.0;
+    const BoutReal expected = 1.5430806348152437;
+    EXPECT_TRUE(IsFieldEqual(cosh(field), expected));
 
-  EXPECT_TRUE(IsFieldEqual(ddt(second), 1.1));
+    field = -1.0;
+    EXPECT_TRUE(IsFieldEqual(cosh(field), expected));
+  }
 
-  // Mesh properties
-  EXPECT_EQ(second.getMesh(), mesh_staggered);
+  TEST_F(Field3DTest, Tanh) {
+    Field3D field;
 
-  EXPECT_EQ(second.getNx(), Field3DTest::nx);
-  EXPECT_EQ(second.getNy(), Field3DTest::ny);
-  EXPECT_EQ(second.getNz(), Field3DTest::nz);
+    field = 1.0;
+    const BoutReal expected = 0.761594155955764;
+    EXPECT_TRUE(IsFieldEqual(tanh(field), expected));
 
-  EXPECT_EQ(second.getLocation(), CELL_XLOW);
+    field = -1.0;
+    EXPECT_TRUE(IsFieldEqual(tanh(field), -expected));
+  }
 
-  // We don't check the boundaries, but the data is protected and
-  // there are no inquiry functions
-}
+  TEST_F(Field3DTest, Floor) {
+    Field3D field;
 
-TEST_F(Field3DTest, FillField) {
-  Field3D f{mesh};
+    field = 50.0;
+    field(1, 1, 1) = 49.9;
+    field(2, 3, 4) = -20;
 
-  fillField(f, {{{1., 1., 1., 1., 1., 1., 1.},
-                 {1., 1., 1., 1., 1., 1., 1.},
-                 {1., 1., 1., 1., 1., 1., 1.},
-                 {1., 1., 1., 1., 1., 1., 1.},
-                 {1., 1., 1., 1., 1., 1., 1.}},
+    const BoutReal floor_value = 50.0;
 
-                {{1., 1., 1., 1., 1., 1., 1.},
-                 {1., 1., 1., 1., 1., 1., 1.},
-                 {1., 1., 1., 1., 1., 1., 1.},
-                 {1., 1., 1., 1., 1., 1., 1.},
-                 {1., 1., 1., 1., 1., 1., 1.}},
+    EXPECT_TRUE(IsFieldEqual(floor(field, floor_value), floor_value));
+  }
 
-                {{1., 1., 1., 1., 1., 1., 1.},
-                 {1., 1., 1., 1., 1., 1., 1.},
-                 {1., 1., 1., 1., 1., 1., 1.},
-                 {1., 1., 1., 1., 1., 1., 1.},
-                 {1., 1., 1., 1., 1., 1., 1.}}});
+  TEST_F(Field3DTest, Min) {
+    Field3D field;
 
-  EXPECT_TRUE(IsFieldEqual(f, 1.));
+    field = 50.0;
+    field(0, 0, 0) = -99.0;
+    field(1, 1, 1) = 60.0;
+    field(1, 2, 2) = 40.0;
+    field(2, 4, 3) = 99.0;
 
-  fillField(f, {{{0., 1., 2., 3., 4., 5., 6.},
-                 {0., 1., 2., 3., 4., 5., 6.},
-                 {0., 1., 2., 3., 4., 5., 6.},
-                 {0., 1., 2., 3., 4., 5., 6.},
-                 {0., 1., 2., 3., 4., 5., 6.}},
+    // min doesn't include guard cells
+    const BoutReal min_value = 40.0;
 
-                {{0., 1., 2., 3., 4., 5., 6.},
-                 {0., 1., 2., 3., 4., 5., 6.},
-                 {0., 1., 2., 3., 4., 5., 6.},
-                 {0., 1., 2., 3., 4., 5., 6.},
-                 {0., 1., 2., 3., 4., 5., 6.}},
+    EXPECT_EQ(min(field, false), min_value);
+    EXPECT_EQ(min(field, false, "RGN_ALL"), -99.0);
+    EXPECT_EQ(min(field, true, "RGN_ALL"), -99.0);
+  }
 
-                {{0., 1., 2., 3., 4., 5., 6.},
-                 {0., 1., 2., 3., 4., 5., 6.},
-                 {0., 1., 2., 3., 4., 5., 6.},
-                 {0., 1., 2., 3., 4., 5., 6.},
-                 {0., 1., 2., 3., 4., 5., 6.}}});
+  TEST_F(Field3DTest, MinBinaryExpr) {
+    Field3D field;
 
-  Field3D g{mesh};
-  g.allocate();
-  BOUT_FOR_SERIAL(i, g.getRegion("RGN_ALL")) { g[i] = i.z(); }
+    field = 50.0;
+    field(0, 0, 0) = -99.0;
+    field(1, 1, 1) = 60.0;
+    field(1, 2, 2) = 40.0;
+    field(2, 4, 3) = 99.0;
 
-  EXPECT_TRUE(IsFieldEqual(f, g));
-}
+    const auto expr = field / 2.0 - 5.0;
+
+    EXPECT_EQ(min(expr, false), 15.0);
+    EXPECT_EQ(min(expr, false, "RGN_ALL"), -54.5);
+  }
+
+  TEST_F(Field3DTest, Max) {
+    Field3D field;
+
+    field = 50.0;
+    field(0, 0, 0) = -99.0;
+    field(1, 1, 1) = 40.0;
+    field(1, 2, 2) = 60.0;
+    field(2, 4, 3) = 99.0;
+
+    // max doesn't include guard cells
+    const BoutReal max_value = 60.0;
+
+    EXPECT_EQ(max(field, false), max_value);
+    EXPECT_EQ(max(field, false, "RGN_ALL"), 99.0);
+    EXPECT_EQ(max(field, true, "RGN_ALL"), 99.0);
+  }
+
+  TEST_F(Field3DTest, MaxBinaryExpr) {
+    Field3D field;
+
+    field = 50.0;
+    field(0, 0, 0) = -99.0;
+    field(1, 1, 1) = 40.0;
+    field(1, 2, 2) = 60.0;
+    field(2, 4, 3) = 99.0;
+
+    const auto expr = field / 2.0 - 5.0;
+
+    EXPECT_EQ(max(expr, false), 25.0);
+    EXPECT_EQ(max(expr, false, "RGN_ALL"), 44.5);
+  }
+
+  TEST_F(Field3DTest, Mean) {
+    Field3D field;
+
+    field = 50.0;
+    field(0, 0, 0) = 1.0;
+    field(1, 1, 1) = 40.0;
+    field(1, 2, 2) = 60.0;
+    field(2, 4, 3) = 109.0;
+
+    // mean doesn't include guard cells by default
+    const int npoints_all = nx * ny * nz;
+    const BoutReal mean_value_nobndry = 50.0;
+    const BoutReal mean_value_all = 50.0 + 10.0 / npoints_all;
+
+    EXPECT_EQ(mean(field, false), mean_value_nobndry);
+    EXPECT_EQ(mean(field, false, "RGN_ALL"), mean_value_all);
+    EXPECT_EQ(mean(field, true, "RGN_ALL"), mean_value_all);
+  }
+
+  TEST_F(Field3DTest, MeanBinaryExpr) {
+    Field3D field;
+
+    field = 50.0;
+    field(0, 0, 0) = 1.0;
+    field(1, 1, 1) = 40.0;
+    field(1, 2, 2) = 60.0;
+    field(2, 4, 3) = 109.0;
+
+    const int npoints_all = nx * ny * nz;
+    const BoutReal mean_value_nobndry = 103.0;
+    const BoutReal mean_value_all = 103.0 + 20.0 / npoints_all;
+    const auto expr = field * 2.0 + 3.0;
+
+    EXPECT_EQ(mean(expr, false), mean_value_nobndry);
+    EXPECT_EQ(mean(expr, false, "RGN_ALL"), mean_value_all);
+  }
+
+  TEST_F(Field3DTest, DC) {
+    Field3D field;
+
+    field = 1.0;
+    for (const auto& i : field) {
+      field[i] = i.z();
+    }
+
+    EXPECT_TRUE(IsFieldEqual(DC(field), 3.0));
+  }
+
+  TEST_F(Field3DTest, Swap) {
+    WithQuietOutput quiet{output_info};
+
+    // First field
+    Field3D first(1., mesh_staggered);
+
+    first.setLocation(CELL_XLOW);
+
+    first.splitParallelSlices();
+    first.yup() = 1.5;
+    first.ydown() = 0.5;
+
+    ddt(first) = 1.1;
+
+    // Mesh for second field
+    constexpr int second_nx = Field3DTest::nx + 2;
+    constexpr int second_ny = Field3DTest::ny + 2;
+    constexpr int second_nz = Field3DTest::nz + 2;
+
+    FakeMesh second_mesh{second_nx, second_ny, second_nz};
+    second_mesh.setCoordinates(nullptr);
+    second_mesh.StaggerGrids = false;
+    second_mesh.createDefaultRegions();
+
+    // Second field
+    Field3D second(2., &second_mesh);
+
+    second.splitParallelSlices();
+    second.yup() = 2.2;
+    second.ydown() = 1.2;
+
+    ddt(second) = 2.4;
+
+    // Basic sanity check
+    EXPECT_TRUE(IsFieldEqual(first, 1.0));
+    EXPECT_TRUE(IsFieldEqual(second, 2.0));
+
+    // swap is marked noexcept, so absolutely should not throw!
+    ASSERT_NO_THROW(swap(first, second));
+
+    // Values
+    EXPECT_TRUE(IsFieldEqual(first, 2.0));
+    EXPECT_TRUE(IsFieldEqual(second, 1.0));
+
+    EXPECT_TRUE(IsFieldEqual(first.yup(), 2.2));
+    EXPECT_TRUE(IsFieldEqual(first.ydown(), 1.2));
+
+    EXPECT_TRUE(IsFieldEqual(second.yup(), 1.5));
+    EXPECT_TRUE(IsFieldEqual(second.ydown(), 0.5));
+
+    EXPECT_TRUE(IsFieldEqual(ddt(first), 2.4));
+    EXPECT_TRUE(IsFieldEqual(ddt(second), 1.1));
+
+    // Mesh properties
+    EXPECT_EQ(first.getMesh(), &second_mesh);
+    EXPECT_EQ(second.getMesh(), mesh_staggered);
+
+    EXPECT_EQ(first.getNx(), second_nx);
+    EXPECT_EQ(first.getNy(), second_ny);
+    EXPECT_EQ(first.getNz(), second_nz);
+
+    EXPECT_EQ(second.getNx(), Field3DTest::nx);
+    EXPECT_EQ(second.getNy(), Field3DTest::ny);
+    EXPECT_EQ(second.getNz(), Field3DTest::nz);
+
+    EXPECT_EQ(first.getLocation(), CELL_CENTRE);
+    EXPECT_EQ(second.getLocation(), CELL_XLOW);
+
+    // We don't check the boundaries, but the data is protected and
+    // there are no inquiry functions
+  }
+
+  TEST_F(Field3DTest, MoveCtor) {
+    // First field
+    Field3D first(1., mesh_staggered);
+
+    first.setLocation(CELL_XLOW);
+
+    first.splitParallelSlices();
+    first.yup() = 1.5;
+    first.ydown() = 0.5;
+
+    ddt(first) = 1.1;
+
+    // Second field
+    Field3D second{std::move(first)};
+
+    // Values
+    EXPECT_TRUE(IsFieldEqual(second, 1.0));
+
+    EXPECT_TRUE(IsFieldEqual(second.yup(), 1.5));
+    EXPECT_TRUE(IsFieldEqual(second.ydown(), 0.5));
+
+    EXPECT_TRUE(IsFieldEqual(ddt(second), 1.1));
+
+    // Mesh properties
+    EXPECT_EQ(second.getMesh(), mesh_staggered);
+
+    EXPECT_EQ(second.getNx(), Field3DTest::nx);
+    EXPECT_EQ(second.getNy(), Field3DTest::ny);
+    EXPECT_EQ(second.getNz(), Field3DTest::nz);
+
+    EXPECT_EQ(second.getLocation(), CELL_XLOW);
+
+    // We don't check the boundaries, but the data is protected and
+    // there are no inquiry functions
+  }
+
+  TEST_F(Field3DTest, FillField) {
+    Field3D f{mesh};
+
+    fillField(f, {{{1., 1., 1., 1., 1., 1., 1.},
+                   {1., 1., 1., 1., 1., 1., 1.},
+                   {1., 1., 1., 1., 1., 1., 1.},
+                   {1., 1., 1., 1., 1., 1., 1.},
+                   {1., 1., 1., 1., 1., 1., 1.}},
+
+                  {{1., 1., 1., 1., 1., 1., 1.},
+                   {1., 1., 1., 1., 1., 1., 1.},
+                   {1., 1., 1., 1., 1., 1., 1.},
+                   {1., 1., 1., 1., 1., 1., 1.},
+                   {1., 1., 1., 1., 1., 1., 1.}},
+
+                  {{1., 1., 1., 1., 1., 1., 1.},
+                   {1., 1., 1., 1., 1., 1., 1.},
+                   {1., 1., 1., 1., 1., 1., 1.},
+                   {1., 1., 1., 1., 1., 1., 1.},
+                   {1., 1., 1., 1., 1., 1., 1.}}});
+
+    EXPECT_TRUE(IsFieldEqual(f, 1.));
+
+    fillField(f, {{{0., 1., 2., 3., 4., 5., 6.},
+                   {0., 1., 2., 3., 4., 5., 6.},
+                   {0., 1., 2., 3., 4., 5., 6.},
+                   {0., 1., 2., 3., 4., 5., 6.},
+                   {0., 1., 2., 3., 4., 5., 6.}},
+
+                  {{0., 1., 2., 3., 4., 5., 6.},
+                   {0., 1., 2., 3., 4., 5., 6.},
+                   {0., 1., 2., 3., 4., 5., 6.},
+                   {0., 1., 2., 3., 4., 5., 6.},
+                   {0., 1., 2., 3., 4., 5., 6.}},
+
+                  {{0., 1., 2., 3., 4., 5., 6.},
+                   {0., 1., 2., 3., 4., 5., 6.},
+                   {0., 1., 2., 3., 4., 5., 6.},
+                   {0., 1., 2., 3., 4., 5., 6.},
+                   {0., 1., 2., 3., 4., 5., 6.}}});
+
+    Field3D g{mesh};
+    g.allocate();
+    BOUT_FOR_SERIAL(i, g.getRegion("RGN_ALL")) { g[i] = i.z(); }
+
+    EXPECT_TRUE(IsFieldEqual(f, g));
+  }
 
 #if BOUT_HAS_FFTW
-namespace bout {
-namespace testing {
+  namespace bout {
+  namespace testing {
 
-// Amplitudes for the nth wavenumber
-constexpr int k0{1};
-constexpr int k1{2};
-constexpr int k2{3};
+  // Amplitudes for the nth wavenumber
+  constexpr int k0{1};
+  constexpr int k1{2};
+  constexpr int k2{3};
 
-const BoutReal box_size{TWOPI / Field3DTest::nz};
+  const BoutReal box_size{TWOPI / Field3DTest::nz};
 
-// Helper function for the filter and lowpass tests
-BoutReal zWaves(Field3D::ind_type& i) {
-  return 1.0 + std::sin(k0 * i.z() * box_size) + std::cos(k1 * i.z() * box_size)
-         + std::sin(k2 * i.z() * box_size);
-}
-} // namespace testing
-} // namespace bout
+  // Helper function for the filter and lowpass tests
+  BoutReal zWaves(Field3D::ind_type& i) {
+    return 1.0 + std::sin(k0 * i.z() * box_size) + std::cos(k1 * i.z() * box_size)
+           + std::sin(k2 * i.z() * box_size);
+  }
+  } // namespace testing
+  } // namespace bout
 
-TEST_F(Field3DTest, Filter) {
+  TEST_F(Field3DTest, Filter) {
 
-  using namespace bout::testing;
+    using namespace bout::testing;
 
-  auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
+    auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
 
-  auto expected = makeField<Field3D>(
-      [&](Field3D::ind_type& i) { return std::cos(k1 * i.z() * box_size); },
-      bout::globals::mesh);
+    auto expected = makeField<Field3D>(
+        [&](Field3D::ind_type& i) { return std::cos(k1 * i.z() * box_size); },
+        bout::globals::mesh);
 
-  auto output = filter(input, 2);
+    auto output = filter(input, 2);
 
-  EXPECT_TRUE(IsFieldEqual(output, expected));
-}
+    EXPECT_TRUE(IsFieldEqual(output, expected));
+  }
 
-TEST_F(Field3DTest, LowPassOneArg) {
+  TEST_F(Field3DTest, LowPassOneArg) {
 
-  using namespace bout::testing;
+    using namespace bout::testing;
 
-  auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
+    auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
 
-  auto expected = makeField<Field3D>(
-      [&](Field3D::ind_type& i) {
-        return 1.0 + std::sin(k0 * i.z() * box_size) + std::cos(k1 * i.z() * box_size);
-      },
-      bout::globals::mesh);
+    auto expected = makeField<Field3D>(
+        [&](Field3D::ind_type& i) {
+          return 1.0 + std::sin(k0 * i.z() * box_size) + std::cos(k1 * i.z() * box_size);
+        },
+        bout::globals::mesh);
 
-  auto output = lowPass(input, 2);
+    auto output = lowPass(input, 2);
 
-  EXPECT_TRUE(IsFieldEqual(output, expected));
-}
+    EXPECT_TRUE(IsFieldEqual(output, expected));
+  }
 
-TEST_F(Field3DTest, LowPassOneArgNothing) {
+  TEST_F(Field3DTest, LowPassOneArgNothing) {
 
-  using namespace bout::testing;
+    using namespace bout::testing;
 
-  auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
+    auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
 
-  auto output = lowPass(input, 20);
+    auto output = lowPass(input, 20);
 
-  EXPECT_TRUE(IsFieldEqual(output, input));
-}
+    EXPECT_TRUE(IsFieldEqual(output, input));
+  }
 
-TEST_F(Field3DTest, LowPassTwoArg) {
+  TEST_F(Field3DTest, LowPassTwoArg) {
 
-  using namespace bout::testing;
+    using namespace bout::testing;
 
-  auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
+    auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
 
-  auto expected = makeField<Field3D>(
-      [&](Field3D::ind_type& i) {
-        return std::sin(k0 * i.z() * box_size) + std::cos(k1 * i.z() * box_size);
-      },
-      bout::globals::mesh);
+    auto expected = makeField<Field3D>(
+        [&](Field3D::ind_type& i) {
+          return std::sin(k0 * i.z() * box_size) + std::cos(k1 * i.z() * box_size);
+        },
+        bout::globals::mesh);
 
-  auto output = lowPass(input, 2, false);
+    auto output = lowPass(input, 2, false);
 
-  EXPECT_TRUE(IsFieldEqual(output, expected));
+    EXPECT_TRUE(IsFieldEqual(output, expected));
 
-  // Check passing int still works
-  auto output2 = lowPass(input, 2, 0);
+    // Check passing int still works
+    auto output2 = lowPass(input, 2, 0);
 
-  EXPECT_TRUE(IsFieldEqual(output2, expected));
+    EXPECT_TRUE(IsFieldEqual(output2, expected));
 
-  // Calling lowPass with an int that is not 0 or 1 is an error
-  EXPECT_THROW(lowPass(input, 2, -1), BoutException);
-  EXPECT_THROW(lowPass(input, 2, 2), BoutException);
-}
+    // Calling lowPass with an int that is not 0 or 1 is an error
+    EXPECT_THROW(lowPass(input, 2, -1), BoutException);
+    EXPECT_THROW(lowPass(input, 2, 2), BoutException);
+  }
 
-TEST_F(Field3DTest, LowPassTwoArgKeepZonal) {
+  TEST_F(Field3DTest, LowPassTwoArgKeepZonal) {
 
-  using namespace bout::testing;
+    using namespace bout::testing;
 
-  auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
+    auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
 
-  auto expected = makeField<Field3D>(
-      [&](Field3D::ind_type& i) {
-        return 1.0 + std::sin(k0 * i.z() * box_size) + std::cos(k1 * i.z() * box_size);
-      },
-      bout::globals::mesh);
+    auto expected = makeField<Field3D>(
+        [&](Field3D::ind_type& i) {
+          return 1.0 + std::sin(k0 * i.z() * box_size) + std::cos(k1 * i.z() * box_size);
+        },
+        bout::globals::mesh);
 
-  auto output = lowPass(input, 2, true);
+    auto output = lowPass(input, 2, true);
 
-  EXPECT_TRUE(IsFieldEqual(output, expected));
+    EXPECT_TRUE(IsFieldEqual(output, expected));
 
-  // Check passing int still works
-  auto output2 = lowPass(input, 2, 1);
+    // Check passing int still works
+    auto output2 = lowPass(input, 2, 1);
 
-  EXPECT_TRUE(IsFieldEqual(output2, expected));
-}
+    EXPECT_TRUE(IsFieldEqual(output2, expected));
+  }
 
-TEST_F(Field3DTest, LowPassTwoArgNothing) {
+  TEST_F(Field3DTest, LowPassTwoArgNothing) {
 
-  using namespace bout::testing;
+    using namespace bout::testing;
 
-  auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
+    auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
 
-  auto output = lowPass(input, 20, true);
+    auto output = lowPass(input, 20, true);
 
-  EXPECT_TRUE(IsFieldEqual(output, input));
-}
+    EXPECT_TRUE(IsFieldEqual(output, input));
+  }
 #endif
 
-TEST_F(Field3DTest, OperatorEqualsField3D) {
-  Field3D field;
+  TEST_F(Field3DTest, OperatorEqualsField3D) {
+    Field3D field;
 
-  // Create field with non-default arguments so we can check they get copied
-  // to 'field'.
-  // Note that Average z-direction type is not really allowed for Field3D, but
-  // we don't check anywhere at the moment.
-  Field3D field2{
-      mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+    // Create field with non-default arguments so we can check they get copied
+    // to 'field'.
+    // Note that Average z-direction type is not really allowed for Field3D, but
+    // we don't check anywhere at the moment.
+    Field3D field2{
+        mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
 
-  field = field2;
+    field = field2;
 
-  EXPECT_TRUE(areFieldsCompatible(field, field2));
-  EXPECT_EQ(field.getMesh(), field2.getMesh());
-  EXPECT_EQ(field.getLocation(), field2.getLocation());
-  EXPECT_EQ(field.getDirectionY(), field2.getDirectionY());
-  EXPECT_EQ(field.getDirectionZ(), field2.getDirectionZ());
-}
+    EXPECT_TRUE(areFieldsCompatible(field, field2));
+    EXPECT_EQ(field.getMesh(), field2.getMesh());
+    EXPECT_EQ(field.getLocation(), field2.getLocation());
+    EXPECT_EQ(field.getDirectionY(), field2.getDirectionY());
+    EXPECT_EQ(field.getDirectionZ(), field2.getDirectionZ());
+  }
 
-TEST_F(Field3DTest, OperatorEqualsBinaryExprCopiesMetadata) {
-  Field3D source{
-      mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
-  source = 9.;
+  TEST_F(Field3DTest, OperatorEqualsBinaryExprCopiesMetadata) {
+    Field3D source{
+        mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+    source = 9.;
 
-  Field3D target(mesh_staggered);
-  target = 0.;
-  target.splitParallelSlices();
+    Field3D target(mesh_staggered);
+    target = 0.;
+    target.splitParallelSlices();
 
-  target = sqrt(source);
+    target = sqrt(source);
 
-  EXPECT_EQ(target.getMesh(), source.getMesh());
-  EXPECT_EQ(target.getLocation(), source.getLocation());
-  EXPECT_EQ(target.getDirectionY(), source.getDirectionY());
-  EXPECT_EQ(target.getDirectionZ(), source.getDirectionZ());
-  EXPECT_FALSE(target.hasParallelSlices());
-  EXPECT_TRUE(IsFieldEqual(target, 3.));
-}
+    EXPECT_EQ(target.getMesh(), source.getMesh());
+    EXPECT_EQ(target.getLocation(), source.getLocation());
+    EXPECT_EQ(target.getDirectionY(), source.getDirectionY());
+    EXPECT_EQ(target.getDirectionZ(), source.getDirectionZ());
+    EXPECT_FALSE(target.hasParallelSlices());
+    EXPECT_TRUE(IsFieldEqual(target, 3.));
+  }
 
-TEST_F(Field3DTest, EmptyFrom) {
-  // Create field with non-default arguments so we can check they get copied
-  // to 'field2'.
-  // Note that Average z-direction type is not really allowed for Field3D, but
-  // we don't check anywhere at the moment.
-  Field3D field{
-      mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
-  field = 5.;
+  TEST_F(Field3DTest, EmptyFrom) {
+    // Create field with non-default arguments so we can check they get copied
+    // to 'field2'.
+    // Note that Average z-direction type is not really allowed for Field3D, but
+    // we don't check anywhere at the moment.
+    Field3D field{
+        mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+    field = 5.;
 
-  Field3D field2{emptyFrom(field)};
-  EXPECT_EQ(field2.getMesh(), mesh_staggered);
-  EXPECT_EQ(field2.getLocation(), CELL_XLOW);
-  EXPECT_EQ(field2.getDirectionY(), YDirectionType::Aligned);
-  EXPECT_EQ(field2.getDirectionZ(), ZDirectionType::Average);
-  EXPECT_TRUE(field2.isAllocated());
-}
+    Field3D field2{emptyFrom(field)};
+    EXPECT_EQ(field2.getMesh(), mesh_staggered);
+    EXPECT_EQ(field2.getLocation(), CELL_XLOW);
+    EXPECT_EQ(field2.getDirectionY(), YDirectionType::Aligned);
+    EXPECT_EQ(field2.getDirectionZ(), ZDirectionType::Average);
+    EXPECT_TRUE(field2.isAllocated());
+  }
 
-TEST_F(Field3DTest, ZeroFrom) {
-  // Create field with non-default arguments so we can check they get copied
-  // to 'field2'.
-  // Note that Average z-direction type is not really allowed for Field3D, but
-  // we don't check anywhere at the moment.
-  Field3D field{
-      mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
-  field = 5.;
+  TEST_F(Field3DTest, ZeroFrom) {
+    // Create field with non-default arguments so we can check they get copied
+    // to 'field2'.
+    // Note that Average z-direction type is not really allowed for Field3D, but
+    // we don't check anywhere at the moment.
+    Field3D field{
+        mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+    field = 5.;
 
-  Field3D field2{zeroFrom(field)};
-  EXPECT_EQ(field2.getMesh(), mesh_staggered);
-  EXPECT_EQ(field2.getLocation(), CELL_XLOW);
-  EXPECT_EQ(field2.getDirectionY(), YDirectionType::Aligned);
-  EXPECT_EQ(field2.getDirectionZ(), ZDirectionType::Average);
-  EXPECT_TRUE(field2.isAllocated());
-  EXPECT_TRUE(IsFieldEqual(field2, 0.));
-}
+    Field3D field2{zeroFrom(field)};
+    EXPECT_EQ(field2.getMesh(), mesh_staggered);
+    EXPECT_EQ(field2.getLocation(), CELL_XLOW);
+    EXPECT_EQ(field2.getDirectionY(), YDirectionType::Aligned);
+    EXPECT_EQ(field2.getDirectionZ(), ZDirectionType::Average);
+    EXPECT_TRUE(field2.isAllocated());
+    EXPECT_TRUE(IsFieldEqual(field2, 0.));
+  }
 
-TEST_F(Field3DTest, Field3DParallel) {
-  Field3DParallel field(1.0);
-  field = 1.0;
+  TEST_F(Field3DTest, Field3DParallel) {
+    Field3DParallel field(1.0);
+    field = 1.0;
 
-  Field3D field2 = field;
+    Field3D field2 = field;
 
-  auto& field3 = field.asField3D();
+    auto& field3 = field.asField3D();
 
-  field *= 2;
+    field *= 2;
 
-  EXPECT_TRUE(IsFieldEqual(field, 2.0));
-  EXPECT_TRUE(IsFieldEqual(field2, 1.0));
-  EXPECT_TRUE(IsFieldEqual(field3, 2.0));
+    EXPECT_TRUE(IsFieldEqual(field, 2.0));
+    EXPECT_TRUE(IsFieldEqual(field2, 1.0));
+    EXPECT_TRUE(IsFieldEqual(field3, 2.0));
 
-  field3.asField3DParallel() *= 3;
+    field3.asField3DParallel() *= 3;
 
-  EXPECT_TRUE(IsFieldEqual(field3, 6.0));
-}
+    EXPECT_TRUE(IsFieldEqual(field3, 6.0));
+  }
 
 // Restore compiler warnings
 #pragma GCC diagnostic pop
