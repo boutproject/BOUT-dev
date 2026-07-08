@@ -5,17 +5,11 @@
 #ifndef BOUT_FV_OPS_H
 #define BOUT_FV_OPS_H
 
-#include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
-#include "bout/build_defines.hxx"
-#include "bout/coordinates.hxx"
 #include "bout/field.hxx"
 #include "bout/field3d.hxx"
-#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
 #include "bout/output_bout_types.hxx" // NOLINT(unused-includes, misc-include-cleaner)
-#include "bout/region.hxx"
-#include "bout/utils.hxx"
 #include "bout/vector2d.hxx"
 
 namespace FV {
