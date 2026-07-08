@@ -106,8 +106,16 @@ public:
   /// get g_22 at the cell faces;
   const FieldMetric& g_22_ylow() const;
   const FieldMetric& g_22_yhigh() const;
-  FieldMetric& g_22_ylow();
-  FieldMetric& g_22_yhigh();
+  FieldMetric& g_22_ylow() {
+    const_cast<const Coordinates*>(this)->g_22_ylow();
+    ASSERT2(_g_22_ylow.has_value());
+    return *_g_22_ylow;
+  }
+  FieldMetric& g_22_yhigh() {
+    const_cast<const Coordinates*>(this)->g_22_yhigh();
+    ASSERT2(_g_22_yhigh.has_value());
+    return *_g_22_yhigh;
+  }
   // Cell Areas
   const FieldMetric& cell_area_xlow() const {
     if (_cell_area_xlow.has_value()) {
