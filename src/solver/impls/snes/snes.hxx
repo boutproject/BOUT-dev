@@ -223,6 +223,13 @@ private:
   int nlocal; ///< Number of variables on local processor
   int neq;    ///< Number of variables in total
 
+  bool have_constraints;  ///< Are there any constraint variables?
+  Array<BoutReal> is_dae; ///< If using constraints, 1 -> DAE, 0 -> AE
+
+  IS is_diff = nullptr; // is_dae == 1
+  IS is_alg = nullptr;  // is_dae == 0 (phi constraint and any other algebraics)
+  bool have_is_maps = false;
+
   PetscLib lib; ///< Handles initialising, finalising PETSc
   Vec snes_f;   ///< Used by SNES to store function
   Vec deriv; ///< Time derivative; only used if diagnose = true, otherwise will store in snes_f

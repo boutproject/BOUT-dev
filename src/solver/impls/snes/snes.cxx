@@ -364,7 +364,9 @@ SNESSolver::SNESSolver(Options* opts)
                             .withDefault<BoutReal>(100.)),
       asinh_vars((*options)["asinh_vars"]
                      .doc("Apply asinh() to all variables?")
-                     .withDefault<bool>(false)) {}
+                     .withDefault<bool>(false)) {
+  has_constraints = true; ///< This solver can handle constraints
+}
 
 int SNESSolver::init() {
   Solver::init();
@@ -384,6 +386,29 @@ int SNESSolver::init() {
 
   output_info.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
                     n3Dvars(), n2Dvars(), neq, nlocal);
+
+  // Check if there are any constraints
+  have_constraints = false;
+
+  for (int i = 0; i < n2Dvars(); i++) {
+    if (f2d[i].constraint) {
+      have_constraints = true;
+      break;
+    }
+  }
+  for (int i = 0; i < n3Dvars(); i++) {
+    if (f3d[i].constraint) {
+      have_constraints = true;
+      break;
+    }
+  }
+
+  if (have_constraints) {
+    is_dae.reallocate(nlocal);
+    // Call the Solver function, which sets the array
+    // to one when not a constraint, zero for constraint
+    set_id(std::begin(is_dae));
+  }
 
   // Initialise fields for storing residual of nonlinear solves
   if (diagnose) {
@@ -448,6 +473,34 @@ int SNESSolver::init() {
   local_residual = 0.0;
   local_residual_2d = 0.0;
   global_residual = 0.0;
+
+  if (have_constraints) {
+    // CreatePETSc-native index sets representing the two parts of your DAE.
+    PetscInt istart, iend;
+    PetscCall(VecGetOwnershipRange(snes_x, &istart, &iend));
+    ASSERT2(iend - istart == nlocal);
+
+    std::vector<PetscInt> diff_idx;
+    std::vector<PetscInt> alg_idx;
+    diff_idx.reserve(nlocal);
+    alg_idx.reserve(nlocal);
+
+    for (PetscInt i = 0; i < nlocal; ++i) {
+      const PetscInt gi = istart + i;
+      if (is_dae[i] > 0.5) { // differential
+        diff_idx.push_back(gi);
+      } else { // algebraic constraint (i.e. phi)
+        alg_idx.push_back(gi);
+      }
+    }
+
+    PetscCall(ISCreateGeneral(BoutComm::get(), diff_idx.size(), diff_idx.data(),
+                              PETSC_COPY_VALUES, &is_diff));
+    PetscCall(ISCreateGeneral(BoutComm::get(), alg_idx.size(), alg_idx.data(),
+                              PETSC_COPY_VALUES, &is_alg));
+
+    have_is_maps = true;
+  }
 
   // Nonlinear solver interface (SNES)
   output_info.write("Create SNES\n");
@@ -578,6 +631,24 @@ int SNESSolver::init() {
 #endif
       }
     }
+  }
+
+  if (have_constraints && have_is_maps && !matrix_free && pc_type == "fieldsplit") {
+    output_info.write("Using PCFieldSplit preconditioner for DAE system\n");
+
+    // Use PETSc fieldsplit
+    PetscCall(PCSetType(pc, PCFIELDSPLIT));
+
+    // Give PETSc the index sets
+    PetscCall(PCFieldSplitSetIS(pc, "diff", is_diff));
+    PetscCall(PCFieldSplitSetIS(pc, "alg", is_alg));
+
+    // Let the user configure from options (recommended)
+    // Example options you can set in input file:
+    //   -pc_fieldsplit_type additive
+    //   -fieldsplit_alg_pc_type hypre -fieldsplit_alg_pc_hypre_type boomeramg
+    //   -fieldsplit_diff_pc_type ilu
+    //
   }
 
   // Get runtime options
@@ -1510,26 +1581,99 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
   switch (equation_form) {
   case BoutSnesEquationForm::rearranged_backward_euler: {
     // Rearranged Backward Euler
-    // f = (x0 - x)/Δt + f
-    // First calculate x - x0 to minimise floating point issues
-    VecWAXPY(delta_x, -1.0, x0, x); // delta_x = x - x0
-    VecAXPY(f, -1. / dt, delta_x);  // f <- f - delta_x / dt
+    // F = (x0 - x)/Δt + f
+    // Algebraic:     F = G(x)  (already stored in f by rhs_function)
+
+    if (!have_constraints) {
+
+      // First calculate x - x0 to minimise floating point issues
+      VecWAXPY(delta_x, -1.0, x0, x); // delta_x = x - x0
+      VecAXPY(f, -1.0 / dt, delta_x);  // f <- f - delta_x / dt
+
+    } else {
+
+      ASSERT2(have_is_maps);
+      // Some constraints
+
+      Vec x_diff, x0_diff, delta_x_diff, f_diff;
+      PetscCall(VecGetSubVector(x, is_diff, &x_diff));
+      PetscCall(VecGetSubVector(x0, is_diff, &x0_diff));
+      PetscCall(VecGetSubVector(delta_x, is_diff, &delta_x_diff));
+      PetscCall(VecGetSubVector(f, is_diff, &f_diff));
+
+      PetscCall(VecWAXPY(delta_x_diff, -1.0, x0_diff, x_diff)); // delta_x_diff = x_diff - x0_diff
+      PetscCall(VecAXPY(f_diff, -1.0 / dt, delta_x_diff));       // f_diff <- f_diff - delta_x / dt
+
+      PetscCall(VecRestoreSubVector(x, is_diff, &x_diff));
+      PetscCall(VecRestoreSubVector(x0, is_diff, &x0_diff));
+      PetscCall(VecRestoreSubVector(delta_x, is_diff, &delta_x_diff));
+      PetscCall(VecRestoreSubVector(f, is_diff, &f_diff));
+    }
     break;
   }
   case BoutSnesEquationForm::pseudo_transient: {
     // Pseudo-transient timestepping. Same as Rearranged Backward Euler
     // except that Δt is a vector
-    // f = (x0 - x)/Δt + f
-    VecWAXPY(delta_x, -1.0, x0, x);
-    VecPointwiseDivide(delta_x, delta_x, dt_vec); // delta_x /= dt
-    VecAXPY(f, -1., delta_x);                     // f <- f - delta_x
+    // F = (x0 - x)/Δt + f
+    // Algebraic:     F = G(x)  (already stored in f by rhs_function)
+
+    if (!have_constraints) {
+
+
+      VecWAXPY(delta_x, -1.0, x0, x);
+      VecPointwiseDivide(delta_x, delta_x, dt_vec); // delta_x /= dt
+      VecAXPY(f, -1.0, delta_x);                     // f <- f - delta_x
+
+
+    } else {
+      ASSERT2(have_is_maps);
+
+      Vec x_diff, x0_diff, delta_x_diff, f_diff, dt_vec_diff;
+      PetscCall(VecGetSubVector(x, is_diff, &x_diff));
+      PetscCall(VecGetSubVector(x0, is_diff, &x0_diff));
+      PetscCall(VecGetSubVector(delta_x, is_diff, &delta_x_diff));
+      PetscCall(VecGetSubVector(f, is_diff, &f_diff));
+      PetscCall(VecGetSubVector(dt_vec, is_diff, &dt_vec_diff));
+
+      PetscCall(VecWAXPY(delta_x_diff, -1.0, x0_diff, x_diff));
+      PetscCall(VecPointwiseDivide(delta_x_diff, delta_x_diff, dt_vec_diff)); // delta_x /= dt
+      PetscCall(VecAXPY(f_diff, -1.0, delta_x_diff));                         // f <- f - delta_x
+
+      PetscCall(VecRestoreSubVector(delta_x, is_diff, &delta_x_diff));
+      PetscCall(VecRestoreSubVector(x,      is_diff, &x_diff));
+      PetscCall(VecRestoreSubVector(x0,     is_diff, &x0_diff));
+      PetscCall(VecRestoreSubVector(f,      is_diff, &f_diff));
+      PetscCall(VecRestoreSubVector(dt_vec, is_diff, &dt_vec_diff));
+    }
     break;
   }
   case BoutSnesEquationForm::backward_euler: {
-    // Backward Euler
-    // Set f = x - x0 - Δt*f
-    VecAYPX(f, -dt, x);   // f <- x - Δt*f
-    VecAXPY(f, -1.0, x0); // f <- f - x0
+    // Backward Euler:
+    // Differential:  F = x - x0 - dt*f
+    // Algebraic:     F = G(x)  (already stored in f by rhs_function)
+
+    if (!have_constraints) {
+
+      VecAYPX(f, -dt, x);   // f <- x - Δt*f
+      VecAXPY(f, -1.0, x0); // f <- f - x0
+
+    } else {
+
+      ASSERT2(have_is_maps);
+      // Some constraints
+
+      Vec x_diff, x0_diff, f_diff;
+      PetscCall(VecGetSubVector(x, is_diff, &x_diff));
+      PetscCall(VecGetSubVector(x0, is_diff, &x0_diff));
+      PetscCall(VecGetSubVector(f, is_diff, &f_diff));
+
+      PetscCall(VecAYPX(f_diff, -dt, x_diff));   // f_diff <- x_diff - dt*f_diff
+      PetscCall(VecAXPY(f_diff, -1.0, x0_diff)); // f_diff <- f_diff - x0_diff
+
+      PetscCall(VecRestoreSubVector(x, is_diff, &x_diff));
+      PetscCall(VecRestoreSubVector(x0, is_diff, &x0_diff));
+      PetscCall(VecRestoreSubVector(f, is_diff, &f_diff));
+    }
     break;
   }
   case BoutSnesEquationForm::direct_newton: {
