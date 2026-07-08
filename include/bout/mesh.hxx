@@ -44,6 +44,7 @@ class Mesh;
 #ifndef BOUT_MESH_H
 #define BOUT_MESH_H
 
+#include "bout/array.hxx"
 #include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/coordinates.hxx" // Coordinates class
@@ -171,6 +172,9 @@ public:
   ///
   /// @returns zero if successful, non-zero on failure
   int get(bool& bval, const std::string& name, bool def = false);
+
+  int get(Array<int>& var, const std::string& name);
+  int get(Array<BoutReal>& var, const std::string& name);
 
   /// Get a Field2D from the input source
   /// including communicating guard cells
@@ -482,7 +486,7 @@ public:
   // Boundary regions
 
   /// Return a vector containing all the boundary regions on this processor
-  virtual std::vector<BoundaryRegionBase*> getBoundaries() = 0;
+  virtual std::vector<BoundaryRegionBase*> getBoundaries() const = 0;
 
   /// Get the set of all possible boundaries in this configuration
   virtual std::set<std::string> getPossibleBoundaries() const {
@@ -605,7 +609,7 @@ public:
   virtual int getLocalZIndexNoBoundaries(int zglobal) const = 0;
 
   /// Size of the mesh on this processor including guard/boundary cells
-  int LocalNx, LocalNy, LocalNz;
+  int LocalNx{0}, LocalNy{0}, LocalNz{0};
 
   /// Local ranges of data (inclusive), excluding guard cells
   int xstart, xend, ystart, yend, zstart, zend;

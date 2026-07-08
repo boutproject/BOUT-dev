@@ -311,3 +311,26 @@ because they are needed in a lot of the code. They shouldn’t change
 after initialisation, unless the physics model starts doing fancy
 things with deforming meshes. In that case it is up to the user to
 ensure they are updated.
+
+.. _sec-derived-geometric-quantities:
+
+Derived geometric quantities
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`Coordinates` also provides several quantities derived from the metric tensor
+and Jacobian, rather than requiring each operator to reconstruct them locally.
+Examples include:
+
+* `g_22` evaluated at the lower and upper `y` cell faces
+* cell-face areas in the `x`, `y`, and `z` directions
+* cell volumes
+
+These are used by conservative operators, especially the finite-volume
+operators documented in :ref:`sec-finite-volume-operators`, where fluxes are
+naturally expressed as a face area multiplied by a face flux and divided by a
+cell volume.
+
+In the current implementation these quantities are computed lazily from the
+current metric data and then cached for reuse. This keeps the operator code
+closer to the discrete flux expressions while centralising the geometry
+construction in `Coordinates`.

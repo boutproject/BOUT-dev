@@ -2581,9 +2581,8 @@ bool BoutMesh::periodicY(int jx, BoutReal& ts) const {
 int BoutMesh::numberOfYBoundaries() const {
   if (jyseps2_1 != jyseps1_2) {
     return 2;
-  } else {
-    return 1;
   }
+  return 1;
 }
 
 std::pair<bool, BoutReal> BoutMesh::hasBranchCutLower(int jx) const {
@@ -3250,7 +3249,7 @@ RangeIterator BoutMesh::iterateBndryUpperY() const {
   return RangeIterator(xs, xe);
 }
 
-std::vector<BoundaryRegionBase*> BoutMesh::getBoundaries() { return boundary; }
+std::vector<BoundaryRegionBase*> BoutMesh::getBoundaries() const { return boundary; }
 
 using bout::boundary::BoundaryRegionFCI;
 std::vector<std::shared_ptr<BoundaryRegionFCI>>

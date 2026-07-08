@@ -40,6 +40,7 @@ static constexpr auto DEFAULT_DIR = "data";
 #include "bout/build_defines.hxx"
 #include "bout/coordinates_accessor.hxx"
 #include "bout/dcomplex.hxx"
+#include "bout/git_metadata.hxx"
 #include "bout/globals.hxx"
 #include "bout/hyprelib.hxx"
 #include "bout/interpolation_xz.hxx"
@@ -523,6 +524,12 @@ void savePIDtoFile(const std::string& data_dir, int MYPE) {
 void printStartupHeader(int MYPE, int NPES) {
   output_progress.write(_f("BOUT++ version {:s}\n"), bout::version::full);
   output_progress.write(_f("Revision: {:s}\n"), bout::version::revision);
+  if (bout::version::git_metadata_available()) {
+    output_progress.write("Git tree: {}\n",
+                          bout::version::git_dirty() ? "dirty" : "clean");
+  } else {
+    output_progress.write("Git tree: unavailable\n");
+  }
 #ifdef MD5SUM
   output_progress.write("MD5 checksum: {:s}\n", BUILDFLAG(MD5SUM));
 #endif
@@ -664,6 +671,9 @@ void setRunStartInfo(Options& options) {
   // output BOUT.settings file was used as input
   runinfo["version"].force(bout::version::full, "Output");
   runinfo["revision"].force(bout::version::revision, "Output");
+  runinfo["git_diff"].force(std::string{bout::version::git_diff()}, "Output");
+  runinfo["git_diff_available"].force(bout::version::git_metadata_available(), "Output");
+  runinfo["git_dirty"].force(bout::version::git_dirty(), "Output");
 
   time_t start_time = time(nullptr);
   runinfo["started"].force(ctime(&start_time), "Output");
@@ -705,6 +715,11 @@ void addBuildFlagsToOptions(Options& options) {
   options["has_cuda"].force(bout::build::has_cuda);
   options["use_metric_3d"].force(bout::build::use_metric_3d);
   options["use_msgstack"].force(bout::build::use_msgstack);
+  options["bout_git_hash"].force(bout::version::revision, "Output");
+  options["bout_git_diff"].force(std::string{bout::version::git_diff()}, "Output");
+  options["bout_git_diff_available"].force(bout::version::git_metadata_available(),
+                                           "Output");
+  options["bout_git_dirty"].force(bout::version::git_dirty(), "Output");
 }
 
 void writeSettingsFile(Options& options, const std::string& data_dir,
