@@ -1896,8 +1896,10 @@ void Coordinates::normaliseFCI(const BoutReal Bnorm, const BoutReal rho_0) {
 
   geometry(); // Calculate other metrics
 
-  g_22_ylow();
-  g_22_yhigh();
-  (*_g_22_ylow) /= SQ(rho_s0);
-  (*_g_22_yhigh) /= SQ(rho_s0);
+  if (Bxy.isFci()) {
+    g_22_ylow();
+    g_22_yhigh();
+    (*_g_22_ylow) /= SQ(rho_s0);
+    (*_g_22_yhigh) /= SQ(rho_s0);
+  }
 }
