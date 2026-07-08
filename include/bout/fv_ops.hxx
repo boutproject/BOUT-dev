@@ -19,6 +19,7 @@
 #include "bout/vector2d.hxx"
 
 namespace FV {
+/// Vorticity:
 /// \f[
 ///   \nabla (a \cdot \nabla_\perp(f))
 /// \f]
