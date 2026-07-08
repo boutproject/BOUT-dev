@@ -36,7 +36,7 @@ def getversion():
             return version.lstrip("v")
 
         _bout_previous_version = "v5.2.0"
-        _bout_next_version = "v5.3.0"
+        _bout_next_version = "v6.0.0"
 
         try:
             try:
