@@ -23,8 +23,10 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
 #include "bout/build_defines.hxx"
-
+#include "bout/dcomplex.hxx"
+#include "bout/metric_tensor.hxx"
 #include <bout/assert.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
@@ -35,40 +37,30 @@
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
 #include <bout/globals.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 #include <bout/mesh.hxx>
 #include <bout/region.hxx>
 #include <bout/solver.hxx>
+#include <bout/unused.hxx>
 #include <bout/utils.hxx>
 #include <bout/vecops.hxx>
 
-#include <bout/invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
-
-#include <bout/interpolation.hxx>
-#include <bout/unused.hxx>
-
 #include <cmath>
+#include <string>
 
 /*******************************************************************************
 * Grad_par
 * The parallel derivative along unperturbed B-field
 *******************************************************************************/
 
-Coordinates::FieldMetric Grad_par(const Field2D& var, CELL_LOC outloc,
-                                  const std::string& method) {
-  return var.getCoordinates(outloc)->Grad_par(var, outloc, method);
-}
-
-Coordinates::FieldMetric Grad_par(const Field2D& var, const std::string& method,
-                                  CELL_LOC outloc) {
-  return var.getCoordinates(outloc)->Grad_par(var, outloc, method);
+bout::FieldMetric Grad_par(const Field2D& var, CELL_LOC outloc,
+                           const std::string& method) {
+  return DDY(var, outloc, method) * var.getCoordinates(outloc)->invSg();
 }
 
 Field3D Grad_par(const Field3D& var, CELL_LOC outloc, const std::string& method) {
-  return var.getCoordinates(outloc)->Grad_par(var, outloc, method);
-}
-
-Field3D Grad_par(const Field3D& var, const std::string& method, CELL_LOC outloc) {
-  return var.getCoordinates(outloc)->Grad_par(var, outloc, method);
+  return DDY(var, outloc, method) * var.getCoordinates(outloc)->invSg();
 }
 
 /*******************************************************************************
@@ -198,46 +190,34 @@ Field3D Grad_parP(const Field3D& apar, const Field3D& f) {
 * vparallel times the parallel derivative along unperturbed B-field
 *******************************************************************************/
 
-Coordinates::FieldMetric Vpar_Grad_par(const Field2D& v, const Field2D& f,
-                                       CELL_LOC outloc, const std::string& method) {
-  return f.getCoordinates(outloc)->Vpar_Grad_par(v, f, outloc, method);
-}
-
-Coordinates::FieldMetric Vpar_Grad_par(const Field2D& v, const Field2D& f,
-                                       const std::string& method, CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Vpar_Grad_par(v, f, outloc, method);
+bout::FieldMetric Vpar_Grad_par(const Field2D& v, const Field2D& f, CELL_LOC outloc,
+                                const std::string& method) {
+  return VDDY(v, f, outloc, method) * f.getCoordinates(outloc)->invSg();
 }
 
 Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
                       const std::string& method) {
-  return f.getCoordinates(outloc)->Vpar_Grad_par(v, f, outloc, method);
-}
-
-Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f, const std::string& method,
-                      CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Vpar_Grad_par(v, f, outloc, method);
+  return VDDY(v, f, outloc, method) * f.getCoordinates(outloc)->invSg();
 }
 
 /*******************************************************************************
 * Div_par
 * parallel divergence operator B \partial_{||} (F/B)
 *******************************************************************************/
-Coordinates::FieldMetric Div_par(const Field2D& f, CELL_LOC outloc,
-                                 const std::string& method) {
-  return f.getCoordinates(outloc)->Div_par(f, outloc, method);
-}
+bout::FieldMetric Div_par(const Field2D& f, CELL_LOC outloc, const std::string& method) {
+  const auto& Bxy_outloc = f.getCoordinates(outloc)->Bxy();
+  // Need Bxy at location of f, which might be different from outloc
+  const auto& Bxy_floc = f.getCoordinates()->Bxy();
 
-Coordinates::FieldMetric Div_par(const Field2D& f, const std::string& method,
-                                 CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Div_par(f, outloc, method);
+  return Bxy_outloc * Grad_par(bout::FieldMetric{f / Bxy_floc}, outloc, method);
 }
 
 Field3D Div_par(const Field3D& f, CELL_LOC outloc, const std::string& method) {
-  return f.getCoordinates(outloc)->Div_par(f, outloc, method);
-}
+  const auto& Bxy_outloc = f.getCoordinates(outloc)->Bxy();
+  // Need Bxy at location of f, which might be different from outloc
+  const auto& Bxy_floc = f.getCoordinates()->Bxy();
 
-Field3D Div_par(const Field3D& f, const std::string& method, CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Div_par(f, outloc, method);
+  return Bxy_outloc * Grad_par(Field3D{f / Bxy_floc}, outloc, method);
 }
 
 Field3D Div_par(const Field3D& f, const Field3D& v) {
@@ -318,13 +298,23 @@ Field3D Div_par_flux(const Field3D& v, const Field3D& f, const std::string& meth
 * Note: For parallel Laplacian use LaplacePar
 *******************************************************************************/
 
-Coordinates::FieldMetric Grad2_par2(const Field2D& f, CELL_LOC outloc,
-                                    const std::string& method) {
-  return f.getCoordinates(outloc)->Grad2_par2(f, outloc, method);
+bout::FieldMetric Grad2_par2(const Field2D& f, CELL_LOC outloc,
+                             const std::string& method) {
+  const auto& coords = *f.getCoordinates(outloc);
+
+  return coords.Grad2_par2_DDY_invSg(outloc, method) * DDY(f, outloc, method)
+         + D2DY2(f, outloc, method) / coords.g_22();
 }
 
 Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc, const std::string& method) {
-  return f.getCoordinates(outloc)->Grad2_par2(f, outloc, method);
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+
+  const auto& coords = *f.getCoordinates(outloc);
+
+  return coords.Grad2_par2_DDY_invSg(outloc, method) * DDY(f, outloc, method)
+         + D2DY2(f, outloc, method) / coords.g_22();
 }
 
 /*******************************************************************************
@@ -332,8 +322,7 @@ Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc, const std::string& method)
 * Parallel divergence of diffusive flux, K*Grad_par
 *******************************************************************************/
 
-Coordinates::FieldMetric Div_par_K_Grad_par(BoutReal kY, const Field2D& f,
-                                            CELL_LOC outloc) {
+bout::FieldMetric Div_par_K_Grad_par(BoutReal kY, const Field2D& f, CELL_LOC outloc) {
   return kY * Grad2_par2(f, outloc);
 }
 
@@ -341,8 +330,8 @@ Field3D Div_par_K_Grad_par(BoutReal kY, const Field3D& f, CELL_LOC outloc) {
   return kY * Grad2_par2(f, outloc);
 }
 
-Coordinates::FieldMetric Div_par_K_Grad_par(const Field2D& kY, const Field2D& f,
-                                            CELL_LOC outloc) {
+bout::FieldMetric Div_par_K_Grad_par(const Field2D& kY, const Field2D& f,
+                                     CELL_LOC outloc) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
@@ -445,10 +434,11 @@ Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& 
     const bool is_periodic_y = mesh->periodicY(ix);
 
     if (bndry_flux || is_periodic_y || !mesh->lastY(ix) || (iy != mesh->yend)) {
-      const BoutReal c = 0.5 * (K[i] + K[iyp]);               // K at the upper boundary
+      const BoutReal c = 0.5 * (K[i] + K[iyp]); // K at the upper boundary
       const BoutReal J = 0.5 * (coord->J()[i] + coord->J()[iyp]); // Jacobian at boundary
       const BoutReal g_22 = 0.5 * (coord->g_22()[i] + coord->g_22()[iyp]);
-      const BoutReal gradient = 2. * (f[iyp] - f[i]) / (coord->dy()[i] + coord->dy()[iyp]);
+      const BoutReal gradient =
+          2. * (f[iyp] - f[i]) / (coord->dy()[i] + coord->dy()[iyp]);
 
       const BoutReal flux = c * J * gradient / g_22;
 
@@ -457,10 +447,11 @@ Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& 
 
     // Calculate flux at lower surface
     if (bndry_flux || is_periodic_y || !mesh->firstY(ix) || (iy != mesh->ystart)) {
-      const BoutReal c = 0.5 * (K[i] + K[iym]);               // K at the lower boundary
+      const BoutReal c = 0.5 * (K[i] + K[iym]); // K at the lower boundary
       const BoutReal J = 0.5 * (coord->J()[i] + coord->J()[iym]); // Jacobian at boundary
       const BoutReal g_22 = 0.5 * (coord->g_22()[i] + coord->g_22()[iym]);
-      const BoutReal gradient = 2. * (f[i] - f[iym]) / (coord->dy()[i] + coord->dy()[iym]);
+      const BoutReal gradient =
+          2. * (f[i] - f[iym]) / (coord->dy()[i] + coord->dy()[iym]);
 
       const BoutReal flux = c * J * gradient / g_22;
 
@@ -481,16 +472,136 @@ Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& 
 * perpendicular Laplacian operator
 *******************************************************************************/
 
-Coordinates::FieldMetric Delp2(const Field2D& f, CELL_LOC outloc, bool useFFT) {
-  return f.getCoordinates(outloc)->Delp2(f, outloc, useFFT);
+bout::FieldMetric Delp2(const Field2D& f, CELL_LOC outloc, [[maybe_unused]] bool useFFT) {
+  const auto& coords = *f.getCoordinates(outloc);
+  return coords.G1() * DDX(f, outloc) + coords.g11() * D2DX2(f, outloc);
 }
 
 Field3D Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
-  return f.getCoordinates(outloc)->Delp2(f, outloc, useFFT);
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+
+  ASSERT1(f.getLocation() == outloc);
+  const auto* mesh = f.getMesh();
+
+  if (mesh->GlobalNx == 1 && mesh->GlobalNz == 1) {
+    // copy mesh, location, etc
+    return f * 0;
+  }
+  ASSERT2(mesh->xstart > 0); // Need at least one guard cell;
+
+  Field3D result{emptyFrom(f).setLocation(outloc)};
+
+  if (useFFT and not bout::build::use_metric_3d and mesh->getNZPE() == 1) {
+    const int ncz = mesh->LocalNz;
+
+    // Allocate memory
+    auto ft = Matrix<dcomplex>(mesh->LocalNx, (ncz / 2) + 1);
+    auto delft = Matrix<dcomplex>(mesh->LocalNx, ncz / 2 + 1);
+
+    // Loop over y indices
+    // Note: should not include y-guard or y-boundary points here as that would
+    // use values from corner cells in dx, which may not be initialised.
+    for (int jy = mesh->ystart; jy <= mesh->yend; jy++) {
+
+      // Take forward FFT
+
+      for (int jx = 0; jx < mesh->LocalNx; jx++) {
+        rfft(&f(jx, jy, 0), ncz, &ft(jx, 0));
+      }
+
+      // Loop over kz
+      for (int jz = 0; jz <= ncz / 2; jz++) {
+
+        // No smoothing in the x direction
+        for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+          // Perform x derivative
+
+          dcomplex a, b, c;
+          laplace_tridag_coefs(jx, jy, jz, a, b, c, nullptr, nullptr, outloc);
+
+          delft(jx, jz) = a * ft(jx - 1, jz) + b * ft(jx, jz) + c * ft(jx + 1, jz);
+        }
+      }
+
+      // Reverse FFT
+      for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+
+        irfft(&delft(jx, 0), ncz, &result(jx, jy, 0));
+      }
+    }
+  } else {
+    const auto& coords = *f.getCoordinates(outloc);
+    result = coords.G1() * DDX(f, outloc) + coords.G3() * DDZ(f, outloc)
+             + coords.g11() * D2DX2(f, outloc) + coords.g33() * D2DZ2(f, outloc)
+             + 2 * coords.g13() * D2DXDZ(f, outloc);
+  }
+
+  ASSERT2(result.getLocation() == outloc);
+
+  return result;
 }
 
 FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
-  return f.getCoordinates(outloc)->Delp2(f, outloc, useFFT);
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+
+  ASSERT1(f.getLocation() == outloc);
+  const auto* mesh = f.getMesh();
+
+  if (mesh->GlobalNx == 1 && mesh->GlobalNz == 1) {
+    // copy mesh, location, etc
+    return f * 0;
+  }
+  ASSERT2(mesh->xstart > 0); // Need at least one guard cell
+
+  FieldPerp result{emptyFrom(f).setLocation(outloc)};
+
+  const int jy = f.getIndex();
+  result.setIndex(jy);
+
+  if (useFFT and mesh->getNZPE() == 1) {
+    int ncz = mesh->LocalNz;
+
+    // Allocate memory
+    auto ft = Matrix<dcomplex>(mesh->LocalNx, ncz / 2 + 1);
+    auto delft = Matrix<dcomplex>(mesh->LocalNx, ncz / 2 + 1);
+
+    // Take forward FFT
+    for (int jx = 0; jx < mesh->LocalNx; jx++) {
+      rfft(&f(jx, 0), ncz, &ft(jx, 0));
+    }
+
+    // Loop over kz
+    for (int jz = 0; jz <= ncz / 2; jz++) {
+
+      // No smoothing in the x direction
+      for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+        // Perform x derivative
+
+        dcomplex a, b, c;
+        laplace_tridag_coefs(jx, jy, jz, a, b, c);
+
+        delft(jx, jz) = a * ft(jx - 1, jz) + b * ft(jx, jz) + c * ft(jx + 1, jz);
+      }
+    }
+
+    // Reverse FFT
+    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+      irfft(&delft(jx, 0), ncz, &result(jx, 0));
+    }
+
+  } else {
+    throw BoutException("Non-fourier Delp2 not currently implented for FieldPerp.");
+    // Would be the following but don't have standard derivative operators for FieldPerps
+    // yet
+    // result = G1 * ::DDX(f, outloc) + G3 * ::DDZ(f, outloc) + g11 * ::D2DX2(f, outloc)
+    //          + g33 * ::D2DZ2(f, outloc) + 2 * g13 * ::D2DXDZ(f, outloc);
+  };
+
+  return result;
 }
 
 /*******************************************************************************
@@ -500,9 +611,9 @@ FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
 * Laplace_perp = Laplace - Laplace_par
 *******************************************************************************/
 
-Coordinates::FieldMetric Laplace_perp(const Field2D& f, CELL_LOC outloc,
-                                      const std::string& dfdy_boundary_condition,
-                                      const std::string& dfdy_region) {
+bout::FieldMetric Laplace_perp(const Field2D& f, CELL_LOC outloc,
+                               const std::string& dfdy_boundary_condition,
+                               const std::string& dfdy_region) {
   return Laplace(f, outloc, dfdy_boundary_condition, dfdy_region)
          - Laplace_par(f, outloc);
 }
@@ -522,12 +633,18 @@ Field3D Laplace_perp(const Field3D& f, CELL_LOC outloc,
  *
  *******************************************************************************/
 
-Coordinates::FieldMetric Laplace_par(const Field2D& f, CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Laplace_par(f, outloc);
+bout::FieldMetric Laplace_par(const Field2D& f, CELL_LOC outloc) {
+  const auto& coords = *f.getCoordinates(outloc);
+  return D2DY2(f, outloc) / coords.g_22()
+         + DDY(bout::FieldMetric{coords.J() / coords.g_22()}, outloc) * DDY(f, outloc)
+               / coords.J();
 }
 
 Field3D Laplace_par(const Field3D& f, CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Laplace_par(f, outloc);
+  const auto& coords = *f.getCoordinates(outloc);
+  return D2DY2(f, outloc) / coords.g_22()
+         + DDY(coords.J().asField3DParallel() / coords.g_22(), outloc) * DDY(f, outloc)
+               / coords.J();
 }
 
 /*******************************************************************************
@@ -535,18 +652,31 @@ Field3D Laplace_par(const Field3D& f, CELL_LOC outloc) {
 * Full Laplacian operator on scalar field
 *******************************************************************************/
 
-Coordinates::FieldMetric Laplace(const Field2D& f, CELL_LOC outloc,
-                                 const std::string& dfdy_boundary_condition,
-                                 const std::string& dfdy_region) {
-  return f.getCoordinates(outloc)->Laplace(f, outloc, dfdy_boundary_condition,
-                                           dfdy_region);
+bout::FieldMetric Laplace(const Field2D& f, CELL_LOC outloc,
+                          const std::string& dfdy_boundary_condition,
+                          const std::string& dfdy_region) {
+  const auto& coords = *f.getCoordinates(outloc);
+
+  return coords.G1() * DDX(f, outloc) + coords.G2() * DDY(f, outloc)
+         + coords.g11() * D2DX2(f, outloc) + coords.g22() * D2DY2(f, outloc)
+         + 2.0 * coords.g12()
+               * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY", dfdy_boundary_condition,
+                        dfdy_region);
 }
 
 Field3D Laplace(const Field3D& f, CELL_LOC outloc,
                 const std::string& dfdy_boundary_condition,
                 const std::string& dfdy_region) {
-  return f.getCoordinates(outloc)->Laplace(f, outloc, dfdy_boundary_condition,
-                                           dfdy_region);
+  const auto& coords = *f.getCoordinates(outloc);
+
+  return coords.G1() * DDX(f, outloc) + coords.G2() * DDY(f, outloc)
+         + coords.G3() * DDZ(f, outloc) + coords.g11() * D2DX2(f, outloc)
+         + coords.g22() * D2DY2(f, outloc) + coords.g33() * D2DZ2(f, outloc)
+         + 2.0
+               * (coords.g12()
+                      * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY",
+                               dfdy_boundary_condition, dfdy_region)
+                  + coords.g13() * D2DXDZ(f, outloc) + coords.g23() * D2DYDZ(f, outloc));
 }
 
 /*******************************************************************************
@@ -555,7 +685,65 @@ Field3D Laplace(const Field3D& f, CELL_LOC outloc,
  *******************************************************************************/
 
 Field2D Laplace_perpXY(const Field2D& A, const Field2D& f) {
-  return f.getCoordinates()->Laplace_perpXY(A, f);
+#if BOUT_USE_METRIC_3D
+  throw BoutException("Coordinates::Laplace_perpXY for 3D metric not implemented");
+#else
+  const auto& coords = *f.getCoordinates();
+
+  Field2D result;
+  result.allocate();
+  for (auto i : result.getRegion(RGN_NOBNDRY)) {
+    result[i] = 0.;
+
+    // outer x boundary
+    const auto outer_x_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.xp()]); };
+    const BoutReal outer_x_A = outer_x_avg(A);
+    const BoutReal outer_x_J = outer_x_avg(coords.J());
+    const BoutReal outer_x_g11 = outer_x_avg(coords.g11());
+    const BoutReal outer_x_dx = outer_x_avg(coords.dx());
+    const BoutReal outer_x_value = outer_x_A * outer_x_J * outer_x_g11
+                                   / (coords.J()[i] * outer_x_dx * coords.dx()[i]);
+    result[i] += outer_x_value * (f[i.xp()] - f[i]);
+
+    // inner x boundary
+    const auto inner_x_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.xm()]); };
+    const BoutReal inner_x_A = inner_x_avg(A);
+    const BoutReal inner_x_J = inner_x_avg(coords.J());
+    const BoutReal inner_x_g11 = inner_x_avg(coords.g11());
+    const BoutReal inner_x_dx = inner_x_avg(coords.dx());
+    const BoutReal inner_x_value = inner_x_A * inner_x_J * inner_x_g11
+                                   / (coords.J()[i] * inner_x_dx * coords.dx()[i]);
+    result[i] += inner_x_value * (f[i.xm()] - f[i]);
+
+    // upper y boundary
+    const auto upper_y_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.yp()]); };
+    const BoutReal upper_y_A = upper_y_avg(A);
+    const BoutReal upper_y_J = upper_y_avg(coords.J());
+    const BoutReal upper_y_g_22 = upper_y_avg(coords.g_22());
+    const BoutReal upper_y_g23 = upper_y_avg(coords.g23());
+    const BoutReal upper_y_g_23 = upper_y_avg(coords.g_23());
+    const BoutReal upper_y_dy = upper_y_avg(coords.dy());
+    const BoutReal upper_y_value =
+        -upper_y_A * upper_y_J * upper_y_g23 * upper_y_g_23
+        / (upper_y_g_22 * coords.J()[i] * upper_y_dy * coords.dy()[i]);
+    result[i] += upper_y_value * (f[i.yp()] - f[i]);
+
+    // lower y boundary
+    const auto lower_y_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.ym()]); };
+    const BoutReal lower_y_A = lower_y_avg(A);
+    const BoutReal lower_y_J = lower_y_avg(coords.J());
+    const BoutReal lower_y_g_22 = lower_y_avg(coords.g_22());
+    const BoutReal lower_y_g23 = lower_y_avg(coords.g23());
+    const BoutReal lower_y_g_23 = lower_y_avg(coords.g_23());
+    const BoutReal lower_y_dy = lower_y_avg(coords.dy());
+    const BoutReal lower_y_value =
+        -lower_y_A * lower_y_J * lower_y_g23 * lower_y_g_23
+        / (lower_y_g_22 * coords.J()[i] * lower_y_dy * coords.dy()[i]);
+    result[i] += lower_y_value * (f[i.ym()] - f[i]);
+  }
+
+  return result;
+#endif
 }
 
 /*******************************************************************************
@@ -564,8 +752,8 @@ Field2D Laplace_perpXY(const Field2D& A, const Field2D& f) {
 * Used for ExB terms and perturbed B field using A_||
 *******************************************************************************/
 
-Coordinates::FieldMetric b0xGrad_dot_Grad(const Field2D& phi, const Field2D& A,
-                                          CELL_LOC outloc) {
+bout::FieldMetric b0xGrad_dot_Grad(const Field2D& phi, const Field2D& A,
+                                   CELL_LOC outloc) {
 
   if (outloc == CELL_DEFAULT) {
     outloc = A.getLocation();
@@ -576,15 +764,15 @@ Coordinates::FieldMetric b0xGrad_dot_Grad(const Field2D& phi, const Field2D& A,
   Coordinates* metric = phi.getCoordinates(outloc);
 
   // Calculate phi derivatives
-  Coordinates::FieldMetric dpdx = DDX(phi, outloc);
-  Coordinates::FieldMetric dpdy = DDY(phi, outloc);
+  bout::FieldMetric dpdx = DDX(phi, outloc);
+  bout::FieldMetric dpdy = DDY(phi, outloc);
 
   // Calculate advection velocity
-  Coordinates::FieldMetric vx = -metric->g_23() * dpdy;
-  Coordinates::FieldMetric vy = metric->g_23() * dpdx;
+  bout::FieldMetric vx = -metric->g_23() * dpdy;
+  bout::FieldMetric vy = metric->g_23() * dpdx;
 
   // Upwind A using these velocities
-  Coordinates::FieldMetric result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc);
+  bout::FieldMetric result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc);
   result /= metric->J() * sqrt(metric->g_22());
 
   ASSERT1(result.getLocation() == outloc);
@@ -608,13 +796,13 @@ Field3D b0xGrad_dot_Grad(const Field2D& phi, const Field3D& A, CELL_LOC outloc) 
   Coordinates* metric = phi.getCoordinates(outloc);
 
   // Calculate phi derivatives
-  Coordinates::FieldMetric dpdx = DDX(phi, outloc);
-  Coordinates::FieldMetric dpdy = DDY(phi, outloc);
+  bout::FieldMetric dpdx = DDX(phi, outloc);
+  bout::FieldMetric dpdy = DDY(phi, outloc);
 
   // Calculate advection velocity
-  Coordinates::FieldMetric vx = -metric->g_23() * dpdy;
-  Coordinates::FieldMetric vy = metric->g_23() * dpdx;
-  Coordinates::FieldMetric vz = metric->g_12() * dpdy - metric->g_22() * dpdx;
+  bout::FieldMetric vx = -metric->g_23() * dpdy;
+  bout::FieldMetric vy = metric->g_23() * dpdx;
+  bout::FieldMetric vz = metric->g_12() * dpdy - metric->g_22() * dpdx;
 
   if (mesh->IncIntShear) {
     // BOUT-06 style differencing
@@ -715,9 +903,8 @@ Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field3D& A, CELL_LOC outloc) 
  * Terms of form b0 x Grad(f) dot Grad(g) / B = [f, g]
  *******************************************************************************/
 
-Coordinates::FieldMetric bracket(const Field2D& f, const Field2D& g,
-                                 BRACKET_METHOD method, CELL_LOC outloc,
-                                 Solver* UNUSED(solver)) {
+bout::FieldMetric bracket(const Field2D& f, const Field2D& g, BRACKET_METHOD method,
+                          CELL_LOC outloc, Solver* UNUSED(solver)) {
 
   ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
@@ -725,7 +912,7 @@ Coordinates::FieldMetric bracket(const Field2D& f, const Field2D& g,
   }
   ASSERT1(outloc == g.getLocation());
 
-  Coordinates::FieldMetric result{emptyFrom(f)};
+  bout::FieldMetric result{emptyFrom(f)};
 
   if ((method == BRACKET_SIMPLE) || (method == BRACKET_ARAKAWA)) {
     // Use a subset of terms for comparison to BOUT-06
