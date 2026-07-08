@@ -115,11 +115,10 @@ void verifyNumPoints(BoundaryRegion* region, int ptsRequired) {
 void verifyNumPoints(BoundaryRegion*, int) {}
 #endif
 
-
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryDirichlet_O1::clone(BoundaryRegion* region,
-                                     const std::list<std::string>& args) {
+                                        const std::list<std::string>& args) {
   verifyNumPoints(region, 1);
 
   std::shared_ptr<FieldGenerator> newgen;
@@ -168,9 +167,8 @@ void BoundaryDirichlet_O1::apply(Field2D& f, BoutReal t) {
       for (int i = 1; i < bndry->width; i++) {
         int xi = bndry->x + i * bndry->bx;
         int yi = bndry->y + i * bndry->by;
-        f(xi, yi) =  val;                    
-      }   
-      
+        f(xi, yi) = val;
+      }
     }
   }
 }
@@ -1844,7 +1842,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   ///////////////////////////////////////////////////////////////
 
   BoundaryOp* BoundaryNeumann_O1::clone(BoundaryRegion * region,
-                                     const std::list<std::string>& args) {
+                                        const std::list<std::string>& args) {
     verifyNumPoints(region, 1);
     std::shared_ptr<FieldGenerator> newgen = nullptr;
     if (!args.empty()) {
@@ -1857,8 +1855,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   void BoundaryNeumann_O1::apply(Field2D & f) { BoundaryNeumann_O1::apply(f, 0.); }
 
   void BoundaryNeumann_O1::apply(Field2D & f, BoutReal t) {
-  // Set (at 1st order) the gradient/value at the grid cell to the guard cells.
-
+    // Set (at 1st order) the gradient/value at the grid cell to the guard cells.
 
 #if not(BOUT_USE_METRIC_3D)
     Mesh* mesh = bndry->localmesh;
@@ -1879,7 +1876,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
     CELL_LOC loc = f.getLocation();
     if (mesh->StaggerGrids) {
-      // Staggered. 
+      // Staggered.
       throw BoutException("neumann_o1 BC is not implementated for staggered grids.");
 
     } else {
@@ -1896,13 +1893,14 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
         f(bndry->x, bndry->y) =
             f(bndry->x - bndry->bx, bndry->y - bndry->by) + delta * val;
         if (bndry->width == 2) {
-          f(bndry->x + bndry->bx, bndry->y + bndry->by) = f(bndry->x, bndry->y) + delta * val;              
+          f(bndry->x + bndry->bx, bndry->y + bndry->by) =
+              f(bndry->x, bndry->y) + delta * val;
         }
       }
     }
 #else
-  throw BoutException("Applying boundary condition 'neumann' to Field2D "
-                      "not compatible with 3D metrics in all cases.");
+    throw BoutException("Applying boundary condition 'neumann' to Field2D "
+                        "not compatible with 3D metrics in all cases.");
 #endif
   }
 
@@ -1927,7 +1925,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
     CELL_LOC loc = f.getLocation();
     if (mesh->StaggerGrids) {
-      // Staggered. 
+      // Staggered.
       throw BoutException("neumann_o1 BC is not implementated for staggered grids.");
 
     } else {
@@ -1937,9 +1935,9 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
           BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, zk)
                            + bndry->by * metric->dy(bndry->x, bndry->y, zk);
 #else
-      BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y)
-                       + bndry->by * metric->dy(bndry->x, bndry->y);
-      for (int zk = mesh->zstart; zk <= mesh->zend; zk++) {
+        BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y)
+                         + bndry->by * metric->dy(bndry->x, bndry->y);
+        for (int zk = mesh->zstart; zk <= mesh->zend; zk++) {
 #endif
           if (fg) {
             val = fg->generate(Context(bndry, zk, loc, t, mesh));
@@ -1948,7 +1946,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
               f(bndry->x - bndry->bx, bndry->y - bndry->by, zk) + delta * val;
           if (bndry->width == 2) {
             f(bndry->x + bndry->bx, bndry->y + bndry->by, zk) =
-                f(bndry->x, bndry->y, zk) + delta * val;                
+                f(bndry->x, bndry->y, zk) + delta * val;
           }
         }
       }

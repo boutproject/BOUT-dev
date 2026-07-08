@@ -20,16 +20,16 @@ using std::string;
 BoundaryFactory* BoundaryFactory::instance = nullptr;
 
 BoundaryFactory::BoundaryFactory() {
-  add(new BoundaryDirichlet(), "dirichlet"); // Default
+  add(new BoundaryDirichlet(), "dirichlet");       // Default
   add(new BoundaryDirichlet_O1(), "dirichlet_o1"); // Old implementation in v3
   add(new BoundaryDirichlet(), "dirichlet_o2"); // Synonym for "dirichlet"
   add(new BoundaryDirichlet_O3(), "dirichlet_o3");
   add(new BoundaryDirichlet_O4(), "dirichlet_o4");
   add(new BoundaryDirichlet_4thOrder(), "dirichlet_4thorder");
 
-  add(new BoundaryNeumann(), "neumann"); // Default
+  add(new BoundaryNeumann(), "neumann");       // Default
   add(new BoundaryNeumann_O1(), "neumann_o1"); // Old implementation in v3
-  add(new BoundaryNeumann(), "neumann_o2"); // Synonym for "neumann"
+  add(new BoundaryNeumann(), "neumann_o2");    // Synonym for "neumann"
   add(new BoundaryNeumann_4thOrder(), "neumann_4thorder");
   add(new BoundaryNeumann_O4(), "neumann_o4");
   add(new BoundaryNeumannPar(), "neumannpar");
