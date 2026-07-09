@@ -216,7 +216,7 @@ Field3D Div_par(const Field3D& f, CELL_LOC outloc, const std::string& method) {
   // Need Bxy at location of f, which might be different from outloc
   const auto& Bxy_floc = f.getCoordinates()->Bxy();
 
-  return Bxy_outloc * Grad_par(Field3D{f / Bxy_floc}, outloc, method);
+  return Bxy_outloc * Grad_par(Field3DParallel{f} / Bxy_floc, outloc, method);
 }
 
 Field3D Div_par(const Field3D& f, const Field3D& v) {
