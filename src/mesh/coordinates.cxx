@@ -671,6 +671,8 @@ void Coordinates::setDx(FieldMetric dx, const bool communicate) {
     throw BoutException("dx magnitude less than 1e-8");
   }
   dx_ = std::move(dx);
+  invalidateCellGeometryCaches();
+  invalidateAccessorCache();
   if (communicate) {
     localmesh->communicate_no_slices(dx_);
   }
@@ -681,6 +683,8 @@ void Coordinates::setDy(FieldMetric dy, const bool communicate) {
     throw BoutException("dy magnitude less than 1e-8");
   }
   dy_ = std::move(dy);
+  invalidateCellGeometryCaches();
+  invalidateAccessorCache();
   if (communicate) {
     localmesh->communicate_no_slices(dy_);
   }
@@ -691,6 +695,9 @@ void Coordinates::setDz(FieldMetric dz, const bool communicate) {
     throw BoutException("dz magnitude less than 1e-8");
   }
   dz_ = std::move(dz);
+  zlength_cache.reset();
+  invalidateCellGeometryCaches();
+  invalidateAccessorCache();
   if (communicate) {
     localmesh->communicate_no_slices(dz_);
   }
@@ -716,17 +723,8 @@ void Coordinates::recalculateAndReset(bool recalculate_staggered,
   zlength_cache.reset();
   Grad2_par2_DDY_invSgCache.clear();
   invSgCache.reset();
-  CoordinatesAccessor::clear(this);
-
-  _g_22_ylow.reset();
-  _g_22_yhigh.reset();
-  _cell_area_xlow.reset();
-  _cell_area_xhigh.reset();
-  _cell_area_ylow.reset();
-  _cell_area_yhigh.reset();
-  _cell_area_zlow.reset();
-  _cell_area_zhigh.reset();
-  _cell_volume.reset();
+  invalidateCellGeometryCaches();
+  invalidateAccessorCache();
 }
 
 void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_centre) {
@@ -998,6 +996,36 @@ void Coordinates::checkContravariant() {
   contravariantMetricTensor.check(localmesh->ystart);
 }
 
+void Coordinates::invalidateCellGeometryCaches() {
+  _g_22_ylow.reset();
+  _g_22_yhigh.reset();
+  _cell_area_xlow.reset();
+  _cell_area_xhigh.reset();
+  _cell_area_ylow.reset();
+  _cell_area_yhigh.reset();
+  _cell_area_zlow.reset();
+  _cell_area_zhigh.reset();
+  _cell_volume.reset();
+}
+
+void Coordinates::invalidateAccessorCache() { CoordinatesAccessor::clear(this); }
+
+void Coordinates::invalidateJacobianCaches() {
+  g_values_cache.reset();
+  invalidateCellGeometryCaches();
+  invalidateAccessorCache();
+}
+
+void Coordinates::invalidateMetricCaches() {
+  christoffel_symbols_cache.reset();
+  g_values_cache.reset();
+  Grad2_par2_DDY_invSgCache.clear();
+  invSgCache.reset();
+  jacobian_cache.reset();
+  invalidateCellGeometryCaches();
+  invalidateAccessorCache();
+}
+
 const Coordinates::FieldMetric& Coordinates::J() const {
   if (jacobian_cache == nullptr) {
     jacobian_cache = std::make_unique<FieldMetric>(recalculateJacobian());
@@ -1010,6 +1038,7 @@ void Coordinates::setJ(const FieldMetric& J, const bool communicate) {
   bout::checkPositive(J, "J", "RGN_NOCORNERS");
 
   //TODO: Calculate J and check value is close
+  invalidateJacobianCaches();
   jacobian_cache = std::make_unique<FieldMetric>(J);
   if (communicate) {
     localmesh->communicate_no_slices(*jacobian_cache);
@@ -1170,6 +1199,9 @@ std::shared_ptr<YBoundary> Coordinates::makeYBoundary(YBndryType type) const {
 void Coordinates::setBxy(FieldMetric Bxy, const bool communicate) {
   //TODO: Calculate Bxy and check value is close
   Bxy_ = std::move(Bxy);
+  _g_22_ylow.reset();
+  _g_22_yhigh.reset();
+  invalidateAccessorCache();
   if (communicate) {
     localmesh->communicate_no_slices(Bxy_);
   }
@@ -1180,6 +1212,9 @@ void Coordinates::setContravariantMetricTensor(
     bool recalculate_staggered, bool force_interpolate_from_centre) {
   contravariantMetricTensor = metric_tensor;
   covariantMetricTensor = contravariantMetricTensor.inverse(region);
+  invalidateMetricCaches();
+  setJ(recalculateJacobian());
+  setBxy(recalculateBxy());
   recalculateAndReset(recalculate_staggered, force_interpolate_from_centre);
 }
 
@@ -1189,6 +1224,9 @@ void Coordinates::setCovariantMetricTensor(const CovariantMetricTensor& metric_t
                                            bool force_interpolate_from_centre) {
   covariantMetricTensor = metric_tensor;
   contravariantMetricTensor = covariantMetricTensor.inverse(region);
+  invalidateMetricCaches();
+  setJ(recalculateJacobian());
+  setBxy(recalculateBxy());
   recalculateAndReset(recalculate_staggered, force_interpolate_from_centre);
 }
 
@@ -1197,6 +1235,9 @@ void Coordinates::setMetricTensor(
     const CovariantMetricTensor& covariant_metric_tensor) {
   contravariantMetricTensor = contravariant_metric_tensor;
   covariantMetricTensor = covariant_metric_tensor;
+  invalidateMetricCaches();
+  setJ(recalculateJacobian());
+  setBxy(recalculateBxy());
 }
 
 void Coordinates::communicateMetricTensor() {

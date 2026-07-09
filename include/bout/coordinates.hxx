@@ -514,6 +514,10 @@ private:
   void checkCovariant();
   // check that contravariant tensors are positive (if expected) and finite (always)
   void checkContravariant();
+  void invalidateMetricCaches();
+  void invalidateJacobianCaches();
+  void invalidateCellGeometryCaches();
+  void invalidateAccessorCache();
 
   mutable std::array<std::shared_ptr<YBoundary>, 3> ybndrys;
 
