@@ -780,9 +780,10 @@ FieldPerp operator/(const Field3D& lhs, const FieldPerp& rhs);
 #define FIELD3D_FIELD3D_FIELD3D_OP(OP_SYM, OP_TYPE)                                    \
   template <typename L, typename R,                                                    \
             typename = std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>>> \
-  BinaryExpr<Field3D, L, R, bout::op::OP_TYPE> operator OP_SYM(const L& lhs,           \
-                                                               const R& rhs) {         \
+  auto operator OP_SYM(const L& lhs, const R& rhs) {                                   \
     ASSERT1_EXPR_COMPATIBLE(lhs, rhs);                                                 \
+    static_assert(!std::is_same_v<L, Field3DParallel>);                                \
+    static_assert(!std::is_same_v<R, Field3DParallel>);                                \
     auto regionID =                                                                    \
         lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());          \
     return BinaryExpr<Field3D, L, R, bout::op::OP_TYPE>{                               \
