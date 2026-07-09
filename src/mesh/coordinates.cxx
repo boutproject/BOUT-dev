@@ -931,65 +931,82 @@ void Coordinates::setParallelTransform(Options* options) {
 }
 
 const ChristoffelSymbols& Coordinates::christoffel_symbols() const {
-  if (christoffel_symbols_cache == nullptr) {
-    christoffel_symbols_cache = std::make_unique<ChristoffelSymbols>(*this);
-    // Set boundary guard cells of Christoffel symbol terms
-    // Ideally, when location is staggered, we would set the upper/outer boundary point
-    // correctly rather than by extrapolating here: e.g. if location==CELL_YLOW and we are
-    // at the upper y-boundary the x- and z-derivatives at yend+1 at the boundary can be
-    // calculated because the guard cells are available, while the y-derivative could be
-    // calculated from the CELL_CENTRE metric components (which have guard cells available
-    // past the boundary location). This would avoid the problem that the y-boundary on the
-    // CELL_YLOW grid is at a 'guard cell' location (yend+1).
-    // However, the above would require lots of special handling, so just extrapolate for
-    // now.
+  BOUT_OMP_SAFE(critical(christoffel_symbols_cache))
+  {
+    if (christoffel_symbols_cache == nullptr) {
+      christoffel_symbols_cache = std::make_unique<ChristoffelSymbols>(*this);
+      // Set boundary guard cells of Christoffel symbol terms
+      // Ideally, when location is staggered, we would set the upper/outer boundary point
+      // correctly rather than by extrapolating here: e.g. if location==CELL_YLOW and we are
+      // at the upper y-boundary the x- and z-derivatives at yend+1 at the boundary can be
+      // calculated because the guard cells are available, while the y-derivative could be
+      // calculated from the CELL_CENTRE metric components (which have guard cells available
+      // past the boundary location). This would avoid the problem that the y-boundary on the
+      // CELL_YLOW grid is at a 'guard cell' location (yend+1).
+      // However, the above would require lots of special handling, so just extrapolate for
+      // now.
 
-    christoffel_symbols_cache->map([this](const FieldMetric& component) {
-      return interpolateAndExtrapolate(component, location, true, true, false,
-                                       transform.get());
-    });
+      christoffel_symbols_cache->map([this](const FieldMetric& component) {
+        return interpolateAndExtrapolate(component, location, true, true, false,
+                                         transform.get());
+      });
+    }
   }
   return *christoffel_symbols_cache;
 }
 
 GValues& Coordinates::g_values() const {
-  if (g_values_cache == nullptr) {
-    g_values_cache = std::make_unique<GValues>(*this);
-    g_values_cache->map([this](const FieldMetric& component) {
-      return interpolateAndExtrapolate(component, location, true, true, true,
-                                       transform.get());
-    });
+  BOUT_OMP_SAFE(critical(g_values_cache))
+  {
+    if (g_values_cache == nullptr) {
+      g_values_cache = std::make_unique<GValues>(*this);
+      g_values_cache->map([this](const FieldMetric& component) {
+        return interpolateAndExtrapolate(component, location, true, true, true,
+                                         transform.get());
+      });
+    }
   }
   return *g_values_cache;
 }
 
 const Coordinates::FieldMetric& Coordinates::invSg() const {
-  if (invSgCache == nullptr) {
-    auto ptr = std::make_unique<Coordinates::FieldMetric>();
-    (*ptr) = 1.0 / sqrt(g_22());
-    invSgCache = std::move(ptr);
+  BOUT_OMP_SAFE(critical(invSg_cache))
+  {
+    if (invSgCache == nullptr) {
+      auto ptr = std::make_unique<Coordinates::FieldMetric>();
+      (*ptr) = 1.0 / sqrt(g_22());
+      invSgCache = std::move(ptr);
+    }
   }
   return *invSgCache;
 }
 
 const Coordinates::FieldMetric&
 Coordinates::Grad2_par2_DDY_invSg(CELL_LOC outloc, const std::string& method) const {
+  const FieldMetric* result{nullptr};
+  BOUT_OMP_SAFE(critical(Grad2_par2_DDY_invSg_cache))
+  {
+    if (auto search = Grad2_par2_DDY_invSgCache.find(method);
+        search != Grad2_par2_DDY_invSgCache.end()) {
+      result = search->second.get();
+    } else {
+      if (invSgCache == nullptr) {
+        auto ptr = std::make_unique<Coordinates::FieldMetric>();
+        (*ptr) = 1.0 / sqrt(g_22());
+        invSgCache = std::move(ptr);
+      }
 
-  if (auto search = Grad2_par2_DDY_invSgCache.find(method);
-      search != Grad2_par2_DDY_invSgCache.end()) {
-    return *search->second;
+      // Communicate to get parallel slices
+      localmesh->communicate(*invSgCache);
+      invSgCache->applyParallelBoundary("parallel_neumann_o2");
+
+      auto ptr = std::make_unique<Coordinates::FieldMetric>();
+      *ptr = DDY(*invSgCache, outloc, method) * (*invSgCache);
+      result = ptr.get();
+      Grad2_par2_DDY_invSgCache[method] = std::move(ptr);
+    }
   }
-  invSg();
-
-  // Communicate to get parallel slices
-  localmesh->communicate(*invSgCache);
-  invSgCache->applyParallelBoundary("parallel_neumann_o2");
-
-  // cache
-  auto ptr = std::make_unique<Coordinates::FieldMetric>();
-  *ptr = DDY(*invSgCache, outloc, method) * invSg();
-  Grad2_par2_DDY_invSgCache[method] = std::move(ptr);
-  return *Grad2_par2_DDY_invSgCache[method];
+  return *result;
 }
 
 void Coordinates::checkCovariant() { covariantMetricTensor.check(localmesh->ystart); }
@@ -1029,8 +1046,11 @@ void Coordinates::invalidateMetricCaches() {
 }
 
 const Coordinates::FieldMetric& Coordinates::J() const {
-  if (jacobian_cache == nullptr) {
-    jacobian_cache = std::make_unique<FieldMetric>(recalculateJacobian());
+  BOUT_OMP_SAFE(critical(jacobian_cache))
+  {
+    if (jacobian_cache == nullptr) {
+      jacobian_cache = std::make_unique<FieldMetric>(recalculateJacobian());
+    }
   }
   return *jacobian_cache;
 }
