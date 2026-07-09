@@ -803,11 +803,11 @@ void Mesh::recalculateStaggeredCoordinates() {
     auto force_interpolate_from_centre = true;
     Coordinates& new_coordinates =
         *createDefaultCoordinates(location, force_interpolate_from_centre);
-    *coords_map[location] = std::move(new_coordinates);
 
     auto recalculate_staggered = false;
     new_coordinates.recalculateAndReset(recalculate_staggered,
                                         force_interpolate_from_centre);
+    *coords_map[location] = std::move(new_coordinates);
   }
 }
 
