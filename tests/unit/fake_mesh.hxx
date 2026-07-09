@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bout/paralleltransform.hxx"
 #include <bout/boundary_region.hxx>
 #include <bout/boundary_region_iter.hxx>
 #include <bout/bout_types.hxx>
@@ -377,37 +378,40 @@ class MockParallelTransform : public ParallelTransform {
 public:
   MockParallelTransform(Mesh& mesh, bool allow_transform_)
       : ParallelTransform(mesh), allow_transform(allow_transform_) {}
-  ~MockParallelTransform() = default;
+  ~MockParallelTransform() override = default;
 
-  void calcParallelSlices(Field3D&) override {}
+  void calcParallelSlices(Field3D& /*f*/) override {}
 
   bool canToFromFieldAligned() const override { return allow_transform; }
 
-  bool requiresTwistShift(bool, YDirectionType) override { return false; }
+  bool requiresTwistShift(bool /*twist_shift_enabled*/,
+                          YDirectionType /*ytype*/) override {
+    return false;
+  }
 
   void checkInputGrid() override {}
 
-  Field3D fromFieldAligned(const Field3D& f, const std::string&) override {
+  Field3D fromFieldAligned(const Field3D& f, const std::string& /*region*/) override {
     if (f.getDirectionY() != YDirectionType::Aligned) {
       throw BoutException("Unaligned field passed to fromFieldAligned");
     }
     return -f;
   }
 
-  FieldPerp fromFieldAligned(const FieldPerp& f, const std::string&) override {
+  FieldPerp fromFieldAligned(const FieldPerp& f, const std::string& /*region*/) override {
     if (f.getDirectionY() != YDirectionType::Aligned) {
       throw BoutException("Unaligned field passed to fromFieldAligned");
     }
     return -f;
   }
 
-  Field3D toFieldAligned(const Field3D& f, const std::string&) override {
+  Field3D toFieldAligned(const Field3D& f, const std::string& /*region*/) override {
     if (f.getDirectionY() != YDirectionType::Standard) {
       throw BoutException("Aligned field passed to toFieldAligned");
     }
     return -f;
   }
-  FieldPerp toFieldAligned(const FieldPerp& f, const std::string&) override {
+  FieldPerp toFieldAligned(const FieldPerp& f, const std::string& /*region*/) override {
     if (f.getDirectionY() != YDirectionType::Standard) {
       throw BoutException("Aligned field passed to toFieldAligned");
     }
