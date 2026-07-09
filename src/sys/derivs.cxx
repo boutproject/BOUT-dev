@@ -62,7 +62,7 @@
 
 Field3D DDX(const Field3D& f, CELL_LOC outloc, const std::string& method,
             const std::string& region) {
-  const auto& coords = *f.getCoordinates();
+  const auto& coords = *f.getCoordinates(outloc);
 
   Field3D result = bout::derivatives::index::DDX(f, outloc, method, region) / coords.dx();
 
@@ -78,7 +78,7 @@ bout::FieldMetric DDX(const Field2D& f, CELL_LOC outloc, const std::string& meth
                       const std::string& region) {
   ASSERT1(f.getLocation() == outloc || outloc == CELL_DEFAULT);
   return bout::derivatives::index::DDX(f, outloc, method, region)
-         / f.getCoordinates()->dx();
+         / f.getCoordinates(outloc)->dx();
 }
 
 ////////////// Y DERIVATIVE /////////////////
@@ -93,7 +93,7 @@ bout::FieldMetric DDY(const Field2D& f, CELL_LOC outloc, const std::string& meth
                       const std::string& region) {
   ASSERT1(f.getLocation() == outloc || outloc == CELL_DEFAULT);
   return bout::derivatives::index::DDY(f, outloc, method, region)
-         / f.getCoordinates()->dy();
+         / f.getCoordinates(outloc)->dy();
 }
 
 ////////////// Z DERIVATIVE /////////////////
