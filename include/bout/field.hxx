@@ -651,7 +651,6 @@ std::optional<int> getPerpYIndex(const BinaryExpr<ResT, L, R, Func>& expr) {
         result.yup(i) = func(f.yup(i));                                                 \
         result.ydown(i) = func(f.ydown(i));                                             \
       }                                                                                 \
-      result.name = std::string(#name "(") + f.name + std::string(")");                 \
       checkData(result);                                                                \
       return result;                                                                    \
     } else {                                                                            \
