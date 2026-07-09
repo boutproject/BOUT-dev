@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <limits>
 #include <optional>
+#include <string>
 #include <type_traits>
 
 #if BOUT_HAS_CUDA
@@ -29,6 +30,7 @@ namespace bout::detail {
 // It is used because Mesh is an incomplete type so methods cannot be called
 // in the template functions in this header file.
 const Region<Ind3D>& getField3DRegion(const Mesh* mesh, std::optional<size_t> regionID);
+size_t getField3DRegionID(const Mesh* mesh, const std::string& region_name);
 } // namespace bout::detail
 
 template <typename T>

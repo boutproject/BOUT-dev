@@ -609,6 +609,20 @@ class FieldPerp;
 
 namespace bout::detail {
 template <typename T>
+using UnaryFieldResult_t =
+    std::conditional_t<std::is_same_v<std::decay_t<T>, ::Field3DParallel>, ::Field3D,
+                       std::decay_t<T>>;
+
+template <typename T>
+std::optional<size_t> getUnaryRegionID(const Mesh* mesh, const std::string& region_name) {
+  if constexpr (std::is_same_v<UnaryFieldResult_t<T>, ::Field3D>) {
+    return bout::detail::getField3DRegionID(mesh, region_name);
+  } else {
+    return std::nullopt;
+  }
+}
+
+template <typename T>
 std::optional<int> getPerpYIndex(const T& value) {
   if constexpr (std::is_same_v<std::decay_t<T>, ::FieldPerp>) {
     return value.getIndex();
@@ -641,35 +655,23 @@ std::optional<int> getPerpYIndex(const BinaryExpr<ResT, L, R, Func>& expr) {
   };                                                                                    \
   template <typename T, typename = bout::utils::EnableIfField<T>>                       \
   inline auto name(const T& f, const std::string& rgn = "RGN_ALL") {                    \
-    if constexpr (std::is_same_v<T, Field3DParallel>) {                                 \
-      /* Check if the input is allocated */                                             \
-      checkData(f);                                                                     \
-      /* Define and allocate the output result */                                       \
-      T result{emptyFrom(f)};                                                           \
-      BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }                    \
-      for (int i = 0; i < f.numberParallelSlices(); ++i) {                              \
-        result.yup(i) = func(f.yup(i));                                                 \
-        result.ydown(i) = func(f.ydown(i));                                             \
-      }                                                                                 \
-      result.name = std::string(#name "(") + f.name + std::string(")");                 \
-      checkData(result);                                                                \
-      return result;                                                                    \
-    } else {                                                                            \
-      return BinaryExpr<T, T, T, bout::op::name>{static_cast<typename T::View>(f),      \
-                                                 static_cast<typename T::View>(f),      \
-                                                 bout::op::name{},                      \
-                                                 f.getMesh(),                           \
-                                                 f.getLocation(),                       \
-                                                 f.getDirections(),                     \
-                                                 std::nullopt,                          \
-                                                 f.getRegion(rgn),                      \
-                                                 bout::detail::getPerpYIndex(f)};       \
-    }                                                                                   \
+    using ResT = bout::detail::UnaryFieldResult_t<T>;                                   \
+    return BinaryExpr<ResT, T, T, bout::op::name>{                                      \
+        static_cast<typename T::View>(f),                                               \
+        static_cast<typename T::View>(f),                                               \
+        bout::op::name{},                                                               \
+        f.getMesh(),                                                                    \
+        f.getLocation(),                                                                \
+        f.getDirections(),                                                              \
+        bout::detail::getUnaryRegionID<T>(f.getMesh(), rgn),                            \
+        f.getMesh()->template getRegion<ResT>(rgn),                                     \
+        bout::detail::getPerpYIndex(f)};                                                \
   }                                                                                     \
   template <typename ResT, typename L, typename R, typename Func>                       \
   inline auto name(const BinaryExpr<ResT, L, R, Func>& f) {                             \
-    return BinaryExpr<ResT, BinaryExpr<ResT, L, R, Func>, BinaryExpr<ResT, L, R, Func>, \
-                      bout::op::name>{                                                  \
+    using UnaryResT = bout::detail::UnaryFieldResult_t<ResT>;                           \
+    return BinaryExpr<UnaryResT, BinaryExpr<ResT, L, R, Func>,                          \
+                      BinaryExpr<ResT, L, R, Func>, bout::op::name>{                    \
         static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),                    \
         static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),                    \
         bout::op::name{},                                                               \
@@ -682,7 +684,18 @@ std::optional<int> getPerpYIndex(const BinaryExpr<ResT, L, R, Func>& expr) {
   }                                                                                     \
   template <typename ResT, typename L, typename R, typename Func>                       \
   inline auto name(const BinaryExpr<ResT, L, R, Func>& f, const std::string& rgn) {     \
-    return name(ResT{f}, rgn);                                                          \
+    using UnaryResT = bout::detail::UnaryFieldResult_t<ResT>;                           \
+    return BinaryExpr<UnaryResT, BinaryExpr<ResT, L, R, Func>,                          \
+                      BinaryExpr<ResT, L, R, Func>, bout::op::name>{                    \
+        static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),                    \
+        static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),                    \
+        bout::op::name{},                                                               \
+        f.getMesh(),                                                                    \
+        f.getLocation(),                                                                \
+        f.getDirections(),                                                              \
+        bout::detail::getUnaryRegionID<UnaryResT>(f.getMesh(), rgn),                    \
+        f.getMesh()->template getRegion<UnaryResT>(rgn),                                \
+        bout::detail::getPerpYIndex(f)};                                                \
   }
 #endif
 
@@ -698,36 +711,23 @@ struct Square {
 
 template <typename T, typename = bout::utils::EnableIfField<T>>
 inline auto SQ(const T& f, const std::string& rgn = "RGN_ALL") {
-  if constexpr (std::is_same_v<T, Field3DParallel>) {
-    checkData(f);
-    T result{emptyFrom(f)};
-    if (f.hasParallelSlices() and !result.hasParallelSlices()) {
-      result.splitParallelSlices();
-    }
-    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = ::SQ(f[d]); }
-    for (size_t i = 0; i < f.numberParallelSlices(); ++i) {
-      result.yup(i) = SQ(f.yup(i), rgn);
-      result.ydown(i) = SQ(f.ydown(i), rgn);
-    }
-    result.name = std::string("SQ(") + f.name + std::string(")");
-    checkData(result);
-    return result;
-  } else {
-    return BinaryExpr<T, T, T, bout::op::Square>{static_cast<typename T::View>(f),
-                                                 static_cast<typename T::View>(f),
-                                                 bout::op::Square{},
-                                                 f.getMesh(),
-                                                 f.getLocation(),
-                                                 f.getDirections(),
-                                                 std::nullopt,
-                                                 f.getRegion(rgn),
-                                                 bout::detail::getPerpYIndex(f)};
-  }
+  using ResT = bout::detail::UnaryFieldResult_t<T>;
+  return BinaryExpr<ResT, T, T, bout::op::Square>{
+      static_cast<typename T::View>(f),
+      static_cast<typename T::View>(f),
+      bout::op::Square{},
+      f.getMesh(),
+      f.getLocation(),
+      f.getDirections(),
+      bout::detail::getUnaryRegionID<T>(f.getMesh(), rgn),
+      f.getMesh()->template getRegion<ResT>(rgn),
+      bout::detail::getPerpYIndex(f)};
 }
 
 template <typename ResT, typename L, typename R, typename Func>
 inline auto SQ(const BinaryExpr<ResT, L, R, Func>& f) {
-  return BinaryExpr<ResT, BinaryExpr<ResT, L, R, Func>, BinaryExpr<ResT, L, R, Func>,
+  using UnaryResT = bout::detail::UnaryFieldResult_t<ResT>;
+  return BinaryExpr<UnaryResT, BinaryExpr<ResT, L, R, Func>, BinaryExpr<ResT, L, R, Func>,
                     bout::op::Square>{
       static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),
       static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),
@@ -742,7 +742,18 @@ inline auto SQ(const BinaryExpr<ResT, L, R, Func>& f) {
 
 template <typename ResT, typename L, typename R, typename Func>
 inline auto SQ(const BinaryExpr<ResT, L, R, Func>& f, const std::string& rgn) {
-  return SQ(ResT{f}, rgn);
+  using UnaryResT = bout::detail::UnaryFieldResult_t<ResT>;
+  return BinaryExpr<UnaryResT, BinaryExpr<ResT, L, R, Func>, BinaryExpr<ResT, L, R, Func>,
+                    bout::op::Square>{
+      static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),
+      static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),
+      bout::op::Square{},
+      f.getMesh(),
+      f.getLocation(),
+      f.getDirections(),
+      bout::detail::getUnaryRegionID<UnaryResT>(f.getMesh(), rgn),
+      f.getMesh()->template getRegion<UnaryResT>(rgn),
+      bout::detail::getPerpYIndex(f)};
 }
 
 /// Square root of \p f over region \p rgn

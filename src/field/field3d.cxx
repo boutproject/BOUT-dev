@@ -936,6 +936,11 @@ const Region<Ind3D>& getField3DRegion(const Mesh* mesh, std::optional<size_t> re
   return mesh->getRegion("RGN_ALL");
 }
 
+size_t getField3DRegionID(const Mesh* mesh, const std::string& region_name) {
+  ASSERT1(mesh != nullptr);
+  return mesh->getRegionID(region_name);
+}
+
 } // namespace bout::detail
 
 void swap(Field3D& first, Field3D& second) noexcept {
