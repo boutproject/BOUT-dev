@@ -684,6 +684,88 @@ protected:
   }
 };
 
+/// Field3DParallel is intended to behave like Field3D, but preserve parallel
+/// Fields.
+/// Operations on Field3D, like multiplication, exp and floor only work on the
+/// "main" field, Field3DParallel will retain the parallel slices.
+class Field3DParallel : public Field3D {
+public:
+  template <class... Types>
+  explicit Field3DParallel(Types... args) : Field3D(std::move(args)...) {
+    ensureFieldAligned();
+  }
+  Field3DParallel(const Field3D& f) : Field3D(f) { ensureFieldAligned(); }
+  Field3DParallel(const Field3D& f, bool isRef) : Field3D(f), isRef(isRef) {
+    ensureFieldAligned();
+  }
+  Field3DParallel(const Field2D& f) : Field3D(f) { ensureFieldAligned(); }
+  // Explicitly needed, as DirectionTypes is sometimes constructed from a
+  // brace enclosed list
+  explicit Field3DParallel(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
+                           DirectionTypes directions_in = {YDirectionType::Standard,
+                                                           ZDirectionType::Standard},
+                           std::optional<size_t> regionID = {})
+      : Field3D(localmesh, location_in, directions_in, regionID) {
+    if (isFci()) {
+      splitParallelSlices();
+    }
+    ensureFieldAligned();
+  }
+  explicit Field3DParallel(Array<BoutReal> data, Mesh* localmesh,
+                           CELL_LOC location = CELL_CENTRE,
+                           DirectionTypes directions_in = {YDirectionType::Standard,
+                                                           ZDirectionType::Standard})
+      : Field3D(std::move(data), localmesh, location, directions_in) {
+    ensureFieldAligned();
+  }
+  explicit Field3DParallel(BoutReal, Mesh* mesh = nullptr);
+  Field3D& asField3D() { return *this; }
+  const Field3D& asField3D() const { return *this; }
+
+  Field3DParallel& operator*=(const Field3D&);
+  Field3DParallel& operator/=(const Field3D&);
+  Field3DParallel& operator+=(const Field3D&);
+  Field3DParallel& operator-=(const Field3D&);
+  Field3DParallel& operator*=(const Field3DParallel&);
+  Field3DParallel& operator/=(const Field3DParallel&);
+  Field3DParallel& operator+=(const Field3DParallel&);
+  Field3DParallel& operator-=(const Field3DParallel&);
+  Field3DParallel& operator*=(BoutReal);
+  Field3DParallel& operator/=(BoutReal);
+  Field3DParallel& operator+=(BoutReal);
+  Field3DParallel& operator-=(BoutReal);
+  Field3DParallel& operator=(const Field3D& rhs) {
+    Field3D::operator=(rhs);
+    ensureFieldAligned();
+    return *this;
+  }
+  Field3DParallel& operator=(Field3D&& rhs) {
+    Field3D::operator=(std::move(rhs));
+    ensureFieldAligned();
+    return *this;
+  }
+  Field3DParallel& operator=(BoutReal);
+  Field3DParallel& allocate();
+
+private:
+  void ensureFieldAligned();
+  bool isRef{false};
+};
+
+// We need checkData for templates
+#if CHECK > 0
+/// Throw an exception if \p f is not allocated or if any
+/// elements are non-finite (for CHECK > 2).
+/// Loops over all points including the boundaries by
+/// default (can be changed using the \p rgn argument
+void checkData(const Field3D& f, const std::string& region = "RGN_NOBNDRY");
+#else
+/// Ignored with disabled CHECK; Throw an exception if \p f is not
+/// allocated or if any elements are non-finite (for CHECK > 2)
+inline void checkData([[maybe_unused]] const Field3D& f,
+                      [[maybe_unused]] const std::string& region = "RGN_NOBNDRY") {};
+#endif
+
 // Non-member overloaded operators
 
 template <typename T>
@@ -911,19 +993,6 @@ Field3D pow(const Field3D& lhs, const Field2D& rhs, const std::string& rgn = "RG
 FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs,
               const std::string& rgn = "RGN_ALL");
 
-#if CHECK > 0
-/// Throw an exception if \p f is not allocated or if any
-/// elements are non-finite (for CHECK > 2).
-/// Loops over all points including the boundaries by
-/// default (can be changed using the \p rgn argument
-void checkData(const Field3D& f, const std::string& region = "RGN_NOBNDRY");
-#else
-/// Ignored with disabled CHECK; Throw an exception if \p f is not
-/// allocated or if any elements are non-finite (for CHECK > 2)
-inline void checkData([[maybe_unused]] const Field3D& f,
-                      [[maybe_unused]] const std::string& region = "RGN_NOBNDRY") {};
-#endif
-
 /// Fourier filtering, removes all except one mode
 ///
 /// @param[in] var Variable to apply filter to
@@ -1013,74 +1082,6 @@ inline Field3D copy(const Field3D& f) {
   }
   return result;
 }
-
-/// Field3DParallel is intended to behave like Field3D, but preserve parallel
-/// Fields.
-/// Operations on Field3D, like multiplication, exp and floor only work on the
-/// "main" field, Field3DParallel will retain the parallel slices.
-class Field3DParallel : public Field3D {
-public:
-  template <class... Types>
-  explicit Field3DParallel(Types... args) : Field3D(std::move(args)...) {
-    ensureFieldAligned();
-  }
-  Field3DParallel(const Field3D& f) : Field3D(f) { ensureFieldAligned(); }
-  Field3DParallel(const Field3D& f, bool isRef) : Field3D(f), isRef(isRef) {
-    ensureFieldAligned();
-  }
-  Field3DParallel(const Field2D& f) : Field3D(f) { ensureFieldAligned(); }
-  // Explicitly needed, as DirectionTypes is sometimes constructed from a
-  // brace enclosed list
-  explicit Field3DParallel(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
-                           DirectionTypes directions_in = {YDirectionType::Standard,
-                                                           ZDirectionType::Standard},
-                           std::optional<size_t> regionID = {})
-      : Field3D(localmesh, location_in, directions_in, regionID) {
-    if (isFci()) {
-      splitParallelSlices();
-    }
-    ensureFieldAligned();
-  }
-  explicit Field3DParallel(Array<BoutReal> data, Mesh* localmesh,
-                           CELL_LOC location = CELL_CENTRE,
-                           DirectionTypes directions_in = {YDirectionType::Standard,
-                                                           ZDirectionType::Standard})
-      : Field3D(std::move(data), localmesh, location, directions_in) {
-    ensureFieldAligned();
-  }
-  explicit Field3DParallel(BoutReal, Mesh* mesh = nullptr);
-  Field3D& asField3D() { return *this; }
-  const Field3D& asField3D() const { return *this; }
-
-  Field3DParallel& operator*=(const Field3D&);
-  Field3DParallel& operator/=(const Field3D&);
-  Field3DParallel& operator+=(const Field3D&);
-  Field3DParallel& operator-=(const Field3D&);
-  Field3DParallel& operator*=(const Field3DParallel&);
-  Field3DParallel& operator/=(const Field3DParallel&);
-  Field3DParallel& operator+=(const Field3DParallel&);
-  Field3DParallel& operator-=(const Field3DParallel&);
-  Field3DParallel& operator*=(BoutReal);
-  Field3DParallel& operator/=(BoutReal);
-  Field3DParallel& operator+=(BoutReal);
-  Field3DParallel& operator-=(BoutReal);
-  Field3DParallel& operator=(const Field3D& rhs) {
-    Field3D::operator=(rhs);
-    ensureFieldAligned();
-    return *this;
-  }
-  Field3DParallel& operator=(Field3D&& rhs) {
-    Field3D::operator=(std::move(rhs));
-    ensureFieldAligned();
-    return *this;
-  }
-  Field3DParallel& operator=(BoutReal);
-  Field3DParallel& allocate();
-
-private:
-  void ensureFieldAligned();
-  bool isRef{false};
-};
 
 Field3DParallel Field3D::asField3DParallel() {
   if (isAllocated()) {
