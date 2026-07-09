@@ -56,10 +56,10 @@ struct is_expr_fieldperp : std::false_type {};
 template <>
 struct is_expr_fieldperp<FieldPerp> : std::true_type {};
 
+// Helper variable template
 template <typename T>
 inline constexpr bool is_expr_fieldperp_v = is_expr_fieldperp<std::decay_t<T>>::value;
 
-// Helper variable template
 template <typename T>
 inline constexpr bool is_expr_field3d_v = is_expr_field3d<std::decay_t<T>>::value;
 
