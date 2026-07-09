@@ -378,6 +378,10 @@ class MockParallelTransform : public ParallelTransform {
 public:
   MockParallelTransform(Mesh& mesh, bool allow_transform_)
       : ParallelTransform(mesh), allow_transform(allow_transform_) {}
+  MockParallelTransform(const MockParallelTransform&) = delete;
+  MockParallelTransform& operator=(const MockParallelTransform&) = delete;
+  MockParallelTransform(MockParallelTransform&& other) = delete;
+  MockParallelTransform& operator=(MockParallelTransform&& other) = delete;
   ~MockParallelTransform() override = default;
 
   void calcParallelSlices(Field3D& /*f*/) override {}
