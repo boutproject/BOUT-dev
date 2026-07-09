@@ -637,7 +637,7 @@ TEST_F(CoordinatesTest, IndexedAccessors) {
   int x = mesh->xstart;
   int y = mesh->ystart;
 #if BOUT_USE_METRIC_3D
-  int z = mesh->LocalNz;
+  int z = mesh->zstart;
 #endif
 
   output_info.disable();
@@ -662,12 +662,12 @@ TEST_F(CoordinatesTest, IndexedAccessors) {
 #endif
 
 #if not(BOUT_USE_METRIC_3D)
-  const FieldMetric& actual_dx = coords.dx(x, y);
-  const FieldMetric& actual_dy = coords.dy(x, y);
+  const BoutReal actual_dx = coords.dx(x, y);
+  const BoutReal actual_dy = coords.dy(x, y);
 #else
-  const Field3D& actual_dx = coords.dx(x, y, z);
-  const Field3D& actual_dy = coords.dy(x, y, z);
-  const Field3D& actual_dz = coords.dz(x, y, z);
+  const BoutReal actual_dx = coords.dx(x, y, z);
+  const BoutReal actual_dy = coords.dy(x, y, z);
+  const BoutReal actual_dz = coords.dz(x, y, z);
 #endif
 
   EXPECT_EQ(actual_dx, expected_dx);
