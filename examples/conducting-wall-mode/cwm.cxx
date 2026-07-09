@@ -5,13 +5,25 @@
  * Model version in the code created by M. Umansky and J. Myra.
  *******************************************************************************/
 
+#include <bout/bout_types.hxx>
+#include <bout/coordinates.hxx>
 #include <bout/derivs.hxx>
+#include <bout/difops.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
+#include <bout/globals.hxx>
 #include <bout/initialprofiles.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/invert_laplace.hxx>
+#include <bout/output.hxx>
 #include <bout/physicsmodel.hxx>
+#include <bout/sys/range.hxx>
 #include <bout/tokamak_coordinates.hxx>
+#include <bout/unused.hxx>
 #include <bout/utils.hxx>
+
+#include <cmath>
+#include <memory>
 
 class CWM : public PhysicsModel {
 private:
@@ -328,7 +340,7 @@ private:
     Field3D result;
     if (bout_exb) {
       // Use a subset of terms for comparison to BOUT-06
-      result = VDDZ(-DDX(p), f);
+      result = VDDZ(Field2D{-DDX(p)}, f);
     } else {
       // Use full expression with all terms
       result = b0xGrad_dot_Grad(p, f) / coord->Bxy();
