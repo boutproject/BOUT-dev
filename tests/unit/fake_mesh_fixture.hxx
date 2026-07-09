@@ -31,7 +31,7 @@
 /// Use this template class directly to use different sized grid:
 ///
 ///     using MyTest = FakeMeshFixture_tmpl<7, 9, 11>;
-template <int NX, int NY, int NZ>
+template <int NX, int NY, int NZ, bool FCI = false>
 class FakeMeshFixture_tmpl : public ::testing::Test {
 public:
   FakeMeshFixture_tmpl()
@@ -113,6 +113,11 @@ public:
     mesh_staggered_m.setCoordinates(test_coords_staggered, CELL_XLOW);
     mesh_staggered_m.setCoordinates(test_coords_staggered, CELL_YLOW);
     mesh_staggered_m.setCoordinates(test_coords_staggered, CELL_ZLOW);
+
+    if constexpr (FCI) {
+      mesh_m.getCoordinates()->setParallelTransform(
+          bout::utils::make_unique<MockParallelTransform>(mesh_m, false));
+    }
   }
 
   FakeMeshFixture_tmpl(const FakeMeshFixture_tmpl&) = delete;
