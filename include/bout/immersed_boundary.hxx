@@ -2,7 +2,12 @@
 #ifndef IMMERSED_BOUNDARY_H
 #define IMMERSED_BOUNDARY_H
 
+#include <cmath>
+#include <limits>
 #include <memory>
+#include <sstream>
+#include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -41,11 +46,11 @@ private:
 
   Mesh* localmesh_;
 
-  /// Mask function that is 1 in the plasma, 0 in the wall
+  //Mask function that is 1 in the plasma, 0 in the wall
   Field3D bndry_mask;
-  /// Mask function with ids into ghost cell data arrays.
+  //Mask function with ids into ghost cell data arrays.
   Field3D ghost_ids;
-  /// Coordinate fields.
+  //Coordinate fields.
   Field3D R3;
   Field3D Z3;
   //Partial face info.
@@ -54,7 +59,7 @@ private:
   Field3D fx_grad_offset;
   Field3D fz_grad_offset;
 
-  /// Ghost cell data arrays.
+  //Ghost cell data arrays.
   int num_ghosts = 0;
   //IB_TODO: Allow for reading arrays of ints not just BoutReals from mesh. Then dont need to lround data to nearest int w/ floating point error in indexing.
   Matrix<BoutReal> image_inds;
@@ -64,15 +69,17 @@ private:
   Matrix<BoutReal> normals;
   Array<BoutReal> norm_dist;
 
-  /// Image cell weights/ghost flag arrays.
+  //Image cell weights/ghost flag arrays.
   int num_weights = 0;
-  Matrix<BoutReal> weights;
+  Matrix<BoutReal> weights_dir;
+  Matrix<BoutReal> weights_neu;
   Matrix<BoutReal> is_plasma;
-  Array<int> all_plasma;
-  Array<int> ghost_count;
+  Matrix<BoutReal> ghost_use_bc;
+  Array<BoutReal>  ghost_use_gs;
 
   //Boundary information.
   Field3D bound_ids;
+  Field3D bound_counts;
   int num_bounds = 0;
   BoutReal s1 = 0;
   BoutReal s2 = 0;
@@ -97,49 +104,29 @@ private:
   void CheckInterpOkWithMPI(const int global_indx, const int cell_id, const int proc_idx,
                       const std::string& description) const;
 
-  // Solve 4x4 A x = b (A is copied by value; partial pivoting)
-  // IB_TODO: Clean up/double check this functionality.
+  //IB_TODO: Useful function for converting BoutReal types to int/bool.
+  //Needed because can only read Array/Matrix<BoutReal> from grid file now.
+  //In python, the ints/bools are converted to float but represented exactly.
   template <typename T>
-  static std::array<T,4> solve4x4(std::array<std::array<T,4>,4> A,
-                                  const std::array<T,4> b) {
-    int p[4] = {0,1,2,3};
-    // LU with partial pivoting (Doolittle)
-    for (int k = 0; k < 4; ++k) {
-      // pivot
-      int imax = k;
-      T amax = std::abs(A[p[k]][k]);
-      for (int i = k+1; i < 4; ++i) {
-        T v = std::abs(A[p[i]][k]);
-        if (v > amax) { amax = v; imax = i; }
-      }
-      std::swap(p[k], p[imax]);
-      T pivot = A[p[k]][k];
-      if (std::abs(pivot) == T(0)) { throw BoutException("Singular 4x4 Vandermonde"); }
-      // eliminate
-      for (int i = k+1; i < 4; ++i) {
-        T m = A[p[i]][k] / pivot;
-        A[p[i]][k] = m;
-        for (int j = k+1; j < 4; ++j)
-          A[p[i]][j] -= m * A[p[k]][j];
-      }
+  inline T get_as(BoutReal x, BoutReal tol = 1e-12) const {
+    static_assert(std::is_integral_v<T>,
+      "Currently, get_as<T> only supports integral and bool types.");
+
+    const long r = std::lround(x);
+
+    // Catch values that are not really integer-like, e.g. 2.3, 0.49, etc.
+    if (std::abs(x - static_cast<BoutReal>(r)) > tol) {
+      throw BoutException("IB value not integer like...");
     }
-    // forward subst: Ly = b(p)
-    T y[4];
-    for (int i = 0; i < 4; ++i) {
-      T sum = b[p[i]];
-      for (int j = 0; j < i; ++j) sum -= A[p[i]][j] * y[j];
-      y[i] = sum;
-    }
-    // back subst: Ux = y
-    std::array<T,4> x;
-    for (int i = 3; i >= 0; --i) {
-      T sum = y[i];
-      for (int j = i+1; j < 4; ++j) sum -= A[p[i]][j] * x[j];
-      x[i] = sum / A[p[i]][i];
-    }
-    return x;
+
+    return static_cast<T>(r);
+  }
+  //Use this to get gridpoint inds associated with general point.
+  inline int GetGridInd(BoutReal f) const {
+    return static_cast<int>(f);
   }
 };
+
 
 inline std::unique_ptr<ImmersedBoundary> immBndry; //C++17 global.
 
