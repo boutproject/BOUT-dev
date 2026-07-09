@@ -419,5 +419,5 @@ public:
   }
 
 private:
-  const bool allow_transform;
+  bool allow_transform;
 };
