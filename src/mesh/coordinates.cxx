@@ -496,6 +496,7 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
   if (localmesh->get(J_temp, "J" + suffix, 0.0, false) != 0) {
     output_warn.write(
         "\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
+    localmesh->communicate_no_slices(*jacobian_cache);
   } else {
     checkStaggeredGet(localmesh, "J", suffix);
     *jacobian_cache = ensuredUnaligned(J_temp);
@@ -521,6 +522,7 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
                       "metric tensor\n");
     Bxy_ = interpolateAndExtrapolate(Bcalc, location, extrapolate_x, extrapolate_y, false,
                                      transform.get());
+    localmesh->communicate_no_slices(Bxy_);
   } else {
     checkStaggeredGet(localmesh, "Bxy", suffix);
     Bxy_ = ensuredUnaligned(Bxy_);
@@ -784,7 +786,7 @@ void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_cent
       output_warn.write("\tWARNING: differencing quantity 'd2z' not found. "
                         "Calculating from dz\n");
       d1_dz_ = bout::derivatives::index::DDZ(FieldMetric{1. / dz()});
-      localmesh->communicate(d1_dz_);
+      localmesh->communicate_no_slices(d1_dz_);
       d1_dz_ =
           interpolateAndExtrapolate(d1_dz_, location, true, true, true, transform.get());
     } else {
@@ -799,7 +801,7 @@ void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_cent
     d1_dz_ = 0;
   }
 
-  localmesh->communicate(d1_dx_, d1_dy_, d1_dz_);
+  localmesh->communicate_no_slices(d1_dx_, d1_dy_, d1_dz_);
 }
 
 Coordinates::FieldMetric Coordinates::recalculateJacobian() const {
