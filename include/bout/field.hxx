@@ -630,9 +630,9 @@ std::optional<int> getPerpYIndex(const BinaryExpr<ResT, L, R, Func>& expr) {
 #ifdef FIELD_FUNC
 #error This macro has already been defined
 #else
-#define FIELD_FUNC(name, func)                                                          \
+#define FIELD_FUNC(opname, func)                                                        \
   namespace bout::op {                                                                  \
-  struct name {                                                                         \
+  struct opname {                                                                       \
     template <typename LView, typename RView>                                           \
     BOUT_HOST_DEVICE BoutReal operator()(int idx, const LView& L, const RView&) const { \
       return func(L(idx));                                                              \
@@ -640,7 +640,7 @@ std::optional<int> getPerpYIndex(const BinaryExpr<ResT, L, R, Func>& expr) {
   };                                                                                    \
   };                                                                                    \
   template <typename T, typename = bout::utils::EnableIfField<T>>                       \
-  inline auto name(const T& f, const std::string& rgn = "RGN_ALL") {                    \
+  inline auto opname(const T& f, const std::string& rgn = "RGN_ALL") {                  \
     if constexpr (std::is_same_v<T, Field3DParallel>) {                                 \
       /* Check if the input is allocated */                                             \
       checkData(f);                                                                     \
@@ -651,27 +651,28 @@ std::optional<int> getPerpYIndex(const BinaryExpr<ResT, L, R, Func>& expr) {
         result.yup(i) = func(f.yup(i));                                                 \
         result.ydown(i) = func(f.ydown(i));                                             \
       }                                                                                 \
+      result.name = fmt::format(#opname "({})", f.name);                                \
       checkData(result);                                                                \
       return result;                                                                    \
     } else {                                                                            \
-      return BinaryExpr<T, T, T, bout::op::name>{static_cast<typename T::View>(f),      \
-                                                 static_cast<typename T::View>(f),      \
-                                                 bout::op::name{},                      \
-                                                 f.getMesh(),                           \
-                                                 f.getLocation(),                       \
-                                                 f.getDirections(),                     \
-                                                 std::nullopt,                          \
-                                                 f.getRegion(rgn),                      \
-                                                 bout::detail::getPerpYIndex(f)};       \
+      return BinaryExpr<T, T, T, bout::op::opname>{static_cast<typename T::View>(f),    \
+                                                   static_cast<typename T::View>(f),    \
+                                                   bout::op::opname{},                  \
+                                                   f.getMesh(),                         \
+                                                   f.getLocation(),                     \
+                                                   f.getDirections(),                   \
+                                                   std::nullopt,                        \
+                                                   f.getRegion(rgn),                    \
+                                                   bout::detail::getPerpYIndex(f)};     \
     }                                                                                   \
   }                                                                                     \
   template <typename ResT, typename L, typename R, typename Func>                       \
-  inline auto name(const BinaryExpr<ResT, L, R, Func>& f) {                             \
+  inline auto opname(const BinaryExpr<ResT, L, R, Func>& f) {                           \
     return BinaryExpr<ResT, BinaryExpr<ResT, L, R, Func>, BinaryExpr<ResT, L, R, Func>, \
-                      bout::op::name>{                                                  \
+                      bout::op::opname>{                                                \
         static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),                    \
         static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),                    \
-        bout::op::name{},                                                               \
+        bout::op::opname{},                                                             \
         f.getMesh(),                                                                    \
         f.getLocation(),                                                                \
         f.getDirections(),                                                              \
@@ -680,8 +681,8 @@ std::optional<int> getPerpYIndex(const BinaryExpr<ResT, L, R, Func>& expr) {
         bout::detail::getPerpYIndex(f)};                                                \
   }                                                                                     \
   template <typename ResT, typename L, typename R, typename Func>                       \
-  inline auto name(const BinaryExpr<ResT, L, R, Func>& f, const std::string& rgn) {     \
-    return name(ResT{f}, rgn);                                                          \
+  inline auto opname(const BinaryExpr<ResT, L, R, Func>& f, const std::string& rgn) {   \
+    return opname(ResT{f}, rgn);                                                        \
   }
 #endif
 
