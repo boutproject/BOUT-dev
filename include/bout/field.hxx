@@ -709,7 +709,9 @@ inline auto SQ(const T& f, const std::string& rgn = "RGN_ALL") {
       result.yup(i) = SQ(f.yup(i), rgn);
       result.ydown(i) = SQ(f.ydown(i), rgn);
     }
+#if TRACK
     result.name = std::string("SQ(") + f.name + std::string(")");
+#endif
     checkData(result);
     return result;
   } else {
