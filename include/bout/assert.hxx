@@ -1,4 +1,4 @@
-/*!
+/*!\file
  * Defines a macro ASSERT which throws a BoutException if a given
  * condition is false. Whether the assertion is tested depends on
  * the checking level, so assetions can be removed for optimised runs.

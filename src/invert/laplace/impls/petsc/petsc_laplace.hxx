@@ -1,10 +1,11 @@
+/// \file
+/// Perpendicular Laplacian inversion using PETSc Solvers
+///
+/// Equation solved is:
+/// \f[
+/// d\nabla^2_\perp x + (1/c1)\nabla_perp c2\cdot\nabla_\perp x + ex\nabla_x x + ez\nabla_z x + a x = b
+/// \f]
 /**************************************************************************
- * Perpendicular Laplacian inversion.
- *                           Using PETSc Solvers
- *
- * Equation solved is: \f$d\nabla^2_\perp x + (1/c1)\nabla_perp c2\cdot\nabla_\perp x + ex\nabla_x x + ez\nabla_z x + a x = b\f$
- *
- **************************************************************************
  * Copyright 2013 J. Buchanan, J. Omotani
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
