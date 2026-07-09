@@ -18,7 +18,7 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
   ASSERT0(coords != nullptr);
 
   // Size of the mesh in Z. Used to convert 3D -> 2D index
-  Mesh* mesh = coords->dx().getMesh();
+  const Mesh* mesh = coords->dx().getMesh();
   mesh_nz = mesh->LocalNz;
 
   auto search = coords_store.find(coords);
@@ -61,13 +61,15 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
     COPY_STRIPE(J);
 
     if (coords->Bxy().isAllocated()) {
-      data[stripe_size * ind.ind + static_cast<int>(Offset::B)] = coords->Bxy()[ind];
-      if (coords->Bxy().yup().isAllocated())
+      data[(stripe_size * ind.ind) + static_cast<int>(Offset::B)] = coords->Bxy()[ind];
+      if (coords->Bxy().yup().isAllocated()) {
         data[stripe_size * ind.ind + static_cast<int>(Offset::Byup)] =
             coords->Bxy().yup()[ind];
-      if (coords->Bxy().ydown().isAllocated())
+      }
+      if (coords->Bxy().ydown().isAllocated()) {
         data[stripe_size * ind.ind + static_cast<int>(Offset::Bydown)] =
             coords->Bxy().ydown()[ind];
+      }
     }
 
     COPY_STRIPE(G1, G3);

@@ -1,6 +1,7 @@
-
 #include "bout/parallel_boundary_region.hxx"
 #include "bout/physicsmodel.hxx"
+
+#include <cmath>
 
 class FCIwave : public PhysicsModel {
 private:

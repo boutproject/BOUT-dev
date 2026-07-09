@@ -283,11 +283,6 @@ Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc,
   return metric->Bxy() * FDDY(v, f_B, outloc, method) / sqrt(metric->g_22());
 }
 
-static Field3D Div_par_flux(const Field3D& v, const Field3D& f, const std::string& method,
-                            CELL_LOC outloc) {
-  return Div_par_flux(v, f, outloc, method);
-}
-
 /*******************************************************************************
 * Grad2_par2
 * second parallel derivative

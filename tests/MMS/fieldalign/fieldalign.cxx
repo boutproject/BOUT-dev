@@ -1,4 +1,5 @@
 #include <bout/derivs.hxx>
+#include <bout/field2d.hxx>
 #include <bout/physicsmodel.hxx>
 
 class FieldAlign : public PhysicsModel {

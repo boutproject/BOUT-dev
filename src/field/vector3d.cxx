@@ -28,17 +28,24 @@
  *
  **************************************************************************/
 
-#include <bout/globals.hxx>
-
 #include <bout/assert.hxx>
 #include <bout/boundary_op.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/coordinates.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field_data.hxx>
+#include <bout/globals.hxx>
 #include <bout/interpolation.hxx>
+#include <bout/region.hxx>
 #include <bout/scorepwrapper.hxx>
 #include <bout/vector3d.hxx>
 
+#include <cmath>
+#include <cstdlib>
+
 Vector3D::Vector3D(const Vector3D& f)
-    : FieldData(f), x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),
+    : FieldData(f), x(f.x), y(f.y), z(f.z), covariant(f.covariant),
       location(f.getLocation()) {}
 
 Vector3D::Vector3D(Mesh* localmesh, bool covariant, CELL_LOC location)
@@ -68,10 +75,9 @@ void Vector3D::toCovariant() {
     Mesh* localmesh = getMesh();
 
     if (location == CELL_VSHIFT) {
-      Coordinates *metric_x, *metric_y, *metric_z;
-      metric_x = localmesh->getCoordinates(CELL_XLOW);
-      metric_y = localmesh->getCoordinates(CELL_YLOW);
-      metric_z = localmesh->getCoordinates(CELL_ZLOW);
+      const auto* metric_x = localmesh->getCoordinates(CELL_XLOW);
+      const auto* metric_y = localmesh->getCoordinates(CELL_YLOW);
+      const auto* metric_z = localmesh->getCoordinates(CELL_ZLOW);
 
       // Fields at different locations so we need to interpolate
       // Note : Could reduce peak memory requirement here by just
@@ -87,26 +93,28 @@ void Vector3D::toCovariant() {
 
       // multiply by g_{ij}
       BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
-        x[i] = metric_x->g_11()[i] * x[i] + metric_x->g_12()[i] * y_at_x[i]
-               + metric_x->g_13()[i] * z_at_x[i];
-        y[i] = metric_y->g_22()[i] * y[i] + metric_y->g_12()[i] * x_at_y[i]
-               + metric_y->g_23()[i] * z_at_y[i];
-        z[i] = metric_z->g_33()[i] * z[i] + metric_z->g_13()[i] * x_at_z[i]
-               + metric_z->g_23()[i] * y_at_z[i];
+        x[i] = (metric_x->g_11()[i] * x[i]) + (metric_x->g_12()[i] * y_at_x[i])
+               + (metric_x->g_13()[i] * z_at_x[i]);
+        y[i] = (metric_y->g_22()[i] * y[i]) + (metric_y->g_12()[i] * x_at_y[i])
+               + (metric_y->g_23()[i] * z_at_y[i]);
+        z[i] = (metric_z->g_33()[i] * z[i]) + (metric_z->g_13()[i] * x_at_z[i])
+               + (metric_z->g_23()[i] * y_at_z[i]);
       };
     } else {
-      const auto metric = localmesh->getCoordinates(location);
+      auto* const metric = localmesh->getCoordinates(location);
 
       // Need to use temporary arrays to store result
-      Field3D gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
+      Field3D gx{emptyFrom(x)};
+      Field3D gy{emptyFrom(y)};
+      Field3D gz{emptyFrom(z)};
 
       BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
-        gx[i] = metric->g_11()[i] * x[i] + metric->g_12()[i] * y[i]
-                + metric->g_13()[i] * z[i];
-        gy[i] = metric->g_22()[i] * y[i] + metric->g_12()[i] * x[i]
-                + metric->g_23()[i] * z[i];
-        gz[i] = metric->g_33()[i] * z[i] + metric->g_13()[i] * x[i]
-                + metric->g_23()[i] * y[i];
+        gx[i] = (metric->g_11()[i] * x[i]) + (metric->g_12()[i] * y[i])
+                + (metric->g_13()[i] * z[i]);
+        gy[i] = (metric->g_22()[i] * y[i]) + (metric->g_12()[i] * x[i])
+                + (metric->g_23()[i] * z[i]);
+        gz[i] = (metric->g_33()[i] * z[i]) + (metric->g_13()[i] * x[i])
+                + (metric->g_23()[i] * y[i]);
       };
 
       x = gx;
@@ -124,11 +132,9 @@ void Vector3D::toContravariant() {
     Mesh* localmesh = getMesh();
 
     if (location == CELL_VSHIFT) {
-      Coordinates *metric_x, *metric_y, *metric_z;
-
-      metric_x = localmesh->getCoordinates(CELL_XLOW);
-      metric_y = localmesh->getCoordinates(CELL_YLOW);
-      metric_z = localmesh->getCoordinates(CELL_ZLOW);
+      const auto* metric_x = localmesh->getCoordinates(CELL_XLOW);
+      const auto* metric_y = localmesh->getCoordinates(CELL_YLOW);
+      const auto* metric_z = localmesh->getCoordinates(CELL_ZLOW);
 
       // Fields at different locations so we need to interpolate
       // Note : Could reduce peak memory requirement here by just
@@ -144,27 +150,29 @@ void Vector3D::toContravariant() {
 
       // multiply by g_{ij}
       BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
-        x[i] = metric_x->g11()[i] * x[i] + metric_x->g12()[i] * y_at_x[i]
-               + metric_x->g13()[i] * z_at_x[i];
-        y[i] = metric_y->g22()[i] * y[i] + metric_y->g12()[i] * x_at_y[i]
-               + metric_y->g23()[i] * z_at_y[i];
-        z[i] = metric_z->g33()[i] * z[i] + metric_z->g13()[i] * x_at_z[i]
-               + metric_z->g23()[i] * y_at_z[i];
+        x[i] = (metric_x->g11()[i] * x[i]) + (metric_x->g12()[i] * y_at_x[i])
+               + (metric_x->g13()[i] * z_at_x[i]);
+        y[i] = (metric_y->g22()[i] * y[i]) + (metric_y->g12()[i] * x_at_y[i])
+               + (metric_y->g23()[i] * z_at_y[i]);
+        z[i] = (metric_z->g33()[i] * z[i]) + (metric_z->g13()[i] * x_at_z[i])
+               + (metric_z->g23()[i] * y_at_z[i]);
       };
 
     } else {
-      const auto metric = localmesh->getCoordinates(location);
+      auto* const metric = localmesh->getCoordinates(location);
 
       // Need to use temporary arrays to store result
-      Field3D gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
+      Field3D gx{emptyFrom(x)};
+      Field3D gy{emptyFrom(y)};
+      Field3D gz{emptyFrom(z)};
 
       BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
-        gx[i] =
-            metric->g11()[i] * x[i] + metric->g12()[i] * y[i] + metric->g13()[i] * z[i];
-        gy[i] =
-            metric->g22()[i] * y[i] + metric->g12()[i] * x[i] + metric->g23()[i] * z[i];
-        gz[i] =
-            metric->g33()[i] * z[i] + metric->g13()[i] * x[i] + metric->g23()[i] * y[i];
+        gx[i] = (metric->g11()[i] * x[i]) + (metric->g12()[i] * y[i])
+                + (metric->g13()[i] * z[i]);
+        gy[i] = (metric->g22()[i] * y[i]) + (metric->g12()[i] * x[i])
+                + (metric->g23()[i] * z[i]);
+        gz[i] = (metric->g33()[i] * z[i]) + (metric->g13()[i] * x[i])
+                + (metric->g23()[i] * y[i]);
       };
 
       x = gx;

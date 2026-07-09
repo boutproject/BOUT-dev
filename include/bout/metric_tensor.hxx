@@ -7,7 +7,6 @@
 #include <bout/field3d.hxx>
 
 #include <string>
-#include <string_view>
 
 namespace bout {
 #if BOUT_USE_METRIC_3D

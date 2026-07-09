@@ -16,6 +16,7 @@
 
 #include <bout/bout_types.hxx>
 #include <bout/derivs.hxx>
+#include <bout/field3d.hxx>
 #include <bout/field_factory.hxx>
 #include <bout/initialprofiles.hxx>
 #include <bout/tokamak_coordinates.hxx>

@@ -8,6 +8,7 @@
 
 #include <bout/bout_types.hxx>
 #include <bout/derivs.hxx>
+#include <bout/field2d.hxx>
 #include <bout/field_factory.hxx>
 #include <bout/options.hxx>
 #include <bout/physicsmodel.hxx>

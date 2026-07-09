@@ -517,7 +517,7 @@ private:
   void invalidateMetricCaches();
   void invalidateJacobianCaches();
   void invalidateCellGeometryCaches();
-  void invalidateAccessorCache();
+  void invalidateAccessorCache() const;
 
   mutable std::array<std::shared_ptr<YBoundary>, 3> ybndrys;
 

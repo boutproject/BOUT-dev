@@ -1,5 +1,6 @@
 #include <bout/constants.hxx>
 #include <bout/derivs.hxx>
+#include <bout/field3d.hxx>
 #include <bout/initialprofiles.hxx>
 #include <bout/metric_tensor.hxx>
 #include <bout/physicsmodel.hxx>

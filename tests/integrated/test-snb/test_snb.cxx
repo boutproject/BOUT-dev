@@ -215,8 +215,8 @@ int main(int argc, char** argv) {
       for (int y = mesh->ystart; y <= mesh->yend; y++) {
         const double y_n = (double(y) + 0.5) / double(mesh->yend + 1);
 
-        dy_copy(x, y) = 1. - 0.9 * y_n;
-        J_copy(x, y) = 1. + y_n * y_n;
+        dy_copy(x, y) = 1. - (0.9 * y_n);
+        J_copy(x, y) = 1. + (y_n * y_n);
       }
     }
     coord->setDy(dy_copy);

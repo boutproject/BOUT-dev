@@ -624,7 +624,7 @@ public:
     return getCoordinatesSmart(location).get();
   };
 
-  std::shared_ptr<Coordinates> getCoordinatesSmart(const CELL_LOC location = CELL_CENTRE);
+  std::shared_ptr<Coordinates> getCoordinatesSmart(CELL_LOC location = CELL_CENTRE);
 
   std::shared_ptr<Coordinates>
   getCoordinatesConst(const CELL_LOC location = CELL_CENTRE) const {

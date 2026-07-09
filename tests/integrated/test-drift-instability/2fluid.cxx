@@ -5,6 +5,7 @@
 
 #include <bout/bout.hxx>
 #include <bout/derivs.hxx>
+#include <bout/field2d.hxx>
 #include <bout/initialprofiles.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/invert_laplace.hxx>

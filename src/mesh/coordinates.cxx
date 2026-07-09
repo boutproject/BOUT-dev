@@ -1008,7 +1008,7 @@ void Coordinates::invalidateCellGeometryCaches() {
   _cell_volume.reset();
 }
 
-void Coordinates::invalidateAccessorCache() { CoordinatesAccessor::clear(this); }
+void Coordinates::invalidateAccessorCache() const { CoordinatesAccessor::clear(this); }
 
 void Coordinates::invalidateJacobianCaches() {
   g_values_cache.reset();

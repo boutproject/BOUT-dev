@@ -5,10 +5,10 @@
 
 #include <bout/constants.hxx>
 #include <bout/fft.hxx>
+#include <bout/field3d.hxx>
+#include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
-
-#include <bout/output.hxx>
 
 LaplaceXZcyclic::LaplaceXZcyclic(Mesh* m, Options* options, const CELL_LOC loc)
     : LaplaceXZ(m, options, loc) {

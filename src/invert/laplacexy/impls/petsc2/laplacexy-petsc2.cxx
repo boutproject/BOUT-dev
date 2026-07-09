@@ -162,7 +162,7 @@ void LaplaceXYpetsc2::setCoefs(const Field2D& A, const Field2D& B) {
     BoutReal dx = 0.5 * (coords->dx()[index] + coords->dx()[ind_xp]);
     BoutReal Acoef = 0.5 * (A[index] + A[ind_xp]);
 
-    BoutReal xp = Acoef * J * g11 / (coords->J()[index] * dx * coords->dx()[index]);
+    const BoutReal xp = Acoef * J * g11 / (coords->J()[index] * dx * coords->dx()[index]);
 
     // Metrics on x-1/2 boundary
     J = 0.5 * (coords->J()[index] + coords->J()[ind_xm]);
@@ -170,7 +170,7 @@ void LaplaceXYpetsc2::setCoefs(const Field2D& A, const Field2D& B) {
     dx = 0.5 * (coords->dx()[index] + coords->dx()[ind_xm]);
     Acoef = 0.5 * (A[index] + A[ind_xm]);
 
-    BoutReal xm = Acoef * J * g11 / (coords->J()[index] * dx * coords->dx()[index]);
+    const BoutReal xm = Acoef * J * g11 / (coords->J()[index] * dx * coords->dx()[index]);
 
     BoutReal c = B[index] - xp - xm; // Central coefficient
 
@@ -190,8 +190,8 @@ void LaplaceXYpetsc2::setCoefs(const Field2D& A, const Field2D& B) {
       BoutReal dy = 0.5 * (coords->dy()[index] + coords->dy()[ind_yp]);
       Acoef = 0.5 * (A[ind_yp] + A[index]);
 
-      BoutReal yp = -Acoef * J * g23 * g_23
-                    / (g_22 * coords->J()[index] * dy * coords->dy()[index]);
+      const BoutReal yp = -Acoef * J * g23 * g_23
+                          / (g_22 * coords->J()[index] * dy * coords->dy()[index]);
       c -= yp;
       matrix(index, ind_yp) = yp;
 
@@ -203,8 +203,8 @@ void LaplaceXYpetsc2::setCoefs(const Field2D& A, const Field2D& B) {
       dy = 0.5 * (coords->dy()[index] + coords->dy()[ind_ym]);
       Acoef = 0.5 * (A[ind_ym] + A[index]);
 
-      BoutReal ym = -Acoef * J * g23 * g_23
-                    / (g_22 * coords->J()[index] * dy * coords->dy()[index]);
+      const BoutReal ym = -Acoef * J * g23 * g_23
+                          / (g_22 * coords->J()[index] * dy * coords->dy()[index]);
       c -= ym;
       matrix(index, ind_ym) = ym;
     }

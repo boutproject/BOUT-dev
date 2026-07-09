@@ -24,14 +24,15 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
-#include "bout/bout_types.hxx"
-#include "bout/build_defines.hxx"
+
+#include <bout/build_defines.hxx>
 
 #if BOUT_HAS_PETSC
 
 #include "petsc3damg.hxx"
 
 #include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/derivs.hxx>
 #include <bout/mesh.hxx>
@@ -39,6 +40,8 @@
 #include <bout/petsc_interface.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
+
+#include <cmath>
 
 using bout::utils::flagSet;
 
@@ -328,7 +331,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     }
 
     BoutReal C_d2f_dx2 = coords->g11()[l];
-    BoutReal C_d2f_dy2 = (coords->g22()[l] - 1.0 / coords->g_22()[l]);
+    BoutReal C_d2f_dy2 = (coords->g22()[l] - (1.0 / coords->g_22()[l]));
     BoutReal C_d2f_dz2 = coords->g33()[l];
     if (issetD) {
       C_d2f_dx2 *= D[l];
