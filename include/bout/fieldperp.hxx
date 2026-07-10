@@ -409,6 +409,11 @@ FieldPerp operator/(const FieldPerp& lhs, const Field2D& rhs);
 FieldPerp operator/(const FieldPerp& lhs, BoutReal rhs);
 FieldPerp operator/(BoutReal lhs, const FieldPerp& rhs);
 
+FieldPerp pow(const FieldPerp& lhs, const FieldPerp& rhs,
+              const std::string& rgn = "RGN_ALL");
+FieldPerp pow(const FieldPerp& lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL");
+FieldPerp pow(BoutReal lhs, const FieldPerp& rhs, const std::string& rgn = "RGN_ALL");
+
 /*!
  * Unary minus. Returns the negative of given field,
  * iterates over whole domain including guard/boundary cells.

@@ -1947,6 +1947,37 @@ TEST_F(Field3DTest, PowField3DField3D) {
   EXPECT_TRUE(IsFieldEqual(c, 64.0));
 }
 
+TEST_F(Field3DTest, PowExpressionUsesPowOp) {
+  Field3D field;
+
+  field = 2.0;
+  const auto expr = field + 1.0;
+
+  EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(pow(expr, 2.0))>,
+                              BinaryExpr<Field3D, std::decay_t<decltype(expr)>,
+                                         Constant<double>, bout::op::Pow>>));
+  EXPECT_TRUE(IsFieldEqual(pow(expr, 2.0), 9.0));
+}
+
+TEST_F(Field3DTest, PowMixedField2DField3DExpressionUsesPowOp) {
+  Field2D lhs;
+  Field3D rhs;
+
+  lhs = 2.0;
+  rhs = 3.0;
+
+  const auto lhs_expr = lhs + 1.0;
+  const auto rhs_expr = rhs + 1.0;
+  const auto expr = pow(lhs_expr, rhs_expr);
+
+  EXPECT_TRUE(
+      (std::is_same_v<std::decay_t<decltype(expr)>,
+                      BinaryExpr<Field3D, std::decay_t<decltype(lhs_expr)>,
+                                 std::decay_t<decltype(rhs_expr)>, bout::op::Pow>>));
+  EXPECT_TRUE(IsFieldEqual(expr, 81.0));
+  EXPECT_TRUE(IsFieldEqual(pow(lhs_expr, rhs_expr, "RGN_ALL"), 81.0));
+}
+
 TEST_F(Field3DTest, Sqrt) {
   Field3D field;
 
@@ -2130,6 +2161,49 @@ TEST_F(Field3DTestFCI, SqrtField3DParallelPreservesParallelSlices) {
 
     EXPECT_FALSE(res.hasParallelSlices());
   }
+}
+
+TEST_F(Field3DTestFCI, PowField3DParallelExprPreservesParallelSlices) {
+  Field3DParallel field;
+
+  field = 2.0;
+  field.yup() = 3.0;
+  field.ydown() = 4.0;
+
+  const auto expr = pow(field + 1.0, 2.0);
+
+  EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(expr)>,
+                              BinaryExpr<Field3D, std::decay_t<decltype(field + 1.0)>,
+                                         Constant<double>, bout::op::Pow>>));
+
+  Field3DParallel result{expr};
+
+  EXPECT_TRUE(result.hasParallelSlices());
+  EXPECT_TRUE(IsFieldEqual(result, 9.0));
+  EXPECT_TRUE(IsFieldEqual(result.yup(), 16.0));
+  EXPECT_TRUE(IsFieldEqual(result.ydown(), 25.0));
+}
+
+TEST_F(Field3DTestFCI, PowField3DParallelRegionExprPreservesParallelSlices) {
+  Field3DParallel field;
+
+  field = 2.0;
+  field.yup() = 3.0;
+  field.ydown() = 4.0;
+
+  const auto base = field + 1.0;
+  const auto expr = pow(base, 2.0, "RGN_ALL");
+
+  EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(expr)>,
+                              BinaryExpr<Field3D, std::decay_t<decltype(base)>,
+                                         Constant<double>, bout::op::Pow>>));
+
+  Field3DParallel result{expr};
+
+  EXPECT_TRUE(result.hasParallelSlices());
+  EXPECT_TRUE(IsFieldEqual(result, 9.0));
+  EXPECT_TRUE(IsFieldEqual(result.yup(), 16.0));
+  EXPECT_TRUE(IsFieldEqual(result.ydown(), 25.0));
 }
 
 TEST_F(Field3DTestFCI, SqrtField3DParallelExprPreservesParallelSlices) {

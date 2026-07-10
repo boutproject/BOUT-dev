@@ -911,7 +911,6 @@ inline auto operator-(const Field3D& f) {
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-Field3D pow(const Field3D& lhs, const Field2D& rhs, const std::string& rgn = "RGN_ALL");
 FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs,
               const std::string& rgn = "RGN_ALL");
 

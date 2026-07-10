@@ -539,53 +539,233 @@ inline BoutReal mean(const BinaryExpr<ResT, L, R, Func>& f, bool allpe = false,
   return bout::reduce::Mean::finalize(state);
 }
 
+namespace bout::op {
+struct Pow {
+  template <typename LView, typename RView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx, const LView& L,
+                                                        const RView& R) const {
+    return ::pow(L(idx), R(idx));
+  }
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(BoutReal a, BoutReal b) const {
+    return ::pow(a, b);
+  }
+};
+}; // namespace bout::op
+
+namespace bout::detail {
+template <typename T>
+std::optional<int> getPerpYIndex(const T& value);
+
+template <typename ResT, typename L, typename R, typename Func>
+std::optional<int> getPerpYIndex(const BinaryExpr<ResT, L, R, Func>& expr);
+
+template <typename ResT>
+std::optional<size_t> getPowRegionID(const Mesh* mesh, const std::string& region_name) {
+  if constexpr (std::is_same_v<ResT, Field3D>) {
+    return bout::detail::getField3DRegionID(mesh, region_name);
+  } else {
+    return std::nullopt;
+  }
+}
+
+template <typename ResT, typename L, typename R, typename LView, typename RView,
+          typename IndType>
+auto makePowExpr(const LView& lhs_view, const RView& rhs_view, Mesh* mesh,
+                 CELL_LOC location, DirectionTypes directions,
+                 std::optional<size_t> regionID, const Region<IndType>& region,
+                 std::optional<int> yindex = std::nullopt) {
+  return BinaryExpr<ResT, L, R, bout::op::Pow>{lhs_view, rhs_view, bout::op::Pow{},
+                                               mesh,     location, directions,
+                                               regionID, region,   yindex};
+}
+} // namespace bout::detail
+
 /// Exponent: pow(lhs, lhs) is \p lhs raised to the power of \p rhs
 ///
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument)
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-template <typename T, typename = bout::utils::EnableIfField<T>>
-T pow(const T& lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
-
-  ASSERT1(areFieldsCompatible(lhs, rhs));
-
-  T result{emptyFrom(lhs)};
-
-  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
-
-  checkData(result);
-  return result;
+template <typename L, typename R>
+std::enable_if_t<is_expr_field2d_v<L> && is_expr_field2d_v<R>,
+                 BinaryExpr<Field2D, L, R, bout::op::Pow>>
+pow(const L& lhs, const R& rhs) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  return bout::detail::makePowExpr<Field2D, L, R>(
+      static_cast<typename L::View>(lhs), static_cast<typename R::View>(rhs),
+      lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), std::nullopt,
+      lhs.getMesh()->getRegion2D("RGN_ALL"));
 }
 
-template <typename T, typename = bout::utils::EnableIfField<T>>
-T pow(const T& lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL") {
-
-  // Check if the inputs are allocated
-  checkData(lhs);
-  checkData(rhs);
-
-  T result{emptyFrom(lhs)};
-
-  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs); }
-
-  checkData(result);
-  return result;
+template <typename L, typename R>
+std::enable_if_t<is_expr_field2d_v<L> && is_expr_field2d_v<R>,
+                 BinaryExpr<Field2D, L, R, bout::op::Pow>>
+pow(const L& lhs, const R& rhs, const std::string& rgn) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  return bout::detail::makePowExpr<Field2D, L, R>(
+      static_cast<typename L::View>(lhs), static_cast<typename R::View>(rhs),
+      lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), std::nullopt,
+      lhs.getMesh()->getRegion2D(rgn));
 }
 
-template <typename T, typename = bout::utils::EnableIfField<T>>
-T pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
+template <typename L, typename R>
+std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>,
+                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
+pow(const L& lhs, const R& rhs) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
+  return bout::detail::makePowExpr<Field3D, L, R>(
+      static_cast<typename L::View>(lhs), static_cast<typename R::View>(rhs),
+      lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), regionID,
+      (regionID.has_value() ? lhs.getMesh()->getRegion(regionID.value())
+                            : lhs.getMesh()->getRegion("RGN_ALL")),
+      bout::detail::getPerpYIndex(lhs));
+}
 
-  // Check if the inputs are allocated
-  checkData(lhs);
-  checkData(rhs);
+template <typename L, typename R>
+std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>,
+                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
+pow(const L& lhs, const R& rhs, const std::string& rgn) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  return bout::detail::makePowExpr<Field3D, L, R>(
+      static_cast<typename L::View>(lhs), static_cast<typename R::View>(rhs),
+      lhs.getMesh(), lhs.getLocation(), lhs.getDirections(),
+      bout::detail::getPowRegionID<Field3D>(lhs.getMesh(), rgn),
+      lhs.getMesh()->getRegion(rgn), bout::detail::getPerpYIndex(lhs));
+}
 
-  // Define and allocate the output result
-  T result{emptyFrom(rhs)};
+template <typename L, typename R>
+std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>,
+                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
+pow(const L& lhs, const R& rhs) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  int mesh_nz = lhs.getMesh()->LocalNz;
+  return bout::detail::makePowExpr<Field3D, L, R>(
+      static_cast<typename L::View>(lhs),
+      static_cast<typename R::View>(rhs).setScale(1, mesh_nz), lhs.getMesh(),
+      lhs.getLocation(), lhs.getDirections(), lhs.getRegionID(),
+      lhs.getMesh()->getRegion("RGN_ALL"), bout::detail::getPerpYIndex(lhs));
+}
 
-  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs, rhs[i]); }
+template <typename L, typename R>
+std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>,
+                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
+pow(const L& lhs, const R& rhs, const std::string& rgn) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  int mesh_nz = lhs.getMesh()->LocalNz;
+  return bout::detail::makePowExpr<Field3D, L, R>(
+      static_cast<typename L::View>(lhs),
+      static_cast<typename R::View>(rhs).setScale(1, mesh_nz), lhs.getMesh(),
+      lhs.getLocation(), lhs.getDirections(),
+      bout::detail::getPowRegionID<Field3D>(lhs.getMesh(), rgn),
+      lhs.getMesh()->getRegion(rgn), bout::detail::getPerpYIndex(lhs));
+}
 
-  checkData(result);
-  return result;
+template <typename L, typename R>
+std::enable_if_t<is_expr_field2d_v<L> && is_expr_field3d_v<R>,
+                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
+pow(const L& lhs, const R& rhs) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  int mesh_nz = rhs.getMesh()->LocalNz;
+  return bout::detail::makePowExpr<Field3D, L, R>(
+      static_cast<typename L::View>(lhs).setScale(1, mesh_nz),
+      static_cast<typename R::View>(rhs), rhs.getMesh(), rhs.getLocation(),
+      rhs.getDirections(), rhs.getRegionID(), rhs.getMesh()->getRegion("RGN_ALL"),
+      bout::detail::getPerpYIndex(rhs));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_field2d_v<L> && is_expr_field3d_v<R>,
+                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
+pow(const L& lhs, const R& rhs, const std::string& rgn) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  int mesh_nz = rhs.getMesh()->LocalNz;
+  return bout::detail::makePowExpr<Field3D, L, R>(
+      static_cast<typename L::View>(lhs).setScale(1, mesh_nz),
+      static_cast<typename R::View>(rhs), rhs.getMesh(), rhs.getLocation(),
+      rhs.getDirections(), bout::detail::getPowRegionID<Field3D>(rhs.getMesh(), rgn),
+      rhs.getMesh()->getRegion(rgn), bout::detail::getPerpYIndex(rhs));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_field2d_v<L> && is_expr_constant_v<R>,
+                 BinaryExpr<Field2D, L, Constant<R>, bout::op::Pow>>
+pow(const L& lhs, R rhs) {
+  return bout::detail::makePowExpr<Field2D, L, Constant<R>>(
+      static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
+      lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), std::nullopt,
+      lhs.getMesh()->getRegion2D("RGN_ALL"));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_field2d_v<L> && is_expr_constant_v<R>,
+                 BinaryExpr<Field2D, L, Constant<R>, bout::op::Pow>>
+pow(const L& lhs, R rhs, const std::string& rgn) {
+  return bout::detail::makePowExpr<Field2D, L, Constant<R>>(
+      static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
+      lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), std::nullopt,
+      lhs.getMesh()->getRegion2D(rgn));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_constant_v<L> && is_expr_field2d_v<R>,
+                 BinaryExpr<Field2D, Constant<L>, R, bout::op::Pow>>
+pow(L lhs, const R& rhs) {
+  return bout::detail::makePowExpr<Field2D, Constant<L>, R>(
+      static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
+      rhs.getMesh(), rhs.getLocation(), rhs.getDirections(), std::nullopt,
+      rhs.getMesh()->getRegion2D("RGN_ALL"));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_constant_v<L> && is_expr_field2d_v<R>,
+                 BinaryExpr<Field2D, Constant<L>, R, bout::op::Pow>>
+pow(L lhs, const R& rhs, const std::string& rgn) {
+  return bout::detail::makePowExpr<Field2D, Constant<L>, R>(
+      static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
+      rhs.getMesh(), rhs.getLocation(), rhs.getDirections(), std::nullopt,
+      rhs.getMesh()->getRegion2D(rgn));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_field3d_v<L> && is_expr_constant_v<R>,
+                 BinaryExpr<Field3D, L, Constant<R>, bout::op::Pow>>
+pow(const L& lhs, R rhs) {
+  return bout::detail::makePowExpr<Field3D, L, Constant<R>>(
+      static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
+      lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), lhs.getRegionID(),
+      lhs.getMesh()->getRegion("RGN_ALL"), bout::detail::getPerpYIndex(lhs));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_field3d_v<L> && is_expr_constant_v<R>,
+                 BinaryExpr<Field3D, L, Constant<R>, bout::op::Pow>>
+pow(const L& lhs, R rhs, const std::string& rgn) {
+  return bout::detail::makePowExpr<Field3D, L, Constant<R>>(
+      static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
+      lhs.getMesh(), lhs.getLocation(), lhs.getDirections(),
+      bout::detail::getPowRegionID<Field3D>(lhs.getMesh(), rgn),
+      lhs.getMesh()->getRegion(rgn), bout::detail::getPerpYIndex(lhs));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_constant_v<L> && is_expr_field3d_v<R>,
+                 BinaryExpr<Field3D, Constant<L>, R, bout::op::Pow>>
+pow(L lhs, const R& rhs) {
+  return bout::detail::makePowExpr<Field3D, Constant<L>, R>(
+      static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
+      rhs.getMesh(), rhs.getLocation(), rhs.getDirections(), rhs.getRegionID(),
+      rhs.getMesh()->getRegion("RGN_ALL"), bout::detail::getPerpYIndex(rhs));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_constant_v<L> && is_expr_field3d_v<R>,
+                 BinaryExpr<Field3D, Constant<L>, R, bout::op::Pow>>
+pow(L lhs, const R& rhs, const std::string& rgn) {
+  return bout::detail::makePowExpr<Field3D, Constant<L>, R>(
+      static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
+      rhs.getMesh(), rhs.getLocation(), rhs.getDirections(),
+      bout::detail::getPowRegionID<Field3D>(rhs.getMesh(), rgn),
+      rhs.getMesh()->getRegion(rgn), bout::detail::getPerpYIndex(rhs));
 }
 
 /*!
