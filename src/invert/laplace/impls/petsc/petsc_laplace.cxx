@@ -259,6 +259,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
       KSPDestroy(&ksp);
     }
     KSPCreate(comm, &ksp);
+    ksp_initialised = true;
 
     // Configure Linear Solver
 #if PETSC_VERSION_GE(3, 5, 0)
