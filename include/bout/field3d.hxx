@@ -1211,16 +1211,6 @@ struct is_expr_field3d<BinaryExpr<ResT, L, R, Fun>>
     : std::integral_constant<bool, is_expr_field3d<std::decay_t<L>>::value
                                        || is_expr_field3d_v<std::decay_t<R>>> {};
 
-Field3D operator+(const Field2D& lhs, const Field3DParallel& rhs);
-Field3D operator-(const Field2D& lhs, const Field3DParallel& rhs);
-Field3D operator*(const Field2D& lhs, const Field3DParallel& rhs);
-Field3D operator/(const Field2D& lhs, const Field3DParallel& rhs);
-
-Field3D operator+(const Field3DParallel& lhs, const Field2D& rhs);
-Field3D operator-(const Field3DParallel& lhs, const Field2D& rhs);
-Field3D operator*(const Field3DParallel& lhs, const Field2D& rhs);
-Field3D operator/(const Field3DParallel& lhs, const Field2D& rhs);
-
 inline Field3DParallel
 filledFrom(const Field3DParallel& f,
            const std::function<BoutReal(int yoffset, Ind3D index)>& func) {

@@ -13,6 +13,7 @@
 #include <bout/griddata.hxx>
 #include <bout/mesh.hxx>
 #include <bout/mpi_wrapper.hxx>
+#include <bout/paralleltransform.hxx>
 #include <bout/region.hxx>
 #include <bout/sys/range.hxx>
 #include <bout/unused.hxx>
@@ -90,7 +91,7 @@ public:
 
   void setCoordinates(std::shared_ptr<Coordinates> coords,
                       CELL_LOC location = CELL_CENTRE) {
-    coords_map[location] = coords;
+    coords_map[location] = std::move(coords);
   }
 
   void setGridDataSource(GridDataSource* source_in) { source = source_in; }
