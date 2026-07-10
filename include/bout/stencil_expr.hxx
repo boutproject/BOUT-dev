@@ -188,10 +188,122 @@ struct BracketArakawaOp {
   }
 };
 
+struct Delp2_C2_Op {
+  CoordinatesAccessor coords;
+  int ny{0};
+  int nz{0};
+
+  template <typename LView, typename RView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx, const LView& f,
+                                                        const RView&) const {
+    const int ixp = i_xp(idx, ny, nz);
+    const int ixm = i_xm(idx, ny, nz);
+    const int izp = i_zp(idx, nz);
+    const int izm = i_zm(idx, nz);
+
+    const int izpxp = i_xp(izp, ny, nz);
+    const int izpxm = i_xm(izp, ny, nz);
+    const int izmxp = i_xp(izm, ny, nz);
+    const int izmxm = i_xm(izm, ny, nz);
+
+    const BoutReal dx = coords.dx(idx);
+    const BoutReal dz = coords.dz(idx);
+
+    return (coords.G1(idx) + coords.d1_dx(idx) * coords.g11(idx))
+               * (f(ixp) - f(ixm)) / (2.0 * dx)
+           + coords.G3(idx) * (f(izp) - f(izm)) / (2.0 * dz)
+           + coords.g11(idx) * (f(ixp) - 2.0 * f(idx) + f(ixm)) / SQ(dx)
+           + coords.g33(idx) * (f(izp) - 2.0 * f(idx) + f(izm)) / SQ(dz)
+           + 2.0 * coords.g13(idx)
+                 * ((f(izpxp) - f(izpxm)) - (f(izmxp) - f(izmxm)))
+                 / (4.0 * dz * dx);
+  }
+};
+
+struct Delp2_C4_Op {
+  CoordinatesAccessor coords;
+  int ny{0};
+  int nz{0};
+
+  template <typename LView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal ddx(int idx, const LView& f,
+                                                 BoutReal dx) const {
+    const int ixp = i_xp(idx, ny, nz);
+    const int ixm = i_xm(idx, ny, nz);
+    const int ixp2 = i_xp(ixp, ny, nz);
+    const int ixm2 = i_xm(ixm, ny, nz);
+
+    return (-f(ixp2) + 8.0 * f(ixp) - 8.0 * f(ixm) + f(ixm2)) / (12.0 * dx);
+  }
+
+  template <typename LView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal ddz(int idx, const LView& f,
+                                                 BoutReal dz) const {
+    const int izp = i_zp(idx, nz);
+    const int izm = i_zm(idx, nz);
+    const int izp2 = i_zp(izp, nz);
+    const int izm2 = i_zm(izm, nz);
+
+    return (-f(izp2) + 8.0 * f(izp) - 8.0 * f(izm) + f(izm2)) / (12.0 * dz);
+  }
+
+  template <typename LView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal d2dx2(int idx, const LView& f,
+                                                   BoutReal dx) const {
+    const int ixp = i_xp(idx, ny, nz);
+    const int ixm = i_xm(idx, ny, nz);
+    const int ixp2 = i_xp(ixp, ny, nz);
+    const int ixm2 = i_xm(ixm, ny, nz);
+
+    return (-f(ixp2) + 16.0 * f(ixp) - 30.0 * f(idx) + 16.0 * f(ixm) - f(ixm2))
+           / (12.0 * SQ(dx));
+  }
+
+  template <typename LView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal d2dz2(int idx, const LView& f,
+                                                   BoutReal dz) const {
+    const int izp = i_zp(idx, nz);
+    const int izm = i_zm(idx, nz);
+    const int izp2 = i_zp(izp, nz);
+    const int izm2 = i_zm(izm, nz);
+
+    return (-f(izp2) + 16.0 * f(izp) - 30.0 * f(idx) + 16.0 * f(izm) - f(izm2))
+           / (12.0 * SQ(dz));
+  }
+
+  template <typename LView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal d2dxdz(int idx, const LView& f,
+                                                    BoutReal dx, BoutReal dz) const {
+    const int izp = i_zp(idx, nz);
+    const int izm = i_zm(idx, nz);
+    const int izp2 = i_zp(izp, nz);
+    const int izm2 = i_zm(izm, nz);
+
+    return (-ddx(izp2, f, dx) + 8.0 * ddx(izp, f, dx) - 8.0 * ddx(izm, f, dx)
+            + ddx(izm2, f, dx))
+           / (12.0 * dz);
+  }
+
+  template <typename LView, typename RView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx, const LView& f,
+                                                        const RView&) const {
+    const BoutReal dx = coords.dx(idx);
+    const BoutReal dz = coords.dz(idx);
+
+    return (coords.G1(idx) + coords.d1_dx(idx) * coords.g11(idx)) * ddx(idx, f, dx)
+           + coords.G3(idx) * ddz(idx, f, dz)
+           + coords.g11(idx) * d2dx2(idx, f, dx)
+           + coords.g33(idx) * d2dz2(idx, f, dz)
+           + 2.0 * coords.g13(idx) * d2dxdz(idx, f, dx, dz);
+  }
+};
+
 using DDZExprC2 = BinaryExpr<Field3D, Field3D, Field3D, DDZ_C2_Op>;
 using DDZExprC4 = BinaryExpr<Field3D, Field3D, Field3D, DDZ_C4_Op>;
 using DDZDispatchExpr = BinaryExpr<Field3D, Field3D, Field3D, DDZ_Dispatch_Op>;
 using BracketArakawaExpr = BinaryExpr<Field3D, Field3D, Field3D, BracketArakawaOp>;
+using Delp2ExprC2 = BinaryExpr<Field3D, Field3D, Field3D, Delp2_C2_Op>;
+using Delp2ExprC4 = BinaryExpr<Field3D, Field3D, Field3D, Delp2_C4_Op>;
 
 } // namespace bout::stencil
 
@@ -327,6 +439,40 @@ inline bout::stencil::BracketArakawaExpr bracket_arakawa(const Field3D& f,
       static_cast<Field3D::View>(g),
       bout::stencil::BracketArakawaOp{CoordinatesAccessor{f.getCoordinates()}, f.getNy(),
                                       f.getNz()},
+      f.getMesh(),
+      f.getLocation(),
+      f.getDirections(),
+      region_id,
+      f.getMesh()->getRegion("RGN_NOBNDRY")};
+}
+
+inline bout::stencil::Delp2ExprC2 Delp2_C2(const Field3D& f) {
+  checkData(f);
+
+  const auto region_id = f.getMesh()->getRegionID("RGN_NOBNDRY");
+
+  return bout::stencil::Delp2ExprC2{
+      static_cast<Field3D::View>(f),
+      static_cast<Field3D::View>(f),
+      bout::stencil::Delp2_C2_Op{CoordinatesAccessor{f.getCoordinates()}, f.getNy(),
+                                 f.getNz()},
+      f.getMesh(),
+      f.getLocation(),
+      f.getDirections(),
+      region_id,
+      f.getMesh()->getRegion("RGN_NOBNDRY")};
+}
+
+inline bout::stencil::Delp2ExprC4 Delp2_C4(const Field3D& f) {
+  checkData(f);
+
+  const auto region_id = f.getMesh()->getRegionID("RGN_NOBNDRY");
+
+  return bout::stencil::Delp2ExprC4{
+      static_cast<Field3D::View>(f),
+      static_cast<Field3D::View>(f),
+      bout::stencil::Delp2_C4_Op{CoordinatesAccessor{f.getCoordinates()}, f.getNy(),
+                                 f.getNz()},
       f.getMesh(),
       f.getLocation(),
       f.getDirections(),
