@@ -746,14 +746,15 @@ FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const {
 namespace {
 /// Primary declaration of ConvertContainer, for specialization below.
 /// No definition needed unless it is used.
-template <class Container>
+template <class Container, class Enable = void>
 struct ConvertContainer;
 
 /// Visitor to convert an int, BoutReal or Array/Matrix/Tensor to the
 /// appropriate container. Templated on both the container class C
 /// and scalar type Scalar.
 template <template <class> class C, class Scalar>
-struct ConvertContainer<C<Scalar>> {
+struct ConvertContainer<C<Scalar>,
+                        std::enable_if_t<!std::is_same_v<C<Scalar>, Array<Scalar>>>> {
   using Container = C<Scalar>;
   ConvertContainer(std::string error, Container similar_to_)
       : error_message(std::move(error)), similar_to(std::move(similar_to_)) {}
@@ -778,6 +779,46 @@ struct ConvertContainer<C<Scalar>> {
   Container operator()(const C<OtherScalar>& value) {
     Container result(similar_to);
     result.reshape(value.shape()); // Resize to shape of input
+
+    std::transform(std::begin(value), std::end(value), std::begin(result),
+                   [](const OtherScalar& x) { return static_cast<Scalar>(x); });
+    return result;
+  }
+
+  template <class Other>
+  Container operator()([[maybe_unused]] const Other& value) {
+    throw BoutException(error_message);
+  }
+
+private:
+  std::string error_message;
+  Container similar_to;
+};
+
+template <class Scalar, class Backing>
+struct ConvertContainer<Array<Scalar, Backing>, void> {
+  using Container = Array<Scalar, Backing>;
+  ConvertContainer(std::string error, Container similar_to_)
+      : error_message(std::move(error)), similar_to(std::move(similar_to_)) {}
+
+  Container operator()(int value) {
+    Container result(similar_to);
+    std::fill(std::begin(result), std::end(result), static_cast<Scalar>(value));
+    return result;
+  }
+
+  Container operator()(BoutReal value) {
+    Container result(similar_to);
+    std::fill(std::begin(result), std::end(result), static_cast<Scalar>(value));
+    return result;
+  }
+
+  Container operator()(const Container& value) { return value; }
+
+  template <class OtherScalar, class OtherBacking>
+  Container operator()(const Array<OtherScalar, OtherBacking>& value) {
+    Container result(similar_to);
+    result.reallocate(value.size());
 
     std::transform(std::begin(value), std::end(value), std::begin(result),
                    [](const OtherScalar& x) { return static_cast<Scalar>(x); });

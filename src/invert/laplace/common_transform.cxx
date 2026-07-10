@@ -13,7 +13,182 @@
 #include "bout/openmpwrap.hxx"
 #include "bout/utils.hxx"
 
+#if BOUT_HAS_CUDA
+#include <cuComplex.h>
+#include <cuda_runtime.h>
+#include <cufft.h>
+#endif
+
+#if BOUT_HAS_CUDA && __has_include(<nvtx3/nvToolsExt.h>)
+#include <nvtx3/nvToolsExt.h>
+#endif
+
+#include <cstdint>
+#include <algorithm>
 #include <iterator>
+#include <memory>
+
+namespace {
+#if BOUT_HAS_CUDA && __has_include(<nvtx3/nvToolsExt.h>)
+class NvtxRange {
+public:
+  NvtxRange(const char* name, uint32_t argb) {
+    nvtxEventAttributes_t event{};
+    event.version = NVTX_VERSION;
+    event.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+    event.messageType = NVTX_MESSAGE_TYPE_ASCII;
+    event.message.ascii = name;
+    event.colorType = NVTX_COLOR_ARGB;
+    event.color = argb;
+    nvtxRangePushEx(&event);
+  }
+
+  ~NvtxRange() { nvtxRangePop(); }
+
+  NvtxRange(const NvtxRange&) = delete;
+  NvtxRange& operator=(const NvtxRange&) = delete;
+};
+#else
+class NvtxRange {
+public:
+  NvtxRange(const char*, uint32_t) {}
+};
+#endif
+
+#if BOUT_HAS_CUDA
+static_assert(sizeof(dcomplex) == sizeof(cufftDoubleComplex),
+              "dcomplex and cufftDoubleComplex must have the same memory layout");
+
+void checkCuda(cudaError_t status, const char* call) {
+  if (status != cudaSuccess) {
+    throw BoutException("CUDA error in FFTTransform {}: {}", call,
+                        cudaGetErrorString(status));
+  }
+}
+
+void checkCufft(cufftResult status, const char* call) {
+  if (status != CUFFT_SUCCESS) {
+    throw BoutException("cuFFT error in FFTTransform {}: status {}", call,
+                        static_cast<int>(status));
+  }
+}
+
+template <class T>
+class CudaBuffer {
+public:
+  CudaBuffer() = default;
+  ~CudaBuffer() {
+    if (data != nullptr) {
+      cudaFree(data);
+    }
+  }
+
+  CudaBuffer(const CudaBuffer&) = delete;
+  CudaBuffer& operator=(const CudaBuffer&) = delete;
+
+  T* get() { return data; }
+  const T* get() const { return data; }
+
+  void ensure(std::size_t count) {
+    if (count <= capacity) {
+      return;
+    }
+    if (data != nullptr) {
+      cudaFree(data);
+      data = nullptr;
+    }
+    checkCuda(cudaMalloc(&data, count * sizeof(T)), "cudaMalloc");
+    capacity = count;
+  }
+
+private:
+  T* data{nullptr};
+  std::size_t capacity{0};
+};
+
+class CufftPlan {
+public:
+  CufftPlan() = default;
+  ~CufftPlan() {
+    if (plan != 0) {
+      cufftDestroy(plan);
+    }
+  }
+
+  CufftPlan(const CufftPlan&) = delete;
+  CufftPlan& operator=(const CufftPlan&) = delete;
+
+  cufftHandle get() const { return plan; }
+
+  void ensure(int new_nz, int new_batch, cufftType type) {
+    if (plan != 0 && new_nz == nz && new_batch == batch && type == plan_type) {
+      return;
+    }
+    if (plan != 0) {
+      cufftDestroy(plan);
+      plan = 0;
+    }
+
+    int n[] = {new_nz};
+    const int real_dist = new_nz;
+    const int complex_dist = (new_nz / 2) + 1;
+    if (type == CUFFT_D2Z) {
+      checkCufft(cufftPlanMany(&plan, 1, n, nullptr, 1, real_dist, nullptr, 1,
+                               complex_dist, type, new_batch),
+                 "cufftPlanMany D2Z");
+    } else {
+      checkCufft(cufftPlanMany(&plan, 1, n, nullptr, 1, complex_dist, nullptr, 1,
+                               real_dist, type, new_batch),
+                 "cufftPlanMany Z2D");
+    }
+    nz = new_nz;
+    batch = new_batch;
+    plan_type = type;
+  }
+
+private:
+  cufftHandle plan{0};
+  int nz{0};
+  int batch{0};
+  cufftType plan_type{CUFFT_D2Z};
+};
+
+class CufftScratch {
+public:
+  void ensure(int nz, int batch) {
+    const int nmodes = (nz / 2) + 1;
+    const auto real_size = batch * nz;
+    const auto complex_size = batch * nmodes;
+    if (real_size > real_host_size) {
+      real_host.reallocate(real_size);
+      real_host_size = real_size;
+    }
+    if (complex_size > complex_host_size) {
+      complex_host.reallocate(complex_size);
+      complex_host_size = complex_size;
+    }
+    real_device.ensure(static_cast<std::size_t>(real_size));
+    complex_device.ensure(static_cast<std::size_t>(complex_size));
+    forward_plan.ensure(nz, batch, CUFFT_D2Z);
+    backward_plan.ensure(nz, batch, CUFFT_Z2D);
+  }
+
+  Array<BoutReal> real_host;
+  Array<dcomplex> complex_host;
+  CudaBuffer<cufftDoubleReal> real_device;
+  CudaBuffer<cufftDoubleComplex> complex_device;
+  CufftPlan forward_plan;
+  CufftPlan backward_plan;
+  int real_host_size{0};
+  int complex_host_size{0};
+};
+
+CufftScratch& cufftScratch() {
+  static CufftScratch scratch;
+  return scratch;
+}
+#endif
+} // namespace
 
 FFTTransform::FFTTransform(const Mesh& mesh, int nmode, int xs, int xe, int ys, int ye,
                            int zs, int ze, int inbndry, int outbndry,
@@ -30,9 +205,55 @@ auto FFTTransform::forward(const Laplacian& laplacian, const Field3D& rhs,
                            const Field3D& x0, const Field2D& Acoef, const Field2D& C1coef,
                            const Field2D& C2coef,
                            const Field2D& Dcoef) const -> Matrices {
+  NvtxRange forward_range{"Laplace FFTTransform Field3D forward", 0xFFFF6666};
 
   Matrices result(nsys, nx);
 
+#if BOUT_HAS_CUDA
+  {
+    NvtxRange range{"Laplace FFTTransform Field3D forward: cufft rfft", 0xFFFF8844};
+    auto& scratch = cufftScratch();
+    const int nmodes = (nz / 2) + 1;
+    scratch.ensure(nz, nxny);
+
+    for (int ind = 0; ind < nxny; ++ind) {
+      const int ix = xs + (ind / ny);
+      const int iy = ys + (ind % ny);
+      const BoutReal* input =
+          (((ix < inbndry) and inner_boundary_set_on_first_x)
+           || ((localmesh->LocalNx - ix - 1 < outbndry)
+               and outer_boundary_set_on_last_x))
+              ? &(x0(ix, iy, zs))
+              : &(rhs(ix, iy, zs));
+      std::copy(input, input + nz, std::begin(scratch.real_host) + ind * nz);
+    }
+
+    checkCuda(cudaMemcpy(scratch.real_device.get(), std::begin(scratch.real_host),
+                         static_cast<std::size_t>(nxny) * nz * sizeof(BoutReal),
+                         cudaMemcpyHostToDevice),
+              "copy rfft input to device");
+    checkCufft(cufftExecD2Z(scratch.forward_plan.get(), scratch.real_device.get(),
+                            scratch.complex_device.get()),
+               "cufftExecD2Z");
+    checkCuda(cudaMemcpy(reinterpret_cast<cufftDoubleComplex*>(
+                             std::begin(scratch.complex_host)),
+                         scratch.complex_device.get(),
+                         static_cast<std::size_t>(nxny) * nmodes
+                             * sizeof(cufftDoubleComplex),
+                         cudaMemcpyDeviceToHost),
+              "copy rfft output to host");
+
+    const BoutReal fac = 1.0 / nz;
+    for (int ind = 0; ind < nxny; ++ind) {
+      const int ix = xs + (ind / ny);
+      const int iy = ys + (ind % ny);
+      for (int kz = 0; kz < nmode; kz++) {
+        result.bcmplx(((iy - ys) * nmode) + kz, ix - xs) =
+            scratch.complex_host[ind * nmodes + kz] * fac;
+      }
+    }
+  }
+#else
   BOUT_OMP_PERF(parallel)
   {
     /// Create a local thread-scope working array
@@ -41,39 +262,50 @@ auto FFTTransform::forward(const Laplacian& laplacian, const Field3D& rhs,
 
     // Loop over X and Y indices, including boundaries but not guard cells
     // (unless periodic in x)
-    BOUT_OMP_PERF(for)
-    for (int ind = 0; ind < nxny; ++ind) {
-      const int ix = xs + (ind / ny);
-      const int iy = ys + (ind % ny);
+    {
+      NvtxRange range{"Laplace FFTTransform Field3D forward: rfft", 0xFFFF8888};
+      BOUT_OMP_PERF(for)
+      for (int ind = 0; ind < nxny; ++ind) {
+        const int ix = xs + (ind / ny);
+        const int iy = ys + (ind % ny);
 
-      // Take FFT in Z direction, apply shift, and put result in k1d
+        // Take FFT in Z direction, apply shift, and put result in k1d
 
-      if (((ix < inbndry) and inner_boundary_set_on_first_x)
-          || ((localmesh->LocalNx - ix - 1 < outbndry)
-              and outer_boundary_set_on_last_x)) {
-        // Use the values in x0 in the boundary
-        rfft(&(x0(ix, iy, zs)), nz, std::begin(k1d));
-      } else {
-        rfft(&(rhs(ix, iy, zs)), nz, std::begin(k1d));
-      }
+        if (((ix < inbndry) and inner_boundary_set_on_first_x)
+            || ((localmesh->LocalNx - ix - 1 < outbndry)
+                and outer_boundary_set_on_last_x)) {
+          // Use the values in x0 in the boundary
+          rfft(&(x0(ix, iy, zs)), nz, std::begin(k1d));
+        } else {
+          rfft(&(rhs(ix, iy, zs)), nz, std::begin(k1d));
+        }
 
-      // Copy into array, transposing so kz is first index
-      for (int kz = 0; kz < nmode; kz++) {
-        result.bcmplx(((iy - ys) * nmode) + kz, ix - xs) = k1d[kz];
+        // Copy into array, transposing so kz is first index
+        for (int kz = 0; kz < nmode; kz++) {
+          result.bcmplx(((iy - ys) * nmode) + kz, ix - xs) = k1d[kz];
+        }
       }
     }
+  }
+#endif
 
     // Get elements of the tridiagonal matrix
     // including boundary conditions
-    BOUT_OMP_PERF(for nowait)
-    for (int ind = 0; ind < nsys; ind++) {
-      const int iy = ys + (ind / nmode);
-      const int kz = ind % nmode;
+  BOUT_OMP_PERF(parallel)
+  {
+    {
+      NvtxRange range{"Laplace FFTTransform Field3D forward: tridag matrices",
+                      0xFFFFAAAA};
+      BOUT_OMP_PERF(for nowait)
+      for (int ind = 0; ind < nsys; ind++) {
+        const int iy = ys + (ind / nmode);
+        const int kz = ind % nmode;
 
-      const BoutReal kwave = kz * 2.0 * PI / zlength; // wave number is 1/[rad]
-      laplacian.tridagMatrix(&result.a(ind, 0), &result.b(ind, 0), &result.c(ind, 0),
-                             &result.bcmplx(ind, 0), iy, kz, kwave, &Acoef, &C1coef,
-                             &C2coef, &Dcoef, false);
+        const BoutReal kwave = kz * 2.0 * PI / zlength; // wave number is 1/[rad]
+        laplacian.tridagMatrix(&result.a(ind, 0), &result.b(ind, 0),
+                               &result.c(ind, 0), &result.bcmplx(ind, 0), iy, kz,
+                               kwave, &Acoef, &C1coef, &C2coef, &Dcoef, false);
+      }
     }
   }
   return result;
@@ -81,8 +313,54 @@ auto FFTTransform::forward(const Laplacian& laplacian, const Field3D& rhs,
 
 auto FFTTransform::backward(const Field3D& rhs,
                             const Matrix<dcomplex>& xcmplx3D) const -> Field3D {
+  NvtxRange backward_range{"Laplace FFTTransform Field3D backward", 0xFFFFEEEE};
   Field3D x{emptyFrom(rhs)};
 
+#if BOUT_HAS_CUDA
+  {
+    NvtxRange range{"Laplace FFTTransform Field3D backward: cufft irfft", 0xFFFFFF88};
+    auto& scratch = cufftScratch();
+    const int nmodes = (nz / 2) + 1;
+    scratch.ensure(nz, nxny);
+
+    std::fill(std::begin(scratch.complex_host), std::end(scratch.complex_host),
+              dcomplex{0.0, 0.0});
+    for (int ind = 0; ind < nxny; ++ind) {
+      const int ix = xs + (ind / ny);
+      const int iy = ys + (ind % ny);
+
+      if (zero_DC) {
+        scratch.complex_host[ind * nmodes] = 0.0;
+      }
+      for (int kz = static_cast<int>(zero_DC); kz < nmode; kz++) {
+        scratch.complex_host[ind * nmodes + kz] =
+            xcmplx3D(((iy - ys) * nmode) + kz, ix - xs);
+      }
+    }
+
+    checkCuda(cudaMemcpy(scratch.complex_device.get(),
+                         reinterpret_cast<cufftDoubleComplex*>(
+                             std::begin(scratch.complex_host)),
+                         static_cast<std::size_t>(nxny) * nmodes
+                             * sizeof(cufftDoubleComplex),
+                         cudaMemcpyHostToDevice),
+              "copy irfft input to device");
+    checkCufft(cufftExecZ2D(scratch.backward_plan.get(), scratch.complex_device.get(),
+                            scratch.real_device.get()),
+               "cufftExecZ2D");
+    checkCuda(cudaMemcpy(std::begin(scratch.real_host), scratch.real_device.get(),
+                         static_cast<std::size_t>(nxny) * nz * sizeof(BoutReal),
+                         cudaMemcpyDeviceToHost),
+              "copy irfft output to host");
+
+    for (int ind = 0; ind < nxny; ++ind) {
+      const int ix = xs + (ind / ny);
+      const int iy = ys + (ind % ny);
+      std::copy(std::begin(scratch.real_host) + ind * nz,
+                std::begin(scratch.real_host) + (ind + 1) * nz, &(x(ix, iy, zs)));
+    }
+  }
+#else
   // FFT back to real space
   BOUT_OMP_PERF(parallel)
   {
@@ -90,26 +368,30 @@ auto FFTTransform::backward(const Field3D& rhs,
     // ZFFT routine expects input of this length
     auto k1d = Array<dcomplex>((nz / 2) + 1);
 
-    BOUT_OMP_PERF(for nowait)
-    for (int ind = 0; ind < nxny; ++ind) { // Loop over X and Y
-      const int ix = xs + (ind / ny);
-      const int iy = ys + (ind % ny);
+    {
+      NvtxRange range{"Laplace FFTTransform Field3D backward: irfft", 0xFFFFFFFF};
+      BOUT_OMP_PERF(for nowait)
+      for (int ind = 0; ind < nxny; ++ind) { // Loop over X and Y
+        const int ix = xs + (ind / ny);
+        const int iy = ys + (ind % ny);
 
-      if (zero_DC) {
-        k1d[0] = 0.;
+        if (zero_DC) {
+          k1d[0] = 0.;
+        }
+
+        for (int kz = static_cast<int>(zero_DC); kz < nmode; kz++) {
+          k1d[kz] = xcmplx3D(((iy - ys) * nmode) + kz, ix - xs);
+        }
+
+        for (int kz = nmode; kz < (nz / 2) + 1; kz++) {
+          k1d[kz] = 0.0; // Filtering out all higher harmonics
+        }
+
+        irfft(std::begin(k1d), nz, &(x(ix, iy, zs)));
       }
-
-      for (int kz = static_cast<int>(zero_DC); kz < nmode; kz++) {
-        k1d[kz] = xcmplx3D(((iy - ys) * nmode) + kz, ix - xs);
-      }
-
-      for (int kz = nmode; kz < (nz / 2) + 1; kz++) {
-        k1d[kz] = 0.0; // Filtering out all higher harmonics
-      }
-
-      irfft(std::begin(k1d), nz, &(x(ix, iy, zs)));
     }
   }
+#endif
 
   return x;
 }

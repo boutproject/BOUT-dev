@@ -47,6 +47,10 @@
 
 #include "fmt/format.h"
 
+#if BOUT_HAS_CUDA && __has_include(<nvtx3/nvToolsExt.h>)
+#include <nvtx3/nvToolsExt.h>
+#endif
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -58,6 +62,32 @@ void solver_gloc(integer N, BoutReal t, BoutReal* u, BoutReal* udot, void* f_dat
 void solver_cfn(integer N, BoutReal t, N_Vector u, void* f_data);
 
 namespace {
+#if BOUT_HAS_CUDA && __has_include(<nvtx3/nvToolsExt.h>)
+class NvtxRange {
+public:
+  NvtxRange(const char* name, uint32_t argb) {
+    nvtxEventAttributes_t event{};
+    event.version = NVTX_VERSION;
+    event.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+    event.colorType = NVTX_COLOR_ARGB;
+    event.color = argb;
+    event.messageType = NVTX_MESSAGE_TYPE_ASCII;
+    event.message.ascii = name;
+    nvtxRangePushEx(&event);
+  }
+
+  ~NvtxRange() { nvtxRangePop(); }
+
+  NvtxRange(const NvtxRange&) = delete;
+  NvtxRange& operator=(const NvtxRange&) = delete;
+};
+#else
+class NvtxRange {
+public:
+  NvtxRange(const char*, uint32_t) {}
+};
+#endif
+
 // local only
 void pvode_load_data_f3d(const std::vector<bool>& evolve_bndrys,
                          std::vector<Field3D>& ffs, const BoutReal* udata) {
@@ -289,12 +319,14 @@ int PvodeSolver::init() {
  **************************************************************************/
 
 int PvodeSolver::run() {
+  NvtxRange range{"PVODE run output loop", 0xFF0F766E};
 
   if (!pvode_initialised) {
     throw BoutException("PvodeSolver not initialised\n");
   }
 
   for (int i = 1; i <= getNumberOutputSteps(); i++) {
+    NvtxRange output_step_range{"PVODE output step", 0xFF14B8A6};
 
     /// Run the solver for one output timestep
     simtime = run(simtime + getOutputTimestep());
@@ -319,6 +351,7 @@ int PvodeSolver::run() {
 }
 
 BoutReal PvodeSolver::run(BoutReal tout) {
+  NvtxRange range{"PVODE run(tout)", 0xFF134E4A};
   TRACE("Running solver: solver::run({})", tout);
 
   BoutReal* udata;
@@ -330,6 +363,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
   int flag;
   if (!monitor_timestep) {
     // Run in normal mode
+    NvtxRange cvode_range{"PVODE CVode advance", 0xFF0D9488};
     flag = CVode(cvode_mem, tout, u, &simtime, NORMAL);
   } else {
     // Run in single step mode, to call timestep monitors
@@ -337,6 +371,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
     //CvodeGetCurrentTime(cvode_mem, &internal_time);
 
     while (internal_time < tout) {
+      NvtxRange cvode_step_range{"PVODE CVode one step", 0xFF0D9488};
       // Run another step
       BoutReal last_time = internal_time;
       flag = CVode(cvode_mem, tout, u, &internal_time, ONE_STEP);
@@ -355,10 +390,16 @@ BoutReal PvodeSolver::run(BoutReal tout) {
   }
 
   // Copy variables
-  load_vars(udata);
+  {
+    NvtxRange load_range{"PVODE load output variables", 0xFF99F6E4};
+    load_vars(udata);
+  }
 
   // Call rhs function to get extra variables at this time
-  run_rhs(simtime);
+  {
+    NvtxRange rhs_range{"PVODE output-time RHS refresh", 0xFF5EEAD4};
+    run_rhs(simtime);
+  }
 
   // Check return flag
   if (flag != SUCCESS) {
@@ -411,35 +452,55 @@ BoutReal PvodeSolver::run(BoutReal tout) {
 
 void PvodeSolver::rhs([[maybe_unused]] int N, BoutReal t, BoutReal* udata,
                       BoutReal* dudata) {
+  NvtxRange range{"PVODE RHS callback", 0xFF2563EB};
   TRACE("Running RHS: PvodeSolver::rhs({})", t);
 
   // Get current timestep
   hcur = 0.0; //((CVodeMemRec*) cvode_mem)->cv_h;
 
   // Load state from CVODE
-  load_vars(udata);
+  {
+    NvtxRange load_range{"PVODE RHS load_vars", 0xFF93C5FD};
+    load_vars(udata);
+  }
 
   // Call function
-  run_rhs(t);
+  {
+    NvtxRange rhs_range{"PVODE RHS run_rhs", 0xFF60A5FA};
+    run_rhs(t);
+  }
 
   // Save derivatives to CVODE
-  save_derivs(dudata);
+  {
+    NvtxRange save_range{"PVODE RHS save_derivs", 0xFFBFDBFE};
+    save_derivs(dudata);
+  }
 }
 
 void PvodeSolver::gloc([[maybe_unused]] int N, BoutReal t, BoutReal* udata,
                        BoutReal* dudata) {
+  NvtxRange range{"PVODE preconditioner gloc callback", 0xFFA855F7};
   TRACE("Running RHS: PvodeSolver::gloc({})", t);
 
   Timer timer("rhs");
 
   // Load state from CVODE
-  load_vars(udata);
+  {
+    NvtxRange load_range{"PVODE gloc load_vars", 0xFFD8B4FE};
+    load_vars(udata);
+  }
 
   // Call function
-  run_rhs(t);
+  {
+    NvtxRange rhs_range{"PVODE gloc run_rhs", 0xFFC084FC};
+    run_rhs(t);
+  }
 
   // Save derivatives to CVODE
-  save_derivs(dudata);
+  {
+    NvtxRange save_range{"PVODE gloc save_derivs", 0xFFE9D5FF};
+    save_derivs(dudata);
+  }
 }
 
 /**************************************************************************

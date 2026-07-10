@@ -26,6 +26,7 @@ if(BOUT_HAS_CUDA)
   # compile features, set for the bout++ target.
   set_source_files_properties(${BOUT_SOURCES_CXX} PROPERTIES LANGUAGE CUDA)
   find_package(CUDAToolkit)
+  target_link_libraries(bout++ PUBLIC CUDA::cufft CUDA::cusparse)
   set_target_properties(bout++ PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
   set_target_properties(bout++ PROPERTIES POSITION_INDEPENDENT_CODE ON)
   set_target_properties(bout++ PROPERTIES LINKER_LANGUAGE CUDA)

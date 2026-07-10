@@ -29,8 +29,13 @@
  **************************************************************************/
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
+#include "bout/build_defines.hxx"
 #include <bout/physicsmodel.hxx>
 #undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
+
+#if BOUT_HAS_CUDA && __has_include(<nvtx3/nvToolsExt.h>)
+#include <nvtx3/nvToolsExt.h>
+#endif
 
 #include "bout/version.hxx"
 #include <bout/mesh.hxx>
@@ -44,6 +49,34 @@
 #include <cstddef>
 #include <string>
 using namespace std::literals;
+
+namespace {
+#if BOUT_HAS_CUDA && __has_include(<nvtx3/nvToolsExt.h>)
+class NvtxRange {
+public:
+  NvtxRange(const char* name, uint32_t argb) {
+    nvtxEventAttributes_t event{};
+    event.version = NVTX_VERSION;
+    event.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+    event.colorType = NVTX_COLOR_ARGB;
+    event.color = argb;
+    event.messageType = NVTX_MESSAGE_TYPE_ASCII;
+    event.message.ascii = name;
+    nvtxRangePushEx(&event);
+  }
+
+  ~NvtxRange() { nvtxRangePop(); }
+
+  NvtxRange(const NvtxRange&) = delete;
+  NvtxRange& operator=(const NvtxRange&) = delete;
+};
+#else
+class NvtxRange {
+public:
+  NvtxRange(const char*, uint32_t) {}
+};
+#endif
+} // namespace
 
 namespace bout {
 void DataFileFacade::add(ValueType value, const std::string& name, bool save_repeat) {
@@ -115,15 +148,20 @@ void PhysicsModel::initialise(Solver* s) {
   }
 }
 
-int PhysicsModel::runRHS(BoutReal time, bool linear) { return rhs(time, linear); }
+int PhysicsModel::runRHS(BoutReal time, bool linear) {
+  NvtxRange range{"PhysicsModel::runRHS", 0xFF5B8DEF};
+  return rhs(time, linear);
+}
 
 bool PhysicsModel::splitOperator() { return splitop; }
 
 int PhysicsModel::runConvective(BoutReal time, bool linear) {
+  NvtxRange range{"PhysicsModel::runConvective", 0xFF2CB1BC};
   return convective(time, linear);
 }
 
 int PhysicsModel::runDiffusive(BoutReal time, bool linear) {
+  NvtxRange range{"PhysicsModel::runDiffusive", 0xFF8B5CF6};
   return diffusive(time, linear);
 }
 

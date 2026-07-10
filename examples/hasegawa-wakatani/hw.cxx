@@ -1,9 +1,42 @@
 
+#include <bout/build_defines.hxx>
 #include <bout/derivs.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/physicsmodel.hxx>
 #include <bout/smoothing.hxx>
 #include <bout/stencil_expr.hxx>
+
+#if BOUT_HAS_CUDA && __has_include(<nvtx3/nvToolsExt.h>)
+#include <nvtx3/nvToolsExt.h>
+#endif
+
+namespace {
+#if BOUT_HAS_CUDA && __has_include(<nvtx3/nvToolsExt.h>)
+class NvtxRange {
+public:
+  NvtxRange(const char* name, uint32_t argb) {
+    nvtxEventAttributes_t event{};
+    event.version = NVTX_VERSION;
+    event.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+    event.messageType = NVTX_MESSAGE_TYPE_ASCII;
+    event.message.ascii = name;
+    event.colorType = NVTX_COLOR_ARGB;
+    event.color = argb;
+    nvtxRangePushEx(&event);
+  }
+
+  ~NvtxRange() { nvtxRangePop(); }
+
+  NvtxRange(const NvtxRange&) = delete;
+  NvtxRange& operator=(const NvtxRange&) = delete;
+};
+#else
+class NvtxRange {
+public:
+  NvtxRange(const char*, uint32_t) {}
+};
+#endif
+} // namespace
 
 class HW : public PhysicsModel {
 private:
@@ -25,10 +58,22 @@ private:
   // Simple implementation of 4th order perpendicular Laplacian
   Field3D Delp4(const Field3D& var) {
     Field3D tmp;
-    tmp = Delp2(var);
-    mesh->communicate(tmp);
-    tmp.applyBoundary("neumann");
-    return Delp2(tmp);
+    {
+      NvtxRange range{"HW Delp4: first Delp2_C2", 0xFF66CCFF};
+      tmp = Delp2_C2(var);
+    }
+    {
+      NvtxRange range{"HW Delp4: communicate tmp", 0xFF6699CC};
+      mesh->communicate(tmp);
+    }
+    {
+      NvtxRange range{"HW Delp4: apply neumann boundary", 0xFF336699};
+      tmp.applyBoundary("neumann");
+    }
+    {
+      NvtxRange range{"HW Delp4: second Delp2_C2", 0xFF003366};
+      return Delp2_C2(tmp);
+    }
   }
 
 protected:
@@ -95,34 +140,58 @@ protected:
   int convective(BoutReal UNUSED(time)) override {
     // Non-stiff, convective part of the problem
 
-    // Solve for potential
-    phi = phiSolver->solve(vort, phi);
-
-    // Communicate variables
-    mesh->communicate(n, vort, phi);
-
-    // Modified H-W equations, with zonal component subtracted from resistive coupling term
-    Field3D nonzonal_n = n;
-    Field3D nonzonal_phi = phi;
-    if (modified) {
-      // Subtract average in Y and Z
-      nonzonal_n -= averageY(DC(n));
-      nonzonal_phi -= averageY(DC(phi));
+    {
+      NvtxRange range{"HW convective: Laplacian solve vort -> phi", 0xFFFF3333};
+      phi = phiSolver->solve(vort, phi);
     }
 
-    ddt(n) =
-        -bracket_arakawa(phi, n) + alpha * (nonzonal_phi - nonzonal_n) - kappa * DDZ(phi);
+    {
+      NvtxRange range{"HW convective: communicate n/vort/phi", 0xFFFF7733};
+      mesh->communicate(n, vort, phi);
+    }
 
-    ddt(vort) = -bracket_arakawa(phi, vort) + alpha * (nonzonal_phi - nonzonal_n);
+    // Modified H-W equations, with zonal component subtracted from resistive coupling term
+    Field3D nonzonal_n;
+    Field3D nonzonal_phi;
+    {
+      NvtxRange range{"HW convective: build nonzonal fields", 0xFFFFCC33};
+      nonzonal_n = n;
+      nonzonal_phi = phi;
+      if (modified) {
+        // Subtract average in Y and Z
+        nonzonal_n -= averageY(DC(n));
+        nonzonal_phi -= averageY(DC(phi));
+      }
+    }
+
+    {
+      NvtxRange range{"HW ddt(n): bracket_arakawa + alpha coupling + DDZ", 0xFF00FFFF};
+      ddt(n) = -bracket_arakawa(phi, n) + alpha * (nonzonal_phi - nonzonal_n)
+               - kappa * DDZ(phi);
+    }
+
+    {
+      NvtxRange range{"HW ddt(vort): bracket_arakawa + alpha coupling", 0xFFFFAA00};
+      ddt(vort) = -bracket_arakawa(phi, vort) + alpha * (nonzonal_phi - nonzonal_n);
+    }
 
     return 0;
   }
 
   int diffusive(BoutReal UNUSED(time)) override {
     // Diffusive terms
-    mesh->communicate(n, vort);
-    ddt(n) = -Dn * Delp4(n);
-    ddt(vort) = -Dvort * Delp4(vort);
+    {
+      NvtxRange range{"HW diffusive: communicate n/vort", 0xFFAA66FF};
+      mesh->communicate(n, vort);
+    }
+    {
+      NvtxRange range{"HW diffusive: ddt(n) Delp4", 0xFF8844CC};
+      ddt(n) = -Dn * Delp4(n);
+    }
+    {
+      NvtxRange range{"HW diffusive: ddt(vort) Delp4", 0xFF662299};
+      ddt(vort) = -Dvort * Delp4(vort);
+    }
     return 0;
   }
 };
