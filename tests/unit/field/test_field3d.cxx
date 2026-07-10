@@ -1967,7 +1967,7 @@ TEST_F(Field3DTest, SQExpressionUsesSquareOp) {
   EXPECT_TRUE(IsFieldEqual(SQ(expr), 9.0));
 }
 
-TEST_F(Field3DTest, SQField3DParallelPreservesParallelSlices) {
+TEST_F(Field3DTest, SQField3DParallelNoFCIDropsParallelSlices) {
   Field3DParallel field;
 
   field = 2.0;
@@ -1983,10 +1983,9 @@ TEST_F(Field3DTest, SQField3DParallelPreservesParallelSlices) {
 
   Field3DParallel result{squared};
 
+  // Not FCI so parallel slices are not calculated
   EXPECT_FALSE(result.hasParallelSlices());
   EXPECT_TRUE(IsFieldEqual(result, 4.0));
-  EXPECT_TRUE(IsFieldEqual(result.yup(), 9.0));
-  EXPECT_TRUE(IsFieldEqual(result.ydown(), 16.0));
 }
 
 TEST_F(Field3DTest, Field3DParallelArithmeticReturnsLazyExpr) {
