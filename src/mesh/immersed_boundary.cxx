@@ -15,14 +15,18 @@ ImmersedBoundary::ImmersedBoundary() {
   ASSERT0(mesh->get(bndry_mask,     "in_mask") == 0);
   ASSERT0(mesh->get(ghost_ids,     "ghost_id") == 0);
   ASSERT0(mesh->get(num_ghosts,          "ng") == 0);
-  ASSERT0(mesh->get(num_weights,         "nw") == 0);
+  ASSERT0(mesh->get(num_weights,            "nw") == 0);
+  ASSERT0(mesh->get(ghost_use_bc, "ghost_use_bc") == 0);
+  ASSERT0(mesh->get(ghost_use_gs, "ghost_use_gs") == 0);
+  ASSERT0(mesh->get(weights_dir,   "weights_dir") == 0);
+  ASSERT0(mesh->get(weights_neu,   "weights_neu") == 0);
   ASSERT0(mesh->get(image_inds,  "image_inds") == 0);
   ASSERT0(mesh->get(image_points, "image_pts") == 0);
   ASSERT0(mesh->get(bndry_points, "bndry_pts") == 0);
   ASSERT0(mesh->get(normals,        "normals") == 0);
   ASSERT0(mesh->get(norm_dist,    "norm_dist") == 0);
-  ASSERT0(mesh->get(is_plasma,    "is_plasma") == 0);
-  ASSERT0(mesh->get(weights,        "weights") == 0);
+  //ASSERT0(mesh->get(is_plasma,    "is_plasma") == 0);
+  //ASSERT0(mesh->get(weights,        "weights") == 0);
   ASSERT0(mesh->get(R3,                   "R") == 0);
   ASSERT0(mesh->get(Z3,                   "Z") == 0);
   ASSERT0(mesh->get(bound_ids,     "bound_id") == 0);
@@ -34,24 +38,29 @@ ImmersedBoundary::ImmersedBoundary() {
   ASSERT0(mesh->get(s2,                  "s2") == 0);
   ASSERT0(mesh->get(bweights,      "bweights") == 0);
   ASSERT0(mesh->get(bbase_inds,   "base_inds") == 0);
+  ASSERT0(mesh->get(bound_counts,  "bound_count") == 0);
+  ASSERT0(mesh->get(x_face_frac,    "face_fac_x") == 0);
+  ASSERT0(mesh->get(z_face_frac,    "face_fac_z") == 0);
+  ASSERT0(mesh->get(fx_grad_offset, "fx_grad_offset") == 0);
+  ASSERT0(mesh->get(fz_grad_offset, "fz_grad_offset") == 0);
 
   if (num_weights <= 0 or num_ghosts <= 0 or num_bounds <= 0) {
     throw BoutException("Invalid number of ghost cells or weights or cut cells.");
   }
 
   //Set useful flags for info about image nodes being plasma cells or not.
-  all_plasma.reallocate(num_ghosts);
-  ghost_count.reallocate(num_ghosts);
-  for (size_t i = 0; i < num_ghosts; ++i) {
-    bool is_all_plasma = true; //Assume true by default.
-    ghost_count[i] = num_weights;
-    for (size_t j = 0; j < num_weights; ++j) {
-      const auto is_plasma_node = static_cast<bool>(is_plasma(i,j));
-      is_all_plasma &= is_plasma_node;
-      ghost_count[i] -= is_plasma_node;
-    }
-    all_plasma[i] = is_all_plasma;
-  }
+  // all_plasma.reallocate(num_ghosts);
+  // ghost_count.reallocate(num_ghosts);
+  // for (size_t i = 0; i < num_ghosts; ++i) {
+  //   bool is_all_plasma = true; //Assume true by default.
+  //   ghost_count[i] = num_weights;
+  //   for (size_t j = 0; j < num_weights; ++j) {
+  //     const auto is_plasma_node = static_cast<bool>(is_plasma(i,j));
+  //     is_all_plasma &= is_plasma_node;
+  //     ghost_count[i] -= is_plasma_node;
+  //   }
+  //   all_plasma[i] = is_all_plasma;
+  // }
 
   //Set up new boundary and plasma regions.
   Region<Ind3D>::RegionIndices xbndry_indices;
@@ -218,6 +227,78 @@ void ImmersedBoundary::FloorField(Field3D& f, const float val) const {
   }
 }
 
+// //IB_TODO: Interpolate dfdn from dfdn at segment endpoints (bdy/cell intersections).
+// //IB_TODO: Also need fb and a at boundary approximation.
+// void ImmersedBoundary::ComputeBoundaryFluxes(const Field3D& a, const Field3D& f, Field3D& result) const {
+//   //Get bc info from field first.
+//   const auto bc_type = bc_map.at(f.name).first;
+//   const auto bc_val  = bc_map.at(f.name).second;
+
+//   //Loop over cut-cells w/ centers in plasma and calculate flux through wall boundary.
+//   BOUT_FOR(i, f.getRegion("RGN_NO_IMM_BNDRY_CUT")) {
+//     const auto b = bound_ids[i];
+
+//     BoutReal dfdn = 0.0;
+//     if (bc_type == BoundCond::NEUMANN) {
+//       dfdn = bc_val; //Note, using outward normal derivative here.
+//     } else if (bc_type == BoundCond::DIRICHLET) {
+//       //Perform bilinear interpolation for points along the boundary normal, and 
+//       //calculate normal derivative at boundary.
+//       const int ai0_global = static_cast<int>(bbase_inds(b, 0));
+//       const int aj0 = static_cast<int>(bbase_inds(b, 1));
+//       const int bi0_global = static_cast<int>(bbase_inds(b, 2));
+//       const int bj0 = static_cast<int>(bbase_inds(b, 3));
+
+//       const int ai0 = mesh->getLocalXIndex(ai0_global);
+//       const int bi0 = mesh->getLocalXIndex(bi0_global);
+
+//       const BoutReal wA00 = bweights(b, 0);
+//       const BoutReal wA01 = bweights(b, 1);
+//       const BoutReal wA10 = bweights(b, 2);
+//       const BoutReal wA11 = bweights(b, 3);
+
+//       const BoutReal wB00 = bweights(b, 4);
+//       const BoutReal wB01 = bweights(b, 5);
+//       const BoutReal wB10 = bweights(b, 6);
+//       const BoutReal wB11 = bweights(b, 7);
+
+//       // Bilinear interpolation using the correct local stencil
+//       const BoutReal fA = wA00*f(ai0,1,aj0) + wA01*f(ai0,1,aj0+1) + wA10*f(ai0+1,1,aj0) + wA11*f(ai0+1,1,aj0+1);
+//       const BoutReal fB = wB00*f(bi0,1,bj0) + wB01*f(bi0,1,bj0+1) + wB10*f(bi0+1,1,bj0) + wB11*f(bi0+1,1,bj0+1);
+
+//       // Boundary value and one-sided derivative from J&C '98.
+//       const BoutReal fb = bc_val;
+
+//       const BoutReal term1 = (s2/s1) * (fb - fA);
+//       const BoutReal term2 = (s1/s2) * (fb - fB);
+
+//       dfdn = (term1 - term2) / (s2 - s1);
+//     } else {
+//        throw BoutException(bc_exception);
+//     }
+
+//     //Flux assumes normal is outward for dfdn.
+//     const auto bdy_flux = -a[i] * bd_area[b] * dfdn;
+//     result[i] -= bdy_flux;
+//   }
+// }
+
+float ImmersedBoundary::xFaceFrac(const Ind3D& ind) const {
+  return x_face_frac[ind];
+}
+
+float ImmersedBoundary::zFaceFrac(const Ind3D& ind) const {
+  return z_face_frac[ind];
+}
+
+int ImmersedBoundary::xFaceGradOffset(const Ind3D& ind) const {
+  return get_as<int>(fx_grad_offset[ind]);
+}
+
+int ImmersedBoundary::zFaceGradOffset(const Ind3D& ind) const {
+  return get_as<int>(fz_grad_offset[ind]);
+}
+
 //IB_TODO: Interpolate dfdn from dfdn at segment endpoints (bdy/cell intersections).
 //IB_TODO: Also need fb and a at boundary approximation.
 void ImmersedBoundary::ComputeBoundaryFluxes(const Field3D& a, const Field3D& f, Field3D& result) const {
@@ -227,127 +308,169 @@ void ImmersedBoundary::ComputeBoundaryFluxes(const Field3D& a, const Field3D& f,
 
   //Loop over cut-cells w/ centers in plasma and calculate flux through wall boundary.
   BOUT_FOR(i, f.getRegion("RGN_NO_IMM_BNDRY_CUT")) {
-    const auto b = bound_ids[i];
-
-    BoutReal dfdn = 0.0;
-    if (bc_type == BoundCond::NEUMANN) {
-      dfdn = bc_val; //Note, using outward normal derivative here.
-    } else if (bc_type == BoundCond::DIRICHLET) {
-      //Perform bilinear interpolation for points along the boundary normal, and 
-      //calculate normal derivative at boundary.
-      const int ai0_global = static_cast<int>(bbase_inds(b, 0));
-      const int aj0 = static_cast<int>(bbase_inds(b, 1));
-      const int bi0_global = static_cast<int>(bbase_inds(b, 2));
-      const int bj0 = static_cast<int>(bbase_inds(b, 3));
-
-      const int ai0 = mesh->getLocalXIndex(ai0_global);
-      const int bi0 = mesh->getLocalXIndex(bi0_global);
-
-      const BoutReal wA00 = bweights(b, 0);
-      const BoutReal wA01 = bweights(b, 1);
-      const BoutReal wA10 = bweights(b, 2);
-      const BoutReal wA11 = bweights(b, 3);
-
-      const BoutReal wB00 = bweights(b, 4);
-      const BoutReal wB01 = bweights(b, 5);
-      const BoutReal wB10 = bweights(b, 6);
-      const BoutReal wB11 = bweights(b, 7);
-
-      // Bilinear interpolation using the correct local stencil
-      const BoutReal fA = wA00*f(ai0,1,aj0) + wA01*f(ai0,1,aj0+1) + wA10*f(ai0+1,1,aj0) + wA11*f(ai0+1,1,aj0+1);
-      const BoutReal fB = wB00*f(bi0,1,bj0) + wB01*f(bi0,1,bj0+1) + wB10*f(bi0+1,1,bj0) + wB11*f(bi0+1,1,bj0+1);
-
-      // Boundary value and one-sided derivative from J&C '98.
-      const BoutReal fb = bc_val;
-
-      const BoutReal term1 = (s2/s1) * (fb - fA);
-      const BoutReal term2 = (s1/s2) * (fb - fB);
-
-      dfdn = (term1 - term2) / (s2 - s1);
-    } else {
-       throw BoutException(bc_exception);
+    const int first_bid = get_as<int>(bound_ids[i]);
+    const int bound_count = get_as<int>(bound_counts[i]);
+    if (first_bid < 0 || bound_count <= 0 || first_bid + bound_count > num_bounds) {
+      throw BoutException("Invalid cut-cell boundary metadata.");
     }
 
-    //Flux assumes normal is outward for dfdn.
-    const auto bdy_flux = -a[i] * bd_area[b] * dfdn;
-    result[i] -= bdy_flux;
+    for (int n = 0; n < bound_count; ++n) {
+      const int b = first_bid + n;
+
+      BoutReal dfdn = 0.0;
+      if (bc_type == BoundCond::NEUMANN) {
+        dfdn = bc_val; //Note, using outward normal derivative here.
+      } else if (bc_type == BoundCond::DIRICHLET) {
+        //Perform bilinear interpolation for points along the boundary normal, and 
+        //calculate normal derivative at boundary.
+        const int ai0_global = GetGridInd(bbase_inds(b, 0));
+        const int aj0 = GetGridInd(bbase_inds(b, 1));
+        const int bi0_global = GetGridInd(bbase_inds(b, 2));
+        const int bj0 = GetGridInd(bbase_inds(b, 3));
+
+        const int ai0 = mesh->getLocalXIndex(ai0_global);
+        const int bi0 = mesh->getLocalXIndex(bi0_global);
+
+        const BoutReal wA00 = bweights(b, 0);
+        const BoutReal wA01 = bweights(b, 1);
+        const BoutReal wA10 = bweights(b, 2);
+        const BoutReal wA11 = bweights(b, 3);
+
+        const BoutReal wB00 = bweights(b, 4);
+        const BoutReal wB01 = bweights(b, 5);
+        const BoutReal wB10 = bweights(b, 6);
+        const BoutReal wB11 = bweights(b, 7);
+
+        // Bilinear interpolation using the correct local stencil
+        const BoutReal fA = wA00*f(ai0,1,aj0) + wA01*f(ai0,1,aj0+1) + wA10*f(ai0+1,1,aj0) + wA11*f(ai0+1,1,aj0+1);
+        const BoutReal fB = wB00*f(bi0,1,bj0) + wB01*f(bi0,1,bj0+1) + wB10*f(bi0+1,1,bj0) + wB11*f(bi0+1,1,bj0+1);
+
+        // Boundary value and one-sided derivative from J&C '98.
+        const BoutReal fb = bc_val;
+
+        const BoutReal term1 = (s2/s1) * (fb - fA);
+        const BoutReal term2 = (s1/s2) * (fb - fB);
+
+        dfdn = (term1 - term2) / (s2 - s1);
+      } else {
+         throw BoutException(bc_exception);
+      }
+
+      //Flux assumes normal is outward for dfdn.
+      const auto bdy_flux = -a[i] * bd_area[b] * dfdn;
+      result[i] -= bdy_flux;
+    }
   }
 }
 
+// // Calculate image value from nearby grid points. Note weights are defined as
+// // w00, w01, w10, w11 with indices (x,z). All other values follow from there.
+// BoutReal ImmersedBoundary::GetImageValue(Field3D& f, const int gid,
+//             const BoutReal bc_val, const BoundCond bc_type) const {
+//   // Get nearby vals to image from floating point index.
+//   // Only x mpi-parallelized at the moment.
+//   const int indx_global = static_cast<int>(image_inds(gid,0));
+//   const int indx = mesh->getLocalXIndex(indx_global);
+//   const int indz = static_cast<int>(image_inds(gid,1));
+  
+//   //IB_TODO: Need indy for ghost cells in y? Same below. Or do everything in 2d?
+//   //IB_TODO: Use num_weights instead of 4, same for below where 4s used.
+//   auto node_vals = std::array<BoutReal, 4>{f(indx,1,indz), f(indx,1,indz+1), 
+//                                            f(indx+1,1,indz), f(indx+1,1,indz+1)};
+
+//   BoutReal image_val = 0.0;
+//   // If all nearby nodes in plasma just add weights.
+//   if (all_plasma[gid]) {
+//     for (size_t i = 0; i < num_weights; ++i) {
+//       image_val += weights(gid,i)*node_vals[i];
+//     }
+//   }
+//   // If some nearby points are ghost cells.
+//   else {
+//     std::array<std::array<BoutReal, 4>, 4> vandMat{};
+//     // Get R,Z values of nearby cells.
+//     auto nodes_x = std::array<BoutReal, 4>{R3(indx,1,indz),   R3(indx,1,indz+1),
+//                                            R3(indx+1,1,indz), R3(indx+1,1,indz+1)};
+//     auto nodes_z = std::array<BoutReal, 4>{Z3(indx,1,indz),   Z3(indx,1,indz+1),
+//                                            Z3(indx+1,1,indz), Z3(indx+1,1,indz+1)};
+//     // Get indices to nearby ghost cell data.
+//     auto node_gids = std::array<int, 4>{static_cast<int>(std::lround(ghost_ids(indx,1,indz))),
+//                                         static_cast<int>(std::lround(ghost_ids(indx,1,indz+1))),
+//                                         static_cast<int>(std::lround(ghost_ids(indx+1,1,indz))),
+//                                         static_cast<int>(std::lround(ghost_ids(indx+1,1,indz+1)))};
+
+//     for (size_t i = 0; i < num_weights; ++i) {
+//       int igid = node_gids[i];
+
+//       //If primary ghost cell || singular secondary ghost cell.
+//       if (gid == igid || (igid >= 0 && ghost_count[igid] == 1)) {
+//         auto node_gid = igid;
+//         auto xB = bndry_points(node_gid,0);
+//         auto zB = bndry_points(node_gid,1);
+//         auto xN = normals(node_gid,0);
+//         auto zN = normals(node_gid,1);
+//         switch (bc_type) {
+//           case BoundCond::DIRICHLET:
+//             node_vals[i] = bc_val;
+//             vandMat[i] = std::array<BoutReal, 4>{xB*zB, xB, zB, 1.0};
+//             break;
+//           case BoundCond::NEUMANN:
+//             node_vals[i] = -bc_val;
+//             vandMat[i] = std::array<BoutReal, 4>{xB*zN + zB*xN, xN, zN, 0};
+//             break;
+//           default:
+//             throw BoutException(bc_exception);
+//         }
+//       } else {
+//         auto x = nodes_x[i];
+//         auto z = nodes_z[i];
+//         vandMat[i] = std::array<BoutReal, 4>{x*z, x, z, 1.0};
+//       }
+//     }
+
+//     //Perform 4x4 matrix solve.
+//     //IB_TODO: Combine code to always use Vandermonde, and solve with Vandermonde beforehand to do a dot product.
+//     auto c = solve4x4(vandMat, node_vals);
+
+//     auto xI = image_points(gid,0);
+//     auto zI = image_points(gid,1);
+
+//     //Set image value from solved coefficients.
+//     image_val = c[0]*(xI*zI) + c[1]*xI + c[2]*zI + c[3];
+//   }
+
+//   return image_val;
+// }
+
 // Calculate image value from nearby grid points. Note weights are defined as
-// w00, w01, w10, w11 with indices (x,z). All other values follow from there.
+// w00, w01, w10, w11 with indices (x,z). All other values follow from there.f
 BoutReal ImmersedBoundary::GetImageValue(Field3D& f, const int gid,
             const BoutReal bc_val, const BoundCond bc_type) const {
   // Get nearby vals to image from floating point index.
   // Only x mpi-parallelized at the moment.
-  const int indx_global = static_cast<int>(image_inds(gid,0));
+  const int indx_global = GetGridInd(image_inds(gid,0));
   const int indx = mesh->getLocalXIndex(indx_global);
-  const int indz = static_cast<int>(image_inds(gid,1));
+  const int indz = GetGridInd(image_inds(gid,1));
   
   //IB_TODO: Need indy for ghost cells in y? Same below. Or do everything in 2d?
   //IB_TODO: Use num_weights instead of 4, same for below where 4s used.
   auto node_vals = std::array<BoutReal, 4>{f(indx,1,indz), f(indx,1,indz+1), 
                                            f(indx+1,1,indz), f(indx+1,1,indz+1)};
 
-  BoutReal image_val = 0.0;
-  // If all nearby nodes in plasma just add weights.
-  if (all_plasma[gid]) {
-    for (size_t i = 0; i < num_weights; ++i) {
-      image_val += weights(gid,i)*node_vals[i];
+  if (!(bc_type == BoundCond::DIRICHLET || bc_type == BoundCond::NEUMANN)) {
+    throw BoutException(bc_exception);
+  }
+  const auto& weights = bc_type == BoundCond::DIRICHLET ? weights_dir : weights_neu;
+
+  for (size_t i = 0; i < num_weights; ++i) {
+    if (get_as<bool>(ghost_use_bc(gid, i))) {
+      node_vals[i] = bc_val;
     }
   }
-  // If some nearby points are ghost cells.
-  else {
-    std::array<std::array<BoutReal, 4>, 4> vandMat{};
-    // Get R,Z values of nearby cells.
-    auto nodes_x = std::array<BoutReal, 4>{R3(indx,1,indz),   R3(indx,1,indz+1),
-                                           R3(indx+1,1,indz), R3(indx+1,1,indz+1)};
-    auto nodes_z = std::array<BoutReal, 4>{Z3(indx,1,indz),   Z3(indx,1,indz+1),
-                                           Z3(indx+1,1,indz), Z3(indx+1,1,indz+1)};
-    // Get indices to nearby ghost cell data.
-    auto node_gids = std::array<int, 4>{static_cast<int>(std::lround(ghost_ids(indx,1,indz))),
-                                        static_cast<int>(std::lround(ghost_ids(indx,1,indz+1))),
-                                        static_cast<int>(std::lround(ghost_ids(indx+1,1,indz))),
-                                        static_cast<int>(std::lround(ghost_ids(indx+1,1,indz+1)))};
 
-    for (size_t i = 0; i < num_weights; ++i) {
-      int igid = node_gids[i];
-
-      //If primary ghost cell || singular secondary ghost cell.
-      if (gid == igid || (igid >= 0 && ghost_count[igid] == 1)) {
-        auto node_gid = igid;
-        auto xB = bndry_points(node_gid,0);
-        auto zB = bndry_points(node_gid,1);
-        auto xN = normals(node_gid,0);
-        auto zN = normals(node_gid,1);
-        switch (bc_type) {
-          case BoundCond::DIRICHLET:
-            node_vals[i] = bc_val;
-            vandMat[i] = std::array<BoutReal, 4>{xB*zB, xB, zB, 1.0};
-            break;
-          case BoundCond::NEUMANN:
-            node_vals[i] = -bc_val;
-            vandMat[i] = std::array<BoutReal, 4>{xB*zN + zB*xN, xN, zN, 0};
-            break;
-          default:
-            throw BoutException(bc_exception);
-        }
-      } else {
-        auto x = nodes_x[i];
-        auto z = nodes_z[i];
-        vandMat[i] = std::array<BoutReal, 4>{x*z, x, z, 1.0};
-      }
-    }
-
-    //Perform 4x4 matrix solve.
-    //IB_TODO: Combine code to always use Vandermonde, and solve with Vandermonde beforehand to do a dot product.
-    auto c = solve4x4(vandMat, node_vals);
-
-    auto xI = image_points(gid,0);
-    auto zI = image_points(gid,1);
-
-    //Set image value from solved coefficients.
-    image_val = c[0]*(xI*zI) + c[1]*xI + c[2]*zI + c[3];
+  BoutReal image_val = 0.0;
+  for (size_t i = 0; i < num_weights; ++i) {
+    image_val += weights(gid,i)*node_vals[i];
   }
 
   return image_val;
@@ -376,7 +499,7 @@ void ImmersedBoundary::SetBoundary(Field3D& f) {
     BOUT_FOR(i, f.getRegion("RGN_IMM_BNDRY_GST")) {
       const auto gid = ghost_ids[i];
       //If first iteration or more than 1 ghost (GS iteration to converge).
-      if (it == 0 || ghost_count[gid] > 1) {
+      if (it == 0 || get_as<bool>(ghost_use_gs[gid])) {
         const auto image_val = GetImageValue(f, gid, bc_val, bc_type);
         const auto ghost_val = GetGhostValue(image_val, gid, bc_val, bc_type);
         f[i] = ghost_val;

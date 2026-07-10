@@ -26,6 +26,11 @@ public:
   bool IsInside(const Ind3D& ind) const;
   bool IsGhost(const Ind3D& ind) const;
   bool IsCutCell(const Ind3D& ind) const;
+  
+  float xFaceFrac(const Ind3D& ind) const;
+  float zFaceFrac(const Ind3D& ind) const;
+  int xFaceGradOffset(const Ind3D& ind) const;
+  int zFaceGradOffset(const Ind3D& ind) const;
 
   void FieldSetup(Field3D& f);
   void FloorField(Field3D& f, const float val = 0.0) const;
@@ -56,11 +61,24 @@ private:
   Array<BoutReal> norm_dist;
 
   /// Image cell weights/ghost flag arrays.
+  //int num_weights = 0;
+  //Matrix<BoutReal> weights;
+  //Matrix<BoutReal> is_plasma;
+  //Array<int> all_plasma;
+  //Array<int> ghost_count;
+
+  //Image cell weights/ghost flag arrays.
   int num_weights = 0;
-  Matrix<BoutReal> weights;
+  Matrix<BoutReal> weights_dir;
+  Matrix<BoutReal> weights_neu;
   Matrix<BoutReal> is_plasma;
-  Array<int> all_plasma;
-  Array<int> ghost_count;
+  Matrix<BoutReal> ghost_use_bc;
+  Array<BoutReal>  ghost_use_gs;
+  Field3D bound_counts;
+  Field3D x_face_frac;
+  Field3D z_face_frac;
+  Field3D fx_grad_offset;
+  Field3D fz_grad_offset;
 
   //Boundary information.
   Field3D bound_ids;
@@ -129,6 +147,28 @@ private:
       x[i] = sum / A[p[i]][i];
     }
     return x;
+  }
+
+  //IB_TODO: Useful function for converting BoutReal types to int/bool.
+  //Needed because can only read Array/Matrix<BoutReal> from grid file now.
+  //In python, the ints/bools are converted to float but represented exactly.
+  template <typename T>
+  inline T get_as(BoutReal x, BoutReal tol = 1e-12) const {
+    static_assert(std::is_integral_v<T>,
+      "Currently, get_as<T> only supports integral and bool types.");
+
+    const long r = std::lround(x);
+
+    // Catch values that are not really integer-like, e.g. 2.3, 0.49, etc.
+    if (std::abs(x - static_cast<BoutReal>(r)) > tol) {
+      throw BoutException("IB value not integer like...");
+    }
+
+    return static_cast<T>(r);
+  }
+  //Use this to get gridpoint inds associated with general point.
+  inline int GetGridInd(BoutReal f) const {
+    return static_cast<int>(f);
   }
 };
 
