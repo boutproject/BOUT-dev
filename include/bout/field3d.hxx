@@ -488,11 +488,13 @@ public:
     BOUT_HOST_DEVICE BOUT_FORCEINLINE int numberParallelSlices() const {
       return num_parallel_slices;
     }
+    /// Not a DEVICE function because it dereferences a Field3D pointer
     BOUT_FORCEINLINE View yup(int slice = 0) const {
       ASSERT2(slice < num_parallel_slices);
       ASSERT2(yup_fields[slice].isAllocated());
       return static_cast<Field3D::View>(yup_fields[slice]);
     }
+    /// Not a DEVICE function because it dereferences a Field3D pointer
     BOUT_FORCEINLINE View ydown(int slice = 0) const {
       ASSERT2(slice < num_parallel_slices);
       ASSERT2(ydown_fields[slice].isAllocated());
@@ -500,14 +502,11 @@ public:
     }
   };
   operator View() {
-    return View{&data[0], hasParallelSlices() ? yup_fields.data() : nullptr,
-                hasParallelSlices() ? ydown_fields.data() : nullptr,
+    return View{&data[0], yup_fields.data(), ydown_fields.data(),
                 static_cast<int>(numberParallelSlices())};
   }
   operator View() const {
-    return View{const_cast<BoutReal*>(&data[0]),
-                hasParallelSlices() ? yup_fields.data() : nullptr,
-                hasParallelSlices() ? ydown_fields.data() : nullptr,
+    return View{const_cast<BoutReal*>(&data[0]), yup_fields.data(), ydown_fields.data(),
                 static_cast<int>(numberParallelSlices())};
   }
   //operator View() const { return View{&data[0]}; }
@@ -1064,9 +1063,6 @@ public:
 
   struct View {
     Field3D::View base;
-    const Field3D* yup_fields{nullptr};
-    const Field3D* ydown_fields{nullptr};
-    int num_parallel_slices{0};
 
     BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx) const {
       return base(idx);
@@ -1082,32 +1078,26 @@ public:
       return *this;
     }
 
-    BOUT_FORCEINLINE bool hasParallelSlices() const { return num_parallel_slices > 0; }
-    BOUT_FORCEINLINE int numberParallelSlices() const { return num_parallel_slices; }
-    BOUT_FORCEINLINE View yup(int slice = 0) const {
-      ASSERT2(slice < num_parallel_slices);
-      ASSERT2(yup_fields[slice].isAllocated());
-      return View{static_cast<Field3D::View>(yup_fields[slice]), nullptr, nullptr, 0};
+    BOUT_FORCEINLINE bool hasParallelSlices() const { return base.hasParallelSlices(); }
+    BOUT_FORCEINLINE int numberParallelSlices() const {
+      return base.numberParallelSlices();
     }
+    /// Not a DEVICE function because it dereferences a Field3D pointer
+    BOUT_FORCEINLINE View yup(int slice = 0) const {
+      ASSERT2(slice < base.num_parallel_slices);
+      ASSERT2(base.yup_fields[slice].isAllocated());
+      return View{static_cast<Field3D::View>(base.yup_fields[slice])};
+    }
+    /// Not a DEVICE function because it dereferences a Field3D pointer
     BOUT_FORCEINLINE View ydown(int slice = 0) const {
-      ASSERT2(slice < num_parallel_slices);
-      ASSERT2(ydown_fields[slice].isAllocated());
-      return View{static_cast<Field3D::View>(ydown_fields[slice]), nullptr, nullptr, 0};
+      ASSERT2(slice < base.num_parallel_slices);
+      ASSERT2(base.ydown_fields[slice].isAllocated());
+      return View{static_cast<Field3D::View>(base.ydown_fields[slice])};
     }
   };
 
-  operator View() {
-    return View{static_cast<Field3D::View>(*this),
-                hasParallelSlices() ? yup_fields.data() : nullptr,
-                hasParallelSlices() ? ydown_fields.data() : nullptr,
-                static_cast<int>(numberParallelSlices())};
-  }
-  operator View() const {
-    return View{static_cast<Field3D::View>(*this),
-                hasParallelSlices() ? yup_fields.data() : nullptr,
-                hasParallelSlices() ? ydown_fields.data() : nullptr,
-                static_cast<int>(numberParallelSlices())};
-  }
+  operator View() { return View{static_cast<Field3D::View>(*this)}; }
+  operator View() const { return View{static_cast<Field3D::View>(*this)}; }
 
   Field3DParallel& operator*=(const Field3D&);
   Field3DParallel& operator/=(const Field3D&);
