@@ -1,7 +1,6 @@
 #ifndef BOUT_FIELDGROUP_H
 #define BOUT_FIELDGROUP_H
 
-#include <bout/traits.hxx>
 #include <bout/vector2d.hxx>
 #include <bout/vector3d.hxx>
 
@@ -62,7 +61,7 @@ public:
   /// to FieldGroup, leading to an infinite loop.
   template <typename... Ts>
   explicit FieldGroup(Ts&... ts) {
-    add(ts...);
+    (add(ts), ...);
   }
 
   /// Copy contents of another FieldGroup \p other into this group.
@@ -121,27 +120,8 @@ public:
 
   /// Add multiple fields to this group
   template <typename... Ts>
-  void add(Field& t, Ts&... ts) {
-    add(t);     // Add the first using functions above
-    add(ts...); // Add the rest
-  }
-
-  template <typename... Ts>
-  void add(Field3D& t, Ts&... ts) {
-    add(t);     // Add the first using functions above
-    add(ts...); // Add the rest
-  }
-
-  template <typename... Ts>
-  void add(Vector3D& t, Ts&... ts) {
-    add(t);     // Add the first using functions above
-    add(ts...); // Add the rest
-  }
-
-  template <typename... Ts>
-  void add(Vector2D& t, Ts&... ts) {
-    add(t);     // Add the first using functions above
-    add(ts...); // Add the rest
+  requires(sizeof...(Ts) > 1) void add(Ts&... ts) {
+    (add(ts), ...);
   }
 
   /// Return number of fields

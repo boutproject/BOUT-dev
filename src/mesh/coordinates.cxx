@@ -56,7 +56,7 @@ namespace {
 // initializing yet, leading to an infinite recursion.
 // Also, here we interpolate for the boundary points at xstart/ystart and
 // (xend+1)/(yend+1) instead of extrapolating.
-template <class T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 void fillGuards_impl(T& result, CELL_LOC location, const T& f, bool extrapolate_x,
                      bool extrapolate_y, bool no_extra_interpolate = false) {
   const auto* localmesh = result.getMesh();
@@ -172,7 +172,7 @@ void fillGuards_impl(T& result, CELL_LOC location, const T& f, bool extrapolate_
 /// Boundary guard cells are set by extrapolating from the grid, like
 /// 'free_o3' boundary conditions
 /// Corner guard cells are set to BoutNaN
-template <class T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 auto interpolateAndExtrapolate(const T& f_, CELL_LOC location, bool extrapolate_x,
                                bool extrapolate_y, bool no_extra_interpolate,
                                ParallelTransform* pt_ = nullptr) -> T {

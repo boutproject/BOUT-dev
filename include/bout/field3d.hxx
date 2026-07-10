@@ -669,7 +669,7 @@ protected:
       _track(change, operation);
     }
   }
-  template <typename T, typename = bout::utils::EnableIfField<T>>
+  template <IsField T>
   void _track(const T& change, std::string operation);
   void _track(const BoutReal& change, std::string operation);
 

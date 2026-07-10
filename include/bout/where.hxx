@@ -31,14 +31,18 @@
 #include "bout/field.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
+#include <type_traits>
 
 /// For each point, choose between two inputs based on a third input
 ///
 /// @param[in] test   The value which determines which input to use
 /// @param[in] gt0    Uses this value if test > 0.0
 /// @param[in] le0    Uses this value if test <= 0.0
-template <class T, class U, class V,
-          class ResultType = typename bout::utils::EnableIfField<T, U, V>>
+
+// Overload 1: Three fields
+template <typename T, typename U, typename V,
+          typename ResultType = std::common_type_t<T, U, V>>
+requires IsField<T>&& IsField<U>&& IsField<V>
 auto where(const T& test, const U& gt0, const V& le0) -> ResultType {
   ASSERT1_FIELDS_COMPATIBLE(test, gt0);
   ASSERT1_FIELDS_COMPATIBLE(test, le0);
@@ -51,7 +55,9 @@ auto where(const T& test, const U& gt0, const V& le0) -> ResultType {
   return result;
 }
 
-template <class T, class U, class ResultType = typename bout::utils::EnableIfField<T, U>>
+// Overload 2: Two fields, one BoutReal (le0)
+template <typename T, typename U, typename ResultType = std::common_type_t<T, U>>
+requires IsField<T>&& IsField<U>
 auto where(const T& test, const U& gt0, BoutReal le0) -> ResultType {
   ASSERT1_FIELDS_COMPATIBLE(test, gt0);
 
@@ -63,7 +69,9 @@ auto where(const T& test, const U& gt0, BoutReal le0) -> ResultType {
   return result;
 }
 
-template <class T, class V, class ResultType = typename bout::utils::EnableIfField<T, V>>
+// Overload 3: Two fields, one BoutReal (gt0)
+template <typename T, typename V, typename ResultType = std::common_type_t<T, V>>
+requires IsField<T>&& IsField<V>
 auto where(const T& test, BoutReal gt0, const V& le0) -> ResultType {
   ASSERT1_FIELDS_COMPATIBLE(test, le0);
 
@@ -75,7 +83,9 @@ auto where(const T& test, BoutReal gt0, const V& le0) -> ResultType {
   return result;
 }
 
-template <class T, class ResultType = T>
+// Overload 4: One field, two BoutReals
+template <typename T, typename ResultType = T>
+requires IsField<T>
 auto where(const T& test, BoutReal gt0, BoutReal le0) -> ResultType {
   ResultType result{emptyFrom(test)};
 

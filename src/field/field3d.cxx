@@ -982,7 +982,7 @@ Field3D& Field3D::enableTracking(const std::string& name,
   return *this;
 }
 
-template <typename T, typename>
+template <IsField T>
 void Field3D::_track(const T& change, std::string operation) {
   if (tracking_state == 0) {
     return;
@@ -1010,12 +1010,10 @@ void Field3D::_track(const T& change, std::string operation) {
   });
 }
 
-template void
-Field3D::_track<Field3D, bout::utils::EnableIfField<Field3D>>(const Field3D&,
-                                                              std::string);
+template void Field3D::_track<Field3D>(const Field3D&, std::string);
 template void Field3D::_track<Field3DParallel>(const Field3DParallel&, std::string);
 template void Field3D::_track<Field2D>(const Field2D&, std::string);
-template void Field3D::_track<>(const FieldPerp&, std::string);
+template void Field3D::_track<FieldPerp>(const FieldPerp&, std::string);
 
 void Field3D::_track(const BoutReal& change, std::string operation) {
   if (tracking_state == 0) {

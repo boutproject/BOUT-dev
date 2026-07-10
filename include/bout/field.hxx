@@ -258,8 +258,11 @@ inline T filledFrom(const T& f, Function func, std::string region_string = "RGN_
   return result;
 }
 
+template<typename T>
+concept IsField = std::is_base_of_v<Field, T>;
+
 /// Unary + operator. This doesn't do anything
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 T operator+(const T& f) {
   return f;
 }
@@ -341,7 +344,7 @@ inline T fromFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
 /// @param[in] f      Input field
 /// @param[in] allpe  Minimum over all processors?
 /// @param[in] rgn    The region to calculate the result over
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 inline BoutReal min(const T& f, bool allpe = false,
                     const std::string& rgn = "RGN_NOBNDRY") {
 
@@ -390,7 +393,7 @@ inline BoutReal min(const BinaryExpr<ResT, L, R, Func>& f, bool allpe = false,
 /// @param[in] f       The field to check
 /// @param[in] allpe   Check over all processors
 /// @param[in] region  The region to check for uniformity over
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 inline bool isUniform(const T& f, bool allpe = false,
                       const std::string& region = "RGN_ALL") {
   bool result = true;
@@ -418,7 +421,7 @@ inline bool isUniform(const T& f, bool allpe = false,
 /// @param[in] f       The field to check
 /// @param[in] allpe   Check over all processors
 /// @param[in] region  The region to assume is uniform
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 inline BoutReal getUniform(const T& f, [[maybe_unused]] bool allpe = false,
                            const std::string& region = "RGN_ALL") {
 #if CHECK > 1
@@ -443,7 +446,7 @@ inline BoutReal getUniform(const T& f, [[maybe_unused]] bool allpe = false,
 /// @param[in] f      Input field
 /// @param[in] allpe  Maximum over all processors?
 /// @param[in] rgn    The region to calculate the result over
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 inline BoutReal max(const T& f, bool allpe = false,
                     const std::string& rgn = "RGN_NOBNDRY") {
 
@@ -494,7 +497,7 @@ inline BoutReal max(const BinaryExpr<ResT, L, R, Func>& f, bool allpe = false,
 /// @param[in] f      Input field
 /// @param[in] allpe  Mean over all processors?
 /// @param[in] rgn    The region to calculate the result over
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 inline BoutReal mean(const T& f, bool allpe = false,
                      const std::string& rgn = "RGN_NOBNDRY") {
 
@@ -544,7 +547,7 @@ inline BoutReal mean(const BinaryExpr<ResT, L, R, Func>& f, bool allpe = false,
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument)
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 T pow(const T& lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
 
   ASSERT1(areFieldsCompatible(lhs, rhs));
@@ -557,7 +560,7 @@ T pow(const T& lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
   return result;
 }
 
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 T pow(const T& lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL") {
 
   // Check if the inputs are allocated
@@ -572,7 +575,7 @@ T pow(const T& lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL") {
   return result;
 }
 
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 T pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
 
   // Check if the inputs are allocated
@@ -639,7 +642,7 @@ std::optional<int> getPerpYIndex(const BinaryExpr<ResT, L, R, Func>& expr) {
     }                                                                                   \
   };                                                                                    \
   };                                                                                    \
-  template <typename T, typename = bout::utils::EnableIfField<T>>                       \
+  template <IsField T>                       \
   inline auto name(const T& f, const std::string& rgn = "RGN_ALL") {                    \
     if constexpr (std::is_same_v<T, Field3DParallel>) {                                 \
       /* Check if the input is allocated */                                             \
@@ -696,7 +699,7 @@ struct Square {
 };
 }; // namespace bout::op
 
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 inline auto SQ(const T& f, const std::string& rgn = "RGN_ALL") {
   if constexpr (std::is_same_v<T, Field3DParallel>) {
     checkData(f);
@@ -840,7 +843,7 @@ FIELD_FUNC(tanh, ::tanh)
 /// Check if all values of a field \p var are finite.
 /// Loops over all points including the boundaries by
 /// default (can be changed using the \p rgn argument
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 inline bool finite(const T& f, const std::string& rgn = "RGN_ALL") {
 
   if (!f.isAllocated()) {
@@ -858,7 +861,7 @@ inline bool finite(const T& f, const std::string& rgn = "RGN_ALL") {
 
 /// Makes a copy of a field \p f, ensuring that the underlying data is
 /// not shared.
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 T copy(const T& f) {
   T result = f;
   result.allocate();
@@ -873,7 +876,7 @@ class Field3DParallel;
 /// @param[in] var  Variable to apply floor to
 /// @param[in] f    The floor value
 /// @param[in] rgn  The region to calculate the result over
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 inline T floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
   checkData(var);
   T result = copy(var);
