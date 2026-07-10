@@ -381,6 +381,43 @@ struct BinaryExpr {
   }
   BOUT_HOST_DEVICE BOUT_FORCEINLINE int regionIdx(int idx) const { return indices[idx]; }
 
+  bool hasParallelSlices() const {
+    if constexpr (is_expr_constant_v<L> && is_expr_constant_v<R>) {
+      return false;
+    } else if constexpr (is_expr_constant_v<L>) {
+      return rhs.hasParallelSlices();
+    } else if constexpr (is_expr_constant_v<R>) {
+      return lhs.hasParallelSlices();
+    } else {
+      return lhs.hasParallelSlices() && rhs.hasParallelSlices();
+    }
+  }
+  int numberParallelSlices() const {
+    if (!hasParallelSlices()) {
+      return 0;
+    }
+    if constexpr (is_expr_constant_v<L> && is_expr_constant_v<R>) {
+      return 0;
+    } else if constexpr (is_expr_constant_v<L>) {
+      return rhs.numberParallelSlices();
+    } else if constexpr (is_expr_constant_v<R>) {
+      return lhs.numberParallelSlices();
+    } else {
+      ASSERT2(lhs.numberParallelSlices() == rhs.numberParallelSlices());
+      return lhs.numberParallelSlices();
+    }
+  }
+  auto yup(int slice = 0) const {
+    return BinaryExpr<ResT, L, R, Func>{lhs.yup(slice), rhs.yup(slice), f,
+                                        mesh,           location,       directions,
+                                        regionID,       indices,        yindex};
+  }
+  auto ydown(int slice = 0) const {
+    return BinaryExpr<ResT, L, R, Func>{
+        lhs.ydown(slice), rhs.ydown(slice), f,       mesh,  location,
+        directions,       regionID,         indices, yindex};
+  }
+
   //operator ResT() { return ResT{*this}; }
   struct View {
     typename L::View lhs;
@@ -396,13 +433,50 @@ struct BinaryExpr {
       this->div = div;
       return *this;
     }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE bool hasParallelSlices() const {
+      if constexpr (is_expr_constant_v<L> && is_expr_constant_v<R>) {
+        return false;
+      } else if constexpr (is_expr_constant_v<L>) {
+        return rhs.hasParallelSlices();
+      } else if constexpr (is_expr_constant_v<R>) {
+        return lhs.hasParallelSlices();
+      } else {
+        return lhs.hasParallelSlices() && rhs.hasParallelSlices();
+      }
+    }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE int numberParallelSlices() const {
+      if (!hasParallelSlices()) {
+        return 0;
+      }
+      if constexpr (is_expr_constant_v<L> && is_expr_constant_v<R>) {
+        return 0;
+      } else if constexpr (is_expr_constant_v<L>) {
+        return rhs.numberParallelSlices();
+      } else if constexpr (is_expr_constant_v<R>) {
+        return lhs.numberParallelSlices();
+      } else {
+        ASSERT2(lhs.numberParallelSlices() == rhs.numberParallelSlices());
+        return lhs.numberParallelSlices();
+      }
+    }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE auto yup(int slice = 0) const {
+      auto result = *this;
+      result.lhs = lhs.yup(slice);
+      result.rhs = rhs.yup(slice);
+      return result;
+    }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE auto ydown(int slice = 0) const {
+      auto result = *this;
+      result.lhs = lhs.ydown(slice);
+      result.rhs = rhs.ydown(slice);
+      return result;
+    }
     BOUT_HOST_DEVICE BOUT_FORCEINLINE int size() const { return num_indices; }
     BOUT_HOST_DEVICE BOUT_FORCEINLINE int regionIdx(int idx) const {
       return indices[idx];
     }
     BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx) const {
       return f((idx * mul) / div, lhs, rhs); // single‐pass fusion
-      //return f(lhs((idx * mul) / div), rhs((idx * mul) / div)); // single‐pass fusion
     }
   };
 

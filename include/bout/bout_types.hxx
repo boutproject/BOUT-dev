@@ -149,6 +149,10 @@ struct Constant {
     T v;
     View(T v) : v(v) {}
     BOUT_HOST_DEVICE T operator()(int) const { return v; }
+    BOUT_HOST_DEVICE bool hasParallelSlices() const { return false; }
+    BOUT_HOST_DEVICE int numberParallelSlices() const { return 0; }
+    BOUT_HOST_DEVICE View yup(int = 0) const { return *this; }
+    BOUT_HOST_DEVICE View ydown(int = 0) const { return *this; }
   };
   operator View() const { return {val}; }
 };

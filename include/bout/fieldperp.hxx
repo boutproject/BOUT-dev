@@ -352,6 +352,10 @@ public:
       this->div = div;
       return *this;
     }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE bool hasParallelSlices() const { return false; }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE int numberParallelSlices() const { return 0; }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE View yup(int = 0) const { return *this; }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE View ydown(int = 0) const { return *this; }
   };
   operator View() { return View{&data[0]}; }
   operator View() const { return View{const_cast<BoutReal*>(&data[0])}; }

@@ -12,6 +12,7 @@
 #include "bout/field3d.hxx"
 #include "bout/mesh.hxx"
 #include "bout/output.hxx"
+#include "bout/paralleltransform.hxx"
 #include "bout/unused.hxx"
 #include "bout/utils.hxx"
 
@@ -26,6 +27,34 @@ using namespace bout::globals;
 
 // Reuse the "standard" fixture for FakeMesh
 using Field3DTest = FakeMeshFixture;
+
+class MockFciParallelTransform : public ParallelTransform {
+public:
+  explicit MockFciParallelTransform(Mesh& mesh_in) : ParallelTransform(mesh_in) {}
+
+  void calcParallelSlices(Field3D& f) override {
+    if (!f.hasParallelSlices()) {
+      f.splitParallelSlices();
+    }
+    for (size_t i = 0; i < f.numberParallelSlices(); ++i) {
+      f.yup(i) = f;
+      f.ydown(i) = f;
+    }
+  }
+
+  Field3D toFieldAligned(const Field3D& f, const std::string&) override { return f; }
+  FieldPerp toFieldAligned(const FieldPerp& f, const std::string&) override { return f; }
+  Field3D fromFieldAligned(const Field3D& f, const std::string&) override { return f; }
+  FieldPerp fromFieldAligned(const FieldPerp& f, const std::string&) override {
+    return f;
+  }
+
+  bool canToFromFieldAligned() const override { return false; }
+  bool requiresTwistShift(bool, YDirectionType) override { return false; }
+
+protected:
+  void checkInputGrid() override {}
+};
 
 TEST_F(Field3DTest, Is3D) {
   Field3D field;
@@ -1977,6 +2006,132 @@ TEST_F(Field3DTest, SQField3DParallelPreservesParallelSlices) {
   EXPECT_TRUE(IsFieldEqual(squared, 4.0));
   EXPECT_TRUE(IsFieldEqual(squared.yup(), 9.0));
   EXPECT_TRUE(IsFieldEqual(squared.ydown(), 16.0));
+}
+
+TEST_F(Field3DTest, Field3DParallelArithmeticReturnsLazyExpr) {
+  Field3DParallel parallel;
+  Field3D field;
+
+  parallel = 2.0;
+  parallel.splitParallelSlices();
+  parallel.yup() = 3.0;
+  parallel.ydown() = 4.0;
+  field = 5.0;
+
+  const auto expr = parallel + field;
+
+  EXPECT_TRUE(
+      (std::is_same_v<std::decay_t<decltype(expr)>,
+                      BinaryExpr<Field3D, Field3DParallel, Field3D, bout::op::Add>>));
+
+  Field3DParallel result{expr};
+
+  EXPECT_FALSE(result.hasParallelSlices());
+  EXPECT_TRUE(IsFieldEqual(result, 7.0));
+}
+
+TEST_F(Field3DTest, Field3DParallelAssignmentFromLazyExprDiscardsSlicesWhenNotFci) {
+  Field3DParallel parallel;
+  Field3DParallel result;
+
+  parallel = 2.0;
+  parallel.splitParallelSlices();
+  parallel.yup() = 3.0;
+  parallel.ydown() = 4.0;
+
+  const auto expr = 10.0 - parallel;
+
+  EXPECT_TRUE((std::is_same_v<
+               std::decay_t<decltype(expr)>,
+               BinaryExpr<Field3D, Constant<BoutReal>, Field3DParallel, bout::op::Sub>>));
+
+  result = expr;
+
+  EXPECT_FALSE(result.hasParallelSlices());
+  EXPECT_TRUE(IsFieldEqual(result, 8.0));
+}
+
+#if CHECK >= 2
+TEST_F(Field3DTest, Field3DParallelAssignmentFromLazyExprRequiresField3DSlicesInFci) {
+  mesh->getCoordinates()->setParallelTransform(
+      bout::utils::make_unique<MockFciParallelTransform>(*mesh));
+
+  Field3DParallel parallel;
+  Field3D field;
+
+  parallel = 2.0;
+  parallel.yup() = 3.0;
+  parallel.ydown() = 4.0;
+  field = 5.0;
+
+  EXPECT_THROW(Field3DParallel result{parallel + field}, BoutException);
+}
+#endif
+
+TEST_F(Field3DTest, Field3DParallelAssignmentFromLazyExprUsesField3DSlicesInFci) {
+  mesh->getCoordinates()->setParallelTransform(
+      bout::utils::make_unique<MockFciParallelTransform>(*mesh));
+
+  Field3DParallel parallel;
+  Field3D field;
+
+  parallel = 2.0;
+  parallel.yup() = 3.0;
+  parallel.ydown() = 4.0;
+
+  field = 5.0;
+  field.splitParallelSlices();
+  field.yup() = 7.0;
+  field.ydown() = 11.0;
+
+  Field3DParallel result{parallel + field};
+
+  EXPECT_TRUE(result.hasParallelSlices());
+  EXPECT_TRUE(IsFieldEqual(result, 7.0));
+  EXPECT_TRUE(IsFieldEqual(result.yup(), 10.0));
+  EXPECT_TRUE(IsFieldEqual(result.ydown(), 15.0));
+}
+
+TEST_F(Field3DTest, Field3DParallelAssignmentFromField3DExprUsesSlicesInFci) {
+  mesh->getCoordinates()->setParallelTransform(
+      bout::utils::make_unique<MockFciParallelTransform>(*mesh));
+
+  Field3D lhs;
+  Field3D rhs;
+
+  lhs = 2.0;
+  lhs.splitParallelSlices();
+  lhs.yup() = 3.0;
+  lhs.ydown() = 4.0;
+
+  rhs = 5.0;
+  rhs.splitParallelSlices();
+  rhs.yup() = 7.0;
+  rhs.ydown() = 11.0;
+
+  Field3DParallel result{lhs * rhs};
+
+  EXPECT_TRUE(result.hasParallelSlices());
+  EXPECT_TRUE(IsFieldEqual(result, 10.0));
+  EXPECT_TRUE(IsFieldEqual(result.yup(), 21.0));
+  EXPECT_TRUE(IsFieldEqual(result.ydown(), 44.0));
+}
+
+TEST_F(Field3DTest, Field3DParallelAssignmentFromScalarExprUsesSlicesInFci) {
+  mesh->getCoordinates()->setParallelTransform(
+      bout::utils::make_unique<MockFciParallelTransform>(*mesh));
+
+  Field3DParallel parallel;
+  parallel = 2.0;
+  parallel.yup() = 3.0;
+  parallel.ydown() = 4.0;
+
+  Field3DParallel result{parallel + 1.0};
+
+  EXPECT_TRUE(result.hasParallelSlices());
+  EXPECT_TRUE(IsFieldEqual(result, 3.0));
+  EXPECT_TRUE(IsFieldEqual(result.yup(), 4.0));
+  EXPECT_TRUE(IsFieldEqual(result.ydown(), 5.0));
 }
 
 TEST_F(Field3DTest, Abs) {
