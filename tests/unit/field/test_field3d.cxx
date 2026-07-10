@@ -2543,6 +2543,61 @@ TEST_F(Field3DTest, Floor) {
   EXPECT_TRUE(IsFieldEqual(floor(field, floor_value), floor_value));
 }
 
+TEST_F(Field3DTest, FloorExpressionUsesFloorOp) {
+  Field3D field;
+
+  field = 2.0;
+  const auto expr = field + 1.0;
+
+  EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(floor(expr, 5.0))>,
+                              BinaryExpr<Field3D, std::decay_t<decltype(expr)>,
+                                         Constant<BoutReal>, bout::op::Floor>>));
+  EXPECT_TRUE(IsFieldEqual(floor(expr, 5.0), 5.0));
+}
+
+TEST_F(Field3DTestFCI, FloorField3DParallelExprPreservesParallelSlices) {
+  Field3DParallel field;
+
+  field = 2.0;
+  field.yup() = 3.0;
+  field.ydown() = 4.0;
+
+  const auto expr = floor(field + 1.0, 4.5);
+
+  EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(expr)>,
+                              BinaryExpr<Field3D, std::decay_t<decltype(field + 1.0)>,
+                                         Constant<BoutReal>, bout::op::Floor>>));
+
+  Field3DParallel result{expr};
+
+  EXPECT_TRUE(result.hasParallelSlices());
+  EXPECT_TRUE(IsFieldEqual(result, 4.5));
+  EXPECT_TRUE(IsFieldEqual(result.yup(), 4.5));
+  EXPECT_TRUE(IsFieldEqual(result.ydown(), 5.0));
+}
+
+TEST_F(Field3DTestFCI, FloorField3DParallelRegionExprPreservesParallelSlices) {
+  Field3DParallel field;
+
+  field = 2.0;
+  field.yup() = 3.0;
+  field.ydown() = 4.0;
+
+  const auto base = field + 1.0;
+  const auto expr = floor(base, 4.5, "RGN_ALL");
+
+  EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(expr)>,
+                              BinaryExpr<Field3D, std::decay_t<decltype(base)>,
+                                         Constant<BoutReal>, bout::op::Floor>>));
+
+  Field3DParallel result{expr};
+
+  EXPECT_TRUE(result.hasParallelSlices());
+  EXPECT_TRUE(IsFieldEqual(result, 4.5));
+  EXPECT_TRUE(IsFieldEqual(result.yup(), 4.5));
+  EXPECT_TRUE(IsFieldEqual(result.ydown(), 5.0));
+}
+
 TEST_F(Field3DTest, Min) {
   Field3D field;
 

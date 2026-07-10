@@ -33,10 +33,12 @@ class Field;
 #include <cstdio>
 #include <optional>
 #include <string>
+#include <type_traits>
 
 #include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/build_config.hxx"
 #include "bout/field_data.hxx"
 #include "bout/region.hxx"
 #include "bout/traits.hxx"
@@ -887,6 +889,20 @@ struct Square {
     return ::SQ(value);
   }
 };
+
+struct Floor {
+  template <typename LView, typename RView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx, const LView& L,
+                                                        const RView& R) const {
+    const BoutReal value = L(idx);
+    const BoutReal floor_value = R(idx);
+    return value < floor_value ? floor_value : value;
+  }
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(BoutReal value,
+                                                        BoutReal floor_value) const {
+    return value < floor_value ? floor_value : value;
+  }
+};
 }; // namespace bout::op
 
 template <typename T, typename = bout::utils::EnableIfField<T>>
@@ -1065,46 +1081,51 @@ class Field3DParallel;
 /// @param[in] f    The floor value
 /// @param[in] rgn  The region to calculate the result over
 template <typename T, typename = bout::utils::EnableIfField<T>>
-inline T floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
-  checkData(var);
-  T result = copy(var);
+inline auto floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
+  using ResT = bout::detail::UnaryFieldResult_t<T>;
+  return BinaryExpr<ResT, T, Constant<BoutReal>, bout::op::Floor>{
+      static_cast<typename T::View>(var),
+      static_cast<typename Constant<BoutReal>::View>(f),
+      bout::op::Floor{},
+      var.getMesh(),
+      var.getLocation(),
+      var.getDirections(),
+      bout::detail::getUnaryRegionID<T>(var.getMesh(), rgn),
+      var.getMesh()->template getRegion<ResT>(rgn),
+      bout::detail::getPerpYIndex(var)};
+}
 
-  BOUT_FOR(d, var.getRegion(rgn)) {
-    if (result[d] < f) {
-      result[d] = f;
-    }
-  }
-  if constexpr (std::is_same_v<T, Field3DParallel>) {
-    if (var.hasParallelSlices()) {
-      for (size_t i = 0; i < result.numberParallelSlices(); ++i) {
-        if (result.yup(i).isAllocated()) {
-          BOUT_FOR(d, result.yup(i).getRegion(rgn)) {
-            if (result.yup(i)[d] < f) {
-              result.yup(i)[d] = f;
-            }
-          }
-        } else {
-          if (result.isFci()) {
-            throw BoutException("Expected parallel slice to be allocated");
-          }
-        }
-        if (result.ydown(i).isAllocated()) {
-          BOUT_FOR(d, result.ydown(i).getRegion(rgn)) {
-            if (result.ydown(i)[d] < f) {
-              result.ydown(i)[d] = f;
-            }
-          }
-        } else {
-          if (result.isFci()) {
-            throw BoutException("Expected parallel slice to be allocated");
-          }
-        }
-      }
-    }
-  } else {
-    result.clearParallelSlices();
-  }
-  return result;
+template <typename ResT, typename L, typename R, typename Func>
+inline auto floor(const BinaryExpr<ResT, L, R, Func>& var, BoutReal f) {
+  using UnaryResT = bout::detail::UnaryFieldResult_t<ResT>;
+  return BinaryExpr<UnaryResT, BinaryExpr<ResT, L, R, Func>, Constant<BoutReal>,
+                    bout::op::Floor>{
+      static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(var),
+      static_cast<typename Constant<BoutReal>::View>(f),
+      bout::op::Floor{},
+      var.getMesh(),
+      var.getLocation(),
+      var.getDirections(),
+      var.getRegionID(),
+      var.indices,
+      bout::detail::getPerpYIndex(var)};
+}
+
+template <typename ResT, typename L, typename R, typename Func>
+inline auto floor(const BinaryExpr<ResT, L, R, Func>& var, BoutReal f,
+                  const std::string& rgn) {
+  using UnaryResT = bout::detail::UnaryFieldResult_t<ResT>;
+  return BinaryExpr<UnaryResT, BinaryExpr<ResT, L, R, Func>, Constant<BoutReal>,
+                    bout::op::Floor>{
+      static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(var),
+      static_cast<typename Constant<BoutReal>::View>(f),
+      bout::op::Floor{},
+      var.getMesh(),
+      var.getLocation(),
+      var.getDirections(),
+      bout::detail::getUnaryRegionID<UnaryResT>(var.getMesh(), rgn),
+      var.getMesh()->template getRegion<UnaryResT>(rgn),
+      bout::detail::getPerpYIndex(var)};
 }
 
 #undef FIELD_FUNC
