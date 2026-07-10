@@ -153,3 +153,4 @@ public:
 };
 
 using FakeMeshFixture = FakeMeshFixture_tmpl<3, 5, 7>;
+using FakeMeshFixtureFCI = FakeMeshFixture_tmpl<3, 5, 7, true>;
