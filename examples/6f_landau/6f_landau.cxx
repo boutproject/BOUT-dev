@@ -612,10 +612,10 @@ private:
     return result;
   }
 
-  BoutReal TanH(BoutReal a)
-  {
+  BoutReal TanH(BoutReal a) {
     BoutReal temp = exp(a);
     return ((temp - 1.0 / temp) / (temp + 1.0 / temp));
+    // return tanh(a); This should be equivalent to the above. 
   }
 
   const Field3D mask_x_1d(bool BoutRealspace, int mask_flag, BoutReal mask_width, BoutReal mask_length) {
@@ -644,8 +644,9 @@ private:
             result(jx,jy,jz) = 0.;
         }
     result /= max(result, true);
-    if (BoutRealspace)
+    if (BoutRealspace) {
       //result = result.shiftZ(false); // Shift back
+    }
     
     // Need to communicate boundaries
     mesh->communicate(result);
@@ -706,7 +707,7 @@ private:
             f(jx,jy,jz) = limit - f0(jx,jy);
           }
         }
-    // mesh->communicate(f);
+    mesh->communicate(f);
     return f;
   }
 
@@ -2760,7 +2761,7 @@ protected:
 	      for (jx = 0;jx < mesh->LocalNx; jx++) {
 	        for (jy = 0;jy < mesh->LocalNy; jy++) {
             BoutReal log_out =0;
-	          BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy,jz);
+	          BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy);
             BoutReal logT = log(Te_tmp_loc);
             if (Te_tmp_loc >= 2.0 && Te_tmp_loc <= 500.) {
               log_out = - 5.01649969e+01 * pow(logT, 0)
@@ -4765,7 +4766,7 @@ protected:
         ddt(Ti) += Grad_perp(kappa_perp_i) * Grad_perp(Ti) / N0; //NOTE(malamast): We have not included the time variation of kappa_perp_i when we substratced the equilibrium term. 
       }
 
-      if (gyroviscous && compress0 & nonlinear) {
+      if (gyroviscous && compress0 && nonlinear) {
         ddt(Ti) -= 1.333333 * Tipara3 * (Ti0 + Ti) * Vipar * b0xcv * Grad(Vipar) / B0;
       }
 
