@@ -151,6 +151,7 @@ private:
   BoutReal J0_factor, P0_factor;
   Vector2D b0xcv;                                // Curvature term
   Field2D phi0;                                  // When diamagnetic terms used
+  Field2D G3;                                    // Useful to temporary overwrite G3
 
   Field2D N0, Ti0, Te0, Ne0, N_imp0, T_imp0;     // number density and temperature
   Field2D Pi0, Pe0, P_imp0;
@@ -408,6 +409,8 @@ private:
 
   /// for debug purpose
   Field3D term1, term2, term3, term4, term5;
+
+  bool set_G3_to_zero;                           // Set G3 to zero to avoid instabilities
 
   /****************************************************************************/
   /****************************************************************************/
@@ -1437,6 +1440,8 @@ protected:
                        .doc("Use a (semi-) Lagrangian method for Grad_parP")
                        .withDefault(false);
     parallel_project = options["parallel_project"].withDefault(false);
+
+    set_G3_to_zero = options["set_G3_to_zero"].doc("Set G3 to zero to avoid instabilities").withDefault(false);
 
     // Vacuum region control
     vacuum_pressure =
@@ -2572,6 +2577,8 @@ protected:
     coord->g_13 = I * Rxy * Rxy;
     coord->g_23 = Btxy * hthe * Rxy / Bpxy;
 
+    G3 = coord->G3;
+
     // Calculate quantities from metric tensor
     coord->geometry();
 
@@ -3456,9 +3463,18 @@ protected:
     ubyn.applyBoundary();
     mesh->communicate(ubyn);
     // Invert laplacian for phi
+
+    // Set G3 = 0. to avoid instabilities (adopted from STORM)
+    if (set_G3_to_zero) {
+      coord->G3 = 0.;
+    }
+
     phi = phiSolver->solve(ubyn); // NOTE(malamast): a) Should this be N0 + Ni  instead of just N0
                                   //                 b) Should we subtract the term 1/N0 Grad_perp(phi0) * Grad_perp(Ni) like we did above with  Upara0 / N0 * Delp2(Pi)?
 
+    if (set_G3_to_zero) {        
+      coord->G3 = G3;
+    }
     // mesh->communicate(phi);
     // phi.applyBoundary();
 
