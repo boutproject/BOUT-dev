@@ -5,8 +5,11 @@
 
 #if BOUT_HAS_HYPRE
 
+#include "bout/assert.hxx"
 #include "bout/bout_enum_class.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/caliper_wrapper.hxx"
 #include "bout/field.hxx"
 #include "bout/globalindexer.hxx"
@@ -383,19 +386,19 @@ public:
     }
 
     Element& operator=(const Element& other) {
-      ASSERT3(finite(static_cast<BoutReal>(other)));
+      ASSERT3(std::isfinite(static_cast<BoutReal>(other)));
       return *this = static_cast<BoutReal>(other);
     }
     Element& operator=(BoutReal value_) {
-      ASSERT3(finite(value_));
+      ASSERT3(std::isfinite(value_));
       value = value_;
       vector->V[vec_i] = value_;
       return *this;
     }
     Element& operator+=(BoutReal value_) {
-      ASSERT3(finite(value_));
+      ASSERT3(std::isfinite(value_));
       value += value_;
-      ASSERT3(finite(value));
+      ASSERT3(std::isfinite(value));
       vector->V[vec_i] += value_;
       return *this;
     }
@@ -550,7 +553,7 @@ public:
           weights(weights_) {
 #if CHECK > 2
       for (const auto val : weights) {
-        ASSERT3(finite(val));
+        ASSERT3(std::isfinite(val));
       }
 #endif
       ASSERT2(positions.size() == weights.size());
@@ -563,19 +566,19 @@ public:
     }
     Element& operator=(const Element& other) {
 
-      ASSERT3(finite(static_cast<BoutReal>(other)));
+      ASSERT3(std::isfinite(static_cast<BoutReal>(other)));
       return *this = static_cast<BoutReal>(other);
     }
     Element& operator=(BoutReal value_) {
 
-      ASSERT3(finite(value_));
+      ASSERT3(std::isfinite(value_));
       value = value_;
       setValues(value);
       return *this;
     }
     Element& operator+=(BoutReal value_) {
 
-      ASSERT3(finite(value_));
+      ASSERT3(std::isfinite(value_));
       auto column_position = std::find(cbegin(positions), cend(positions), column);
       if (column_position != cend(positions)) {
         const auto i = std::distance(cbegin(positions), column_position);
