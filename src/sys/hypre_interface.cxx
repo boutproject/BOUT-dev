@@ -15,7 +15,7 @@ BCMatrixEquations::BCMatrixEquations(HYPRE_Int nrows, HYPRE_Int* ncols,
   HYPRE_Int* row_indexes;
 
   // Create the row_indexes array
-  row_indexes = (HYPRE_Int*)malloc(sizeof(HYPRE_Int) * nrows);
+  HypreMalloc(row_indexes, sizeof(HYPRE_Int) * nrows);
   row_indexes[0] = 0;
   for (HYPRE_Int i = 1; i < nrows; i++) {
     row_indexes[i] = row_indexes[i - 1] + ncols[i - 1];
