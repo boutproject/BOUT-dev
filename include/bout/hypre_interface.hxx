@@ -331,6 +331,7 @@ public:
     return result;
   }
 
+  // Loads values into I and V arrays but does not assemble
   void importValuesFromField(const T& f) {
     CALI_CXX_MARK_FUNCTION;
 
@@ -345,8 +346,6 @@ public:
     }
 
     ASSERT2(vec_i == vsize);
-    // writeCacheToHypre(); // redundant assemble already performs writeCacheToHypre
-    assemble();
     have_indices = true;
   }
 
