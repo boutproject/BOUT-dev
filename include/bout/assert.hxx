@@ -19,6 +19,8 @@
 
 #include "bout/boutexception.hxx"
 
+#include <string_view>
+
 #ifndef CHECK
 #define CHECKLEVEL 0
 #else
@@ -26,41 +28,45 @@
 #endif
 
 #if CHECKLEVEL >= 0
-#define ASSERT0(condition)                                                               \
-  if (!(condition)) {                                                                    \
-    throw BoutException("Assertion failed in {:s}, line {:d}: {:s}", __FILE__, __LINE__, \
-                        #condition);                                                     \
+#define ASSERT0(condition)                                           \
+  if (!(condition)) {                                                \
+    throw BoutException("Assertion failed in {:s}, line {:d}: {:s}", \
+                        std::string_view(__FILE__), __LINE__,        \
+                        std::string_view(#condition));               \
   }
 #else // CHECKLEVEL >= 0
 #define ASSERT0(condition)
 #endif
 
 #if CHECKLEVEL >= 1
-#define ASSERT1(condition)                                                               \
-  if (!(condition)) {                                                                    \
-    throw BoutException("Assertion failed in {:s}, line {:d}: {:s}", __FILE__, __LINE__, \
-                        #condition);                                                     \
-    abort();                                                                             \
+#define ASSERT1(condition)                                           \
+  if (!(condition)) {                                                \
+    throw BoutException("Assertion failed in {:s}, line {:d}: {:s}", \
+                        std::string_view(__FILE__), __LINE__,        \
+                        std::string_view(#condition));               \
+    abort();                                                         \
   }
 #else // CHECKLEVEL >= 1
 #define ASSERT1(condition)
 #endif
 
 #if CHECKLEVEL >= 2
-#define ASSERT2(condition)                                                               \
-  if (!(condition)) {                                                                    \
-    throw BoutException("Assertion failed in {:s}, line {:d}: {:s}", __FILE__, __LINE__, \
-                        #condition);                                                     \
+#define ASSERT2(condition)                                           \
+  if (!(condition)) {                                                \
+    throw BoutException("Assertion failed in {:s}, line {:d}: {:s}", \
+                        std::string_view(__FILE__), __LINE__,        \
+                        std::string_view(#condition));               \
   }
 #else // CHECKLEVEL >= 2
 #define ASSERT2(condition)
 #endif
 
 #if CHECKLEVEL >= 3
-#define ASSERT3(condition)                                                               \
-  if (!(condition)) {                                                                    \
-    throw BoutException("Assertion failed in {:s}, line {:d}: {:s}", __FILE__, __LINE__, \
-                        #condition);                                                     \
+#define ASSERT3(condition)                                           \
+  if (!(condition)) {                                                \
+    throw BoutException("Assertion failed in {:s}, line {:d}: {:s}", \
+                        std::string_view(__FILE__), __LINE__,        \
+                        std::string_view(#condition));               \
   }
 #else // CHECKLEVEL >= 3
 #define ASSERT3(condition)
