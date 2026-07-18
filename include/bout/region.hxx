@@ -254,6 +254,7 @@ struct SpecificInd {
     case (DIRECTION::Z):
       return zp(dd);
     }
+    return *this;
   }
 
   /// Templated routine to return index.?m(offset), where `?` is one of {x,y,z}
@@ -274,6 +275,7 @@ struct SpecificInd {
     case (DIRECTION::Z):
       return zm(dd);
     }
+    return *this;
   }
 
   inline SpecificInd xp(int dx = 1) const { return {ind + (dx * ny * nz), ny, nz}; }

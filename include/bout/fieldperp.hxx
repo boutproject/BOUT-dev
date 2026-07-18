@@ -438,8 +438,8 @@ inline FieldPerp emptyFrom<FieldPerp>(const FieldPerp& f) {
 #if CHECK > 0
 void checkData(const FieldPerp& f, const std::string& region = "RGN_NOX");
 #else
-inline void checkData(const FieldPerp& UNUSED(f),
-                      const std::string& UNUSED(region) = "RGN_NOX") {}
+inline void checkData([[maybe_unused]] const FieldPerp& f,
+                      [[maybe_unused]] const std::string& region = "RGN_NOX") {}
 #endif
 
 /// Force guard cells of passed field \p var to NaN
@@ -452,7 +452,7 @@ inline void invalidateGuards(FieldPerp& UNUSED(var)) {}
 /// toString template specialisation
 /// Defined in utils.hxx
 template <>
-inline std::string toString<>(const FieldPerp& UNUSED(val)) {
+inline std::string toString<>([[maybe_unused]] const FieldPerp& val) {
   return "<FieldPerp>";
 }
 
