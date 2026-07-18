@@ -7,6 +7,7 @@
 #include "bout/bout_types.hxx"
 #include "bout/build_config.hxx"
 #include "bout/build_defines.hxx"
+#include "bout/build_config.hxx"
 #include "bout/region.hxx"
 
 #include <cstddef>
@@ -366,7 +367,7 @@ struct BinaryExpr {
   BinaryExpr& operator=(const BinaryExpr&) = delete;
   BinaryExpr& operator=(BinaryExpr&&) = delete;
 
-  BOUT_HOST_DEVICE BOUT_FORCEINLINE int size() const { return indices.size(); }
+  BOUT_FORCEINLINE int size() const { return indices.size(); }
   BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx) const {
     return f(idx, lhs, rhs); // single‐pass fusion
   }
