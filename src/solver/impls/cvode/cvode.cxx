@@ -172,8 +172,9 @@ CvodeSolver::CvodeSolver(Options* opts)
 
   if ((*options)["use_precon"].isSet()) {
     throw BoutException("solver:use_precon is deprecated for CVODE and is now "
-                        "ignored. Use solver:cvode_precon_method=none to disable "
-                        "preconditioning.\n");
+                        "ignored. To reproduce behaviour of use_precon=true, "
+                        "set cvode_precon_method=user. This enables the Hermes-3 "
+                        "physical preconditioners.\n");
   }
 
   // Add diagnostics to output
