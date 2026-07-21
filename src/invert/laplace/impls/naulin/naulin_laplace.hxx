@@ -6,7 +6,7 @@
 ///   \nabla^2(\phi[i+1])
 ///      + 1/DC(C_1 D)\nabla_\perp(DC(C_2))\nabla_\perp(\phi[i+1])
 ///      + DC(A/D)\phi[i+1]
-///   = rhs(\phi[i])
+///      \\ = rhs(\phi[i])
 ///        + 1/DC(C_1 D)\nabla_\perp(DC(C_2))\nabla_\perp(\phi[i])
 ///        + DC(A/D)\phi[i]
 /// \f}
@@ -29,16 +29,16 @@
 ///
 /// \f{eqnarray}{
 /// \Omega^D &=& \nabla\cdot(n\nabla_\perp \phi)
-///       &=& n \nabla_\perp^2 \phi + \nabla n\cdot\nabla_\perp \phi
-///       &=& n \Omega + \nabla n\cdot\nabla_\perp \phi
-///       &=& n \Omega + \nabla_\perp n\cdot\nabla_\perp \phi
+///     \\ &=&n \nabla_\perp^2 \phi + \nabla n\cdot\nabla_\perp \phi
+///     \\ &=&n \Omega + \nabla n\cdot\nabla_\perp \phi
+///     \\ &=&n \Omega + \nabla_\perp n\cdot\nabla_\perp \phi
 /// \f}
 ///
 /// Rearranging gives
 ///
 /// \f{eqnarray}{
 /// \Omega  &=& \frac{\Omega^D}{n} - \nabla_\perp \ln(n)\cdot\nabla_\perp \phi
-/// \nabla_\perp^2 \phi
+/// \\ \nabla_\perp^2 \phi
 /// &=& \frac{\Omega^D}{n} - \nabla_\perp \ln(n)\cdot\nabla_\perp \phi
 /// \f}
 ///
