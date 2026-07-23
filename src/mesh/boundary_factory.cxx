@@ -23,7 +23,7 @@ BoundaryFactory* BoundaryFactory::instance = nullptr;
 BoundaryFactory::BoundaryFactory() {
   add(new BoundaryDirichlet(), "dirichlet");       // Default
   add(new BoundaryDirichlet_O1(), "dirichlet_o1"); // Old implementation in v3
-  add(new BoundaryDirichlet(), "dirichlet_o2"); // Synonym for "dirichlet"
+  add(new BoundaryDirichlet(), "dirichlet_o2");    // Synonym for "dirichlet"
   add(new BoundaryDirichlet_O3(), "dirichlet_o3");
   add(new BoundaryDirichlet_O4(), "dirichlet_o4");
   add(new BoundaryDirichlet_4thOrder(), "dirichlet_4thorder");

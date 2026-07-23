@@ -1899,8 +1899,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       }
     }
 #else
-    throw BoutException("Applying boundary condition 'neumann' to Field2D "
-                        "not compatible with 3D metrics in all cases.");
+  throw BoutException("Applying boundary condition 'neumann' to Field2D "
+                      "not compatible with 3D metrics in all cases.");
 #endif
   }
 
@@ -1935,9 +1935,9 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
           BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, zk)
                            + bndry->by * metric->dy(bndry->x, bndry->y, zk);
 #else
-        BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y)
-                         + bndry->by * metric->dy(bndry->x, bndry->y);
-        for (int zk = mesh->zstart; zk <= mesh->zend; zk++) {
+      BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y)
+                       + bndry->by * metric->dy(bndry->x, bndry->y);
+      for (int zk = mesh->zstart; zk <= mesh->zend; zk++) {
 #endif
           if (fg) {
             val = fg->generate(Context(bndry, zk, loc, t, mesh));
