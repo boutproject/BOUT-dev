@@ -120,7 +120,7 @@ private:
 
   /// Rescale state (snes_x) so that all quantities are around 1. If
   /// quantities are near zero then RTOL is used.
-  PetscErrorCode rescale(int& saved_jacobian_lag);
+  PetscErrorCode rescale();
 
   /// Call the physics model RHS function
   ///

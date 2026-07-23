@@ -603,7 +603,7 @@ int SNESSolver::init() {
   return 0;
 }
 
-PetscErrorCode SNESSolver::rescale(int& saved_jacobian_lag) {
+PetscErrorCode SNESSolver::rescale() {
   // Individual variable scaling
   // Note: If variables are rescaled then the Jacobian columns
   //       need to be scaled or recalculated
@@ -651,12 +651,8 @@ PetscErrorCode SNESSolver::rescale(int& saved_jacobian_lag) {
   }
 
   // Force recalculation of the Jacobian
-  SNESGetLagJacobian(snes, &saved_jacobian_lag);
-  // FIXME: This isn't actually what we want to happen. The lag should
-  // stay as before, we just want to make sure the Jacobian gets
-  // re-evaluated at the start of the solve. We need to use
-  // SNESSetJacobianPersist for that.
-  SNESSetLagJacobian(snes, 1);
+  PetscCall(SNESSetLagJacobianPersists(snes, PETSC_FALSE));
+
   return PETSC_SUCCESS;
 }
 
@@ -679,9 +675,8 @@ int SNESSolver::run() {
     PetscCall(VecRestoreArray(snes_x, &xdata));
   }
 
-  int saved_jacobian_lag = 0;
   if (scale_vars) {
-    PetscCall(rescale(saved_jacobian_lag));
+    PetscCall(rescale());
   }
 
   // Initialise residuals
@@ -702,6 +697,8 @@ int SNESSolver::run() {
   recent_failure_rate = 0.0;
   int steps_since_rescale = 0;
   BoutReal change_since_rescale = 0.;
+  // Tracks whether we force persisting of lagged Jacobian to be turned off for the next time-step
+  bool persist_jac_lag_off = false;
   for (int s = 1; s <= getNumberOutputSteps(); s++) {
     target += getOutputTimestep();
 
@@ -716,10 +713,17 @@ int SNESSolver::run() {
         break; // Could happen if step over multiple outputs
       }
 
+      if (persist_jac_lag_off) {
+        persist_jac_lag_off = false;
+      } else {
+        PetscCall(
+            SNESSetLagJacobianPersists(snes, static_cast<PetscBool>(jacobian_persists)));
+      }
+
       if (scale_vars
           and (change_since_rescale > rescale_threshold
                or steps_since_rescale == rescale_period)) {
-        PetscCall(rescale(saved_jacobian_lag));
+        PetscCall(rescale());
         change_since_rescale = 0.;
         steps_since_rescale = 0;
       }
@@ -748,14 +752,14 @@ int SNESSolver::run() {
         if (timestep < dt_min_reset) {
           // Hit the minimum timestep, probably through repeated failures
 
-          if (saved_jacobian_lag != 0) {
+          if (persist_jac_lag_off) {
             // Already tried this and it didn't work
             throw BoutException("Solver failed after many attempts");
           }
 
           // Try resetting the preconditioner, turn off predictor, and use a large timestep
-          SNESGetLagJacobian(snes, &saved_jacobian_lag);
-          SNESSetLagJacobian(snes, 1);
+          PetscCall(SNESSetLagJacobianPersists(snes, PETSC_FALSE));
+          persist_jac_lag_off = true;
           timestep = getOutputTimestep();
           predictor = false; // Predictor can cause problems in near steady-state.
         }
@@ -782,8 +786,6 @@ int SNESSolver::run() {
           const BoutReal beta = dt / (simtime - time1);
           VecAXPBY(snes_x, -beta, (1. + beta), x1);
         }
-
-        SNESSetLagJacobian(snes, lag_jacobian);
       }
 
       // Run the solver
@@ -864,11 +866,8 @@ int SNESSolver::run() {
           PetscCall(FDJrestoreFromPruning());
         }
 
-        if (saved_jacobian_lag == 0) {
-          // This triggers a Jacobian recalculation
-          SNESGetLagJacobian(snes, &saved_jacobian_lag);
-          SNESSetLagJacobian(snes, 1);
-        }
+        PetscCall(SNESSetLagJacobianPersists(snes, PETSC_FALSE));
+        persist_jac_lag_off = true;
 
         // Check lock state
         PetscInt lock_state;
@@ -882,13 +881,6 @@ int SNESSolver::run() {
         }
         looping = true;
         continue; // Try again
-      }
-
-      if (saved_jacobian_lag != 0) {
-        // Following successful step, reset Jacobian lag
-        // to previous value
-        SNESSetLagJacobian(snes, saved_jacobian_lag);
-        saved_jacobian_lag = 0;
       }
 
       if (predictor) {
@@ -997,10 +989,8 @@ int SNESSolver::run() {
 
       if (static_cast<BoutReal>(lin_its) / nl_its > 0.5 * maxl) {
         // Recompute Jacobian if number of linear iterations is too high
-        if (saved_jacobian_lag == 0) {
-          SNESGetLagJacobian(snes, &saved_jacobian_lag);
-          SNESSetLagJacobian(snes, 1);
-        }
+        PetscCall(SNESSetLagJacobianPersists(snes, PETSC_FALSE));
+        persist_jac_lag_off = true;
       }
 
       snes_failures = 0;

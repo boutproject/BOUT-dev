@@ -11,6 +11,7 @@
 #include <array>
 #include <list>
 #include <map>
+#include <memory>
 #include <string>
 using std::list;
 using std::string;
@@ -88,7 +89,9 @@ void BoundaryFactory::cleanup() {
   instance = nullptr;
 }
 
-BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* region) {
+BoundaryOpBase*
+BoundaryFactory::create(const string& name,
+                        const std::shared_ptr<BoundaryRegionBase>& region) {
 
   // Search for a string of the form: modifier(operation)
   auto pos = name.find('(');
@@ -110,8 +113,8 @@ BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* 
       // Clone the boundary operation, passing the region to operate over,
       // an empty args list and empty keyword map
       list<string> args;
-      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionFCI*>(region), args,
-                        {});
+      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionFCI*>(region.get()),
+                        args, {});
     } else {
       // Perpendicular boundary
       BoundaryOp* op = findBoundaryOp(trim(name));
@@ -202,16 +205,16 @@ BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* 
   if (pop != nullptr) {
     // An operation with arguments
     if (region->isParallel) {
-      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionFCI*>(region), arglist,
-                        keywords);
+      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionFCI*>(region.get()),
+                        arglist, keywords);
     }
     if (region->isX) {
-      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionX*>(region), arglist,
-                        keywords);
+      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionX*>(region.get()),
+                        arglist, keywords);
     }
     if (region->isY) {
-      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionY*>(region), arglist,
-                        keywords);
+      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionY*>(region.get()),
+                        arglist, keywords);
     }
   }
   if (!region->isParallel) {
@@ -230,12 +233,15 @@ BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* 
   return nullptr;
 }
 
-BoundaryOpBase* BoundaryFactory::create(const char* name, BoundaryRegionBase* region) {
+BoundaryOpBase*
+BoundaryFactory::create(const char* name,
+                        const std::shared_ptr<BoundaryRegionBase>& region) {
   return create(string(name), region);
 }
 
-BoundaryOpBase* BoundaryFactory::createFromOptions(const string& varname,
-                                                   BoundaryRegionBase* region) {
+BoundaryOpBase*
+BoundaryFactory::createFromOptions(const string& varname,
+                                   const std::shared_ptr<BoundaryRegionBase>& region) {
   if (region == nullptr) {
     return nullptr;
   }
@@ -360,8 +366,9 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string& varname,
   // values. If a user want to override, specify "none" or "null"
 }
 
-BoundaryOpBase* BoundaryFactory::createFromOptions(const char* varname,
-                                                   BoundaryRegionBase* region) {
+BoundaryOpBase*
+BoundaryFactory::createFromOptions(const char* varname,
+                                   const std::shared_ptr<BoundaryRegionBase>& region) {
   return createFromOptions(string(varname), region);
 }
 

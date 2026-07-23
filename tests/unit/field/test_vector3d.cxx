@@ -21,11 +21,6 @@ protected:
     WithQuietOutput quiet{output_info};
     // Delete any existing mesh
     if (mesh != nullptr) {
-      // Delete boundary regions
-      for (auto& r : mesh->getBoundaries()) {
-        delete r;
-      }
-
       delete mesh;
       mesh = nullptr;
     }
@@ -57,12 +52,6 @@ protected:
   }
 
   ~Vector3DTest() override {
-    if (mesh != nullptr) {
-      // Delete boundary regions
-      for (auto& r : mesh->getBoundaries()) {
-        delete r;
-      }
-    }
     delete mesh;
     mesh = nullptr;
     delete mesh_staggered;

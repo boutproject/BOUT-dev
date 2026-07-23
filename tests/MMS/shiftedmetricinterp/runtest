@@ -2,9 +2,6 @@
 
 import boutpp
 
-# requires boutpp
-# requires not make
-
 from boutdata.data import BoutOptionsFile
 import numpy as np
 import itertools

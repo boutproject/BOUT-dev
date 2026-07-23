@@ -28,7 +28,7 @@ either physics models (e.g. ``test-delp2`` and
 Building Physics Models
 -----------------------
 
-After building the library (see :ref:`sec-cmake`), you can build a
+After building the library (see :ref:`sec-config-bout`), you can build a
 physics model in several different ways.
 
 For the bundled examples, perhaps the easiest is to build it directly
@@ -528,7 +528,7 @@ is the macro::
     OPTION(options, g, 5.0/3.0);
 
 which is equivalent to::
-  
+
     g = options["g"].withDefault( 5.0/3.0 );
 
 See :ref:`sec-options` for more details of how to use the input
@@ -734,14 +734,14 @@ and ``a(1,y,z)`` is in the domain, then the boundary would be set so that::
 rearranged as::
 
     a(0,y,z) = - a(1,y,z) + b(0,y,z) + b(1,y,z)
-    
+
 To copy the boundary cells (and communication guard cells), iterate
 over them::
 
     BOUT_FOR(i, a.getRegion("RGN_GUARDS")) {
       a[i] = b[i];
     }
-    
+
 See :ref:`sec-iterating` for more details on iterating over custom regions.
 
 .. _sec-custom-bc:

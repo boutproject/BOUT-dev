@@ -13,7 +13,7 @@ fi
 
 cmake --build build --target build-check -j 2
 cd build
-ctest --output-on-failure --timeout 300
+cmake --build . --target check
 
 export LD_LIBRARY_PATH=/home/runner/local/lib:$LD_LIBRARY_PATH
 

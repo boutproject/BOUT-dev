@@ -169,7 +169,7 @@ public:
   bool hasBndryUpperY() const override { return has_boundary_upper_y; }
 
   // Boundary regions
-  std::vector<BoundaryRegionBase*> getBoundaries() const override;
+  std::vector<std::shared_ptr<BoundaryRegionBase>> getBoundaries() const override;
   std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>
   getBoundariesPar(BoundaryParType type) const override;
   void addBoundaryPar(std::shared_ptr<bout::boundary::BoundaryRegionFCI> bndry,
@@ -416,7 +416,7 @@ protected:
   void addBoundaryRegions();
 
 private:
-  std::vector<BoundaryRegionBase*> boundary; // Vector of boundary regions
+  std::vector<std::shared_ptr<BoundaryRegionBase>> boundary; // Vector of boundary regions
   std::array<std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>,
              static_cast<int>(BoundaryParType::SIZE)>
       par_boundary; // Vector of parallel boundary regions

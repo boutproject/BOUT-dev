@@ -1,17 +1,17 @@
-/*!************************************************************************
+/*! \file
 * Singleton class for reading options files
 *
 * Uses a bridge pattern to access OptionParser classes to parse
 * different file formats
 *
 * Handles the command-line parsing
-* 
 *
-**************************************************************************
+*/
+/*************************************************************************
 * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
 *
 * Contact: Ben Dudson, bd512@york.ac.uk
-* 
+*
 * This file is part of BOUT++.
 *
 * BOUT++ is free software: you can redistribute it and/or modify
@@ -47,11 +47,11 @@ class OptionsReader;
 /// Example
 /// -------
 ///
-/// Options opt;
-/// OptionsReader::getInstance()->read(&opt, "somefile.inp");
+///     Options opt;
+///     OptionsReader::getInstance()->read(&opt, "somefile.inp");
 ///
-/// opt now contains a tree of sections and options from the input file "somefile.inp"
-///
+/// ``opt`` now contains a tree of sections and options from the input
+/// file "somefile.inp"
 class OptionsReader {
 public:
   /// Return a pointer to the instance singleton

@@ -31,7 +31,7 @@ endif()
 # Set the version here, strip any extra tags to use in `project`
 # We try to use git to get a full description, inspired by setuptools_scm
 set(_bout_previous_version "5.2.0")
-set(_bout_next_version "5.2.1")
+set(_bout_next_version "6.0.0")
 execute_process(
   COMMAND "git" describe --tags --match=v${_bout_previous_version}
   COMMAND sed -e s/${_bout_previous_version}-/${_bout_next_version}.dev/ -e
@@ -773,6 +773,7 @@ option(
   OFF
 )
 if(BOUT_TESTS)
+  set(CMAKE_CTEST_ARGUMENTS "--output-on-failure" "--timeout" "300")
   enable_testing()
   # Targets for just building the tests
   # Tests need to add themselves as dependencies to these targets
@@ -800,7 +801,8 @@ if(BOUT_TESTS)
   endif()
 
   add_custom_target(
-    check-integrated-tests COMMAND ctest -R "test-" --output-on-failure
+    check-integrated-tests
+    COMMAND bash "${PROJECT_BINARY_DIR}/tests/run_integrated_tests.sh"
   )
   add_dependencies(check-integrated-tests build-check-integrated-tests)
 
@@ -813,6 +815,30 @@ if(BOUT_TESTS)
   if(BOUT_ENABLE_UNIT_TESTS)
     add_dependencies(check check-unit-tests)
   endif()
+
+  # Copy the pytest config file
+  configure_file(
+    "${PROJECT_SOURCE_DIR}/tests/conftest.py"
+    "${PROJECT_BINARY_DIR}/tests/conftest.py"
+  )
+
+  # Copy the pyproject.toml file
+  configure_file(
+    "${PROJECT_SOURCE_DIR}/pyproject.toml"
+    "${PROJECT_BINARY_DIR}/pyproject.toml"
+  )
+
+  # Copy the pytest config file for the boutpp tests
+  configure_file(
+    "${PROJECT_SOURCE_DIR}/tests/integrated/test-boutpp/conftest.py"
+    "${PROJECT_BINARY_DIR}/tests/integrated/test-boutpp/conftest.py"
+  )
+
+  # Copy the pytest shell script
+  configure_file(
+    "${PROJECT_SOURCE_DIR}/tests/run_integrated_tests.sh"
+    "${PROJECT_BINARY_DIR}/tests/run_integrated_tests.sh" @ONLY
+  )
 
 endif()
 
