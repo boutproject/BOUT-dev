@@ -20,10 +20,15 @@
  *
  **************************************************************************/
 
-#include "fmt/format.h"
+#include "bout/boutexception.hxx"
+#include "bout/field3d.hxx"
 #include "bout/globals.hxx"
 #include "bout/interpolation_xz.hxx"
 #include "bout/mesh.hxx"
+#include "bout/output_bout_types.hxx" // IWYU pragma: keep
+
+#include <fmt/format.h>
+#include <fmt/ranges.h>
 
 #include <vector>
 
@@ -113,7 +118,7 @@ Field3D XZLagrange4pt::interpolate(const Field3D& f, const std::string& region) 
     const int jz2mnew = (jz - 1 + ncz) % ncz;
 
     // Interpolate in Z first
-    BoutReal xvals[4];
+    std::array<BoutReal, 4> xvals{};
 
     const int y_next = y + y_offset;
 
@@ -133,8 +138,13 @@ Field3D XZLagrange4pt::interpolate(const Field3D& f, const std::string& region) 
                             t_z(x, y, z));
 
     // Then in X
-    f_interp(x, y_next, z) = lagrange_4pt(xvals, t_x(x, y, z));
-    ASSERT2(std::isfinite(f_interp(x, y_next, z)));
+    f_interp(x, y_next, z) = lagrange_4pt(xvals.data(), t_x(x, y, z));
+#if CHECK >= 2
+    if (not std::isfinite(f_interp(x, y_next, z))) {
+      throw BoutException("not finite at ({}, {}, {})\nxvals: {}\nt_x: {}", x, y_next, z,
+                          fmt::join(xvals, ", "), t_x(x, y, z));
+    }
+#endif
   }
   const auto region2 = y_offset != 0 ? fmt::format("RGN_YPAR_{:+d}", y_offset) : region;
   f_interp.setRegion(region2);

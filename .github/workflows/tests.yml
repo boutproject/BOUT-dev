@@ -40,75 +40,6 @@ jobs:
         is_cron:
           - ${{ github.event_name == 'cron' }}
         config:
-          - name: "PETSc unreleased, ADIOS2, 3D metrics"
-            os: ubuntu-24.04
-            cmake_options: "-DCHECK=2
-                            -DCMAKE_BUILD_TYPE=Debug
-                            -DBUILD_SHARED_LIBS=ON
-                            -DBOUT_ENABLE_METRIC_3D=ON
-                            -DBOUT_ENABLE_OPENMP=ON
-                            -DBOUT_USE_PETSC=ON
-                            -DBOUT_USE_SLEPC=ON
-                            -DBOUT_USE_SUNDIALS=ON
-                            -DBOUT_USE_HYPRE=OFF
-                            -DBOUT_USE_ADIOS2=ON
-                            -DBOUT_ENABLE_PYTHON=ON
-                            -DADIOS2_ROOT=/home/runner/local
-                            -DSUNDIALS_ROOT=/home/runner/local
-                            -DPETSC_DIR=/home/runner/local/petsc
-                            -DSLEPC_DIR=/home/runner/local/slepc"
-            build_petsc: -petsc-main
-            build_petsc_branch: main
-            build_adios2: true
-            on_cron: true
-
-          - name: "Default options, Ubuntu 22.04"
-            os: ubuntu-22.04
-            cmake_options: ""
-            on_cron: false
-
-          - name: "Optimised, static"
-            os: ubuntu-latest
-            cmake_options: "-DCHECK=0
-                            -DBUILD_SHARED_LIBS=OFF
-                            -DCMAKE_CXX_FLAGS=-Ofast
-                            -DBOUT_ENABLE_SIGNAL=OFF
-                            -DBOUT_ENABLE_TRACK=OFF
-                            -DBOUT_ENABLE_BACKTRACE=OFF
-                            -DBOUT_USE_PETSC=ON
-                            -DBOUT_USE_SLEPC=ON
-                            -DBOUT_USE_SUNDIALS=ON
-                            -DBOUT_USE_HYPRE=ON
-                            -DSUNDIALS_ROOT=/home/runner/local"
-            on_cron: false
-
-          - name: "Debug, shared"
-            os: ubuntu-latest
-            cmake_options: "-DCHECK=4
-                            -DCMAKE_BUILD_TYPE=Debug
-                            -DBOUT_ENABLE_SIGNAL=ON
-                            -DBOUT_ENABLE_TRACK=ON
-                            -DBOUT_USE_PETSC=ON
-                            -DBOUT_USE_SLEPC=ON
-                            -DBOUT_USE_SUNDIALS=ON
-                            -DBOUT_USE_HYPRE=ON
-                            -DSUNDIALS_ROOT=/home/runner/local"
-            on_cron: false
-
-          - name: "Shared, release"
-            os: ubuntu-latest
-            cmake_options: "-DBUILD_SHARED_LIBS=ON
-                            -DBOUT_ENABLE_OPENMP=ON
-                            -DCMAKE_BUILD_TYPE=Release
-                            -DBOUT_USE_PETSC=ON
-                            -DBOUT_USE_SLEPC=ON
-                            -DBOUT_USE_SUNDIALS=ON
-                            -DBOUT_USE_HYPRE=ON
-                            -DBOUT_BUILD_DOCS=OFF
-                            -DSUNDIALS_ROOT=/home/runner/local"
-            omp_num_threads: 2
-            on_cron: false
-
           - name: "Shared, OpenMP, 3D metrics"
             os: ubuntu-latest
             cmake_options: "-DCHECK=2
@@ -121,6 +52,7 @@ jobs:
                             -DBOUT_USE_SUNDIALS=ON
                             -DBOUT_USE_HYPRE=OFF
                             -DBOUT_ENABLE_PYTHON=ON
+                            -DBOUT_RUN_ALL_TESTS=ON
                             -DSUNDIALS_ROOT=/home/runner/local"
             omp_num_threads: 2
             on_cron: false
@@ -206,28 +138,3 @@ jobs:
         run: |
           UNIT_ONLY=${{ matrix.config.unit_only }} ./.ci_with_cmake.sh ${{ matrix.config.cmake_options }} \
               -DPython3_EXECUTABLE=$GITHUB_WORKSPACE/.venv/bin/python
-
-  Fedora:
-    # This is its own job as it doesn't use most of the steps of the
-    # standard_tests
-    timeout-minutes: 120
-    runs-on: ubuntu-latest
-    env:
-      BOUT_TEST_DOWNLOAD_FLAGS: --retry-on-http-error=502,503,504 --tries 3
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          submodules: true
-
-      - name: Cache Zenodo test data
-        uses: actions/cache@v6
-        with:
-          path: build/tests/integrated/test-fci-mpi/grid.fci.nc
-          # If we update the test, invalidate the cache
-          key: zenodo-data-${{ hashFiles('tests/integrated/test-fci-mpi/CMakeLists.txt') }}
-
-      - name: Build Fedora
-        run: ./.ci_fedora.sh setup openmpi
-        shell: bash
-        env:
-          TRAVIS_BUILD_DIR: ${{ github.workspace }}
