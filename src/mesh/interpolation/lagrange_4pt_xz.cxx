@@ -141,8 +141,27 @@ Field3D XZLagrange4pt::interpolate(const Field3D& f, const std::string& region) 
     f_interp(x, y_next, z) = lagrange_4pt(xvals.data(), t_x(x, y, z));
 #if CHECK >= 2
     if (not std::isfinite(f_interp(x, y_next, z))) {
-      throw BoutException("not finite at ({}, {}, {})\nxvals: {}\nt_x: {}", x, y_next, z,
-                          fmt::join(xvals, ", "), t_x(x, y, z));
+      throw BoutException(
+          "not finite at ({}, {}, {})\n"
+          "xvals: {}\n"
+          "t_x: {}\n"
+          "jx vals: ({}, {}, {}, {})\n"
+          "jz vals: ({}, {}, {}, {})\n"
+          "f vals (x->, z^): [\n"
+          "  {}, {}, {}, {}\n"
+          "  {}, {}, {}, {}\n"
+          "  {}, {}, {}, {}\n"
+          "  {}, {}, {}, {}\n"
+          "]",
+          x, y_next, z, fmt::join(xvals, ", "), t_x(x, y, z),
+          // clang-format off
+          jx2mnew, jx, jxpnew, jx2pnew,
+          jz2mnew, jz, jzpnew, jz2pnew,
+          f(jx2mnew, y_next, jz2pnew), f(jx, y_next, jz2pnew), f(jxpnew, y_next, jz2pnew), f(jx2pnew, y_next, jz2pnew),
+          f(jx2mnew, y_next, jzpnew), f(jx, y_next, jzpnew), f(jxpnew, y_next, jzpnew), f(jx2pnew, y_next, jzpnew),
+          f(jx2mnew, y_next, jz), f(jx, y_next, jz), f(jxpnew, y_next, jz), f(jx2pnew, y_next, jz),
+          f(jx2mnew, y_next, jz2mnew), f(jx, y_next, jz2mnew), f(jxpnew, y_next, jz2mnew), f(jx2pnew, y_next, jz2mnew));
+      // clang-format on
     }
 #endif
   }

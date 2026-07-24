@@ -44,13 +44,10 @@ int main(int argc, char** argv) {
   using bout::globals::mesh;
 
   Field3D input{FieldFactory::get()->create3D("input_field", Options::getRoot(), mesh)};
-  Field3D K{FieldFactory::get()->create3D("K", Options::getRoot(), mesh)};
+  mesh->communicate(input);
 
-  {
-    TRACE("comms");
-    // Communicate to calculate parallel transform.
-    mesh->communicate(input, K);
-  }
+  Field3D K{FieldFactory::get()->create3D("K", Options::getRoot(), mesh)};
+  mesh->communicate(K);
 
   Options dump;
   // Add mesh geometry variables
@@ -60,38 +57,38 @@ int main(int argc, char** argv) {
   Field3D flow_ylow;
 
   {
-    TRACE("grad_par");
+    output.write("grad_par\n");
     fci_op_test("grad_par", dump, input, Grad_par(input));
   }
   {
-    TRACE("grad2_par2");
+    output.write("grad2_par2\n");
     fci_op_test("grad2_par2", dump, input, Grad2_par2(input));
   }
   {
-    TRACE("div_par");
+    output.write("div_par\n");
     fci_op_test("div_par", dump, input, Div_par(input));
   }
   {
-    TRACE("div_par_K_grad_par");
+    output.write("div_par_K_grad_par\n");
     fci_op_test("div_par_K_grad_par", dump, input, Div_par_K_Grad_par(K, input));
   }
   {
-    TRACE("div_par_K_grad_par_mod");
+    output.write("div_par_K_grad_par_mod\n");
     fci_op_test("div_par_K_grad_par_mod", dump, input,
                 Div_par_K_Grad_par_mod(K, input, flow_ylow));
   }
   {
-    TRACE("laplace_par");
+    output.write("laplace_par\n");
     fci_op_test("laplace_par", dump, input, Laplace_par(input));
   }
 
   // Finite volume methods
   {
-    TRACE("FV_div_par_mod");
+    output.write("FV_div_par_mod\n");
     fci_op_test("FV_div_par_mod", dump, input, FV::Div_par_mod(input, K, K, flow_ylow));
   }
   {
-    TRACE("FV_div_par_fvv");
+    output.write("FV_div_par_fvv\n");
     fci_op_test("FV_div_par_fvv", dump, input, FV::Div_par_fvv(input, K, K));
   }
 
