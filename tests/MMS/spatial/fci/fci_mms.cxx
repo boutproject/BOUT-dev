@@ -46,8 +46,11 @@ int main(int argc, char** argv) {
   Field3D input{FieldFactory::get()->create3D("input_field", Options::getRoot(), mesh)};
   Field3D K{FieldFactory::get()->create3D("K", Options::getRoot(), mesh)};
 
-  // Communicate to calculate parallel transform.
-  mesh->communicate(input, K);
+  {
+    TRACE("comms");
+    // Communicate to calculate parallel transform.
+    mesh->communicate(input, K);
+  }
 
   Options dump;
   // Add mesh geometry variables
@@ -56,17 +59,41 @@ int main(int argc, char** argv) {
   // Dummy variable for *_mod overloads
   Field3D flow_ylow;
 
-  fci_op_test("grad_par", dump, input, Grad_par(input));
-  fci_op_test("grad2_par2", dump, input, Grad2_par2(input));
-  fci_op_test("div_par", dump, input, Div_par(input));
-  fci_op_test("div_par_K_grad_par", dump, input, Div_par_K_Grad_par(K, input));
-  fci_op_test("div_par_K_grad_par_mod", dump, input,
-              Div_par_K_Grad_par_mod(K, input, flow_ylow));
-  fci_op_test("laplace_par", dump, input, Laplace_par(input));
+  {
+    TRACE("grad_par");
+    fci_op_test("grad_par", dump, input, Grad_par(input));
+  }
+  {
+    TRACE("grad2_par2");
+    fci_op_test("grad2_par2", dump, input, Grad2_par2(input));
+  }
+  {
+    TRACE("div_par");
+    fci_op_test("div_par", dump, input, Div_par(input));
+  }
+  {
+    TRACE("div_par_K_grad_par");
+    fci_op_test("div_par_K_grad_par", dump, input, Div_par_K_Grad_par(K, input));
+  }
+  {
+    TRACE("div_par_K_grad_par_mod");
+    fci_op_test("div_par_K_grad_par_mod", dump, input,
+                Div_par_K_Grad_par_mod(K, input, flow_ylow));
+  }
+  {
+    TRACE("laplace_par");
+    fci_op_test("laplace_par", dump, input, Laplace_par(input));
+  }
 
   // Finite volume methods
-  fci_op_test("FV_div_par_mod", dump, input, FV::Div_par_mod(input, K, K, flow_ylow));
-  fci_op_test("FV_div_par_fvv", dump, input, FV::Div_par_fvv(input, K, K));
+  {
+    TRACE("FV_div_par_mod");
+    fci_op_test("FV_div_par_mod", dump, input, FV::Div_par_mod(input, K, K, flow_ylow));
+  }
+  {
+    TRACE("FV_div_par_fvv");
+    fci_op_test("FV_div_par_fvv", dump, input, FV::Div_par_fvv(input, K, K));
+  }
 
   bout::writeDefaultOutputFile(dump);
 
