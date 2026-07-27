@@ -646,9 +646,16 @@ void Coordinates::outputVars(Options& output_options) {
   output_options["J" + loc_string].force(J(), "Coordinates");
   output_options["Bxy" + loc_string].force(Bxy(), "Coordinates");
 
-  output_options["G1" + loc_string].force(G1(), "Coordinates");
-  output_options["G2" + loc_string].force(G2(), "Coordinates");
-  output_options["G3" + loc_string].force(G3(), "Coordinates");
+  if (g_values_cache != nullptr) {
+    // If we haven't used them yet, then presumably we don't actually need them,
+    // so let's not compute them now.
+    // Also, previously, we were explicitly setting the G-values to NaN for FCI
+    // instead of computing them (presumably because these are both difficult to
+    // compute accurately for FCI and unneeded in FCI models in practice).
+    output_options["G1" + loc_string].force(G1(), "Coordinates");
+    output_options["G2" + loc_string].force(G2(), "Coordinates");
+    output_options["G3" + loc_string].force(G3(), "Coordinates");
+  }
 
   getParallelTransform().outputVars(output_options);
 }
