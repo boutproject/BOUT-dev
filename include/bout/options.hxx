@@ -55,6 +55,7 @@ class Options;
 #include <fmt/format.h>
 
 #include <cmath>
+#include <cstddef>
 #include <functional>
 #include <map>
 #include <ostream>
