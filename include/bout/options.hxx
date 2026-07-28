@@ -934,6 +934,9 @@ private:
   bool similar(T lhs, T rhs) const {
     return lhs == rhs;
   }
+
+  /// Replaces the start of the name of an Option and any children
+  void recursively_update_names(size_t len, const std::string& new_prefix);
 };
 
 // Specialised assign methods for types stored in ValueType
