@@ -258,16 +258,19 @@ Options& Options::operator=(Options&& other) noexcept {
 
   value = std::move(other.value);
   attributes = std::move(other.attributes);
-  full_name = std::move(other.full_name);
   is_section = other.is_section;
   children = std::move(other.children);
   value_used = other.value_used;
 
   // Ensure that this is the parent of all children,
   // otherwise will point to the original Options instance
+  const auto len = other.full_name.size();
+  const std::string new_prefix = len == 0 ? full_name + ":" : full_name;
   for (auto& child : children) {
     child.second.parent_instance = this;
+    child.second.recursively_update_names(len, new_prefix);
   }
+
   return *this;
 }
 
@@ -1026,6 +1029,13 @@ std::vector<int> Options::getShape() const {
     return bout::utils::visit(GetDimensions{}, value);
   }
   return lazy_shape;
+}
+
+void Options::recursively_update_names(size_t len, const std::string& new_prefix) {
+  full_name.replace(0, len, new_prefix);
+  for (auto& [_, child] : children) {
+    child.recursively_update_names(len, new_prefix);
+  }
 }
 
 fmt::format_context::iterator
