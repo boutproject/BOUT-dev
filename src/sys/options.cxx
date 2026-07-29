@@ -262,10 +262,21 @@ Options& Options::operator=(Options&& other) noexcept {
   children = std::move(other.children);
   value_used = other.value_used;
 
+  size_t len = other.full_name.size();
+  std::string new_prefix;
+  if (len == 0) {
+    new_prefix = full_name.empty() ? full_name : full_name + ":";
+  } else {
+    new_prefix = full_name;
+    // If new_prefix is empty but the old name is not then we also
+    // need to remove a colon when updating names
+    if (full_name.empty()) {
+      len += 1;
+    }
+  }
+
   // Ensure that this is the parent of all children,
   // otherwise will point to the original Options instance
-  const auto len = other.full_name.size();
-  const std::string new_prefix = len == 0 ? full_name + ":" : full_name;
   for (auto& child : children) {
     child.second.parent_instance = this;
     child.second.recursively_update_names(len, new_prefix);
