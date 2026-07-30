@@ -7,6 +7,7 @@
 
 #include <adios2.h>
 
+#include <string>
 #include <unordered_map>
 
 namespace bout {
@@ -57,10 +58,26 @@ ADIOSStream::~ADIOSStream() {
   }
 }
 
-ADIOSStream& ADIOSStream::ADIOSGetStream(const std::string& fname, adios2::Mode mode) {
+ADIOSStream::ADIOSStream(const std::string& fname, adios2::Mode mode,
+                         const std::string& engineType)
+    : fname(fname), file_mode(mode) {
+
+  ADIOSPtr adiosp = GetADIOSPtr();
+  try {
+    io = adiosp->AtIO(fname);
+  } catch (const std::invalid_argument& e) {
+    io = adiosp->DeclareIO(fname);
+    if (!engineType.empty()) {
+      io.SetEngine(engineType);
+    }
+  }
+}
+
+ADIOSStream& ADIOSStream::ADIOSGetStream(const std::string& fname, adios2::Mode mode,
+                                         const std::string& engineType) {
   auto it = adiosStreams.find(fname);
   if (it == adiosStreams.end()) {
-    it = adiosStreams.emplace(fname, ADIOSStream(fname, mode)).first;
+    it = adiosStreams.emplace(fname, ADIOSStream(fname, mode, engineType)).first;
   }
   return it->second;
 }

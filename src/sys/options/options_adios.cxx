@@ -356,16 +356,9 @@ Options OptionsADIOS::read([[maybe_unused]] bool lazy) {
   const Timer timer("io");
 
   // Open file
-  const ADIOSPtr adiosp = GetADIOSPtr();
-  adios2::IO io;
-  const std::string ioname = "read_" + filename;
-  try {
-    io = adiosp->AtIO(ioname);
-  } catch (const std::invalid_argument& e) {
-    io = adiosp->DeclareIO(ioname);
-  }
-
-  adios2::Engine reader = io.Open(filename, adios2::Mode::ReadRandomAccess);
+  ADIOSStream& stream =
+      ADIOSStream::ADIOSGetStream(filename, adios2::Mode::ReadRandomAccess);
+  adios2::Engine& reader = stream.engine();
   if (!reader) {
     throw BoutException("Could not open ADIOS file '{:s}' for reading\n", filename);
   }
@@ -373,7 +366,7 @@ Options OptionsADIOS::read([[maybe_unused]] bool lazy) {
   Options result;
 
   // Iterate over all variables
-  for (const auto& varpair : io.AvailableVariables()) {
+  for (const auto& varpair : stream.io.AvailableVariables()) {
     const auto& var_name = varpair.first; // Name of the variable
 
     auto it = varpair.second.find("Type");
@@ -388,21 +381,21 @@ Options OptionsADIOS::read([[maybe_unused]] bool lazy) {
     // Note: Copying the value rather than simple assignment is used
     // because the Options assignment operator overwrites full_name.
     var = 0; // Setting is_section to false
-    var.value = readVariable(reader, io, var_name, var_type).value;
+    var.value = readVariable(reader, stream.io, var_name, var_type).value;
     var.attributes["source"] = filename;
 
     // Get variable attributes
-    for (const auto& attpair : io.AvailableAttributes(var_name, "/", true)) {
+    for (const auto& attpair : stream.io.AvailableAttributes(var_name, "/", true)) {
       const auto& att_name = attpair.first; // Attribute name
       const auto& att = attpair.second;     // attribute params
 
       auto it = att.find("Type");
       const std::string& att_type = it->second;
-      readAttribute(io, att_name, att_type, var);
+      readAttribute(stream.io, att_name, att_type, var);
     }
   }
 
-  reader.Close();
+  stream.finish();
 
   return result;
 }

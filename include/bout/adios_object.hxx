@@ -21,6 +21,7 @@
 #include <adios2.h>
 #include <memory>
 #include <mpi.h>
+#include <string>
 
 namespace bout {
 
@@ -43,7 +44,8 @@ public:
   int adiosStep = 0;
 
   /** create or return the ADIOSStream based on the target file name */
-  static ADIOSStream& ADIOSGetStream(const std::string& fname, adios2::Mode mode);
+  static ADIOSStream& ADIOSGetStream(const std::string& fname, adios2::Mode mode,
+                                     const std::string& engineType = "BP5");
 
   ~ADIOSStream();
 
@@ -78,7 +80,7 @@ public:
     if (not engine_) {
       engine_ = io.Open(fname, file_mode);
       if (not engine_) {
-        throw BoutException("Could not open ADIOS file '{:s}' for writing", fname);
+        throw BoutException("Could not open ADIOS file '{:s}'", fname);
       }
     }
     return engine_;
@@ -101,24 +103,17 @@ public:
 
   void finish() {
     if (engine_) {
-      engine().EndStep();
+      if (isInStep) {
+        engine().EndStep();
+        isInStep = false;
+      }
       engine().Close();
+      engine_ = adios2::Engine();
     }
   }
 
 private:
-  ADIOSStream(const std::string& fname, adios2::Mode mode)
-      : fname(fname), file_mode(mode) {
-
-    ADIOSPtr adiosp = GetADIOSPtr();
-    std::string ioname = "write_" + fname;
-    try {
-      io = adiosp->AtIO(ioname);
-    } catch (const std::invalid_argument& e) {
-      io = adiosp->DeclareIO(ioname);
-      io.SetEngine("BP5");
-    }
-  };
+  ADIOSStream(const std::string& fname, adios2::Mode mode, const std::string& engineType);
 
   std::string fname;
   adios2::Mode file_mode;
