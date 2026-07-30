@@ -410,14 +410,29 @@ struct BinaryExpr {
     }
   }
   auto yup(int slice = 0) const {
-    return BinaryExpr<ResT, L, R, Func>{lhs.yup(slice), rhs.yup(slice), f,
-                                        mesh,           location,       directions,
-                                        regionID,       indices,        yindex};
+    return BinaryExpr<ResT, L, R, Func>{
+        lhs.yup(slice),
+        rhs.yup(slice),
+        f,
+        mesh,
+        location,
+        directions,
+        mesh->getCommonRegion(lhs.yup(slice).getRegionID(), rhs.yup(slice).getRegionID()),
+        indices,
+        yindex};
   }
   auto ydown(int slice = 0) const {
     return BinaryExpr<ResT, L, R, Func>{
-        lhs.ydown(slice), rhs.ydown(slice), f,       mesh,  location,
-        directions,       regionID,         indices, yindex};
+        lhs.ydown(slice),
+        rhs.ydown(slice),
+        f,
+        mesh,
+        location,
+        directions,
+        mesh->getCommonRegion(lhs.ydown(slice).getRegionID(),
+                              rhs.ydown(slice).getRegionID()),
+        indices,
+        yindex};
   }
 
   //operator ResT() { return ResT{*this}; }
