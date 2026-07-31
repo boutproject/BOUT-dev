@@ -27,6 +27,7 @@
 #include <string>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 namespace bout {
 
@@ -95,6 +96,21 @@ public:
       return;
     }
     engine().Put(GetValueVariable<T>(varname), value);
+  }
+
+  template <class T>
+  void Put(const std::string& varname, const Array<T>& value) {
+    PutArrayLike(varname, value);
+  }
+
+  template <class T>
+  void Put(const std::string& varname, const Matrix<T>& value) {
+    PutArrayLike(varname, value);
+  }
+
+  template <class T>
+  void Put(const std::string& varname, const Tensor<T>& value) {
+    PutArrayLike(varname, value);
   }
 
   template <class T>
@@ -189,6 +205,43 @@ private:
 
     resizeForShape(value, shape, offset, std::make_index_sequence<ndims>{});
     engine().Get(variable, value.begin(), mode);
+  }
+
+  template <class Container>
+  void PutArrayLike(const std::string& varname, const Container& value) {
+    using T = typename Container::data_type;
+    auto var = GetArrayVariable<T>(varname, makeShape(BoutComm::size(), value),
+                                   makeDimNames(value), BoutComm::rank());
+    var.SetSelection(adios2::Box<adios2::Dims>{makeStart(value), makeShape(1, value)});
+    engine().Put<T>(var, value.begin());
+  }
+
+  template <class Container>
+  adios2::Dims makeShape(std::size_t first, const Container& value) const {
+    return std::apply(
+        [first](auto... sizes) {
+          return adios2::Dims{first, static_cast<std::size_t>(sizes)...};
+        },
+        value.shape());
+  }
+
+  template <class Container>
+  adios2::Dims makeStart(const Container& value) const {
+    constexpr auto ndims = std::tuple_size_v<decltype(value.shape())>;
+    adios2::Dims start(ndims + 1, 0);
+    start[0] = static_cast<std::size_t>(BoutComm::rank());
+    return start;
+  }
+
+  template <class Container>
+  std::vector<std::string> makeDimNames(const Container& value) const {
+    constexpr auto ndims = std::tuple_size_v<decltype(value.shape())>;
+    std::vector<std::string> dim_names{"rank"};
+    dim_names.reserve(ndims + 1);
+    for (std::size_t i = 0; i < ndims; i++) {
+      dim_names.push_back("dim_" + std::to_string(i));
+    }
+    return dim_names;
   }
 
   template <class Container, std::size_t... I>
