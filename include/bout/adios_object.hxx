@@ -19,6 +19,10 @@
 #include "bout/assert.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/fieldperp.hxx"
+#include "bout/mesh.hxx"
 #include "bout/utils.hxx"
 
 #include <adios2.h>
@@ -88,6 +92,24 @@ public:
   void Get(const std::string& varname, Tensor<T>& value,
            adios2::Mode mode = adios2::Mode::Sync) {
     GetArrayLike(varname, value, mode);
+  }
+
+  void Get(const std::string& varname, Field2D& value,
+           adios2::Mode mode = adios2::Mode::Sync) {
+    value.allocate();
+    GetField(varname, {"x", "y"}, *value.getMesh(), &value(0, 0), mode);
+  }
+
+  void Get(const std::string& varname, Field3D& value,
+           adios2::Mode mode = adios2::Mode::Sync) {
+    value.allocate();
+    GetField(varname, {"x", "y", "z"}, *value.getMesh(), &value(0, 0, 0), mode);
+  }
+
+  void Get(const std::string& varname, FieldPerp& value,
+           adios2::Mode mode = adios2::Mode::Sync) {
+    value.allocate();
+    GetField(varname, {"x", "z"}, *value.getMesh(), &value(0, 0), mode);
   }
 
   template <class T>
@@ -169,6 +191,69 @@ public:
 
 private:
   ADIOSStream(const std::string& fname, adios2::Mode mode, const std::string& engineType);
+
+  struct FieldSelection {
+    adios2::Dims start;
+    adios2::Dims count;
+    adios2::Dims mem_start;
+    adios2::Dims mem_count;
+
+    auto selection() const { return adios2::Box<adios2::Dims>{start, count}; }
+    auto memorySelection() const {
+      return adios2::Box<adios2::Dims>{mem_start, mem_count};
+    }
+  };
+
+  void GetField(const std::string& varname, const std::vector<std::string>& dim_names,
+                const Mesh& mesh, BoutReal* data, adios2::Mode mode) {
+    auto variable = io.InquireVariable<BoutReal>(varname);
+    ASSERT1(variable);
+    ASSERT1(variable.ShapeID() == adios2::ShapeID::GlobalArray);
+
+    auto selection = makeFieldSelection(dim_names, mesh);
+    variable.SetSelection(selection.selection());
+    variable.SetMemorySelection(selection.memorySelection());
+    engine().Get(variable, data, mode);
+  }
+
+  FieldSelection makeFieldSelection(const std::vector<std::string>& dim_names,
+                                    const Mesh& mesh) const {
+    ASSERT1(!dim_names.empty());
+    ASSERT1(dim_names.size() <= 3);
+    ASSERT1(dim_names[0] == "x");
+
+    FieldSelection selection;
+    selection.start.push_back(static_cast<std::size_t>(mesh.MapGlobalX));
+    selection.count.push_back(static_cast<std::size_t>(mesh.MapCountX));
+    selection.mem_start.push_back(static_cast<std::size_t>(mesh.MapLocalX));
+    selection.mem_count.push_back(static_cast<std::size_t>(mesh.LocalNx));
+
+    if (dim_names.size() > 1) {
+      if (dim_names[1] == "y") {
+        selection.start.push_back(static_cast<std::size_t>(mesh.MapGlobalY));
+        selection.count.push_back(static_cast<std::size_t>(mesh.MapCountY));
+        selection.mem_start.push_back(static_cast<std::size_t>(mesh.MapLocalY));
+        selection.mem_count.push_back(static_cast<std::size_t>(mesh.LocalNy));
+      } else if (dim_names[1] == "z") {
+        selection.start.push_back(static_cast<std::size_t>(mesh.MapGlobalZ));
+        selection.count.push_back(static_cast<std::size_t>(mesh.MapCountZ));
+        selection.mem_start.push_back(static_cast<std::size_t>(mesh.MapLocalZ));
+        selection.mem_count.push_back(static_cast<std::size_t>(mesh.LocalNz));
+      } else {
+        ASSERT1(false);
+      }
+    }
+
+    if (dim_names.size() > 2) {
+      ASSERT1(dim_names[2] == "z");
+      selection.start.push_back(static_cast<std::size_t>(mesh.MapGlobalZ));
+      selection.count.push_back(static_cast<std::size_t>(mesh.MapCountZ));
+      selection.mem_start.push_back(static_cast<std::size_t>(mesh.MapLocalZ));
+      selection.mem_count.push_back(static_cast<std::size_t>(mesh.LocalNz));
+    }
+
+    return selection;
+  }
 
   template <class Container>
   void GetArrayLike(const std::string& varname, Container& value, adios2::Mode mode) {
