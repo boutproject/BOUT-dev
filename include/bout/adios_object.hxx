@@ -22,6 +22,7 @@
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/fieldperp.hxx"
+#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
 #include "bout/utils.hxx"
 
@@ -292,7 +293,7 @@ private:
 
     const auto shape = variable.Shape();
     auto dims_attr = io.InquireAttribute<std::string>(varname + "/__xarray_dimensions__");
-    std::size_t offset = 0;
+    auto read_shape = shape;
 
     if (dims_attr) {
       const auto dim_names = dims_attr.Data();
@@ -309,14 +310,20 @@ private:
 
         variable.SetSelection(adios2::Box<adios2::Dims>{start, count});
         variable.SetMemorySelection(adios2::Box<adios2::Dims>{start, count});
-        offset = 1;
+        read_shape = adios2::Dims(shape.begin() + 1, shape.end());
+      } else if (!dim_names.empty() && dim_names[0] == "x") {
+        ASSERT1(globals::mesh);
+        auto selection = makeFieldSelection(dim_names, *globals::mesh);
+        variable.SetSelection(selection.selection());
+        variable.SetMemorySelection(selection.memorySelection());
+        read_shape = selection.mem_count;
       }
     }
 
     constexpr auto ndims = std::tuple_size_v<decltype(value.shape())>;
-    ASSERT1(shape.size() == ndims + offset);
+    ASSERT1(read_shape.size() == ndims);
 
-    resizeForShape(value, shape, offset, std::make_index_sequence<ndims>{});
+    resizeForShape(value, read_shape, 0, std::make_index_sequence<ndims>{});
     engine().Get(variable, value.begin(), mode);
   }
 
