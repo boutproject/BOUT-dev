@@ -135,6 +135,18 @@ public:
     PutArrayLike(varname, value);
   }
 
+  void Put(const std::string& varname, const Field2D& value) {
+    PutField(varname, {"x", "y"}, *value.getMesh(), &value(0, 0));
+  }
+
+  void Put(const std::string& varname, const Field3D& value) {
+    PutField(varname, {"x", "y", "z"}, *value.getMesh(), &value(0, 0, 0));
+  }
+
+  void Put(const std::string& varname, const FieldPerp& value) {
+    PutField(varname, {"x", "z"}, *value.getMesh(), &value(0, 0));
+  }
+
   template <class T>
   adios2::Variable<T>
   GetArrayVariable(const std::string& varname, const adios2::Dims& shape,
@@ -193,6 +205,7 @@ private:
   ADIOSStream(const std::string& fname, adios2::Mode mode, const std::string& engineType);
 
   struct FieldSelection {
+    adios2::Dims shape;
     adios2::Dims start;
     adios2::Dims count;
     adios2::Dims mem_start;
@@ -216,6 +229,16 @@ private:
     engine().Get(variable, data, mode);
   }
 
+  void PutField(const std::string& varname, const std::vector<std::string>& dim_names,
+                const Mesh& mesh, const BoutReal* data) {
+    auto selection = makeFieldSelection(dim_names, mesh);
+    auto variable =
+        GetArrayVariable<BoutReal>(varname, selection.shape, dim_names, BoutComm::rank());
+    variable.SetSelection(selection.selection());
+    variable.SetMemorySelection(selection.memorySelection());
+    engine().Put(variable, data);
+  }
+
   FieldSelection makeFieldSelection(const std::vector<std::string>& dim_names,
                                     const Mesh& mesh) const {
     ASSERT1(!dim_names.empty());
@@ -223,6 +246,7 @@ private:
     ASSERT1(dim_names[0] == "x");
 
     FieldSelection selection;
+    selection.shape.push_back(static_cast<std::size_t>(mesh.GlobalNx));
     selection.start.push_back(static_cast<std::size_t>(mesh.MapGlobalX));
     selection.count.push_back(static_cast<std::size_t>(mesh.MapCountX));
     selection.mem_start.push_back(static_cast<std::size_t>(mesh.MapLocalX));
@@ -230,11 +254,13 @@ private:
 
     if (dim_names.size() > 1) {
       if (dim_names[1] == "y") {
+        selection.shape.push_back(static_cast<std::size_t>(mesh.GlobalNy));
         selection.start.push_back(static_cast<std::size_t>(mesh.MapGlobalY));
         selection.count.push_back(static_cast<std::size_t>(mesh.MapCountY));
         selection.mem_start.push_back(static_cast<std::size_t>(mesh.MapLocalY));
         selection.mem_count.push_back(static_cast<std::size_t>(mesh.LocalNy));
       } else if (dim_names[1] == "z") {
+        selection.shape.push_back(static_cast<std::size_t>(mesh.GlobalNz));
         selection.start.push_back(static_cast<std::size_t>(mesh.MapGlobalZ));
         selection.count.push_back(static_cast<std::size_t>(mesh.MapCountZ));
         selection.mem_start.push_back(static_cast<std::size_t>(mesh.MapLocalZ));
@@ -245,7 +271,9 @@ private:
     }
 
     if (dim_names.size() > 2) {
+      ASSERT1(dim_names[1] == "y");
       ASSERT1(dim_names[2] == "z");
+      selection.shape.push_back(static_cast<std::size_t>(mesh.GlobalNz));
       selection.start.push_back(static_cast<std::size_t>(mesh.MapGlobalZ));
       selection.count.push_back(static_cast<std::size_t>(mesh.MapCountZ));
       selection.mem_start.push_back(static_cast<std::size_t>(mesh.MapLocalZ));
