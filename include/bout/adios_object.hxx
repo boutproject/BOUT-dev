@@ -16,6 +16,8 @@
 
 #if BOUT_HAS_ADIOS2
 
+#include "bout/assert.hxx"
+#include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
 
 #include <adios2.h>
@@ -56,6 +58,21 @@ public:
       v = io.DefineVariable<T>(varname);
     }
     return v;
+  }
+
+  template <class T>
+  void Get(const std::string& varname, T& value, adios2::Mode mode = adios2::Mode::Sync) {
+    auto variable = GetValueVariable<T>(varname);
+    ASSERT1(variable.ShapeID() == adios2::ShapeID::GlobalValue);
+    engine().Get(variable, &value, mode);
+  }
+
+  template <class T>
+  void Put(const std::string& varname, T value) {
+    if (BoutComm::rank() != 0) {
+      return;
+    }
+    engine().Put(GetValueVariable<T>(varname), value);
   }
 
   template <class T>
