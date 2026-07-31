@@ -19,11 +19,14 @@
 #include "bout/assert.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/utils.hxx"
 
 #include <adios2.h>
 #include <memory>
 #include <mpi.h>
 #include <string>
+#include <tuple>
+#include <utility>
 
 namespace bout {
 
@@ -62,9 +65,28 @@ public:
 
   template <class T>
   void Get(const std::string& varname, T& value, adios2::Mode mode = adios2::Mode::Sync) {
-    auto variable = GetValueVariable<T>(varname);
+    auto variable = io.InquireVariable<T>(varname);
+    ASSERT1(variable);
     ASSERT1(variable.ShapeID() == adios2::ShapeID::GlobalValue);
     engine().Get(variable, &value, mode);
+  }
+
+  template <class T>
+  void Get(const std::string& varname, Array<T>& value,
+           adios2::Mode mode = adios2::Mode::Sync) {
+    GetArrayLike(varname, value, mode);
+  }
+
+  template <class T>
+  void Get(const std::string& varname, Matrix<T>& value,
+           adios2::Mode mode = adios2::Mode::Sync) {
+    GetArrayLike(varname, value, mode);
+  }
+
+  template <class T>
+  void Get(const std::string& varname, Tensor<T>& value,
+           adios2::Mode mode = adios2::Mode::Sync) {
+    GetArrayLike(varname, value, mode);
   }
 
   template <class T>
@@ -131,6 +153,49 @@ public:
 
 private:
   ADIOSStream(const std::string& fname, adios2::Mode mode, const std::string& engineType);
+
+  template <class Container>
+  void GetArrayLike(const std::string& varname, Container& value, adios2::Mode mode) {
+    using T = typename Container::data_type;
+    auto variable = io.InquireVariable<T>(varname);
+    ASSERT1(variable);
+    ASSERT1(variable.ShapeID() == adios2::ShapeID::GlobalArray);
+
+    const auto shape = variable.Shape();
+    auto dims_attr = io.InquireAttribute<std::string>(varname + "/__xarray_dimensions__");
+    std::size_t offset = 0;
+
+    if (dims_attr) {
+      const auto dim_names = dims_attr.Data();
+      if (!dim_names.empty() && dim_names[0] == "rank") {
+        ASSERT1(!shape.empty());
+        ASSERT1(static_cast<std::size_t>(BoutComm::rank()) < shape[0]);
+
+        adios2::Dims start{static_cast<std::size_t>(BoutComm::rank())};
+        adios2::Dims count{1};
+        for (std::size_t i = 1; i < shape.size(); i++) {
+          start.push_back(0);
+          count.push_back(shape[i]);
+        }
+
+        variable.SetSelection(adios2::Box<adios2::Dims>{start, count});
+        variable.SetMemorySelection(adios2::Box<adios2::Dims>{start, count});
+        offset = 1;
+      }
+    }
+
+    constexpr auto ndims = std::tuple_size_v<decltype(value.shape())>;
+    ASSERT1(shape.size() == ndims + offset);
+
+    resizeForShape(value, shape, offset, std::make_index_sequence<ndims>{});
+    engine().Get(variable, value.begin(), mode);
+  }
+
+  template <class Container, std::size_t... I>
+  void resizeForShape(Container& value, const adios2::Dims& shape, std::size_t offset,
+                      std::index_sequence<I...> /*indices*/) {
+    value.reallocate(static_cast<typename Container::size_type>(shape[offset + I])...);
+  }
 
   std::string fname;
   adios2::Mode file_mode;
