@@ -19,7 +19,7 @@
 
 #include "bout/boutexception.hxx"
 
-#include <string_view>
+#include <string_view>  // IWYU pragma: export
 
 #ifndef CHECK
 #define CHECKLEVEL 0
