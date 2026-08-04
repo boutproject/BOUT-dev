@@ -263,16 +263,13 @@ Options& Options::operator=(Options&& other) noexcept {
   value_used = other.value_used;
 
   size_t len = other.full_name.size();
-  std::string new_prefix;
-  if (len == 0) {
-    new_prefix = full_name.empty() ? full_name : full_name + ":";
-  } else {
-    new_prefix = full_name;
-    // If new_prefix is empty but the old name is not then we also
-    // need to remove a colon when updating names
-    if (full_name.empty()) {
-      len += 1;
-    }
+  std::string new_prefix = full_name;
+  if (len == 0 and not full_name.empty()) {
+    // Append section delimiter to new name
+    new_prefix += ":";
+  } else if (len != 0 and full_name.empty()) {
+    // Remove extraneous section delimiter from old name
+    len += 1;
   }
 
   // Ensure that this is the parent of all children,
