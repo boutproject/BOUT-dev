@@ -7,7 +7,6 @@
 #include "bout/bout_types.hxx"
 #include "bout/build_config.hxx"
 #include "bout/build_defines.hxx"
-#include "bout/build_config.hxx"
 #include "bout/region.hxx"
 
 #include <cstddef>

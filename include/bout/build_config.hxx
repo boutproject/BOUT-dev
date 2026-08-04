@@ -92,6 +92,15 @@ constexpr auto use_msgstack = static_cast<bool>(BOUT_USE_MSGSTACK);
 #else
 #define BOUT_ASSUME(condition) ((void)0)
 #endif
+
+#if defined(__GNUC__) || defined(__clang__)
+#define BOUT_UNREACHABLE() __builtin_unreachable()
+#elif defined(_MSC_VER)
+#define BOUT_UNREACHABLE() __assume(false)
+#else
+// Cannot call std::abort in device code
+#define BOUT_UNREACHABLE()
+#endif
 // NOLINTEND(cppcoreguidelines-macro-usage)
 
 #endif // BOUT_BUILD_OPTIONS_HXX
