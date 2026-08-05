@@ -760,13 +760,11 @@ namespace {
 template <class Container>
 struct ConvertContainer;
 
-/// Visitor to convert an int, BoutReal or Array/Matrix/Tensor to the
-/// appropriate container. Templated on both the container class C
-/// and scalar type Scalar.
-template <template <class> class C, class Scalar>
-struct ConvertContainer<C<Scalar>> {
-  using Container = C<Scalar>;
-  ConvertContainer(std::string error, Container similar_to_)
+template <class Container>
+struct ConvertContainerBase {
+  using Scalar = typename Container::data_type;
+
+  ConvertContainerBase(std::string error, Container similar_to_)
       : error_message(std::move(error)), similar_to(std::move(similar_to_)) {}
 
   Container operator()(int value) {
@@ -783,26 +781,89 @@ struct ConvertContainer<C<Scalar>> {
 
   Container operator()(const Container& value) { return value; }
 
-  // Convert between scalar types: C<OtherScalar> -> C<Scalar>
-  // The size of the returned result will be the same as the input value
-  template <class OtherScalar>
-  Container operator()(const C<OtherScalar>& value) {
+  // Convert between scalar types while preserving the shape of the input.
+  template <class OtherContainer>
+  Container convert(const OtherContainer& value) {
     Container result(similar_to);
     result.reshape(value.shape()); // Resize to shape of input
 
     std::transform(std::begin(value), std::end(value), std::begin(result),
-                   [](const OtherScalar& x) { return static_cast<Scalar>(x); });
+                   [](const auto& x) { return static_cast<Scalar>(x); });
     return result;
   }
 
   template <class Other>
-  Container operator()([[maybe_unused]] const Other& value) {
+  Container incompatible([[maybe_unused]] const Other& value) {
     throw BoutException(error_message);
   }
 
 private:
   std::string error_message;
   Container similar_to;
+};
+
+/// Visitor to convert an int, BoutReal or Array to the appropriate Array type.
+template <class Scalar, class Backing>
+struct ConvertContainer<Array<Scalar, Backing>>
+    : ConvertContainerBase<Array<Scalar, Backing>> {
+  using Container = Array<Scalar, Backing>;
+  using Base = ConvertContainerBase<Container>;
+
+  using Base::Base;
+  using Base::operator();
+
+  // The size of the returned result will be the same as the input value
+  template <class OtherScalar, class OtherBacking>
+  Container operator()(const Array<OtherScalar, OtherBacking>& value) {
+    return this->convert(value);
+  }
+
+  template <class Other>
+  Container operator()([[maybe_unused]] const Other& value) {
+    return this->incompatible(value);
+  }
+};
+
+/// Visitor to convert an int, BoutReal or Matrix to the appropriate Matrix type.
+template <class Scalar>
+struct ConvertContainer<Matrix<Scalar>> : ConvertContainerBase<Matrix<Scalar>> {
+  using Container = Matrix<Scalar>;
+  using Base = ConvertContainerBase<Container>;
+
+  using Base::Base;
+  using Base::operator();
+
+  // The size of the returned result will be the same as the input value
+  template <class OtherScalar>
+  Container operator()(const Matrix<OtherScalar>& value) {
+    return this->convert(value);
+  }
+
+  template <class Other>
+  Container operator()([[maybe_unused]] const Other& value) {
+    return this->incompatible(value);
+  }
+};
+
+/// Visitor to convert an int, BoutReal or Tensor to the appropriate Tensor type.
+template <class Scalar>
+struct ConvertContainer<Tensor<Scalar>> : ConvertContainerBase<Tensor<Scalar>> {
+  using Container = Tensor<Scalar>;
+  using Base = ConvertContainerBase<Container>;
+
+  using Base::Base;
+  using Base::operator();
+
+  // The size of the returned result will be the same as the input value
+  template <class OtherScalar>
+  Container operator()(const Tensor<OtherScalar>& value) {
+    return this->convert(value);
+  }
+
+  template <class Other>
+  Container operator()([[maybe_unused]] const Other& value) {
+    return this->incompatible(value);
+  }
 };
 } // namespace
 
