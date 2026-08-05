@@ -3,7 +3,7 @@
  *                           Using Hypre Solvers
  *
  **************************************************************************
- * Copyright 2021 - 2025 BOUT++ contributors
+ * Copyright 2021 - 2026 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -30,17 +30,25 @@
 #include "hypre3d_laplace.hxx"
 
 #include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/caliper_wrapper.hxx>
 #include <bout/derivs.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
+#include <bout/globalindexer.hxx>
 #include <bout/hypre_interface.hxx>
 #include <bout/mesh.hxx>
 #include <bout/operatorstencil.hxx>
+#include <bout/region.hxx>
 #include <bout/solver.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
 #include <cmath>
+#include <memory>
+#include <vector>
 
 LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in, Solver*)
     : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
@@ -232,7 +240,7 @@ Field3D LaplaceHypre3d::solve(const Field3D& b_in, const Field3D& x0) {
   CALI_MARK_BEGIN("LaplaceHypre3d_solve:solve");
   // Invoke solver
   {
-    Timer timer("hypresolve");
+    const Timer timer("hypresolve");
     linearSystem.solve();
   }
 
@@ -309,7 +317,7 @@ void LaplaceHypre3d::updateMatrix3D() {
     }
 
     BoutReal C_d2f_dx2 = coords->g11[l];
-    BoutReal C_d2f_dy2 = (coords->g22[l] - 1.0 / coords->g_22[l]);
+    BoutReal C_d2f_dy2 = (coords->g22[l] - (1.0 / coords->g_22[l]));
     BoutReal C_d2f_dz2 = coords->g33[l];
     if (issetD) {
       C_d2f_dx2 *= D[l];
@@ -364,7 +372,7 @@ void LaplaceHypre3d::updateMatrix3D() {
   // Must add these (rather than assign) so that elements used in
   // interpolation don't overwrite each other.
   BOUT_FOR_SERIAL(l, indexer->getRegionNobndry()) {
-    BoutReal C_df_dy = (coords->G2[l] - dJ_dy[l] / coords->J[l]);
+    BoutReal C_df_dy = (coords->G2[l] - (dJ_dy[l] / coords->J[l]));
     if (issetD) {
       C_df_dy *= D[l];
     }
@@ -375,7 +383,7 @@ void LaplaceHypre3d::updateMatrix3D() {
           / C1[l];
     }
 
-    BoutReal C_d2f_dy2 = (coords->g22[l] - 1.0 / coords->g_22[l]);
+    BoutReal C_d2f_dy2 = (coords->g22[l] - (1.0 / coords->g_22[l]));
     if (issetD) {
       C_d2f_dy2 *= D[l];
     }

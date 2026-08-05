@@ -10,14 +10,18 @@
 #include "bout/invert_laplace.hxx"
 #include "gtest/gtest.h"
 
+#include "bout/bout_types.hxx"
+#include "bout/coordinates.hxx"
 #include "bout/derivs.hxx"
 #include "bout/difops.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
+#include "bout/globals.hxx"
 #include "bout/griddata.hxx"
 #include "bout/hypre_interface.hxx"
 #include "bout/mesh.hxx"
 #include "bout/options.hxx"
+#include "bout/region.hxx"
 #include "bout/vecops.hxx"
 
 #include "fake_mesh_fixture.hxx"
@@ -38,7 +42,7 @@ public:
     upper_y_neumann = yup_neumann;
   }
 
-  const Field3D operator()(Field3D& f) {
+  Field3D operator()(Field3D& f) {
     Field3D result = d * Laplace_perp(f, CELL_DEFAULT, "free", "RGN_NOY")
                      + (Grad(f) * Grad(c2) - DDY(c2) * DDY(f) / coords->g_22) / c1 + a * f
                      + ex * DDX(f) + ez * DDZ(f);
@@ -53,7 +57,7 @@ private:
   bool inner_x_neumann, outer_x_neumann, // If false then use Dirichlet conditions
       lower_y_neumann, upper_y_neumann;
 
-  void applyBoundaries(Field3D& newF, Field3D& f) {
+  void applyBoundaries(Field3D& newF, Field3D& f) const {
     BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_INNER_X")) {
       if (inner_x_neumann) {
         newF[i] = (f[i.xp()] - f[i]) / coords->dx[i] / sqrt(coords->g_11[i]);
@@ -104,14 +108,14 @@ public:
     coef3.allocate();
 
     BOUT_FOR(i, mesh->getRegion2D("RGN_ALL")) {
-      BoutReal x = i.x() / (BoutReal)nx - 0.5;
-      BoutReal y = i.y() / (BoutReal)ny - 0.5;
+      const BoutReal x = i.x() / (BoutReal)nx - 0.5;
+      const BoutReal y = i.y() / (BoutReal)ny - 0.5;
       coef2[i] = x + y;
     }
     BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
-      BoutReal x = i.x() / (BoutReal)nx - 0.5;
-      BoutReal y = i.y() / (BoutReal)ny - 0.5;
-      BoutReal z = i.z() / (BoutReal)nz - 0.5;
+      const BoutReal x = i.x() / (BoutReal)nx - 0.5;
+      const BoutReal y = i.y() / (BoutReal)ny - 0.5;
+      const BoutReal z = i.z() / (BoutReal)nz - 0.5;
       f3[i] = 1e3 * exp(-0.5 * sqrt(x * x + y * y + z * z) / sigmasq);
       coef3[i] = x + y + sin(2 * 3.14159265358979323846 * z);
     }

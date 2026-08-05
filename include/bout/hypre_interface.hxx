@@ -12,8 +12,13 @@
 #include "bout/boutexception.hxx"
 #include "bout/caliper_wrapper.hxx"
 #include "bout/field.hxx"
+#include "bout/field2d.hxx"
 #include "bout/globalindexer.hxx"
 #include "bout/hyprelib.hxx"
+#include "bout/options.hxx"
+#include "bout/output.hxx"
+#include "bout/paralleltransform.hxx"
+#include "bout/region.hxx"
 #include "bout/utils.hxx"
 
 #include "HYPRE.h"
@@ -23,7 +28,10 @@
 #include "HYPRE_utilities.h"
 #include "_hypre_utilities.h"
 
+#include <cmath>
+#include <iterator>
 #include <memory>
+#include <vector>
 
 // BOUT_ENUM_CLASS does not work inside namespaces
 BOUT_ENUM_CLASS(HYPRE_SOLVER_TYPE, gmres, bicgstab, pcg);
@@ -213,7 +221,7 @@ public:
     other.V = nullptr;
   }
 
-  HypreVector<T>& operator=(HypreVector<T>&& other) {
+  HypreVector<T>& operator=(HypreVector<T>&& other) noexcept {
     comm = other.comm;
     jlower = other.jlower;
     jupper = other.jupper;
@@ -291,6 +299,10 @@ public:
 
   void assemble() {
     CALI_CXX_MARK_FUNCTION;
+
+    // Should not already be assembled
+    ASSERT1(parallel_vector == nullptr);
+
     writeCacheToHypre();
     checkHypreError(HYPRE_IJVectorAssemble(hypre_vector));
     checkHypreError(HYPRE_IJVectorGetObject(hypre_vector,
@@ -352,8 +364,14 @@ public:
   HYPRE_IJVector get() { return hypre_vector; }
   const HYPRE_IJVector& get() const { return hypre_vector; }
 
-  HYPRE_ParVector getParallel() { return parallel_vector; }
-  const HYPRE_ParVector& getParallel() const { return parallel_vector; }
+  HYPRE_ParVector getParallel() {
+    ASSERT1(parallel_vector != nullptr);
+    return parallel_vector;
+  }
+  const HYPRE_ParVector& getParallel() const {
+    ASSERT1(parallel_vector != nullptr);
+    return parallel_vector;
+  }
 
   class Element {
     HypreVector<T>* vector;
@@ -777,7 +795,7 @@ public:
           pw.begin(), pw.end(), std::back_inserter(positions),
           [this, ny, nz](ParallelTransform::PositionsAndWeights p) -> HYPRE_Int {
             return this->index_converter->getGlobal(
-                ind_type(p.i * ny * nz + p.j * nz + p.k, ny, nz));
+                ind_type((((p.i * ny) + p.j) * nz) + p.k, ny, nz));
           });
       std::transform(pw.begin(), pw.end(), std::back_inserter(weights),
                      [](ParallelTransform::PositionsAndWeights p) -> HYPRE_Complex {
