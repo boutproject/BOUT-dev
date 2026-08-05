@@ -262,10 +262,18 @@ Options& Options::operator=(Options&& other) noexcept {
   children = std::move(other.children);
   value_used = other.value_used;
 
+  size_t len = other.full_name.size();
+  std::string new_prefix = full_name;
+  if (len == 0 and not full_name.empty()) {
+    // Append section delimiter to new name
+    new_prefix += ":";
+  } else if (len != 0 and full_name.empty()) {
+    // Remove extraneous section delimiter from old name
+    len += 1;
+  }
+
   // Ensure that this is the parent of all children,
   // otherwise will point to the original Options instance
-  const auto len = other.full_name.size();
-  const std::string new_prefix = len == 0 ? full_name + ":" : full_name;
   for (auto& child : children) {
     child.second.parent_instance = this;
     child.second.recursively_update_names(len, new_prefix);
