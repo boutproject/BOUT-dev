@@ -31,6 +31,8 @@ namespace bout::detail {
 // in the template functions in this header file.
 const Region<Ind3D>& getField3DRegion(const Mesh* mesh, std::optional<size_t> regionID);
 size_t getField3DRegionID(const Mesh* mesh, const std::string& region_name);
+std::optional<size_t> meshGetCommenRegionID(Mesh* mesh, std::optional<size_t> regionID1,
+                                            std::optional<size_t> regionID2);
 } // namespace bout::detail
 
 template <typename T>
@@ -417,7 +419,7 @@ struct BinaryExpr {
         mesh,
         location,
         directions,
-        mesh->getCommonRegion(lhs.yup(slice).getRegionID(), rhs.yup(slice).getRegionID()),
+        meshGetCommonRegion(mesh, lhs.yup(slice).regionID, rhs.yup(slice).regionID),
         indices,
         yindex};
   }
@@ -429,8 +431,7 @@ struct BinaryExpr {
         mesh,
         location,
         directions,
-        mesh->getCommonRegion(lhs.ydown(slice).getRegionID(),
-                              rhs.ydown(slice).getRegionID()),
+        meshGetCommonRegion(mesh, lhs.ydown(slice).regionID, rhs.ydown(slice).regionID),
         indices,
         yindex};
   }
