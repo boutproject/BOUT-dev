@@ -31,6 +31,7 @@ class Field3D;
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/build_config.hxx"
 #include "bout/field.hxx"
 #include "bout/field2d.hxx"
@@ -468,6 +469,7 @@ public:
     const Field3D* yup_fields{nullptr};
     const Field3D* ydown_fields{nullptr};
     int num_parallel_slices{0};
+    std::optional<size_t> regionID;
 
     BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx) const {
       return data[idx];
@@ -500,14 +502,16 @@ public:
       ASSERT2(ydown_fields[slice].isAllocated());
       return static_cast<Field3D::View>(ydown_fields[slice]);
     }
+
+    std::optional<size_t> getRegionID() const { return regionID; }
   };
   operator View() {
     return View{&data[0], yup_fields.data(), ydown_fields.data(),
-                static_cast<int>(numberParallelSlices())};
+                static_cast<int>(numberParallelSlices()), regionID};
   }
   operator View() const {
     return View{const_cast<BoutReal*>(&data[0]), yup_fields.data(), ydown_fields.data(),
-                static_cast<int>(numberParallelSlices())};
+                static_cast<int>(numberParallelSlices()), regionID};
   }
   //operator View() const { return View{&data[0]}; }
 
@@ -1094,6 +1098,8 @@ public:
       ASSERT2(base.ydown_fields[slice].isAllocated());
       return View{static_cast<Field3D::View>(base.ydown_fields[slice])};
     }
+
+    std::optional<size_t> getRegionID() const { return base.regionID; }
   };
 
   operator View() { return View{static_cast<Field3D::View>(*this)}; }
@@ -1149,8 +1155,12 @@ public:
       for (int i = 0; i < expr.numberParallelSlices(); ++i) {
         yup(i).allocate();
         ydown(i).allocate();
-        expr.yup(i).evaluate(static_cast<Field3D::View>(yup(i)).data);
-        expr.ydown(i).evaluate(static_cast<Field3D::View>(ydown(i)).data);
+        auto expr_yup = expr.yup(i);
+        auto expr_ydown = expr.ydown(i);
+        yup(i).setRegion(expr_yup.getRegionID());
+        ydown(i).setRegion(expr_ydown.getRegionID());
+        expr_yup.evaluate(static_cast<Field3D::View>(yup(i)).data);
+        expr_ydown.evaluate(static_cast<Field3D::View>(ydown(i)).data);
       }
     }
 

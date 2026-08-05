@@ -12,14 +12,18 @@
 #include "bout/constants.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
+#include "bout/fieldops.hxx"
+#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
 #include "bout/output.hxx"
+#include "bout/output_bout_types.hxx"
 #include "bout/paralleltransform.hxx"
 #include "bout/region.hxx"
 #include "bout/unused.hxx"
 
 #include <cmath>
 #include <set>
+#include <type_traits>
 #include <vector>
 
 #include "fake_mesh_fixture.hxx"
@@ -2152,9 +2156,13 @@ TEST_F(Field3DTestFCI, SqrtField3DParallelPreservesParallelSlices) {
     const Field3DParallel res{expr};
 
     EXPECT_TRUE(res.hasParallelSlices());
+    // Input yup/ydown fields are only valid over limited regions, so
+    // calculations are only performed over those regions.
+    EXPECT_EQ(res.yup().getRegionID(), field.yup().getRegionID());
+    EXPECT_EQ(res.ydown().getRegionID(), field.ydown().getRegionID());
     EXPECT_TRUE(IsFieldEqual(res, 2.0));
-    EXPECT_TRUE(IsFieldEqual(res.yup(), 3.0));
-    EXPECT_TRUE(IsFieldEqual(res.ydown(), 4.0));
+    EXPECT_TRUE(IsFieldEqual(res.yup(), 3.0, "RGN_YPAR_+1"));
+    EXPECT_TRUE(IsFieldEqual(res.ydown(), 4.0, "RGN_YPAR_-1"));
   }
   {
     const Field3D res = sqrt(field.asField3D());

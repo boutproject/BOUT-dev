@@ -35,6 +35,8 @@ class Field2D;
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/build_config.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/field.hxx"
 #include "bout/field_data.hxx"
@@ -45,6 +47,7 @@ class Field2D;
 #include <iostream>
 #include <ostream>
 #include <string>
+#include <type_traits>
 
 #include "bout/fieldops.hxx"
 
@@ -333,6 +336,7 @@ public:
     BoutReal* data;
     int mul = 1;
     int div = 1;
+
     BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx) const {
       return data[(idx * mul / div)];
     }
@@ -349,6 +353,8 @@ public:
     BOUT_HOST_DEVICE BOUT_FORCEINLINE int numberParallelSlices() const { return 0; }
     BOUT_HOST_DEVICE BOUT_FORCEINLINE View yup(int = 0) const { return *this; }
     BOUT_HOST_DEVICE BOUT_FORCEINLINE View ydown(int = 0) const { return *this; }
+
+    std::optional<size_t> getRegionID() const { return {}; }
   };
   operator View() { return View{&data[0]}; }
   operator View() const { return View{const_cast<BoutReal*>(&data[0])}; }

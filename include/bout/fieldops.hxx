@@ -31,7 +31,7 @@ namespace bout::detail {
 // in the template functions in this header file.
 const Region<Ind3D>& getField3DRegion(const Mesh* mesh, std::optional<size_t> regionID);
 size_t getField3DRegionID(const Mesh* mesh, const std::string& region_name);
-std::optional<size_t> meshGetCommenRegionID(Mesh* mesh, std::optional<size_t> regionID1,
+std::optional<size_t> meshGetCommonRegionID(Mesh* mesh, std::optional<size_t> regionID1,
                                             std::optional<size_t> regionID2);
 } // namespace bout::detail
 
@@ -419,7 +419,8 @@ struct BinaryExpr {
         mesh,
         location,
         directions,
-        meshGetCommonRegion(mesh, lhs.yup(slice).regionID, rhs.yup(slice).regionID),
+        bout::detail::meshGetCommonRegionID(mesh, lhs.yup(slice).getRegionID(),
+                                            rhs.yup(slice).getRegionID()),
         indices,
         yindex};
   }
@@ -431,18 +432,19 @@ struct BinaryExpr {
         mesh,
         location,
         directions,
-        meshGetCommonRegion(mesh, lhs.ydown(slice).regionID, rhs.ydown(slice).regionID),
+        bout::detail::meshGetCommonRegionID(mesh, lhs.ydown(slice).getRegionID(),
+                                            rhs.ydown(slice).getRegionID()),
         indices,
         yindex};
   }
 
-  //operator ResT() { return ResT{*this}; }
   struct View {
     typename L::View lhs;
     typename R::View rhs;
     const int* indices;
     int num_indices;
     Func f;
+    std::optional<size_t> regionID;
     int mul = 1;
     int div = 1;
 
@@ -496,10 +498,14 @@ struct BinaryExpr {
     BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx) const {
       return f((idx * mul) / div, lhs, rhs); // single‐pass fusion
     }
+
+    std::optional<size_t> getRegionID() const { return regionID; }
   };
 
-  operator View() { return View{lhs, rhs, &indices[0], indices.size(), f}; }
-  operator View() const { return View{lhs, rhs, &indices[0], indices.size(), f}; }
+  operator View() { return View{lhs, rhs, &indices[0], indices.size(), f, regionID}; }
+  operator View() const {
+    return View{lhs, rhs, &indices[0], indices.size(), f, regionID};
+  }
 
   void evaluate(BoutReal* data) const {
 #if BOUT_HAS_CUDA && defined(__CUDACC__)

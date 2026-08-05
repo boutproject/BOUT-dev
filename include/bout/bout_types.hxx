@@ -25,6 +25,7 @@
 #include "bout/build_config.hxx"
 
 #include <limits>
+#include <optional>
 #include <string>
 
 /// Size of real numbers
@@ -153,6 +154,8 @@ struct Constant {
     BOUT_HOST_DEVICE int numberParallelSlices() const { return 0; }
     BOUT_HOST_DEVICE View yup(int = 0) const { return *this; }
     BOUT_HOST_DEVICE View ydown(int = 0) const { return *this; }
+
+    std::optional<size_t> getRegionID() const { return {}; }
   };
   operator View() const { return {val}; }
 };

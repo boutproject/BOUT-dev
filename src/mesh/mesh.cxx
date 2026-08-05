@@ -865,8 +865,8 @@ std::optional<size_t> Mesh::getCommonRegion(std::optional<size_t> lhs,
 }
 
 namespace bout::detail {
-std::optional<size_t> meshGetCommenRegionID(Mesh* mesh, std::optional<size_t> regionID1,
+std::optional<size_t> meshGetCommonRegionID(Mesh* mesh, std::optional<size_t> regionID1,
                                             std::optional<size_t> regionID2) {
-  return mesh->getCommenRegionID(regionID1, regionID2);
+  return mesh->getCommonRegion(regionID1, regionID2);
 }
 } // namespace bout::detail
