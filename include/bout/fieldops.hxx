@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <limits>
 #include <optional>
+#include <string>
 #include <type_traits>
 
 #if BOUT_HAS_CUDA
@@ -29,6 +30,9 @@ namespace bout::detail {
 // It is used because Mesh is an incomplete type so methods cannot be called
 // in the template functions in this header file.
 const Region<Ind3D>& getField3DRegion(const Mesh* mesh, std::optional<size_t> regionID);
+size_t getField3DRegionID(const Mesh* mesh, const std::string& region_name);
+std::optional<size_t> meshGetCommonRegionID(Mesh* mesh, std::optional<size_t> regionID1,
+                                            std::optional<size_t> regionID2);
 } // namespace bout::detail
 
 template <typename T>
@@ -381,13 +385,66 @@ struct BinaryExpr {
   }
   BOUT_HOST_DEVICE BOUT_FORCEINLINE int regionIdx(int idx) const { return indices[idx]; }
 
-  //operator ResT() { return ResT{*this}; }
+  bool hasParallelSlices() const {
+    if constexpr (is_expr_constant_v<L> && is_expr_constant_v<R>) {
+      return false;
+    } else if constexpr (is_expr_constant_v<L>) {
+      return rhs.hasParallelSlices();
+    } else if constexpr (is_expr_constant_v<R>) {
+      return lhs.hasParallelSlices();
+    } else {
+      return lhs.hasParallelSlices() && rhs.hasParallelSlices();
+    }
+  }
+  int numberParallelSlices() const {
+    if (!hasParallelSlices()) {
+      return 0;
+    }
+    if constexpr (is_expr_constant_v<L> && is_expr_constant_v<R>) {
+      return 0;
+    } else if constexpr (is_expr_constant_v<L>) {
+      return rhs.numberParallelSlices();
+    } else if constexpr (is_expr_constant_v<R>) {
+      return lhs.numberParallelSlices();
+    } else {
+      ASSERT2(lhs.numberParallelSlices() == rhs.numberParallelSlices());
+      return lhs.numberParallelSlices();
+    }
+  }
+  auto yup(int slice = 0) const {
+    return BinaryExpr<ResT, L, R, Func>{
+        lhs.yup(slice),
+        rhs.yup(slice),
+        f,
+        mesh,
+        location,
+        directions,
+        bout::detail::meshGetCommonRegionID(mesh, lhs.yup(slice).getRegionID(),
+                                            rhs.yup(slice).getRegionID()),
+        indices,
+        yindex};
+  }
+  auto ydown(int slice = 0) const {
+    return BinaryExpr<ResT, L, R, Func>{
+        lhs.ydown(slice),
+        rhs.ydown(slice),
+        f,
+        mesh,
+        location,
+        directions,
+        bout::detail::meshGetCommonRegionID(mesh, lhs.ydown(slice).getRegionID(),
+                                            rhs.ydown(slice).getRegionID()),
+        indices,
+        yindex};
+  }
+
   struct View {
     typename L::View lhs;
     typename R::View rhs;
     const int* indices;
     int num_indices;
     Func f;
+    std::optional<size_t> regionID;
     int mul = 1;
     int div = 1;
 
@@ -396,18 +453,59 @@ struct BinaryExpr {
       this->div = div;
       return *this;
     }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE bool hasParallelSlices() const {
+      if constexpr (is_expr_constant_v<L> && is_expr_constant_v<R>) {
+        return false;
+      } else if constexpr (is_expr_constant_v<L>) {
+        return rhs.hasParallelSlices();
+      } else if constexpr (is_expr_constant_v<R>) {
+        return lhs.hasParallelSlices();
+      } else {
+        return lhs.hasParallelSlices() && rhs.hasParallelSlices();
+      }
+    }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE int numberParallelSlices() const {
+      if (!hasParallelSlices()) {
+        return 0;
+      }
+      if constexpr (is_expr_constant_v<L> && is_expr_constant_v<R>) {
+        return 0;
+      } else if constexpr (is_expr_constant_v<L>) {
+        return rhs.numberParallelSlices();
+      } else if constexpr (is_expr_constant_v<R>) {
+        return lhs.numberParallelSlices();
+      } else {
+        ASSERT2(lhs.numberParallelSlices() == rhs.numberParallelSlices());
+        return lhs.numberParallelSlices();
+      }
+    }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE auto yup(int slice = 0) const {
+      auto result = *this;
+      result.lhs = lhs.yup(slice);
+      result.rhs = rhs.yup(slice);
+      return result;
+    }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE auto ydown(int slice = 0) const {
+      auto result = *this;
+      result.lhs = lhs.ydown(slice);
+      result.rhs = rhs.ydown(slice);
+      return result;
+    }
     BOUT_HOST_DEVICE BOUT_FORCEINLINE int size() const { return num_indices; }
     BOUT_HOST_DEVICE BOUT_FORCEINLINE int regionIdx(int idx) const {
       return indices[idx];
     }
     BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx) const {
       return f((idx * mul) / div, lhs, rhs); // single‐pass fusion
-      //return f(lhs((idx * mul) / div), rhs((idx * mul) / div)); // single‐pass fusion
     }
+
+    std::optional<size_t> getRegionID() const { return regionID; }
   };
 
-  operator View() { return View{lhs, rhs, &indices[0], indices.size(), f}; }
-  operator View() const { return View{lhs, rhs, &indices[0], indices.size(), f}; }
+  operator View() { return View{lhs, rhs, &indices[0], indices.size(), f, regionID}; }
+  operator View() const {
+    return View{lhs, rhs, &indices[0], indices.size(), f, regionID};
+  }
 
   void evaluate(BoutReal* data) const {
 #if BOUT_HAS_CUDA && defined(__CUDACC__)

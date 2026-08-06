@@ -1168,6 +1168,19 @@ TEST_F(Field2DTest, PowField2DField2D) {
   EXPECT_TRUE(IsFieldEqual(c, 64.0));
 }
 
+TEST_F(Field2DTest, PowExpressionUsesPowOp) {
+  Field2D field;
+
+  field = 2.0;
+  const auto expr = field + 1.0;
+
+  EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(pow(expr, 2.0))>,
+                              BinaryExpr<Field2D, std::decay_t<decltype(expr)>,
+                                         Constant<double>, bout::op::Pow>>));
+  EXPECT_TRUE(IsFieldEqual(pow(expr, 2.0), 9.0));
+  EXPECT_TRUE(IsFieldEqual(pow(expr, 2.0, "RGN_ALL"), 9.0));
+}
+
 TEST_F(Field2DTest, Sqrt) {
   Field2D field;
 
@@ -1315,6 +1328,19 @@ TEST_F(Field2DTest, Floor) {
   const BoutReal floor_value = 50.0;
 
   EXPECT_TRUE(IsFieldEqual(floor(field, floor_value), floor_value));
+}
+
+TEST_F(Field2DTest, FloorExpressionUsesFloorOp) {
+  Field2D field;
+
+  field = 2.0;
+  const auto expr = field + 1.0;
+
+  EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(floor(expr, 5.0))>,
+                              BinaryExpr<Field2D, std::decay_t<decltype(expr)>,
+                                         Constant<BoutReal>, bout::op::Floor>>));
+  EXPECT_TRUE(IsFieldEqual(floor(expr, 5.0), 5.0));
+  EXPECT_TRUE(IsFieldEqual(floor(expr, 5.0, "RGN_ALL"), 5.0));
 }
 
 TEST_F(Field2DTest, Min) {

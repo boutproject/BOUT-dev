@@ -352,6 +352,10 @@ public:
       this->div = div;
       return *this;
     }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE bool hasParallelSlices() const { return false; }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE int numberParallelSlices() const { return 0; }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE View yup(int = 0) const { return *this; }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE View ydown(int = 0) const { return *this; }
   };
   operator View() { return View{&data[0]}; }
   operator View() const { return View{const_cast<BoutReal*>(&data[0])}; }
@@ -404,6 +408,11 @@ FieldPerp operator/(const FieldPerp& lhs, const Field3D& rhs);
 FieldPerp operator/(const FieldPerp& lhs, const Field2D& rhs);
 FieldPerp operator/(const FieldPerp& lhs, BoutReal rhs);
 FieldPerp operator/(BoutReal lhs, const FieldPerp& rhs);
+
+FieldPerp pow(const FieldPerp& lhs, const FieldPerp& rhs,
+              const std::string& rgn = "RGN_ALL");
+FieldPerp pow(const FieldPerp& lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL");
+FieldPerp pow(BoutReal lhs, const FieldPerp& rhs, const std::string& rgn = "RGN_ALL");
 
 /*!
  * Unary minus. Returns the negative of given field,

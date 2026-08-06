@@ -863,3 +863,10 @@ std::optional<size_t> Mesh::getCommonRegion(std::optional<size_t> lhs,
   }
   return region3Dintersect[pos];
 }
+
+namespace bout::detail {
+std::optional<size_t> meshGetCommonRegionID(Mesh* mesh, std::optional<size_t> regionID1,
+                                            std::optional<size_t> regionID2) {
+  return mesh->getCommonRegion(regionID1, regionID2);
+}
+} // namespace bout::detail
