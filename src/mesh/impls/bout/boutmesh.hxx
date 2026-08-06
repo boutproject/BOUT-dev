@@ -4,19 +4,29 @@
 
 #include "mpi.h"
 
+#include "bout/bout_types.hxx"
 #include "bout/unused.hxx"
 #include <bout/mesh.hxx>
 
-#include <cmath>
 #include <list>
 #include <set>
 #include <string>
 #include <vector>
 
+class Field;
+
 /// Implementation of Mesh (mostly) compatible with BOUT
 ///
 /// Topology and communications compatible with BOUT
 /// conventions.
+
+BOUT_ENUM_CLASS(MeshTopology,
+                CFL,  // Closed field line
+                SN,   // Single null
+                UDN,  // Unconnected double null
+                CDN); // Connected double null
+
+
 class BoutMesh : public Mesh {
 public:
   BoutMesh(GridDataSource* s, Options* options = nullptr);
@@ -24,6 +34,10 @@ public:
 
   /// Read in the mesh from data sources
   int load() override;
+
+  MeshTopology getMeshTopology(int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
+                                        int jyseps2_2_, int ny_inner_, int ixseps1_,
+                                        int ixseps2_);
 
   /////////////////////////////////////////////
   // Communicate variables
@@ -58,10 +72,13 @@ public:
   /////////////////////////////////////////////
   // non-local communications
 
-  int getNXPE() override;       ///< The number of processors in the X direction
-  int getNYPE() override;       ///< The number of processors in the Y direction
-  int getXProcIndex() override; ///< This processor's index in X direction
-  int getYProcIndex() override; ///< This processor's index in Y direction
+  int getNXPE() const override;       ///< The number of processors in the X direction
+  int getNYPE() const override;       ///< The number of processors in the Y direction
+  int getNZPE() const override;       ///< The number of processors in the Z direction
+  int getXProcIndex() const override; ///< This processor's index in X direction
+  int getYProcIndex() const override; ///< This processor's index in Y direction
+  int getZProcIndex() const override; ///< This processor's index in Z direction
+  int getProcIndex(int X, int Y, int Z) const override;
 
   /////////////////////////////////////////////
   // X communications
@@ -105,6 +122,7 @@ public:
   MPI_Comm getXcomm(int UNUSED(jy)) const override { return comm_x; }
   /// Return communicator containing all processors in Y
   MPI_Comm getYcomm(int xpos) const override;
+  MPI_Comm getXZcomm() const override { return comm_xz; }
 
   /// Is local X index \p jx periodic in Y?
   ///
@@ -156,6 +174,9 @@ public:
   RangeIterator iterateBndryUpperInnerY() const override;
   RangeIterator iterateBndryUpperOuterY() const override;
 
+  bool hasBndryLowerY() const override { return has_boundary_lower_y; }
+  bool hasBndryUpperY() const override { return has_boundary_upper_y; }
+
   // Boundary regions
   std::vector<BoundaryRegion*> getBoundaries() override;
   std::vector<std::shared_ptr<BoundaryRegionPar>>
@@ -164,15 +185,15 @@ public:
                       BoundaryParType type) override;
   std::set<std::string> getPossibleBoundaries() const override;
 
-  Field3D smoothSeparatrix(const Field3D& f) override;
-
   int getNx() const { return nx; }
   int getNy() const { return ny; }
 
   BoutReal GlobalX(int jx) const override;
   BoutReal GlobalY(int jy) const override;
+  BoutReal GlobalZ(int jz) const override;
   BoutReal GlobalX(BoutReal jx) const override;
   BoutReal GlobalY(BoutReal jy) const override;
+  BoutReal GlobalZ(BoutReal jz) const override;
 
   BoutReal getIxseps1() const { return ixseps1; }
   BoutReal getIxseps2() const { return ixseps2; }
@@ -205,7 +226,7 @@ protected:
   /// `getPossibleBoundaries`. \p create_regions controls whether or
   /// not the various `Region`s are created on the new mesh
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
-           int pe_xind, int pe_yind, bool symmetric_X, bool symmetric_Y, bool periodic_X,
+           int pe_xind, int pe_yind, bool symmetric_X, bool symmetric_Y, bool periodic_X_,
            int ixseps1_, int ixseps2_, int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
            int jyseps2_2_, int ny_inner_, bool create_regions = true);
 
@@ -275,6 +296,7 @@ protected:
 
   /// Create the various sub-communicators
   void createCommunicators();
+  
 
   /// Create the boundary regions in X
   void createXBoundaries();
@@ -294,16 +316,24 @@ private:
   int NPES; ///< Number of processors
   int MYPE; ///< Rank of this processor
 
-  int PE_YIND; ///< Y index of this processor
-  int NYPE;    // Number of processors in the Y direction
+  int PE_XIND; ///< X index of this processor
+  int NXPE;    ///< Number of processors in the X direction
 
-  int NZPE;
+  int PE_YIND; ///< Y index of this processor
+  int NYPE;    ///< Number of processors in the Y direction
+
+  int PE_ZIND{0}; ///< Z index of this processor
+  int NZPE{1};    ///< Number of processors in the Z direction
 
   /// Is this processor in the core region?
   bool MYPE_IN_CORE{false};
 
-  int XGLOBAL(BoutReal xloc, BoutReal& xglo) const;
-  int YGLOBAL(BoutReal yloc, BoutReal& yglo) const;
+  /// Returns the global X index given a local index
+  BoutReal getGlobalXIndex(BoutReal xloc) const;
+  /// Returns the global Y index given a local index
+  BoutReal getGlobalYIndex(BoutReal yloc) const;
+  /// Returns the global Z index given a local index
+  BoutReal getGlobalZIndex(BoutReal zloc) const;
 
   // Topology
   int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2;
@@ -311,6 +341,8 @@ private:
   int ny_inner;
 
   std::vector<BoutReal> ShiftAngle; ///< Angle for twist-shift location
+
+  MeshTopology mesh_topology;
 
 protected:
   // These are protected so we can make them public in the test suite
@@ -354,8 +386,9 @@ private:
   // Settings
   bool TwistShift; // Use a twist-shift condition in core?
 
-  bool symmetricGlobalX; ///< Use a symmetric definition in GlobalX() function
-  bool symmetricGlobalY;
+  bool symmetricGlobalX;        ///< Use a symmetric definition in `GlobalX()` function
+  bool symmetricGlobalY;        ///< Use a symmetric definition in `GlobalY()` function
+  bool symmetricGlobalZ{false}; ///< Use a symmetric definition in `GlobalZ()` function
 
   int zperiod;
   BoutReal ZMIN, ZMAX; // Range of the Z domain (in fractions of 2pi)
@@ -394,12 +427,16 @@ protected:
   /// Adds 2D and 3D regions for boundaries
   void addBoundaryRegions();
 
+  //void findValidProcessorNum(int ny, int nx);
+
 private:
   std::vector<BoundaryRegion*> boundary; // Vector of boundary regions
   std::array<std::vector<std::shared_ptr<BoundaryRegionPar>>,
              static_cast<int>(BoundaryParType::SIZE)>
       par_boundary; // Vector of parallel boundary regions
 
+  bool has_boundary_lower_y{false};
+  bool has_boundary_upper_y{false};
   //////////////////////////////////////////////////
   // Communications
 
@@ -439,6 +476,8 @@ private:
 
   /// Communicator containing all processors in X
   MPI_Comm comm_x{MPI_COMM_NULL};
+  /// Communicator for all processors in an XZ plane
+  MPI_Comm comm_xz{MPI_COMM_NULL};
 
   //////////////////////////////////////////////////
   // Surface communications
@@ -460,12 +499,12 @@ private:
   void post_receiveY(CommHandle& ch);
 
   /// Take data from objects and put into a buffer
-  int pack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-                int ylt, BoutReal* buffer);
+  int pack_data(const std::vector<Field*>& var_list, int xge, int xlt, int yge, int ylt,
+                BoutReal* buffer) const;
   /// Copy data from a buffer back into the fields
+  int unpack_data(const std::vector<Field*>& var_list, int xge, int xlt, int yge, int ylt,
+                  const BoutReal* buffer) const;
 
-  int unpack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-                  int ylt, BoutReal* buffer);
 };
 
 namespace {
@@ -483,10 +522,28 @@ struct CheckMeshResult {
 
 /// Check that \p total_processors can be decomposed into \p
 /// num_y_processors in Y for the given `BoutMesh` topology parameters
-CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
-                                            int num_y_guards, int jyseps1_1,
-                                            int jyseps2_1, int jyseps1_2, int jyseps2_2,
-                                            int ny_inner);
+CheckMeshResult checkBoutMeshYDecomposition(
+    int num_y_processors, int ny,
+    int num_y_guards,
+    int jyseps1_1, int jyseps2_1,
+    int jyseps1_2, int jyseps2_2,
+    int ny_inner);
+
+// New topology-aware
+CheckMeshResult checkBoutMeshYDecomposition(
+    int num_y_processors, int ny,
+    int num_y_guards,
+    int jyseps1_1, int jyseps2_1,
+    int jyseps1_2, int jyseps2_2,
+    int ny_inner,
+    MeshTopology mesh_topology);
+
+  CheckMeshResult findValidProcessorNum(int ny, int nx, int NPES, int NYPE = 1, int NXPE = 1);
+
+  CheckMeshResult findValidYDecomposition(int ny, int NPES, int NYPE,
+                                        int jyseps1_1, int jyseps2_1,
+                                        int jyseps1_2, int jyseps2_2,
+                                        int ny_inner, MeshTopology mesh_topology);
 } // namespace bout
 
 #endif // BOUT_BOUTMESH_H
