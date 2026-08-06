@@ -45,7 +45,6 @@ using EnginePtr = std::shared_ptr<adios2::Engine>;
 using IOPtr = std::shared_ptr<adios2::IO>;
 
 ADIOSPtr GetADIOSPtr();
-IOPtr GetIOPtr(const std::string IOName);
 
 class ADIOSStream {
 public:
@@ -114,38 +113,44 @@ public:
   }
 
   template <class T>
-  void Put(const std::string& varname, T value) {
+  void Put(const std::string& varname, T value, adios2::Mode mode = adios2::Mode::Sync) {
     if (BoutComm::rank() != 0) {
       return;
     }
-    engine().Put(GetValueVariable<T>(varname), value);
+    engine().Put(GetValueVariable<T>(varname), value, mode);
   }
 
   template <class T>
-  void Put(const std::string& varname, const Array<T>& value) {
-    PutArrayLike(varname, value);
+  void Put(const std::string& varname, const Array<T>& value,
+           adios2::Mode mode = adios2::Mode::Sync) {
+    PutArrayLike(varname, value, mode);
   }
 
   template <class T>
-  void Put(const std::string& varname, const Matrix<T>& value) {
-    PutArrayLike(varname, value);
+  void Put(const std::string& varname, const Matrix<T>& value,
+           adios2::Mode mode = adios2::Mode::Sync) {
+    PutArrayLike(varname, value, mode);
   }
 
   template <class T>
-  void Put(const std::string& varname, const Tensor<T>& value) {
-    PutArrayLike(varname, value);
+  void Put(const std::string& varname, const Tensor<T>& value,
+           adios2::Mode mode = adios2::Mode::Sync) {
+    PutArrayLike(varname, value, mode);
   }
 
-  void Put(const std::string& varname, const Field2D& value) {
-    PutField(varname, {"x", "y"}, *value.getMesh(), &value(0, 0));
+  void Put(const std::string& varname, const Field2D& value,
+           adios2::Mode mode = adios2::Mode::Sync) {
+    PutField(varname, {"x", "y"}, *value.getMesh(), &value(0, 0), mode);
   }
 
-  void Put(const std::string& varname, const Field3D& value) {
-    PutField(varname, {"x", "y", "z"}, *value.getMesh(), &value(0, 0, 0));
+  void Put(const std::string& varname, const Field3D& value,
+           adios2::Mode mode = adios2::Mode::Sync) {
+    PutField(varname, {"x", "y", "z"}, *value.getMesh(), &value(0, 0, 0), mode);
   }
 
-  void Put(const std::string& varname, const FieldPerp& value) {
-    PutField(varname, {"x", "z"}, *value.getMesh(), &value(0, 0));
+  void Put(const std::string& varname, const FieldPerp& value,
+           adios2::Mode mode = adios2::Mode::Sync) {
+    PutField(varname, {"x", "z"}, *value.getMesh(), &value(0, 0), mode);
   }
 
   template <class T>
@@ -231,13 +236,13 @@ private:
   }
 
   void PutField(const std::string& varname, const std::vector<std::string>& dim_names,
-                const Mesh& mesh, const BoutReal* data) {
+                const Mesh& mesh, const BoutReal* data, adios2::Mode mode) {
     auto selection = makeFieldSelection(dim_names, mesh);
     auto variable =
         GetArrayVariable<BoutReal>(varname, selection.shape, dim_names, BoutComm::rank());
     variable.SetSelection(selection.selection());
     variable.SetMemorySelection(selection.memorySelection());
-    engine().Put(variable, data);
+    engine().Put(variable, data, mode);
   }
 
   FieldSelection makeFieldSelection(const std::vector<std::string>& dim_names,
@@ -328,12 +333,13 @@ private:
   }
 
   template <class Container>
-  void PutArrayLike(const std::string& varname, const Container& value) {
+  void PutArrayLike(const std::string& varname, const Container& value,
+                    adios2::Mode mode) {
     using T = typename Container::data_type;
     auto var = GetArrayVariable<T>(varname, makeShape(BoutComm::size(), value),
                                    makeDimNames(value), BoutComm::rank());
     var.SetSelection(adios2::Box<adios2::Dims>{makeStart(value), makeShape(1, value)});
-    engine().Put<T>(var, value.begin());
+    engine().Put<T>(var, value.begin(), mode);
   }
 
   template <class Container>

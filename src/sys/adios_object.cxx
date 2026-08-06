@@ -15,6 +15,30 @@ namespace bout {
 static ADIOSPtr adios = nullptr;
 static std::unordered_map<std::string, ADIOSStream> adiosStreams;
 
+namespace {
+std::string GetIOName(const std::string& fname, adios2::Mode mode) {
+  switch (mode) {
+  case adios2::Mode::Read:
+    return "read_" + fname;
+  case adios2::Mode::ReadRandomAccess:
+    return "read_random_access_" + fname;
+  case adios2::Mode::Append:
+    return "append_" + fname;
+  case adios2::Mode::Write:
+    return "write_" + fname;
+  default:
+    return fname;
+  }
+}
+
+adios2::IO GetIO(const std::string& fname, adios2::Mode mode,
+                 const std::string& engineType) {
+  auto io = GetADIOSPtr()->DeclareIO(GetIOName(fname, mode));
+  io.SetEngine(engineType);
+  return io;
+}
+} // namespace
+
 void ADIOSInit(MPI_Comm comm) { adios = std::make_shared<adios2::ADIOS>(comm); }
 
 void ADIOSInit(const std::string configFile, MPI_Comm comm) {
@@ -38,16 +62,6 @@ ADIOSPtr GetADIOSPtr() {
   return adios;
 }
 
-IOPtr GetIOPtr(const std::string IOName) {
-  auto adios = GetADIOSPtr();
-  IOPtr io = nullptr;
-  try {
-    io = std::make_shared<adios2::IO>(adios->AtIO(IOName));
-  } catch (std::invalid_argument& e) {
-  }
-  return io;
-}
-
 ADIOSStream::~ADIOSStream() {
   if (engine_) {
     if (isInStep) {
@@ -60,24 +74,14 @@ ADIOSStream::~ADIOSStream() {
 
 ADIOSStream::ADIOSStream(const std::string& fname, adios2::Mode mode,
                          const std::string& engineType)
-    : fname(fname), file_mode(mode) {
-
-  ADIOSPtr adiosp = GetADIOSPtr();
-  try {
-    io = adiosp->AtIO(fname);
-  } catch (const std::invalid_argument& e) {
-    io = adiosp->DeclareIO(fname);
-    if (!engineType.empty()) {
-      io.SetEngine(engineType);
-    }
-  }
-}
+    : io(GetIO(fname, mode, engineType)), fname(fname), file_mode(mode) {}
 
 ADIOSStream& ADIOSStream::ADIOSGetStream(const std::string& fname, adios2::Mode mode,
                                          const std::string& engineType) {
-  auto it = adiosStreams.find(fname);
+  const auto key = GetIOName(fname, mode);
+  auto it = adiosStreams.find(key);
   if (it == adiosStreams.end()) {
-    it = adiosStreams.emplace(fname, ADIOSStream(fname, mode, engineType)).first;
+    it = adiosStreams.emplace(key, ADIOSStream(fname, mode, engineType)).first;
   }
   return it->second;
 }
