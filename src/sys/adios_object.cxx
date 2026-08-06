@@ -86,34 +86,5 @@ ADIOSStream& ADIOSStream::ADIOSGetStream(const std::string& fname, adios2::Mode 
   return it->second;
 }
 
-void ADIOSSetParameters(const std::string& input, char delimKeyValue, char delimItem,
-                        adios2::IO& io) {
-  auto lf_Trim = [](std::string& input) {
-    input.erase(0, input.find_first_not_of(" \n\r\t")); // prefixing spaces
-    input.erase(input.find_last_not_of(" \n\r\t") + 1); // suffixing spaces
-  };
-
-  std::istringstream inputSS(input);
-  std::string parameter;
-  while (std::getline(inputSS, parameter, delimItem)) {
-    const size_t position = parameter.find(delimKeyValue);
-    if (position == std::string::npos) {
-      throw BoutException("ADIOSSetParameters(): wrong format for IO parameter "
-                          + parameter + ", format must be key" + delimKeyValue
-                          + "value for each entry");
-    }
-
-    std::string key = parameter.substr(0, position);
-    lf_Trim(key);
-    std::string value = parameter.substr(position + 1);
-    lf_Trim(value);
-    if (value.length() == 0) {
-      throw BoutException("ADIOS2SetParameters: empty value in IO parameter " + parameter
-                          + ", format must be key" + delimKeyValue + "value");
-    }
-    io.SetParameter(key, value);
-  }
-}
-
 } // namespace bout
 #endif //BOUT_HAS_ADIOS2

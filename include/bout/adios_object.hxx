@@ -41,16 +41,12 @@ void ADIOSInit(const std::string configFile, MPI_Comm comm);
 void ADIOSFinalize();
 
 using ADIOSPtr = std::shared_ptr<adios2::ADIOS>;
-using EnginePtr = std::shared_ptr<adios2::Engine>;
-using IOPtr = std::shared_ptr<adios2::IO>;
 
 ADIOSPtr GetADIOSPtr();
 
 class ADIOSStream {
 public:
   adios2::IO io;
-  adios2::Variable<double> vTime;
-  adios2::Variable<int> vStep;
   int adiosStep = 0;
 
   /** create or return the ADIOSStream based on the target file name */
@@ -383,10 +379,6 @@ private:
   /// true if BeginStep was called and EndStep was not yet called
   bool isInStep = false;
 };
-
-/** Set user parameters for an IO group */
-void ADIOSSetParameters(const std::string& input, char delimKeyValue, char delimItem,
-                        adios2::IO& io);
 
 } // namespace bout
 
