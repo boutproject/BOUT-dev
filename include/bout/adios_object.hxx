@@ -324,7 +324,7 @@ private:
     constexpr auto ndims = std::tuple_size_v<decltype(value.shape())>;
     ASSERT1(read_shape.size() == ndims);
 
-    resizeForShape(value, read_shape, 0, std::make_index_sequence<ndims>{});
+    resizeForShape(value, read_shape, std::make_index_sequence<ndims>{});
     engine().Get(variable, value.begin(), mode);
   }
 
@@ -367,9 +367,9 @@ private:
   }
 
   template <class Container, std::size_t... I>
-  void resizeForShape(Container& value, const adios2::Dims& shape, std::size_t offset,
+  void resizeForShape(Container& value, const adios2::Dims& shape,
                       std::index_sequence<I...> /*indices*/) {
-    value.reallocate(static_cast<typename Container::size_type>(shape[offset + I])...);
+    value.reallocate(static_cast<typename Container::size_type>(shape[I])...);
   }
 
   std::string fname;
