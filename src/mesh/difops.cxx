@@ -47,6 +47,8 @@
 #include <bout/unused.hxx>
 
 #include <cmath>
+#include <cstdint>
+#include <limits>
 
 /*******************************************************************************
 * Grad_par
