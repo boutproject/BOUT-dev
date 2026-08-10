@@ -380,6 +380,7 @@ namespace bout {
 enum ConductionMethod : uint8_t { Original, ProductJK, Harmonic };
 }
 
+namespace {
 template <bout::ConductionMethod conduction_method>
 Field3D Div_par_K_Grad_par_mod_impl(const Field3D& Kin, const Field3D& fin,
                                     Field3D& flow_ylow, bool bndry_flux) {
@@ -533,6 +534,7 @@ Field3D Div_par_K_Grad_par_mod_impl(const Field3D& Kin, const Field3D& fin,
 
   return result;
 }
+} // namespace
 
 Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& flow_ylow,
                                bool bndry_flux, const std::string& method) {
