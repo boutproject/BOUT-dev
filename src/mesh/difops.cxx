@@ -374,8 +374,13 @@ Field3D Div_par_K_Grad_par(const Field3D& kY, const Field3D& f, CELL_LOC outloc)
          + Div_par(kY, outloc) * Grad_par(f, outloc);
 }
 
-Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& flow_ylow,
-                               bool bndry_flux) {
+namespace bout {
+enum ConductionMethod : uint8_t { Original, ProductJK, Harmonic };
+}
+
+template <bout::ConductionMethod conduction_method>
+Field3D Div_par_K_Grad_par_mod_impl(const Field3D& Kin, const Field3D& fin,
+                                    Field3D& flow_ylow, bool bndry_flux) {
   ASSERT2(Kin.getLocation() == fin.getLocation());
 
   const Mesh* mesh = Kin.getMesh();
@@ -437,32 +442,83 @@ Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& 
 
   BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
     // Calculate flux at upper surface
-    const auto ix = i.x();
-    const auto iy = i.y();
+
     const auto iyp = i.yp();
     const auto iym = i.ym();
 
-    const bool is_periodic_y = mesh->periodicY(ix);
+    if (bndry_flux || mesh->periodicY(i.x()) || !mesh->lastY(i.x())
+        || (i.y() != mesh->yend)) {
+      BoutReal flux = 0.0;
 
-    if (bndry_flux || is_periodic_y || !mesh->lastY(ix) || (iy != mesh->yend)) {
-      const BoutReal c = 0.5 * (K[i] + K[iyp]);               // K at the upper boundary
-      const BoutReal J = 0.5 * (coord->J[i] + coord->J[iyp]); // Jacobian at boundary
-      const BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iyp]);
-      const BoutReal gradient = 2. * (f[iyp] - f[i]) / (coord->dy[i] + coord->dy[iyp]);
+      if constexpr (conduction_method == bout::ConductionMethod::Original) {
+        const BoutReal c = 0.5 * (K[i] + K[iyp]);               // K at the upper boundary
+        const BoutReal J = 0.5 * (coord->J[i] + coord->J[iyp]); // Jacobian at boundary
+        const BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iyp]);
 
-      const BoutReal flux = c * J * gradient / g_22;
+        const BoutReal gradient = 2. * (f[iyp] - f[i]) / (coord->dy[i] + coord->dy[iyp]);
 
+        flux = c * J * gradient / g_22;
+      } else if constexpr (conduction_method == bout::ConductionMethod::ProductJK) {
+        // Intended to reduce sensitivity of result to K in small cells
+        const BoutReal cJ =
+            0.5 * (K[i] * coord->J[i] + K[iyp] * coord->J[iyp]); // K * J at boundary
+        const BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iyp]);
+
+        const BoutReal gradient = 2. * (f[iyp] - f[i]) / (coord->dy[i] + coord->dy[iyp]);
+
+        flux = cJ * gradient / g_22;
+      } else if constexpr (conduction_method == bout::ConductionMethod::Harmonic) {
+        // Harmonic average (serial resistance)
+        const BoutReal cond_i = K[i] * coord->J[i] / (coord->g_22[i] * coord->dy[i]);
+        const BoutReal cond_iyp =
+            K[iyp] * coord->J[iyp] / (coord->g_22[iyp] * coord->dy[iyp]);
+        const BoutReal denom = cond_i + cond_iyp;
+
+        // Harmonic mean: series resistance of two half-cells
+        const BoutReal C_edge =
+            (std::abs(denom) > std::numeric_limits<BoutReal>::epsilon())
+                ? 2.0 * cond_i * cond_iyp / denom
+                : 0.0;
+
+        flux = C_edge * (f[iyp] - f[i]);
+      }
       result[i] += flux / (coord->dy[i] * coord->J[i]);
     }
 
     // Calculate flux at lower surface
-    if (bndry_flux || is_periodic_y || !mesh->firstY(ix) || (iy != mesh->ystart)) {
-      const BoutReal c = 0.5 * (K[i] + K[iym]);               // K at the lower boundary
-      const BoutReal J = 0.5 * (coord->J[i] + coord->J[iym]); // Jacobian at boundary
-      const BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iym]);
-      const BoutReal gradient = 2. * (f[i] - f[iym]) / (coord->dy[i] + coord->dy[iym]);
+    if (bndry_flux || mesh->periodicY(i.x()) || !mesh->firstY(i.x())
+        || (i.y() != mesh->ystart)) {
+      BoutReal flux = 0.0;
 
-      const BoutReal flux = c * J * gradient / g_22;
+      if constexpr (conduction_method == bout::ConductionMethod::Original) {
+        const BoutReal c = 0.5 * (K[i] + K[iym]);               // K at the lower boundary
+        const BoutReal J = 0.5 * (coord->J[i] + coord->J[iym]); // Jacobian at boundary
+        const BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iym]);
+
+        const BoutReal gradient = 2. * (f[i] - f[iym]) / (coord->dy[i] + coord->dy[iym]);
+
+        flux = c * J * gradient / g_22;
+      } else if constexpr (conduction_method == bout::ConductionMethod::ProductJK) {
+        const BoutReal cJ =
+            0.5 * (K[i] * coord->J[i] + K[iym] * coord->J[iym]); // K * J at boundary
+        const BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iym]);
+
+        const BoutReal gradient = 2. * (f[i] - f[iym]) / (coord->dy[i] + coord->dy[iym]);
+
+        flux = cJ * gradient / g_22;
+      } else if constexpr (conduction_method == bout::ConductionMethod::Harmonic) {
+        const BoutReal cond_i = K[i] * coord->J[i] / (coord->g_22[i] * coord->dy[i]);
+        const BoutReal cond_iym =
+            K[iym] * coord->J[iym] / (coord->g_22[iym] * coord->dy[iym]);
+        const BoutReal denom = cond_i + cond_iym;
+
+        const BoutReal C_edge =
+            (std::abs(denom) > std::numeric_limits<BoutReal>::epsilon())
+                ? 2.0 * cond_i * cond_iym / denom
+                : 0.0;
+
+        flux = C_edge * (f[i] - f[iym]);
+      }
 
       result[i] -= flux / (coord->dy[i] * coord->J[i]);
       flow_ylow[i] = -flux * coord->dx[i] * coord->dz[i];
@@ -476,6 +532,23 @@ Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& 
   return result;
 }
 
+Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& flow_ylow,
+                               bool bndry_flux, const std::string& method) {
+  if (method == "orginal") {
+    return Div_par_K_Grad_par_mod_impl<bout::ConductionMethod::Original>(
+        Kin, fin, flow_ylow, bndry_flux);
+  }
+  if (method == "productJK") {
+    return Div_par_K_Grad_par_mod_impl<bout::ConductionMethod::ProductJK>(
+        Kin, fin, flow_ylow, bndry_flux);
+  }
+  if (method == "harmonic") {
+    return Div_par_K_Grad_par_mod_impl<bout::ConductionMethod::Harmonic>(
+        Kin, fin, flow_ylow, bndry_flux);
+  }
+  throw BoutException(
+      "Unknown method `{}` - choose from `orginal`, `productJK` or `harmonic`.", method);
+}
 /*******************************************************************************
 * Delp2
 * perpendicular Laplacian operator

@@ -198,7 +198,8 @@ Field3D Div_par_K_Grad_par(const Field3D& kY, const Field3D& f,
 /// Version with energy flow diagnostic
 /// For FCI fields, `flow_ylow` is currently returned as zero.
 Field3D Div_par_K_Grad_par_mod(const Field3D& k, const Field3D& f, Field3D& flow_ylow,
-                               bool bndry_flux = true);
+                               bool bndry_flux = true,
+                               const std::string& method = "orginal");
 
 /*!
  * Perpendicular Laplacian operator
