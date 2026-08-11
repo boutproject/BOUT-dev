@@ -236,10 +236,6 @@ Field3D Div_par(const Field3DParallel& f, CELL_LOC outloc, const std::string& me
   return f.getCoordinates(outloc)->Div_par(f, outloc, method);
 }
 
-Field3D Div_par(const Field3DParallel& f, const std::string& method, CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Div_par(f, outloc, method);
-}
-
 Field3D Div_par(const Field3DParallel& f, const Field3DParallel& v) {
   ASSERT1_FIELDS_COMPATIBLE(f, v);
   ASSERT1(f.hasParallelSlices());
@@ -302,11 +298,6 @@ Field3D Div_par_flux(const Field3DParallel& v, const Field3DParallel& f, CELL_LO
   f_B.yup() = f.yup() / Bxy_floc;
   f_B.ydown() = f.ydown() / Bxy_floc;
   return metric->Bxy * FDDY(v, f_B, outloc, method) / sqrt(metric->g_22);
-}
-
-Field3D Div_par_flux(const Field3DParallel& v, const Field3DParallel& f,
-                     const std::string& method, CELL_LOC outloc) {
-  return Div_par_flux(v, f, outloc, method);
 }
 
 /*******************************************************************************
