@@ -126,10 +126,10 @@ inline Coordinates::FieldMetric Div_par(const Field2D& f, CELL_LOC outloc,
   return Div_par(f, outloc, toString(method));
 }
 
-Field3D Div_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+Field3D Div_par(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
                 const std::string& method = "DEFAULT");
 
-inline Field3D Div_par(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method) {
+inline Field3D Div_par(const Field3DParallel& f, CELL_LOC outloc, DIFF_METHOD method) {
   return Div_par(f, outloc, toString(method));
 }
 
@@ -137,15 +137,16 @@ inline Field3D Div_par(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method) {
 // Both f and v are interpolated onto cell boundaries
 // using 2nd order central difference, then multiplied together
 // to get the flux at the boundary.
-Field3D Div_par(const Field3D& f, const Field3D& v);
+Field3D Div_par(const Field3DParallel& f, const Field3D& v);
 
 // Flux methods. Model divergence of flux: df/dt =  Div(v * f)
 // TODO : Should we add Field2D versions?
-Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+Field3D Div_par_flux(const Field3DParallel& v, const Field3DParallel& f,
+                     CELL_LOC outloc = CELL_DEFAULT,
                      const std::string& method = "DEFAULT");
 
-inline Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc,
-                            DIFF_METHOD method) {
+inline Field3D Div_par_flux(const Field3DParallel& v, const Field3DParallel& f,
+                            CELL_LOC outloc, DIFF_METHOD method) {
   return Div_par_flux(v, f, outloc, toString(method));
 }
 

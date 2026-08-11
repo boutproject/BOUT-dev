@@ -232,15 +232,15 @@ Coordinates::FieldMetric Div_par(const Field2D& f, const std::string& method,
   return f.getCoordinates(outloc)->Div_par(f, outloc, method);
 }
 
-Field3D Div_par(const Field3D& f, CELL_LOC outloc, const std::string& method) {
+Field3D Div_par(const Field3DParallel& f, CELL_LOC outloc, const std::string& method) {
   return f.getCoordinates(outloc)->Div_par(f, outloc, method);
 }
 
-Field3D Div_par(const Field3D& f, const std::string& method, CELL_LOC outloc) {
+Field3D Div_par(const Field3DParallel& f, const std::string& method, CELL_LOC outloc) {
   return f.getCoordinates(outloc)->Div_par(f, outloc, method);
 }
 
-Field3D Div_par(const Field3D& f, const Field3D& v) {
+Field3D Div_par(const Field3DParallel& f, const Field3DParallel& v) {
   ASSERT1_FIELDS_COMPATIBLE(f, v);
   ASSERT1(f.hasParallelSlices());
   ASSERT1(v.hasParallelSlices());
@@ -284,7 +284,7 @@ Field3D Div_par(const Field3D& f, const Field3D& v) {
 
 //////// Flux methods
 
-Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc,
+Field3D Div_par_flux(const Field3DParallel& v, const Field3DParallel& f, CELL_LOC outloc,
                      const std::string& method) {
   Coordinates* metric = f.getCoordinates(outloc);
 
@@ -304,8 +304,8 @@ Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc,
   return metric->Bxy * FDDY(v, f_B, outloc, method) / sqrt(metric->g_22);
 }
 
-Field3D Div_par_flux(const Field3D& v, const Field3D& f, const std::string& method,
-                     CELL_LOC outloc) {
+Field3D Div_par_flux(const Field3DParallel& v, const Field3DParallel& f,
+                     const std::string& method, CELL_LOC outloc) {
   return Div_par_flux(v, f, outloc, method);
 }
 
