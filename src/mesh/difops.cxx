@@ -377,7 +377,7 @@ Field3D Div_par_K_Grad_par(const Field3D& kY, const Field3D& f, CELL_LOC outloc)
 }
 
 namespace bout {
-enum ConductionMethod : uint8_t { Original, ProductJK, Harmonic };
+enum class ConductionMethod : uint8_t { Original, ProductJK, Harmonic };
 }
 
 namespace {
