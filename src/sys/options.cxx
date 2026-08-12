@@ -1132,9 +1132,9 @@ bout::details::OptionsFormatterBase::format(const Options& options,
       fmt::format_to(ctx.out(), " = {}", as_str);
     }
 
-    const bool has_doc = options.attributes.count("doc") != 0U;
-    const bool has_source = options.attributes.count("source") != 0U;
-    const bool has_type = options.attributes.count("type") != 0U;
+    const bool has_doc = options.attributes.contains("doc");
+    const bool has_source = options.attributes.contains("source");
+    const bool has_type = options.attributes.contains("type");
 
     std::vector<std::string> comments;
 
