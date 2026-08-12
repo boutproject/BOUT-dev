@@ -42,6 +42,8 @@
 #include "bout/bout_types.hxx"
 #include "bout/coordinates.hxx"
 
+#include <cstdint>
+
 class Solver;
 
 /*!
@@ -196,10 +198,27 @@ Field3D Div_par_K_Grad_par(const Field3D& kY, const Field2D& f,
 Field3D Div_par_K_Grad_par(const Field3D& kY, const Field3D& f,
                            CELL_LOC outloc = CELL_DEFAULT);
 
+namespace bout {
+enum class ConductionMethod : uint8_t {
+  /// Separately averages :math:`K`, :math:`J`, :math:`g_{22}`, and
+  /// :math:`dy` at the face and then multiplies them together.
+  Original,
+  /// Uses the same stencil as ``Original`` but averages :math:`J K`
+  /// together before applying the face gradient.
+  ProductJK,
+  ///  Uses a harmonic average of the half-cell conductances
+  /// :math:`K J / (g_{22} dy)`. This better matches a series-resistance
+  /// interpretation of two adjacent half-cells and can give noticeably
+  /// different results when coefficients or cell sizes vary strongly.
+  Harmonic
+};
+}
 /// Version with energy flow diagnostic
 /// For FCI fields, `flow_ylow` is currently returned as zero.
-Field3D Div_par_K_Grad_par_mod(const Field3D& k, const Field3D& f, Field3D& flow_ylow,
-                               bool bndry_flux = true);
+Field3D
+Div_par_K_Grad_par_mod(const Field3D& k, const Field3D& f, Field3D& flow_ylow,
+                       bool bndry_flux = true,
+                       bout::ConductionMethod method = bout::ConductionMethod::Original);
 
 /*!
  * Perpendicular Laplacian operator
