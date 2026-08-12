@@ -547,7 +547,8 @@ Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& 
         Kin, fin, flow_ylow, bndry_flux);
   }
   throw BoutException(
-      "Unknown method `{}` - choose from `Original`, `ProductJK` or `Harmonic`.", method);
+      "Unknown method `{}` - choose from `Original`, `ProductJK` or `Harmonic`.",
+      static_cast<int>(method));
 }
 /*******************************************************************************
 * Delp2
