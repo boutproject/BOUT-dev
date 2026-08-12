@@ -53,6 +53,7 @@
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/build_config.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/openmpwrap.hxx" // IWYU pragma: keep
 
@@ -254,6 +255,7 @@ struct SpecificInd {
     case (DIRECTION::Z):
       return zp(dd);
     }
+    BOUT_UNREACHABLE();
   }
 
   /// Templated routine to return index.?m(offset), where `?` is one of {x,y,z}
@@ -274,6 +276,7 @@ struct SpecificInd {
     case (DIRECTION::Z):
       return zm(dd);
     }
+    BOUT_UNREACHABLE();
   }
 
   inline SpecificInd xp(int dx = 1) const { return {ind + (dx * ny * nz), ny, nz}; }

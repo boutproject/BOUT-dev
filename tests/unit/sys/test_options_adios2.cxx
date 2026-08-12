@@ -27,7 +27,8 @@ public:
   static void TearDownTestSuite() { bout::ADIOSFinalize(); }
 
   ~OptionsAdios2Test() override {
-    bout::ADIOSStream::ADIOSGetStream(filename, adios2::Mode::Deferred).engine().Close();
+    bout::ADIOSStream::ADIOSGetStream(filename, adios2::Mode::Write).finish();
+    bout::ADIOSStream::ADIOSGetStream(filename, adios2::Mode::Append).finish();
   }
 
   // A temporary filename

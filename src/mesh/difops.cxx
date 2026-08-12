@@ -211,15 +211,15 @@ bout::FieldMetric Div_par(const Field2D& f, CELL_LOC outloc, const std::string& 
   return Bxy_outloc * Grad_par(bout::FieldMetric{f / Bxy_floc}, outloc, method);
 }
 
-Field3D Div_par(const Field3D& f, CELL_LOC outloc, const std::string& method) {
+Field3D Div_par(const Field3DParallel& f, CELL_LOC outloc, const std::string& method) {
   const auto& Bxy_outloc = f.getCoordinates(outloc)->Bxy();
   // Need Bxy at location of f, which might be different from outloc
   const auto& Bxy_floc = f.getCoordinates()->Bxy();
 
-  return Bxy_outloc * Grad_par(Field3DParallel{f} / Bxy_floc, outloc, method);
+  return Bxy_outloc * Grad_par(f / Bxy_floc, outloc, method);
 }
 
-Field3D Div_par(const Field3D& f, const Field3D& v) {
+Field3D Div_par(const Field3DParallel& f, const Field3DParallel& v) {
   ASSERT1_FIELDS_COMPATIBLE(f, v);
   ASSERT1(f.hasParallelSlices());
   ASSERT1(v.hasParallelSlices());
@@ -263,7 +263,7 @@ Field3D Div_par(const Field3D& f, const Field3D& v) {
 
 //////// Flux methods
 
-Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc,
+Field3D Div_par_flux(const Field3DParallel& v, const Field3DParallel& f, CELL_LOC outloc,
                      const std::string& method) {
   const Coordinates* metric = f.getCoordinates(outloc);
 

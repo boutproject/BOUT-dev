@@ -233,7 +233,6 @@ private:
   /// Y-index of solution field.
   int yindex = -1;
 
-  MPI_Comm comm;
   KSP ksp = nullptr; ///< PETSc solver
   bool ksp_initialised = false;
 

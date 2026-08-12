@@ -31,7 +31,7 @@ endif()
 # Set the version here, strip any extra tags to use in `project`
 # We try to use git to get a full description, inspired by setuptools_scm
 set(_bout_previous_version "5.2.0")
-set(_bout_next_version "5.2.1")
+set(_bout_next_version "6.0.0")
 execute_process(
   COMMAND "git" describe --tags --match=v${_bout_previous_version}
   COMMAND sed -e s/${_bout_previous_version}-/${_bout_next_version}.dev/ -e
@@ -129,7 +129,6 @@ set(BOUT_SOURCES
     ./include/bout/deriv_store.hxx
     ./include/bout/derivs.hxx
     ./include/bout/difops.hxx
-    ./include/bout/expr.hxx
     ./include/bout/fft.hxx
     ./include/bout/field.hxx
     ./include/bout/field2d.hxx

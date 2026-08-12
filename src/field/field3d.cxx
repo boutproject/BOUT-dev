@@ -686,22 +686,6 @@ void Field3D::swapData(Field3D& other) { std::swap(data, other.data); }
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
-Field3D pow(const Field3D& lhs, const Field2D& rhs, const std::string& rgn) {
-
-  // Check if the inputs are allocated
-  checkData(lhs);
-  checkData(rhs);
-  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
-
-  // Define and allocate the output result
-  Field3D result{emptyFrom(lhs)};
-
-  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
-
-  checkData(result);
-  return result;
-}
-
 FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs, const std::string& rgn) {
 
   checkData(lhs);
@@ -934,6 +918,11 @@ const Region<Ind3D>& getField3DRegion(const Mesh* mesh, std::optional<size_t> re
     return mesh->getRegion(regionID.value());
   }
   return mesh->getRegion("RGN_ALL");
+}
+
+size_t getField3DRegionID(const Mesh* mesh, const std::string& region_name) {
+  ASSERT1(mesh != nullptr);
+  return mesh->getRegionID(region_name);
 }
 
 } // namespace bout::detail

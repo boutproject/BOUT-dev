@@ -832,7 +832,8 @@ public:
   // Switch for communication of corner guard and boundary cells
   const bool include_corner_cells;
 
-  std::optional<size_t> getCommonRegion(std::optional<size_t>, std::optional<size_t>);
+  std::optional<size_t> getCommonRegion(std::optional<size_t> lhs,
+                                        std::optional<size_t> rhs);
   size_t getRegionID(const std::string& region) const;
   const Region<Ind3D>& getRegion(size_t RegionID) const { return region3D[RegionID]; }
   const Region<Ind3D>& getRegion(std::optional<size_t> RegionID) const {

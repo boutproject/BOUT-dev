@@ -140,8 +140,7 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
                            [[maybe_unused]] Solver* solver)
     : Laplacian(opt, loc, mesh_in), A(0.0, mesh_in), C1(1.0, mesh_in), C2(1.0, mesh_in),
       D(1.0, mesh_in), Ex(0.0, mesh_in), Ez(0.0, mesh_in), issetD(false), issetC(false),
-      issetE(false), comm(localmesh->getXZcomm()),
-      opts(opt == nullptr ? &(Options::root()["laplace"]) : opt),
+      issetE(false), opts(opt == nullptr ? &(Options::root()["laplace"]) : opt),
       // WARNING: only a few of these options actually make sense: see the
       // PETSc documentation to work out which they are (possibly
       // pbjacobi, sor might be useful choices?)
@@ -258,7 +257,8 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
     if (ksp_initialised) {
       KSPDestroy(&ksp);
     }
-    KSPCreate(comm, &ksp);
+    KSPCreate(localmesh->getXZcomm(), &ksp);
+    ksp_initialised = true;
 
     // Configure Linear Solver
 #if PETSC_VERSION_GE(3, 5, 0)
@@ -336,7 +336,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
   }
   if (!isOuterBoundaryFlagSet(INVERT_RHS)) {
     BOUT_FOR_SERIAL(index, indexer->getRegionOuterX()) {
-      rhs(index) = isInnerBoundaryFlagSet(INVERT_SET) ? x0[index] : 0.0;
+      rhs(index) = isOuterBoundaryFlagSet(INVERT_SET) ? x0[index] : 0.0;
     }
   }
 
@@ -489,10 +489,10 @@ void LaplacePetsc::setSecondOrderMatrix(int y, bool inner_X_neumann,
   // Set the boundaries
   if (inner_X_neumann) {
     const auto dx = sliceXZ(coords->dx(), y);
-    const auto g11 = sliceXZ(coords->g11(), y);
+    const auto g_11 = sliceXZ(coords->g_11(), y);
 
     BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
-      const auto factor = 1. / dx[i] / std::sqrt(g11[i]);
+      const auto factor = 1. / dx[i] / std::sqrt(g_11[i]);
       operator2D(i, i) = -factor;
       operator2D(i, i.xp()) = factor;
     }
@@ -504,10 +504,10 @@ void LaplacePetsc::setSecondOrderMatrix(int y, bool inner_X_neumann,
   }
   if (outer_X_neumann) {
     const auto dx = sliceXZ(coords->dx(), y);
-    const auto g11 = sliceXZ(coords->g11(), y);
+    const auto g_11 = sliceXZ(coords->g_11(), y);
 
     BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
-      const auto factor = 1. / dx[i] / std::sqrt(g11[i]);
+      const auto factor = 1. / dx[i] / std::sqrt(g_11[i]);
       operator2D(i, i) = factor;
       operator2D(i, i.xm()) = -factor;
     }
@@ -559,10 +559,10 @@ void LaplacePetsc::setFourthOrderMatrix(int y, bool inner_X_neumann,
   // Set boundaries
   if (inner_X_neumann) {
     const auto dx = sliceXZ(coords->dx(), y);
-    const auto g11 = sliceXZ(coords->g11(), y);
+    const auto g_11 = sliceXZ(coords->g_11(), y);
 
     BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
-      const auto factor = 1. / dx[i] / std::sqrt(g11[i]);
+      const auto factor = 1. / dx[i] / std::sqrt(g_11[i]);
       operator2D(i, i) = (-25.0 / 12.0) * factor;
       operator2D(i, i.xp(1)) = 4.0 * factor;
       operator2D(i, i.xp(2)) = -3.0 * factor;
@@ -581,10 +581,10 @@ void LaplacePetsc::setFourthOrderMatrix(int y, bool inner_X_neumann,
 
   if (outer_X_neumann) {
     const auto dx = sliceXZ(coords->dx(), y);
-    const auto g11 = sliceXZ(coords->g11(), y);
+    const auto g_11 = sliceXZ(coords->g_11(), y);
 
     BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
-      const auto factor = 1. / dx[i] / std::sqrt(g11[i]);
+      const auto factor = 1. / dx[i] / std::sqrt(g_11[i]);
       operator2D(i, i) = (25.0 / 12.0) * factor;
       operator2D(i, i.xm(1)) = -4.0 * factor;
       operator2D(i, i.xm(2)) = 3.0 * factor;
