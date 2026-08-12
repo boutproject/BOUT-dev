@@ -773,7 +773,7 @@ void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_cent
   if (localmesh->get(d2y, "d2y" + suffix, 0.0, false, location) != 0) {
     output_warn.write("\tWARNING: differencing quantity 'd2y' not found. "
                       "Calculating from dy\n");
-    d1_dy_ = DDY(1. / dy().asField3DParallel()); // d/di(1/dy)
+    d1_dy_ = DDY(1. / dy()); // d/di(1/dy)
 
     localmesh->communicate_no_slices(d1_dy_);
     d1_dy_ =
