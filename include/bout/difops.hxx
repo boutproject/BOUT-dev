@@ -137,7 +137,7 @@ inline Field3D Div_par(const Field3DParallel& f, CELL_LOC outloc, DIFF_METHOD me
 // Both f and v are interpolated onto cell boundaries
 // using 2nd order central difference, then multiplied together
 // to get the flux at the boundary.
-Field3D Div_par(const Field3DParallel& f, const Field3D& v);
+Field3D Div_par(const Field3DParallel& f, const Field3DParallel& v);
 
 // Flux methods. Model divergence of flux: df/dt =  Div(v * f)
 // TODO : Should we add Field2D versions?
