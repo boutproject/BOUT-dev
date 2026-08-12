@@ -45,11 +45,12 @@
 #include "bout/monitor.hxx"
 #include "bout/options.hxx"
 #include "bout/region.hxx"
-#include "bout/unused.hxx"
 
+#include <algorithm>
 #include <cstdint>
 #include <iterator>
 #include <memory>
+#include <vector>
 
 ///////////////////////////////////////////////////////////////////
 // C function pointer types
