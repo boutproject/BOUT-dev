@@ -14,6 +14,8 @@
 #include <bout/field_factory.hxx>
 #include <bout/invert/laplacexz.hxx>
 
+using bout::globals::mesh;
+
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
