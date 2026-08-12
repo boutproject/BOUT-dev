@@ -42,6 +42,8 @@
 #include "bout/bout_types.hxx"
 #include "bout/coordinates.hxx"
 
+#include <cstdint>
+
 class Solver;
 
 /*!
