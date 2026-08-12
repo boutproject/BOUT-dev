@@ -93,7 +93,7 @@ template <typename E>
 std::enable_if_t<is_expr_field3d_v<E> && !bout::utils::is_Field3D_v<E>, const Field3D>
 DDY(const E& expr, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
     const std::string& region = "RGN_NOBNDRY") {
-  return DDY(Field3D{expr}, outloc, method, region);
+  return DDY(Field3D{Field3DParallel{expr}}, outloc, method, region);
 }
 
 /// Calculate first partial derivative in Y
