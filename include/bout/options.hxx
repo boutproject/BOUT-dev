@@ -354,9 +354,7 @@ public:
   std::map<std::string, AttributeType> attributes;
 
   /// Return true if this value has attribute \p key
-  bool hasAttribute(const std::string& key) const {
-    return attributes.contains(key);
-  }
+  bool hasAttribute(const std::string& key) const { return attributes.contains(key); }
 
   /// Set attributes, overwriting any already set
   ///
