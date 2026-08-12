@@ -58,7 +58,7 @@ bout::FieldMetric Grad_par(const Field2D& var, CELL_LOC outloc,
   return DDY(var, outloc, method) * var.getCoordinates(outloc)->invSg();
 }
 
-Field3D Grad_par(const Field3D& var, CELL_LOC outloc, const std::string& method) {
+Field3D Grad_par(const Field3DParallel& var, CELL_LOC outloc, const std::string& method) {
   return DDY(var, outloc, method) * var.getCoordinates(outloc)->invSg();
 }
 
@@ -194,7 +194,7 @@ bout::FieldMetric Vpar_Grad_par(const Field2D& v, const Field2D& f, CELL_LOC out
   return VDDY(v, f, outloc, method) * f.getCoordinates(outloc)->invSg();
 }
 
-Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
+Field3D Vpar_Grad_par(const Field3DParallel& v, const Field3DParallel& f, CELL_LOC outloc,
                       const std::string& method) {
   return VDDY(v, f, outloc, method) * f.getCoordinates(outloc)->invSg();
 }
@@ -320,7 +320,7 @@ bout::FieldMetric Div_par_K_Grad_par(BoutReal kY, const Field2D& f, CELL_LOC out
   return kY * Grad2_par2(f, outloc);
 }
 
-Field3D Div_par_K_Grad_par(BoutReal kY, const Field3D& f, CELL_LOC outloc) {
+Field3D Div_par_K_Grad_par(BoutReal kY, const Field3DParallel& f, CELL_LOC outloc) {
   return kY * Grad2_par2(f, outloc);
 }
 
@@ -333,7 +333,7 @@ bout::FieldMetric Div_par_K_Grad_par(const Field2D& kY, const Field2D& f,
          + Div_par(kY, outloc) * Grad_par(f, outloc);
 }
 
-Field3D Div_par_K_Grad_par(const Field2D& kY, const Field3D& f, CELL_LOC outloc) {
+Field3D Div_par_K_Grad_par(const Field2D& kY, const Field3DParallel& f, CELL_LOC outloc) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
@@ -341,7 +341,7 @@ Field3D Div_par_K_Grad_par(const Field2D& kY, const Field3D& f, CELL_LOC outloc)
          + Div_par(kY, outloc) * Grad_par(f, outloc);
 }
 
-Field3D Div_par_K_Grad_par(const Field3D& kY, const Field2D& f, CELL_LOC outloc) {
+Field3D Div_par_K_Grad_par(const Field3DParallel& kY, const Field2D& f, CELL_LOC outloc) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
@@ -349,7 +349,8 @@ Field3D Div_par_K_Grad_par(const Field3D& kY, const Field2D& f, CELL_LOC outloc)
          + Div_par(kY, outloc) * Grad_par(f, outloc);
 }
 
-Field3D Div_par_K_Grad_par(const Field3D& kY, const Field3D& f, CELL_LOC outloc) {
+Field3D Div_par_K_Grad_par(const Field3DParallel& kY, const Field3DParallel& f,
+                           CELL_LOC outloc) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
@@ -357,8 +358,8 @@ Field3D Div_par_K_Grad_par(const Field3D& kY, const Field3D& f, CELL_LOC outloc)
          + Div_par(kY, outloc) * Grad_par(f, outloc);
 }
 
-Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& flow_ylow,
-                               bool bndry_flux) {
+Field3D Div_par_K_Grad_par_mod(const Field3DParallel& Kin, const Field3DParallel& fin,
+                               Field3D& flow_ylow, bool bndry_flux) {
   ASSERT2(Kin.getLocation() == fin.getLocation());
 
   const Mesh* mesh = Kin.getMesh();

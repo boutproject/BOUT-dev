@@ -61,7 +61,7 @@ inline bout::FieldMetric Grad_par(const Field2D& var, CELL_LOC outloc,
   return Grad_par(var, outloc, toString(method));
 }
 
-Field3D Grad_par(const Field3D& var, CELL_LOC outloc = CELL_DEFAULT,
+Field3D Grad_par(const Field3DParallel& var, CELL_LOC outloc = CELL_DEFAULT,
                  const std::string& method = "DEFAULT");
 
 /*!
@@ -99,11 +99,12 @@ inline bout::FieldMetric Vpar_Grad_par(const Field2D& v, const Field2D& f,
   return Vpar_Grad_par(v, f, outloc, toString(method));
 }
 
-Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+Field3D Vpar_Grad_par(const Field3DParallel& v, const Field3DParallel& f,
+                      CELL_LOC outloc = CELL_DEFAULT,
                       const std::string& method = "DEFAULT");
 
-inline Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
-                             DIFF_METHOD method) {
+inline Field3D Vpar_Grad_par(const Field3DParallel& v, const Field3DParallel& f,
+                             CELL_LOC outloc, DIFF_METHOD method) {
   return Vpar_Grad_par(v, f, outloc, toString(method));
 }
 
@@ -186,20 +187,21 @@ inline Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method)
  */
 bout::FieldMetric Div_par_K_Grad_par(BoutReal kY, const Field2D& f,
                                      CELL_LOC outloc = CELL_DEFAULT);
-Field3D Div_par_K_Grad_par(BoutReal kY, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT);
+Field3D Div_par_K_Grad_par(BoutReal kY, const Field3DParallel& f,
+                           CELL_LOC outloc = CELL_DEFAULT);
 bout::FieldMetric Div_par_K_Grad_par(const Field2D& kY, const Field2D& f,
                                      CELL_LOC outloc = CELL_DEFAULT);
-Field3D Div_par_K_Grad_par(const Field2D& kY, const Field3D& f,
+Field3D Div_par_K_Grad_par(const Field2D& kY, const Field3DParallel& f,
                            CELL_LOC outloc = CELL_DEFAULT);
-Field3D Div_par_K_Grad_par(const Field3D& kY, const Field2D& f,
+Field3D Div_par_K_Grad_par(const Field3DParallel& kY, const Field2D& f,
                            CELL_LOC outloc = CELL_DEFAULT);
-Field3D Div_par_K_Grad_par(const Field3D& kY, const Field3D& f,
+Field3D Div_par_K_Grad_par(const Field3DParallel& kY, const Field3DParallel& f,
                            CELL_LOC outloc = CELL_DEFAULT);
 
 /// Version with energy flow diagnostic
 /// For FCI fields, `flow_ylow` is currently returned as zero.
-Field3D Div_par_K_Grad_par_mod(const Field3D& k, const Field3D& f, Field3D& flow_ylow,
-                               bool bndry_flux = true);
+Field3D Div_par_K_Grad_par_mod(const Field3DParallel& k, const Field3DParallel& f,
+                               Field3D& flow_ylow, bool bndry_flux = true);
 
 /*!
  * Perpendicular Laplacian operator
