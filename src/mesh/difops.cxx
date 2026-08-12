@@ -533,17 +533,15 @@ Field3D Div_par_K_Grad_par_mod_impl(const Field3D& Kin, const Field3D& fin,
 
 Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& flow_ylow,
                                bool bndry_flux, bout::ConductionMethod method) {
-  if (method == bout::ConductionMethod::Original) {
-    return Div_par_K_Grad_par_mod_impl<bout::ConductionMethod::Original>(
-        Kin, fin, flow_ylow, bndry_flux);
-  }
-  if (method == bout::ConductionMethod::ProductJK) {
-    return Div_par_K_Grad_par_mod_impl<bout::ConductionMethod::ProductJK>(
-        Kin, fin, flow_ylow, bndry_flux);
-  }
-  if (method == bout::ConductionMethod::Harmonic) {
-    return Div_par_K_Grad_par_mod_impl<bout::ConductionMethod::Harmonic>(
-        Kin, fin, flow_ylow, bndry_flux);
+  using enum bout::ConductionMethod;
+
+  switch (method) {
+  case Original:
+    return Div_par_K_Grad_par_mod_impl<Original>(Kin, fin, flow_ylow, bndry_flux);
+  case ProductJK:
+    return Div_par_K_Grad_par_mod_impl<ProductJK>(Kin, fin, flow_ylow, bndry_flux);
+  case Harmonic:
+    return Div_par_K_Grad_par_mod_impl<Harmonic>(Kin, fin, flow_ylow, bndry_flux);
   }
   throw BoutException(
       "Unknown method `{}` - choose from `Original`, `ProductJK` or `Harmonic`.",
