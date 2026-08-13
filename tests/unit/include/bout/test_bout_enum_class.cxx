@@ -7,6 +7,7 @@
 
 BOUT_ENUM_CLASS(TestEnum, foo, bar);
 BOUT_ENUM_CLASS_NS(bout, TestEnum, foo, bar);
+BOUT_ENUM_CLASS_NS(bout::test, TestEnum, foo, bar);
 
 TEST(BoutEnumClassNS, toString) {
   EXPECT_EQ(toString(bout::TestEnum::foo), "foo");
@@ -68,6 +69,26 @@ TEST(BoutEnumClassNS, options) {
   options["optfail"] = "expect_fail";
 
   EXPECT_THROW(options["optfail"].as<bout::TestEnum>(), BoutException);
+}
+
+TEST(BoutEnumClassNS2, options) {
+  WithQuietOutput quiet_info{output_info};
+
+  Options options;
+
+  auto opt1 = options["opt"].withDefault(bout::test::TestEnum::foo);
+  EXPECT_EQ(opt1, bout::test::TestEnum::foo);
+  EXPECT_NE(opt1, bout::test::TestEnum::bar);
+
+  options["opt"] = "bar";
+
+  auto opt2 = options["opt"].as<bout::test::TestEnum>();
+  EXPECT_EQ(opt2, bout::test::TestEnum::bar);
+  EXPECT_NE(opt2, bout::test::TestEnum::foo);
+
+  options["optfail"] = "expect_fail";
+
+  EXPECT_THROW(options["optfail"].as<bout::test::TestEnum>(), BoutException);
 }
 
 TEST(BoutEnumClass, ostream) {
