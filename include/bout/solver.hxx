@@ -45,11 +45,12 @@
 #include "bout/monitor.hxx"
 #include "bout/options.hxx"
 #include "bout/region.hxx"
-#include "bout/unused.hxx"
 
+#include <algorithm>
 #include <cstdint>
 #include <iterator>
 #include <memory>
+#include <vector>
 
 ///////////////////////////////////////////////////////////////////
 // C function pointer types
@@ -514,8 +515,7 @@ protected:
   /// Does \p vars contain a field with \p name?
   template <class T>
   bool contains(const std::vector<VarStr<T>>& vars, const std::string& name) {
-    const auto in_vars = std::find(begin(vars), end(vars), name);
-    return in_vars != end(vars);
+    return std::ranges::find(vars, name, &VarStr<T>::name) != std::ranges::end(vars);
   }
 
   /// Vectors of variables to evolve
