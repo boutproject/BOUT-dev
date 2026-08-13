@@ -1323,17 +1323,17 @@ void Coordinates::normaliseMetricFCI(const BoutReal rho_s0, const BoutReal Bnorm
     return f / rhoSQ;
   });
   // coord->J.asField3DParallel() /= rho_s0 * rho_s0 * rho_s0;
-  if constexpr (bout::build::use_metric_3d) {
-    if (J().hasParallelSlices()) {
-      setJ(Field3DParallel{J() * (rho_s0 * rho_s0 * rho_s0)});
-    } else {
-      setJ(J() * (rho_s0 * rho_s0 * rho_s0));
-    }
-    setBxy(Field3DParallel(Bxy() / Bnorm));
+#if BOUT_USE_METRIC_3D
+  if (J().hasParallelSlices()) {
+    setJ(Field3DParallel{J() * (rho_s0 * rho_s0 * rho_s0)});
   } else {
     setJ(J() * (rho_s0 * rho_s0 * rho_s0));
-    setBxy(Bxy() / Bnorm);
   }
+  setBxy(Field3DParallel(Bxy() / Bnorm));
+#else
+  setJ(J() * (rho_s0 * rho_s0 * rho_s0));
+  setBxy(Bxy() / Bnorm);
+#endif
   invalidateMetricCaches();
 }
 
