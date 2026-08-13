@@ -762,10 +762,13 @@ Field3D Laplace(const Field3D& f, CELL_LOC outloc,
  * Inverse of Laplacian operator in LaplaceXY solver
  *******************************************************************************/
 
-Field2D Laplace_perpXY(const Field2D& A, const Field2D& f) {
 #if BOUT_USE_METRIC_3D
+Field2D Laplace_perpXY([[maybe_unused]] const Field2D& A,
+                       [[maybe_unused]] const Field2D& f) {
   throw BoutException("Coordinates::Laplace_perpXY for 3D metric not implemented");
+}
 #else
+Field2D Laplace_perpXY(const Field2D& A, const Field2D& f) {
   const auto& coords = *f.getCoordinates();
 
   Field2D result;
@@ -821,8 +824,8 @@ Field2D Laplace_perpXY(const Field2D& A, const Field2D& f) {
   }
 
   return result;
-#endif
 }
+#endif
 
 /*******************************************************************************
 * b0xGrad_dot_Grad
