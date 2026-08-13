@@ -1,5 +1,21 @@
 # Changelog
 
+## [v6.0.0](https://github.com/boutproject/BOUT-dev/tree/v6.0.0
+
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v5.2.0...)
+
+### Breaking changes
+
+- `Coordinates` has been refactored to with a more encapsulated interface. This
+  allows us to ensure that derived quantities are correctly updated when the
+  metric components are changed, as well as defer creation of the Christoffel
+  symbols, and other derivatives of the metric components. This change will
+  require most physics models to be updated. You can do this with the
+  `bout-upgrader` from `boutdata`:
+  ```console
+  $ bout-upgrader v6 v6_upgrader file/to/update.cxx
+  ````
+
 ## [v5.2.0](https://github.com/boutproject/BOUT-dev/tree/v5.2.0
 
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v5.1.1...v5.2.0)

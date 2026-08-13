@@ -1,6 +1,7 @@
-
 #include "bout/parallel_boundary_region.hxx"
 #include "bout/physicsmodel.hxx"
+
+#include <cmath>
 
 class FCIwave : public PhysicsModel {
 private:
@@ -45,7 +46,7 @@ private:
 
     for (auto i : result.getRegion(RGN_NOBNDRY)) {
       result[i] = Bxyz[i] * (f_B.yup()[i.yp()] - f_B.ydown()[i.ym()])
-                  / (2. * coord->dy[i] * sqrt(coord->g_22[i]));
+                  / (2. * coord->dy()[i] * sqrt(coord->g_22()[i]));
 
       if (!finite(result[i])) {
         output.write("[{:d},{:d},{:d}]: {:e}, {:e} -> {:e}\n", i.x(), i.y(), i.z(),

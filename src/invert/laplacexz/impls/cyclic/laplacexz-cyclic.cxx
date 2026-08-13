@@ -5,10 +5,10 @@
 
 #include <bout/constants.hxx>
 #include <bout/fft.hxx>
+#include <bout/field3d.hxx>
+#include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
-
-#include <bout/output.hxx>
 
 LaplaceXZcyclic::LaplaceXZcyclic(Mesh* m, Options* options, const CELL_LOC loc)
     : LaplaceXZ(m, options, loc) {
@@ -74,7 +74,7 @@ void LaplaceXZcyclic::setCoefs(const Field2D& A2D, const Field2D& B2D) {
   Coordinates* coord = localmesh->getCoordinates(location);
 
   // NOTE: For now the X-Z terms are omitted, so check that they are small
-  ASSERT2(max(abs(coord->g13)) < 1e-5);
+  ASSERT2(max(abs(coord->g13())) < 1e-5);
 
   int ind = 0;
   const BoutReal zlength = getUniform(coord->zlength());

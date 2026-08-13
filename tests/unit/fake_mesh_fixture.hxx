@@ -3,11 +3,14 @@
 #include <gtest/gtest.h>
 #include <memory>
 
+#include "bout/build_config.hxx"
+#include "bout/metric_tensor.hxx"
 #include <bout/boundary_region.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/build_defines.hxx>
 #include <bout/coordinates.hxx>
+#include <bout/field2d.hxx>
 #include <bout/globals.hxx>
 #include <bout/griddata.hxx>
 #include <bout/mesh.hxx>
@@ -47,22 +50,22 @@ public:
         Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0});
-
-    // Set some auxilliary variables
-    // Usually set in geometry()
-    // Note: For testing these are set to non-zero values
-    test_coords->G1 = test_coords->G2 = test_coords->G3 = 0.1;
+    mesh_m.setCoordinates(test_coords);
 
     // Set nonuniform corrections
-    test_coords->non_uniform = true;
-    test_coords->d1_dx = test_coords->d1_dy = 0.2;
-    test_coords->d1_dz = 0.0;
-#if BOUT_USE_METRIC_3D
-    test_coords->Bxy.splitParallelSlices();
-    test_coords->Bxy.yup() = test_coords->Bxy.ydown() = test_coords->Bxy;
-#endif
+    test_coords->setNon_uniform(true);
+    test_coords->setD1_dx(0.2);
+    test_coords->setD1_dy(0.2);
+    test_coords->setD1_dz(0.0);
 
-    // No call to Coordinates::geometry() needed here
+    if (bout::build::use_metric_3d) {
+      bout::FieldMetric mutable_Bxy = test_coords->Bxy();
+      mutable_Bxy.splitParallelSlices();
+      mutable_Bxy.yup() = test_coords->Bxy();
+      mutable_Bxy.ydown() = test_coords->Bxy();
+      test_coords->setBxy(mutable_Bxy);
+    }
+
     mesh_m.setCoordinates(test_coords);
     mesh_m.setGridDataSource(new FakeGridDataSource());
     // May need a ParallelTransform to create fields, because create3D calls
@@ -89,22 +92,25 @@ public:
         Field2D{1.0, &mesh_staggered_m}, Field2D{0.0, &mesh_staggered_m},
         Field2D{0.0, &mesh_staggered_m}, Field2D{0.0, &mesh_staggered_m},
         Field2D{0.0, &mesh_staggered_m}, Field2D{0.0, &mesh_staggered_m});
-
-    // Set some auxilliary variables
-    test_coords_staggered->G1 = test_coords_staggered->G2 = test_coords_staggered->G3 =
-        0.1;
+    mesh_staggered_m.setCoordinates(test_coords_staggered);
 
     // Set nonuniform corrections
-    test_coords_staggered->non_uniform = true;
-    test_coords_staggered->d1_dx = test_coords_staggered->d1_dy = 0.2;
-    test_coords_staggered->d1_dz = 0.0;
-#if BOUT_USE_METRIC_3D
-    test_coords_staggered->Bxy.splitParallelSlices();
-    test_coords_staggered->Bxy.yup() = test_coords_staggered->Bxy.ydown() =
-        test_coords_staggered->Bxy;
-#endif
+    test_coords_staggered->setNon_uniform(true);
+    test_coords_staggered->setD1_dx(0.2);
+    test_coords_staggered->setD1_dy(0.2);
+    test_coords_staggered->setD1_dz(0.0);
 
-    // No call to Coordinates::geometry() needed here
+    if (bout::build::use_metric_3d) {
+      bout::FieldMetric mutable_Bxy = test_coords_staggered->Bxy();
+      mutable_Bxy.splitParallelSlices();
+      test_coords_staggered->setBxy(mutable_Bxy);
+
+      mutable_Bxy = test_coords_staggered->Bxy();
+      mutable_Bxy.yup() = test_coords_staggered->Bxy();
+      mutable_Bxy.ydown() = test_coords_staggered->Bxy();
+      test_coords_staggered->setBxy(mutable_Bxy);
+    }
+
     test_coords_staggered->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(mesh_staggered_m));
 

@@ -1,3 +1,4 @@
+#include "bout/assert.hxx"
 #include <bout/array.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
@@ -554,12 +555,39 @@ Mesh::createDefaultCoordinates(const CELL_LOC location,
   if (location == CELL_CENTRE || location == CELL_DEFAULT) {
     // Initialize coordinates from input
     return std::make_shared<Coordinates>(this, options);
-  } else {
-    // Interpolate coordinates from CELL_CENTRE version
-    return std::make_shared<Coordinates>(this, options, location,
-                                         getCoordinates(CELL_CENTRE),
-                                         force_interpolate_from_centre);
   }
+  // Interpolate coordinates from CELL_CENTRE version
+  return std::make_shared<Coordinates>(this, options, location,
+                                       getCoordinates(CELL_CENTRE),
+                                       force_interpolate_from_centre);
+}
+
+std::shared_ptr<Coordinates> Mesh::getCoordinatesSmart(CELL_LOC location) {
+  ASSERT1(location != CELL_DEFAULT);
+  ASSERT1(location != CELL_VSHIFT);
+
+  auto found = coords_map.find(location);
+  if (found != coords_map.end()) {
+    // True branch most common, returns immediately
+    return found->second;
+  }
+
+  // No coordinate system set. Create default
+  // Note that this can't be allocated here due to incomplete type
+  // (circular dependency between Mesh and Coordinates)
+  auto inserted = coords_map.emplace(location, nullptr);
+  auto force_interpolate_from_centre = false;
+  inserted.first->second =
+      createDefaultCoordinates(location, force_interpolate_from_centre);
+
+  auto recalculate_staggered = false;
+  inserted.first->second->recalculateAndReset(recalculate_staggered,
+                                              force_interpolate_from_centre);
+
+  inserted.first->second->communicateMetricTensor();
+  inserted.first->second->communicateDz();
+
+  return inserted.first->second;
 }
 
 const Region<>& Mesh::getRegion3D(const std::string& region_name) const {
@@ -772,8 +800,14 @@ void Mesh::recalculateStaggeredCoordinates() {
       continue;
     }
 
-    *coords_map[location] = std::move(*createDefaultCoordinates(location, true));
-    coords_map[location]->geometry(false, true);
+    auto force_interpolate_from_centre = true;
+    Coordinates& new_coordinates =
+        *createDefaultCoordinates(location, force_interpolate_from_centre);
+
+    auto recalculate_staggered = false;
+    new_coordinates.recalculateAndReset(recalculate_staggered,
+                                        force_interpolate_from_centre);
+    *coords_map[location] = std::move(new_coordinates);
   }
 }
 

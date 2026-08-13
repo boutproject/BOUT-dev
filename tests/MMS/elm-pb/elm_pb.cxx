@@ -292,7 +292,7 @@ public:
     const auto& hthe = tokamak_coords.hthe;
     const auto& I = tokamak_coords.I_unnormalised;
 
-    B0 = tokamak_coords.Bxy;
+    B0 = tokamak_coords.Bxy();
 
     if (include_curvature) {
       // Load curvature term
@@ -315,7 +315,7 @@ public:
     if (ShiftXderivs) {
       if (mesh->IncIntShear) {
         // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-        mesh->getCoordinates()->IntShiftTorsion = I;
+        mesh->getCoordinates()->setIntShiftTorsion(I);
       } else {
         // Dimits style, using local coordinate system
         if (include_curvature) {
@@ -596,7 +596,7 @@ public:
       ddt(U) += viscos_perp * Delp2(U); // Perpendicular viscosity
     }
 
-    ddt(U) -= 10 * (SQ(SQ(coords->dx)) * D4DX4(U) + SQ(SQ(coords->dz)) * D4DZ4(U));
+    ddt(U) -= 10 * (SQ(SQ(coords->dx())) * D4DX4(U) + SQ(SQ(coords->dz())) * D4DZ4(U));
 
     ////////////////////////////////////////////////////
     // Pressure equation
@@ -616,7 +616,7 @@ public:
       ddt(P) += diffusion_par * Grad2_par2(P); // Parallel diffusion
     }
 
-    ddt(P) -= 10 * (SQ(SQ(coords->dx)) * D4DX4(P) + SQ(SQ(coords->dz)) * D4DZ4(P));
+    ddt(P) -= 10 * (SQ(SQ(coords->dx())) * D4DX4(P) + SQ(SQ(coords->dz())) * D4DZ4(P));
 
     ////////////////////////////////////////////////////
     // Compressional effects
