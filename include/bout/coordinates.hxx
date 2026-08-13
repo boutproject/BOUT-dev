@@ -372,6 +372,13 @@ public:
 
   void communicateMetricTensor();
 
+private:
+  void normaliseMetricTokamak(BoutReal rho_s0, BoutReal Bnorm);
+  void normaliseMetricFCI(BoutReal rho_s0, BoutReal Bnorm);
+
+public:
+  void normaliseMetric(BoutReal rho_s0, BoutReal Bnorm);
+
   void communicateDz();
 
   ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz

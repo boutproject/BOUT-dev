@@ -1284,3 +1284,58 @@ void Coordinates::splitBxyParallelSlices() {
     Bxy_.yup() = Bxy_.ydown() = copy;
   }
 }
+
+void Coordinates::normaliseMetricTokamak(const BoutReal rho_s0, const BoutReal Bnorm) {
+  contravariantMetricTensor = ContravariantMetricTensor(
+      contravariantMetricTensor.g11() / SQ(Bnorm * rho_s0),
+      contravariantMetricTensor.g22() * SQ(rho_s0),
+      contravariantMetricTensor.g33() * SQ(rho_s0),
+      contravariantMetricTensor.g12() / Bnorm, contravariantMetricTensor.g13() / Bnorm,
+      contravariantMetricTensor.g23() * SQ(rho_s0));
+
+  covariantMetricTensor = CovariantMetricTensor(
+      covariantMetricTensor.g11() * SQ(Bnorm * rho_s0),
+      covariantMetricTensor.g22() / SQ(rho_s0), covariantMetricTensor.g33() / SQ(rho_s0),
+      covariantMetricTensor.g12() * Bnorm, covariantMetricTensor.g13() * Bnorm,
+      covariantMetricTensor.g23() / SQ(rho_s0));
+
+  setBxy(Bxy() / Bnorm);
+  setJ(J() * Bnorm / rho_s0);
+  invalidateMetricCaches();
+}
+
+void Coordinates::normaliseMetricFCI(const BoutReal rho_s0, const BoutReal Bnorm) {
+  BoutReal rhoSQ = SQ(rho_s0);
+
+  // coord->g11.asField3DParallel() *= rhoSQ;
+  contravariantMetricTensor.map([&](auto f) -> FieldMetric {
+    if (f.hasParallelSlices()) {
+      return f.asField3DParallel() * rhoSQ;
+    };
+    return f * rhoSQ;
+  });
+
+  //coord->g_11.asField3DParallel() /= rhoSQ;
+  covariantMetricTensor.map([&](auto f) -> FieldMetric {
+    if (f.hasParallelSlices()) {
+      return f.asField3DParallel() / rhoSQ;
+    };
+    return f / rhoSQ;
+  });
+  // coord->J.asField3DParallel() /= rho_s0 * rho_s0 * rho_s0;
+  if (J().hasParallelSlices()) {
+    setJ(Field3DParallel{J() * (rho_s0 * rho_s0 * rho_s0)});
+  } else {
+    setJ(J() * (rho_s0 * rho_s0 * rho_s0));
+  }
+  setBxy(Field3DParallel(Bxy() / Bnorm));
+  invalidateMetricCaches();
+}
+
+void Coordinates::normaliseMetric(const BoutReal rho_s0, const BoutReal Bnorm) {
+  ASSERT2(hasParallelTransform());
+  if (Bxy().isFci()) {
+    return normaliseMetricFCI(rho_s0, Bnorm);
+  }
+  return normaliseMetricTokamak(rho_s0, Bnorm);
+}
