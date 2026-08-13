@@ -524,8 +524,9 @@ Field3D Div_par_K_Grad_par_mod_impl(const Field3DParallel& Kin,
 }
 } // namespace
 
-Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& flow_ylow,
-                               bool bndry_flux, bout::ConductionMethod method) {
+Field3D Div_par_K_Grad_par_mod(const Field3DParallel& Kin, const Field3DParallel& fin,
+                               Field3D& flow_ylow, bool bndry_flux,
+                               bout::ConductionMethod method) {
   using enum bout::ConductionMethod;
 
   switch (method) {
