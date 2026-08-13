@@ -67,7 +67,7 @@
 /// Create an enum class with toString and <enum name>FromString functions, and an
 /// Options::as<enum> overload to read the enum
 #define BOUT_ENUM_CLASS(enumname, ...)                                         \
-  enum class enumname : std::int8_t { __VA_ARGS__ };                           \
+  enum class enumname : std::uint8_t { __VA_ARGS__ };                          \
                                                                                \
   inline std::string toString(enumname e) {                                    \
                                                                                \
@@ -109,7 +109,7 @@
 /// Options::as<enum> overload to read the enum
 #define BOUT_ENUM_CLASS_NS(ns, enumname, ...)                                      \
   namespace ns {                                                                   \
-  enum class enumname : std::int8_t { __VA_ARGS__ };                               \
+  enum class enumname : std::uint8_t { __VA_ARGS__ };                              \
   }                                                                                \
                                                                                    \
   inline std::string toString(ns::enumname e) {                                    \
