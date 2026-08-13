@@ -823,6 +823,7 @@ Coordinates::FieldMetric Coordinates::recalculateJacobian() const {
 }
 
 Coordinates::FieldMetric Coordinates::recalculateBxy() const {
+  ASSERT2(not J().isFci());
   return sqrt(g_22()) / J();
 }
 
