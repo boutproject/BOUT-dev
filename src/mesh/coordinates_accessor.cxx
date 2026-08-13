@@ -21,8 +21,7 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
   const Mesh* mesh = coords->dx().getMesh();
   mesh_nz = mesh->LocalNz;
 
-  auto search = coords_store.find(coords);
-  if (search != coords_store.end()) {
+  if (const auto search = coords_store.find(coords); search != coords_store.end()) {
     // Found, so get the pointer to the data
     data = search->second.begin();
     return;
