@@ -141,11 +141,12 @@
                                                                                    \
   template <>                                                                      \
   inline ns::enumname Options::as<ns::enumname>(const ns::enumname&) const {       \
-    return BOUT_MAKE_FROMSTRING_NAME(ns::enumname)(this->as<std::string>());       \
+    return ns::BOUT_MAKE_FROMSTRING_NAME(enumname)(this->as<std::string>());       \
   }                                                                                \
-                                                                                   \
-  inline std::ostream& operator<<(std::ostream& out, const ns::enumname& e) {      \
+  namespace ns {                                                                   \
+  inline std::ostream& operator<<(std::ostream& out, const enumname& e) {          \
     return out << toString(e);                                                     \
+  }                                                                                \
   }
 
 #endif // BOUT_ENUM_CLASS_H
