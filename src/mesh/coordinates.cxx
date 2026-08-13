@@ -1278,6 +1278,9 @@ void Coordinates::communicateMetricTensor() {
 void Coordinates::communicateDz() { localmesh->communicate(dz_); }
 
 void Coordinates::splitBxyParallelSlices() {
-  Bxy_.splitParallelSlices();
-  Bxy_.yup() = Bxy_.ydown() = Bxy_;
+  if (not Bxy_.hasParallelSlices()) {
+    auto copy = Bxy_;
+    Bxy_.splitParallelSlices();
+    Bxy_.yup() = Bxy_.ydown() = copy;
+  }
 }
