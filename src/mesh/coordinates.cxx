@@ -1299,6 +1299,7 @@ void Coordinates::normaliseMetricTokamak(const BoutReal rho_s0, const BoutReal B
       covariantMetricTensor.g12() * Bnorm, covariantMetricTensor.g13() * Bnorm,
       covariantMetricTensor.g23() / SQ(rho_s0));
 
+  setDx(dx() / (rho_s0 * rho_s0 * Bnorm));
   setBxy(Bxy() / Bnorm);
   setJ(J() * Bnorm / rho_s0);
   invalidateMetricCaches();
