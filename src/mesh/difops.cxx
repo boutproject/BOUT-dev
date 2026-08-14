@@ -539,7 +539,7 @@ Field3D Div_par_K_Grad_par_mod(const Field3DParallel& Kin, const Field3DParallel
   }
   throw BoutException(
       "Unknown method `{}` - choose from `Original`, `ProductJK` or `Harmonic`.",
-      static_cast<int>(method));
+      toString(method));
 }
 /*******************************************************************************
 * Delp2
