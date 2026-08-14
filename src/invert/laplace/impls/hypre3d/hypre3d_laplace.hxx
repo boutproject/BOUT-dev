@@ -145,7 +145,7 @@ public:
   }
 
   // Return a reference to the matrix objects representing the Laplace
-  // operator. These will be (re)construct if necessary.
+  // operator. These will be (re)constructed if necessary.
   bout::HypreMatrix<Field3D>& getMatrix3D();
   IndexerPtr<Field3D> getIndexer() { return indexer; }
 

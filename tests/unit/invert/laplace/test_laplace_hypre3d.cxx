@@ -351,6 +351,17 @@ TEST_P(LaplaceHypre3dTest, TestSolve3DGuess) {
   BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) { EXPECT_NEAR(expected[i], actual[i], tol); }
 }
 
+TEST_P(LaplaceHypre3dTest, TestSolve3DRepeated) {
+  const Field3D rhs = forward(f3);
+  const Field3D first = solver.solve(rhs);
+  const Field3D second = solver.solve(rhs);
+
+  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
+    EXPECT_NEAR(f3[i], first[i], tol);
+    EXPECT_NEAR(f3[i], second[i], tol);
+  }
+}
+
 TEST_P(LaplaceHypre3dTest, TestSolvePerp) {
   FieldPerp f(1.0);
   EXPECT_THROW(solver.solve(f), BoutException);

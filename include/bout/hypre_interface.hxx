@@ -28,6 +28,7 @@
 #include "HYPRE_utilities.h"
 #include "_hypre_utilities.h"
 
+#include <algorithm>
 #include <cmath>
 #include <iterator>
 #include <memory>
@@ -131,47 +132,70 @@ using BCValuesPtr = std::shared_ptr<HypreComplexArray>;
  *
  *   NOTE: Implementation in src/sys/hypre_interface.cxx
  */
-struct BCMatrixEquations {
+struct BoundaryElimination {
   HYPRE_Int nb;
   HYPRE_Int* binum_array;
   HYPRE_Int* bjnum_array;
+  HYPRE_Int* bdep_array;
   HYPRE_Complex* bii_array;
   HYPRE_Complex* bij_array;
   HYPRE_Int na;
   HYPRE_Int* aknum_array;
   HYPRE_Complex* aki_array;
+  std::vector<HYPRE_Int> reduction_order;
+  std::vector<HYPRE_Int> expansion_order;
 
-  BCMatrixEquations() = delete;
+  BoundaryElimination() = delete;
 
-  BCMatrixEquations(HYPRE_Int nrows, HYPRE_Int* ncols, HYPRE_BigInt* rows,
-                    HYPRE_Int** row_indexes_ptr, HYPRE_BigInt* cols,
-                    HYPRE_Complex* values,
-                    HYPRE_Int nb,         // number of boundary equations
-                    HYPRE_Int* bi_array); // row i for each boundary equation
+  BoundaryElimination(HYPRE_Int nrows, HYPRE_Int* ncols, HYPRE_BigInt* rows,
+                      HYPRE_Int** row_indexes_ptr, HYPRE_BigInt* cols,
+                      HYPRE_Complex* values,
+                      HYPRE_Int nb,         // number of boundary equations
+                      HYPRE_Int* bi_array); // row i for each boundary equation
 
-  ~BCMatrixEquations() {
+  ~BoundaryElimination() {
     // Free arrays
     HypreFree(binum_array);
     HypreFree(bjnum_array);
+    HypreFree(bdep_array);
     HypreFree(bii_array);
     HypreFree(bij_array);
     HypreFree(aknum_array);
     HypreFree(aki_array);
   }
 
+  HYPRE_Int size() const { return nb; }
+
+  /// Copy boundary-row entries from an existing full-space vector.
+  BCValuesPtr copyBoundaryRowValues(const HYPRE_Complex* values) const;
+
+  /// Evaluate the original boundary equations using the supplied full-space vector.
+  BCValuesPtr evaluateBoundaryEquations(const HYPRE_Complex* values) const;
+
   /// Applies in-place modification of the rhs array.
   ///
-  /// Returns an array of boundary values that can be used to apply
-  /// boundary conditions to a solution vector.
-  BCValuesPtr adjustBCRightHandSideEquations(HYPRE_Complex* rhs);
+  /// Returns boundary values needed to reconstruct the full-space solution.
+  BCValuesPtr reduceRightHandSideInPlace(HYPRE_Complex* rhs) const;
 
   /// Apply boundary conditions to the solution.
-  /// Uses the BCValuesPtr returned from adjustBCRightHandSideEquations()
-  void adjustBCSolutionEquations(BCValuesPtr brhs, HYPRE_Complex* solution);
+  /// Uses the BCValuesPtr returned from reduceRightHandSideInPlace()
+  void expandSolutionInPlace(BCValuesPtr brhs, HYPRE_Complex* solution) const;
+
+  /// Reconstruct the action of the full operator from the reduced matrix-vector product.
+  void expandMatvecResultInPlace(BCValuesPtr boundary_operator_values,
+                                 BCValuesPtr full_boundary_values,
+                                 HYPRE_Complex* result) const;
 };
 
-/// A shared pointer to a BCMatrixEquations object
-using BCMatrixPtr = std::shared_ptr<BCMatrixEquations>;
+/// A shared pointer to a BoundaryElimination object
+using BoundaryEliminationPtr = std::shared_ptr<BoundaryElimination>;
+
+struct BoundaryEliminationState {
+  BCValuesPtr interior_values;
+  BCValuesPtr boundary_values;
+};
+
+enum class HypreVectorReadMode { standard, solution, matvec };
 
 template <class T>
 class HypreVector {
@@ -185,6 +209,8 @@ class HypreVector {
   bool have_indices{false};
   HYPRE_BigInt* I{nullptr};
   HYPRE_Complex* V{nullptr};
+  HYPRE_Complex* workV{nullptr};
+  bool cache_current{false};
   HypreLib hyprelib{};
 
 public:
@@ -201,6 +227,7 @@ public:
     checkHypreError(HYPRE_IJVectorDestroy(hypre_vector));
     HypreFree(I);
     HypreFree(V);
+    HypreFree(workV);
   }
 
   // Disable copy, at least for now: not clear that HYPRE_IJVector is
@@ -212,13 +239,15 @@ public:
       : comm(other.comm), jlower(other.jlower), jupper(other.jupper), vsize(other.vsize),
         indexConverter(other.indexConverter), location(other.location),
         initialised(other.initialised), have_indices(other.have_indices), I(other.I),
-        V(other.V) {
+        V(other.V), workV(other.workV), cache_current(other.cache_current) {
     std::swap(hypre_vector, other.hypre_vector);
     std::swap(parallel_vector, other.parallel_vector);
     other.initialised = false;
     other.have_indices = false;
     other.I = nullptr;
     other.V = nullptr;
+    other.workV = nullptr;
+    other.cache_current = false;
   }
 
   HypreVector<T>& operator=(HypreVector<T>&& other) noexcept {
@@ -236,8 +265,12 @@ public:
     other.have_indices = false;
     I = other.I;
     V = other.V;
+    workV = other.workV;
+    cache_current = other.cache_current;
     other.I = nullptr;
     other.V = nullptr;
+    other.workV = nullptr;
+    other.cache_current = false;
     return *this;
   }
 
@@ -267,7 +300,9 @@ public:
     initialised = true;
     HypreMalloc(I, vsize * sizeof(HYPRE_BigInt));
     HypreMalloc(V, vsize * sizeof(HYPRE_Complex));
+    HypreMalloc(workV, vsize * sizeof(HYPRE_Complex));
     importValuesFromField(f);
+    assemble();
   }
 
   /// Construct a vector with given index set, but don't set any values
@@ -287,40 +322,70 @@ public:
     location = CELL_LOC::centre;
     HypreMalloc(I, vsize * sizeof(HYPRE_BigInt));
     HypreMalloc(V, vsize * sizeof(HYPRE_Complex));
+    HypreMalloc(workV, vsize * sizeof(HYPRE_Complex));
   }
 
-  // Data for eliminating boundary equation
-  bool elimBErhs = false;
-  bool elimBEsol = false;
-  BCMatrixPtr bcmatrix;
-  BCValuesPtr bcvalues; /// Stores rhs values of BC rows
-
-  void syncElimBErhs(HypreVector<T>& rhs) { bcvalues = rhs.bcvalues; }
-
-  void assemble() {
+  void assemble(const BoundaryElimination* boundary_elimination = nullptr,
+                BoundaryEliminationState* elimination_state = nullptr) {
     CALI_CXX_MARK_FUNCTION;
 
-    // Should not already be assembled
-    ASSERT1(parallel_vector == nullptr);
-
-    writeCacheToHypre();
+    parallel_vector = nullptr;
+    checkHypreError(HYPRE_IJVectorInitialize(hypre_vector));
+    writeCacheToHypre(boundary_elimination, elimination_state);
     checkHypreError(HYPRE_IJVectorAssemble(hypre_vector));
     checkHypreError(HYPRE_IJVectorGetObject(hypre_vector,
                                             reinterpret_cast<void**>(&parallel_vector)));
+    cache_current = true;
   }
 
-  void writeCacheToHypre() {
-    if (elimBErhs) {
-      bcvalues = bcmatrix->adjustBCRightHandSideEquations(V);
+  void writeCacheToHypre(const BoundaryElimination* boundary_elimination = nullptr,
+                         BoundaryEliminationState* elimination_state = nullptr) {
+    HYPRE_Complex* values = V;
+    if (boundary_elimination != nullptr) {
+      ASSERT1(elimination_state != nullptr);
+      std::copy(V, V + vsize, workV);
+      values = workV;
+      elimination_state->interior_values =
+          boundary_elimination->reduceRightHandSideInPlace(values);
+      elimination_state->boundary_values = elimination_state->interior_values;
+    } else if (elimination_state != nullptr) {
+      elimination_state->interior_values = nullptr;
+      elimination_state->boundary_values = nullptr;
     }
-    checkHypreError(HYPRE_IJVectorSetValues(hypre_vector, vsize, I, V));
+    checkHypreError(HYPRE_IJVectorSetValues(hypre_vector, vsize, I, values));
   }
 
-  void readCacheFromHypre() {
-    checkHypreError(HYPRE_IJVectorGetValues(hypre_vector, vsize, I, V));
-    if (elimBEsol) {
-      bcmatrix->adjustBCSolutionEquations(bcvalues, V);
+  void readCacheFromHypre(const BoundaryElimination* boundary_elimination = nullptr,
+                          const BoundaryEliminationState* elimination_state = nullptr,
+                          HypreVectorReadMode mode = HypreVectorReadMode::standard) {
+    HYPRE_Complex* values = V;
+    if ((boundary_elimination != nullptr) and (mode != HypreVectorReadMode::standard)) {
+      values = workV;
     }
+    checkHypreError(HYPRE_IJVectorGetValues(hypre_vector, vsize, I, values));
+    if (boundary_elimination != nullptr) {
+      switch (mode) {
+      case HypreVectorReadMode::standard:
+        break;
+      case HypreVectorReadMode::solution:
+        ASSERT1(elimination_state != nullptr);
+        ASSERT1(elimination_state->interior_values != nullptr);
+        boundary_elimination->expandSolutionInPlace(elimination_state->interior_values,
+                                                    values);
+        std::copy(values, values + vsize, V);
+        break;
+      case HypreVectorReadMode::matvec:
+        ASSERT1(elimination_state != nullptr);
+        ASSERT1(elimination_state->interior_values != nullptr);
+        ASSERT1(elimination_state->boundary_values != nullptr);
+        boundary_elimination->expandMatvecResultInPlace(
+            elimination_state->interior_values, elimination_state->boundary_values,
+            values);
+        std::copy(values, values + vsize, V);
+        break;
+      }
+    }
+    cache_current = true;
   }
 
   T toField() {
@@ -329,7 +394,9 @@ public:
     T result(indexConverter->getMesh());
     result.allocate().setLocation(location);
 
-    readCacheFromHypre();
+    if ((!cache_current) and (parallel_vector != nullptr)) {
+      readCacheFromHypre();
+    }
     // Note that this only populates boundaries to a depth of 1
     int count = 0;
     BOUT_FOR_SERIAL(i, indexConverter->getRegionAll()) {
@@ -359,10 +426,12 @@ public:
 
     ASSERT2(vec_i == vsize);
     have_indices = true;
+    cache_current = true;
   }
 
   HYPRE_IJVector get() { return hypre_vector; }
   const HYPRE_IJVector& get() const { return hypre_vector; }
+  const HYPRE_Complex* getValues() const { return V; }
 
   HYPRE_ParVector getParallel() {
     ASSERT1(parallel_vector != nullptr);
@@ -410,6 +479,7 @@ public:
       ASSERT3(std::isfinite(value_));
       value = value_;
       vector->V[vec_i] = value_;
+      vector->cache_current = true;
       return *this;
     }
     Element& operator+=(BoutReal value_) {
@@ -417,6 +487,7 @@ public:
       value += value_;
       ASSERT3(std::isfinite(value));
       vector->V[vec_i] += value_;
+      vector->cache_current = true;
       return *this;
     }
     operator BoutReal() const { return value; }
@@ -439,11 +510,20 @@ public:
 
   friend void swap(HypreVector<T>& lhs, HypreVector<T>& rhs) {
     using std::swap;
+    swap(lhs.comm, rhs.comm);
+    swap(lhs.jlower, rhs.jlower);
+    swap(lhs.jupper, rhs.jupper);
+    swap(lhs.vsize, rhs.vsize);
     swap(lhs.hypre_vector, rhs.hypre_vector);
     swap(lhs.parallel_vector, rhs.parallel_vector);
     swap(lhs.indexConverter, rhs.indexConverter);
     swap(lhs.location, rhs.location);
     swap(lhs.initialised, rhs.initialised);
+    swap(lhs.have_indices, rhs.have_indices);
+    swap(lhs.I, rhs.I);
+    swap(lhs.V, rhs.V);
+    swap(lhs.workV, rhs.workV);
+    swap(lhs.cache_current, rhs.cache_current);
   }
 };
 
@@ -463,6 +543,8 @@ class HypreMatrix {
   std::vector<HYPRE_BigInt>* I;
   std::vector<std::vector<HYPRE_BigInt>>* J;
   std::vector<std::vector<HYPRE_Complex>>* V;
+  bool elimBE{false};
+  BoundaryEliminationPtr boundary_elimination;
   HypreLib hyprelib{};
 
   // todo also take care of I,J,V
@@ -486,7 +568,8 @@ public:
         index_converter(other.index_converter), location(other.location),
         initialised(other.initialised), yoffset(other.yoffset),
         parallel_transform(other.parallel_transform), assembled(other.assembled),
-        num_rows(other.num_rows), I(other.I), J(other.J), V(other.V) {
+        num_rows(other.num_rows), I(other.I), J(other.J), V(other.V),
+        elimBE(other.elimBE), boundary_elimination(other.boundary_elimination) {
     std::swap(hypre_matrix, other.hypre_matrix);
     std::swap(parallel_matrix, other.parallel_matrix);
   }
@@ -507,6 +590,8 @@ public:
     I = other.I;
     J = other.J;
     V = other.V;
+    elimBE = other.elimBE;
+    boundary_elimination = other.boundary_elimination;
     return *this;
   }
 
@@ -805,33 +890,21 @@ public:
     return Element(*this, global_row, global_column, positions, weights);
   }
 
-  // Data for eliminating boundary equations
-  bool elimBE = false;
-  BCMatrixPtr bcmatrix; // Shared pointer
-
   void setElimBE() { elimBE = true; }
-
-  void setElimBEVectors(HypreVector<T>& sol, HypreVector<T>& rhs) {
-    sol.elimBEsol = elimBE;
-    sol.bcmatrix = bcmatrix;
-
-    rhs.elimBErhs = elimBE;
-    rhs.bcmatrix = bcmatrix;
-  }
 
   void assemble() {
     CALI_CXX_MARK_FUNCTION;
 
     HYPRE_BigInt num_entries = 0;
-    HYPRE_BigInt* num_cols;
+    HYPRE_Int* num_cols;
     HYPRE_BigInt* cols;
     HYPRE_BigInt* rawI;
     HYPRE_Complex* vals;
 
-    HypreMalloc(num_cols, num_rows * sizeof(HYPRE_BigInt));
+    HypreMalloc(num_cols, num_rows * sizeof(HYPRE_Int));
     for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
-      num_cols[i] = (*J)[i].size();
-      num_entries += (*J)[i].size();
+      num_cols[i] = static_cast<HYPRE_Int>((*J)[i].size());
+      num_entries += num_cols[i];
     }
 
     HypreMalloc(rawI, num_rows * sizeof(HYPRE_BigInt));
@@ -862,7 +935,7 @@ public:
         nb++;
       }
 
-      bcmatrix = std::make_shared<BCMatrixEquations>(
+      boundary_elimination = std::make_shared<BoundaryElimination>(
           num_rows, num_cols, rawI, &row_indexes, cols, vals, nb, bi_array);
       HypreFree(bi_array);
 
@@ -870,6 +943,7 @@ public:
                                                row_indexes, cols, vals));
       HypreFree(row_indexes);
     } else {
+      boundary_elimination = nullptr;
       checkHypreError(
           HYPRE_IJMatrixSetValues(*hypre_matrix, num_rows, num_cols, rawI, cols, vals));
     }
@@ -917,12 +991,17 @@ public:
     result.I = I; // We want the pointer to transfer so this works like a view
     result.J = J;
     result.V = V;
+    result.elimBE = elimBE;
+    result.boundary_elimination = boundary_elimination;
 
     return result;
   }
 
   HYPRE_IJMatrix get() { return *hypre_matrix; }
   const HYPRE_IJMatrix& get() const { return *hypre_matrix; }
+  const BoundaryElimination* getBoundaryElimination() const {
+    return boundary_elimination.get();
+  }
 
   HYPRE_ParCSRMatrix getParallel() { return parallel_matrix; }
   const HYPRE_ParCSRMatrix& getParallel() const { return parallel_matrix; }
@@ -932,8 +1011,33 @@ public:
   void computeAxpby(double alpha, HypreVector<T>& x, double beta, HypreVector<T>& y) {
     CALI_CXX_MARK_FUNCTION;
 
+    BoundaryEliminationState elimination_state;
+    if (boundary_elimination != nullptr) {
+      elimination_state.interior_values =
+          boundary_elimination->evaluateBoundaryEquations(x.getValues());
+      elimination_state.boundary_values =
+          std::make_shared<HypreComplexArray>(boundary_elimination->size());
+      BCValuesPtr y_boundary_values;
+      if (beta != 0.0) {
+        y_boundary_values = boundary_elimination->copyBoundaryRowValues(y.getValues());
+      }
+      for (HYPRE_Int i = 0; i < boundary_elimination->size(); ++i) {
+        const HYPRE_Complex operator_value = elimination_state.interior_values->data[i];
+        elimination_state.interior_values->data[i] = alpha * operator_value;
+        elimination_state.boundary_values->data[i] =
+            alpha * operator_value
+            + (y_boundary_values != nullptr ? beta * y_boundary_values->data[i] : 0.0);
+      }
+    }
+
+    x.assemble();
+    y.assemble();
     checkHypreError(HYPRE_ParCSRMatrixMatvec(alpha, parallel_matrix, x.getParallel(),
                                              beta, y.getParallel()));
+    y.readCacheFromHypre(boundary_elimination.get(),
+                         boundary_elimination != nullptr ? &elimination_state : nullptr,
+                         boundary_elimination != nullptr ? HypreVectorReadMode::matvec
+                                                         : HypreVectorReadMode::standard);
   }
 
   // y = A*x
@@ -941,8 +1045,7 @@ public:
   void computeAx(HypreVector<T>& x, HypreVector<T>& y) {
     CALI_CXX_MARK_FUNCTION;
 
-    checkHypreError(HYPRE_ParCSRMatrixMatvec(1.0, parallel_matrix, x.getParallel(), 0.0,
-                                             y.getParallel()));
+    computeAxpby(1.0, x, 0.0, y);
   }
 };
 
@@ -1161,6 +1264,11 @@ public:
     ASSERT2(A != nullptr);
     ASSERT2(x != nullptr);
     ASSERT2(b != nullptr);
+    BoundaryEliminationState elimination_state;
+    const auto* boundary_elimination = A->getBoundaryElimination();
+    b->assemble(boundary_elimination,
+                boundary_elimination != nullptr ? &elimination_state : nullptr);
+    x->assemble();
     if (not solver_setup) {
       checkHypreError(
           solverSetup(solver, A->getParallel(), b->getParallel(), x->getParallel()));
@@ -1169,6 +1277,12 @@ public:
 
     solve_err = checkHypreError(
         solverSolve(solver, A->getParallel(), b->getParallel(), x->getParallel()));
+
+    x->readCacheFromHypre(boundary_elimination,
+                          boundary_elimination != nullptr ? &elimination_state : nullptr,
+                          boundary_elimination != nullptr
+                              ? HypreVectorReadMode::solution
+                              : HypreVectorReadMode::standard);
 
     return solve_err;
   }

@@ -226,14 +226,8 @@ Field3D LaplaceHypre3d::solve(const Field3D& b_in, const Field3D& x0) {
 
   CALI_MARK_BEGIN("LaplaceHypre3d_solve:vectorAssemble");
 
-  operator3D.setElimBEVectors(solution, rhs);
-
   rhs.importValuesFromField(b);
   solution.importValuesFromField(x0);
-  rhs.assemble();
-  solution.assemble();
-
-  solution.syncElimBErhs(rhs);
 
   CALI_MARK_END("LaplaceHypre3d_solve:vectorAssemble");
 
