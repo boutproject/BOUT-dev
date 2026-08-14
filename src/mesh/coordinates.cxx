@@ -1308,7 +1308,7 @@ void Coordinates::normaliseMetricTokamak(const BoutReal rho_s0, const BoutReal B
 void Coordinates::normaliseMetricFCI(const BoutReal rho_s0, const BoutReal Bnorm) {
   BoutReal rhoSQ = SQ(rho_s0);
 
-  // coord->g11.asField3DParallel() *= rhoSQ;
+  // g??.asField3DParallel() *= rhoSQ;
   contravariantMetricTensor.map([&](auto f) -> FieldMetric {
     if (f.hasParallelSlices()) {
       return f.asField3DParallel() * rhoSQ;
@@ -1316,14 +1316,14 @@ void Coordinates::normaliseMetricFCI(const BoutReal rho_s0, const BoutReal Bnorm
     return f * rhoSQ;
   });
 
-  //coord->g_11.asField3DParallel() /= rhoSQ;
+  // g_??.asField3DParallel() /= rhoSQ;
   covariantMetricTensor.map([&](auto f) -> FieldMetric {
     if (f.hasParallelSlices()) {
       return f.asField3DParallel() / rhoSQ;
     };
     return f / rhoSQ;
   });
-  // coord->J.asField3DParallel() /= rho_s0 * rho_s0 * rho_s0;
+  // J.asField3DParallel() /= rho_s0 * rho_s0 * rho_s0;
 #if BOUT_USE_METRIC_3D
   if (J().hasParallelSlices()) {
     setJ(Field3DParallel{J() * (rho_s0 * rho_s0 * rho_s0)});
