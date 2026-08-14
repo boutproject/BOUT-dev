@@ -1326,13 +1326,13 @@ void Coordinates::normaliseMetricFCI(const BoutReal rho_s0, const BoutReal Bnorm
   // J.asField3DParallel() /= rho_s0 * rho_s0 * rho_s0;
 #if BOUT_USE_METRIC_3D
   if (J().hasParallelSlices()) {
-    setJ(Field3DParallel{J() * (rho_s0 * rho_s0 * rho_s0)});
+    setJ(Field3DParallel{J() / (rho_s0 * rho_s0 * rho_s0)});
   } else {
-    setJ(J() * (rho_s0 * rho_s0 * rho_s0));
+    setJ(J() / (rho_s0 * rho_s0 * rho_s0));
   }
   setBxy(Field3DParallel(Bxy() / Bnorm));
 #else
-  setJ(J() * (rho_s0 * rho_s0 * rho_s0));
+  setJ(J() / (rho_s0 * rho_s0 * rho_s0));
   setBxy(Bxy() / Bnorm);
 #endif
   invalidateMetricCaches();
