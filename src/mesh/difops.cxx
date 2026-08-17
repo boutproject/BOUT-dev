@@ -392,13 +392,13 @@ Field3D Div_par_K_Grad_par_mod_impl(const Field3DParallel& Kin,
 
       // Upper cell edge
       const BoutReal c_up = 0.5 * (Kin[i] + K_up[iyp]); // K at the upper boundary
-      const BoutReal gradient_up = (f_up[iyp] - fin[i]) / (coord->dy()[i] * sqrt(coord->g_22_yhigh()[i]));
+      const BoutReal gradient_up = (f_up[iyp] - fin[i]) / (coord->dy[i] * sqrt(coord->g_22_yhigh()[i]));
 
       const BoutReal flux_up = c_up * gradient_up * coord->cell_area_yhigh()[i];
 
       // Lower cell edge
       const BoutReal c_down = 0.5 * (Kin[i] + K_down[iym]); // K at the lower boundary
-      const BoutReal gradient_down = (fin[i] - f_down[iym]) / (coord->dy()[i] * sqrt(coord->g_22_ylow()[i]));
+      const BoutReal gradient_down = (fin[i] - f_down[iym]) / (coord->dy[i] * sqrt(coord->g_22_ylow()[i]));
 
       const BoutReal flux_down = c_down * gradient_down * coord->cell_area_ylow()[i];
 
