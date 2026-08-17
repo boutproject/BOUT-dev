@@ -533,6 +533,14 @@ RawBoundaryEliminationSystem makeSingleBoundarySystem() {
           {0}};
 }
 
+RawBoundaryEliminationSystem makeMultiCoupledBoundarySystem() {
+  return {{2, 3, 3, 2},
+          {0, 1, 2, 3},
+          {0, 1, 0, 1, 3, 0, 1, 2, 2, 3},
+          {2.0, 3.0, 5.0, 7.0, 11.0, 13.0, 17.0, 19.0, 23.0, 29.0},
+          {0}};
+}
+
 RawBoundaryEliminationSystem makeBackwardCoupledRowSystem() {
   return {{2, 3, 3, 2},
           {0, 1, 2, 3},
@@ -561,6 +569,8 @@ TEST(BoundaryEliminationTest, TransformsSingleBoundarySystem) {
   EXPECT_EQ(system.elimination->bdep_array[0], -1);
   EXPECT_EQ(system.elimination->bii_array[0], 2.0);
   EXPECT_EQ(system.elimination->bij_array[0], 3.0);
+  EXPECT_EQ(system.elimination->aoffset_array[0], 0);
+  EXPECT_EQ(system.elimination->aoffset_array[1], 1);
   EXPECT_EQ(system.elimination->aknum_array[0], 1);
   EXPECT_EQ(system.elimination->aki_array[0], 5.0);
 }
@@ -605,6 +615,59 @@ TEST(BoundaryEliminationTest, ReconstructsMatvecForSingleBoundarySystem) {
   EXPECT_EQ(reduced_result[2], 77.0);
 }
 
+TEST(BoundaryEliminationTest, EliminatesBoundaryCouplingsFromAllAffectedRows) {
+  auto system = makeMultiCoupledBoundarySystem();
+
+  EXPECT_EQ(system.ncols[0], 1);
+  EXPECT_EQ(system.values[0], -1.0);
+  EXPECT_EQ(system.values[1], 0.0);
+  EXPECT_EQ(system.values[2], 0.0);
+  EXPECT_DOUBLE_EQ(system.values[3], -0.5);
+  EXPECT_EQ(system.values[4], 11.0);
+  EXPECT_EQ(system.values[5], 0.0);
+  EXPECT_DOUBLE_EQ(system.values[6], -2.5);
+  EXPECT_EQ(system.values[7], 19.0);
+  EXPECT_EQ(system.values[8], 23.0);
+  EXPECT_EQ(system.values[9], 29.0);
+
+  EXPECT_EQ(system.elimination->na, 2);
+  EXPECT_EQ(system.elimination->aoffset_array[0], 0);
+  EXPECT_EQ(system.elimination->aoffset_array[1], 2);
+  EXPECT_EQ(system.elimination->aknum_array[0], 1);
+  EXPECT_EQ(system.elimination->aknum_array[1], 2);
+  EXPECT_EQ(system.elimination->aki_array[0], 5.0);
+  EXPECT_EQ(system.elimination->aki_array[1], 13.0);
+}
+
+TEST(BoundaryEliminationTest, ReducesRightHandSideForMultipleAffectedRows) {
+  auto system = makeMultiCoupledBoundarySystem();
+  std::array<HYPRE_Complex, 4> rhs{{19.0, 23.0, 31.0, 37.0}};
+
+  auto brhs = system.elimination->reduceRightHandSideInPlace(rhs.data());
+
+  ASSERT_NE(brhs, nullptr);
+  EXPECT_EQ(brhs->data[0], 19.0);
+  EXPECT_EQ(rhs[0], 19.0);
+  EXPECT_DOUBLE_EQ(rhs[1], -24.5);
+  EXPECT_DOUBLE_EQ(rhs[2], -92.5);
+  EXPECT_EQ(rhs[3], 37.0);
+}
+
+TEST(BoundaryEliminationTest, ReconstructsMatvecForMultipleAffectedRows) {
+  auto system = makeMultiCoupledBoundarySystem();
+  std::array<HYPRE_Complex, 4> x{{1.0, 2.0, 3.0, 4.0}};
+  std::array<HYPRE_Complex, 4> reduced_result{{-1.0, 32.0, 52.0, 185.0}};
+  auto boundary_values = system.elimination->evaluateBoundaryEquations(x.data());
+
+  system.elimination->expandMatvecResultInPlace(boundary_values, boundary_values,
+                                                reduced_result.data());
+
+  EXPECT_EQ(reduced_result[0], 8.0);
+  EXPECT_EQ(reduced_result[1], 52.0);
+  EXPECT_EQ(reduced_result[2], 104.0);
+  EXPECT_EQ(reduced_result[3], 185.0);
+}
+
 TEST(BoundaryEliminationTest, HandlesBackwardCoupledRows) {
   auto system = makeBackwardCoupledRowSystem();
 
@@ -619,6 +682,9 @@ TEST(BoundaryEliminationTest, HandlesBackwardCoupledRows) {
   EXPECT_EQ(system.values[8], 0.0);
   EXPECT_EQ(system.values[9], -1.0);
 
+  EXPECT_EQ(system.elimination->aoffset_array[0], 0);
+  EXPECT_EQ(system.elimination->aoffset_array[1], 1);
+  EXPECT_EQ(system.elimination->aoffset_array[2], 2);
   EXPECT_EQ(system.elimination->aknum_array[0], 2);
   EXPECT_EQ(system.elimination->aknum_array[1], 1);
 }

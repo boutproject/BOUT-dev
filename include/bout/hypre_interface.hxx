@@ -103,12 +103,16 @@ using BCValuesPtr = std::shared_ptr<HypreComplexArray>;
  *
  *      b_ii * u_i + b_ij * u_j = rhs_i
  *
- * - We also assume that each boundary equation has only one interior equation k
- *   coupled to it (such that k = j) with coupling coefficient a_ki
+ * - We also assume that each boundary equation has only one retained unknown j
+ *   on the boundary row
+ *
+ *      b_ii * u_i + b_ij * u_j = rhs_i
+ *
+ * - Any number of other equations k may couple to u_i with coefficient a_ki
  *
  *      a_ki * u_i + a_kj * u_j + ... = rhs_k
  *
- * - Each equation k is adjusted as follows:
+ * - Each such equation k is adjusted as follows:
  *
  *      a_kj = a_kj - a_ki * b_ij / b_ii
  *      a_ki = 0
@@ -140,6 +144,7 @@ struct BoundaryElimination {
   HYPRE_Complex* bii_array;
   HYPRE_Complex* bij_array;
   HYPRE_Int na;
+  HYPRE_Int* aoffset_array;
   HYPRE_Int* aknum_array;
   HYPRE_Complex* aki_array;
   std::vector<HYPRE_Int> reduction_order;
@@ -160,6 +165,7 @@ struct BoundaryElimination {
     HypreFree(bdep_array);
     HypreFree(bii_array);
     HypreFree(bij_array);
+    HypreFree(aoffset_array);
     HypreFree(aknum_array);
     HypreFree(aki_array);
   }
