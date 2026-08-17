@@ -1341,7 +1341,8 @@ void Coordinates::normaliseMetricFCI(const BoutReal rho_s0, const BoutReal Bnorm
 void Coordinates::normaliseMetric(const BoutReal rho_s0, const BoutReal Bnorm) {
   ASSERT2(hasParallelTransform());
   if (Bxy().isFci()) {
-    return normaliseMetricFCI(rho_s0, Bnorm);
+    normaliseMetricFCI(rho_s0, Bnorm);
+    return;
   }
-  return normaliseMetricTokamak(rho_s0, Bnorm);
+  normaliseMetricTokamak(rho_s0, Bnorm);
 }
