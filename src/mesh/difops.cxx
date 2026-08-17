@@ -385,32 +385,25 @@ Field3D Div_par_K_Grad_par_mod_impl(const Field3DParallel& Kin,
 
     Field3D result{zeroFrom(fin)};
     flow_ylow = zeroFrom(fin);
-
+    
     BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
       const auto iyp = i.yp();
       const auto iym = i.ym();
 
       // Upper cell edge
       const BoutReal c_up = 0.5 * (Kin[i] + K_up[iyp]); // K at the upper boundary
-      const BoutReal J_up =
-          0.5 * (coord->J()[i] + coord->J().yup()[iyp]); // Jacobian at boundary
-      const BoutReal g_22_up = 0.5 * (coord->g_22()[i] + coord->g_22().yup()[iyp]);
-      const BoutReal gradient_up =
-          2. * (f_up[iyp] - fin[i]) / (coord->dy()[i] + coord->dy().yup()[iyp]);
+      const BoutReal gradient_up = (f_up[iyp] - fin[i]) / (coord->dy()[i] * sqrt(g_22_yhigh()[i]));
 
-      const BoutReal flux_up = c_up * J_up * gradient_up / g_22_up;
+      const BoutReal flux_up = c_up * gradient_up * coord->cell_area_yhigh()[i];
 
       // Lower cell edge
       const BoutReal c_down = 0.5 * (Kin[i] + K_down[iym]); // K at the lower boundary
-      const BoutReal J_down =
-          0.5 * (coord->J()[i] + coord->J().ydown()[iym]); // Jacobian at boundary
-      const BoutReal g_22_down = 0.5 * (coord->g_22()[i] + coord->g_22().ydown()[iym]);
-      const BoutReal gradient_down =
-          2. * (fin[i] - f_down[iym]) / (coord->dy()[i] + coord->dy().ydown()[iym]);
+      const BoutReal gradient_down = (fin[i] - f_down[iym]) / (coord->dy()[i] * sqrt(g_22_ylow()[i]));
 
-      const BoutReal flux_down = c_down * J_down * gradient_down / g_22_down;
+      const BoutReal flux_down = c_down * gradient_down * coord->cell_area_ylow()[i];
 
-      result[i] = (flux_up - flux_down) / (coord->dy()[i] * coord->J()[i]);
+      // Add the fluxes
+      result[i] = (flux_up - flux_down) / (coord->cell_volume()[i]);
     }
 
     return result;
