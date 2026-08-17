@@ -32,8 +32,8 @@ int Diffusion::init(bool UNUSED(restarting)) {
 
   /*this assumes equidistant grid*/
   int nguard = mesh->xstart;
-  coord->dx = Lx / (mesh->GlobalNx - 2 * nguard);
-  coord->dy = Ly / (mesh->GlobalNy - 2 * nguard);
+  coord->setDx(Lx / (mesh->GlobalNx - 2 * nguard));
+  coord->setDy(Ly / (mesh->GlobalNy - 2 * nguard));
 
   SAVE_ONCE2(Lx, Ly);
 
@@ -43,20 +43,8 @@ int Diffusion::init(bool UNUSED(restarting)) {
   SAVE_ONCE(mu_N);
 
   //set mesh
-  coord->g11 = 1.0;
-  coord->g22 = 1.0;
-  coord->g33 = 1.0;
-  coord->g12 = 0.0;
-  coord->g13 = 0.0;
-  coord->g23 = 0.0;
-
-  coord->g_11 = 1.0;
-  coord->g_22 = 1.0;
-  coord->g_33 = 1.0;
-  coord->g_12 = 0.0;
-  coord->g_13 = 0.0;
-  coord->g_23 = 0.0;
-  coord->geometry();
+  coord->setMetricTensor(ContravariantMetricTensor(1.0, 1.0, 1.0, 0.0, 0.0, 0.0),
+                         CovariantMetricTensor(1.0, 1.0, 1.0, 0.0, 0.0, 0.0));
 
   // Tell BOUT++ to solve N
   SOLVE_FOR(N);

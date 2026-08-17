@@ -687,9 +687,9 @@ public:
     Element& operator+=(BoutReal value_) {
 
       ASSERT3(std::isfinite(value_));
-      auto column_position = std::find(cbegin(positions), cend(positions), column);
+      auto column_position = std::ranges::find(positions, column);
       if (column_position != cend(positions)) {
-        const auto i = std::distance(cbegin(positions), column_position);
+        const auto i = std::distance(begin(positions), column_position);
         value += weights[i] * value_;
       }
       addValues(value_);

@@ -12,7 +12,7 @@ import contextlib  # corelib
 
 try:
     import packaging.tags  # packaging
-except:
+except ImportError:
     packaging = None
 
 
@@ -36,7 +36,7 @@ def getversion():
             return version.lstrip("v")
 
         _bout_previous_version = "v5.2.0"
-        _bout_next_version = "v5.2.1"
+        _bout_next_version = "v6.0.0"
 
         try:
             try:
@@ -161,7 +161,6 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
     )
     run(f"cmake --build  _wheel_build/ -j {os.cpu_count()}")
     run("cmake --install _wheel_build/")
-    distinfo = f"_wheel_install"
     prepare_metadata_for_build_wheel("_wheel_install", record=True)
 
     # Do not add --symlink as python's does not extract that as symlinks
@@ -220,8 +219,8 @@ Version: {getversion()}
         )
         with open("LICENSE") as src:
             pre = "License: "
-            for l in src:
-                f.write(f"{pre}{l}")
+            for line in src:
+                f.write(f"{pre}{line}")
                 pre = "         "
         f.write("Description-Content-Type: text/markdown\n\n")
         with open("README.md") as src:
@@ -344,11 +343,8 @@ def help():
     """
     table = []
     for k, v in todos.items():
-        try:
-            doc = v.__doc__.strip()
-            doc = " : " + doc
-        except:
-            doc = ""
+        doc = v.__doc__.strip()
+        doc = " : " + doc
         table.append((k, doc))
     maxkey = max([len(k) for k, _ in table])
     fmt = f"   %-{maxkey}s%s"

@@ -55,6 +55,7 @@ class Options;
 #include <fmt/format.h>
 
 #include <cmath>
+#include <cstddef>
 #include <functional>
 #include <map>
 #include <ostream>
@@ -354,9 +355,7 @@ public:
   std::map<std::string, AttributeType> attributes;
 
   /// Return true if this value has attribute \p key
-  bool hasAttribute(const std::string& key) const {
-    return attributes.find(key) != attributes.end();
-  }
+  bool hasAttribute(const std::string& key) const { return attributes.contains(key); }
 
   /// Set attributes, overwriting any already set
   ///
@@ -579,7 +578,7 @@ public:
     value_used = true; // Note this is mutable
 
     output_info << "\tOption " << full_name << " = " << val;
-    if (attributes.count("source")) {
+    if (attributes.contains("source")) {
       // Specify the source of the setting
       output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
     }
@@ -907,7 +906,7 @@ private:
     // If already set, and not time evolving then check for changing values
     // If a variable has a "time_dimension" attribute then it is assumed
     // that updates to the value is ok and don't need to be forced.
-    if (isSet() && (attributes.find("time_dimension") == attributes.end())) {
+    if (isSet() && (!attributes.contains("time_dimension"))) {
       // Check if current value the same as new value
       if (!bout::utils::variantEqualTo(value, val)) {
         if (force or !bout::utils::variantEqualTo(attributes["source"], source)) {
@@ -934,6 +933,9 @@ private:
   bool similar(T lhs, T rhs) const {
     return lhs == rhs;
   }
+
+  /// Replaces the start of the name of an Option and any children
+  void recursively_update_names(size_t len, const std::string& new_prefix);
 };
 
 // Specialised assign methods for types stored in ValueType

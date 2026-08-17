@@ -211,7 +211,7 @@ public:
   void apply(Field3D& f, BoutReal t) override {
     if (bndry != nullptr) {
       f.ynext(bndry->dir()).allocate(); // Ensure unique before modifying
-      auto dy = f.getCoordinates()->dy;
+      auto dy = f.getCoordinates()->dy();
       for (auto pnt : *bndry) {
         BoutReal value = getValue(pnt, t);
         if (isNeumann) {
@@ -222,7 +222,7 @@ public:
     }
     if (bndryX != nullptr) {
       f.allocate();
-      auto dy = f.getCoordinates()->dx;
+      auto dy = f.getCoordinates()->dx();
       for (auto pnt : *bndryX) {
         BoutReal value = getValue(pnt, t);
         if (isNeumann) {
@@ -233,7 +233,7 @@ public:
     }
     if (bndryY != nullptr) {
       f.allocate();
-      auto dy = f.getCoordinates()->dy;
+      auto dy = f.getCoordinates()->dy();
       for (auto pnt : *bndryY) {
         BoutReal value = getValue(pnt, t);
         if (isNeumann) {

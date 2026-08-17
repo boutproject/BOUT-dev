@@ -406,7 +406,7 @@ public:
     Element& operator+=(BoutReal val) {
 
       ASSERT3(std::isfinite(val));
-      auto columnPosition = std::find(positions.begin(), positions.end(), petscCol);
+      auto columnPosition = std::ranges::find(positions, petscCol);
       if (columnPosition != positions.end()) {
         const int index = std::distance(positions.begin(), columnPosition);
         value += weights[index] * val;

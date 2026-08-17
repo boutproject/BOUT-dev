@@ -819,7 +819,7 @@ public:
 
     if (mesh->IncIntShear) {
       // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-      mesh->getCoordinates()->IntShiftTorsion = I;
+      mesh->getCoordinates()->setIntShiftTorsion(I);
     } else {
       // Dimits style, using local coordinate system
       if (include_curvature) {
@@ -1749,11 +1749,11 @@ public:
     if (hyperviscos > 0.0) {
       // Calculate coefficient.
 
-      hyper_mu_x = hyperviscos * metric->g_11 * SQ(metric->dx)
-                   * abs(metric->g11 * D2DX2(U)) / (abs(U) + 1e-3);
+      hyper_mu_x = hyperviscos * metric->g_11() * SQ(metric->dx())
+                   * abs(metric->g11() * D2DX2(U)) / (abs(U) + 1e-3);
       hyper_mu_x.applyBoundary("dirichlet"); // Set to zero on all boundaries
 
-      ddt(U) += hyper_mu_x * metric->g11 * D2DX2(U);
+      ddt(U) += hyper_mu_x * metric->g11() * D2DX2(U);
 
       if (first_run) { // Print out maximum values of viscosity used on this processor
         output.write("   Hyper-viscosity values:\n");
@@ -1865,7 +1865,7 @@ public:
         BoutReal pnorm = P0(0, 0);
         ddt(P) += heating_P * source_expx2(P0, 2. * hp_width, 0.5 * hp_length)
                   * (Tbar / pnorm); // heat source
-        ddt(P) += (100. * source_tanhx(P0, hp_width, hp_length) + 0.01) * metric->g11
+        ddt(P) += (100. * source_tanhx(P0, hp_width, hp_length) + 0.01) * metric->g11()
                   * D2DX2(P) * (Tbar / Lbar / Lbar); // radial diffusion
       }
 

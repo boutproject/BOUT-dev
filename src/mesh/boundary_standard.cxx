@@ -2661,8 +2661,8 @@ void BoundaryNeumann::apply([[maybe_unused]] Field2D& f, [[maybe_unused]] BoutRe
       rfft(f(x - 2 * bx, y), mesh->LocalNz, c1.begin());
       c1[0] = c0[0] - c1[0]; // Only need gradient
 
-      // Solve  metric->g11*d2f/dx2 - metric->g33*kz^2f = 0
-      // Assume metric->g11, metric->g33 constant -> exponential growth or decay
+      // Solve  metric->g11()*d2f/dx2 - metric->g33()*kz^2f = 0
+      // Assume metric->g11(), metric->g33() constant -> exponential growth or decay
 
       // Loop in X towards edge of domain
       do {
@@ -2878,8 +2878,8 @@ void BoundaryNeumann::apply([[maybe_unused]] Field2D& f, [[maybe_unused]] BoutRe
           c1[jz] = la * c2[jz] + lb * c1[jz] + lc * c0[jz];
         }
       }
-      // Solve  metric->g11*d2f/dx2 - metric->g33*kz^2f = 0
-      // Assume metric->g11, metric->g33 constant -> exponential growth or decay
+      // Solve  metric->g11()*d2f/dx2 - metric->g33()*kz^2f = 0
+      // Assume metric->g11(), metric->g33() constant -> exponential growth or decay
       BoutReal xpos = 0.0;
       // Loop in X towards edge of domain
       do {
@@ -2976,7 +2976,7 @@ void BoundaryNeumann::apply([[maybe_unused]] Field2D& f, [[maybe_unused]] BoutRe
           var.z(jx + 1, jy, jz) = var.z(jx - 3, jy, jz) + 4. * metric->dx(jx, jy) * tmp;
         }
 
-        // d/dx( Jmetric->g11 B_x ) = - d/dx( Jmetric->g12 B_y + Jmetric->g13 B_z)
+        // d/dx( Jmetric->g11() B_x ) = - d/dx( Jmetric->g12() B_y + Jmetric->g13() B_z)
         //                    - d/dy( JB^y ) - d/dz( JB^z )
 
         tmp =
