@@ -220,6 +220,7 @@ set(BOUT_SOURCES
     ./include/bout/vector2d.hxx
     ./include/bout/vector3d.hxx
     ./include/bout/where.hxx
+    ./include/bout/yboundary_regions.hxx
     ./src/bout++-time.hxx
     ./src/bout++.cxx
     ./src/field/field.cxx
@@ -323,6 +324,7 @@ set(BOUT_SOURCES
     ./src/mesh/petsc_operators.cxx
     ./src/mesh/surfaceiter.cxx
     ./src/mesh/tokamak_coordinates.cxx
+    ./src/mesh/yboundary_regions.cxx
     ./src/physics/gyro_average.cxx
     ./src/physics/physicsmodel.cxx
     ./src/physics/smoothing.cxx
