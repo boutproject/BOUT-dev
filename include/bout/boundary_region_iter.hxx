@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
@@ -23,18 +22,6 @@
 
 namespace bout {
 namespace boundary {
-
-/// Physical type of y boundary
-enum class BndryType : std::int8_t {
-  sheath,
-  not_sheath_par,
-  core,
-  sol,
-  sol_perp,
-  sol_par,
-  all,
-  num
-};
 
 template <typename impl>
 class BoundaryRegionIterBase {
