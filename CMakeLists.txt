@@ -387,7 +387,7 @@ set(BOUT_SOURCES
     ./src/sys/range.cxx
     ./src/sys/slepclib.cxx
     ./src/sys/timer.cxx
-        ./src/sys/utils.cxx
+    ./src/sys/utils.cxx
     ${CMAKE_CURRENT_BINARY_DIR}/include/bout/revision.hxx
     ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
 )
