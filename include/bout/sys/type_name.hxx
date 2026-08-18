@@ -20,8 +20,7 @@ class Matrix;
 template <class T>
 class Tensor;
 
-namespace bout {
-namespace utils {
+namespace bout::utils {
 
 template <typename T>
 std::string typeName() {
@@ -57,7 +56,6 @@ std::string typeName() {
   }
 }
 
-} // namespace utils
-} // namespace bout
+} // namespace bout::utils
 
 #endif // TYPE_NAME_HXX
