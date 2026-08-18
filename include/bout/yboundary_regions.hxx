@@ -2,7 +2,6 @@
 
 #include "bout/boundary_region_iter.hxx"
 
-#include "bout/assert.hxx"
 #include "bout/boundary_iterator.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field_data.hxx"
@@ -11,11 +10,22 @@
 #include "bout/options.hxx"
 #include "bout/parallel_boundary_region.hxx"
 #include "bout/region.hxx"
+
+#include <concepts>
 #include <memory>
 #include <vector>
 
 namespace bout {
 namespace boundary {
+/// Helper concept for functions to pass into `YBoundary::iter`
+///
+/// The function passed into `YBoundary::iter` operates over elements of types
+/// derived from `BoundaryRegionIterBase`, but because this uses CRTP they can
+/// be a bit difficult to name. Instead use `YBoundaryPoint auto` as the
+/// parameter type.
+template <class T>
+concept YBoundaryPoint = std::derived_from<T, BoundaryRegionIterBase<T>>;
+
 /// This class allows to simplify iterating over y-boundaries.
 ///
 /// It makes it easier to write code for FieldAligned boundaries, but if a bit
@@ -28,15 +38,22 @@ class YBoundary {
 public:
   /// Iterate over the boundary.
   /// This function takes a lamda / templated function, that applies the boundary on the given point.
-  /// The function must take a `auto& point` as argument.
+  /// The function must take a `const YBoundaryPoint auto& point` as its only argument.
   /// See also the documentation at ../../manual/sphinx/user_docs/boundary_options.rst
-  template <class Func>
-  void iter(const Func& func) {
-    iter_regions([&](auto& region) {
-      for (auto& point : region) {
+  template <class F>
+    requires std::regular_invocable<F&, const BoundaryRegionIterY&>
+             || std::regular_invocable<F&, const BoundaryRegionIterFCI&>
+  void iter(F func) {
+    for (auto& region : boundary_regions) {
+      for (auto& point : *region) {
         func(point);
       }
-    });
+    }
+    for (auto& region : boundary_regions_par) {
+      for (auto& point : *region) {
+        func(point);
+      }
+    }
   }
 
   YBoundary(YBndryType type, Options* options_ptr, const Mesh& mesh) {
@@ -97,7 +114,7 @@ public:
     // Cache boundary regions
     _contains.emplace_back(&mesh, false);
     _contains.emplace_back(&mesh, false);
-    iter([&](const auto& point) {
+    iter([&](const YBoundaryPoint auto& point) {
       if (point.dir() == 1) {
         _contains[1][point.ind()] = true;
       } else if (point.dir() == -1) {
@@ -129,15 +146,6 @@ public:
   }
 
 private:
-  template <class Func>
-  void iter_regions(const Func& func) {
-    for (auto& region : boundary_regions) {
-      func(*region);
-    }
-    for (auto& region : boundary_regions_par) {
-      func(*region);
-    }
-  }
   std::vector<std::shared_ptr<BoundaryRegionFCI>> boundary_regions_par;
   std::vector<std::shared_ptr<BoundaryRegionY>> boundary_regions;
 
