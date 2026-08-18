@@ -110,6 +110,18 @@ public:
   /// finite difference approximated Jacobian.
   PetscErrorCode scaleJacobian(Mat Jac_new);
 
+  /// Convert solver coordinates into the physical variables used by the model.
+  PetscErrorCode toPhysicalState(Vec x, Vec physical_x);
+
+  /// Call the physics model RHS function on a vector of physical variables.
+  PetscErrorCode raw_rhs_function(Vec x, Vec f, bool linear);
+
+  /// Apply solver-coordinate transforms, call the raw RHS, and transform the
+  /// resulting derivatives back into solver coordinates.
+  PetscErrorCode scaled_rhs_function(Vec x, Vec f, bool linear);
+
+  PetscErrorCode maybeExportJacobian(Mat system_jacobian, Vec x_solver);
+
   /// Save diagnostics to output
   void outputVars(Options& output_options, bool save_repeat = true) override;
 
@@ -121,13 +133,11 @@ private:
   /// Rescale state (snes_x) so that all quantities are around 1. If
   /// quantities are near zero then RTOL is used.
   PetscErrorCode rescale();
-
-  /// Call the physics model RHS function
-  ///
-  /// @param[in] x       The state vector. Will be scaled if scale_vars=true
-  /// @param[out] f      The vector for the result f(x)
-  /// @param[in] linear  Specifies that the SNES solver is in a linear (KSP) inner loop
-  PetscErrorCode rhs_function(Vec x, Vec f, bool linear);
+  PetscErrorCode saveDiagnosticJacobian(JacobianExportKind kind, Vec x_solver);
+  std::string getJacobianExportStem(JacobianExportKind kind);
+  std::string getJacobianMatrixFilename(const std::string& stem) const;
+  PetscErrorCode exportMatrixAndMetadata(const PetscPreconditioner& preconditioner,
+                                         const std::string& stem);
 
   BoutSnesOutput output_trigger; ///< Sets when outputs are written
 
@@ -277,6 +287,13 @@ private:
 
   bool asinh_vars; ///< Evolve asinh(vars) to compress magnitudes while preserving signs
   const BoutReal asinh_scale = 1e-5; // Scale below which asinh response becomes ~linear
+
+  bool save_jacobian;                      ///< Save Jacobian matrices for diagnostics
+  JacobianExportKind jacobian_export_kind; ///< Which Jacobian to save
+  std::string jacobian_export_prefix; ///< Prefix for Jacobian matrix/metadata outputs
+  PetscMatrixExportFormat jacobian_export_format; ///< Output format for matrix save
+  int jacobian_export_counter{0};                 ///< Running counter for saved Jacobians
+  bool jacobian_metadata_written{false}; ///< Has the shared JSON metadata been written?
 
   std::vector<Field2D>
       resid_2d; ///< Storage for residuals of SNES solve, unpacked from snes_f

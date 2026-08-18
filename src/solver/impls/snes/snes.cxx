@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <fmt/format.h>
 #include <vector>
 
 #include "petscerror.h"
@@ -61,6 +62,15 @@ PetscErrorCode FormFunctionForColoring(void* UNUSED(snes), Vec x, Vec f, void* c
   return static_cast<SNESSolver*>(ctx)->snes_function(x, f, true);
 }
 
+PetscErrorCode FormRawFunctionForColoring(void* UNUSED(snes), Vec x, Vec f, void* ctx) {
+  return static_cast<SNESSolver*>(ctx)->raw_rhs_function(x, f, true);
+}
+
+PetscErrorCode FormScaledFunctionForColoring(void* UNUSED(snes), Vec x, Vec f,
+                                             void* ctx) {
+  return static_cast<SNESSolver*>(ctx)->scaled_rhs_function(x, f, true);
+}
+
 PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
   // Get the context
   SNESSolver* s;
@@ -71,6 +81,8 @@ PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
 
 PetscErrorCode ComputeJacobianScaledColor(SNES snes, Vec x1, Mat Jac, Mat Jac_new,
                                           void* ctx);
+PetscErrorCode ComputeJacobianDefaultMaybeExport(SNES snes, Vec x1, Mat Jac, Mat Jac_new,
+                                                 void* ctx);
 } // namespace
 
 PetscErrorCode SNESSolver::FDJinitialise() {
@@ -111,9 +123,9 @@ PetscErrorCode SNESSolver::FDJinitialise() {
         nullptr, &Jfd);
 
     if (matrix_free_operator) {
-      SNESSetJacobian(snes, Jmf, Jfd, SNESComputeJacobianDefault, this);
+      SNESSetJacobian(snes, Jmf, Jfd, ComputeJacobianDefaultMaybeExport, this);
     } else {
-      SNESSetJacobian(snes, Jfd, Jfd, SNESComputeJacobianDefault, this);
+      SNESSetJacobian(snes, Jfd, Jfd, ComputeJacobianDefaultMaybeExport, this);
     }
 
     MatSetOption(Jfd, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
@@ -364,7 +376,99 @@ SNESSolver::SNESSolver(Options* opts)
                             .withDefault<BoutReal>(100.)),
       asinh_vars((*options)["asinh_vars"]
                      .doc("Apply asinh() to all variables?")
-                     .withDefault<bool>(false)) {}
+                     .withDefault<bool>(false)),
+      save_jacobian((*options)["save_jacobian"]
+                        .doc("Save Jacobian matrices for diagnostics?")
+                        .withDefault<bool>(false)),
+      jacobian_export_kind((*options)["jacobian_export_kind"]
+                               .doc("Which Jacobian to save: system, scaled, rhs")
+                               .withDefault(JacobianExportKind::system)),
+      jacobian_export_prefix(
+          (*options)["jacobian_export_prefix"]
+              .doc("Prefix for saved Jacobian matrix and metadata files")
+              .withDefault("jacobian")),
+      jacobian_export_format((*options)["jacobian_export_format"]
+                                 .doc("Format for saved Jacobian matrices: binary, ascii")
+                                 .withDefault(PetscMatrixExportFormat::binary)) {}
+
+std::string SNESSolver::getJacobianExportStem(JacobianExportKind kind) {
+  return fmt::format("{}_{}_{:06d}", jacobian_export_prefix, toString(kind),
+                     jacobian_export_counter++);
+}
+
+std::string SNESSolver::getJacobianMatrixFilename(const std::string& stem) const {
+  return stem
+         + (jacobian_export_format == PetscMatrixExportFormat::binary ? ".dat" : ".txt");
+}
+
+PetscErrorCode
+SNESSolver::exportMatrixAndMetadata(const PetscPreconditioner& preconditioner,
+                                    const std::string& stem) {
+  if (!jacobian_metadata_written) {
+    writeJacobianMetadataJson(jacobian_export_prefix + "_metadata.json", "snes");
+    jacobian_metadata_written = true;
+  }
+
+  PetscCall(
+      preconditioner.saveMatrix(getJacobianMatrixFilename(stem), jacobian_export_format));
+  PetscFunctionReturn(PETSC_SUCCESS);
+}
+
+PetscErrorCode SNESSolver::saveDiagnosticJacobian(JacobianExportKind kind, Vec x_solver) {
+  PetscPreconditioner diagnostic_preconditioner;
+  Field3D index = globalIndex(0);
+  PetscCall(diagnostic_preconditioner.createJacobianPattern(
+      index, *options, nlocal, n2Dvars(), n3Dvars(), BoutComm::get()));
+
+  if (kind == JacobianExportKind::rhs) {
+    PetscCall(diagnostic_preconditioner.updateColoring(FormRawFunctionForColoring, this));
+  } else {
+    PetscCall(
+        diagnostic_preconditioner.updateColoring(FormScaledFunctionForColoring, this));
+  }
+
+  Vec x_evaluate = x_solver;
+  Vec physical_x{nullptr};
+  if (kind == JacobianExportKind::rhs) {
+    PetscCall(VecDuplicate(x_solver, &physical_x));
+    PetscCall(toPhysicalState(x_solver, physical_x));
+    x_evaluate = physical_x;
+  }
+
+  Mat diagnostic_jacobian = diagnostic_preconditioner.jacobian();
+  PetscCall(MatZeroEntries(diagnostic_jacobian));
+  PetscCall(SNESComputeJacobianDefaultColor(snes, x_evaluate, diagnostic_jacobian,
+                                            diagnostic_jacobian,
+                                            diagnostic_preconditioner.coloring()));
+  PetscCall(
+      exportMatrixAndMetadata(diagnostic_preconditioner, getJacobianExportStem(kind)));
+
+  if (physical_x != nullptr) {
+    PetscCall(VecDestroy(&physical_x));
+  }
+
+  PetscFunctionReturn(PETSC_SUCCESS);
+}
+
+PetscErrorCode SNESSolver::maybeExportJacobian(Mat system_jacobian, Vec x_solver) {
+  if (!save_jacobian) {
+    PetscFunctionReturn(PETSC_SUCCESS);
+  }
+
+  if (jacobian_export_kind == JacobianExportKind::system) {
+    if (!jacobian_metadata_written) {
+      writeJacobianMetadataJson(jacobian_export_prefix + "_metadata.json", "snes");
+      jacobian_metadata_written = true;
+    }
+    PetscCall(PetscPreconditioner::saveMatrix(
+        system_jacobian,
+        getJacobianMatrixFilename(getJacobianExportStem(jacobian_export_kind)),
+        jacobian_export_format));
+    PetscFunctionReturn(PETSC_SUCCESS);
+  }
+
+  PetscFunctionReturn(saveDiagnosticJacobian(jacobian_export_kind, x_solver));
+}
 
 int SNESSolver::init() {
   Solver::init();
@@ -1128,13 +1232,13 @@ PetscErrorCode SNESSolver::updateResiduals(Vec x) {
   const BoutReal* current_residual = nullptr;
   if (diagnose) {
     // Call RHS function to get time derivatives
-    PetscCall(rhs_function(x, deriv, false));
+    PetscCall(scaled_rhs_function(x, deriv, false));
 
     // Reading the residual vectors
     PetscCall(VecGetArrayRead(deriv, &current_residual));
   } else {
     // Call RHS function to get time derivatives
-    PetscCall(rhs_function(x, snes_f, false));
+    PetscCall(scaled_rhs_function(x, snes_f, false));
 
     // Reading the residual vectors
     PetscCall(VecGetArrayRead(snes_f, &current_residual));
@@ -1415,34 +1519,34 @@ BoutReal SNESSolver::updatePseudoTimestep(BoutReal previous_timestep,
   throw BoutException("SNESSolver::updatePseudoTimestep invalid BoutPTCStrategy");
 }
 
-PetscErrorCode SNESSolver::rhs_function(Vec x, Vec f, bool linear) {
-  // Get data from PETSc into BOUT++ fields
+PetscErrorCode SNESSolver::toPhysicalState(Vec x, Vec physical_x) {
   if (scale_vars) {
-    // scaled_x <- x * var_scaling_factors
-    PetscCall(VecPointwiseMult(scaled_x, x, var_scaling_factors));
-  } else if (asinh_vars) {
-    PetscCall(VecCopy(x, scaled_x));
+    PetscCall(VecPointwiseMult(physical_x, x, var_scaling_factors));
   } else {
-    scaled_x = x;
+    PetscCall(VecCopy(x, physical_x));
   }
 
   if (asinh_vars) {
     PetscInt size;
-    PetscCall(VecGetLocalSize(scaled_x, &size));
+    PetscCall(VecGetLocalSize(physical_x, &size));
 
-    BoutReal* scaled_data = nullptr;
-    PetscCall(VecGetArray(scaled_x, &scaled_data));
+    BoutReal* physical_data = nullptr;
+    PetscCall(VecGetArray(physical_x, &physical_data));
     for (PetscInt i = 0; i != size; ++i) {
-      scaled_data[i] = asinh_scale * std::sinh(scaled_data[i]);
+      physical_data[i] = asinh_scale * std::sinh(physical_data[i]);
     }
-    PetscCall(VecRestoreArray(scaled_x, &scaled_data));
+    PetscCall(VecRestoreArray(physical_x, &physical_data));
   }
 
+  return PETSC_SUCCESS;
+}
+
+PetscErrorCode SNESSolver::raw_rhs_function(Vec x, Vec f, bool linear) {
   const BoutReal* xdata = nullptr;
-  PetscCall(VecGetArrayRead(scaled_x, &xdata));
+  PetscCall(VecGetArrayRead(x, &xdata));
   // const_cast needed due to load_vars API. Not writing to xdata.
   load_vars(const_cast<BoutReal*>(xdata));
-  PetscCall(VecRestoreArrayRead(scaled_x, &xdata));
+  PetscCall(VecRestoreArrayRead(x, &xdata));
 
   try {
     // Call RHS function
@@ -1460,6 +1564,18 @@ PetscErrorCode SNESSolver::rhs_function(Vec x, Vec f, bool linear) {
   BoutReal* fdata = nullptr;
   PetscCall(VecGetArray(f, &fdata));
   save_derivs(fdata);
+  PetscCall(VecRestoreArray(f, &fdata));
+
+  return PETSC_SUCCESS;
+}
+
+PetscErrorCode SNESSolver::scaled_rhs_function(Vec x, Vec f, bool linear) {
+  if (!scale_vars && !asinh_vars) {
+    return raw_rhs_function(x, f, linear);
+  }
+
+  PetscCall(toPhysicalState(x, scaled_x));
+  PetscCall(raw_rhs_function(scaled_x, f, linear));
 
   if (asinh_vars) {
     // Modify time-derivatives for asinh(var) using chain rule
@@ -1472,13 +1588,14 @@ PetscErrorCode SNESSolver::rhs_function(Vec x, Vec f, bool linear) {
     PetscCall(VecGetLocalSize(f, &size));
     const BoutReal* scaled_data = nullptr;
     PetscCall(VecGetArrayRead(scaled_x, &scaled_data));
+    BoutReal* fdata = nullptr;
+    PetscCall(VecGetArray(f, &fdata));
     for (PetscInt i = 0; i != size; ++i) {
       fdata[i] /= std::sqrt(SQ(scaled_data[i]) + SQ(asinh_scale));
     }
+    PetscCall(VecRestoreArray(f, &fdata));
     PetscCall(VecRestoreArrayRead(scaled_x, &scaled_data));
   }
-
-  PetscCall(VecRestoreArray(f, &fdata));
 
   if (scale_vars) {
     PetscCall(VecPointwiseDivide(f, f, var_scaling_factors));
@@ -1490,7 +1607,7 @@ PetscErrorCode SNESSolver::rhs_function(Vec x, Vec f, bool linear) {
 PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
 
   // Call the RHS function
-  if (rhs_function(x, f, linear) != PETSC_SUCCESS) {
+  if (scaled_rhs_function(x, f, linear) != PETSC_SUCCESS) {
     // Tell SNES that the input was out of domain
     SNESSetFunctionDomainError(snes);
     // Note: Returning non-zero error here leaves vectors in locked state
@@ -1664,7 +1781,20 @@ PetscErrorCode ComputeJacobianScaledColor(SNES snes, Vec x1, Mat Jac, Mat Jac_ne
   CHKERRQ(err);
 
   // Call the SNESSolver function
-  return fctx->scaleJacobian(Jac_new);
+  PetscCall(fctx->scaleJacobian(Jac_new));
+  PetscFunctionReturn(fctx->maybeExportJacobian(Jac_new, x1));
+}
+
+PetscErrorCode ComputeJacobianDefaultMaybeExport(SNES snes, Vec x1, Mat Jac, Mat Jac_new,
+                                                 void* ctx) {
+  PetscErrorCode err = SNESComputeJacobianDefault(snes, x1, Jac, Jac_new, ctx);
+  CHKERRQ(err);
+
+  if ((err != 0) or (ctx == nullptr)) {
+    return err;
+  }
+
+  PetscFunctionReturn(static_cast<SNESSolver*>(ctx)->maybeExportJacobian(Jac_new, x1));
 }
 } // namespace
 

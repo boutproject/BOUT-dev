@@ -51,6 +51,7 @@
 
 #include <cmath>
 #include <ctime>
+#include <fstream>
 #include <memory>
 #include <numeric>
 #include <set>
@@ -79,6 +80,44 @@
 int* Solver::pargc = nullptr;
 char*** Solver::pargv = nullptr;
 
+namespace {
+std::string jsonEscape(const std::string& input) {
+  std::string escaped;
+  escaped.reserve(input.size());
+
+  for (const char ch : input) {
+    switch (ch) {
+    case '\\':
+      escaped += "\\\\";
+      break;
+    case '"':
+      escaped += "\\\"";
+      break;
+    case '\b':
+      escaped += "\\b";
+      break;
+    case '\f':
+      escaped += "\\f";
+      break;
+    case '\n':
+      escaped += "\\n";
+      break;
+    case '\r':
+      escaped += "\\r";
+      break;
+    case '\t':
+      escaped += "\\t";
+      break;
+    default:
+      escaped += ch;
+      break;
+    }
+  }
+
+  return escaped;
+}
+} // namespace
+
 /**************************************************************************
  * Constructor
  **************************************************************************/
@@ -94,6 +133,10 @@ Solver::Solver(Options* opts)
                                   "timestep, to make it easier to concatenate output "
                                   "data sets in time")
                              .withDefault(false)),
+      save_jacobian_index_base(
+          (*options)["save_jacobian_index_base"]
+              .doc("Write the base global index field used for Jacobian diagnostics")
+              .withDefault(false)),
       is_nonsplit_model_diffusive(
           (*options)["is_nonsplit_model_diffusive"]
               .doc("If not a split operator, treat RHS as diffusive?")
@@ -705,6 +748,11 @@ void Solver::outputVars(Options& output_options, bool save_repeat) {
            "or the previous run did not have a run_id.")
       .assignRepeat(run_restart_from, "t", save_repeat and save_repeat_run_id, "Solver");
 
+  if (save_jacobian_index_base) {
+    output_options["jacobian_index_base"].assignRepeat(jacobianIndexBase(), "t",
+                                                       save_repeat, "Solver");
+  }
+
   // Add 2D and 3D evolving fields to output file
   for (const auto& f : f2d) {
     // Add to dump file (appending)
@@ -1205,6 +1253,91 @@ Field3D Solver::globalIndex(int localStart) {
   mesh->communicate(index);
 
   return index;
+}
+
+Field3D Solver::jacobianIndexBase(int localStart) { return globalIndex(localStart); }
+
+std::vector<Solver::JacobianVariableMetadata> Solver::getJacobianMetadata2D() const {
+  std::vector<JacobianVariableMetadata> metadata;
+  metadata.reserve(f2d.size());
+
+  for (int i = 0; i < static_cast<int>(f2d.size()); ++i) {
+    metadata.push_back(JacobianVariableMetadata{i, f2d[i].name, toString(f2d[i].location),
+                                                f2d[i].evolve_bndry, f2d[i].constraint,
+                                                f2d[i].description});
+  }
+
+  return metadata;
+}
+
+std::vector<Solver::JacobianVariableMetadata> Solver::getJacobianMetadata3D() const {
+  std::vector<JacobianVariableMetadata> metadata;
+  metadata.reserve(f3d.size());
+
+  for (int i = 0; i < static_cast<int>(f3d.size()); ++i) {
+    metadata.push_back(JacobianVariableMetadata{i, f3d[i].name, toString(f3d[i].location),
+                                                f3d[i].evolve_bndry, f3d[i].constraint,
+                                                f3d[i].description});
+  }
+
+  return metadata;
+}
+
+Solver::JacobianMetadata
+Solver::getJacobianMetadata(const std::string& solver_name) const {
+  return JacobianMetadata{1,
+                          solver_name,
+                          n2Dvars(),
+                          n3Dvars(),
+                          getJacobianMetadata2D(),
+                          getJacobianMetadata3D(),
+                          "For each (x,y): 2D variables at z=0, then 3D variables for "
+                          "z=0..Nz-1; evolved boundary points precede RGN_NOBNDRY"};
+}
+
+void Solver::writeJacobianMetadataJson(const std::string& filename,
+                                       const std::string& solver_name) const {
+  if (MYPE != 0) {
+    return;
+  }
+
+  const auto metadata = getJacobianMetadata(solver_name);
+  std::ofstream json_file(filename);
+  if (!json_file.is_open()) {
+    throw BoutException("Failed to open Jacobian metadata file '{}'", filename);
+  }
+
+  auto write_variables = [&](const std::vector<JacobianVariableMetadata>& variables,
+                             const char* name) {
+    json_file << "  \"" << name << "\": [\n";
+    for (std::size_t i = 0; i < variables.size(); ++i) {
+      const auto& variable = variables[i];
+      json_file << "    {\"offset\": " << variable.offset << ", "
+                << "\"name\": \"" << jsonEscape(variable.name) << "\", "
+                << "\"location\": \"" << jsonEscape(variable.location) << "\", "
+                << "\"evolve_bndry\": " << (variable.evolve_bndry ? "true" : "false")
+                << ", "
+                << "\"constraint\": " << (variable.constraint ? "true" : "false") << ", "
+                << "\"description\": \"" << jsonEscape(variable.description) << "\"}";
+      if (i + 1 != variables.size()) {
+        json_file << ",";
+      }
+      json_file << "\n";
+    }
+    json_file << "  ]";
+  };
+
+  json_file << "{\n"
+            << "  \"format_version\": " << metadata.format_version << ",\n"
+            << "  \"solver\": \"" << jsonEscape(metadata.solver_name) << "\",\n"
+            << "  \"n2d\": " << metadata.n2d << ",\n"
+            << "  \"n3d\": " << metadata.n3d << ",\n";
+  write_variables(metadata.variables_2d, "variables_2d");
+  json_file << ",\n";
+  write_variables(metadata.variables_3d, "variables_3d");
+  json_file << ",\n"
+            << "  \"ordering\": \"" << jsonEscape(metadata.ordering) << "\"\n"
+            << "}\n";
 }
 
 /**************************************************************************

@@ -10,7 +10,10 @@
 #ifndef BOUT_PETSC_PRECONDITIONER_H
 #define BOUT_PETSC_PRECONDITIONER_H
 
+#include "bout/bout_enum_class.hxx"
 #include "bout/build_defines.hxx"
+
+BOUT_ENUM_CLASS(PetscMatrixExportFormat, binary, ascii);
 
 #if BOUT_HAS_PETSC
 
@@ -21,6 +24,8 @@
 
 #include <petscmat.h>
 #include <petscvec.h>
+
+#include <string>
 
 class Options;
 class Field3D;
@@ -73,6 +78,13 @@ public:
   Mat jacobian() const { return Jfd; }
   MatFDColoring coloring() const { return fdcoloring; }
 
+  static PetscErrorCode
+  saveMatrix(Mat matrix, const std::string& filename,
+             PetscMatrixExportFormat format = PetscMatrixExportFormat::binary);
+  PetscErrorCode
+  saveMatrix(const std::string& filename,
+             PetscMatrixExportFormat format = PetscMatrixExportFormat::binary) const;
+
   void reset();
 
 private:
@@ -86,6 +98,9 @@ private:
 // unconditionally in PETSc-enabled compilation units.
 class PetscPreconditioner {
 public:
+  void saveMatrix(
+      const std::string& UNUSED(filename),
+      PetscMatrixExportFormat UNUSED(format) = PetscMatrixExportFormat::binary) const {}
   void reset() {}
 };
 

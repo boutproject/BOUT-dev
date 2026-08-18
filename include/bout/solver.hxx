@@ -38,6 +38,7 @@
 
 #include "bout/build_defines.hxx"
 
+#include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/globals.hxx"
@@ -100,6 +101,8 @@ constexpr auto SOLVERRKGENERIC = "rkgeneric";
 
 enum class FieldCategories : std::uint8_t { VARS, DERIVS, MMS };
 enum class SOLVER_VAR_OP : std::uint8_t { LOAD, SET_ID, SAVE };
+
+BOUT_ENUM_CLASS(JacobianExportKind, system, scaled, rhs);
 
 /// A type to set where in the list monitors are added
 enum class MonitorPosition { BACK, FRONT };
@@ -368,6 +371,25 @@ public:
 protected:
   friend class SundialsNVectorInterface;
 
+  struct JacobianVariableMetadata {
+    int offset{0};
+    std::string name;
+    std::string location;
+    bool evolve_bndry{false};
+    bool constraint{false};
+    std::string description;
+  };
+
+  struct JacobianMetadata {
+    int format_version{1};
+    std::string solver_name;
+    int n2d{0};
+    int n3d{0};
+    std::vector<JacobianVariableMetadata> variables_2d;
+    std::vector<JacobianVariableMetadata> variables_3d;
+    std::string ordering;
+  };
+
   /// Number of command-line arguments
   static int* pargc;
   /// Command-line arguments
@@ -606,6 +628,12 @@ protected:
 
   /// Returns a Field3D containing the global indices
   Field3D globalIndex(int localStart);
+  Field3D jacobianIndexBase(int localStart = 0);
+  std::vector<JacobianVariableMetadata> getJacobianMetadata2D() const;
+  std::vector<JacobianVariableMetadata> getJacobianMetadata3D() const;
+  JacobianMetadata getJacobianMetadata(const std::string& solver_name) const;
+  void writeJacobianMetadataJson(const std::string& filename,
+                                 const std::string& solver_name) const;
 
   /// Maximum internal timestep
   BoutReal max_dt{-1.0};
@@ -670,6 +698,7 @@ private:
   std::string run_restart_from = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy";
   /// Save `run_id` and `run_restart_from` every output
   bool save_repeat_run_id{false};
+  bool save_jacobian_index_base{false};
 
   /// Current iteration (output time-step) number
   int iteration{0};

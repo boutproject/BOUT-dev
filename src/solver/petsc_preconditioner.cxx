@@ -6,6 +6,7 @@
 
 #include "bout/assert.hxx"
 #include "bout/boutcomm.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/field3d.hxx"
 #include "bout/globals.hxx"
 #include "bout/mesh.hxx"
@@ -16,6 +17,7 @@
 #include <algorithm>
 #include <cmath>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -69,6 +71,31 @@ void PetscPreconditioner::reset() {
     MatDestroy(&Jfd);
     Jfd = nullptr;
   }
+}
+
+PetscErrorCode PetscPreconditioner::saveMatrix(Mat matrix, const std::string& filename,
+                                               PetscMatrixExportFormat format) {
+  if (matrix == nullptr) {
+    throw BoutException("Cannot save Jacobian matrix: matrix has not been created yet");
+  }
+
+  PetscViewer viewer{nullptr};
+  if (format == PetscMatrixExportFormat::binary) {
+    PetscCall(PetscViewerBinaryOpen(BoutComm::get(), filename.c_str(), FILE_MODE_WRITE,
+                                    &viewer));
+  } else {
+    PetscCall(PetscViewerASCIIOpen(BoutComm::get(), filename.c_str(), &viewer));
+  }
+
+  PetscCall(MatView(matrix, viewer));
+  PetscCall(PetscViewerDestroy(&viewer));
+
+  PetscFunctionReturn(PETSC_SUCCESS);
+}
+
+PetscErrorCode PetscPreconditioner::saveMatrix(const std::string& filename,
+                                               PetscMatrixExportFormat format) const {
+  return saveMatrix(Jfd, filename, format);
 }
 
 PetscErrorCode PetscPreconditioner::createJacobianPattern(Field3D& index,
