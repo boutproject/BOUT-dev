@@ -14,6 +14,8 @@
 #include <memory>
 #include <vector>
 
+namespace bout {
+namespace boundary {
 /// This class allows to simplify iterating over y-boundaries.
 ///
 /// It makes it easier to write code for FieldAligned boundaries, but if a bit
@@ -136,17 +138,11 @@ private:
       func(*region);
     }
   }
-  std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>> boundary_regions_par;
-  std::vector<std::shared_ptr<bout::boundary::BoundaryRegionY>> boundary_regions;
+  std::vector<std::shared_ptr<BoundaryRegionFCI>> boundary_regions_par;
+  std::vector<std::shared_ptr<BoundaryRegionY>> boundary_regions;
 
   std::vector<BoutMask> _contains;
 };
 
-inline std::shared_ptr<YBoundary> getYBoundary(Coordinates* coords,
-                                               YBndryType type = YBndryType::sheath) {
-  auto itype = static_cast<int>(type);
-  if (coords->ybndrys[itype] == nullptr) {
-    coords->ybndrys[itype] = coords->makeYBoundary(type);
-  }
-  return coords->ybndrys[itype];
-}
+} // namespace boundary
+} // namespace bout

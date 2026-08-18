@@ -1222,8 +1222,13 @@ void Coordinates::_compute_cell_volume() const {
   }
 }
 
-std::shared_ptr<YBoundary> Coordinates::makeYBoundary(YBndryType type) const {
-  return std::make_shared<YBoundary>(type, localoptions, *localmesh);
+const bout::boundary::YBoundary& Coordinates::getYBoundary(YBndryType type) const {
+  using bout::boundary::YBoundary;
+  const auto itype = static_cast<int>(type);
+  if (ybndrys.at(itype) == nullptr) {
+    ybndrys.at(itype) = std::make_shared<YBoundary>(type, localoptions, *localmesh);
+  }
+  return *ybndrys.at(itype);
 }
 
 void Coordinates::setBxy(FieldMetric Bxy, const bool communicate) {

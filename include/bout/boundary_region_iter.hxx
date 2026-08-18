@@ -752,24 +752,21 @@ void iter_boundary(const Bndry& bndry, const Func& func) {
   }
 }
 
-} // namespace boundary
-} // namespace bout
-inline bout::boundary::BoundaryRegionIterFCI
-begin(const bout::boundary::BoundaryRegionFCI& reg) {
-  return bout::boundary::BoundaryRegionIterFCI(&reg, true);
+inline auto begin(const BoundaryRegionFCI& reg) {
+  return BoundaryRegionIterFCI(&reg, true);
 }
-inline bout::boundary::BoundaryRegionIterFCI
-end(const bout::boundary::BoundaryRegionFCI& reg) {
-  return bout::boundary::BoundaryRegionIterFCI(&reg, false);
+inline auto end(const BoundaryRegionFCI& reg) {
+  return BoundaryRegionIterFCI(&reg, false);
 }
 
 template <bool isX>
-inline bout::boundary::BoundaryRegionIterXY<isX>
-begin(const bout::boundary::BoundaryRegionXY<isX>& reg) {
-  return bout::boundary::BoundaryRegionIterXY<isX>(&reg, true);
+inline auto begin(const BoundaryRegionXY<isX>& reg) {
+  return BoundaryRegionIterXY<isX>(&reg, true);
 }
 template <bool isX>
-inline bout::boundary::BoundaryRegionIterXY<isX>
-end(const bout::boundary::BoundaryRegionXY<isX>& reg) {
-  return bout::boundary::BoundaryRegionIterXY<isX>(&reg, false);
+inline auto end(const BoundaryRegionXY<isX>& reg) {
+  return BoundaryRegionIterXY<isX>(&reg, false);
 }
+
+} // namespace boundary
+} // namespace bout

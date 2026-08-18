@@ -9,6 +9,8 @@
 
 using YBTest = FakeMeshFixture_tmpl<4, 5, 7>;
 
+using bout::boundary::YBoundary;
+using bout::boundary::YBoundaryPoint;
 using bout::globals::mesh;
 
 TEST_F(YBTest, dirichlet_o2_rgn) {
