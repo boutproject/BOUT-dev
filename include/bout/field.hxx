@@ -258,7 +258,7 @@ inline T filledFrom(const T& f, Function func, std::string region_string = "RGN_
   return result;
 }
 
-template<typename T>
+template <typename T>
 concept IsField = std::is_base_of_v<Field, T>;
 
 /// Unary + operator. This doesn't do anything
@@ -642,7 +642,7 @@ std::optional<int> getPerpYIndex(const BinaryExpr<ResT, L, R, Func>& expr) {
     }                                                                                   \
   };                                                                                    \
   };                                                                                    \
-  template <IsField T>                       \
+  template <IsField T>                                                                  \
   inline auto name(const T& f, const std::string& rgn = "RGN_ALL") {                    \
     if constexpr (std::is_same_v<T, Field3DParallel>) {                                 \
       /* Check if the input is allocated */                                             \
