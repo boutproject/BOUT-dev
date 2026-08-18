@@ -8,7 +8,7 @@
 #include "bout/bout_types.hxx"
 
 #include <string>
-#include <type_traits> // Required for std::is_same_v
+#include <type_traits>
 #include <typeinfo>
 
 // Forward declarations
