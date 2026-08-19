@@ -5,3 +5,6 @@ bout_add_integrated_test(
   USE_DATA_BOUT_INP
   REQUIRES BOUT_HAS_FFTW
 )
+
+configure_file(read_jacobian.py read_jacobian.py COPYONLY)
+configure_file(PetscBinaryIO.py PetscBinaryIO.py COPYONLY)
