@@ -37,10 +37,30 @@ concept function_accessor =
     std::regular_invocable<F, int, Ind3D>
     and std::is_same_v<std::invoke_result_t<F, int, Ind3D>, BoutReal>;
 
+/// Interface for boundary iterators
+template <class Iter>
+concept boundary_iterator = requires(Iter point, Field3D f) {
+  point.getAt(f, int{});
+  point.next(f);
+  point.current(f);
+  point.prev(f);
+
+  point.ind();
+  point.length(CELL_LOC{});
+  point.valid();
+  point.boundary_width();
+  point.is_lower();
+  point.offset();
+
+  point.smallValue();
+};
+
 /// Common base class for boundary region iterators
 ///
 /// This uses CRTP: boundary region iterators should inherit from this,
-/// templated on themselves, and they must implement all methods that call `impl().`
+/// templated on themselves, and they must implement all methods in
+/// `boundary_iterator`, (that is, those methods that call `impl().` in this
+/// class)
 template <typename Impl>
 class BoundaryRegionIterBase {
   BoundaryRegionIterBase() = default;
@@ -61,6 +81,9 @@ public:
   int boundary_width() const { return impl()._boundary_width(); }
   /// Is this the lower boundary?
   bool is_lower() const { return impl()._is_lower(); }
+  /// Get the offset from the last point in the domain
+  /// For FA this is always ±1, for FCI this can be up to ±MYG, excluding 0
+  int offset() const { return impl()._offset(); }
 
   /*
    *         FIELD3D ACCESSORS
@@ -97,9 +120,7 @@ public:
   BoutReal& current(Field3D& f) const { return impl()._getAt(f, 1); }
   /// Get the second to last point in the domain - this may not be valid and thus throw
   const BoutReal& prev(const Field3D& f) const { return impl()._getAt(f, 2); }
-  /// Get the offset from the last point in the domain
-  /// For FA this is always ±1, for FCI this can be up to ±MYG, excluding 0
-  int offset() const { return impl()._offset(); }
+
   /*
    *         FIELD2D ACCESSORS
    */
@@ -163,207 +184,20 @@ public:
     return impl()._getAt(func, 2);
   }
 
-  /*
-   *     INTERPOLATION and EXTRAPOLATION
-   */
-
-  // extrapolate a given field to the boundary
-  BoutReal extrapolate_boundary_o1(const Field3D& f) const { return current(f); }
-  // extrapolate a given field to the boundary
-  BoutReal extrapolate_boundary_o2(const Field3D& f) const {
-    ASSERT3(valid() >= 0);
-    if (valid() < 1) {
-      return extrapolate_boundary_o1(f);
-    }
-    return current(f) * (1 + length(f.getLocation())) - prev(f) * length(f.getLocation());
-  }
-  /// Extrapolate a given function to the boundary
-  BoutReal extrapolate_bounday_o1(const function_accessor auto& func,
-                                  [[maybe_unused]] CELL_LOC loc = CELL_CENTRE) const {
-    return current(func);
-  }
-  /// Extrapolate a given function to the boundary
-  BoutReal extrapolate_boundary_o2(const function_accessor auto& func,
-                                   CELL_LOC loc = CELL_CENTRE) const {
-    ASSERT3(valid() >= 0);
-    if (valid() < 1) {
-      return extrapolate_boundary_o1(func);
-    }
-    return current(func) * (1 + length(loc)) - prev(func) * length(loc);
-  }
-
-  /// Interpolate a field to the boundary, using the boundary values
-  BoutReal interpolate_boundary_o2(const Field3D& f) const {
-    return current(f) * (1 - length(f.getLocation())) + next(f) * length(f.getLocation());
-  }
-  /// Interpolate a field to the boundary, using the boundary values
-  BoutReal interpolate_boundary_o2(const function_accessor auto& func,
-                                   CELL_LOC loc = CELL_CENTRE) const {
-    return current(func) * (1 - length(loc)) + next(func) * length(loc);
-  }
-  /// Extrapolate to the first boundary value freely
-  BoutReal extrapolate_next_o1(const Field3D& f) const { return current(f); }
-  /// Extrapolate to the first boundary value freely
-  BoutReal extrapolate_next_o2(const Field3D& f) const {
-    ASSERT3(valid() >= 0);
-    if (valid() < 1) {
-      return extrapolate_next_o1(f);
-    }
-    return current(f) * 2 - prev(f);
-  }
-
-  /// Extrapolate to the first boundary value freely
-  BoutReal extrapolate_next_o1(const function_accessor auto& func) const {
-    return current(func);
-  }
-  /// Extrapolate to the first boundary value freely
-  BoutReal extrapolate_next_o2(const function_accessor auto& func) const {
-    ASSERT3(valid() >= 0);
-    if (valid() < 1) {
-      return extrapolate_next_o1(func);
-    }
-    return current(func) * 2 - prev(func);
-  }
-
-  /// extrapolate the gradient into the boundary
-  BoutReal extrapolate_grad_o1([[maybe_unused]] const Field3D& f) const { return 0; }
-  /// extrapolate the gradient into the boundary
-  BoutReal extrapolate_grad_o2(const Field3D& f) const {
-    ASSERT3(valid() >= 0);
-    if (valid() < 1) {
-      return extrapolate_grad_o1(f);
-    }
-    return current(f) - next(f);
-  }
-
-  BoutReal extrapolate_boundary_free(const Field3D& f,
-                                     BoundaryFreeExtrapolation mode) const {
-    BoutReal fac = BoutNaN;
-    if (valid() > 0) {
-      fac = limitFreeScale(prev(f), current(f), mode);
-    } else {
-      fac = mode == BoundaryFreeExtrapolation::linear ? 0 : 1;
-    }
-    auto val = current(f);
-    BoutReal next = mode == BoundaryFreeExtrapolation::linear ? val + fac : val * fac;
-    return val * length(f.getLocation()) + next * (1 - length(f.getLocation()));
-  }
-
-  /*
-   *     APPLY BOUNDARY CONDITIONS
-   */
-
-  /// Apply a dirichlet boundary condition
-  void dirichlet_o1(Field3D& f, BoutReal value) const {
-    for (int i = 0; i < boundary_width(); ++i) {
-      getAt(f, -i) = value;
-    }
-  }
-
-  /// Apply a dirichlet boundary condition
-  void dirichlet_o2(Field3D& f, BoutReal value) const {
-    if (length(f.getLocation()) < small_value) {
-      return dirichlet_o1(f, value);
-    }
-    for (int i = 0; i < boundary_width(); ++i) {
-      getAt(f, -i) = parallel_stencil::dirichlet_o2(
-          i + 1, current(f), i + 1 - length(f.getLocation()), value);
-    }
-  }
-
-  /// Apply a dirichlet boundary condition
-  void dirichlet_o3(Field3D& f, BoutReal value) const {
-    ASSERT3(valid() >= 0);
-    if (valid() < 1) {
-      return dirichlet_o2(f, value);
-    }
-    if (length(f.getLocation()) < small_value) {
-      for (int i = 0; i < boundary_width(); ++i) {
-        getAt(f, -i) = parallel_stencil::dirichlet_o2(
-            i + 2, prev(f), i + 1 - length(f.getLocation()), value);
-      }
-    } else {
-      for (int i = 0; i < boundary_width(); ++i) {
-        getAt(f, -i) = parallel_stencil::dirichlet_o3(
-            i + 2, prev(f), i + 1, current(f), i + 1 - length(f.getLocation()), value);
-      }
-    }
-  }
-
-  /// Ensure the value in the boundary is at least `value`
-  void limit_at_least(Field3D& f, BoutReal value) const {
-    for (int i = 0; i < boundary_width(); ++i) {
-      if (getAt(f, -i) < value) {
-        getAt(f, -i) = value;
-      }
-    }
-  }
-
-  /// Apply neumann boundary condition, where `value` is the gradient in index space
-
-  // neumann_o1 would give second order convergence, given an appropriate one-sided stencil.
-  // But in general we do not, and thus for normal C2 stencils, this is 1st order.
-  void neumann_o1(Field3D& f, BoutReal value) const {
-    for (int i = 0; i < boundary_width(); ++i) {
-      getAt(f, -i) = current(f) + value * (i + 1);
-    }
-  }
-
-  /// Apply neumann boundary condition, where `value` is the gradient in index space
-  void neumann_o2(Field3D& f, BoutReal value) const {
-    ASSERT3(valid() >= 0);
-    if (valid() < 1) {
-      return neumann_o1(f, value);
-    }
-    for (int i = 0; i < boundary_width(); ++i) {
-      getAt(f, -i) = prev(f) + (2 + i) * value;
-    }
-  }
-
-  /// Apply neumann boundary condition, where `value` is the gradient in index space
-  void neumann_o3(Field3D& f, BoutReal value) const {
-    ASSERT3(valid() >= 0);
-    if (valid() < 1) {
-      return neumann_o2(f, value);
-    }
-    for (int i = 0; i < boundary_width(); ++i) {
-      getAt(f, -i) = parallel_stencil::neumann_o3(i + 1 - length(f.getLocation()), value,
-                                                  i + 1, current(f), 2, prev(f));
-    }
-  }
-
-  void set_free(Field3D& f, BoundaryFreeExtrapolation mode) const {
-    BoutReal fac = BoutNaN;
-    if (valid() > 0) {
-      fac = limitFreeScale(prev(f), current(f), mode);
-    } else {
-      fac = mode == BoundaryFreeExtrapolation::linear ? 0 : 1;
-    }
-    auto val = current(f);
-    if (mode == BoundaryFreeExtrapolation::linear) {
-      for (int i = 0; i < boundary_width(); ++i) {
-        val += fac;
-        getAt(f, -i) = val;
-      }
-    } else {
-      for (int i = 0; i < boundary_width(); ++i) {
-        val *= fac;
-        getAt(f, -i) = val;
-      }
-    }
-  }
   void setSmallValue(BoutReal val) {
     ASSERT2(val > 0);
     ASSERT2(val < 0.5);
     small_value = val;
   }
 
+  BoutReal smallValue() const { return small_value; }
+
 private:
   BoutReal small_value = 1e-4;
   friend Impl;
 };
 
-namespace {
+namespace details {
 /// Limited free gradient of log of a quantity
 /// This ensures that the guard cell values remain positive
 /// while also ensuring that the quantity never increases
@@ -400,7 +234,7 @@ inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc, BoundaryFreeExtrapolati
 
   return fp;
 }
-} // namespace
+} // namespace details
 
 /// An FCI-aware boundary region
 ///
@@ -792,6 +626,233 @@ inline auto begin(const BoundaryRegionXY<isX>& reg) {
 template <bool isX>
 inline auto end(const BoundaryRegionXY<isX>& reg) {
   return BoundaryRegionIterXY<isX>(&reg, false);
+}
+
+/*
+ *     INTERPOLATION and EXTRAPOLATION
+ */
+
+/// Extrapolate a given field to the boundary
+template <boundary_iterator Iter>
+BoutReal extrapolate_boundary_o1(const Iter& point, const Field3D& f) {
+  return point.current(f);
+}
+
+/// Extrapolate a given field to the boundary
+template <boundary_iterator Iter>
+BoutReal extrapolate_boundary_o2(const Iter& point, const Field3D& f) {
+  ASSERT3(point.valid() >= 0);
+  if (point.valid() < 1) {
+    return extrapolate_boundary_o1(point, f);
+  }
+  return point.current(f) * (1 + point.length(f.getLocation()))
+         - point.prev(f) * point.length(f.getLocation());
+}
+
+/// Extrapolate a given function to the boundary
+template <boundary_iterator Iter>
+BoutReal extrapolate_bounday_o1(const Iter& point, const function_accessor auto& func,
+                                [[maybe_unused]] CELL_LOC loc = CELL_CENTRE) {
+  return point.current(func);
+}
+
+/// Extrapolate a given function to the boundary
+template <boundary_iterator Iter>
+BoutReal extrapolate_boundary_o2(const Iter& point, const function_accessor auto& func,
+                                 CELL_LOC loc = CELL_CENTRE) {
+  ASSERT3(point.valid() >= 0);
+  if (point.valid() < 1) {
+    return extrapolate_boundary_o1(point, func);
+  }
+  return point.current(func) * (1 + point.length(loc))
+         - point.prev(func) * point.length(loc);
+}
+
+/// Interpolate a field to the boundary, using the boundary values
+template <boundary_iterator Iter>
+BoutReal interpolate_boundary_o2(const Iter& point, const Field3D& f) {
+  return point.current(f) * (1 - point.length(f.getLocation()))
+         + point.next(f) * point.length(f.getLocation());
+}
+/// Interpolate a field to the boundary, using the boundary values
+template <boundary_iterator Iter>
+BoutReal interpolate_boundary_o2(const Iter& point, const function_accessor auto& func,
+                                 CELL_LOC loc = CELL_CENTRE) {
+  return point.current(func) * (1 - point.length(loc))
+         + point.next(func) * point.length(loc);
+}
+/// Extrapolate to the first boundary value freely
+template <boundary_iterator Iter>
+BoutReal extrapolate_next_o1(const Iter& point, const Field3D& f) {
+  return point.current(f);
+}
+/// Extrapolate to the first boundary value freely
+template <boundary_iterator Iter>
+BoutReal extrapolate_next_o2(const Iter& point, const Field3D& f) {
+  ASSERT3(point.valid() >= 0);
+  if (point.valid() < 1) {
+    return extrapolate_next_o1(point, f);
+  }
+  return point.current(f) * 2 - point.prev(f);
+}
+
+/// Extrapolate to the first boundary value freely
+template <boundary_iterator Iter>
+BoutReal extrapolate_next_o1(const Iter& point, const function_accessor auto& func) {
+  return point.current(func);
+}
+/// Extrapolate to the first boundary value freely
+template <boundary_iterator Iter>
+BoutReal extrapolate_next_o2(const Iter& point, const function_accessor auto& func) {
+  ASSERT3(point.valid() >= 0);
+  if (point.valid() < 1) {
+    return extrapolate_next_o1(func);
+  }
+  return point.current(func) * 2 - prev(func);
+}
+
+/// extrapolate the gradient into the boundary
+template <boundary_iterator Iter>
+BoutReal extrapolate_grad_o1([[maybe_unused]] const Iter& point,
+                             [[maybe_unused]] const Field3D& f) {
+  return 0;
+}
+/// extrapolate the gradient into the boundary
+template <boundary_iterator Iter>
+BoutReal extrapolate_grad_o2(const Iter& point, const Field3D& f) {
+  ASSERT3(point.valid() >= 0);
+  if (point.valid() < 1) {
+    return extrapolate_grad_o1(point, f);
+  }
+  return point.current(f) - point.next(f);
+}
+
+template <boundary_iterator Iter>
+BoutReal extrapolate_boundary_free(const Iter& point, const Field3D& f,
+                                   BoundaryFreeExtrapolation mode) {
+  BoutReal fac = BoutNaN;
+  if (point.valid() > 0) {
+    fac = limitFreeScale(point.prev(f), point.current(f), mode);
+  } else {
+    fac = mode == BoundaryFreeExtrapolation::linear ? 0 : 1;
+  }
+  const auto val = point.current(f);
+  const BoutReal next = mode == BoundaryFreeExtrapolation::linear ? val + fac : val * fac;
+  return val * point.length(f.getLocation()) + next * (1 - point.length(f.getLocation()));
+}
+
+/*
+ *     APPLY BOUNDARY CONDITIONS
+ */
+
+/// Apply a dirichlet boundary condition
+template <boundary_iterator Iter>
+void dirichlet_o1(const Iter& point, Field3D& f, BoutReal value) {
+  for (int i = 0; i < point.boundary_width(); ++i) {
+    point.getAt(f, -i) = value;
+  }
+}
+
+/// Apply a dirichlet boundary condition
+template <boundary_iterator Iter>
+void dirichlet_o2(const Iter& point, Field3D& f, BoutReal value) {
+  if (point.length(f.getLocation()) < point.smallValue()) {
+    return dirichlet_o1(point, f, value);
+  }
+  for (int i = 0; i < point.boundary_width(); ++i) {
+    point.getAt(f, -i) = parallel_stencil::dirichlet_o2(
+        i + 1, point.current(f), i + 1 - point.length(f.getLocation()), value);
+  }
+}
+
+/// Apply a dirichlet boundary condition
+template <boundary_iterator Iter>
+void dirichlet_o3(const Iter& point, Field3D& f, BoutReal value) {
+  ASSERT3(point.valid() >= 0);
+  if (point.valid() < 1) {
+    return dirichlet_o2(point, f, value);
+  }
+  if (point.length(f.getLocation()) < point.smallValue()) {
+    for (int i = 0; i < point.boundary_width(); ++i) {
+      point.getAt(f, -i) = parallel_stencil::dirichlet_o2(
+          i + 2, point.prev(f), i + 1 - point.length(f.getLocation()), value);
+    }
+  } else {
+    for (int i = 0; i < point.boundary_width(); ++i) {
+      point.getAt(f, -i) =
+          parallel_stencil::dirichlet_o3(i + 2, point.prev(f), i + 1, point.current(f),
+                                         i + 1 - point.length(f.getLocation()), value);
+    }
+  }
+}
+
+/// Ensure the value in the boundary is at least `value`
+template <boundary_iterator Iter>
+void limit_at_least(const Iter& point, Field3D& f, BoutReal value) {
+  for (int i = 0; i < point.boundary_width(); ++i) {
+    if (point.getAt(f, -i) < value) {
+      point.getAt(f, -i) = value;
+    }
+  }
+}
+
+/// Apply neumann boundary condition, where `value` is the gradient in index space
+
+// neumann_o1 would give second order convergence, given an appropriate one-sided stencil.
+// But in general we do not, and thus for normal C2 stencils, this is 1st order.
+template <boundary_iterator Iter>
+void neumann_o1(const Iter& point, Field3D& f, BoutReal value) {
+  for (int i = 0; i < point.boundary_width(); ++i) {
+    point.getAt(f, -i) = point.current(f) + value * (i + 1);
+  }
+}
+
+/// Apply neumann boundary condition, where `value` is the gradient in index space
+template <boundary_iterator Iter>
+void neumann_o2(const Iter& point, Field3D& f, BoutReal value) {
+  ASSERT3(point.valid() >= 0);
+  if (point.valid() < 1) {
+    return neumann_o1(point, f, value);
+  }
+  for (int i = 0; i < point.boundary_width(); ++i) {
+    point.getAt(f, -i) = point.prev(f) + (2 + i) * value;
+  }
+}
+
+/// Apply neumann boundary condition, where `value` is the gradient in index space
+template <boundary_iterator Iter>
+void neumann_o3(const Iter& point, Field3D& f, BoutReal value) {
+  ASSERT3(point.valid() >= 0);
+  if (point.valid() < 1) {
+    return neumann_o2(point, f, value);
+  }
+  for (int i = 0; i < point.boundary_width(); ++i) {
+    point.getAt(f, -i) =
+        parallel_stencil::neumann_o3(i + 1 - point.length(f.getLocation()), value, i + 1,
+                                     point.current(f), 2, point.prev(f));
+  }
+}
+
+template <boundary_iterator Iter>
+void set_free(const Iter& point, Field3D& f, BoundaryFreeExtrapolation mode) {
+  BoutReal fac = BoutNaN;
+  if (point.valid() > 0) {
+    fac = limitFreeScale(point.prev(f), point.current(f), mode);
+  } else {
+    fac = mode == BoundaryFreeExtrapolation::linear ? 0 : 1;
+  }
+  auto val = point.current(f);
+  if (mode == BoundaryFreeExtrapolation::linear) {
+    for (int i = 0; i < point.boundary_width(); ++i) {
+      val += fac;
+      point.getAt(f, -i) = val;
+    }
+  } else {
+    for (int i = 0; i < point.boundary_width(); ++i) {
+      val *= fac;
+      point.getAt(f, -i) = val;
+    }
+  }
 }
 
 } // namespace boundary

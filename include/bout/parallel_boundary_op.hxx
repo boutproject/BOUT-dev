@@ -251,27 +251,27 @@ public:
 class BoundaryOpPar_dirichlet_o1 : public BoundaryOpParTemp<BoundaryOpPar_dirichlet_o1> {
 public:
   using BoundaryOpParTemp::BoundaryOpParTemp;
-  template <class T>
-  static void apply_stencil(Field3D& f, T& pnt, BoutReal value) {
-    pnt.dirichlet_o1(f, value);
+  template <bout::boundary::boundary_iterator Iter>
+  static void apply_stencil(Field3D& f, Iter& pnt, BoutReal value) {
+    dirichlet_o1(pnt, f, value);
   }
 };
 
 class BoundaryOpPar_dirichlet_o2 : public BoundaryOpParTemp<BoundaryOpPar_dirichlet_o2> {
 public:
   using BoundaryOpParTemp::BoundaryOpParTemp;
-  template <class T>
-  static void apply_stencil(Field3D& f, T& pnt, BoutReal value) {
-    pnt.dirichlet_o2(f, value);
+  template <bout::boundary::boundary_iterator Iter>
+  static void apply_stencil(Field3D& f, Iter& pnt, BoutReal value) {
+    dirichlet_o2(pnt, f, value);
   }
 };
 
 class BoundaryOpPar_dirichlet_o3 : public BoundaryOpParTemp<BoundaryOpPar_dirichlet_o3> {
 public:
   using BoundaryOpParTemp::BoundaryOpParTemp;
-  template <class T>
-  static void apply_stencil(Field3D& f, T& pnt, BoutReal value) {
-    pnt.dirichlet_o3(f, value);
+  template <bout::boundary::boundary_iterator Iter>
+  static void apply_stencil(Field3D& f, Iter& pnt, BoutReal value) {
+    dirichlet_o3(pnt, f, value);
   }
 };
 
@@ -279,9 +279,9 @@ class BoundaryOpPar_neumann_o1
     : public BoundaryOpParTemp<BoundaryOpPar_neumann_o1, true> {
 public:
   using BoundaryOpParTemp::BoundaryOpParTemp;
-  template <class T>
-  static void apply_stencil(Field3D& f, T& pnt, BoutReal value) {
-    pnt.neumann_o1(f, value);
+  template <bout::boundary::boundary_iterator Iter>
+  static void apply_stencil(Field3D& f, Iter& pnt, BoutReal value) {
+    neumann_o1(pnt, f, value);
   }
 };
 
@@ -289,9 +289,9 @@ class BoundaryOpPar_neumann_o2
     : public BoundaryOpParTemp<BoundaryOpPar_neumann_o2, true> {
 public:
   using BoundaryOpParTemp::BoundaryOpParTemp;
-  template <class T>
-  static void apply_stencil(Field3D& f, T& pnt, BoutReal value) {
-    pnt.neumann_o2(f, value);
+  template <bout::boundary::boundary_iterator Iter>
+  static void apply_stencil(Field3D& f, Iter& pnt, BoutReal value) {
+    neumann_o2(pnt, f, value);
   }
 };
 
@@ -299,9 +299,9 @@ class BoundaryOpPar_neumann_o3
     : public BoundaryOpParTemp<BoundaryOpPar_neumann_o3, true> {
 public:
   using BoundaryOpParTemp::BoundaryOpParTemp;
-  template <class T>
-  static void apply_stencil(Field3D& f, T& pnt, BoutReal value) {
-    pnt.neumann_o3(f, value);
+  template <bout::boundary::boundary_iterator Iter>
+  static void apply_stencil(Field3D& f, Iter& pnt, BoutReal value) {
+    neumann_o3(pnt, f, value);
   }
 };
 

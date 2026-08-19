@@ -31,6 +31,7 @@
 #include "bout/field2d.hxx"
 
 #include "bout/index_derivs_interface.hxx"
+#include "bout/yboundary_regions.hxx"
 #include <bout/boutcomm.hxx>
 #include <bout/globals.hxx>
 
@@ -513,9 +514,9 @@ void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices,
       for (auto& region : fieldmesh->getBoundariesPar()) {
         for (const auto& point : *region) {
           // Interpolate midpoint value in f3d
-          const BoutReal val = point.interpolate_boundary_o2(f3d);
+          const BoutReal val = interpolate_boundary_o2(point, f3d);
           // Set the same boundary value in this field
-          point.dirichlet_o1(*this, val);
+          dirichlet_o1(point, *this, val);
         }
       }
     }
@@ -526,9 +527,10 @@ void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices,
   // Loop over boundary regions
   for (const auto& newreg : fieldmesh->getBoundaries()) {
     if (newreg->isX) {
-      bout::boundary::iter_boundary(newreg, [&](auto& point) {
-        const BoutReal val = point.interpolate_boundary_o2(f3d);
-        point.dirichlet_o2(*this, val);
+      using namespace bout::boundary;
+      iter_boundary(newreg, [&](YBoundaryPoint auto& point) {
+        const BoutReal val = interpolate_boundary_o2(point, f3d);
+        dirichlet_o2(point, *this, val);
       });
       if (forceLegacy) {
         // get the old, potentially wrong behaviour
