@@ -154,8 +154,6 @@ public:
   /// get g_22 at the cell faces;
   const FieldMetric& g_22_ylow() const;
   const FieldMetric& g_22_yhigh() const;
-  FieldMetric& g_22_ylow();
-  FieldMetric& g_22_yhigh();
   // Cell Areas
   const FieldMetric& cell_area_xlow() const {
     if (_cell_area_xlow.has_value()) {
