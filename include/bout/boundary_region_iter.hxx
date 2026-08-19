@@ -35,6 +35,11 @@ template <class F>
 concept function_accessor =
     std::regular_invocable<F, int, Ind3D>
     and std::is_same_v<std::invoke_result_t<F, int, Ind3D>, BoutReal>;
+
+/// Common base class for boundary region iterators
+///
+/// This uses CRTP: boundary region iterators should inherit from this,
+/// templated on themselves, and they must implement all methods that call `impl().`
 template <typename Impl>
 class BoundaryRegionIterBase {
   BoundaryRegionIterBase() = default;
@@ -60,11 +65,17 @@ public:
    *         FIELD3D ACCESSORS
    */
 
-  /// get the value at a given offset `off` of a field `f`.
-  /// off = -1 is the second point in the boundary
-  /// off = 0 is the first point in the boundary
-  /// off = 1 is the last point in the domain
-  /// off = 2 is the second to last point in the domain
+  /// Get the value at a given \p offset of a field \p f.
+  ///
+  /// `offset = -1` is the second point in the boundary
+  /// `offset = 0` is the first point in the boundary
+  /// `offset = 1` is the last point in the domain
+  /// `offset = 2` is the second to last point in the domain
+  ///
+  /// |---|---|---|--> interior points
+  /// -1  0 ^ 1   2
+  ///       |
+  ///    boundary
   template <bool check = true>
   BoutReal& getAt(Field3D& f, int offset) const {
     return impl().template _getAt<check>(f, offset);
@@ -92,11 +103,17 @@ public:
    *         FIELD2D ACCESSORS
    */
 
-  /// get the value at a given offset `off` of a field `f`.
-  /// off = -1 is the second point in the boundary
-  /// off = 0 is the first point in the boundary
-  /// off = 1 is the last point in the domain
-  /// off = 2 is the second to last point in the domain
+  /// Get the value at a given \p offset of a field \p f.
+  ///
+  /// `offset = -1` is the second point in the boundary
+  /// `offset = 0` is the first point in the boundary
+  /// `offset = 1` is the last point in the domain
+  /// `offset = 2` is the second to last point in the domain
+  ///
+  /// |---|---|---|--> interior points
+  /// -1  0 ^ 1   2
+  ///       |
+  ///    boundary
   template <bool check = true>
   BoutReal& getAt(Field2D& f, int offset) const {
     return impl().template _getAt<check>(f, offset);
@@ -122,11 +139,12 @@ public:
    *         FUNCTIONS ACCESSORS
    */
 
-  /// get the value at a given offset `off` of a field `f`.
-  /// off = -1 is the second point in the boundary
-  /// off = 0 is the first point in the boundary
-  /// off = 1 is the last point in the domain
-  /// off = 2 is the second to last point in the domain
+  /// Apply the function \p func at a given \p offset
+  ///
+  /// |---|---|---|--> interior points
+  /// -1  0 ^ 1   2
+  ///       |
+  ///    boundary
   template <bool check = true>
   BoutReal getAt(const function_accessor auto& func, int offset) const {
     return impl().template _getAt<check>(func, offset);
@@ -383,6 +401,11 @@ inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc, BoundaryFreeExtrapolati
 }
 } // namespace
 
+/// An FCI-aware boundary region
+///
+/// Uses `BoundaryRegionIterFCI` as its iterator.
+///
+/// This can't use the legacy iteration methods (`first()`, `next()`, and so on)
 class BoundaryRegionFCI : public BoundaryRegionBase {
 public:
   BoundaryRegionFCI(const std::string& name, const BndryLoc& loc, int dir, Mesh* mesh)
@@ -436,6 +459,7 @@ private:
   }
 };
 
+/// Iterator over a `BoundaryRegionFCI`
 class BoundaryRegionIterFCI : public BoundaryRegionIterBase<BoundaryRegionIterFCI> {
 private:
   // TODO(dave) make non-const?
@@ -527,6 +551,11 @@ public:
   BoundaryRegionIterFCI& operator*() { return *this; }
 };
 
+/// Boundary region for field-aligned grids
+///
+/// FCI grids should use `BoundaryRegionFCI`
+///
+/// Uses `BoundaryRegionIterXY` as its iterator
 template <bool isXtemp>
 class BoundaryRegionXY : public BoundaryRegionBase {
 public:
@@ -557,6 +586,7 @@ private:
   signed char valid;
 };
 
+/// Iterator over a `BoundaryRegionXY`
 template <bool isX>
 class BoundaryRegionIterXY : public BoundaryRegionIterBase<BoundaryRegionIterXY<isX>> {
 private:
@@ -664,9 +694,14 @@ public:
   // No-op for compatibility
   BoundaryRegionIterXY& operator*() { return *this; }
 };
+
+/// Alias for boundary regions over X specifically
 using BoundaryRegionX = BoundaryRegionXY<true>;
+/// Alias for boundary regions over Y specifically
 using BoundaryRegionY = BoundaryRegionXY<false>;
+/// Alias for boundary region iterators over X specifically
 using BoundaryRegionIterX = BoundaryRegionIterXY<true>;
+/// Alias for boundary region iterators over Y specifically
 using BoundaryRegionIterY = BoundaryRegionIterXY<false>;
 
 inline std::shared_ptr<BoundaryRegionX>
