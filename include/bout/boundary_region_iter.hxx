@@ -2,27 +2,39 @@
 
 #include <algorithm>
 #include <cmath>
+#include <concepts>
 #include <cstddef>
-#include <functional>
 #include <memory>
 #include <string>
 #include <type_traits>
 #include <vector>
 
-#include "bout/assert.hxx"
-#include "bout/boundary_common.hxx"
-#include "bout/bout_types.hxx"
-#include "bout/field_data.hxx"
-#include "bout/utils.hxx"
+#include <bout/assert.hxx>
+#include <bout/boundary_common.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
+#include <bout/field_data.hxx>
 #include <bout/parallel_boundary_region.hxx>
 #include <bout/region.hxx>
 #include <bout/sys/parallel_stencils.hxx>
+#include <bout/utils.hxx>
 
 namespace bout {
 namespace boundary {
 
+/// Helper concept for `BoundaryRegionIterBase::getAt` function accessor overloads
+///
+/// This is a callable that takes two arguments:
+/// - `int yoffset`, the parallel slice offset
+/// - `Ind3D ind`, the index of the boundary point
+///
+/// and returns a `BoutReal`
+template <class F>
+concept function_accessor =
+    std::regular_invocable<F, int, Ind3D>
+    and std::is_same_v<std::invoke_result_t<F, int, Ind3D>, BoutReal>;
 template <typename Impl>
 class BoundaryRegionIterBase {
   BoundaryRegionIterBase() = default;
@@ -116,21 +128,20 @@ public:
   /// off = 1 is the last point in the domain
   /// off = 2 is the second to last point in the domain
   template <bool check = true>
-  BoutReal getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& func,
-                 int off) const {
-    return static_cast<const impl*>(this)->template _getAt<check>(func, off);
+  BoutReal getAt(const function_accessor auto& func, int offset) const {
+    return impl().template _getAt<check>(func, offset);
   }
   /// Get the first point in the boundary
-  BoutReal next(const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
-    return static_cast<const impl*>(this)->_getAt(func, 0);
+  BoutReal next(const function_accessor auto& func) const {
+    return impl()._getAt(func, 0);
   }
   /// Get the last point in the domain
-  BoutReal current(const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
-    return static_cast<const impl*>(this)->_getAt(func, 1);
+  BoutReal current(const function_accessor auto& func) const {
+    return impl()._getAt(func, 1);
   }
   /// Get the second to last point in the domain - this may not be valid and thus throw
-  BoutReal prev(const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
-    return static_cast<const impl*>(this)->_getAt(func, 2);
+  BoutReal prev(const function_accessor auto& func) const {
+    return impl()._getAt(func, 2);
   }
 
   /*
@@ -148,15 +159,13 @@ public:
     return current(f) * (1 + length(f.getLocation())) - prev(f) * length(f.getLocation());
   }
   /// Extrapolate a given function to the boundary
-  BoutReal
-  extrapolate_bounday_o1(const std::function<BoutReal(int yoffset, Ind3D ind)>& func,
-                         [[maybe_unused]] CELL_LOC loc = CELL_CENTRE) const {
+  BoutReal extrapolate_bounday_o1(const function_accessor auto& func,
+                                  [[maybe_unused]] CELL_LOC loc = CELL_CENTRE) const {
     return current(func);
   }
   /// Extrapolate a given function to the boundary
-  BoutReal
-  extrapolate_boundary_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& func,
-                          CELL_LOC loc = CELL_CENTRE) const {
+  BoutReal extrapolate_boundary_o2(const function_accessor auto& func,
+                                   CELL_LOC loc = CELL_CENTRE) const {
     ASSERT3(valid() >= 0);
     if (valid() < 1) {
       return extrapolate_boundary_o1(func);
@@ -169,9 +178,8 @@ public:
     return current(f) * (1 - length(f.getLocation())) + next(f) * length(f.getLocation());
   }
   /// Interpolate a field to the boundary, using the boundary values
-  BoutReal
-  interpolate_boundary_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& func,
-                          CELL_LOC loc = CELL_CENTRE) const {
+  BoutReal interpolate_boundary_o2(const function_accessor auto& func,
+                                   CELL_LOC loc = CELL_CENTRE) const {
     return current(func) * (1 - length(loc)) + next(func) * length(loc);
   }
   /// Extrapolate to the first boundary value freely
@@ -186,13 +194,11 @@ public:
   }
 
   /// Extrapolate to the first boundary value freely
-  BoutReal
-  extrapolate_next_o1(const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
+  BoutReal extrapolate_next_o1(const function_accessor auto& func) const {
     return current(func);
   }
   /// Extrapolate to the first boundary value freely
-  BoutReal
-  extrapolate_next_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& func) const {
+  BoutReal extrapolate_next_o2(const function_accessor auto& func) const {
     ASSERT3(valid() >= 0);
     if (valid() < 1) {
       return extrapolate_next_o1(func);
@@ -485,8 +491,7 @@ public:
     return f.ynext(_off)[_ind().yp(_off)];
   }
   template <bool check = true>
-  BoutReal _getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
-                  int off) const {
+  BoutReal _getAt(const function_accessor auto& f, int off) const {
     if constexpr (check) {
       ASSERT3(valid() > -off - 2);
     }
@@ -612,8 +617,7 @@ public:
     }
   }
   template <bool check = true>
-  BoutReal _getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
-                  int off) const {
+  BoutReal _getAt(const function_accessor auto& f, int off) const {
     if constexpr (check) {
       ASSERT3(_valid() > -off - 2);
     }
