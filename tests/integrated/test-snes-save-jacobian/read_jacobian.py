@@ -56,6 +56,15 @@ import PetscBinaryIO  # noqa: E402
 RawPetscSparse = tuple[tuple[int, int], tuple[np.ndarray, np.ndarray, np.ndarray]]
 
 
+def _to_native_endian(array: np.ndarray) -> np.ndarray:
+    """Return an array with native byte order for downstream Python libraries."""
+
+    result = np.asarray(array)
+    if result.dtype.byteorder in {"=", "|"}:
+        return result
+    return result.byteswap().view(result.dtype.newbyteorder("="))
+
+
 def load_metadata(path: str | Path) -> dict[str, Any]:
     """Load Jacobian variable metadata from JSON."""
 
@@ -127,7 +136,7 @@ def load_petsc_matrix(
 
     matrix = objects[0]
     if matrix_format == "dense":
-        return np.asarray(matrix)
+        return _to_native_endian(np.asarray(matrix))
     return matrix
 
 
@@ -140,7 +149,7 @@ def sparse_to_dense(matrix: RawPetscSparse) -> np.ndarray:
         start = int(indptr[row])
         end = int(indptr[row + 1])
         dense[row, np.asarray(indices[start:end], dtype=int)] = values[start:end]
-    return dense
+    return _to_native_endian(dense)
 
 
 def to_numpy_dense(matrix: np.ndarray | RawPetscSparse) -> np.ndarray:
@@ -164,6 +173,103 @@ def to_scipy_csr(matrix: np.ndarray | RawPetscSparse):
 
     (nrows, ncols), (indptr, indices, values) = matrix
     return csr_matrix((values, indices, indptr), shape=(nrows, ncols))
+
+
+def _normalise_dofs(dofs: Any) -> list[dict[str, Any]]:
+    """Return DOF records as a plain list of dicts.
+
+    This accepts either the native ``list[dict]`` returned by ``load_jacobian()``
+    or a Pandas DataFrame created by ``to_pandas()``.
+    """
+
+    if hasattr(dofs, "to_dict"):
+        return list(dofs.to_dict(orient="records"))
+    return list(dofs)
+
+
+def variable_indices(dofs: Any, variable_name: str) -> list[int]:
+    """Return matrix row/column positions corresponding to one variable."""
+
+    records = _normalise_dofs(dofs)
+    positions = [
+        position
+        for position, record in enumerate(records)
+        if record["name"] == variable_name
+    ]
+    if not positions:
+        raise KeyError(f"Variable {variable_name!r} was not found in the DOF metadata")
+    return positions
+
+
+def _slice_raw_petsc_sparse(
+    matrix: RawPetscSparse, row_indices: list[int], col_indices: list[int]
+) -> RawPetscSparse:
+    """Slice a raw PETSc CSR tuple and return the same sparse representation."""
+
+    (_, _), (indptr, indices, values) = matrix
+    col_lookup = {old_col: new_col for new_col, old_col in enumerate(col_indices)}
+    sliced_indptr = np.zeros(len(row_indices) + 1, dtype=np.asarray(indptr).dtype)
+    sliced_indices: list[int] = []
+    sliced_values: list[Any] = []
+
+    nnz = 0
+    for new_row, old_row in enumerate(row_indices):
+        start = int(indptr[old_row])
+        end = int(indptr[old_row + 1])
+        for entry_index in range(start, end):
+            old_col = int(indices[entry_index])
+            new_col = col_lookup.get(old_col)
+            if new_col is None:
+                continue
+            sliced_indices.append(new_col)
+            sliced_values.append(values[entry_index])
+            nnz += 1
+        sliced_indptr[new_row + 1] = nnz
+
+    return (
+        (len(row_indices), len(col_indices)),
+        (
+            sliced_indptr,
+            np.asarray(sliced_indices, dtype=np.asarray(indices).dtype),
+            np.asarray(sliced_values, dtype=np.asarray(values).dtype),
+        ),
+    )
+
+
+def extract_block(matrix: Any, dofs: Any, row_variable: str, col_variable: str) -> Any:
+    """Extract a variable-to-variable Jacobian block.
+
+    Parameters
+    ----------
+    matrix:
+        A dense NumPy array, raw PETSc CSR tuple, or Pandas DataFrame.
+    dofs:
+        DOF metadata as returned by ``load_jacobian()`` or the DataFrame returned
+        by ``to_pandas()``.
+    row_variable, col_variable:
+        Variable names to select from the row and column spaces respectively.
+
+    Returns
+    -------
+    A sliced object in the same representation family as the input ``matrix``.
+    """
+
+    row_indices = variable_indices(dofs, row_variable)
+    col_indices = variable_indices(dofs, col_variable)
+
+    if isinstance(matrix, np.ndarray):
+        return matrix[np.ix_(row_indices, col_indices)]
+
+    if isinstance(matrix, tuple) and len(matrix) == 2:
+        return _slice_raw_petsc_sparse(matrix, row_indices, col_indices)
+
+    if hasattr(matrix, "iloc"):
+        return matrix.iloc[row_indices, col_indices]
+
+    raise TypeError(
+        "extract_block() supports NumPy dense arrays, raw PETSc CSR tuples, "
+        "and Pandas DataFrames"
+    )
 
 
 def _make_label(name: str, x: int, y: int, z: int) -> str:
