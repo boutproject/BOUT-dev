@@ -11,6 +11,7 @@
 
 #include <bout/assert.hxx>
 #include <bout/boundary_common.hxx>
+#include <bout/boundary_region.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/field2d.hxx>
@@ -478,6 +479,8 @@ public:
   BoutReal s_z() const { return region->bndry_points[pos].intersection.s_z; };
   Mesh* localmesh() const { return region->localmesh; };
   int dir() const { return region->_dir; }
+  bool _is_lower() const { return region->_dir < 0; }
+
   template <bool check = true>
   BoutReal& _getAt(Field3D& f, int off) const {
     ASSERT3(f.hasParallelSlices());
@@ -572,7 +575,7 @@ public:
       location = dir == 1 ? BNDRY_YUP : BNDRY_YDOWN;
     }
   }
-  int dir() { return _dir; }
+  int dir() const { return _dir; }
   // legacy interface
   void first() override { throw BoutException("Legacy interface is not suppored"); }
   void next() override { throw BoutException("Legacy interface is not suppored"); }
@@ -598,6 +601,8 @@ public:
   BoundaryRegionIterXY(const BoundaryRegionXY<isX>* reg, bool isstart)
       : region(reg), pos(isstart ? 0 : reg->rgn.size()) {}
   int dir() const { return region->_dir; }
+  Ind3D ind() const { return _ind(); }
+
   template <bool check = true>
   BoutReal& _getAt(Field3D& f, int off) const {
     if constexpr (check) {
