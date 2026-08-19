@@ -1,13 +1,12 @@
-
-class BoundaryRegion;
-
 #ifndef BOUT_BNDRY_REGION_H
 #define BOUT_BNDRY_REGION_H
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <utility>
 
+class BoundaryRegion;
 class Mesh;
 namespace bout {
 namespace globals {
@@ -42,16 +41,21 @@ constexpr BndryLoc BNDRY_INVALID = BndryLoc::invalid;
 /// Physical type of y boundary
 enum class YBndryType : std::int8_t { sheath, not_sheath, all };
 
+/// Base class for boundary regions
 class BoundaryRegionBase {
 public:
   BoundaryRegionBase() = delete;
+  BoundaryRegionBase(const BoundaryRegionBase&) = delete;
+  BoundaryRegionBase(BoundaryRegionBase&&) = delete;
+  BoundaryRegionBase& operator=(const BoundaryRegionBase&) = delete;
+  BoundaryRegionBase& operator=(BoundaryRegionBase&&) = delete;
   BoundaryRegionBase(std::string name, Mesh* passmesh = nullptr)
       : localmesh(passmesh ? passmesh : bout::globals::mesh), label(std::move(name)) {}
   BoundaryRegionBase(std::string name, BndryLoc loc, Mesh* passmesh = nullptr)
       : localmesh(passmesh ? passmesh : bout::globals::mesh), label(std::move(name)),
         location(loc) {}
 
-  virtual ~BoundaryRegionBase();
+  virtual ~BoundaryRegionBase() = default;
 
   virtual BoundaryRegion* getLegacyPointer();
   Mesh* localmesh; ///< Mesh does this boundary region belongs to
@@ -70,7 +74,7 @@ public:
   virtual bool
   isDone() = 0; ///< Returns true if outside domain. Can use this with nested nextX, nextY
 
-  BoundaryRegion* legacy{nullptr};
+  std::unique_ptr<BoundaryRegion> legacy{nullptr};
 };
 
 /// Describes a region of the boundary, and a means of iterating over it

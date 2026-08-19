@@ -710,7 +710,7 @@ NewBoundaryRegionXIn(const std::string& name, int ymin, int ymax, Mesh* mesh) {
       name, -1, mesh,
       Region<Ind3D>(mesh->xstart, mesh->xstart, ymin, ymax, mesh->zstart, mesh->zend,
                     mesh->LocalNy, mesh->LocalNz, mesh->maxregionblocksize));
-  pointer->legacy = new ::BoundaryRegionXIn(name, ymin, ymax, mesh);
+  pointer->legacy = std::make_unique<::BoundaryRegionXIn>(name, ymin, ymax, mesh);
   return pointer;
 }
 
@@ -720,7 +720,7 @@ NewBoundaryRegionXOut(const std::string& name, int ymin, int ymax, Mesh* mesh) {
       name, 1, mesh,
       Region<Ind3D>(mesh->xend, mesh->xend, ymin, ymax, mesh->zstart, mesh->zend,
                     mesh->LocalNy, mesh->LocalNz, mesh->maxregionblocksize));
-  pointer->legacy = new ::BoundaryRegionXOut(name, ymin, ymax, mesh);
+  pointer->legacy = std::make_unique<::BoundaryRegionXOut>(name, ymin, ymax, mesh);
   return pointer;
 }
 
@@ -730,7 +730,7 @@ NewBoundaryRegionYUp(const std::string& name, int xmin, int xmax, Mesh* mesh) {
       name, 1, mesh,
       Region<Ind3D>(xmin, xmax, mesh->yend, mesh->yend, mesh->zstart, mesh->zend,
                     mesh->LocalNy, mesh->LocalNz, mesh->maxregionblocksize));
-  pointer->legacy = new ::BoundaryRegionYUp(name, xmin, xmax, mesh);
+  pointer->legacy = std::make_unique<::BoundaryRegionYUp>(name, xmin, xmax, mesh);
   return pointer;
 }
 
@@ -740,7 +740,7 @@ NewBoundaryRegionYDown(const std::string& name, int xmin, int xmax, Mesh* mesh) 
       name, -1, mesh,
       Region<Ind3D>(xmin, xmax, mesh->ystart, mesh->ystart, mesh->zstart, mesh->zend,
                     mesh->LocalNy, mesh->LocalNz, mesh->maxregionblocksize));
-  pointer->legacy = new ::BoundaryRegionYDown(name, xmin, xmax, mesh);
+  pointer->legacy = std::make_unique<::BoundaryRegionYDown>(name, xmin, xmax, mesh);
   return pointer;
 }
 
