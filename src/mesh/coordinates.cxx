@@ -1338,12 +1338,14 @@ void Coordinates::normaliseMetricFCI(const BoutReal rho_s0, const BoutReal Bnorm
   invalidateMetricCaches();
   // No we compute g_22_* - they must not be cleared. If they get
   // cleared, they will be recomputed, but not normalised!
-  g_22_ylow();
-  g_22_yhigh();
-  ASSERT2(_g_22_ylow.has_value());
-  (*_g_22_ylow) /= rhoSQ;
-  ASSERT2(_g_22_yhigh.has_value());
-  (*_g_22_yhigh) /= rhoSQ;
+  if (Bxy().isFci()) {
+    g_22_ylow();
+    g_22_yhigh();
+    ASSERT2(_g_22_ylow.has_value());
+    (*_g_22_ylow) /= rhoSQ;
+    ASSERT2(_g_22_yhigh.has_value());
+    (*_g_22_yhigh) /= rhoSQ;
+  }
 }
 
 void Coordinates::normaliseMetric(const BoutReal rho_s0, const BoutReal Bnorm) {
