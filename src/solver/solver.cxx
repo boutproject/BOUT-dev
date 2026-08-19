@@ -57,6 +57,7 @@
 #include <set>
 #include <string>
 #include <utility>
+#include <vector>
 
 // Implementations:
 #include "impls/adams_bashforth/adams_bashforth.hxx"
@@ -748,9 +749,12 @@ void Solver::outputVars(Options& output_options, bool save_repeat) {
            "or the previous run did not have a run_id.")
       .assignRepeat(run_restart_from, "t", save_repeat and save_repeat_run_id, "Solver");
 
-  if (save_jacobian_index_base) {
-    output_options["jacobian_index_base"].assignRepeat(jacobianIndexBase(), "t",
-                                                       save_repeat, "Solver");
+  if (initialised and save_jacobian_index_base) {
+    // The Jacobian index base offsets are not time-dependent
+    // Only need to calculate once, but can only be calculated
+    // once the solver has been initialised. This outputVars
+    // is called once at the start before Solver is initialised.
+    output_options["jacobian_index_base"].force(jacobianIndexBase(), "Solver");
   }
 
   // Add 2D and 3D evolving fields to output file

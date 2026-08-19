@@ -136,8 +136,7 @@ private:
   PetscErrorCode saveDiagnosticJacobian(JacobianExportKind kind, Vec x_solver);
   std::string getJacobianExportStem(JacobianExportKind kind);
   std::string getJacobianMatrixFilename(const std::string& stem) const;
-  PetscErrorCode exportMatrixAndMetadata(const PetscPreconditioner& preconditioner,
-                                         const std::string& stem);
+  PetscErrorCode exportMatrixAndMetadata(Mat jacobian, const std::string& stem);
 
   BoutSnesOutput output_trigger; ///< Sets when outputs are written
 
