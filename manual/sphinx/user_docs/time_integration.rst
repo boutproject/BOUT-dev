@@ -107,6 +107,9 @@ given in table :numref:`tab-solveropts`.
    +--------------------------+--------------------------------------------+-------------------------------------+
    | diagnose                 | Collect and print additional diagnostics   | cvode, imexbdf2, beuler             |
    +--------------------------+--------------------------------------------+-------------------------------------+
+   | save\_jacobian\_index\_base | Write the per-cell Jacobian base index  | beuler / snes                       |
+   |                          | field used to reconstruct saved Jacobians  |                                     |
+   +--------------------------+--------------------------------------------+-------------------------------------+
    | nvector                  | ``N_Vector`` backend for SUNDIALS solvers: | cvode, ida, arkode                  |
    |                          | ``sundials`` or ``manyvector``             |                                     |
    +--------------------------+--------------------------------------------+-------------------------------------+
@@ -775,6 +778,71 @@ Setting ``solver:force_symmetric_coloring = true``, will make sure
 that the jacobian colouring matrix is symmetric.  This will often
 include a few extra non-zeros that the stencil will miss otherwise
 
+Saving Jacobians for diagnostics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The SNES solver can save PETSc Jacobian matrices for post-processing.
+This is useful for checking sparsity structure, understanding variable
+coupling, and diagnosing whether solver scaling is helping.
+
+Enable this with:
+
+.. code-block:: ini
+
+   [solver]
+   type = snes
+   save_jacobian = true
+   save_jacobian_index_base = true
+
+By default this writes the Jacobian of the nonlinear system actually
+solved by SNES. Three Jacobian definitions are available:
+
+- ``system``: the Jacobian of the full nonlinear system solved by SNES,
+  including timestep terms and any solver-specific rearrangement.
+- ``scaled``: the Jacobian after solver-coordinate transforms such as
+  variable scaling or ``asinh`` variables.
+- ``rhs``: the Jacobian of the bare model ``rhs()`` in physical variables.
+
+For example, to save the raw RHS Jacobian instead of the system Jacobian:
+
+.. code-block:: bash
+
+   ./your_model solver:save_jacobian=true \
+                solver:save_jacobian_index_base=true \
+                solver:jacobian_export_kind=rhs
+
+To save an ASCII matrix with a custom filename prefix:
+
+.. code-block:: ini
+
+   [solver]
+   save_jacobian = true
+   save_jacobian_index_base = true
+   jacobian_export_kind = scaled
+   jacobian_export_format = ascii
+   jacobian_export_prefix = jacobian_scaled_debug
+
+The Jacobian files are written into ``datadir``:
+
+- ``<prefix>_<kind>_<counter>.dat`` or ``.txt``: PETSc matrix written by
+  ``MatView``.
+- ``<prefix>_metadata.json``: compact JSON metadata describing the ordering
+  of 2D and 3D evolved variables.
+- ``jacobian_index_base`` in the normal BOUT++ dump files: the per-cell base
+  global index needed to expand the compact JSON metadata into one row/column
+  label per degree of freedom.
+
+The JSON metadata stores per-variable information once, including name,
+location, ``evolve_bndry``, and ``constraint`` flags. Row and column labels
+for individual matrix entries are reconstructed by combining this JSON with
+``jacobian_index_base`` and the mesh shape.
+
+For now, an example Python reader is provided in
+``tests/integrated/test-snes-save-jacobian/read_jacobian.py``. It can load
+the PETSc matrix into dense NumPy form, keep it sparse, optionally create
+Pandas views, and extract variable-to-variable blocks such as ``df/dg``.
+This helper is intended to move into a Python package later, likely xBOUT.
+
 
 Variable Scaling
 ~~~~~~~~~~~~~~~~
@@ -878,11 +946,23 @@ Summary of solver options
 +---------------------------+---------------+----------------------------------------------------+
 | diagnose                  | false         | Print diagnostic information every iteration       |
 +---------------------------+---------------+----------------------------------------------------+
+| save_jacobian             | false         | Save Jacobian matrices for diagnostics             |
++---------------------------+---------------+----------------------------------------------------+
+| jacobian_export_kind      | system        | Which Jacobian to save: ``system``, ``scaled``,    |
+|                           |               | or ``rhs``                                         |
++---------------------------+---------------+----------------------------------------------------+
+| jacobian_export_prefix    | jacobian      | Prefix for Jacobian matrix files and metadata JSON |
++---------------------------+---------------+----------------------------------------------------+
+| jacobian_export_format    | binary        | Matrix file format written by PETSc ``MatView``    |
++---------------------------+---------------+----------------------------------------------------+
 | stencil:cross             | 0             | If ``matrix_free=false`` and ``use_coloring=true`` |
 | stencil:square            | 0             | Set the size and shape of the Jacobian coloring    |
 | stencil:taxi              | 2             | stencil.                                           |
 +---------------------------+---------------+----------------------------------------------------+
 | force_symmetric_coloring  | false         | Ensure that the Jacobian coloring is symmetric     |
++---------------------------+---------------+----------------------------------------------------+
+| save_jacobian_index_base  | false         | Write ``jacobian_index_base`` to the dump files    |
+|                           |               | so saved Jacobians can be reconstructed            |
 +---------------------------+---------------+----------------------------------------------------+
 
 The predictor is linear extrapolation from the last two timesteps. It seems to be

@@ -78,9 +78,16 @@ public:
   Mat jacobian() const { return Jfd; }
   MatFDColoring coloring() const { return fdcoloring; }
 
+  /// Save an arbitrary PETSc matrix to disk using ``MatView``.
+  ///
+  /// This is a low-level utility used by solver-specific diagnostic code. It only
+  /// writes the matrix itself in PETSc binary or ASCII format; companion metadata
+  /// such as variable names and index mapping must be written separately by the
+  /// calling solver.
   static PetscErrorCode
   saveMatrix(Mat matrix, const std::string& filename,
              PetscMatrixExportFormat format = PetscMatrixExportFormat::binary);
+  /// Save the internally owned coloring Jacobian matrix ``Jfd``.
   PetscErrorCode
   saveMatrix(const std::string& filename,
              PetscMatrixExportFormat format = PetscMatrixExportFormat::binary) const;

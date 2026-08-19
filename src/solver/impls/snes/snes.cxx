@@ -379,18 +379,19 @@ SNESSolver::SNESSolver(Options* opts)
                      .doc("Apply asinh() to all variables?")
                      .withDefault<bool>(false)),
       save_jacobian((*options)["save_jacobian"]
-                        .doc("Save Jacobian matrices for diagnostics?")
+                        .doc("Save PETSc Jacobian diagnostics to datadir")
                         .withDefault<bool>(false)),
       jacobian_export_kind((*options)["jacobian_export_kind"]
-                               .doc("Which Jacobian to save: system, scaled, rhs")
+                               .doc("Which Jacobian to save: system, scaled, or rhs")
                                .withDefault(JacobianExportKind::system)),
       jacobian_export_prefix(
           (*options)["jacobian_export_prefix"]
-              .doc("Prefix for saved Jacobian matrix and metadata files")
+              .doc("Prefix for saved Jacobian matrix files and shared metadata JSON")
               .withDefault("jacobian")),
-      jacobian_export_format((*options)["jacobian_export_format"]
-                                 .doc("Format for saved Jacobian matrices: binary, ascii")
-                                 .withDefault(PetscMatrixExportFormat::binary)) {}
+      jacobian_export_format(
+          (*options)["jacobian_export_format"]
+              .doc("PETSc MatView format for saved Jacobians: binary or ascii")
+              .withDefault(PetscMatrixExportFormat::binary)) {}
 
 std::string SNESSolver::getJacobianExportStem(JacobianExportKind kind) {
   // The directory the output data is stored in

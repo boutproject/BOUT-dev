@@ -111,15 +111,29 @@ public:
   PetscErrorCode scaleJacobian(Mat Jac_new);
 
   /// Convert solver coordinates into the physical variables used by the model.
+  ///
+  /// This applies any active solver-space transforms, for example variable
+  /// scaling or ``asinh`` variables, before the model RHS is evaluated.
   PetscErrorCode toPhysicalState(Vec x, Vec physical_x);
 
-  /// Call the physics model RHS function on a vector of physical variables.
+  /// Evaluate the bare model RHS in physical variables.
+  ///
+  /// This loads ``x`` into the BOUT++ evolving fields, calls ``run_rhs()``, and
+  /// stores the resulting derivatives in ``f`` without applying solver-space
+  /// transforms.
   PetscErrorCode raw_rhs_function(Vec x, Vec f, bool linear);
 
-  /// Apply solver-coordinate transforms, call the raw RHS, and transform the
-  /// resulting derivatives back into solver coordinates.
+  /// Evaluate the RHS in solver coordinates.
+  ///
+  /// This maps ``x`` into physical variables, calls ``raw_rhs_function()``, then
+  /// transforms the derivatives back into the coordinate system used internally by
+  /// SNES.
   PetscErrorCode scaled_rhs_function(Vec x, Vec f, bool linear);
 
+  /// Save a diagnostic Jacobian if enabled by ``solver:save_jacobian``.
+  ///
+  /// ``system`` exports the Jacobian used directly by SNES. ``scaled`` and ``rhs``
+  /// build throwaway coloring Jacobians for diagnostics only.
   PetscErrorCode maybeExportJacobian(Mat system_jacobian, Vec x_solver);
 
   /// Save diagnostics to output
@@ -133,9 +147,13 @@ private:
   /// Rescale state (snes_x) so that all quantities are around 1. If
   /// quantities are near zero then RTOL is used.
   PetscErrorCode rescale();
+  /// Build and save a diagnostic Jacobian of the requested kind.
   PetscErrorCode saveDiagnosticJacobian(JacobianExportKind kind, Vec x_solver);
+  /// Construct the basename used for Jacobian outputs in ``datadir``.
   std::string getJacobianExportStem(JacobianExportKind kind);
+  /// Return the matrix filename including the extension for the selected format.
   std::string getJacobianMatrixFilename(const std::string& stem) const;
+  /// Write the matrix and shared JSON metadata for one diagnostic Jacobian.
   PetscErrorCode exportMatrixAndMetadata(Mat jacobian, const std::string& stem);
 
   BoutSnesOutput output_trigger; ///< Sets when outputs are written
@@ -287,12 +305,16 @@ private:
   bool asinh_vars; ///< Evolve asinh(vars) to compress magnitudes while preserving signs
   const BoutReal asinh_scale = 1e-5; // Scale below which asinh response becomes ~linear
 
-  bool save_jacobian;                      ///< Save Jacobian matrices for diagnostics
-  JacobianExportKind jacobian_export_kind; ///< Which Jacobian to save
-  std::string jacobian_export_prefix; ///< Prefix for Jacobian matrix/metadata outputs
-  PetscMatrixExportFormat jacobian_export_format; ///< Output format for matrix save
-  int jacobian_export_counter{0};                 ///< Running counter for saved Jacobians
-  bool jacobian_metadata_written{false}; ///< Has the shared JSON metadata been written?
+  bool save_jacobian; ///< Save Jacobian diagnostics to ``datadir``?
+  JacobianExportKind
+      jacobian_export_kind; ///< Export ``system``, ``scaled``, or ``rhs`` Jacobian
+  std::string jacobian_export_prefix; ///< Prefix for matrix files and ``*_metadata.json``
+  PetscMatrixExportFormat
+      jacobian_export_format; ///< PETSc ``MatView`` format: binary or ascii
+  int jacobian_export_counter{
+      0}; ///< Running counter appended to successive Jacobian saves
+  bool jacobian_metadata_written{
+      false}; ///< Has the shared metadata JSON already been written?
 
   std::vector<Field2D>
       resid_2d; ///< Storage for residuals of SNES solve, unpacked from snes_f

@@ -136,7 +136,8 @@ Solver::Solver(Options* opts)
                              .withDefault(false)),
       save_jacobian_index_base(
           (*options)["save_jacobian_index_base"]
-              .doc("Write the base global index field used for Jacobian diagnostics")
+              .doc("Write jacobian_index_base so saved PETSc Jacobians can be mapped "
+                   "back to variables and cell indices in post-processing")
               .withDefault(false)),
       is_nonsplit_model_diffusive(
           (*options)["is_nonsplit_model_diffusive"]
