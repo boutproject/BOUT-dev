@@ -23,24 +23,26 @@
 namespace bout {
 namespace boundary {
 
-template <typename impl>
+template <typename Impl>
 class BoundaryRegionIterBase {
   BoundaryRegionIterBase() = default;
-  /// get the index at the last point in domain
+
+  /// Get a reference to the derived/implementation class
+  const Impl& impl() const { return *static_cast<const Impl*>(this); }
+
 public:
-  Ind3D ind() const { return static_cast<const impl*>(this)->_ind(); }
+  /// Get the index at the last point in domain
+  Ind3D ind() const { return impl()._ind(); }
   /// get the length from the point in the domain to the boundary in index
   /// space. It is in the range [0, 1]
-  BoutReal length(CELL_LOC loc) const {
-    return static_cast<const impl*>(this)->_length(loc);
-  }
+  BoutReal length(CELL_LOC loc) const { return impl()._length(loc); }
   /// Lower bound of how many points are between the first point in the domain
   /// and the boundary in the other direction.
-  signed char valid() const { return static_cast<const impl*>(this)->_valid(); }
+  signed char valid() const { return impl()._valid(); }
   /// Get the width of the boundary at the current point
-  int boundary_width() const { return static_cast<const impl*>(this)->_boundary_width(); }
+  int boundary_width() const { return impl()._boundary_width(); }
   /// Is this the lower boundary?
-  bool is_lower() const { return static_cast<const impl*>(this)->_is_lower(); }
+  bool is_lower() const { return impl()._is_lower(); }
 
   /*
    *         FIELD3D ACCESSORS
@@ -52,38 +54,28 @@ public:
   /// off = 1 is the last point in the domain
   /// off = 2 is the second to last point in the domain
   template <bool check = true>
-  BoutReal& getAt(Field3D& f, int off) const {
-    return static_cast<const impl*>(this)->template _getAt<check>(f, off);
+  BoutReal& getAt(Field3D& f, int offset) const {
+    return impl().template _getAt<check>(f, offset);
   }
   /// get the value at a given offset `off` of a field `f`.
   template <bool check = true>
-  BoutReal& getAt(const Field3D& f, int off) const {
-    return static_cast<const impl*>(this)->template _getAt<check>(f, off);
+  BoutReal getAt(const Field3D& f, int offset) const {
+    return impl().template _getAt<check>(f, offset);
   }
 
   /// Get the first point in the boundary
-  const BoutReal& next(const Field3D& f) const {
-    return static_cast<const impl*>(this)->_getAt(f, 0);
-  }
+  const BoutReal& next(const Field3D& f) const { return impl()._getAt(f, 0); }
   /// Get the first point in the boundary
-  BoutReal& next(Field3D& f) const {
-    return static_cast<const impl*>(this)->_getAt(f, 0);
-  }
+  BoutReal& next(Field3D& f) const { return impl()._getAt(f, 0); }
   /// Get the last point in the domain
-  const BoutReal& current(const Field3D& f) const {
-    return static_cast<const impl*>(this)->_getAt(f, 1);
-  }
+  const BoutReal& current(const Field3D& f) const { return impl()._getAt(f, 1); }
   /// Get the last point in the domain
-  BoutReal& current(Field3D& f) const {
-    return static_cast<const impl*>(this)->_getAt(f, 1);
-  }
+  BoutReal& current(Field3D& f) const { return impl()._getAt(f, 1); }
   /// Get the second to last point in the domain - this may not be valid and thus throw
-  const BoutReal& prev(const Field3D& f) const {
-    return static_cast<const impl*>(this)->_getAt(f, 2);
-  }
+  const BoutReal& prev(const Field3D& f) const { return impl()._getAt(f, 2); }
   /// Get the offset from the last point in the domain
   /// For FA this is always ±1, for FCI this can be up to ±MYG, excluding 0
-  int offset() const { return static_cast<const impl*>(this)->_offset(); }
+  int offset() const { return impl()._offset(); }
   /*
    *         FIELD2D ACCESSORS
    */
@@ -94,35 +86,25 @@ public:
   /// off = 1 is the last point in the domain
   /// off = 2 is the second to last point in the domain
   template <bool check = true>
-  BoutReal& getAt(Field2D& f, int off) const {
-    return static_cast<const impl*>(this)->template _getAt<check>(f, off);
+  BoutReal& getAt(Field2D& f, int offset) const {
+    return impl().template _getAt<check>(f, offset);
   }
   /// get the value at a given offset `off` of a field `f`.
   template <bool check = true>
-  BoutReal& getAt(const Field2D& f, int off) const {
-    return static_cast<const impl*>(this)->template _getAt<check>(f, off);
+  BoutReal getAt(const Field2D& f, int offset) const {
+    return impl().template _getAt<check>(f, offset);
   }
 
   /// Get the first point in the boundary
-  const BoutReal& next(const Field2D& f) const {
-    return static_cast<const impl*>(this)->_getAt(f, 0);
-  }
+  const BoutReal& next(const Field2D& f) const { return impl()._getAt(f, 0); }
   /// Get the first point in the boundary
-  BoutReal& next(Field2D& f) const {
-    return static_cast<const impl*>(this)->_getAt(f, 0);
-  }
+  BoutReal& next(Field2D& f) const { return impl()._getAt(f, 0); }
   /// Get the last point in the domain
-  const BoutReal& current(const Field2D& f) const {
-    return static_cast<const impl*>(this)->_getAt(f, 1);
-  }
+  const BoutReal& current(const Field2D& f) const { return impl()._getAt(f, 1); }
   /// Get the last point in the domain
-  BoutReal& current(Field2D& f) const {
-    return static_cast<const impl*>(this)->_getAt(f, 1);
-  }
+  BoutReal& current(Field2D& f) const { return impl()._getAt(f, 1); }
   /// Get the second to last point in the domain - this may not be valid and thus throw
-  const BoutReal& prev(const Field2D& f) const {
-    return static_cast<const impl*>(this)->_getAt(f, 2);
-  }
+  const BoutReal& prev(const Field2D& f) const { return impl()._getAt(f, 2); }
 
   /*
    *         FUNCTIONS ACCESSORS
@@ -353,7 +335,7 @@ public:
 
 private:
   BoutReal small_value = 1e-4;
-  friend impl;
+  friend Impl;
 };
 
 namespace {
