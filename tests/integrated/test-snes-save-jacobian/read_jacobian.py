@@ -23,15 +23,31 @@ import numpy as np
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_ROOT = SCRIPT_DIR.parents[2]
+
+
+def _discover_repo_root() -> Path | None:
+    """Find the source-tree root from either the source or copied build script."""
+
+    for candidate in (SCRIPT_DIR, *SCRIPT_DIR.parents):
+        if (candidate / "tools" / "pylib").exists():
+            return candidate
+        if (
+            candidate.name == "build"
+            and (candidate.parent / "tools" / "pylib").exists()
+        ):
+            return candidate.parent
+    return None
+
+
+REPO_ROOT = _discover_repo_root()
 
 # Allow this script to run directly from the test directory or build directory.
 for extra_path in (
     SCRIPT_DIR,
-    REPO_ROOT / "tools" / "pylib",
-    REPO_ROOT / "build" / "tools" / "pylib",
+    None if REPO_ROOT is None else REPO_ROOT / "tools" / "pylib",
+    None if REPO_ROOT is None else REPO_ROOT / "build" / "tools" / "pylib",
 ):
-    if extra_path.exists():
+    if extra_path is not None and extra_path.exists():
         sys.path.insert(0, str(extra_path))
 
 import PetscBinaryIO  # noqa: E402
