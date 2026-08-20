@@ -1,3 +1,8 @@
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/sys/expressionparser.hxx"
 #include <bout/boundary_standard.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/build_defines.hxx>
@@ -10,6 +15,8 @@
 #include <bout/output.hxx>
 #include <bout/sys/generator_context.hxx>
 #include <bout/utils.hxx>
+#include <list>
+#include <memory>
 
 using bout::generator::Context;
 
