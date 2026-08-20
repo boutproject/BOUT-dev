@@ -171,8 +171,8 @@ void BoundaryDirichlet_O1::apply(Field2D& f, BoutReal t) {
     // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
     // This is not very efficient. Both boundary cells can be treated in one loop.
     for (int i = 1; i < bndry->width; i++) {
-      int xi = bndry->x + i * bndry->bx;
-      int yi = bndry->y + i * bndry->by;
+      const int xi = bndry->x + (i * bndry->bx);
+      const int yi = bndry->y + (i * bndry->by);
       f(xi, yi) = val;
     }
   }
@@ -214,8 +214,8 @@ void BoundaryDirichlet_O1::apply(Field3D& f, BoutReal t) {
     // This is not very efficient. Both boundary cells can be treated in one loop.
     for (int i = 1; i < bndry->width; i++) {
       // Set any other guard cells using the values on the cells
-      int xi = bndry->x + i * bndry->bx;
-      int yi = bndry->y + i * bndry->by;
+      const int xi = bndry->x + (i * bndry->bx);
+      const int yi = bndry->y + (i * bndry->by);
       for (int zk = mesh->zstart; zk <= mesh->zend; zk++) {
         if (fg) {
           val = fg->generate(Context(bndry, zk, loc, t, mesh));
@@ -1885,17 +1885,18 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     } // Non-staggered, standard case
 
     for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
-      BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y)
-                       + bndry->by * metric->dy(bndry->x, bndry->y);
+      const BoutReal delta = (bndry->bx * metric->dx(bndry->x, bndry->y))
+                             + (bndry->by * metric->dy(bndry->x, bndry->y));
 
       if (fg) {
         val = fg->generate(Context(bndry, loc, t, mesh));
       }
 
-      f(bndry->x, bndry->y) = f(bndry->x - bndry->bx, bndry->y - bndry->by) + delta * val;
+      f(bndry->x, bndry->y) =
+          f(bndry->x - bndry->bx, bndry->y - bndry->by) + (delta * val);
       if (bndry->width == 2) {
         f(bndry->x + bndry->bx, bndry->y + bndry->by) =
-            f(bndry->x, bndry->y) + delta * val;
+            f(bndry->x, bndry->y) + (delta * val);
       }
     }
 
@@ -1935,18 +1936,18 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
         BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, zk)
                          + bndry->by * metric->dy(bndry->x, bndry->y, zk);
 #else
-    BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y)
-                     + bndry->by * metric->dy(bndry->x, bndry->y);
+    const BoutReal delta = (bndry->bx * metric->dx(bndry->x, bndry->y))
+                           + (bndry->by * metric->dy(bndry->x, bndry->y));
     for (int zk = mesh->zstart; zk <= mesh->zend; zk++) {
 #endif
         if (fg) {
           val = fg->generate(Context(bndry, zk, loc, t, mesh));
         }
         f(bndry->x, bndry->y, zk) =
-            f(bndry->x - bndry->bx, bndry->y - bndry->by, zk) + delta * val;
+            f(bndry->x - bndry->bx, bndry->y - bndry->by, zk) + (delta * val);
         if (bndry->width == 2) {
           f(bndry->x + bndry->bx, bndry->y + bndry->by, zk) =
-              f(bndry->x, bndry->y, zk) + delta * val;
+              f(bndry->x, bndry->y, zk) + (delta * val);
         }
       }
     }
