@@ -40,10 +40,9 @@
 /// @param[in] le0    Uses this value if test <= 0.0
 
 // Overload 1: Three fields
-template <typename T, typename U, typename V,
+template <IsField T, IsField U, IsField V,
           typename ResultType = std::common_type_t<T, U, V>>
-requires IsField<T>&& IsField<U>&& IsField<V> auto where(const T& test, const U& gt0,
-                                                         const V& le0) -> ResultType {
+auto where(const T& test, const U& gt0, const V& le0) -> ResultType {
   ASSERT1_FIELDS_COMPATIBLE(test, gt0);
   ASSERT1_FIELDS_COMPATIBLE(test, le0);
 
@@ -56,9 +55,8 @@ requires IsField<T>&& IsField<U>&& IsField<V> auto where(const T& test, const U&
 }
 
 // Overload 2: Two fields, one BoutReal (le0)
-template <typename T, typename U, typename ResultType = std::common_type_t<T, U>>
-requires IsField<T>&& IsField<U> auto where(const T& test, const U& gt0, BoutReal le0)
-    -> ResultType {
+template <IsField T, IsField U, typename ResultType = std::common_type_t<T, U>>
+auto where(const T& test, const U& gt0, BoutReal le0) -> ResultType {
   ASSERT1_FIELDS_COMPATIBLE(test, gt0);
 
   ResultType result{emptyFrom(test)};
@@ -70,9 +68,8 @@ requires IsField<T>&& IsField<U> auto where(const T& test, const U& gt0, BoutRea
 }
 
 // Overload 3: Two fields, one BoutReal (gt0)
-template <typename T, typename V, typename ResultType = std::common_type_t<T, V>>
-requires IsField<T>&& IsField<V> auto where(const T& test, BoutReal gt0, const V& le0)
-    -> ResultType {
+template <IsField T, IsField V, typename ResultType = std::common_type_t<T, V>>
+auto where(const T& test, BoutReal gt0, const V& le0) -> ResultType {
   ASSERT1_FIELDS_COMPATIBLE(test, le0);
 
   ResultType result{emptyFrom(test)};
@@ -84,8 +81,8 @@ requires IsField<T>&& IsField<V> auto where(const T& test, BoutReal gt0, const V
 }
 
 // Overload 4: One field, two BoutReals
-template <typename T, typename ResultType = T>
-requires IsField<T> auto where(const T& test, BoutReal gt0, BoutReal le0) -> ResultType {
+template <IsField T, typename ResultType = T>
+auto where(const T& test, BoutReal gt0, BoutReal le0) -> ResultType {
   ResultType result{emptyFrom(test)};
 
   BOUT_FOR(i, result.getRegion("RGN_ALL")) { // clang-format: ignore
