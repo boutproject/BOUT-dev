@@ -30,6 +30,7 @@ public:
 
   bool IsInside(const Ind3D& ind) const;
   bool IsGhost(const Ind3D& ind) const;
+  bool IsUsableGhost(const Ind3D& ind) const;
   bool IsCutCell(const Ind3D& ind) const;
   float xFaceFrac(const Ind3D& ind) const;
   float zFaceFrac(const Ind3D& ind) const;

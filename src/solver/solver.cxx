@@ -994,6 +994,10 @@ int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
  * Useful routines (protected)
  **************************************************************************/
 
+bool validCell3D(const Ind3D& ind) {
+  return !immBndry || immBndry->IsInside(ind);
+}
+
 int Solver::getLocalN() {
 
   // Cache the value, so this is not repeatedly called.
@@ -1013,9 +1017,22 @@ int Solver::getLocalN() {
         field.evolve_bndry ? size(field.var->getRegion("RGN_BNDRY")) : 0;
     return value + boundary_size + size(field.var->getRegion("RGN_NOBNDRY"));
   };
+  //Immersed boundary only affects 3D fields so separate sums. Equivalent to above if !immBndry.
+  auto local_N_3D_sum = [](int value, const auto& field) -> int {
+    int count = 0;
+    if (field.evolve_bndry) {
+      BOUT_FOR_SERIAL(i, field.var->getRegion("RGN_BNDRY")) {
+        if (validCell3D(i)) {++count;}
+      }
+    }
+    BOUT_FOR_SERIAL(i, field.var->getRegion("RGN_NOBNDRY")) {
+      if (validCell3D(i)) {++count;}
+    }
+    return value + count;
+  };
 
   const auto local_N_2D = std::accumulate(begin(f2d), end(f2d), 0, local_N_sum);
-  const auto local_N_3D = std::accumulate(begin(f3d), end(f3d), 0, local_N_sum);
+  const auto local_N_3D = std::accumulate(begin(f3d), end(f3d), 0, local_N_3D_sum);
   const auto local_N = local_N_2D + local_N_3D;
 
   cacheLocalN = local_N;
@@ -1068,8 +1085,11 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
         }
 
         const auto ind = f.var->getMesh()->ind2Dto3D(i2d, jz);
-        //IB_TODO: Only annoyance is cant check imm_bdry to ignore validity check. Move IB to mesh instead of H3.
-        (*f.var)[ind] = (!immBndry || immBndry->IsInside(ind)) ? udata[p] : 0;
+        if (!validCell3D(ind)) {
+          (*f.var)[ind] = 0.0;
+          continue;
+        }
+        (*f.var)[ind] = udata[p];
         p++;
       }
     }
@@ -1096,7 +1116,11 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
           continue;
         }
         const auto ind = f.F_var->getMesh()->ind2Dto3D(i2d, jz);
-        (*f.F_var)[ind] = (!immBndry || immBndry->IsInside(ind)) ? udata[p] : 0;
+        if (!validCell3D(ind)) {
+          (*f.F_var)[ind] = 0.0;
+          continue;
+        }
+        (*f.F_var)[ind] = udata[p];
         p++;
       }
     }
@@ -1124,6 +1148,10 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
       // Loop over 3D variables
       for (const auto& f : f3d) {
         if (bndry && !f.evolve_bndry) {
+          continue;
+        }
+        const auto ind = f.var->getMesh()->ind2Dto3D(i2d, jz);
+        if (!validCell3D(ind)) {
           continue;
         }
         if (f.constraint) {
@@ -1158,7 +1186,10 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
         }
 
         const auto ind = f.var->getMesh()->ind2Dto3D(i2d, jz);
-        udata[p] = (!immBndry || immBndry->IsInside(ind)) ? (*f.var)[ind] : 0;
+        if (!validCell3D(ind)) {
+          continue;
+        }
+        udata[p] = (*f.var)[ind];
         p++;
       }
     }
@@ -1185,7 +1216,10 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
         }
 
         const auto ind = f.F_var->getMesh()->ind2Dto3D(i2d, jz);
-        udata[p] = (!immBndry || immBndry->IsInside(ind)) ? (*f.F_var)[ind] : 0;
+        if (!validCell3D(ind)) {
+          continue;
+        }
+        udata[p] = (*f.F_var)[ind];
         p++;
       }
     }
@@ -1210,6 +1244,9 @@ void Solver::loop_vars(BoutReal* udata, SOLVER_VAR_OP op) {
   for (const auto& i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
     loop_vars_op(i2d, udata, p, op, false);
   }
+
+  // Should have included all evolving variables
+  ASSERT1(p == getLocalN());
 }
 
 void Solver::load_vars(BoutReal* udata) {
@@ -1352,26 +1389,42 @@ Field3D Solver::globalIndex(int localStart) {
     // Some boundary points evolving
 
     for (const auto& i2d : mesh->getRegion2D("RGN_BNDRY")) {
-      // Zero index contains 2D and 3D variables
-      index[mesh->ind2Dto3D(i2d, 0)] = ind;
-      ind += n2dbndry + n3dbndry;
+      // Zero index contains 2D and, for plasma cells, 3D variables
+      // No 3D vars included if cell not evolved (not plasma cell per IB).
+      const auto ind3d = mesh->ind2Dto3D(i2d, 0);
+      const int ncells = n2dbndry + (validCell3D(ind3d) ? n3dbndry : 0);
+      if (ncells > 0) {
+        index[ind3d] = ind;
+      }
+      ind += ncells;
 
       for (int jz = 1; jz < nz; jz++) {
-        index[mesh->ind2Dto3D(i2d, jz)] = ind;
-        ind += n3dbndry;
+        const auto ind3d = mesh->ind2Dto3D(i2d, jz);
+        if (validCell3D(ind3d) && n3dbndry > 0) {
+          index[ind3d] = ind;
+          ind += n3dbndry;
+        }
       }
     }
   }
 
   // Bulk of points
   for (const auto& i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
-    // Zero index contains 2D and 3D variables
-    index[mesh->ind2Dto3D(i2d, 0)] = ind;
-    ind += n2d + n3d;
+    // Zero index contains 2D and, for plasma cells, 3D variables
+    // No 3D vars included if cell not evolved (not plasma cell per IB).
+    const auto ind3d = mesh->ind2Dto3D(i2d, 0);
+    const int ncells = n2d + (validCell3D(ind3d) ? n3d : 0);
+    if (ncells > 0) {
+      index[ind3d] = ind;
+    }
+    ind += ncells;
 
     for (int jz = 1; jz < nz; jz++) {
-      index[mesh->ind2Dto3D(i2d, jz)] = ind;
-      ind += n3d;
+      const auto ind3d = mesh->ind2Dto3D(i2d, jz);
+      if (validCell3D(ind3d) && n3d > 0) {
+        index[ind3d] = ind;
+        ind += n3d;
+      }
     }
   }
 

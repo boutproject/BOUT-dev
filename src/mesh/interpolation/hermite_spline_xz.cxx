@@ -390,17 +390,20 @@ Field3D XZHermiteSplineBase<monotonic>::interpolate(const Field3D& f,
 #if USE_NEW_WEIGHTS and defined(HS_USE_PETSC)
   BoutReal* ptr;
   const BoutReal* cptr;
+  const auto valid_ib_value = [](const Ind3D& ind) {
+    return !immBndry || immBndry->IsInside(ind) || immBndry->IsUsableGhost(ind);
+  };
   VecGetArray(rhs, &ptr);
   BOUT_FOR(i, f.getRegion("RGN_NOY")) {
     //IB_TODO: Do this by region so checks not necessary?
-    ptr[int(i)] = (!immBndry || immBndry->IsInside(i)) ? f[i] : 0;
+    ptr[int(i)] = valid_ib_value(i) ? f[i] : 0;
   }
   VecRestoreArray(rhs, &ptr);
   MatMult(petscWeights, rhs, result);
   VecGetArrayRead(result, &cptr);
   BOUT_FOR(i, f.getRegion(region2)) {
     //IB_TODO: Do this by region so checks not necessary?
-    f_interp[i] = (!immBndry || immBndry->IsInside(i)) ? cptr[int(i)] : 0;
+    f_interp[i] = valid_ib_value(i) ? cptr[int(i)] : 0;
     if constexpr (monotonic) {
       const auto iyp = i;
       const auto i = iyp.ym(y_offset);

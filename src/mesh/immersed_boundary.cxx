@@ -129,6 +129,17 @@ bool ImmersedBoundary::IsGhost(const Ind3D& ind) const {
   return get_as<int>(ghost_ids[ind]) >= 0;
 }
 
+bool ImmersedBoundary::IsUsableGhost(const Ind3D& ind) const {
+  if (!IsGhost(ind)) {
+    return false;
+  }
+
+  //IB_TODO: Need to check for now because might be a bad ghost (at extremes)
+  //which was ignored in loops above for setting regions.
+  //Though MPI GS loop should fix that if all data shared.
+  return !IsBadInterpForMPI(GetGridInd(image_inds(gid, 0)));
+}
+
 bool ImmersedBoundary::IsInside(const Ind3D& ind) const {
   return get_as<bool>(bndry_mask[ind]);
 }
@@ -367,6 +378,15 @@ void ImmersedBoundary::SetBoundary(Field3D& f) {
         const auto ghost_val = GetGhostValue(image_val, gid, bc_val, bc_type);
         f[i] = ghost_val;
       }
+    }
+  }
+
+  //IB_TODO: Update to only guard cells when no longer axisymmetric and ny != 1.
+  BOUT_FOR(i, f.getRegion("RGN_IMM_BNDRY_GST")) {
+    //Loop in case MYG > 1.
+    for (int yoffset = 1; yoffset <= f.getMesh()->ystart; ++yoffset) {
+      f[i.yp(yoffset)] = f[i];
+      f[i.ym(yoffset)] = f[i];
     }
   }
 }

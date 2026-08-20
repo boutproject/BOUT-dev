@@ -489,6 +489,10 @@ protected:
   void save_derivs(BoutReal* dudata);
   void set_id(BoutReal* udata);
 
+  /// Useful function for IB method to evolve only plasma cells.
+  /// Currently only 3D and requires immBndry setup first.
+  bool validCell3D(const Ind3D& ind);
+
   /// Returns a Field3D containing the global indices
   Field3D globalIndex(int localStart);
 
