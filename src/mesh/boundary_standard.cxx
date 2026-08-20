@@ -155,27 +155,25 @@ void BoundaryDirichlet_O1::apply(Field2D& f, BoutReal t) {
 
   // Check for staggered grids
 
-  CELL_LOC loc = f.getLocation();
+  CELL_LOC const loc = f.getLocation();
   if (mesh->StaggerGrids) {
     // Staggered
     throw BoutException("dirichlet_o1 BC is not implementated for staggered grids.");
 
-  } else {
-    // Non-staggered, standard case
-    for (; !bndry->isDone(); bndry->next1d()) {
+  } // Non-staggered, standard case
+  for (; !bndry->isDone(); bndry->next1d()) {
 
-      if (fg) {
-        val = fg->generate(Context(bndry, loc, t, mesh));
-      }
-      f(bndry->x, bndry->y) = val;
+    if (fg) {
+      val = fg->generate(Context(bndry, loc, t, mesh));
+    }
+    f(bndry->x, bndry->y) = val;
 
-      // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
-      // This is not very efficient. Both boundary cells can be treated in one loop.
-      for (int i = 1; i < bndry->width; i++) {
-        int xi = bndry->x + i * bndry->bx;
-        int yi = bndry->y + i * bndry->by;
-        f(xi, yi) = val;
-      }
+    // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+    // This is not very efficient. Both boundary cells can be treated in one loop.
+    for (int i = 1; i < bndry->width; i++) {
+      int xi = bndry->x + i * bndry->bx;
+      int yi = bndry->y + i * bndry->by;
+      f(xi, yi) = val;
     }
   }
 }
@@ -199,32 +197,30 @@ void BoundaryDirichlet_O1::apply(Field3D& f, BoutReal t) {
 
   // Check for staggered grids
 
-  CELL_LOC loc = f.getLocation();
+  CELL_LOC const loc = f.getLocation();
   if (mesh->StaggerGrids) {
     // Staggered.
     throw BoutException("dirichlet_o1 BC is not implementated for staggered grids.");
 
-  } else {
-    // Standard (non-staggered) case
-    for (; !bndry->isDone(); bndry->next1d()) {
+  } // Standard (non-staggered) case
+  for (; !bndry->isDone(); bndry->next1d()) {
+    for (int zk = mesh->zstart; zk <= mesh->zend; zk++) {
+      if (fg) {
+        val = fg->generate(Context(bndry, zk, loc, t, mesh));
+      }
+      f(bndry->x, bndry->y, zk) = val;
+    }
+
+    // This is not very efficient. Both boundary cells can be treated in one loop.
+    for (int i = 1; i < bndry->width; i++) {
+      // Set any other guard cells using the values on the cells
+      int xi = bndry->x + i * bndry->bx;
+      int yi = bndry->y + i * bndry->by;
       for (int zk = mesh->zstart; zk <= mesh->zend; zk++) {
         if (fg) {
           val = fg->generate(Context(bndry, zk, loc, t, mesh));
         }
-        f(bndry->x, bndry->y, zk) = val;
-      }
-
-      // This is not very efficient. Both boundary cells can be treated in one loop.
-      for (int i = 1; i < bndry->width; i++) {
-        // Set any other guard cells using the values on the cells
-        int xi = bndry->x + i * bndry->bx;
-        int yi = bndry->y + i * bndry->by;
-        for (int zk = mesh->zstart; zk <= mesh->zend; zk++) {
-          if (fg) {
-            val = fg->generate(Context(bndry, zk, loc, t, mesh));
-          }
-          f(xi, yi, zk) = val;
-        }
+        f(xi, yi, zk) = val;
       }
     }
   }
@@ -238,7 +234,7 @@ void BoundaryDirichlet_O1::apply_ddt(Field2D& f) {
 }
 
 void BoundaryDirichlet_O1::apply_ddt(Field3D& f) {
-  Mesh* mesh = bndry->localmesh;
+  const Mesh* mesh = bndry->localmesh;
   ASSERT1(mesh == f.getMesh());
   Field3D* dt = f.timeDeriv();
 
@@ -1867,7 +1863,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 #if not(BOUT_USE_METRIC_3D)
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());
-    Coordinates* metric = f.getCoordinates();
+    const Coordinates* metric = f.getCoordinates();
 
     bndry->first();
 
@@ -1881,30 +1877,28 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
     // Check for staggered grids
 
-    CELL_LOC loc = f.getLocation();
+    CELL_LOC const loc = f.getLocation();
     if (mesh->StaggerGrids) {
       // Staggered.
       throw BoutException("neumann_o1 BC is not implementated for staggered grids.");
 
-    } else {
-      // Non-staggered, standard case
+    } // Non-staggered, standard case
 
-      for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
-        BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y)
-                         + bndry->by * metric->dy(bndry->x, bndry->y);
+    for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
+      BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y)
+                       + bndry->by * metric->dy(bndry->x, bndry->y);
 
-        if (fg) {
-          val = fg->generate(Context(bndry, loc, t, mesh));
-        }
+      if (fg) {
+        val = fg->generate(Context(bndry, loc, t, mesh));
+      }
 
-        f(bndry->x, bndry->y) =
-            f(bndry->x - bndry->bx, bndry->y - bndry->by) + delta * val;
-        if (bndry->width == 2) {
-          f(bndry->x + bndry->bx, bndry->y + bndry->by) =
-              f(bndry->x, bndry->y) + delta * val;
-        }
+      f(bndry->x, bndry->y) = f(bndry->x - bndry->bx, bndry->y - bndry->by) + delta * val;
+      if (bndry->width == 2) {
+        f(bndry->x + bndry->bx, bndry->y + bndry->by) =
+            f(bndry->x, bndry->y) + delta * val;
       }
     }
+
 #else
   throw BoutException("Applying boundary condition 'neumann' to Field2D "
                       "not compatible with 3D metrics in all cases.");
@@ -1916,7 +1910,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   void BoundaryNeumann_O1::apply(Field3D & f, BoutReal t) {
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());
-    Coordinates* metric = f.getCoordinates();
+    const Coordinates* metric = f.getCoordinates();
 
     bndry->first();
 
@@ -1930,31 +1924,29 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
     // Check for staggered grids
 
-    CELL_LOC loc = f.getLocation();
+    CELL_LOC const loc = f.getLocation();
     if (mesh->StaggerGrids) {
       // Staggered.
       throw BoutException("neumann_o1 BC is not implementated for staggered grids.");
-
-    } else {
-      for (; !bndry->isDone(); bndry->next1d()) {
+    }
+    for (; !bndry->isDone(); bndry->next1d()) {
 #if BOUT_USE_METRIC_3D
-        for (int zk = mesh->zstart; zk <= mesh->zend; zk++) {
-          BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, zk)
-                           + bndry->by * metric->dy(bndry->x, bndry->y, zk);
-#else
-      BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y)
-                       + bndry->by * metric->dy(bndry->x, bndry->y);
       for (int zk = mesh->zstart; zk <= mesh->zend; zk++) {
+        BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, zk)
+                         + bndry->by * metric->dy(bndry->x, bndry->y, zk);
+#else
+    BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y)
+                     + bndry->by * metric->dy(bndry->x, bndry->y);
+    for (int zk = mesh->zstart; zk <= mesh->zend; zk++) {
 #endif
-          if (fg) {
-            val = fg->generate(Context(bndry, zk, loc, t, mesh));
-          }
-          f(bndry->x, bndry->y, zk) =
-              f(bndry->x - bndry->bx, bndry->y - bndry->by, zk) + delta * val;
-          if (bndry->width == 2) {
-            f(bndry->x + bndry->bx, bndry->y + bndry->by, zk) =
-                f(bndry->x, bndry->y, zk) + delta * val;
-          }
+        if (fg) {
+          val = fg->generate(Context(bndry, zk, loc, t, mesh));
+        }
+        f(bndry->x, bndry->y, zk) =
+            f(bndry->x - bndry->bx, bndry->y - bndry->by, zk) + delta * val;
+        if (bndry->width == 2) {
+          f(bndry->x + bndry->bx, bndry->y + bndry->by, zk) =
+              f(bndry->x, bndry->y, zk) + delta * val;
         }
       }
     }
@@ -1968,7 +1960,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   }
 
   void BoundaryNeumann_O1::apply_ddt(Field3D & f) {
-    Mesh* mesh = bndry->localmesh;
+    const Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());
     Field3D* dt = f.timeDeriv();
     for (bndry->first(); !bndry->isDone(); bndry->next()) {

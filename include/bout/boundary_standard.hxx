@@ -5,9 +5,11 @@
 
 #include "bout/boundary_op.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/sys/expressionparser.hxx"
 #include "bout/unused.hxx"
 #include <bout/field_factory.hxx>
 
+#include <memory>
 #include <utility>
 
 /// Dirichlet boundary condition set half way between guard cell and grid cell at 2nd order accuracy
