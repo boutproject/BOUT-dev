@@ -156,7 +156,7 @@ void BoundaryDirichlet_O1::apply(Field2D& f, BoutReal t) {
   // Check for staggered grids
 
   CELL_LOC const loc = f.getLocation();
-  if (mesh->StaggerGrids) {
+  if (loc != CELL_CENTRE) {
     // Staggered
     throw BoutException("dirichlet_o1 BC is not implementated for staggered grids.");
 
@@ -198,7 +198,7 @@ void BoundaryDirichlet_O1::apply(Field3D& f, BoutReal t) {
   // Check for staggered grids
 
   CELL_LOC const loc = f.getLocation();
-  if (mesh->StaggerGrids) {
+  if (loc != CELL_CENTRE) {
     // Staggered.
     throw BoutException("dirichlet_o1 BC is not implementated for staggered grids.");
 
@@ -443,7 +443,7 @@ void BoundaryDirichlet::apply(Field3D& f, BoutReal t) {
   // Check for staggered grids
 
   CELL_LOC loc = f.getLocation();
-  if (mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if (loc != CELL_CENTRE) {
     // Staggered. Need to apply slightly differently
 
     if (loc == CELL_XLOW) {
@@ -945,7 +945,7 @@ void BoundaryDirichlet_O3::apply(Field3D& f, BoutReal t) {
   // Check for staggered grids
 
   CELL_LOC loc = f.getLocation();
-  if (mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if (loc != CELL_CENTRE) {
     // Staggered. Need to apply slightly differently
 
     if (loc == CELL_XLOW) {
@@ -1402,7 +1402,7 @@ void BoundaryDirichlet_O4::apply(Field3D& f, BoutReal t) {
   // Check for staggered grids
 
   CELL_LOC loc = f.getLocation();
-  if (mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if (loc != CELL_CENTRE) {
     // Staggered. Need to apply slightly differently
 
     if (loc == CELL_XLOW) {
@@ -1878,7 +1878,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     // Check for staggered grids
 
     CELL_LOC const loc = f.getLocation();
-    if (mesh->StaggerGrids) {
+    if (loc != CELL_CENTRE) {
       // Staggered.
       throw BoutException("neumann_o1 BC is not implementated for staggered grids.");
 
@@ -1925,7 +1925,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     // Check for staggered grids
 
     CELL_LOC const loc = f.getLocation();
-    if (mesh->StaggerGrids) {
+    if (loc != CELL_CENTRE) {
       // Staggered.
       throw BoutException("neumann_o1 BC is not implementated for staggered grids.");
     }
@@ -2215,7 +2215,7 @@ void BoundaryNeumann::apply([[maybe_unused]] Field2D& f, [[maybe_unused]] BoutRe
     // Check for staggered grids
 
     CELL_LOC loc = f.getLocation();
-    if (mesh->StaggerGrids && loc != CELL_CENTRE) {
+    if (loc != CELL_CENTRE) {
       // Staggered. Need to apply slightly differently
       // Use one-sided differencing. Cell is now on
       // the boundary, so use one-sided differencing
@@ -2504,7 +2504,7 @@ void BoundaryNeumann::apply([[maybe_unused]] Field2D& f, [[maybe_unused]] BoutRe
 
     // Check for staggered grids
     CELL_LOC loc = f.getLocation();
-    if (mesh->StaggerGrids && loc != CELL_CENTRE) {
+    if (loc != CELL_CENTRE) {
       throw BoutException("neumann_o4 not implemented with staggered grid yet");
     } else {
       // Non-staggered, standard case
@@ -2556,7 +2556,7 @@ void BoundaryNeumann::apply([[maybe_unused]] Field2D& f, [[maybe_unused]] BoutRe
 
     // Check for staggered grids
     CELL_LOC loc = f.getLocation();
-    if (mesh->StaggerGrids && loc != CELL_CENTRE) {
+    if (loc != CELL_CENTRE) {
       throw BoutException("neumann_o4 not implemented with staggered grid yet");
     } else {
       Coordinates* coords = f.getCoordinates();
