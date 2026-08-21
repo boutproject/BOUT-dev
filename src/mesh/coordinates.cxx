@@ -1226,7 +1226,7 @@ void Coordinates::_compute_cell_volume() const {
 void Coordinates::_determine_cell_sheath() const {
   BOUT_OMP_SAFE(critical)
   {
-    if (!_cell_volume.has_value()) {
+    if (!_cell_sheath_yhigh.has_value() || !_cell_sheath_ylow.has_value()) {
       FieldMetric sheath_yhigh = 0.0;
       FieldMetric sheath_ylow = 0.0;
       YBoundary sheathbndry(YBndryType::sheath, nullptr, *localmesh);
