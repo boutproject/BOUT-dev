@@ -1269,6 +1269,16 @@ void Coordinates::setMetricTensor(
   setJ(recalculateJacobian());
   setBxy(recalculateBxy());
 }
+void Coordinates::setMetricTensorJB(
+    const ContravariantMetricTensor& contravariant_metric_tensor,
+    const CovariantMetricTensor& covariant_metric_tensor, const FieldMetric& J,
+    const FieldMetric& Bxy) {
+  contravariantMetricTensor = contravariant_metric_tensor;
+  covariantMetricTensor = covariant_metric_tensor;
+  setJ(J);
+  setBxy(Bxy);
+  invalidateMetricCaches();
+}
 
 void Coordinates::communicateMetricTensor() {
   contravariantMetricTensor.communicate();

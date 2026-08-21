@@ -368,6 +368,10 @@ public:
   void setMetricTensor(const ContravariantMetricTensor& contravariant_metric_tensor,
                        const CovariantMetricTensor& covariant_metric_tensor);
 
+  void setMetricTensorJB(const ContravariantMetricTensor& contravariant_metric_tensor,
+                         const CovariantMetricTensor& covariant_metric_tensor,
+                         const FieldMetric& J, const FieldMetric& Bxy);
+
   void communicateMetricTensor();
 
 private:
