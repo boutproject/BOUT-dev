@@ -197,45 +197,6 @@ private:
   friend Impl;
 };
 
-namespace details {
-/// Limited free gradient of log of a quantity
-/// This ensures that the guard cell values remain positive
-/// while also ensuring that the quantity never increases
-///
-///  fm  fc | fp
-///         ^ boundary
-///
-/// exp( 2*log(fc) - log(fm) )
-inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc, BoundaryFreeExtrapolation mode) {
-  if ((fm < fc) && (mode == BoundaryFreeExtrapolation::limited)) {
-    return fc; // Neumann rather than increasing into boundary
-  }
-  if (fm < 1e-10) {
-    return fc; // Low / no density condition
-  }
-
-  BoutReal fp = 0;
-  switch (mode) {
-  case BoundaryFreeExtrapolation::limited:
-  case BoundaryFreeExtrapolation::exponential:
-    fp = SQ(fc) / fm; // Exponential
-    break;
-  case BoundaryFreeExtrapolation::linear:
-    fp = (2.0 * fc) - fm; // Linear
-    break;
-  }
-
-#if CHECKLEVEL >= 2
-  if (!std::isfinite(fp)) {
-    throw BoutException("SheathBoundary limitFree {}: {}, {} -> {}",
-                        static_cast<int>(mode), fm, fc, fp);
-  }
-#endif
-
-  return fp;
-}
-} // namespace details
-
 /// An FCI-aware boundary region
 ///
 /// Uses `BoundaryRegionIterFCI` as its iterator.
