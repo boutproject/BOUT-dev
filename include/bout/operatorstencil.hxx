@@ -33,9 +33,7 @@
 #include <algorithm>
 #include <functional>
 #include <iterator>
-#include <tuple>
 #include <type_traits>
-#include <utility>
 #include <vector>
 
 #include <bout/mesh.hxx>
@@ -50,12 +48,12 @@ struct IndexOffset {
                 "IndexOffset only works with SpecificInd types");
   int dx = 0, dy = 0, dz = 0;
 
-  const inline IndexOffset xp(int delta_x = 1) const { return {dx + delta_x, dy, dz}; }
-  const inline IndexOffset xm(int delta_x = 1) const { return xp(-delta_x); }
-  const inline IndexOffset yp(int delta_y = 1) const { return {dx, dy + delta_y, dz}; }
-  const inline IndexOffset ym(int delta_y = 1) const { return yp(-delta_y); }
-  const inline IndexOffset zp(int delta_z = 1) const { return {dx, dy, dz + delta_z}; }
-  const inline IndexOffset zm(int delta_z = 1) const { return zp(-delta_z); }
+  IndexOffset xp(int delta_x = 1) const { return {dx + delta_x, dy, dz}; }
+  IndexOffset xm(int delta_x = 1) const { return xp(-delta_x); }
+  IndexOffset yp(int delta_y = 1) const { return {dx, dy + delta_y, dz}; }
+  IndexOffset ym(int delta_y = 1) const { return yp(-delta_y); }
+  IndexOffset zp(int delta_z = 1) const { return {dx, dy, dz + delta_z}; }
+  IndexOffset zm(int delta_z = 1) const { return zp(-delta_z); }
 
   IndexOffset& operator+=(const IndexOffset& n) {
     dx += n.dx;
@@ -74,24 +72,24 @@ struct IndexOffset {
 };
 
 template <class T>
-const inline IndexOffset<T> operator+(IndexOffset<T> lhs, const IndexOffset<T>& rhs) {
+inline IndexOffset<T> operator+(IndexOffset<T> lhs, const IndexOffset<T>& rhs) {
   return lhs += rhs;
 }
 template <class T>
-const inline IndexOffset<T> operator-(IndexOffset<T> lhs, const IndexOffset<T>& rhs) {
+inline IndexOffset<T> operator-(IndexOffset<T> lhs, const IndexOffset<T>& rhs) {
   return lhs -= rhs;
 }
 
 template <class T>
-const inline T operator+(const T& lhs, const IndexOffset<T>& rhs) {
+inline T operator+(const T& lhs, const IndexOffset<T>& rhs) {
   return lhs.offset(rhs.dx, rhs.dy, rhs.dz);
 }
 template <class T>
-const inline T operator+(const IndexOffset<T>& lhs, const T& rhs) {
+inline T operator+(const IndexOffset<T>& lhs, const T& rhs) {
   return operator+(rhs, lhs);
 }
 template <class T>
-const inline T operator-(const T& lhs, const IndexOffset<T>& rhs) {
+inline T operator-(const T& lhs, const IndexOffset<T>& rhs) {
   // If CHECKLEVEL >= 3 then SpecificInd<N>.zm() complains about
   // negative values.
   return lhs.offset(-rhs.dx, -rhs.dy, -rhs.dz);
