@@ -1240,7 +1240,7 @@ void Coordinates::_determine_cell_sheath() const {
             sheath_ylow[i] = 1;
           }
         }
-      }
+      });
       _cell_sheath_yhigh.emplace(sheath_yhigh);
       _cell_sheath_ylow.emplace(sheath_ylow);
     }
