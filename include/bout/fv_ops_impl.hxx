@@ -639,11 +639,6 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
   Coordinates* coord = f_in.getCoordinates();
   ASSERT1_FIELDS_COMPATIBLE(f_in, v_in);
 
-  if (!f_in.isFci() && dissipative) {
-    throw BoutException("Using dissipative flag in Div_par_mod but no Fci parallel "
-                        "transform. This flag will have no impact on the simulation");
-  }
-
   if (f_in.isFci()) {
     // Use mid-point (cell boundary) averages
 
@@ -679,6 +674,12 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
     return result;
   }
   ASSERT1_FIELDS_COMPATIBLE(f_in, wave_speed_in);
+
+  // Throw error when not Fci
+  if (dissipative) {
+    throw BoutException("Using dissipative flag in Div_par_mod but no Fci parallel "
+                        "transform. This flag will have no impact on the simulation");
+  }
 
   const Mesh* mesh = f_in.getMesh();
 
