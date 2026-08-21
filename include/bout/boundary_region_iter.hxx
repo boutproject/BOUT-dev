@@ -534,10 +534,17 @@ public:
     ASSERT3(loc == CELL_CENTRE);
     return region->bndry_points[pos].length;
   }
-  bool operator!=(BoundaryRegionIterFCI lhs) const {
-    ASSERT3(region == lhs.region);
-    return pos != lhs.pos;
+
+  auto operator<=>(const BoundaryRegionIterFCI& rhs) const {
+    ASSERT3(region == rhs.region);
+    return pos <=> rhs.pos;
   }
+
+  bool operator==(BoundaryRegionIterFCI lhs) const {
+    ASSERT3(region == lhs.region);
+    return pos == lhs.pos;
+  }
+
   BoundaryRegionIterFCI& operator++() {
     ++pos;
     return *this;
@@ -666,10 +673,17 @@ public:
     }
     return 0.5;
   }
-  bool operator!=(BoundaryRegionIterXY<isX> lhs) {
-    ASSERT3(region == lhs.region);
-    return pos != lhs.pos;
+
+  auto operator<=>(const BoundaryRegionIterXY<isX>& rhs) const {
+    ASSERT3(region == rhs.region);
+    return pos <=> rhs.pos;
   }
+
+  bool operator==(BoundaryRegionIterXY<isX> rhs) const {
+    ASSERT3(region == rhs.region);
+    return pos == rhs.pos;
+  }
+
   BoundaryRegionIterXY& operator++() {
     ++pos;
     return *this;

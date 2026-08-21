@@ -327,38 +327,11 @@ struct SpecificInd {
   inline SpecificInd offset(int dx, int dy, int dz) const {
     return zpm(dz).yp(dy).xp(dx);
   }
+
+  /// Relational operator
+  auto operator<=>(const SpecificInd<N>& rhs) const { return ind <=> rhs.ind; }
+  bool operator==(const SpecificInd<N>& rhs) const { return ind == rhs.ind; }
 };
-
-/// Relational operators
-template <IND_TYPE N>
-inline bool operator==(const SpecificInd<N>& lhs, const SpecificInd<N>& rhs) {
-  return lhs.ind == rhs.ind;
-}
-
-template <IND_TYPE N>
-inline bool operator!=(const SpecificInd<N>& lhs, const SpecificInd<N>& rhs) {
-  return !operator==(lhs, rhs);
-}
-
-template <IND_TYPE N>
-inline bool operator<(const SpecificInd<N>& lhs, const SpecificInd<N>& rhs) {
-  return lhs.ind < rhs.ind;
-}
-
-template <IND_TYPE N>
-inline bool operator>(const SpecificInd<N>& lhs, const SpecificInd<N>& rhs) {
-  return operator<(rhs, lhs);
-}
-
-template <IND_TYPE N>
-inline bool operator>=(const SpecificInd<N>& lhs, const SpecificInd<N>& rhs) {
-  return !operator<(lhs, rhs);
-}
-
-template <IND_TYPE N>
-inline bool operator<=(const SpecificInd<N>& lhs, const SpecificInd<N>& rhs) {
-  return !operator>(lhs, rhs);
-}
 
 /// Arithmetic operators with integers
 template <IND_TYPE N>

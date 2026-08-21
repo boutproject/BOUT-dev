@@ -470,24 +470,7 @@ protected:
     difference_type operator-(const VarIterator& b) { return it - b.it; }
     reference operator[](difference_type n) { return *VarIterator(it[n]); }
 
-    friend bool operator==(const VarIterator& a, const VarIterator& b) {
-      return a.it == b.it;
-    }
-    friend bool operator!=(const VarIterator& a, const VarIterator& b) {
-      return a.it != b.it;
-    }
-    friend bool operator<(const VarIterator& a, const VarIterator& b) {
-      return a.it < b.it;
-    }
-    friend bool operator>(const VarIterator& a, const VarIterator& b) {
-      return a.it > b.it;
-    }
-    friend bool operator<=(const VarIterator& a, const VarIterator& b) {
-      return a.it <= b.it;
-    }
-    friend bool operator>=(const VarIterator& a, const VarIterator& b) {
-      return a.it >= b.it;
-    }
+    auto operator<=>(const VarIterator& rhs) const = default;
 
   private:
     underlying_iterator it{};
