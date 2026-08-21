@@ -1237,7 +1237,7 @@ void Coordinates::_determine_cell_sheath() const {
           if (pnt.dir() > 0) {
             sheath_yhigh[i] = 1;
           } else {
-            heath_ylow[i] = 1;
+            sheath_ylow[i] = 1;
           }
         }
       }
