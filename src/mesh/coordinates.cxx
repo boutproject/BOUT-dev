@@ -1032,6 +1032,8 @@ void Coordinates::invalidateCellGeometryCaches() {
   _cell_area_zlow.reset();
   _cell_area_zhigh.reset();
   _cell_volume.reset();
+  _cell_sheath_yhigh.reset();
+  _cell_sheath_ylow.reset();
 }
 
 void Coordinates::invalidateAccessorCache() const { CoordinatesAccessor::clear(this); }
@@ -1217,6 +1219,30 @@ void Coordinates::_compute_cell_volume() const {
   {
     if (!_cell_volume.has_value()) {
       _cell_volume.emplace(*jacobian_cache * dx_ * dy_ * dz_);
+    }
+  }
+}
+
+void Coordinates::_determine_cell_sheath() const {
+  BOUT_OMP_SAFE(critical)
+  {
+    if (!_cell_volume.has_value()) {
+      FieldMetric sheath_yhigh = 0.0;
+      FieldMetric sheath_ylow = 0.0;
+      YBoundary sheathbndry(YBndryType::sheath, nullptr, *localmesh);
+
+      sheathbndry.iter([&](auto& pnt) {
+        const auto& i = pnt.ind();
+        if (abs(pnt.offset()) == 1) {
+          if (pnt.dir() > 0) {
+            sheath_yhigh[i] = 1;
+          } else {
+            heath_ylow[i] = 1;
+          }
+        }
+      }
+      _cell_sheath_yhigh.emplace(sheath_yhigh);
+      _cell_sheath_ylow.emplace(sheath_ylow);
     }
   }
 }

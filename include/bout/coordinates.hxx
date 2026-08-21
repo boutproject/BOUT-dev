@@ -271,16 +271,56 @@ public:
     return *_cell_volume;
   }
 
+  // Cell sheath
+
+  const FieldMetric& cell_sheath_yhigh() const {
+    if (_cell_sheath_yhigh.has_value()) {
+      return *_cell_sheath_yhigh;
+    }
+    _determine_cell_sheath();
+    ASSERT2(_cell_sheath_yhigh.has_value());
+    return *_cell_sheath_yhigh;
+  }
+
+  const FieldMetric& cell_sheath_yhigh() {
+    if (_cell_sheath_yhigh.has_value()) {
+      return *_cell_sheath_yhigh;
+    }
+    _determine_cell_sheath();
+    ASSERT2(_cell_sheath_yhigh.has_value());
+    return *_cell_sheath_yhigh;
+  }
+
+  const FieldMetric& cell_sheath_ylow() const {
+    if (_cell_sheath_ylow.has_value()) {
+      return *_cell_sheath_ylow;
+    }
+    _determine_cell_sheath();
+    ASSERT2(_cell_sheath_ylow.has_value());
+    return *_cell_sheath_ylow;
+  }
+
+  const FieldMetric& cell_sheath_ylow() {
+    if (_cell_sheath_ylow.has_value()) {
+      return *_cell_sheath_ylow;
+    }
+    _determine_cell_sheath();
+    ASSERT2(_cell_sheath_ylow.has_value());
+    return *_cell_sheath_ylow;
+  }
+
 private:
   mutable std::optional<FieldMetric> _g_22_ylow, _g_22_yhigh;
   mutable std::optional<FieldMetric> _cell_area_xlow, _cell_area_xhigh;
   mutable std::optional<FieldMetric> _cell_area_ylow, _cell_area_yhigh;
   mutable std::optional<FieldMetric> _cell_area_zlow, _cell_area_zhigh;
   mutable std::optional<FieldMetric> _cell_volume;
+  mutable std::optional<FieldMetric> _cell_sheath_yhigh, cell_sheath_ylow;
   void _compute_cell_area_x() const;
   void _compute_cell_area_y() const;
   void _compute_cell_area_z() const;
   void _compute_cell_volume() const;
+  void _determine_cell_sheath() const;
 
 public:
   /// Contravariant metric tensor (g^{ij})
