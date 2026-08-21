@@ -44,11 +44,11 @@ RegisterUnavailableSolver
 
 #include "../../sundials_nvector_interface.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/petsc_preconditioner.hxx"
 #include "bout/region.hxx"
 #include "bout/sundials_backports.hxx"
 
 #if BOUT_HAS_PETSC
-#include "bout/petsc_preconditioner.hxx"
 #include "bout/petsclib.hxx"
 
 #include <petscksp.h>
@@ -68,6 +68,7 @@ RegisterSolver<CvodeSolver> registersolvercvode("cvode");
 // Preconditioner selection for CVODE.
 // Note: String comparisons are case-insensitive so "Auto" avoids conflict with keyword
 BOUT_ENUM_CLASS(CvodePreconMethod, none, Auto, user, petsc, bbd);
+BOUT_ENUM_CLASS(CvodeJacobianExportTrigger, output, linear_setup);
 
 #if SUNDIALS_VERSION_AT_LEAST(6, 0, 0)
 using CvodeBool = sunbooleantype;
@@ -99,11 +100,20 @@ public:
 private:
 #if BOUT_HAS_PETSC
   static PetscErrorCode petscFormFunction(void* dummy, Vec x, Vec f, void* ctx);
+  static PetscErrorCode petscFormRhsFunction(void* dummy, Vec x, Vec f, void* ctx);
   static int petscPSetup(BoutReal t, N_Vector yy, N_Vector yp, CvodeBool jok,
                          CvodeBool* jcurPtr, BoutReal gamma, void* user_data);
   static int petscPSolve(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec,
                          N_Vector zvec, BoutReal gamma, BoutReal delta, int lr,
                          void* user_data);
+  std::string getJacobianExportStem(JacobianExportKind kind);
+  std::string getJacobianMatrixFilename(const std::string& stem) const;
+  PetscErrorCode exportMatrixAndMetadata(Mat jacobian, const std::string& stem);
+  PetscErrorCode saveDiagnosticJacobian(JacobianExportKind kind, Vec x, BoutReal t,
+                                        BoutReal gamma);
+  PetscErrorCode maybeExportJacobian(Mat system_jacobian, Vec x, BoutReal t,
+                                     BoutReal gamma);
+  PetscErrorCode maybeExportOutputJacobian(BoutReal t);
 #endif
 
   BoutReal hcur; //< Current internal timestep
@@ -160,6 +170,13 @@ private:
   NVectorType nvector_type;
   BoutReal cvode_nonlinear_convergence_coef;
   BoutReal cvode_linear_convergence_coef;
+  bool save_jacobian;
+  JacobianExportKind jacobian_export_kind;
+  CvodeJacobianExportTrigger jacobian_export_trigger;
+  std::string jacobian_export_prefix;
+  PetscMatrixExportFormat jacobian_export_format;
+  int jacobian_export_counter{0};
+  bool jacobian_metadata_written{false};
 
   // Diagnostics from CVODE
   int nsteps{0};

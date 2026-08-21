@@ -1,7 +1,7 @@
 bout_add_integrated_test(
-  test-snes-save-jacobian
-  SOURCES test_snes_save_jacobian.cxx
-  REQUIRES BOUT_HAS_PETSC
+  test-cvode-save-jacobian
+  SOURCES test_cvode_save_jacobian.cxx
+  REQUIRES BOUT_HAS_PETSC BOUT_HAS_CVODE
   USE_DATA_BOUT_INP
 )
 

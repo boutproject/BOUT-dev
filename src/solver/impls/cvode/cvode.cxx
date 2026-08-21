@@ -166,6 +166,23 @@ CvodeSolver::CvodeSolver(Options* opts)
               .doc("Factor by which the Krylov linear solver’s convergence test constant "
                    "is reduced from the nonlinear solver test constant.")
               .withDefault(0.05)),
+      save_jacobian((*options)["save_jacobian"]
+                        .doc("Save PETSc Jacobian diagnostics to datadir")
+                        .withDefault(false)),
+      jacobian_export_kind((*options)["jacobian_export_kind"]
+                               .doc("Which Jacobian to save: system, scaled, or rhs")
+                               .withDefault(JacobianExportKind::system)),
+      jacobian_export_trigger((*options)["jacobian_export_trigger"]
+                                  .doc("When to save Jacobians: output or linear_setup")
+                                  .withDefault(CvodeJacobianExportTrigger::linear_setup)),
+      jacobian_export_prefix(
+          (*options)["jacobian_export_prefix"]
+              .doc("Prefix for saved Jacobian matrix files and shared metadata JSON")
+              .withDefault("jacobian")),
+      jacobian_export_format(
+          (*options)["jacobian_export_format"]
+              .doc("PETSc MatView format for saved Jacobians: binary or ascii")
+              .withDefault(PetscMatrixExportFormat::binary)),
       suncontext(createSUNContext(BoutComm::get())) {
   has_constraints = false; // This solver doesn't have constraints
   canReset = true;
@@ -222,6 +239,115 @@ CvodeSolver::~CvodeSolver() {
 #endif
   }
 }
+
+#if BOUT_HAS_PETSC
+std::string CvodeSolver::getJacobianExportStem(JacobianExportKind kind) {
+  const std::string datadir = Options::root()["datadir"];
+  return fmt::format("{}/{}_{}_{:06d}", datadir, jacobian_export_prefix, toString(kind),
+                     jacobian_export_counter++);
+}
+
+std::string CvodeSolver::getJacobianMatrixFilename(const std::string& stem) const {
+  return stem
+         + (jacobian_export_format == PetscMatrixExportFormat::binary ? ".dat" : ".txt");
+}
+
+PetscErrorCode CvodeSolver::exportMatrixAndMetadata(Mat jacobian,
+                                                    const std::string& stem) {
+  if (!jacobian_metadata_written) {
+    const std::string datadir = Options::root()["datadir"];
+    const std::string metadata_filename =
+        datadir + "/" + jacobian_export_prefix + "_metadata.json";
+    output.write("Jacobian metadata written to {}\n", metadata_filename);
+    writeJacobianMetadataJson(metadata_filename, "cvode");
+    jacobian_metadata_written = true;
+  }
+
+  PetscCall(PetscPreconditioner::saveMatrix(jacobian, getJacobianMatrixFilename(stem),
+                                            jacobian_export_format));
+  PetscFunctionReturn(PETSC_SUCCESS);
+}
+
+PetscErrorCode CvodeSolver::saveDiagnosticJacobian(JacobianExportKind kind, Vec x,
+                                                   BoutReal t, BoutReal gamma) {
+  if (kind == JacobianExportKind::scaled) {
+    throw BoutException("solver:jacobian_export_kind=scaled is not supported for CVODE");
+  }
+
+  petsc_t = t;
+  petsc_gamma = gamma;
+
+  PetscPreconditioner diagnostic_preconditioner;
+  Field3D index = globalIndex(0);
+  PetscCall(diagnostic_preconditioner.createJacobianPattern(
+      index, *options, getLocalN(), n2Dvars(), n3Dvars(), BoutComm::get()));
+
+  if (kind == JacobianExportKind::rhs) {
+    PetscCall(diagnostic_preconditioner.updateColoring(CvodeSolver::petscFormRhsFunction,
+                                                       this));
+  } else {
+    PetscCall(
+        diagnostic_preconditioner.updateColoring(CvodeSolver::petscFormFunction, this));
+  }
+
+  Vec diagnostic_f{nullptr};
+  PetscCall(VecDuplicate(x, &diagnostic_f));
+  if (kind == JacobianExportKind::rhs) {
+    PetscCall(CvodeSolver::petscFormRhsFunction(nullptr, x, diagnostic_f, this));
+  } else {
+    PetscCall(CvodeSolver::petscFormFunction(nullptr, x, diagnostic_f, this));
+  }
+  PetscCall(MatFDColoringSetF(diagnostic_preconditioner.coloring(), diagnostic_f));
+
+  Mat diagnostic_jacobian = diagnostic_preconditioner.jacobian();
+  PetscCall(MatZeroEntries(diagnostic_jacobian));
+  PetscCall(MatFDColoringApply(diagnostic_jacobian, diagnostic_preconditioner.coloring(),
+                               x, nullptr));
+  PetscCall(MatAssemblyBegin(diagnostic_jacobian, MAT_FINAL_ASSEMBLY));
+  PetscCall(MatAssemblyEnd(diagnostic_jacobian, MAT_FINAL_ASSEMBLY));
+  PetscCall(exportMatrixAndMetadata(diagnostic_jacobian, getJacobianExportStem(kind)));
+  PetscCall(VecDestroy(&diagnostic_f));
+
+  PetscFunctionReturn(PETSC_SUCCESS);
+}
+
+PetscErrorCode CvodeSolver::maybeExportJacobian(Mat system_jacobian, Vec x, BoutReal t,
+                                                BoutReal gamma) {
+  if (!save_jacobian
+      or jacobian_export_trigger != CvodeJacobianExportTrigger::linear_setup) {
+    PetscFunctionReturn(PETSC_SUCCESS);
+  }
+
+  if (jacobian_export_kind == JacobianExportKind::system) {
+    PetscCall(exportMatrixAndMetadata(system_jacobian,
+                                      getJacobianExportStem(jacobian_export_kind)));
+    PetscFunctionReturn(PETSC_SUCCESS);
+  }
+
+  PetscFunctionReturn(saveDiagnosticJacobian(jacobian_export_kind, x, t, gamma));
+}
+
+PetscErrorCode CvodeSolver::maybeExportOutputJacobian(BoutReal t) {
+  if (!save_jacobian or jacobian_export_trigger != CvodeJacobianExportTrigger::output) {
+    PetscFunctionReturn(PETSC_SUCCESS);
+  }
+
+  Vec x{nullptr};
+  PetscCall(VecCreate(BoutComm::get(), &x));
+  PetscCall(VecSetSizes(x, getLocalN(), PETSC_DETERMINE));
+  PetscCall(VecSetType(x, VECMPI));
+  PetscCall(VecSetUp(x));
+
+  BoutReal* xdata = nullptr;
+  PetscCall(VecGetArray(x, &xdata));
+  save_vars(xdata);
+  PetscCall(VecRestoreArray(x, &xdata));
+
+  PetscErrorCode ierr = saveDiagnosticJacobian(JacobianExportKind::rhs, x, t, 0.0);
+  PetscCall(VecDestroy(&x));
+  PetscFunctionReturn(ierr);
+}
+#endif
 
 /**************************************************************************
  * Initialise
@@ -381,6 +507,57 @@ int CvodeSolver::init() {
     N_VDestroy(constraints_vec);
   }
 
+  CvodePreconMethod selected_precon = precon_method;
+  if (selected_precon == CvodePreconMethod::Auto) {
+    if (hasPreconditioner()) {
+      selected_precon = CvodePreconMethod::user;
+    } else if (bout::build::has_petsc) {
+      selected_precon = CvodePreconMethod::petsc;
+    } else {
+      selected_precon = CvodePreconMethod::bbd;
+    }
+  }
+
+  if (save_jacobian) {
+#if !BOUT_HAS_PETSC
+    throw BoutException("solver:save_jacobian for CVODE requires PETSc support.");
+#else
+    if (jacobian_export_kind == JacobianExportKind::scaled) {
+      throw BoutException(
+          "solver:jacobian_export_kind=scaled is not supported for CVODE because "
+          "CVODE does not currently apply solver-coordinate scaling.");
+    }
+    if (jacobian_export_kind == JacobianExportKind::system
+        and jacobian_export_trigger != CvodeJacobianExportTrigger::linear_setup) {
+      throw BoutException("solver:jacobian_export_kind=system for CVODE requires "
+                          "solver:jacobian_export_trigger=linear_setup.");
+    }
+    if (jacobian_export_trigger == CvodeJacobianExportTrigger::output
+        and jacobian_export_kind != JacobianExportKind::rhs) {
+      throw BoutException("solver:jacobian_export_trigger=output for CVODE currently "
+                          "supports only solver:jacobian_export_kind=rhs.");
+    }
+    if (jacobian_export_trigger == CvodeJacobianExportTrigger::linear_setup) {
+      if (func_iter) {
+        throw BoutException("solver:jacobian_export_trigger=linear_setup for CVODE "
+                            "requires Newton iteration (set solver:func_iter=false).");
+      }
+      if (nvector_type == NVectorType::ManyVector) {
+        throw BoutException("solver:jacobian_export_trigger=linear_setup for CVODE is "
+                            "not supported with solver:nvector=manyvector.");
+      }
+      if (selected_precon != CvodePreconMethod::petsc) {
+        throw BoutException("solver:jacobian_export_trigger=linear_setup for CVODE "
+                            "currently requires solver:cvode_precon_method=petsc "
+                            "(or auto resolving to petsc).");
+      }
+    }
+    if (!petsc_lib) {
+      petsc_lib = std::make_unique<PetscLib>();
+    }
+#endif
+  }
+
   /// Newton method can include Preconditioners and Jacobian function
   if (func_iter) {
     output_info.write("\tUsing Functional iteration\n");
@@ -394,17 +571,6 @@ int CvodeSolver::init() {
     }
   } else {
     output_info.write("\tUsing Newton iteration\n");
-
-    CvodePreconMethod selected_precon = precon_method;
-    if (selected_precon == CvodePreconMethod::Auto) {
-      if (hasPreconditioner()) {
-        selected_precon = CvodePreconMethod::user;
-      } else if (bout::build::has_petsc) {
-        selected_precon = CvodePreconMethod::petsc;
-      } else {
-        selected_precon = CvodePreconMethod::bbd;
-      }
-    }
 
     auto prectype = SUN_PREC_NONE;
     if (selected_precon != CvodePreconMethod::none) {
@@ -719,13 +885,20 @@ BoutReal CvodeSolver::run(BoutReal tout) {
   // Copy variables
   backend.copy_state_from_vector(uvec);
 
-  // Call rhs function to get extra variables at this time
-  run_rhs(simtime);
-
   if (flag < 0) {
     throw BoutException("ERROR CVODE solve failed at t = {:e}, flag = {:d}\n", simtime,
                         flag);
   }
+
+#if BOUT_HAS_PETSC
+  const PetscErrorCode jacobian_export_error = maybeExportOutputJacobian(simtime);
+  if (jacobian_export_error != PETSC_SUCCESS) {
+    throw BoutException("Failed to export CVODE Jacobian diagnostics");
+  }
+#endif
+
+  // Call rhs function to get extra variables at this time
+  run_rhs(simtime);
 
   return simtime;
 }
@@ -921,6 +1094,38 @@ PetscErrorCode CvodeSolver::petscFormFunction(void* UNUSED(dummy), Vec x, Vec f,
   return PETSC_SUCCESS;
 }
 
+PetscErrorCode CvodeSolver::petscFormRhsFunction(void* UNUSED(dummy), Vec x, Vec f,
+                                                 void* ctx) {
+  auto* s = static_cast<CvodeSolver*>(ctx);
+
+  PetscInt length = 0;
+  PetscCall(VecGetLocalSize(x, &length));
+  s->petsc_rhs_tmp.resize(static_cast<std::size_t>(length));
+
+  const BoutReal* xdata = nullptr;
+  PetscCall(VecGetArrayRead(x, &xdata));
+
+  BoutReal* fdata = nullptr;
+  PetscCall(VecGetArray(f, &fdata));
+
+  try {
+    s->rhs(s->petsc_t, const_cast<BoutReal*>(xdata), s->petsc_rhs_tmp.data(), true);
+  } catch (BoutRhsFail&) {
+    PetscCall(VecRestoreArrayRead(x, &xdata));
+    PetscCall(VecRestoreArray(f, &fdata));
+    return 1;
+  }
+
+  for (PetscInt i = 0; i < length; ++i) {
+    fdata[i] = s->petsc_rhs_tmp[i];
+  }
+
+  PetscCall(VecRestoreArrayRead(x, &xdata));
+  PetscCall(VecRestoreArray(f, &fdata));
+
+  return PETSC_SUCCESS;
+}
+
 int CvodeSolver::petscPSetup(BoutReal t, N_Vector yy, N_Vector UNUSED(yp),
                              CvodeBool UNUSED(jok), CvodeBool* jcurPtr, BoutReal gamma,
                              void* user_data) {
@@ -947,6 +1152,12 @@ int CvodeSolver::petscPSetup(BoutReal t, N_Vector yy, N_Vector UNUSED(yp),
     return 1;
   }
 
+  ierr = MatFDColoringSetF(s->petsc_preconditioner.coloring(), s->petsc_f);
+  if (ierr != 0) {
+    VecResetArray(s->petsc_x);
+    return 1;
+  }
+
   Mat J = s->petsc_preconditioner.jacobian();
   ierr = MatZeroEntries(J);
   if (ierr != 0) {
@@ -964,6 +1175,12 @@ int CvodeSolver::petscPSetup(BoutReal t, N_Vector yy, N_Vector UNUSED(yp),
   if (ierr == 0) {
     ierr = MatAssemblyEnd(J, MAT_FINAL_ASSEMBLY);
   }
+  if (ierr != 0) {
+    VecResetArray(s->petsc_x);
+    return 1;
+  }
+
+  ierr = s->maybeExportJacobian(J, s->petsc_x, t, gamma);
   if (ierr != 0) {
     VecResetArray(s->petsc_x);
     return 1;

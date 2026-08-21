@@ -838,7 +838,7 @@ for individual matrix entries are reconstructed by combining this JSON with
 ``jacobian_index_base`` and the mesh shape.
 
 For now, an example Python reader is provided in
-``tests/integrated/test-snes-save-jacobian/read_jacobian.py``. It can load
+``tests/integrated/jacobian_tools/read_jacobian.py``. It can load
 the PETSc matrix into dense NumPy form, keep it sparse, optionally create
 Pandas views, and extract variable-to-variable blocks such as ``df/dg``.
 This helper is intended to move into a Python package later, likely xBOUT.

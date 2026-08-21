@@ -1,0 +1,29 @@
+MXG = 0
+
+[mesh]
+nx = 1
+ny = 16
+nz = 1
+
+[solver]
+type = cvode
+nout = 1
+
+# Force the timestep and order so the gamma factor is known
+output_step = 0.1
+start_timestep = 0.1
+min_timestep = 0.1
+max_timestep = 0.1
+
+cvode_max_order = 1
+
+# Loose tolerances so the step is accepted
+atol = 1
+rtol = 1
+
+save_jacobian_index_base = true
+save_jacobian = true
+jacobian_export_kind = rhs
+jacobian_export_trigger = output
+
+cvode_precon_method = none

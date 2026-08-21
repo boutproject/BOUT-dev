@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Read Jacobian diagnostics written by the SNES save-jacobian test.
+"""Read Jacobian diagnostics written by integrated Jacobian export tests.
 
 This helper is intentionally lightweight:
 
@@ -384,7 +384,7 @@ def to_pandas(matrix: np.ndarray | RawPetscSparse, dofs: list[dict[str, Any]]):
 
 
 def _main() -> None:
-    parser = argparse.ArgumentParser(description="Read SNES Jacobian test output")
+    parser = argparse.ArgumentParser(description="Read integrated-test Jacobian output")
     parser.add_argument(
         "--data-dir", default="data", help="Directory containing Jacobian outputs"
     )
