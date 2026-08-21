@@ -503,7 +503,7 @@ geometries, as flux coordinate independent (FCI) method::
 
       void rhs() {
         BoutReal totalFlux = 0;
-        mesh->getCoordinates()->getYBoundary()->iter([&](auto& point) {
+        getYBoundary(mesh->getCoordinates())->iter([&](auto& point) {
           BoutReal flux = point.interpolate_boundary_o2(N) * point.interpolate_boundary_o2(V);
           totalFlux += flux;
         });
