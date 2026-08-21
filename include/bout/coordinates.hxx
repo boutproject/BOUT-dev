@@ -111,6 +111,11 @@ public:
   const BoutReal& J(int x, int y) const { return J()(x, y); }
 #endif
 
+  const BoutReal& Bxy(int x, int y, int z) const { return Bxy()(x, y, z); }
+#if not(BOUT_USE_METRIC_3D)
+  const BoutReal& Bxy(int x, int y) const { return Bxy()(x, y); }
+#endif
+
   void setDx(FieldMetric dx, bool communicate = true);
   void setDy(FieldMetric dy, bool communicate = true);
   void setDz(FieldMetric dz, bool communicate = true);
