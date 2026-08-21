@@ -665,8 +665,7 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
 
       if (dissipative) {
 
-        const BoutReal amax = std::max(fabs(wave_speed_in[i]), fabs(v_in[i]),
-                                       fabs(v_down[iym]), fabs(v_up[iyp]));
+        const BoutReal amax = std::max(fabs(wave_speed_in[i]), fabs(v_in[i]));
 
         result[i] += (0.5 * amax * (f_in[i] - f_up[iyp]) * coord->cell_area_yhigh()[i]
                       + 0.5 * amax * (f_in[i] - f_down[iym]) * coord->cell_area_ylow()[i])
