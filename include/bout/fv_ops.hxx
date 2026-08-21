@@ -156,8 +156,8 @@ Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc = CELL_
 ///                          For FCI fields this diagnostic is currently set to zero.
 template <typename CellEdges = MC>
 Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
-                    const Field3D& wave_speed_in, Field3D& flow_ylow,
-                    bool fixflux = true);
+                    const Field3D& wave_speed_in, Field3D& flow_ylow, bool fixflux = true,
+                    bool dissipative = false);
 
 /// This operator calculates Div_par(f v v)
 /// It is used primarily (only?) in the parallel momentum equation.

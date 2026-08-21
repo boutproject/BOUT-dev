@@ -586,13 +586,14 @@ than ``FV::Div_par`` for the same limiter choice.
    template<typename CellEdges = MC>
    Field3D Div_par_mod(const Field3D &f_in, const Field3D &v_in,
                        const Field3D &a, Field3D &flow_ylow,
-                       bool fixflux=true);
+                       bool fixflux=true, bool dissipative = false);
 
 
 The extra output argument ``flow_ylow`` stores the flow through the lower
 :math:`y` cell boundary, including the area factor. This can be useful as a
 diagnostic in energy or flux budgets. For FCI fields this diagnostic is
-currently returned as zero.
+currently returned as zero. The flag ``dissipative`` activates a local
+Rusanov-flux if used in Fci.
 
 
 Parallel momentum flux ``Div_par_fvv``

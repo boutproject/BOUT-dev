@@ -578,7 +578,7 @@ template Field3D Div_par<Upwind>(const Field3D& f_in, const Field3D& v_in,
 template Field3D Div_f_v<Upwind>(const Field3D& n_in, const Vector3D& v, bool bndry_flux);
 template Field3D Div_par_mod<Upwind>(const Field3D& f_in, const Field3D& v_in,
                                      const Field3D& wave_speed_in, Field3D& flow_ylow,
-                                     bool fixflux);
+                                     bool fixflux, bool dissipative);
 template Field3D Div_par_fvv_heating<Upwind>(const Field3D& f_in, const Field3D& v_in,
                                              const Field3D& wave_speed_in,
                                              Field3D& flow_ylow, bool fixflux);
@@ -592,7 +592,7 @@ template Field3D Div_par<Fromm>(const Field3D& f_in, const Field3D& v_in,
 template Field3D Div_f_v<Fromm>(const Field3D& n_in, const Vector3D& v, bool bndry_flux);
 template Field3D Div_par_mod<Fromm>(const Field3D& f_in, const Field3D& v_in,
                                     const Field3D& wave_speed_in, Field3D& flow_ylow,
-                                    bool fixflux);
+                                    bool fixflux, bool dissipative);
 template Field3D Div_par_fvv_heating<Fromm>(const Field3D& f_in, const Field3D& v_in,
                                             const Field3D& wave_speed_in,
                                             Field3D& flow_ylow, bool fixflux);
@@ -606,7 +606,7 @@ template Field3D Div_par<MinMod>(const Field3D& f_in, const Field3D& v_in,
 template Field3D Div_f_v<MinMod>(const Field3D& n_in, const Vector3D& v, bool bndry_flux);
 template Field3D Div_par_mod<MinMod>(const Field3D& f_in, const Field3D& v_in,
                                      const Field3D& wave_speed_in, Field3D& flow_ylow,
-                                     bool fixflux);
+                                     bool fixflux, bool dissipative);
 template Field3D Div_par_fvv_heating<MinMod>(const Field3D& f_in, const Field3D& v_in,
                                              const Field3D& wave_speed_in,
                                              Field3D& flow_ylow, bool fixflux);
@@ -620,7 +620,7 @@ template Field3D Div_par<MC>(const Field3D& f_in, const Field3D& v_in,
 template Field3D Div_f_v<MC>(const Field3D& n_in, const Vector3D& v, bool bndry_flux);
 template Field3D Div_par_mod<MC>(const Field3D& f_in, const Field3D& v_in,
                                  const Field3D& wave_speed_in, Field3D& flow_ylow,
-                                 bool fixflux);
+                                 bool fixflux, bool dissipative);
 template Field3D Div_par_fvv_heating<MC>(const Field3D& f_in, const Field3D& v_in,
                                          const Field3D& wave_speed_in, Field3D& flow_ylow,
                                          bool fixflux);
@@ -635,7 +635,7 @@ template Field3D Div_f_v<Superbee>(const Field3D& n_in, const Vector3D& v,
                                    bool bndry_flux);
 template Field3D Div_par_mod<Superbee>(const Field3D& f_in, const Field3D& v_in,
                                        const Field3D& wave_speed_in, Field3D& flow_ylow,
-                                       bool fixflux);
+                                       bool fixflux, bool dissipative);
 template Field3D Div_par_fvv_heating<Superbee>(const Field3D& f_in, const Field3D& v_in,
                                                const Field3D& wave_speed_in,
                                                Field3D& flow_ylow, bool fixflux);
@@ -650,7 +650,7 @@ template Field3D Div_f_v<VanAlbada>(const Field3D& n_in, const Vector3D& v,
                                     bool bndry_flux);
 template Field3D Div_par_mod<VanAlbada>(const Field3D& f_in, const Field3D& v_in,
                                         const Field3D& wave_speed_in, Field3D& flow_ylow,
-                                        bool fixflux);
+                                        bool fixflux, bool dissipative);
 template Field3D Div_par_fvv_heating<VanAlbada>(const Field3D& f_in, const Field3D& v_in,
                                                 const Field3D& wave_speed_in,
                                                 Field3D& flow_ylow, bool fixflux);
@@ -664,7 +664,7 @@ template Field3D Div_par<WENO3>(const Field3D& f_in, const Field3D& v_in,
 template Field3D Div_f_v<WENO3>(const Field3D& n_in, const Vector3D& v, bool bndry_flux);
 template Field3D Div_par_mod<WENO3>(const Field3D& f_in, const Field3D& v_in,
                                     const Field3D& wave_speed_in, Field3D& flow_ylow,
-                                    bool fixflux);
+                                    bool fixflux, bool dissipative);
 template Field3D Div_par_fvv_heating<WENO3>(const Field3D& f_in, const Field3D& v_in,
                                             const Field3D& wave_speed_in,
                                             Field3D& flow_ylow, bool fixflux);
