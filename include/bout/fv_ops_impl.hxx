@@ -633,11 +633,15 @@ Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
 ///                          Already includes area factor * flux
 template <typename CellEdges>
 Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
-                    const Field3D& wave_speed_in, Field3D& flow_ylow, bool fixflux) {
+                    const Field3D& wave_speed_in, Field3D& flow_ylow, bool fixflux, bool dissipative) {
 
   Coordinates* coord = f_in.getCoordinates();
   ASSERT1_FIELDS_COMPATIBLE(f_in, v_in);
 
+  if (!f_in.isFci() && dissipative) {
+    throw BoutException("Using dissipative flag in Div_par_mod but no Fci parallel transform. This flag will have no impact on the simulation");
+  }
+  
   if (f_in.isFci()) {
     // Use mid-point (cell boundary) averages
 
@@ -661,6 +665,14 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
                    - 0.25 * (f_in[i] + f_down[iym]) * (v_in[i] + v_down[iym])
                          * coord->cell_area_ylow()[i])
                   / coord->cell_volume()[i];
+
+      if (dissipative) {
+        const BoutReal amax = BOUTMAX(fabs(wave_speed_in[i]), fabs(v_in[i]), fabs(v_up[iyp]), fabs(v_down[iym]));       
+        result[i] += (0.5 * amax * (f_in[i] - f_up[iyp]) * coord->cell_area_yhigh()[i]
+                      + 0.5 * amax * (f_in[i] - f_down[iym]) * coord->cell_area_ylow()[i])
+                     / coord->cell_volume()[i];
+      }
+      
     }
     return result;
   }
