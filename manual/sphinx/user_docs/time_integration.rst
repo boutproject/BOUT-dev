@@ -107,7 +107,17 @@ given in table :numref:`tab-solveropts`.
    +--------------------------+--------------------------------------------+-------------------------------------+
    | diagnose                 | Collect and print additional diagnostics   | cvode, imexbdf2, beuler             |
    +--------------------------+--------------------------------------------+-------------------------------------+
-   | save\_jacobian\_index\_base | Write the per-cell Jacobian base index  | beuler / snes                       |
+   | save\_jacobian           | Save PETSc Jacobian diagnostics            | cvode, beuler / snes                |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | jacobian\_export\_kind   | Which Jacobian to save                     | cvode, beuler / snes                |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | jacobian\_export\_trigger | When to save Jacobians                    | cvode                               |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | jacobian\_export\_prefix | Prefix for Jacobian matrix/metadata files  | cvode, beuler / snes                |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | jacobian\_export\_format | PETSc output format for Jacobians          | cvode, beuler / snes                |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | save\_jacobian\_index\_base | Write the per-cell Jacobian base index  | cvode, beuler / snes                |
    |                          | field used to reconstruct saved Jacobians  |                                     |
    +--------------------------+--------------------------------------------+-------------------------------------+
    | nvector                  | ``N_Vector`` backend for SUNDIALS solvers: | cvode, ida, arkode                  |
@@ -225,6 +235,68 @@ nonlinear solvers:
 
 The linear solver type can be set using the ``linear_solver`` option.
 Valid choices include ``gmres`` (the default), ``fgmres``, ``tfqmr``, ``bcgs``.
+
+CVODE Jacobian diagnostics
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+CVODE can also save PETSc finite-difference Jacobians for post-processing,
+using the same metadata format as the SNES Jacobian diagnostics.
+
+The shared options are:
+
+- ``save_jacobian = true`` to enable exports
+- ``jacobian_export_kind = system`` or ``rhs``
+- ``jacobian_export_prefix`` to choose the output filename prefix
+- ``jacobian_export_format = binary`` or ``ascii``
+- ``save_jacobian_index_base = true`` to save the per-cell index-base field
+
+CVODE adds one extra option:
+
+- ``jacobian_export_trigger = linear_setup`` exports whenever CVODE rebuilds
+  linear solver data.
+- ``jacobian_export_trigger = output`` exports once per solver output timestep.
+
+The supported combinations are:
+
+- ``jacobian_export_kind = system`` requires
+  ``jacobian_export_trigger = linear_setup`` and
+  ``cvode_precon_method = petsc``.
+- ``jacobian_export_kind = rhs`` with
+  ``jacobian_export_trigger = output`` works without PETSc preconditioning and is
+  the easiest way to inspect the model Jacobian.
+- ``jacobian_export_kind = rhs`` with
+  ``jacobian_export_trigger = linear_setup`` is also supported on the PETSc
+  preconditioner path.
+- ``jacobian_export_kind = scaled`` is not currently supported in CVODE because
+  the solver does not yet apply a separate scaling transform.
+
+For example, to save the raw RHS Jacobian once per output timestep:
+
+.. code-block:: ini
+
+   [solver]
+   type = cvode
+   save_jacobian = true
+   save_jacobian_index_base = true
+   jacobian_export_kind = rhs
+   jacobian_export_trigger = output
+
+To save the linearised CVODE system Jacobian whenever the PETSc
+preconditioner is rebuilt:
+
+.. code-block:: ini
+
+   [solver]
+   type = cvode
+   cvode_precon_method = petsc
+   save_jacobian = true
+   save_jacobian_index_base = true
+   jacobian_export_kind = system
+   jacobian_export_trigger = linear_setup
+
+As with the SNES Jacobian export, the output files are written into
+``datadir`` and can be inspected using
+``tests/integrated/jacobian_tools/read_jacobian.py``.
 
 IMEX-BDF2
 ---------

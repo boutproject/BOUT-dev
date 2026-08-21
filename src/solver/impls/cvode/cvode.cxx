@@ -170,11 +170,13 @@ CvodeSolver::CvodeSolver(Options* opts)
                         .doc("Save PETSc Jacobian diagnostics to datadir")
                         .withDefault(false)),
       jacobian_export_kind((*options)["jacobian_export_kind"]
-                               .doc("Which Jacobian to save: system, scaled, or rhs")
+                               .doc("Which Jacobian to save for CVODE: system or rhs "
+                                    "(scaled is not supported)")
                                .withDefault(JacobianExportKind::system)),
-      jacobian_export_trigger((*options)["jacobian_export_trigger"]
-                                  .doc("When to save Jacobians: output or linear_setup")
-                                  .withDefault(CvodeJacobianExportTrigger::linear_setup)),
+      jacobian_export_trigger(
+          (*options)["jacobian_export_trigger"]
+              .doc("When to save CVODE Jacobians: output or linear_setup")
+              .withDefault(CvodeJacobianExportTrigger::linear_setup)),
       jacobian_export_prefix(
           (*options)["jacobian_export_prefix"]
               .doc("Prefix for saved Jacobian matrix files and shared metadata JSON")
