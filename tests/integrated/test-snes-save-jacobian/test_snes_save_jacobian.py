@@ -1,6 +1,6 @@
 from pathlib import Path
-import numpy as np
 
+import numpy as np
 from read_jacobian import extract_block, load_jacobian, to_numpy_dense, to_pandas
 
 TEST_DIR = Path(".")

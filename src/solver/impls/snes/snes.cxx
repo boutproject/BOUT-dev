@@ -409,8 +409,7 @@ PetscErrorCode SNESSolver::exportMatrixAndMetadata(Mat jacobian,
                                                    const std::string& stem) {
   if (!jacobian_metadata_written) {
     const std::string datadir = Options::root()["datadir"];
-    const std::string metadata_filename =
-        datadir + "/" + jacobian_export_prefix + "_metadata.json";
+    const std::string metadata_filename = datadir + "/jacobian_metadata.json";
     output.write("Jacobian metadata written to {}\n", metadata_filename);
     writeJacobianMetadataJson(metadata_filename, "snes");
     jacobian_metadata_written = true;

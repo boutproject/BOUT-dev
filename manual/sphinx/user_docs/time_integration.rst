@@ -113,7 +113,7 @@ given in table :numref:`tab-solveropts`.
    +--------------------------+--------------------------------------------+-------------------------------------+
    | jacobian\_export\_trigger | When to save Jacobians                    | cvode                               |
    +--------------------------+--------------------------------------------+-------------------------------------+
-   | jacobian\_export\_prefix | Prefix for Jacobian matrix/metadata files  | cvode, beuler / snes                |
+   | jacobian\_export\_prefix | Prefix for Jacobian matrix files           | cvode, beuler / snes                |
    +--------------------------+--------------------------------------------+-------------------------------------+
    | jacobian\_export\_format | PETSc output format for Jacobians          | cvode, beuler / snes                |
    +--------------------------+--------------------------------------------+-------------------------------------+
@@ -898,7 +898,7 @@ The Jacobian files are written into ``datadir``:
 
 - ``<prefix>_<kind>_<counter>.dat`` or ``.txt``: PETSc matrix written by
   ``MatView``.
-- ``<prefix>_metadata.json``: compact JSON metadata describing the ordering
+- ``jacobian_metadata.json``: compact JSON metadata describing the ordering
   of 2D and 3D evolved variables.
 - ``jacobian_index_base`` in the normal BOUT++ dump files: the per-cell base
   global index needed to expand the compact JSON metadata into one row/column
@@ -1023,7 +1023,7 @@ Summary of solver options
 | jacobian_export_kind      | system        | Which Jacobian to save: ``system``, ``scaled``,    |
 |                           |               | or ``rhs``                                         |
 +---------------------------+---------------+----------------------------------------------------+
-| jacobian_export_prefix    | jacobian      | Prefix for Jacobian matrix files and metadata JSON |
+| jacobian_export_prefix    | jacobian      | Prefix for Jacobian matrix files                   |
 +---------------------------+---------------+----------------------------------------------------+
 | jacobian_export_format    | binary        | Matrix file format written by PETSc ``MatView``    |
 +---------------------------+---------------+----------------------------------------------------+

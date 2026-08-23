@@ -1,7 +1,7 @@
 from pathlib import Path
+
 import numpy as np
 from boutdata.collect import collect
-
 from read_jacobian import extract_block, load_jacobian, to_numpy_dense
 
 TEST_DIR = Path(".")
@@ -53,7 +53,7 @@ def test_system_jacobian_linear_setup_trigger(assert_success_in_shell):
     )
 
     data_dir = TEST_DIR / "data"
-    metadata_file = data_dir / "jacobian_system_test_metadata.json"
+    metadata_file = data_dir / "jacobian_metadata.json"
     matrix_file = data_dir / "jacobian_system_test_system_000000.dat"
 
     assert metadata_file.exists()
