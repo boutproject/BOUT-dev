@@ -1366,3 +1366,56 @@ void Coordinates::normaliseMetric(const BoutReal rho_s0, const BoutReal Bnorm) {
   }
   normaliseMetricTokamak(rho_s0, Bnorm);
 }
+
+void Coordinates::normaliseMetric(const MetricNormaliser& norm) {
+  covariantMetricTensor.normaliseMetric(norm);
+  contravariantMetricTensor.normaliseMetric(norm);
+
+#if BOUT_USE_METRIC_3D
+  using FieldMetricParallel = Field3DParallel;
+#else
+  using FieldMetricParallel = Field2D;
+#endif
+
+  if (norm.J().has_value()) {
+    if (J().hasParallelSlices()) {
+      setJ(FieldMetricParallel{J() / *norm.J()});
+    } else {
+      setJ(J() / *norm.J());
+    }
+  }
+  if (norm.Bxy().has_value()) {
+    if (Bxy().hasParallelSlices()) {
+      setBxy(FieldMetricParallel{Bxy() / *norm.Bxy()});
+    } else {
+      setBxy(Bxy() / *norm.Bxy());
+    }
+  }
+  if (norm.dx().has_value()) {
+    setDx(dx() / *norm.dx());
+  }
+  if (norm.dy().has_value()) {
+    setDy(dy() / *norm.dy());
+  }
+  if (norm.dz().has_value()) {
+    setDz(dz() / *norm.dz());
+  }
+  invalidateMetricCaches();
+  if (norm.g().has_value() or norm.g22().has_value()) {
+    if (Bxy().isFci()) {
+      // No we compute g_22_* - they must not be cleared. If they get
+      // cleared, they will be recomputed, but not normalised!
+#if __cpp_lib_optional >= 202110L
+      auto g22 = norm.g().or_else(norm.g22).value();
+#else
+      auto g22 = norm.g().has_value() ? norm.g().value() : norm.g22().value();
+#endif
+      g_22_ylow();
+      g_22_yhigh();
+      ASSERT2(_g_22_ylow.has_value());
+      (*_g_22_ylow) /= g22;
+      ASSERT2(_g_22_yhigh.has_value());
+      (*_g_22_yhigh) /= g22;
+    }
+  }
+}

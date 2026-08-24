@@ -384,6 +384,8 @@ public:
 
   void communicateDz();
 
+  void normaliseMetric(const MetricNormaliser& norm);
+
   ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
   const FieldMetric& J() const;
 
