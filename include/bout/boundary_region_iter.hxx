@@ -506,11 +506,9 @@ void iter_boundary(const std::shared_ptr<const BoundaryRegionBase>& bndrybase,
                       bndrybase->label);
 }
 
-template <class Bndry, class Func,
-          typename = std::enable_if_t<std::is_base_of<BoundaryRegionBase, Bndry>::value>>
+template <class Bndry, class Func>
+  requires std::derived_from<Bndry, BoundaryRegionBase>
 void iter_boundary(const Bndry& bndry, const Func& func) {
-  static_assert(std::is_base_of<BoundaryRegionBase, Bndry>::value,
-                "Bndry must derive from BoundaryRegionY");
   for (auto& point : bndry) {
     func(point);
   }
