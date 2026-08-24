@@ -52,12 +52,10 @@ struct Indices {
           signed char offset, unsigned char abs_offset)
       : index(index), intersection(intersection), length(length), valid(valid),
         offset(offset), abs_offset(abs_offset) {};
-};
 
-inline bool operator<(const Indices& lhs, const Indices& rhs) {
-  return lhs.index < rhs.index;
-}
-inline bool operator<(const Indices& lhs, const Ind3D& rhs) { return lhs.index < rhs; }
+  auto operator<=>(const Indices& rhs) const { return index <=> rhs.index; }
+  auto operator<=>(const Ind3D& rhs) const { return index <=> rhs; }
+};
 
 using IndicesVec = std::vector<Indices>;
 using IndicesIter = IndicesVec::iterator;

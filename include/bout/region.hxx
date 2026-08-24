@@ -241,18 +241,18 @@ struct SpecificInd {
   /// and is determined by the `dir` template argument. The offset corresponds
   /// to the `dd` template argument.
   template <int dd, DIRECTION dir>
-  inline SpecificInd plus() const {
+  SpecificInd plus() const {
     static_assert(dir == DIRECTION::X || dir == DIRECTION::Y || dir == DIRECTION::Z
                       || dir == DIRECTION::YAligned || dir == DIRECTION::YOrthogonal,
                   "Unhandled DIRECTION in SpecificInd::plus");
     switch (dir) {
-    case (DIRECTION::X):
+    case DIRECTION::X:
       return xp(dd);
-    case (DIRECTION::Y):
-    case (DIRECTION::YAligned):
-    case (DIRECTION::YOrthogonal):
+    case DIRECTION::Y:
+    case DIRECTION::YAligned:
+    case DIRECTION::YOrthogonal:
       return yp(dd);
-    case (DIRECTION::Z):
+    case DIRECTION::Z:
       return zp(dd);
     }
     BOUT_UNREACHABLE();
@@ -262,28 +262,28 @@ struct SpecificInd {
   /// and is determined by the `dir` template argument. The offset corresponds
   /// to the `dd` template argument.
   template <int dd, DIRECTION dir>
-  inline SpecificInd minus() const {
+  SpecificInd minus() const {
     static_assert(dir == DIRECTION::X || dir == DIRECTION::Y || dir == DIRECTION::Z
                       || dir == DIRECTION::YAligned || dir == DIRECTION::YOrthogonal,
                   "Unhandled DIRECTION in SpecificInd::minus");
     switch (dir) {
-    case (DIRECTION::X):
+    case DIRECTION::X:
       return xm(dd);
-    case (DIRECTION::Y):
-    case (DIRECTION::YAligned):
-    case (DIRECTION::YOrthogonal):
+    case DIRECTION::Y:
+    case DIRECTION::YAligned:
+    case DIRECTION::YOrthogonal:
       return ym(dd);
-    case (DIRECTION::Z):
+    case DIRECTION::Z:
       return zm(dd);
     }
     BOUT_UNREACHABLE();
   }
 
-  inline SpecificInd xp(int dx = 1) const { return {ind + (dx * ny * nz), ny, nz}; }
+  SpecificInd xp(int dx = 1) const { return {ind + (dx * ny * nz), ny, nz}; }
   /// The index one point -1 in x
-  inline SpecificInd xm(int dx = 1) const { return xp(-dx); }
+  SpecificInd xm(int dx = 1) const { return xp(-dx); }
   /// The index one point +1 in y
-  inline SpecificInd yp(int dy = 1) const {
+  SpecificInd yp(int dy = 1) const {
 #if CHECK >= 4
     if (y() + dy < 0 or y() + dy >= ny) {
       throw BoutException("Offset in y ({:d}) would go out of bounds at {:d}", dy, ind);
@@ -293,12 +293,12 @@ struct SpecificInd {
     return {ind + (dy * nz), ny, nz};
   }
   /// The index one point -1 in y
-  inline SpecificInd ym(int dy = 1) const { return yp(-dy); }
+  SpecificInd ym(int dy = 1) const { return yp(-dy); }
   /// The index one point +1 in z. Wraps around zend to zstart
   /// An alternative, non-branching calculation is :
   /// ind + dz - nz * ((ind + dz) / nz  - ind / nz)
   /// but this appears no faster (and perhaps slower).
-  inline SpecificInd zp(int dz = 1) const {
+  SpecificInd zp(int dz = 1) const {
     ASSERT3(dz >= 0);
     dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
     return {(ind + dz) % nz < dz ? ind - nz + dz : ind + dz, ny, nz};
@@ -307,58 +307,29 @@ struct SpecificInd {
   /// An alternative, non-branching calculation is :
   /// ind - dz + nz * ( (nz + ind) / nz - (nz + ind - dz) / nz)
   /// but this appears no faster (and perhaps slower).
-  inline SpecificInd zm(int dz = 1) const {
+  SpecificInd zm(int dz = 1) const {
     dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
     ASSERT3(dz >= 0);
     return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
   }
   /// Automatically select zm or zp depending on sign
-  inline SpecificInd zpm(int dz) const { return dz > 0 ? zp(dz) : zm(-dz); }
+  SpecificInd zpm(int dz) const { return dz > 0 ? zp(dz) : zm(-dz); }
 
   // and for 2 cells
-  inline SpecificInd xpp() const { return xp(2); }
-  inline SpecificInd xmm() const { return xm(2); }
-  inline SpecificInd ypp() const { return yp(2); }
-  inline SpecificInd ymm() const { return ym(2); }
-  inline SpecificInd zpp() const { return zp(2); }
-  inline SpecificInd zmm() const { return zm(2); }
+  SpecificInd xpp() const { return xp(2); }
+  SpecificInd xmm() const { return xm(2); }
+  SpecificInd ypp() const { return yp(2); }
+  SpecificInd ymm() const { return ym(2); }
+  SpecificInd zpp() const { return zp(2); }
+  SpecificInd zmm() const { return zm(2); }
 
   /// Generic offset of \p index in multiple directions simultaneously
-  inline SpecificInd offset(int dx, int dy, int dz) const {
-    return zpm(dz).yp(dy).xp(dx);
-  }
+  SpecificInd offset(int dx, int dy, int dz) const { return zpm(dz).yp(dy).xp(dx); }
+
+  /// Relational operator
+  auto operator<=>(const SpecificInd<N>& rhs) const { return ind <=> rhs.ind; }
+  bool operator==(const SpecificInd<N>& rhs) const { return ind == rhs.ind; }
 };
-
-/// Relational operators
-template <IND_TYPE N>
-inline bool operator==(const SpecificInd<N>& lhs, const SpecificInd<N>& rhs) {
-  return lhs.ind == rhs.ind;
-}
-
-template <IND_TYPE N>
-inline bool operator!=(const SpecificInd<N>& lhs, const SpecificInd<N>& rhs) {
-  return !operator==(lhs, rhs);
-}
-
-template <IND_TYPE N>
-inline bool operator<(const SpecificInd<N>& lhs, const SpecificInd<N>& rhs) {
-  return lhs.ind < rhs.ind;
-}
-
-template <IND_TYPE N>
-inline bool operator>(const SpecificInd<N>& lhs, const SpecificInd<N>& rhs) {
-  return operator<(rhs, lhs);
-}
-
-template <IND_TYPE N>
-inline bool operator>=(const SpecificInd<N>& lhs, const SpecificInd<N>& rhs) {
-  return !operator<(lhs, rhs);
-}
-
-template <IND_TYPE N>
-inline bool operator<=(const SpecificInd<N>& lhs, const SpecificInd<N>& rhs) {
-  return !operator>(lhs, rhs);
-}
 
 /// Arithmetic operators with integers
 template <IND_TYPE N>
