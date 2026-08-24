@@ -38,8 +38,13 @@ concept function_accessor =
     and std::is_same_v<std::invoke_result_t<F, int, Ind3D>, BoutReal>;
 
 /// Interface for boundary iterators
+///
+/// The function passed into `YBoundary::iter`, for example, operates over
+/// elements of types derived from `BoundaryRegionIterBase`, but because this
+/// uses CRTP they can be a bit difficult to name. Instead use `BoundaryIterator
+/// auto` as the parameter type.
 template <class Iter>
-concept boundary_iterator = requires(Iter point, Field3D f) {
+concept BoundaryIterator = requires(Iter point, Field3D f) {
   point.getAt(f, int{});
   point.next(f);
   point.current(f);
@@ -205,23 +210,24 @@ public:
   /// Iterator over a `BoundaryRegionFCI`
   class Iterator : public BoundaryRegionIterBase<Iterator> {
   private:
-    // TODO(dave) make non-const?
-    const BoundaryRegionFCI* region;
-    size_t pos{0};
+    parallel_boundary_region::Indices index;
+    Mesh* localmesh_m;
+    int _dir;
 
   public:
     Iterator() = delete;
-    Iterator(const BoundaryRegionFCI* reg, bool isstart)
-        : region(reg), pos(isstart ? 0 : reg->bndry_points.size()) {}
-    void setValid(char valid) {
-      const_cast<BoundaryRegionFCI*>(region)->bndry_points[pos].valid = valid;
-    };
-    BoutReal s_x() const { return region->bndry_points[pos].intersection.s_x; };
-    BoutReal s_y() const { return region->bndry_points[pos].intersection.s_y; };
-    BoutReal s_z() const { return region->bndry_points[pos].intersection.s_z; };
-    Mesh* localmesh() const { return region->localmesh; };
-    int dir() const { return region->_dir; }
-    bool _is_lower() const { return region->_dir < 0; }
+    Iterator(parallel_boundary_region::Indices index, const BoundaryRegionFCI& rgn)
+        : index(index), localmesh_m(rgn.localmesh), _dir(rgn._dir) {}
+
+    void setValid(char valid) { index.valid = valid; };
+
+    BoutReal s_x() const { return index.intersection.s_x; };
+    BoutReal s_y() const { return index.intersection.s_y; };
+    BoutReal s_z() const { return index.intersection.s_z; };
+
+    Mesh* localmesh() const { return localmesh_m; };
+    int dir() const { return _dir; }
+    bool _is_lower() const { return _dir < 0; }
 
     template <bool check = true>
     BoutReal& _getAt(Field3D& f, int off) const {
@@ -229,7 +235,7 @@ public:
       if constexpr (check) {
         ASSERT3(_valid() > -off - 2);
       }
-      auto _off = _offset() - (off * region->_dir);
+      auto _off = _offset() - (off * _dir);
       return f.ynext(_off)[_ind().yp(_off)];
     }
     template <bool check = true>
@@ -238,7 +244,7 @@ public:
       if constexpr (check) {
         ASSERT3(_valid() > -off - 2);
       }
-      auto _off = _offset() - (off * region->_dir);
+      auto _off = _offset() - (off * _dir);
       return f.ynext(_off)[_ind().yp(_off)];
     }
     template <bool check = true>
@@ -247,7 +253,7 @@ public:
       if constexpr (check) {
         ASSERT3(_valid() > -off - 2);
       }
-      auto _off = _offset() - (off * region->_dir);
+      auto _off = _offset() - (off * _dir);
       return f.ynext(_off)[_ind().yp(_off)];
     }
     template <bool check = true>
@@ -256,7 +262,7 @@ public:
       if constexpr (check) {
         ASSERT3(_valid() > -off - 2);
       }
-      auto _off = _offset() - (off * region->_dir);
+      auto _off = _offset() - (off * _dir);
       return f.ynext(_off)[_ind().yp(_off)];
     }
     template <bool check = true>
@@ -264,36 +270,23 @@ public:
       if constexpr (check) {
         ASSERT3(valid() > -off - 2);
       }
-      auto _off = _offset() + (off * region->_dir);
+      auto _off = _offset() + (off * _dir);
       return f(_off, _ind().yp(_off));
     }
-    signed char _offset() const { return region->bndry_points[pos].offset; }
-    signed char _valid() const { return region->bndry_points[pos].valid; }
-    Ind3D _ind() const { return region->bndry_points[pos].index; }
-    int _boundary_width() const {
-      return region->localmesh->ystart - region->bndry_points[pos].abs_offset + 1;
-    }
+    signed char _offset() const { return index.offset; }
+    signed char _valid() const { return index.valid; }
+    Ind3D _ind() const { return index.index; }
+    int _boundary_width() const { return localmesh_m->ystart - index.abs_offset + 1; }
     BoutReal _length([[maybe_unused]] CELL_LOC loc) const {
       ASSERT3(loc == CELL_CENTRE);
-      return region->bndry_points[pos].length;
+      return index.length;
     }
 
-    auto operator<=>(const Iterator& rhs) const {
-      ASSERT3(region == rhs.region);
-      return pos <=> rhs.pos;
-    }
+    auto operator<=>(const Iterator& rhs) const { return _ind() <=> rhs._ind(); }
+    bool operator==(Iterator rhs) const { return _ind() == rhs._ind(); }
 
-    bool operator==(Iterator lhs) const {
-      ASSERT3(region == lhs.region);
-      return pos == lhs.pos;
-    }
-
-    Iterator& operator++() {
-      ++pos;
-      return *this;
-    }
-
-    Iterator& operator*() { return *this; }
+    friend auto operator<=>(const Iterator& lhs, Ind3D ind) { return lhs._ind() <=> ind; }
+    friend bool operator==(Iterator lhs, Ind3D ind) { return lhs._ind() == ind; }
   };
 
   BoundaryRegionFCI(const std::string& name, const BndryLoc& loc, int dir, Mesh* mesh)
@@ -303,12 +296,13 @@ public:
   /// Add a point to the boundary
   void add_point(Ind3D ind, BoutReal x, BoutReal y, BoutReal z, BoutReal length,
                  char valid, signed char offset) {
-    if (!bndry_points.empty() && bndry_points.back().index > ind) {
+    if (!bndry_points.empty() && bndry_points.back()._ind() > ind) {
       is_sorted = false;
     }
-    bndry_points.emplace_back(ind, bout::parallel_boundary_region::RealPoint{x, y, z},
-                              length, valid, offset,
-                              static_cast<unsigned char>(std::abs(offset)));
+    auto index = parallel_boundary_region::Indices{
+        ind,    bout::parallel_boundary_region::RealPoint{x, y, z}, length, valid,
+        offset, static_cast<unsigned char>(std::abs(offset))};
+    bndry_points.emplace_back(index, *this);
   }
   void add_point(int ix, int iy, int iz, BoutReal x, BoutReal y, BoutReal z,
                  BoutReal length, char valid, signed char offset) {
@@ -319,7 +313,7 @@ public:
     ensureSorted();
     const auto found =
         std::lower_bound(std::begin(bndry_points), std::end(bndry_points), ind);
-    return found != std::end(bndry_points) and found->index == ind;
+    return found != std::end(bndry_points) and found->_ind() == ind;
   }
   int dir() const { return _dir; }
   // legacy interface
@@ -327,21 +321,23 @@ public:
   void next() override { throw BoutException("Legacy interface is not suppored"); }
   bool isDone() override { throw BoutException("Legacy interface is not suppored"); }
 
-  auto begin() const { return Iterator(this, true); }
-  auto end() const { return Iterator(this, false); }
+  auto begin() const { return bndry_points.begin(); }
+  auto end() const { return bndry_points.end(); }
+  auto begin() { return bndry_points.begin(); }
+  auto end() { return bndry_points.end(); }
 
 private:
   friend class Iterator;
   int _dir;
   // Vector of points in the boundary
-  bout::parallel_boundary_region::IndicesVec bndry_points;
+  std::vector<Iterator> bndry_points;
   Mesh* localmesh;
   bool is_sorted{true};
   void ensureSorted() {
     if (is_sorted) {
       return;
     }
-    std::sort(std::begin(bndry_points), std::end(bndry_points));
+    std::ranges::sort(bndry_points);
   }
   Ind3D xyz2ind(int x, int y, int z) const {
     const int ny = localmesh->LocalNy;
@@ -564,13 +560,13 @@ void iter_boundary(const Bndry& bndry, const Func& func) {
  */
 
 /// Extrapolate a given field to the boundary
-template <boundary_iterator Iter>
+template <BoundaryIterator Iter>
 BoutReal extrapolate_boundary_o1(const Iter& point, const Field3D& f) {
   return point.current(f);
 }
 
 /// Extrapolate a given field to the boundary
-template <boundary_iterator Iter>
+template <BoundaryIterator Iter>
 BoutReal extrapolate_boundary_o2(const Iter& point, const Field3D& f) {
   ASSERT3(point.valid() >= 0);
   if (point.valid() < 1) {
@@ -581,14 +577,14 @@ BoutReal extrapolate_boundary_o2(const Iter& point, const Field3D& f) {
 }
 
 /// Extrapolate a given function to the boundary
-template <boundary_iterator Iter>
+template <BoundaryIterator Iter>
 BoutReal extrapolate_bounday_o1(const Iter& point, const function_accessor auto& func,
                                 [[maybe_unused]] CELL_LOC loc = CELL_CENTRE) {
   return point.current(func);
 }
 
 /// Extrapolate a given function to the boundary
-template <boundary_iterator Iter>
+template <BoundaryIterator Iter>
 BoutReal extrapolate_boundary_o2(const Iter& point, const function_accessor auto& func,
                                  CELL_LOC loc = CELL_CENTRE) {
   ASSERT3(point.valid() >= 0);
@@ -600,25 +596,25 @@ BoutReal extrapolate_boundary_o2(const Iter& point, const function_accessor auto
 }
 
 /// Interpolate a field to the boundary, using the boundary values
-template <boundary_iterator Iter>
+template <BoundaryIterator Iter>
 BoutReal interpolate_boundary_o2(const Iter& point, const Field3D& f) {
   return point.current(f) * (1 - point.length(f.getLocation()))
          + point.next(f) * point.length(f.getLocation());
 }
 /// Interpolate a field to the boundary, using the boundary values
-template <boundary_iterator Iter>
+template <BoundaryIterator Iter>
 BoutReal interpolate_boundary_o2(const Iter& point, const function_accessor auto& func,
                                  CELL_LOC loc = CELL_CENTRE) {
   return point.current(func) * (1 - point.length(loc))
          + point.next(func) * point.length(loc);
 }
 /// Extrapolate to the first boundary value freely
-template <boundary_iterator Iter>
+template <BoundaryIterator Iter>
 BoutReal extrapolate_next_o1(const Iter& point, const Field3D& f) {
   return point.current(f);
 }
 /// Extrapolate to the first boundary value freely
-template <boundary_iterator Iter>
+template <BoundaryIterator Iter>
 BoutReal extrapolate_next_o2(const Iter& point, const Field3D& f) {
   ASSERT3(point.valid() >= 0);
   if (point.valid() < 1) {
@@ -628,12 +624,12 @@ BoutReal extrapolate_next_o2(const Iter& point, const Field3D& f) {
 }
 
 /// Extrapolate to the first boundary value freely
-template <boundary_iterator Iter>
+template <BoundaryIterator Iter>
 BoutReal extrapolate_next_o1(const Iter& point, const function_accessor auto& func) {
   return point.current(func);
 }
 /// Extrapolate to the first boundary value freely
-template <boundary_iterator Iter>
+template <BoundaryIterator Iter>
 BoutReal extrapolate_next_o2(const Iter& point, const function_accessor auto& func) {
   ASSERT3(point.valid() >= 0);
   if (point.valid() < 1) {
@@ -643,13 +639,13 @@ BoutReal extrapolate_next_o2(const Iter& point, const function_accessor auto& fu
 }
 
 /// extrapolate the gradient into the boundary
-template <boundary_iterator Iter>
+template <BoundaryIterator Iter>
 BoutReal extrapolate_grad_o1([[maybe_unused]] const Iter& point,
                              [[maybe_unused]] const Field3D& f) {
   return 0;
 }
 /// extrapolate the gradient into the boundary
-template <boundary_iterator Iter>
+template <BoundaryIterator Iter>
 BoutReal extrapolate_grad_o2(const Iter& point, const Field3D& f) {
   ASSERT3(point.valid() >= 0);
   if (point.valid() < 1) {
@@ -658,7 +654,7 @@ BoutReal extrapolate_grad_o2(const Iter& point, const Field3D& f) {
   return point.current(f) - point.next(f);
 }
 
-template <boundary_iterator Iter>
+template <BoundaryIterator Iter>
 BoutReal extrapolate_boundary_free(const Iter& point, const Field3D& f,
                                    BoundaryFreeExtrapolation mode) {
   BoutReal fac = BoutNaN;
@@ -677,7 +673,7 @@ BoutReal extrapolate_boundary_free(const Iter& point, const Field3D& f,
  */
 
 /// Apply a dirichlet boundary condition
-template <boundary_iterator Iter>
+template <BoundaryIterator Iter>
 void dirichlet_o1(const Iter& point, Field3D& f, BoutReal value) {
   for (int i = 0; i < point.boundary_width(); ++i) {
     point.getAt(f, -i) = value;
@@ -685,7 +681,7 @@ void dirichlet_o1(const Iter& point, Field3D& f, BoutReal value) {
 }
 
 /// Apply a dirichlet boundary condition
-template <boundary_iterator Iter>
+template <BoundaryIterator Iter>
 void dirichlet_o2(const Iter& point, Field3D& f, BoutReal value) {
   if (point.length(f.getLocation()) < point.smallValue()) {
     return dirichlet_o1(point, f, value);
@@ -697,7 +693,7 @@ void dirichlet_o2(const Iter& point, Field3D& f, BoutReal value) {
 }
 
 /// Apply a dirichlet boundary condition
-template <boundary_iterator Iter>
+template <BoundaryIterator Iter>
 void dirichlet_o3(const Iter& point, Field3D& f, BoutReal value) {
   ASSERT3(point.valid() >= 0);
   if (point.valid() < 1) {
@@ -718,7 +714,7 @@ void dirichlet_o3(const Iter& point, Field3D& f, BoutReal value) {
 }
 
 /// Ensure the value in the boundary is at least `value`
-template <boundary_iterator Iter>
+template <BoundaryIterator Iter>
 void limit_at_least(const Iter& point, Field3D& f, BoutReal value) {
   for (int i = 0; i < point.boundary_width(); ++i) {
     if (point.getAt(f, -i) < value) {
@@ -731,7 +727,7 @@ void limit_at_least(const Iter& point, Field3D& f, BoutReal value) {
 
 // neumann_o1 would give second order convergence, given an appropriate one-sided stencil.
 // But in general we do not, and thus for normal C2 stencils, this is 1st order.
-template <boundary_iterator Iter>
+template <BoundaryIterator Iter>
 void neumann_o1(const Iter& point, Field3D& f, BoutReal value) {
   for (int i = 0; i < point.boundary_width(); ++i) {
     point.getAt(f, -i) = point.current(f) + value * (i + 1);
@@ -739,7 +735,7 @@ void neumann_o1(const Iter& point, Field3D& f, BoutReal value) {
 }
 
 /// Apply neumann boundary condition, where `value` is the gradient in index space
-template <boundary_iterator Iter>
+template <BoundaryIterator Iter>
 void neumann_o2(const Iter& point, Field3D& f, BoutReal value) {
   ASSERT3(point.valid() >= 0);
   if (point.valid() < 1) {
@@ -751,7 +747,7 @@ void neumann_o2(const Iter& point, Field3D& f, BoutReal value) {
 }
 
 /// Apply neumann boundary condition, where `value` is the gradient in index space
-template <boundary_iterator Iter>
+template <BoundaryIterator Iter>
 void neumann_o3(const Iter& point, Field3D& f, BoutReal value) {
   ASSERT3(point.valid() >= 0);
   if (point.valid() < 1) {
@@ -764,7 +760,7 @@ void neumann_o3(const Iter& point, Field3D& f, BoutReal value) {
   }
 }
 
-template <boundary_iterator Iter>
+template <BoundaryIterator Iter>
 void set_free(const Iter& point, Field3D& f, BoundaryFreeExtrapolation mode) {
   BoutReal fac = BoutNaN;
   if (point.valid() > 0) {

@@ -61,7 +61,7 @@ YBoundary::YBoundary(YBndryType type, Options* options_ptr, const Mesh& mesh)
     }
   }
   // Cache boundary regions
-  iter([&](const YBoundaryPoint auto& point) {
+  iter([&](const BoundaryIterator auto& point) {
     if (point.dir() == 1) {
       _contains_high[point.ind()] = true;
     } else if (point.dir() == -1) {

@@ -528,7 +528,7 @@ void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices,
   for (const auto& newreg : fieldmesh->getBoundaries()) {
     if (newreg->isX) {
       using namespace bout::boundary;
-      iter_boundary(newreg, [&](YBoundaryPoint auto& point) {
+      iter_boundary(newreg, [&](BoundaryIterator auto& point) {
         const BoutReal val = interpolate_boundary_o2(point, f3d);
         dirichlet_o2(point, *this, val);
       });

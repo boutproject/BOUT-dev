@@ -15,15 +15,6 @@ class Options;
 
 namespace bout {
 namespace boundary {
-/// Helper concept for functions to pass into `YBoundary::iter`
-///
-/// The function passed into `YBoundary::iter` operates over elements of types
-/// derived from `BoundaryRegionIterBase`, but because this uses CRTP they can
-/// be a bit difficult to name. Instead use `YBoundaryPoint auto` as the
-/// parameter type.
-template <class T>
-concept YBoundaryPoint = std::derived_from<T, BoundaryRegionIterBase<T>>;
-
 /// This class allows to simplify iterating over y-boundaries.
 ///
 /// It makes it easier to write code for FieldAligned boundaries, but if a bit
@@ -31,26 +22,25 @@ concept YBoundaryPoint = std::derived_from<T, BoundaryRegionIterBase<T>>;
 ///
 /// An example how to replace old code is given here:
 /// ../../manual/sphinx/user_docs/boundary_options.rst
-
 class YBoundary {
 public:
   YBoundary(YBndryType type, Options* options_ptr, const Mesh& mesh);
 
   /// Iterate over the boundary.
   /// This function takes a lamda / templated function, that applies the boundary on the given point.
-  /// The function must take a `const YBoundaryPoint auto& point` as its only argument.
+  /// The function must take a `const BoundaryIterator auto& point` as its only argument.
   /// See also the documentation at ../../manual/sphinx/user_docs/boundary_options.rst
   template <class F>
     requires std::regular_invocable<F&, const BoundaryRegionY::Iterator&>
              || std::regular_invocable<F&, const BoundaryRegionFCI::Iterator&>
-  void iter(F func) {
-    for (auto& region : boundary_regions) {
-      for (auto& point : *region) {
+  void iter(F func) const {
+    for (const auto& region : boundary_regions) {
+      for (const auto& point : *region) {
         func(point);
       }
     }
-    for (auto& region : boundary_regions_par) {
-      for (auto& point : *region) {
+    for (const auto& region : boundary_regions_par) {
+      for (const auto& point : *region) {
         func(point);
       }
     }
