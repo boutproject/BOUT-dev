@@ -49,15 +49,15 @@ class TokamakMetricNormaliser : public MetricNormaliser {
 public:
   TokamakMetricNormaliser(BoutReal Bnorm, BoutReal rho_s0)
       : Bnorm(Bnorm), rho_s0(rho_s0) {};
-  std::optional<BoutReal> g11();
-  std::optional<BoutReal> g22();
-  std::optional<BoutReal> g33();
-  std::optional<BoutReal> g12();
-  std::optional<BoutReal> g13();
-  std::optional<BoutReal> g23();
-  std::optional<BoutReal> dx();
-  std::optional<BoutReal> J();
-  std::optional<BoutReal> Bxy();
+  std::optional<BoutReal> g11() const override;
+  std::optional<BoutReal> g22() const override;
+  std::optional<BoutReal> g33() const override;
+  std::optional<BoutReal> g12() const override;
+  std::optional<BoutReal> g13() const override;
+  std::optional<BoutReal> g23() const override;
+  std::optional<BoutReal> dx() const override;
+  std::optional<BoutReal> J() const override;
+  std::optional<BoutReal> Bxy() const override;
 
 private:
   BoutReal Bnorm;
@@ -67,9 +67,9 @@ private:
 class FCIMetricNormaliser : public MetricNormaliser {
 public:
   FCIMetricNormaliser(BoutReal Bnorm, BoutReal rho_s0) : Bnorm(Bnorm), rho_s0(rho_s0) {};
-  std::optional<BoutReal> g();
-  std::optional<BoutReal> J();
-  std::optional<BoutReal> Bxy();
+  std::optional<BoutReal> g() const override;
+  std::optional<BoutReal> J() const override;
+  std::optional<BoutReal> Bxy() const override;
 
 private:
   BoutReal Bnorm;
