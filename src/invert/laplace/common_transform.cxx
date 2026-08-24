@@ -19,42 +19,12 @@
 #include <cufft.h>
 #endif
 
-#if BOUT_HAS_CUDA && __has_include(<nvtx3/nvToolsExt.h>)
-#include <nvtx3/nvToolsExt.h>
-#endif
-
 #include <cstdint>
 #include <algorithm>
 #include <iterator>
 #include <memory>
 
 namespace {
-#if BOUT_HAS_CUDA && __has_include(<nvtx3/nvToolsExt.h>)
-class NvtxRange {
-public:
-  NvtxRange(const char* name, uint32_t argb) {
-    nvtxEventAttributes_t event{};
-    event.version = NVTX_VERSION;
-    event.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
-    event.messageType = NVTX_MESSAGE_TYPE_ASCII;
-    event.message.ascii = name;
-    event.colorType = NVTX_COLOR_ARGB;
-    event.color = argb;
-    nvtxRangePushEx(&event);
-  }
-
-  ~NvtxRange() { nvtxRangePop(); }
-
-  NvtxRange(const NvtxRange&) = delete;
-  NvtxRange& operator=(const NvtxRange&) = delete;
-};
-#else
-class NvtxRange {
-public:
-  NvtxRange(const char*, uint32_t) {}
-};
-#endif
-
 #if BOUT_HAS_CUDA
 static_assert(sizeof(dcomplex) == sizeof(cufftDoubleComplex),
               "dcomplex and cufftDoubleComplex must have the same memory layout");
@@ -205,13 +175,11 @@ auto FFTTransform::forward(const Laplacian& laplacian, const Field3D& rhs,
                            const Field3D& x0, const Field2D& Acoef, const Field2D& C1coef,
                            const Field2D& C2coef,
                            const Field2D& Dcoef) const -> Matrices {
-  NvtxRange forward_range{"Laplace FFTTransform Field3D forward", 0xFFFF6666};
 
   Matrices result(nsys, nx);
 
 #if BOUT_HAS_CUDA
   {
-    NvtxRange range{"Laplace FFTTransform Field3D forward: cufft rfft", 0xFFFF8844};
     auto& scratch = cufftScratch();
     const int nmodes = (nz / 2) + 1;
     scratch.ensure(nz, nxny);
@@ -263,7 +231,6 @@ auto FFTTransform::forward(const Laplacian& laplacian, const Field3D& rhs,
     // Loop over X and Y indices, including boundaries but not guard cells
     // (unless periodic in x)
     {
-      NvtxRange range{"Laplace FFTTransform Field3D forward: rfft", 0xFFFF8888};
       BOUT_OMP_PERF(for)
       for (int ind = 0; ind < nxny; ++ind) {
         const int ix = xs + (ind / ny);
@@ -294,8 +261,6 @@ auto FFTTransform::forward(const Laplacian& laplacian, const Field3D& rhs,
   BOUT_OMP_PERF(parallel)
   {
     {
-      NvtxRange range{"Laplace FFTTransform Field3D forward: tridag matrices",
-                      0xFFFFAAAA};
       BOUT_OMP_PERF(for nowait)
       for (int ind = 0; ind < nsys; ind++) {
         const int iy = ys + (ind / nmode);
@@ -313,12 +278,10 @@ auto FFTTransform::forward(const Laplacian& laplacian, const Field3D& rhs,
 
 auto FFTTransform::backward(const Field3D& rhs,
                             const Matrix<dcomplex>& xcmplx3D) const -> Field3D {
-  NvtxRange backward_range{"Laplace FFTTransform Field3D backward", 0xFFFFEEEE};
   Field3D x{emptyFrom(rhs)};
 
 #if BOUT_HAS_CUDA
   {
-    NvtxRange range{"Laplace FFTTransform Field3D backward: cufft irfft", 0xFFFFFF88};
     auto& scratch = cufftScratch();
     const int nmodes = (nz / 2) + 1;
     scratch.ensure(nz, nxny);
@@ -369,7 +332,6 @@ auto FFTTransform::backward(const Field3D& rhs,
     auto k1d = Array<dcomplex>((nz / 2) + 1);
 
     {
-      NvtxRange range{"Laplace FFTTransform Field3D backward: irfft", 0xFFFFFFFF};
       BOUT_OMP_PERF(for nowait)
       for (int ind = 0; ind < nxny; ++ind) { // Loop over X and Y
         const int ix = xs + (ind / ny);

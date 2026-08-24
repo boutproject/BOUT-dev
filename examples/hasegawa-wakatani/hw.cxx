@@ -6,38 +6,6 @@
 #include <bout/smoothing.hxx>
 #include <bout/stencil_expr.hxx>
 
-#if BOUT_HAS_CUDA && __has_include(<nvtx3/nvToolsExt.h>)
-#include <nvtx3/nvToolsExt.h>
-#endif
-
-namespace {
-#if BOUT_HAS_CUDA && __has_include(<nvtx3/nvToolsExt.h>)
-class NvtxRange {
-public:
-  NvtxRange(const char* name, uint32_t argb) {
-    nvtxEventAttributes_t event{};
-    event.version = NVTX_VERSION;
-    event.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
-    event.messageType = NVTX_MESSAGE_TYPE_ASCII;
-    event.message.ascii = name;
-    event.colorType = NVTX_COLOR_ARGB;
-    event.color = argb;
-    nvtxRangePushEx(&event);
-  }
-
-  ~NvtxRange() { nvtxRangePop(); }
-
-  NvtxRange(const NvtxRange&) = delete;
-  NvtxRange& operator=(const NvtxRange&) = delete;
-};
-#else
-class NvtxRange {
-public:
-  NvtxRange(const char*, uint32_t) {}
-};
-#endif
-} // namespace
-
 class HW : public PhysicsModel {
 private:
   Field3D n, vort; // Evolving density and vorticity
@@ -59,19 +27,15 @@ private:
   Field3D Delp4(const Field3D& var) {
     Field3D tmp;
     {
-      NvtxRange range{"HW Delp4: first Delp2_C2", 0xFF66CCFF};
       tmp = Delp2_C2(var);
     }
     {
-      NvtxRange range{"HW Delp4: communicate tmp", 0xFF6699CC};
       mesh->communicate(tmp);
     }
     {
-      NvtxRange range{"HW Delp4: apply neumann boundary", 0xFF336699};
       tmp.applyBoundary("neumann");
     }
     {
-      NvtxRange range{"HW Delp4: second Delp2_C2", 0xFF003366};
       return Delp2_C2(tmp);
     }
   }
@@ -141,12 +105,10 @@ protected:
     // Non-stiff, convective part of the problem
 
     {
-      NvtxRange range{"HW convective: Laplacian solve vort -> phi", 0xFFFF3333};
       phi = phiSolver->solve(vort, phi);
     }
 
     {
-      NvtxRange range{"HW convective: communicate n/vort/phi", 0xFFFF7733};
       mesh->communicate(n, vort, phi);
     }
 
@@ -154,7 +116,6 @@ protected:
     Field3D nonzonal_n;
     Field3D nonzonal_phi;
     {
-      NvtxRange range{"HW convective: build nonzonal fields", 0xFFFFCC33};
       nonzonal_n = n;
       nonzonal_phi = phi;
       if (modified) {
@@ -165,13 +126,11 @@ protected:
     }
 
     {
-      NvtxRange range{"HW ddt(n): bracket_arakawa + alpha coupling + DDZ", 0xFF00FFFF};
       ddt(n) = -bracket_arakawa(phi, n) + alpha * (nonzonal_phi - nonzonal_n)
                - kappa * DDZ(phi);
     }
 
     {
-      NvtxRange range{"HW ddt(vort): bracket_arakawa + alpha coupling", 0xFFFFAA00};
       ddt(vort) = -bracket_arakawa(phi, vort) + alpha * (nonzonal_phi - nonzonal_n);
     }
 
@@ -181,15 +140,12 @@ protected:
   int diffusive(BoutReal UNUSED(time)) override {
     // Diffusive terms
     {
-      NvtxRange range{"HW diffusive: communicate n/vort", 0xFFAA66FF};
       mesh->communicate(n, vort);
     }
     {
-      NvtxRange range{"HW diffusive: ddt(n) Delp4", 0xFF8844CC};
       ddt(n) = -Dn * Delp4(n);
     }
     {
-      NvtxRange range{"HW diffusive: ddt(vort) Delp4", 0xFF662299};
       ddt(vort) = -Dvort * Delp4(vort);
     }
     return 0;

@@ -49,10 +49,6 @@
 
 #include <fmt/format.h>
 
-#if BOUT_HAS_CUDA && __has_include(<nvtx3/nvToolsExt.h>)
-#include <nvtx3/nvToolsExt.h>
-#endif
-
 #include <cmath>
 #include <ctime>
 #include <memory>
@@ -82,34 +78,6 @@
 
 int* Solver::pargc = nullptr;
 char*** Solver::pargv = nullptr;
-
-namespace {
-#if BOUT_HAS_CUDA && __has_include(<nvtx3/nvToolsExt.h>)
-class NvtxRange {
-public:
-  NvtxRange(const char* name, uint32_t argb) {
-    nvtxEventAttributes_t event{};
-    event.version = NVTX_VERSION;
-    event.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
-    event.colorType = NVTX_COLOR_ARGB;
-    event.color = argb;
-    event.messageType = NVTX_MESSAGE_TYPE_ASCII;
-    event.message.ascii = name;
-    nvtxRangePushEx(&event);
-  }
-
-  ~NvtxRange() { nvtxRangePop(); }
-
-  NvtxRange(const NvtxRange&) = delete;
-  NvtxRange& operator=(const NvtxRange&) = delete;
-};
-#else
-class NvtxRange {
-public:
-  NvtxRange(const char*, uint32_t) {}
-};
-#endif
-} // namespace
 
 /**************************************************************************
  * Constructor
@@ -1244,7 +1212,6 @@ Field3D Solver::globalIndex(int localStart) {
  **************************************************************************/
 
 int Solver::run_rhs(BoutReal t, bool linear) {
-  NvtxRange range{"Solver::run_rhs", 0xFF1D4ED8};
   int status;
 
   Timer timer("rhs");
@@ -1264,7 +1231,6 @@ int Solver::run_rhs(BoutReal t, bool linear) {
     Array<BoutReal> tmp2(nv);
 
     {
-      NvtxRange copy_range{"Solver::run_rhs save_vars before convective", 0xFF93C5FD};
       save_vars(tmp.begin()); // Copy variables into tmp
     }
     pre_rhs(t);
@@ -1272,28 +1238,23 @@ int Solver::run_rhs(BoutReal t, bool linear) {
     post_rhs(t); // Check variables, apply boundary conditions
 
     {
-      NvtxRange load_range{"Solver::run_rhs reload vars before diffusive", 0xFFBAE6FD};
       load_vars(tmp.begin()); // Reset variables
     }
     {
-      NvtxRange save_range{"Solver::run_rhs save convective derivs", 0xFFE0F2FE};
       save_derivs(tmp.begin()); // Save time derivatives
     }
     pre_rhs(t);
     status = model->runDiffusive(t, linear);
     post_rhs(t);
     {
-      NvtxRange save_range{"Solver::run_rhs save diffusive derivs", 0xFFE0E7FF};
       save_derivs(tmp2.begin()); // Save time derivatives
     }
     {
-      NvtxRange combine_range{"Solver::run_rhs combine split derivs", 0xFFC7D2FE};
       for (BoutReal *t = tmp.begin(), *t2 = tmp2.begin(); t != tmp.end(); ++t, ++t2) {
         *t += *t2;
       }
     }
     {
-      NvtxRange load_range{"Solver::run_rhs load combined derivs", 0xFFA5B4FC};
       load_derivs(tmp.begin()); // Put back time-derivatives
     }
   } else {
@@ -1313,7 +1274,6 @@ int Solver::run_rhs(BoutReal t, bool linear) {
 
 /// NOTE: This calls add_mms_sources
 int Solver::run_convective(BoutReal t, bool linear) {
-  NvtxRange range{"Solver::run_convective", 0xFF0891B2};
   int status;
 
   Timer timer("rhs");
@@ -1344,7 +1304,6 @@ int Solver::run_convective(BoutReal t, bool linear) {
 }
 
 int Solver::run_diffusive(BoutReal t, bool linear) {
-  NvtxRange range{"Solver::run_diffusive", 0xFF7C3AED};
   int status = 0;
 
   Timer timer("rhs");
@@ -1371,7 +1330,6 @@ int Solver::run_diffusive(BoutReal t, bool linear) {
 }
 
 void Solver::pre_rhs(BoutReal t) {
-  NvtxRange range{"Solver::pre_rhs apply value boundaries", 0xFF64748B};
 
   // Apply boundary conditions to the values
   for (const auto& f : f2d) {
@@ -1388,7 +1346,6 @@ void Solver::pre_rhs(BoutReal t) {
 }
 
 void Solver::post_rhs(BoutReal UNUSED(t)) {
-  NvtxRange range{"Solver::post_rhs check/apply derivative boundaries", 0xFF475569};
 #if CHECK > 0
   for (const auto& f : f3d) {
     if (!f.F_var->isAllocated()) {

@@ -62,10 +62,6 @@
 #include <cusparse.h>
 #endif
 
-#if BOUT_HAS_CUDA && __has_include(<nvtx3/nvToolsExt.h>)
-#include <nvtx3/nvToolsExt.h>
-#endif
-
 #include <array>
 #include <algorithm>
 #include <cstdint>
@@ -73,32 +69,6 @@
 #include <vector>
 
 namespace {
-#if BOUT_HAS_CUDA && __has_include(<nvtx3/nvToolsExt.h>)
-class NvtxRange {
-public:
-  NvtxRange(const char* name, uint32_t argb) {
-    nvtxEventAttributes_t event{};
-    event.version = NVTX_VERSION;
-    event.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
-    event.messageType = NVTX_MESSAGE_TYPE_ASCII;
-    event.message.ascii = name;
-    event.colorType = NVTX_COLOR_ARGB;
-    event.color = argb;
-    nvtxRangePushEx(&event);
-  }
-
-  ~NvtxRange() { nvtxRangePop(); }
-
-  NvtxRange(const NvtxRange&) = delete;
-  NvtxRange& operator=(const NvtxRange&) = delete;
-};
-#else
-class NvtxRange {
-public:
-  NvtxRange(const char*, uint32_t) {}
-};
-#endif
-
 #if BOUT_HAS_CUDA
 static_assert(sizeof(dcomplex) == sizeof(cuDoubleComplex),
               "dcomplex and cuDoubleComplex must have the same memory layout");
@@ -916,7 +886,6 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 }
 
 Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
-  NvtxRange solve_range{"LaplaceCyclic Field3D solve", 0xFFFF5555};
 
   ASSERT1(rhs.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
@@ -977,7 +946,6 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
         isOuterBoundaryFlagSetOnLastX(INVERT_SET), isGlobalFlagSet(INVERT_ZERO_DC));
 
     auto matrices = [&]() {
-      NvtxRange range{"LaplaceCyclic Field3D DST forward", 0xFFFF7777};
       return transform.forward(*this, rhs, x0, Acoef, C1coef, C2coef, Dcoef);
     }();
 
@@ -987,24 +955,20 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
       if (!cusparse_scratch) {
         cusparse_scratch = std::make_unique<LaplaceCyclicCusparseScratch>();
       }
-      NvtxRange range{"LaplaceCyclic Field3D cuSPARSE solve", 0xFFFFBB55};
       solveWithCusparse(matrices.a, matrices.b, matrices.c, matrices.bcmplx, xcmplx3D,
                         localmesh->periodicX, *cusparse_scratch);
     } else
 #endif
     {
       {
-        NvtxRange range{"LaplaceCyclic Field3D CR set coefficients", 0xFFFF9999};
         cr->setCoefs(matrices.a, matrices.b, matrices.c);
       }
       {
-        NvtxRange range{"LaplaceCyclic Field3D CR solve", 0xFFFFBBBB};
         cr->solve(matrices.bcmplx, xcmplx3D);
       }
     }
 
     {
-      NvtxRange range{"LaplaceCyclic Field3D DST backward", 0xFFFFDDDD};
       return transform.backward(rhs, xcmplx3D);
     }
   }
@@ -1016,8 +980,6 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     auto& scratch = *cusparse_scratch;
 
     {
-      NvtxRange range{"LaplaceCyclic Field3D FFT forward: resident cufft rfft",
-                      0xFFFF8844};
       const int nz = localmesh->zend - localmesh->zstart + 1;
       const int nxny = nx * ny;
       const int nmodes = (nz / 2) + 1;
@@ -1054,8 +1016,6 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     }
 
     {
-      NvtxRange range{"LaplaceCyclic Field3D build tridag matrices device",
-                      0xFFFFAAAA};
       const std::size_t field_size =
           static_cast<std::size_t>(localmesh->LocalNx) * localmesh->LocalNy;
       scratch.ensureField2D(field_size);
@@ -1184,12 +1144,10 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     }
 
     {
-      NvtxRange range{"LaplaceCyclic Field3D cuSPARSE solve", 0xFFFFBB55};
       solveWithCusparseDevice(nsys, nx, localmesh->periodicX, scratch);
     }
 
     if (localmesh->periodicX) {
-      NvtxRange range{"LaplaceCyclic Field3D periodic X average", 0xFFFFCCCC};
       const int block_size = 256;
       subtractPeriodicXAverage<<<ny, block_size, block_size * sizeof(double)>>>(
           scratch.x.get(), nx, ny, nmode);
@@ -1197,8 +1155,6 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     }
 
     {
-      NvtxRange range{"LaplaceCyclic Field3D FFT backward: resident cufft irfft",
-                      0xFFFFFF88};
       const int nz = localmesh->zend - localmesh->zstart + 1;
       const int nxny = nx * ny;
       const int nmodes = (nz / 2) + 1;
@@ -1236,7 +1192,6 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
       isOuterBoundaryFlagSetOnLastX(INVERT_SET), isGlobalFlagSet(INVERT_ZERO_DC));
 
   auto matrices = [&]() {
-    NvtxRange range{"LaplaceCyclic Field3D FFT forward", 0xFFFF7777};
     return transform.forward(*this, rhs, x0, Acoef, C1coef, C2coef, Dcoef);
   }();
 
@@ -1246,24 +1201,20 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     if (!cusparse_scratch) {
       cusparse_scratch = std::make_unique<LaplaceCyclicCusparseScratch>();
     }
-    NvtxRange range{"LaplaceCyclic Field3D cuSPARSE solve", 0xFFFFBB55};
     solveWithCusparse(matrices.a, matrices.b, matrices.c, matrices.bcmplx, xcmplx3D,
                       localmesh->periodicX, *cusparse_scratch);
   } else
 #endif
   {
     {
-      NvtxRange range{"LaplaceCyclic Field3D CR set coefficients", 0xFFFF9999};
       cr->setCoefs(matrices.a, matrices.b, matrices.c);
     }
     {
-      NvtxRange range{"LaplaceCyclic Field3D CR solve", 0xFFFFBBBB};
       cr->solve(matrices.bcmplx, xcmplx3D);
     }
   }
 
   if (localmesh->periodicX) {
-    NvtxRange range{"LaplaceCyclic Field3D periodic X average", 0xFFFFCCCC};
     // Subtract X average of kz=0 mode
     std::vector<BoutReal> local(ny + 1, 0.0);
     for (int y = 0; y < ny; y++) {
@@ -1287,7 +1238,6 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
   }
 
   {
-    NvtxRange range{"LaplaceCyclic Field3D FFT backward", 0xFFFFDDDD};
     return transform.backward(rhs, xcmplx3D);
   }
 }
