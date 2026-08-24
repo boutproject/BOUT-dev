@@ -6,25 +6,25 @@ requires-python = ">=3.14"
 
 [manifest.dependency-groups]
 dev = [
-    { name = "clang-format", specifier = "~=22.0" },
-    { name = "clang-tidy", specifier = "~=22.0" },
-    { name = "clangd", specifier = "~=22.0" },
+    { name = "clang-format", specifier = "~=22.1" },
+    { name = "clang-tidy", specifier = "~=22.1" },
+    { name = "clangd", specifier = "~=22.1" },
     { name = "clangd-tidy", specifier = "~=1.1" },
-    { name = "cmake", specifier = "~=4.2" },
+    { name = "cmake", specifier = "~=4.4" },
     { name = "cmakelang", specifier = "~=0.6" },
     { name = "prek", specifier = ">=0.3.10" },
     { name = "pyyaml", specifier = "~=6.0" },
-    { name = "ruff", specifier = "~=0.15" },
+    { name = "ruff", specifier = "~=0.16" },
     { name = "sphinx-lint", specifier = "~=1.0" },
-    { name = "sync-with-uv", specifier = "~=0.5.0" },
+    { name = "sync-with-uv", specifier = "~=0.6.0" },
 ]
 maint = [
-    { name = "pygithub", specifier = "~=2.8" },
+    { name = "pygithub", specifier = "~=2.10" },
     { name = "ruamel-yaml", specifier = "~=0.19" },
-    { name = "unidecode", specifier = "~=1.3" },
+    { name = "unidecode", specifier = "~=1.4" },
 ]
 pytest = [
-    { name = "pytest", specifier = "~=8.4" },
+    { name = "pytest", specifier = "~=9.1" },
     { name = "pytest-xdist", specifier = "~=3.8" },
 ]
 
@@ -517,7 +517,7 @@ wheels = [
 
 [[package]]
 name = "pygithub"
-version = "2.9.1"
+version = "2.10.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyjwt", extra = ["crypto"] },
@@ -526,9 +526,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ab/c3/8465a311197e16cf5ab68789fe689535e90f6b61ab524cc32a39e67237ae/pygithub-2.9.1.tar.gz", hash = "sha256:59771d7ff63d54d427be2e7d0dad2208dfffc2b0a045fec959263787739b611c", size = 2594989, upload-time = "2026-04-14T07:26:13.622Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e1/9b/195603d5371861005a3467c5e4afd02fd0698795a2aa36dc41498b9d879d/pygithub-2.10.0.tar.gz", hash = "sha256:90ff24ef1cd1bd57124c2a3869cafee9d7b066909129ecdaba2c2d1903bc118d", size = 2750952, upload-time = "2026-08-20T10:05:08.327Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/77/aa/81a5506f089a26338bff17535e4339b3b22049ebd1bcdeff756c4d7a7559/pygithub-2.9.1-py3-none-any.whl", hash = "sha256:2ec78fca30092d51a42d76f4ddb02131b6f0c666a35dfdf364cf302cdda115b9", size = 449710, upload-time = "2026-04-14T07:26:12.382Z" },
+    { url = "https://files.pythonhosted.org/packages/91/71/f314841697a1d52af3e1ea7c5e1c3f09685b64ae4c58ff16b605a866255d/pygithub-2.10.0-py3-none-any.whl", hash = "sha256:192ada2a76e4afc7d6b37e500c9bfeba1731e6506697445a5ba1c4af8bf0b924", size = 455554, upload-time = "2026-08-20T10:05:06.991Z" },
 ]
 
 [[package]]
@@ -591,7 +591,7 @@ wheels = [
 
 [[package]]
 name = "pytest"
-version = "8.4.2"
+version = "9.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama", marker = "sys_platform == 'win32'" },
@@ -600,9 +600,9 @@ dependencies = [
     { name = "pluggy" },
     { name = "pygments" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a3/5c/00a0e072241553e1a7496d638deababa67c5058571567b92a7eaa258397c/pytest-8.4.2.tar.gz", hash = "sha256:86c0d0b93306b961d58d62a4db4879f27fe25513d4b969df351abdddb3c30e01", size = 1519618, upload-time = "2025-09-04T14:34:22.711Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e4/47/b9efed96c114afcfa3c9d3fe98a76a1d14c74a9e266d397cf6eb64be5e01/pytest-9.1.1.tar.gz", hash = "sha256:1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313", size = 1636369, upload-time = "2026-06-19T10:58:32.857Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a8/a4/20da314d277121d6534b3a980b29035dcd51e6744bd79075a6ce8fa4eb8d/pytest-8.4.2-py3-none-any.whl", hash = "sha256:872f880de3fc3a5bdc88a11b39c9710c3497a547cfa9320bc3c5e62fbf272e79", size = 365750, upload-time = "2025-09-04T14:34:20.226Z" },
+    { url = "https://files.pythonhosted.org/packages/24/25/1de2678b631f5a49215c6c96fff41ba892b0a34df68d6d80292b1b48aa7f/pytest-9.1.1-py3-none-any.whl", hash = "sha256:37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c", size = 386536, upload-time = "2026-06-19T10:58:31.347Z" },
 ]
 
 [[package]]
@@ -783,16 +783,16 @@ wheels = [
 
 [[package]]
 name = "sync-with-uv"
-version = "0.5.0"
+version = "0.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama" },
     { name = "cyclopts" },
     { name = "tomli" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5f/95/d187e24af4722f83bfef5fe7e050b183c1ae4a4064eb07bd15f7d153dbd5/sync_with_uv-0.5.0.tar.gz", hash = "sha256:236f9029e09c1edf0b13231be7f410119188ff77556069b4bed1c11947bb942c", size = 97828, upload-time = "2025-11-18T18:52:10.12Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b7/03/b152ef82e9de78584ac82537c98991723bec809e4994c1d3e2bb022469e4/sync_with_uv-0.6.0.tar.gz", hash = "sha256:cb995f87e7863e281ff005e8e74fda043af320a8fcb6cef949a83dea0ac944bd", size = 128844, upload-time = "2026-07-14T11:36:37.838Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/24/96/b5413e21f78d9e477a5a6c327812e74237d6d254ed0b8bd03bbc7acd3b2e/sync_with_uv-0.5.0-py3-none-any.whl", hash = "sha256:6c05052bfa27552e159be61bd191d4d7b04b5d7621e7c126f9a67bf4a6881809", size = 9638, upload-time = "2025-11-18T18:52:08.552Z" },
+    { url = "https://files.pythonhosted.org/packages/8c/c3/353b684b02ab653fbbd60172fac7a715b0d49d03a7c7da51db2a364dc061/sync_with_uv-0.6.0-py3-none-any.whl", hash = "sha256:acb634a3ddc406f0d713b9263106f52b7d4a7ee791d2105efe8d4a6f6abc42dd", size = 14456, upload-time = "2026-07-14T11:36:36.452Z" },
 ]
 
 [[package]]
