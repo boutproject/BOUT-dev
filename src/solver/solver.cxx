@@ -994,7 +994,7 @@ int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
  * Useful routines (protected)
  **************************************************************************/
 
-bool validCell3D(const Ind3D& ind) {
+bool Sovler::validCell3D(const Ind3D& ind) {
   return !immBndry || immBndry->IsInside(ind);
 }
 

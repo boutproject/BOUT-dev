@@ -137,6 +137,7 @@ bool ImmersedBoundary::IsUsableGhost(const Ind3D& ind) const {
   //IB_TODO: Need to check for now because might be a bad ghost (at extremes)
   //which was ignored in loops above for setting regions.
   //Though MPI GS loop should fix that if all data shared.
+  const auto gid = get_as<int>(ghost_ids[ind]);
   return !IsBadInterpForMPI(GetGridInd(image_inds(gid, 0)));
 }
 
