@@ -375,13 +375,6 @@ public:
 
   void communicateMetricTensor();
 
-private:
-  void normaliseMetricTokamak(BoutReal rho_s0, BoutReal Bnorm);
-  void normaliseMetricFCI(BoutReal rho_s0, BoutReal Bnorm);
-
-public:
-  void normaliseMetric(BoutReal rho_s0, BoutReal Bnorm);
-
   void communicateDz();
 
   void normaliseMetric(const MetricNormaliser& norm);
