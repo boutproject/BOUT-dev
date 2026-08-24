@@ -1018,7 +1018,7 @@ int Solver::getLocalN() {
     return value + boundary_size + size(field.var->getRegion("RGN_NOBNDRY"));
   };
   //Immersed boundary only affects 3D fields so separate sums. Equivalent to above if !immBndry.
-  auto local_N_3D_sum = [](int value, const auto& field) -> int {
+  auto local_N_3D_sum = [this](int value, const auto& field) -> int {
     int count = 0;
     if (field.evolve_bndry) {
       BOUT_FOR_SERIAL(i, field.var->getRegion("RGN_BNDRY")) {
