@@ -20,6 +20,7 @@
 #include <bout/parallel_boundary_region.hxx>
 #include <bout/region.hxx>
 #include <bout/sys/parallel_stencils.hxx>
+#include <bout/traits.hxx>
 #include <bout/utils.hxx>
 
 namespace bout {
@@ -90,10 +91,6 @@ public:
   /// For FA this is always ±1, for FCI this can be up to ±MYG, excluding 0
   int offset() const { return impl()._offset(); }
 
-  /*
-   *         FIELD3D ACCESSORS
-   */
-
   /// Get the value at a given \p offset of a field \p f.
   ///
   /// `offset = -1` is the second point in the boundary
@@ -105,62 +102,48 @@ public:
   /// -1  0 ^ 1   2
   ///       |
   ///    boundary
-  template <bool check = true>
-  BoutReal& getAt(Field3D& f, int offset) const {
+  template <bool check = true, class T>
+    requires utils::is_Field_v<T>
+  const BoutReal& getAt(const T& f, int offset) const {
     return impl().template _getAt<check>(f, offset);
   }
-  /// get the value at a given offset `off` of a field `f`.
-  template <bool check = true>
-  BoutReal getAt(const Field3D& f, int offset) const {
+
+  template <bool check = true, class T>
+    requires utils::is_Field_v<T>
+  BoutReal& getAt(T& f, int offset) const {
     return impl().template _getAt<check>(f, offset);
   }
 
   /// Get the first point in the boundary
-  const BoutReal& next(const Field3D& f) const { return impl()._getAt(f, 0); }
+  template <class T>
+    requires utils::is_Field_v<T>
+  const BoutReal& next(const T& f) const {
+    return getAt(f, 0);
+  }
   /// Get the first point in the boundary
-  BoutReal& next(Field3D& f) const { return impl()._getAt(f, 0); }
+  template <class T>
+    requires utils::is_Field_v<T>
+  BoutReal& next(T& f) const {
+    return getAt(f, 0);
+  }
   /// Get the last point in the domain
-  const BoutReal& current(const Field3D& f) const { return impl()._getAt(f, 1); }
+  template <class T>
+    requires utils::is_Field_v<T>
+  const BoutReal& current(const T& f) const {
+    return getAt(f, 1);
+  }
   /// Get the last point in the domain
-  BoutReal& current(Field3D& f) const { return impl()._getAt(f, 1); }
+  template <class T>
+    requires utils::is_Field_v<T>
+  BoutReal& current(T& f) const {
+    return getAt(f, 1);
+  }
   /// Get the second to last point in the domain - this may not be valid and thus throw
-  const BoutReal& prev(const Field3D& f) const { return impl()._getAt(f, 2); }
-
-  /*
-   *         FIELD2D ACCESSORS
-   */
-
-  /// Get the value at a given \p offset of a field \p f.
-  ///
-  /// `offset = -1` is the second point in the boundary
-  /// `offset = 0` is the first point in the boundary
-  /// `offset = 1` is the last point in the domain
-  /// `offset = 2` is the second to last point in the domain
-  ///
-  /// |---|---|---|--> interior points
-  /// -1  0 ^ 1   2
-  ///       |
-  ///    boundary
-  template <bool check = true>
-  BoutReal& getAt(Field2D& f, int offset) const {
-    return impl().template _getAt<check>(f, offset);
+  template <class T>
+    requires utils::is_Field_v<T>
+  const BoutReal& prev(const T& f) const {
+    return getAt(f, 2);
   }
-  /// get the value at a given offset `off` of a field `f`.
-  template <bool check = true>
-  BoutReal getAt(const Field2D& f, int offset) const {
-    return impl().template _getAt<check>(f, offset);
-  }
-
-  /// Get the first point in the boundary
-  const BoutReal& next(const Field2D& f) const { return impl()._getAt(f, 0); }
-  /// Get the first point in the boundary
-  BoutReal& next(Field2D& f) const { return impl()._getAt(f, 0); }
-  /// Get the last point in the domain
-  const BoutReal& current(const Field2D& f) const { return impl()._getAt(f, 1); }
-  /// Get the last point in the domain
-  BoutReal& current(Field2D& f) const { return impl()._getAt(f, 1); }
-  /// Get the second to last point in the domain - this may not be valid and thus throw
-  const BoutReal& prev(const Field2D& f) const { return impl()._getAt(f, 2); }
 
   /*
    *         FUNCTIONS ACCESSORS
@@ -177,17 +160,11 @@ public:
     return impl().template _getAt<check>(func, offset);
   }
   /// Get the first point in the boundary
-  BoutReal next(const function_accessor auto& func) const {
-    return impl()._getAt(func, 0);
-  }
+  BoutReal next(const function_accessor auto& func) const { return getAt(func, 0); }
   /// Get the last point in the domain
-  BoutReal current(const function_accessor auto& func) const {
-    return impl()._getAt(func, 1);
-  }
+  BoutReal current(const function_accessor auto& func) const { return getAt(func, 1); }
   /// Get the second to last point in the domain - this may not be valid and thus throw
-  BoutReal prev(const function_accessor auto& func) const {
-    return impl()._getAt(func, 2);
-  }
+  BoutReal prev(const function_accessor auto& func) const { return getAt(func, 2); }
 
   void setSmallValue(BoutReal val) {
     ASSERT2(val > 0);
@@ -229,8 +206,9 @@ public:
     int dir() const { return _dir; }
     bool _is_lower() const { return _dir < 0; }
 
-    template <bool check = true>
-    BoutReal& _getAt(Field3D& f, int off) const {
+    template <bool check = true, class T>
+      requires utils::is_Field_v<T>
+    const BoutReal& _getAt(const T& f, int off) const {
       ASSERT3(f.hasParallelSlices());
       if constexpr (check) {
         ASSERT3(_valid() > -off - 2);
@@ -238,8 +216,10 @@ public:
       auto _off = _offset() - (off * _dir);
       return f.ynext(_off)[_ind().yp(_off)];
     }
-    template <bool check = true>
-    const BoutReal& _getAt(const Field3D& f, int off) const {
+
+    template <bool check = true, class T>
+      requires utils::is_Field_v<T>
+    BoutReal& _getAt(T& f, int off) const {
       ASSERT3(f.hasParallelSlices());
       if constexpr (check) {
         ASSERT3(_valid() > -off - 2);
@@ -247,24 +227,7 @@ public:
       auto _off = _offset() - (off * _dir);
       return f.ynext(_off)[_ind().yp(_off)];
     }
-    template <bool check = true>
-    BoutReal& _getAt(Field2D& f, int off) const {
-      ASSERT3(f.hasParallelSlices());
-      if constexpr (check) {
-        ASSERT3(_valid() > -off - 2);
-      }
-      auto _off = _offset() - (off * _dir);
-      return f.ynext(_off)[_ind().yp(_off)];
-    }
-    template <bool check = true>
-    const BoutReal& _getAt(const Field2D& f, int off) const {
-      ASSERT3(f.hasParallelSlices());
-      if constexpr (check) {
-        ASSERT3(_valid() > -off - 2);
-      }
-      auto _off = _offset() - (off * _dir);
-      return f.ynext(_off)[_ind().yp(_off)];
-    }
+
     template <bool check = true>
     BoutReal _getAt(const function_accessor auto& f, int off) const {
       if constexpr (check) {
@@ -273,6 +236,7 @@ public:
       auto _off = _offset() + (off * _dir);
       return f(_off, _ind().yp(_off));
     }
+
     signed char _offset() const { return index.offset; }
     signed char _valid() const { return index.valid; }
     Ind3D _ind() const { return index.index; }
@@ -293,6 +257,7 @@ public:
       : BoundaryRegionBase(name, loc, mesh), _dir(dir), localmesh(mesh) {
     isParallel = true;
   };
+
   /// Add a point to the boundary
   void add_point(Ind3D ind, BoutReal x, BoutReal y, BoutReal z, BoutReal length,
                  char valid, signed char offset) {
@@ -304,10 +269,14 @@ public:
         offset, static_cast<unsigned char>(std::abs(offset))};
     bndry_points.emplace_back(index, *this);
   }
+
+  /// Add a point to the boundary
   void add_point(int ix, int iy, int iz, BoutReal x, BoutReal y, BoutReal z,
                  BoutReal length, char valid, signed char offset) {
     add_point(xyz2ind(ix, iy, iz), x, y, z, length, valid, offset);
   }
+
+  /// Return `true` if the boundary contains a point at the given index
   bool contains(int ix, int iy, int iz) {
     const auto ind = xyz2ind(ix, iy, iz);
     ensureSorted();
@@ -315,7 +284,10 @@ public:
         std::lower_bound(std::begin(bndry_points), std::end(bndry_points), ind);
     return found != std::end(bndry_points) and found->_ind() == ind;
   }
+
+  /// The direction of the boundary
   int dir() const { return _dir; }
+
   // legacy interface
   void first() override { throw BoutException("Legacy interface is not suppored"); }
   void next() override { throw BoutException("Legacy interface is not suppored"); }
@@ -376,38 +348,26 @@ public:
     int dir() const { return region->_dir; }
     Ind3D ind() const { return _ind(); }
 
-    template <bool check = true>
-    BoutReal& _getAt(Field3D& f, int off) const {
+    template <bool check = true, class T>
+      requires utils::is_Field_v<T>
+    const BoutReal& _getAt(const T& f, int off) const {
       if constexpr (check) {
         ASSERT3(_valid() > -off - 2);
       }
       auto _off = (1 - off) * region->_dir;
       return f[offsetInd(_off)];
     }
-    template <bool check = true>
-    const BoutReal& _getAt(const Field3D& f, int off) const {
+
+    template <bool check = true, class T>
+      requires utils::is_Field_v<T>
+    BoutReal& _getAt(T& f, int off) const {
       if constexpr (check) {
         ASSERT3(_valid() > -off - 2);
       }
       auto _off = (1 - off) * region->_dir;
       return f[offsetInd(_off)];
     }
-    template <bool check = true>
-    BoutReal& _getAt(Field2D& f, int off) const {
-      if constexpr (check) {
-        ASSERT3(_valid() > -off - 2);
-      }
-      auto _off = (1 - off) * region->_dir;
-      return f[offsetInd(_off)];
-    }
-    template <bool check = true>
-    const BoutReal& _getAt(const Field2D& f, int off) const {
-      if constexpr (check) {
-        ASSERT3(_valid() > -off - 2);
-      }
-      auto _off = (1 - off) * region->_dir;
-      return f[offsetInd(_off)];
-    }
+
     template <bool check = true>
     BoutReal _getAt(const function_accessor auto& f, int off) const {
       if constexpr (check) {
@@ -416,6 +376,7 @@ public:
       auto _off = (1 - off) * region->_dir;
       return f(0, offsetInd(_off));
     }
+
     signed char _offset() const { return region->_dir; }
     signed char _valid() const { return region->valid; }
     Ind3D _ind() const { return region->rgn[pos]; }
