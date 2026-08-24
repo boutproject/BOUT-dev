@@ -45,39 +45,8 @@ TokamakCoordinates set_tokamak_coordinates(Mesh& mesh, BoutReal Lbar = 1.0,
                                            BoutReal Bbar = 1.0, bool no_shear = false,
                                            BoutReal shear_factor = 1.0);
 
-class TokamakMetricNormaliser : public MetricNormaliser {
-public:
-  TokamakMetricNormaliser(BoutReal Bnorm, BoutReal rho_s0)
-      : Bnorm(Bnorm), rho_s0(rho_s0) {};
-  std::optional<BoutReal> g11() const override;
-  std::optional<BoutReal> g22() const override;
-  std::optional<BoutReal> g33() const override;
-  std::optional<BoutReal> g12() const override;
-  std::optional<BoutReal> g13() const override;
-  std::optional<BoutReal> g23() const override;
-  std::optional<BoutReal> dx() const override;
-  std::optional<BoutReal> J() const override;
-  std::optional<BoutReal> Bxy() const override;
-
-private:
-  BoutReal Bnorm;
-  BoutReal rho_s0;
-};
-
-class FCIMetricNormaliser : public MetricNormaliser {
-public:
-  FCIMetricNormaliser(BoutReal Bnorm, BoutReal rho_s0) : Bnorm(Bnorm), rho_s0(rho_s0) {};
-  std::optional<BoutReal> g() const override;
-  std::optional<BoutReal> J() const override;
-  std::optional<BoutReal> Bxy() const override;
-
-private:
-  BoutReal Bnorm;
-  BoutReal rho_s0;
-};
-
-std::unique_ptr<MetricNormaliser>
-TokamakOrFCIMetricNormaliser(const Mesh* mesh, BoutReal Bnorm, BoutReal rho_s0);
+MetricNormaliser TokamakOrFCIMetricNormaliser(const Mesh* mesh, BoutReal Bnorm,
+                                              BoutReal rho_s0);
 
 } // namespace bout
 

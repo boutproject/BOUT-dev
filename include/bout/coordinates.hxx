@@ -46,7 +46,7 @@
 
 class Mesh;
 class YBoundary;
-class MetricNormaliser;
+struct MetricNormaliser;
 
 /*!
  * Represents a coordinate system, and associated operators
@@ -547,24 +547,25 @@ protected:
 namespace bout {
 std::string parallelSliceFieldName(std::string_view field, int offset);
 }
+
 /// Represents a way to normalise the coordinate system
 /// If a component returns nothing, no normalisation is performed.
 /// Coordinate values are divided by the respective component from
 /// MetricNormaliser, with the exception of the contravariant metric
 /// tensor, which is multiplied by the normalisation factor.
 struct MetricNormaliser {
-  virtual std::optional<BoutReal> g() const { return {}; };
-  virtual std::optional<BoutReal> g11() const { return {}; };
-  virtual std::optional<BoutReal> g22() const { return {}; };
-  virtual std::optional<BoutReal> g33() const { return {}; };
-  virtual std::optional<BoutReal> g12() const { return {}; };
-  virtual std::optional<BoutReal> g13() const { return {}; };
-  virtual std::optional<BoutReal> g23() const { return {}; };
-  virtual std::optional<BoutReal> dx() const { return {}; };
-  virtual std::optional<BoutReal> dy() const { return {}; };
-  virtual std::optional<BoutReal> dz() const { return {}; };
-  virtual std::optional<BoutReal> J() const { return {}; };
-  virtual std::optional<BoutReal> Bxy() const { return {}; };
+  std::optional<BoutReal> g{};
+  std::optional<BoutReal> g11{};
+  std::optional<BoutReal> g22{};
+  std::optional<BoutReal> g33{};
+  std::optional<BoutReal> g12{};
+  std::optional<BoutReal> g13{};
+  std::optional<BoutReal> g23{};
+  std::optional<BoutReal> dx{};
+  std::optional<BoutReal> dy{};
+  std::optional<BoutReal> dz{};
+  std::optional<BoutReal> J{};
+  std::optional<BoutReal> Bxy{};
 };
 
 #endif // BOUT_COORDINATES_H

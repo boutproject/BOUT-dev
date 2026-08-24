@@ -17,7 +17,7 @@ using FieldMetric = Field2D;
 } // namespace bout
 
 class Coordinates;
-class MetricNormaliser;
+struct MetricNormaliser;
 
 class MetricTensor {
 public:
