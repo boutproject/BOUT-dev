@@ -41,8 +41,8 @@ public:
   /// The function must take a `const YBoundaryPoint auto& point` as its only argument.
   /// See also the documentation at ../../manual/sphinx/user_docs/boundary_options.rst
   template <class F>
-    requires std::regular_invocable<F&, const BoundaryRegionIterY&>
-             || std::regular_invocable<F&, const BoundaryRegionIterFCI&>
+    requires std::regular_invocable<F&, const BoundaryRegionY::Iterator&>
+             || std::regular_invocable<F&, const BoundaryRegionFCI::Iterator&>
   void iter(F func) {
     for (auto& region : boundary_regions) {
       for (auto& point : *region) {

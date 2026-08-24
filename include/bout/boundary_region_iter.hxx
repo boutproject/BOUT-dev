@@ -199,11 +199,103 @@ private:
 
 /// An FCI-aware boundary region
 ///
-/// Uses `BoundaryRegionIterFCI` as its iterator.
-///
 /// This can't use the legacy iteration methods (`first()`, `next()`, and so on)
 class BoundaryRegionFCI : public BoundaryRegionBase {
 public:
+  /// Iterator over a `BoundaryRegionFCI`
+  class Iterator : public BoundaryRegionIterBase<Iterator> {
+  private:
+    // TODO(dave) make non-const?
+    const BoundaryRegionFCI* region;
+    size_t pos{0};
+
+  public:
+    Iterator() = delete;
+    Iterator(const BoundaryRegionFCI* reg, bool isstart)
+        : region(reg), pos(isstart ? 0 : reg->bndry_points.size()) {}
+    void setValid(char valid) {
+      const_cast<BoundaryRegionFCI*>(region)->bndry_points[pos].valid = valid;
+    };
+    BoutReal s_x() const { return region->bndry_points[pos].intersection.s_x; };
+    BoutReal s_y() const { return region->bndry_points[pos].intersection.s_y; };
+    BoutReal s_z() const { return region->bndry_points[pos].intersection.s_z; };
+    Mesh* localmesh() const { return region->localmesh; };
+    int dir() const { return region->_dir; }
+    bool _is_lower() const { return region->_dir < 0; }
+
+    template <bool check = true>
+    BoutReal& _getAt(Field3D& f, int off) const {
+      ASSERT3(f.hasParallelSlices());
+      if constexpr (check) {
+        ASSERT3(_valid() > -off - 2);
+      }
+      auto _off = _offset() - (off * region->_dir);
+      return f.ynext(_off)[_ind().yp(_off)];
+    }
+    template <bool check = true>
+    const BoutReal& _getAt(const Field3D& f, int off) const {
+      ASSERT3(f.hasParallelSlices());
+      if constexpr (check) {
+        ASSERT3(_valid() > -off - 2);
+      }
+      auto _off = _offset() - (off * region->_dir);
+      return f.ynext(_off)[_ind().yp(_off)];
+    }
+    template <bool check = true>
+    BoutReal& _getAt(Field2D& f, int off) const {
+      ASSERT3(f.hasParallelSlices());
+      if constexpr (check) {
+        ASSERT3(_valid() > -off - 2);
+      }
+      auto _off = _offset() - (off * region->_dir);
+      return f.ynext(_off)[_ind().yp(_off)];
+    }
+    template <bool check = true>
+    const BoutReal& _getAt(const Field2D& f, int off) const {
+      ASSERT3(f.hasParallelSlices());
+      if constexpr (check) {
+        ASSERT3(_valid() > -off - 2);
+      }
+      auto _off = _offset() - (off * region->_dir);
+      return f.ynext(_off)[_ind().yp(_off)];
+    }
+    template <bool check = true>
+    BoutReal _getAt(const function_accessor auto& f, int off) const {
+      if constexpr (check) {
+        ASSERT3(valid() > -off - 2);
+      }
+      auto _off = _offset() + (off * region->_dir);
+      return f(_off, _ind().yp(_off));
+    }
+    signed char _offset() const { return region->bndry_points[pos].offset; }
+    signed char _valid() const { return region->bndry_points[pos].valid; }
+    Ind3D _ind() const { return region->bndry_points[pos].index; }
+    int _boundary_width() const {
+      return region->localmesh->ystart - region->bndry_points[pos].abs_offset + 1;
+    }
+    BoutReal _length([[maybe_unused]] CELL_LOC loc) const {
+      ASSERT3(loc == CELL_CENTRE);
+      return region->bndry_points[pos].length;
+    }
+
+    auto operator<=>(const Iterator& rhs) const {
+      ASSERT3(region == rhs.region);
+      return pos <=> rhs.pos;
+    }
+
+    bool operator==(Iterator lhs) const {
+      ASSERT3(region == lhs.region);
+      return pos == lhs.pos;
+    }
+
+    Iterator& operator++() {
+      ++pos;
+      return *this;
+    }
+
+    Iterator& operator*() { return *this; }
+  };
+
   BoundaryRegionFCI(const std::string& name, const BndryLoc& loc, int dir, Mesh* mesh)
       : BoundaryRegionBase(name, loc, mesh), _dir(dir), localmesh(mesh) {
     isParallel = true;
@@ -235,8 +327,11 @@ public:
   void next() override { throw BoutException("Legacy interface is not suppored"); }
   bool isDone() override { throw BoutException("Legacy interface is not suppored"); }
 
+  auto begin() const { return Iterator(this, true); }
+  auto end() const { return Iterator(this, false); }
+
 private:
-  friend class BoundaryRegionIterFCI;
+  friend class Iterator;
   int _dir;
   // Vector of points in the boundary
   bout::parallel_boundary_region::IndicesVec bndry_points;
@@ -255,108 +350,113 @@ private:
   }
 };
 
-/// Iterator over a `BoundaryRegionFCI`
-class BoundaryRegionIterFCI : public BoundaryRegionIterBase<BoundaryRegionIterFCI> {
-private:
-  // TODO(dave) make non-const?
-  const BoundaryRegionFCI* region;
-  size_t pos{0};
-
-public:
-  BoundaryRegionIterFCI() = delete;
-  BoundaryRegionIterFCI(const BoundaryRegionFCI* reg, bool isstart)
-      : region(reg), pos(isstart ? 0 : reg->bndry_points.size()) {}
-  void setValid(char valid) {
-    const_cast<BoundaryRegionFCI*>(region)->bndry_points[pos].valid = valid;
-  };
-  BoutReal s_x() const { return region->bndry_points[pos].intersection.s_x; };
-  BoutReal s_y() const { return region->bndry_points[pos].intersection.s_y; };
-  BoutReal s_z() const { return region->bndry_points[pos].intersection.s_z; };
-  Mesh* localmesh() const { return region->localmesh; };
-  int dir() const { return region->_dir; }
-  bool _is_lower() const { return region->_dir < 0; }
-
-  template <bool check = true>
-  BoutReal& _getAt(Field3D& f, int off) const {
-    ASSERT3(f.hasParallelSlices());
-    if constexpr (check) {
-      ASSERT3(_valid() > -off - 2);
-    }
-    auto _off = _offset() - (off * region->_dir);
-    return f.ynext(_off)[_ind().yp(_off)];
-  }
-  template <bool check = true>
-  const BoutReal& _getAt(const Field3D& f, int off) const {
-    ASSERT3(f.hasParallelSlices());
-    if constexpr (check) {
-      ASSERT3(_valid() > -off - 2);
-    }
-    auto _off = _offset() - (off * region->_dir);
-    return f.ynext(_off)[_ind().yp(_off)];
-  }
-  template <bool check = true>
-  BoutReal& _getAt(Field2D& f, int off) const {
-    ASSERT3(f.hasParallelSlices());
-    if constexpr (check) {
-      ASSERT3(_valid() > -off - 2);
-    }
-    auto _off = _offset() - (off * region->_dir);
-    return f.ynext(_off)[_ind().yp(_off)];
-  }
-  template <bool check = true>
-  const BoutReal& _getAt(const Field2D& f, int off) const {
-    ASSERT3(f.hasParallelSlices());
-    if constexpr (check) {
-      ASSERT3(_valid() > -off - 2);
-    }
-    auto _off = _offset() - (off * region->_dir);
-    return f.ynext(_off)[_ind().yp(_off)];
-  }
-  template <bool check = true>
-  BoutReal _getAt(const function_accessor auto& f, int off) const {
-    if constexpr (check) {
-      ASSERT3(valid() > -off - 2);
-    }
-    auto _off = _offset() + (off * region->_dir);
-    return f(_off, _ind().yp(_off));
-  }
-  signed char _offset() const { return region->bndry_points[pos].offset; }
-  signed char _valid() const { return region->bndry_points[pos].valid; }
-  Ind3D _ind() const { return region->bndry_points[pos].index; }
-  int _boundary_width() const {
-    return region->localmesh->ystart - region->bndry_points[pos].abs_offset + 1;
-  }
-  BoutReal _length([[maybe_unused]] CELL_LOC loc) const {
-    ASSERT3(loc == CELL_CENTRE);
-    return region->bndry_points[pos].length;
-  }
-
-  auto operator<=>(const BoundaryRegionIterFCI& rhs) const {
-    ASSERT3(region == rhs.region);
-    return pos <=> rhs.pos;
-  }
-
-  bool operator==(BoundaryRegionIterFCI lhs) const {
-    ASSERT3(region == lhs.region);
-    return pos == lhs.pos;
-  }
-
-  BoundaryRegionIterFCI& operator++() {
-    ++pos;
-    return *this;
-  }
-  // No-op for compatibility
-  BoundaryRegionIterFCI& operator*() { return *this; }
-};
-
 /// Boundary region for field-aligned grids
 ///
 /// FCI grids should use `BoundaryRegionFCI`
 ///
-/// Uses `BoundaryRegionIterXY` as its iterator
+/// Template parameter `isXtemp` is `true` for boundaries in X, and `false` for boundaries in Y
 template <bool isXtemp>
 class BoundaryRegionXY : public BoundaryRegionBase {
 public:
+  /// Iterator over a `BoundaryRegionXY`
+  class Iterator : public BoundaryRegionIterBase<Iterator> {
+  private:
+    const BoundaryRegionXY<isXtemp>* region;
+    size_t pos{0};
+
+    /// Return the current index displaced by \p offset
+    Ind3D offsetInd(int offset) const {
+      if constexpr (isXtemp) {
+        return _ind().xp(offset);
+      } else {
+        return _ind().yp(offset);
+      }
+    }
+
+  public:
+    Iterator() = delete;
+    Iterator(const BoundaryRegionXY<isXtemp>* reg, bool isstart)
+        : region(reg), pos(isstart ? 0 : reg->rgn.size()) {}
+    int dir() const { return region->_dir; }
+    Ind3D ind() const { return _ind(); }
+
+    template <bool check = true>
+    BoutReal& _getAt(Field3D& f, int off) const {
+      if constexpr (check) {
+        ASSERT3(_valid() > -off - 2);
+      }
+      auto _off = (1 - off) * region->_dir;
+      return f[offsetInd(_off)];
+    }
+    template <bool check = true>
+    const BoutReal& _getAt(const Field3D& f, int off) const {
+      if constexpr (check) {
+        ASSERT3(_valid() > -off - 2);
+      }
+      auto _off = (1 - off) * region->_dir;
+      return f[offsetInd(_off)];
+    }
+    template <bool check = true>
+    BoutReal& _getAt(Field2D& f, int off) const {
+      if constexpr (check) {
+        ASSERT3(_valid() > -off - 2);
+      }
+      auto _off = (1 - off) * region->_dir;
+      return f[offsetInd(_off)];
+    }
+    template <bool check = true>
+    const BoutReal& _getAt(const Field2D& f, int off) const {
+      if constexpr (check) {
+        ASSERT3(_valid() > -off - 2);
+      }
+      auto _off = (1 - off) * region->_dir;
+      return f[offsetInd(_off)];
+    }
+    template <bool check = true>
+    BoutReal _getAt(const function_accessor auto& f, int off) const {
+      if constexpr (check) {
+        ASSERT3(_valid() > -off - 2);
+      }
+      auto _off = (1 - off) * region->_dir;
+      return f(0, offsetInd(_off));
+    }
+    signed char _offset() const { return region->_dir; }
+    signed char _valid() const { return region->valid; }
+    Ind3D _ind() const { return region->rgn[pos]; }
+    int _boundary_width() const {
+      if constexpr (isXtemp) {
+        return region->localmesh->xstart;
+      }
+      return region->localmesh->ystart;
+    }
+    BoutReal _length(CELL_LOC loc) const {
+      if (loc == CELL_XLOW) {
+        if (dir() == 1) {
+          return 1;
+        }
+        return 0;
+      }
+      return 0.5;
+    }
+
+    auto operator<=>(const Iterator& rhs) const {
+      ASSERT3(region == rhs.region);
+      return pos <=> rhs.pos;
+    }
+
+    bool operator==(const Iterator& rhs) const {
+      ASSERT3(region == rhs.region);
+      return pos == rhs.pos;
+    }
+
+    Iterator& operator++() {
+      ++pos;
+      return *this;
+    }
+
+    Iterator& operator*() { return *this; }
+  };
+
   BoundaryRegionXY() = delete;
   BoundaryRegionXY(const std::string& name, int dir, Mesh* mesh, Region<Ind3D>&& rgn)
       : BoundaryRegionBase(name, mesh), _dir(dir),
@@ -376,133 +476,19 @@ public:
   void next() override { throw BoutException("Legacy interface is not suppored"); }
   bool isDone() override { throw BoutException("Legacy interface is not suppored"); }
 
+  auto begin() const { return Iterator(this, true); }
+  auto end() const { return Iterator(this, false); }
+
 private:
-  template <bool isIterX>
-  friend class BoundaryRegionIterXY;
   int _dir;
   std::vector<Ind3D> rgn;
   signed char valid;
-};
-
-/// Iterator over a `BoundaryRegionXY`
-template <bool isX>
-class BoundaryRegionIterXY : public BoundaryRegionIterBase<BoundaryRegionIterXY<isX>> {
-private:
-  const BoundaryRegionXY<isX>* region;
-  size_t pos{0};
-
-public:
-  BoundaryRegionIterXY() = delete;
-  BoundaryRegionIterXY(const BoundaryRegionXY<isX>* reg, bool isstart)
-      : region(reg), pos(isstart ? 0 : reg->rgn.size()) {}
-  int dir() const { return region->_dir; }
-  Ind3D ind() const { return _ind(); }
-
-  template <bool check = true>
-  BoutReal& _getAt(Field3D& f, int off) const {
-    if constexpr (check) {
-      ASSERT3(_valid() > -off - 2);
-    }
-    auto _off = (1 - off) * region->_dir;
-    if constexpr (isX) {
-      return f[_ind().xp(_off)];
-    } else {
-      return f[_ind().yp(_off)];
-    }
-  }
-  template <bool check = true>
-  const BoutReal& _getAt(const Field3D& f, int off) const {
-    if constexpr (check) {
-      ASSERT3(_valid() > -off - 2);
-    }
-    auto _off = (1 - off) * region->_dir;
-    if constexpr (isX) {
-      return f[_ind().xp(_off)];
-    } else {
-      return f[_ind().yp(_off)];
-    }
-  }
-  template <bool check = true>
-  BoutReal& _getAt(Field2D& f, int off) const {
-    if constexpr (check) {
-      ASSERT3(_valid() > -off - 2);
-    }
-    auto _off = (1 - off) * region->_dir;
-    if constexpr (isX) {
-      return f[_ind().xp(_off)];
-    } else {
-      return f[_ind().yp(_off)];
-    }
-  }
-  template <bool check = true>
-  const BoutReal& _getAt(const Field2D& f, int off) const {
-    if constexpr (check) {
-      ASSERT3(_valid() > -off - 2);
-    }
-    auto _off = (1 - off) * region->_dir;
-    if constexpr (isX) {
-      return f[_ind().xp(_off)];
-    } else {
-      return f[_ind().yp(_off)];
-    }
-  }
-  template <bool check = true>
-  BoutReal _getAt(const function_accessor auto& f, int off) const {
-    if constexpr (check) {
-      ASSERT3(_valid() > -off - 2);
-    }
-    auto _off = (1 - off) * region->_dir;
-    if constexpr (isX) {
-      return f(0, _ind().xp(_off));
-    } else {
-      return f(0, _ind().yp(_off));
-    }
-  }
-  signed char _offset() const { return region->_dir; }
-  signed char _valid() const { return region->valid; }
-  Ind3D _ind() const { return region->rgn[pos]; }
-  int _boundary_width() const {
-    if constexpr (isX) {
-      return region->localmesh->xstart;
-    }
-    return region->localmesh->ystart;
-  }
-  BoutReal _length(CELL_LOC loc) const {
-    if (loc == CELL_XLOW) {
-      if (dir() == 1) {
-        return 1;
-      }
-      return 0;
-    }
-    return 0.5;
-  }
-
-  auto operator<=>(const BoundaryRegionIterXY<isX>& rhs) const {
-    ASSERT3(region == rhs.region);
-    return pos <=> rhs.pos;
-  }
-
-  bool operator==(BoundaryRegionIterXY<isX> rhs) const {
-    ASSERT3(region == rhs.region);
-    return pos == rhs.pos;
-  }
-
-  BoundaryRegionIterXY& operator++() {
-    ++pos;
-    return *this;
-  }
-  // No-op for compatibility
-  BoundaryRegionIterXY& operator*() { return *this; }
 };
 
 /// Alias for boundary regions over X specifically
 using BoundaryRegionX = BoundaryRegionXY<true>;
 /// Alias for boundary regions over Y specifically
 using BoundaryRegionY = BoundaryRegionXY<false>;
-/// Alias for boundary region iterators over X specifically
-using BoundaryRegionIterX = BoundaryRegionIterXY<true>;
-/// Alias for boundary region iterators over Y specifically
-using BoundaryRegionIterY = BoundaryRegionIterXY<false>;
 
 inline std::shared_ptr<BoundaryRegionX>
 NewBoundaryRegionXIn(const std::string& name, int ymin, int ymax, Mesh* mesh) {
@@ -571,22 +557,6 @@ void iter_boundary(const Bndry& bndry, const Func& func) {
   for (auto& point : bndry) {
     func(point);
   }
-}
-
-inline auto begin(const BoundaryRegionFCI& reg) {
-  return BoundaryRegionIterFCI(&reg, true);
-}
-inline auto end(const BoundaryRegionFCI& reg) {
-  return BoundaryRegionIterFCI(&reg, false);
-}
-
-template <bool isX>
-inline auto begin(const BoundaryRegionXY<isX>& reg) {
-  return BoundaryRegionIterXY<isX>(&reg, true);
-}
-template <bool isX>
-inline auto end(const BoundaryRegionXY<isX>& reg) {
-  return BoundaryRegionIterXY<isX>(&reg, false);
 }
 
 /*
