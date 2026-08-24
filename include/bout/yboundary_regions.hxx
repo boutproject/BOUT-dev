@@ -1,7 +1,7 @@
 #pragma once
 
+#include "bout/boundary_region.hxx"
 #include "bout/boundary_region_iter.hxx"
-
 #include "bout/boutexception.hxx"
 #include "bout/field_data.hxx"
 #include "bout/mask.hxx"

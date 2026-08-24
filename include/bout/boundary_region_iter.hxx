@@ -346,7 +346,7 @@ private:
   Ind3D xyz2ind(int x, int y, int z) const {
     const int ny = localmesh->LocalNy;
     const int nz = localmesh->LocalNz;
-    return Ind3D{((x * ny + y) * nz) + z, ny, nz};
+    return Ind3D{(((x * ny) + y) * nz) + z, ny, nz};
   }
 };
 
@@ -458,7 +458,7 @@ public:
   };
 
   BoundaryRegionXY() = delete;
-  BoundaryRegionXY(const std::string& name, int dir, Mesh* mesh, Region<Ind3D>&& rgn)
+  BoundaryRegionXY(const std::string& name, int dir, Mesh* mesh, const Region<Ind3D>& rgn)
       : BoundaryRegionBase(name, mesh), _dir(dir),
         valid(isXtemp ? mesh->xstart : mesh->ystart) {
     BOUT_FOR_SERIAL(i, rgn) { this->rgn.emplace_back(i); }

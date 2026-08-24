@@ -1,24 +1,19 @@
 #ifndef BOUT_PAR_BNDRY_H
 #define BOUT_PAR_BNDRY_H
 
-#include "bout/assert.hxx"
-#include "bout/boundary_region.hxx"
-#include "bout/bout_enum_class.hxx"
-#include "bout/bout_types.hxx"
+#include <bout/assert.hxx>
+#include <bout/boundary_region.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
+#include <bout/mesh.hxx>
+#include <bout/region.hxx>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
-#include <functional>
 #include <string>
 #include <vector>
-
-#include "bout/build_defines.hxx"
-#include "bout/field2d.hxx"
-#include "bout/region.hxx"
-#include "bout/sys/parallel_stencils.hxx"
-#include "bout/utils.hxx"
-#include <bout/field3d.hxx>
-#include <bout/mesh.hxx>
 
 /**
  * Boundary region for parallel direction. This contains a vector of points that are
