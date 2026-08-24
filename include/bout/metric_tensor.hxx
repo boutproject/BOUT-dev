@@ -79,7 +79,7 @@ public:
   void communicate();
 
   template <class F>
-  void normaliseMetric(const MetricNormaliser& norm, F&& op);
+  void normaliseMetric(const MetricNormaliser& norm, const F& op);
 
 private:
   FieldMetric g11_m, g22_m, g33_m, g12_m, g13_m, g23_m;

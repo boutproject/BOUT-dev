@@ -150,7 +150,7 @@ auto ContravariantMetricTensor::inverse(const std::string& region, bool communic
 }
 
 template <class F>
-void MetricTensor::normaliseMetric(const MetricNormaliser& norm, F&& op) {
+void MetricTensor::normaliseMetric(const MetricNormaliser& norm, const F& op) {
   if (norm.g.has_value()) {
     op(g11_m, norm.g);
     op(g22_m, norm.g);
