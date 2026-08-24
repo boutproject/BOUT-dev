@@ -75,4 +75,27 @@ TokamakCoordinates set_tokamak_coordinates(Mesh& mesh, BoutReal Lbar, BoutReal B
 
   return {Rxy, Zxy, Bpxy, Btxy, Bxy, hthe, I, I_unnormalised};
 }
+
+std::optional<BoutReal> TokamakMetricNormaliser::g11() { return 1 / SQ(Bnorm * rho_s0); }
+std::optional<BoutReal> TokamakMetricNormaliser::g22() { return SQ(rho_s0); }
+std::optional<BoutReal> TokamakMetricNormaliser::g33() { return SQ(rho_s0); }
+std::optional<BoutReal> TokamakMetricNormaliser::g12() { return 1 / Bnorm; }
+std::optional<BoutReal> TokamakMetricNormaliser::g13() { return 1 / Bnorm; }
+std::optional<BoutReal> TokamakMetricNormaliser::g23() { return SQ(rho_s0); }
+std::optional<BoutReal> TokamakMetricNormaliser::dx() { return rho_s0 * rho_s0 * Bnorm; }
+std::optional<BoutReal> TokamakMetricNormaliser::J() { return rho_s0 / Bnorm; }
+std::optional<BoutReal> TokamakMetricNormaliser::Bxy() { return Bnorm; }
+
+std::optional<BoutReal> FCIMetricNormaliser::g() { return SQ(rho_s0); }
+std::optional<BoutReal> FCIMetricNormaliser::J() { return SQ(rho_s0) * rho_s0; }
+std::optional<BoutReal> FCIMetricNormaliser::Bxy() { return Bnorm; }
+
+std::unique_ptr<MetricNormaliser>
+TokamakOrFCIMetricNormaliser(const Mesh* mesh, BoutReal Bnorm, BoutReal rho_s0) {
+  if (mesh->isFci()) {
+    return std::make_unique<FCIMetricNormaliser>(Bnorm, rho_s0);
+  }
+  return std::make_unique<TokamakMetricNormaliser>(Bnorm, rho_s0);
+}
+
 } // namespace bout

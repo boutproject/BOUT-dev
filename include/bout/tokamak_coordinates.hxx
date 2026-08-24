@@ -45,6 +45,40 @@ TokamakCoordinates set_tokamak_coordinates(Mesh& mesh, BoutReal Lbar = 1.0,
                                            BoutReal Bbar = 1.0, bool no_shear = false,
                                            BoutReal shear_factor = 1.0);
 
+class TokamakMetricNormaliser : public MetricNormaliser {
+public:
+  TokamakMetricNormaliser(BoutReal Bnorm, BoutReal rho_s0)
+      : Bnorm(Bnorm), rho_s0(rho_s0) {};
+  std::optional<BoutReal> g11();
+  std::optional<BoutReal> g22();
+  std::optional<BoutReal> g33();
+  std::optional<BoutReal> g12();
+  std::optional<BoutReal> g13();
+  std::optional<BoutReal> g23();
+  std::optional<BoutReal> dx();
+  std::optional<BoutReal> J();
+  std::optional<BoutReal> Bxy();
+
+private:
+  BoutReal Bnorm;
+  BoutReal rho_s0;
+};
+
+class FCIMetricNormaliser : public MetricNormaliser {
+public:
+  FCIMetricNormaliser(BoutReal Bnorm, BoutReal rho_s0) : Bnorm(Bnorm), rho_s0(rho_s0) {};
+  std::optional<BoutReal> g();
+  std::optional<BoutReal> J();
+  std::optional<BoutReal> Bxy();
+
+private:
+  BoutReal Bnorm;
+  BoutReal rho_s0;
+};
+
+std::unique_ptr<MetricNormaliser>
+TokamakOrFCIMetricNormaliser(const Mesh* mesh, BoutReal Bnorm, BoutReal rho_s0);
+
 } // namespace bout
 
 #endif //BOUT_TOKAMAK_COORDINATES_HXX
