@@ -149,6 +149,48 @@ auto ContravariantMetricTensor::inverse(const std::string& region, bool communic
   return result;
 }
 
+template <class F>
+void MetricTensor::normaliseMetric(const MetricNormaliser& norm, F&& op) {
+  if (norm.g().has_value()) {
+    op(g11_m, norm.g());
+    op(g22_m, norm.g());
+    op(g33_m, norm.g());
+    op(g12_m, norm.g());
+    op(g13_m, norm.g());
+    op(g23_m, norm.g());
+  } else {
+    op(g11_m, norm.g11());
+    op(g22_m, norm.g22());
+    op(g33_m, norm.g33());
+    op(g12_m, norm.g12());
+    op(g13_m, norm.g13());
+    op(g23_m, norm.g23());
+  }
+}
+
+void ContravariantMetricTensor::normaliseMetric(const MetricNormaliser& norm) {
+  MetricTensor::normaliseMetric(norm, [](FieldMetric& f, auto fac) {
+    if (fac.has_value()) {
+      if (f.hasParallelSlices()) {
+        f.asField3DParallel() *= fac.value();
+      } else {
+        f *= fac.value();
+      }
+    }
+  });
+}
+void CovariantMetricTensor::normaliseMetric(const MetricNormaliser& norm) {
+  MetricTensor::normaliseMetric(norm, [](FieldMetric& f, auto fac) {
+    if (fac.has_value()) {
+      if (f.hasParallelSlices()) {
+        f.asField3DParallel() /= fac.value();
+      } else {
+        f /= fac.value();
+      }
+    }
+  });
+}
+
 void MetricTensor::communicate() {
   g11_m.getMesh()->communicate_no_slices(g11_m, g22_m, g33_m, g12_m, g13_m, g23_m);
 }
