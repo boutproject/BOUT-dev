@@ -554,18 +554,18 @@ std::string parallelSliceFieldName(std::string_view field, int offset);
 /// MetricNormaliser, with the exception of the contravariant metric
 /// tensor, which is multiplied by the normalisation factor.
 struct MetricNormaliser {
-  std::optional<BoutReal> g;
-  std::optional<BoutReal> g11;
-  std::optional<BoutReal> g22;
-  std::optional<BoutReal> g33;
-  std::optional<BoutReal> g12;
-  std::optional<BoutReal> g13;
-  std::optional<BoutReal> g23;
-  std::optional<BoutReal> dx;
-  std::optional<BoutReal> dy;
-  std::optional<BoutReal> dz;
-  std::optional<BoutReal> J;
-  std::optional<BoutReal> Bxy;
+  std::optional<BoutReal> g = std::nullopt;
+  std::optional<BoutReal> g11 = std::nullopt;
+  std::optional<BoutReal> g22 = std::nullopt;
+  std::optional<BoutReal> g33 = std::nullopt;
+  std::optional<BoutReal> g12 = std::nullopt;
+  std::optional<BoutReal> g13 = std::nullopt;
+  std::optional<BoutReal> g23 = std::nullopt;
+  std::optional<BoutReal> dx = std::nullopt;
+  std::optional<BoutReal> dy = std::nullopt;
+  std::optional<BoutReal> dz = std::nullopt;
+  std::optional<BoutReal> J = std::nullopt;
+  std::optional<BoutReal> Bxy = std::nullopt;
 };
 
 #endif // BOUT_COORDINATES_H
