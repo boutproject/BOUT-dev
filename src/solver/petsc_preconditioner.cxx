@@ -74,13 +74,13 @@ void PetscPreconditioner::reset() {
 }
 
 PetscErrorCode PetscPreconditioner::saveMatrix(Mat matrix, const std::string& filename,
-                                               PetscMatrixExportFormat format) {
+                                               bout::PetscMatrixExportFormat format) {
   if (matrix == nullptr) {
     throw BoutException("Cannot save Jacobian matrix: matrix has not been created yet");
   }
 
   PetscViewer viewer{nullptr};
-  if (format == PetscMatrixExportFormat::binary) {
+  if (format == bout::PetscMatrixExportFormat::binary) {
     PetscCall(PetscViewerBinaryOpen(BoutComm::get(), filename.c_str(), FILE_MODE_WRITE,
                                     &viewer));
   } else {
@@ -93,8 +93,9 @@ PetscErrorCode PetscPreconditioner::saveMatrix(Mat matrix, const std::string& fi
   PetscFunctionReturn(PETSC_SUCCESS);
 }
 
-PetscErrorCode PetscPreconditioner::saveMatrix(const std::string& filename,
-                                               PetscMatrixExportFormat format) const {
+PetscErrorCode
+PetscPreconditioner::saveMatrix(const std::string& filename,
+                                bout::PetscMatrixExportFormat format) const {
   return saveMatrix(Jfd, filename, format);
 }
 

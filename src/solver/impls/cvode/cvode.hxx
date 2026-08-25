@@ -1,8 +1,6 @@
 /**************************************************************************
  * Interface to SUNDIALS CVODE
  *
- * NOTE: Only one solver can currently be compiled in
- *
  **************************************************************************
  * Copyright 2010 - 2026 BOUT++ contributors
  *
@@ -69,8 +67,8 @@ RegisterSolver<CvodeSolver> registersolvercvode("cvode");
 // Note: String comparisons are case-insensitive so "Auto" avoids conflict with keyword
 BOUT_ENUM_CLASS(CvodePreconMethod, none, Auto, user, petsc, bbd);
 BOUT_ENUM_CLASS_NS(bout, CvodeJacobianExportTrigger,
-                output,      ///< Export once per solver output timestep
-                linear_setup ///< Export whenever CVODE rebuilds linear solver data
+                   output,      ///< Export once per solver output timestep
+                   linear_setup ///< Export whenever CVODE rebuilds linear solver data
 );
 
 #if SUNDIALS_VERSION_AT_LEAST(6, 0, 0)
@@ -112,13 +110,13 @@ private:
                          N_Vector zvec, BoutReal gamma, BoutReal delta, int lr,
                          void* user_data);
   /// Construct the basename used for Jacobian outputs in ``datadir``.
-  std::string getJacobianExportStem(JacobianExportKind kind);
+  std::string getJacobianExportStem(bout::JacobianExportKind kind);
   /// Return the matrix filename including the extension for the selected format.
   std::string getJacobianMatrixFilename(const std::string& stem) const;
   /// Write one Jacobian matrix and the shared metadata JSON.
   PetscErrorCode exportMatrixAndMetadata(Mat jacobian, const std::string& stem);
   /// Build and save a diagnostic Jacobian of the requested kind.
-  PetscErrorCode saveDiagnosticJacobian(JacobianExportKind kind, Vec x, BoutReal t,
+  PetscErrorCode saveDiagnosticJacobian(bout::JacobianExportKind kind, Vec x, BoutReal t,
                                         BoutReal gamma);
   /// Save Jacobians during CVODE linear solver setup callbacks.
   PetscErrorCode maybeExportJacobian(Mat system_jacobian, Vec x, BoutReal t,
@@ -182,11 +180,12 @@ private:
   BoutReal cvode_nonlinear_convergence_coef;
   BoutReal cvode_linear_convergence_coef;
   bool save_jacobian; ///< Save PETSc Jacobian diagnostics to ``datadir``?
-  JacobianExportKind jacobian_export_kind; ///< Export ``system`` or ``rhs`` Jacobian
-  CvodeJacobianExportTrigger
+  bout::JacobianExportKind
+      jacobian_export_kind; ///< Export ``system`` or ``rhs`` Jacobian
+  bout::CvodeJacobianExportTrigger
       jacobian_export_trigger;        ///< Export on ``output`` or ``linear_setup``
   std::string jacobian_export_prefix; ///< Prefix for matrix files and ``*_metadata.json``
-  PetscMatrixExportFormat
+  bout::PetscMatrixExportFormat
       jacobian_export_format; ///< PETSc ``MatView`` format: binary or ascii
   int jacobian_export_counter{
       0}; ///< Running counter appended to successive Jacobian saves

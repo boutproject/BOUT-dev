@@ -23,6 +23,7 @@
 #include <cmath>
 #include <cstddef>
 #include <fmt/format.h>
+#include <string>
 #include <vector>
 
 #include "petscerror.h"
@@ -383,7 +384,7 @@ SNESSolver::SNESSolver(Options* opts)
                         .withDefault<bool>(false)),
       jacobian_export_kind((*options)["jacobian_export_kind"]
                                .doc("Which Jacobian to save: system, scaled, or rhs")
-                               .withDefault(JacobianExportKind::system)),
+                               .withDefault(bout::JacobianExportKind::system)),
       jacobian_export_prefix(
           (*options)["jacobian_export_prefix"]
               .doc("Prefix for saved Jacobian matrix files and shared metadata JSON")
@@ -391,9 +392,9 @@ SNESSolver::SNESSolver(Options* opts)
       jacobian_export_format(
           (*options)["jacobian_export_format"]
               .doc("PETSc MatView format for saved Jacobians: binary or ascii")
-              .withDefault(PetscMatrixExportFormat::binary)) {}
+              .withDefault(bout::PetscMatrixExportFormat::binary)) {}
 
-std::string SNESSolver::getJacobianExportStem(JacobianExportKind kind) {
+std::string SNESSolver::getJacobianExportStem(bout::JacobianExportKind kind) {
   // The directory the output data is stored in
   const std::string datadir = Options::root()["datadir"];
   return fmt::format("{}/{}_{}_{:06d}", datadir, jacobian_export_prefix, toString(kind),
@@ -402,7 +403,8 @@ std::string SNESSolver::getJacobianExportStem(JacobianExportKind kind) {
 
 std::string SNESSolver::getJacobianMatrixFilename(const std::string& stem) const {
   return stem
-         + (jacobian_export_format == PetscMatrixExportFormat::binary ? ".dat" : ".txt");
+         + (jacobian_export_format == bout::PetscMatrixExportFormat::binary ? ".dat"
+                                                                            : ".txt");
 }
 
 PetscErrorCode SNESSolver::exportMatrixAndMetadata(Mat jacobian,
@@ -420,13 +422,14 @@ PetscErrorCode SNESSolver::exportMatrixAndMetadata(Mat jacobian,
   PetscFunctionReturn(PETSC_SUCCESS);
 }
 
-PetscErrorCode SNESSolver::saveDiagnosticJacobian(JacobianExportKind kind, Vec x_solver) {
+PetscErrorCode SNESSolver::saveDiagnosticJacobian(bout::JacobianExportKind kind,
+                                                  Vec x_solver) {
   PetscPreconditioner diagnostic_preconditioner;
   Field3D index = globalIndex(0);
   PetscCall(diagnostic_preconditioner.createJacobianPattern(
       index, *options, nlocal, n2Dvars(), n3Dvars(), BoutComm::get()));
 
-  if (kind == JacobianExportKind::rhs) {
+  if (kind == bout::JacobianExportKind::rhs) {
     PetscCall(diagnostic_preconditioner.updateColoring(FormRawFunctionForColoring, this));
   } else {
     PetscCall(
@@ -435,7 +438,7 @@ PetscErrorCode SNESSolver::saveDiagnosticJacobian(JacobianExportKind kind, Vec x
 
   Vec x_evaluate = x_solver;
   Vec physical_x{nullptr};
-  if (kind == JacobianExportKind::rhs) {
+  if (kind == bout::JacobianExportKind::rhs) {
     PetscCall(VecDuplicate(x_solver, &physical_x));
     PetscCall(toPhysicalState(x_solver, physical_x));
     x_evaluate = physical_x;
@@ -460,7 +463,7 @@ PetscErrorCode SNESSolver::maybeExportJacobian(Mat system_jacobian, Vec x_solver
     PetscFunctionReturn(PETSC_SUCCESS);
   }
 
-  if (jacobian_export_kind == JacobianExportKind::system) {
+  if (jacobian_export_kind == bout::JacobianExportKind::system) {
     PetscCall(exportMatrixAndMetadata(system_jacobian,
                                       getJacobianExportStem(jacobian_export_kind)));
     PetscFunctionReturn(PETSC_SUCCESS);
@@ -1245,7 +1248,7 @@ PetscErrorCode SNESSolver::updateResiduals(Vec x) {
 
   // Note: The ordering of quantities in the PETSc vectors
   // depends on the Solver::loop_vars function
-  Mesh* mesh = bout::globals::mesh;
+  const Mesh* mesh = bout::globals::mesh;
   int idx = 0; // Index into PETSc Vecs
 
   // Boundary cells

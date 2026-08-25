@@ -71,10 +71,10 @@
 #include <string>
 #include <vector>
 
-BOUT_ENUM_CLASS(positivity_constraint, none, positive, non_negative, negative,
-                non_positive);
+BOUT_ENUM_CLASS_NS(bout, positivity_constraint, none, positive, non_negative, negative,
+                   non_positive);
 
-BOUT_ENUM_CLASS(linear_solver, gmres, fgmres, tfqmr, bcgs);
+BOUT_ENUM_CLASS_NS(bout, linear_solver, gmres, fgmres, tfqmr, bcgs);
 
 // NOLINTBEGIN(readability-identifier-length)
 namespace {
@@ -175,11 +175,11 @@ CvodeSolver::CvodeSolver(Options* opts)
       jacobian_export_kind((*options)["jacobian_export_kind"]
                                .doc("Which Jacobian to save for CVODE: system or rhs "
                                     "(scaled is not supported)")
-                               .withDefault(JacobianExportKind::system)),
+                               .withDefault(bout::JacobianExportKind::system)),
       jacobian_export_trigger(
           (*options)["jacobian_export_trigger"]
               .doc("When to save CVODE Jacobians: output or linear_setup")
-              .withDefault(CvodeJacobianExportTrigger::linear_setup)),
+              .withDefault(bout::CvodeJacobianExportTrigger::linear_setup)),
       jacobian_export_prefix(
           (*options)["jacobian_export_prefix"]
               .doc("Prefix for saved Jacobian matrix files and shared metadata JSON")
@@ -187,7 +187,7 @@ CvodeSolver::CvodeSolver(Options* opts)
       jacobian_export_format(
           (*options)["jacobian_export_format"]
               .doc("PETSc MatView format for saved Jacobians: binary or ascii")
-              .withDefault(PetscMatrixExportFormat::binary)),
+              .withDefault(bout::PetscMatrixExportFormat::binary)),
       suncontext(createSUNContext(BoutComm::get())) {
   has_constraints = false; // This solver doesn't have constraints
   canReset = true;
@@ -246,7 +246,7 @@ CvodeSolver::~CvodeSolver() {
 }
 
 #if BOUT_HAS_PETSC
-std::string CvodeSolver::getJacobianExportStem(JacobianExportKind kind) {
+std::string CvodeSolver::getJacobianExportStem(bout::JacobianExportKind kind) {
   const std::string datadir = Options::root()["datadir"];
   return fmt::format("{}/{}_{}_{:06d}", datadir, jacobian_export_prefix, toString(kind),
                      jacobian_export_counter++);
@@ -254,7 +254,8 @@ std::string CvodeSolver::getJacobianExportStem(JacobianExportKind kind) {
 
 std::string CvodeSolver::getJacobianMatrixFilename(const std::string& stem) const {
   return stem
-         + (jacobian_export_format == PetscMatrixExportFormat::binary ? ".dat" : ".txt");
+         + (jacobian_export_format == bout::PetscMatrixExportFormat::binary ? ".dat"
+                                                                            : ".txt");
 }
 
 PetscErrorCode CvodeSolver::exportMatrixAndMetadata(Mat jacobian,
@@ -272,9 +273,9 @@ PetscErrorCode CvodeSolver::exportMatrixAndMetadata(Mat jacobian,
   PetscFunctionReturn(PETSC_SUCCESS);
 }
 
-PetscErrorCode CvodeSolver::saveDiagnosticJacobian(JacobianExportKind kind, Vec x,
+PetscErrorCode CvodeSolver::saveDiagnosticJacobian(bout::JacobianExportKind kind, Vec x,
                                                    BoutReal t, BoutReal gamma) {
-  if (kind == JacobianExportKind::scaled) {
+  if (kind == bout::JacobianExportKind::scaled) {
     throw BoutException("solver:jacobian_export_kind=scaled is not supported for CVODE");
   }
 
@@ -286,7 +287,7 @@ PetscErrorCode CvodeSolver::saveDiagnosticJacobian(JacobianExportKind kind, Vec 
   PetscCall(diagnostic_preconditioner.createJacobianPattern(
       index, *options, getLocalN(), n2Dvars(), n3Dvars(), BoutComm::get()));
 
-  if (kind == JacobianExportKind::rhs) {
+  if (kind == bout::JacobianExportKind::rhs) {
     PetscCall(diagnostic_preconditioner.updateColoring(CvodeSolver::petscFormRhsFunction,
                                                        this));
   } else {
@@ -296,7 +297,7 @@ PetscErrorCode CvodeSolver::saveDiagnosticJacobian(JacobianExportKind kind, Vec 
 
   Vec diagnostic_f{nullptr};
   PetscCall(VecDuplicate(x, &diagnostic_f));
-  if (kind == JacobianExportKind::rhs) {
+  if (kind == bout::JacobianExportKind::rhs) {
     PetscCall(CvodeSolver::petscFormRhsFunction(nullptr, x, diagnostic_f, this));
   } else {
     PetscCall(CvodeSolver::petscFormFunction(nullptr, x, diagnostic_f, this));
@@ -318,11 +319,11 @@ PetscErrorCode CvodeSolver::saveDiagnosticJacobian(JacobianExportKind kind, Vec 
 PetscErrorCode CvodeSolver::maybeExportJacobian(Mat system_jacobian, Vec x, BoutReal t,
                                                 BoutReal gamma) {
   if (!save_jacobian
-      or jacobian_export_trigger != CvodeJacobianExportTrigger::linear_setup) {
+      or jacobian_export_trigger != bout::CvodeJacobianExportTrigger::linear_setup) {
     PetscFunctionReturn(PETSC_SUCCESS);
   }
 
-  if (jacobian_export_kind == JacobianExportKind::system) {
+  if (jacobian_export_kind == bout::JacobianExportKind::system) {
     PetscCall(exportMatrixAndMetadata(system_jacobian,
                                       getJacobianExportStem(jacobian_export_kind)));
     PetscFunctionReturn(PETSC_SUCCESS);
@@ -332,7 +333,8 @@ PetscErrorCode CvodeSolver::maybeExportJacobian(Mat system_jacobian, Vec x, Bout
 }
 
 PetscErrorCode CvodeSolver::maybeExportOutputJacobian(BoutReal t) {
-  if (!save_jacobian or jacobian_export_trigger != CvodeJacobianExportTrigger::output) {
+  if (!save_jacobian
+      or jacobian_export_trigger != bout::CvodeJacobianExportTrigger::output) {
     PetscFunctionReturn(PETSC_SUCCESS);
   }
 
@@ -347,7 +349,8 @@ PetscErrorCode CvodeSolver::maybeExportOutputJacobian(BoutReal t) {
   save_vars(xdata);
   PetscCall(VecRestoreArray(x, &xdata));
 
-  const PetscErrorCode ierr = saveDiagnosticJacobian(JacobianExportKind::rhs, x, t, 0.0);
+  const PetscErrorCode ierr =
+      saveDiagnosticJacobian(bout::JacobianExportKind::rhs, x, t, 0.0);
   PetscCall(VecDestroy(&x));
   PetscFunctionReturn(ierr);
 }
@@ -526,22 +529,22 @@ int CvodeSolver::init() {
 #if !BOUT_HAS_PETSC
     throw BoutException("solver:save_jacobian for CVODE requires PETSc support.");
 #else
-    if (jacobian_export_kind == JacobianExportKind::scaled) {
+    if (jacobian_export_kind == bout::JacobianExportKind::scaled) {
       throw BoutException(
           "solver:jacobian_export_kind=scaled is not supported for CVODE because "
           "CVODE does not currently apply solver-coordinate scaling.");
     }
-    if (jacobian_export_kind == JacobianExportKind::system
-        and jacobian_export_trigger != CvodeJacobianExportTrigger::linear_setup) {
+    if (jacobian_export_kind == bout::JacobianExportKind::system
+        and jacobian_export_trigger != bout::CvodeJacobianExportTrigger::linear_setup) {
       throw BoutException("solver:jacobian_export_kind=system for CVODE requires "
                           "solver:jacobian_export_trigger=linear_setup.");
     }
-    if (jacobian_export_trigger == CvodeJacobianExportTrigger::output
-        and jacobian_export_kind != JacobianExportKind::rhs) {
+    if (jacobian_export_trigger == bout::CvodeJacobianExportTrigger::output
+        and jacobian_export_kind != bout::JacobianExportKind::rhs) {
       throw BoutException("solver:jacobian_export_trigger=output for CVODE currently "
                           "supports only solver:jacobian_export_kind=rhs.");
     }
-    if (jacobian_export_trigger == CvodeJacobianExportTrigger::linear_setup) {
+    if (jacobian_export_trigger == bout::CvodeJacobianExportTrigger::linear_setup) {
       if (func_iter) {
         throw BoutException("solver:jacobian_export_trigger=linear_setup for CVODE "
                             "requires Newton iteration (set solver:func_iter=false).");
@@ -587,18 +590,18 @@ int CvodeSolver::init() {
 
     switch ((*options)["linear_solver"]
                 .doc("Set linear solver type. Default is gmres.")
-                .withDefault(linear_solver::gmres)) {
-    case linear_solver::gmres:
+                .withDefault(bout::linear_solver::gmres)) {
+    case bout::linear_solver::gmres:
       sun_solver = callWithSUNContext(SUNLinSol_SPGMR, suncontext, uvec, prectype, maxl);
       break;
-    case linear_solver::fgmres:
+    case bout::linear_solver::fgmres:
       sun_solver = callWithSUNContext(SUNLinSol_SPFGMR, suncontext, uvec, prectype, maxl);
       break;
-    case linear_solver::tfqmr:
+    case bout::linear_solver::tfqmr:
       sun_solver =
           callWithSUNContext(SUNLinSol_SPTFQMR, suncontext, uvec, prectype, maxl);
       break;
-    case linear_solver::bcgs:
+    case bout::linear_solver::bcgs:
       sun_solver = callWithSUNContext(SUNLinSol_SPBCGS, suncontext, uvec, prectype, maxl);
       break;
     };
@@ -747,17 +750,17 @@ CvodeSolver::create_constraints(const std::vector<VarStr<FieldType>>& fields) {
                                             "positive, non_negative, negative, or "
                                             "non_positive.",
                                             f.name))
-                           .withDefault(positivity_constraint::none);
+                           .withDefault(bout::positivity_constraint::none);
                    switch (value) {
-                   case positivity_constraint::none:
+                   case bout::positivity_constraint::none:
                      return 0.0;
-                   case positivity_constraint::positive:
+                   case bout::positivity_constraint::positive:
                      return 2.0;
-                   case positivity_constraint::non_negative:
+                   case bout::positivity_constraint::non_negative:
                      return 1.0;
-                   case positivity_constraint::negative:
+                   case bout::positivity_constraint::negative:
                      return -2.0;
-                   case positivity_constraint::non_positive:
+                   case bout::positivity_constraint::non_positive:
                      return -1.0;
                    default:
                      throw BoutException("Incorrect value for "

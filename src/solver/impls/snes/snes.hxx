@@ -35,6 +35,7 @@
 
 class SNESSolver;
 
+#include <string>
 #include <vector>
 
 #include "mpi.h"
@@ -148,9 +149,9 @@ private:
   /// quantities are near zero then RTOL is used.
   PetscErrorCode rescale();
   /// Build and save a diagnostic Jacobian of the requested kind.
-  PetscErrorCode saveDiagnosticJacobian(JacobianExportKind kind, Vec x_solver);
+  PetscErrorCode saveDiagnosticJacobian(bout::JacobianExportKind kind, Vec x_solver);
   /// Construct the basename used for Jacobian outputs in ``datadir``.
-  std::string getJacobianExportStem(JacobianExportKind kind);
+  std::string getJacobianExportStem(bout::JacobianExportKind kind);
   /// Return the matrix filename including the extension for the selected format.
   std::string getJacobianMatrixFilename(const std::string& stem) const;
   /// Write the matrix and shared JSON metadata for one diagnostic Jacobian.
@@ -306,10 +307,10 @@ private:
   const BoutReal asinh_scale = 1e-5; // Scale below which asinh response becomes ~linear
 
   bool save_jacobian; ///< Save Jacobian diagnostics to ``datadir``?
-  JacobianExportKind
+  bout::JacobianExportKind
       jacobian_export_kind; ///< Export ``system``, ``scaled``, or ``rhs`` Jacobian
   std::string jacobian_export_prefix; ///< Prefix for matrix files and ``*_metadata.json``
-  PetscMatrixExportFormat
+  bout::PetscMatrixExportFormat
       jacobian_export_format; ///< PETSc ``MatView`` format: binary or ascii
   int jacobian_export_counter{
       0}; ///< Running counter appended to successive Jacobian saves

@@ -1,20 +1,10 @@
 /**************************************************************************
  * Base class for all solvers. Specifies required interface functions
  *
- * Changelog:
- *
- * 2009-08 Ben Dudson, Sean Farley
- *    * Major overhaul, and changed API. Trying to make consistent
- *      interface to PETSc and SUNDIALS solvers
- *
- * 2013-08 Ben Dudson
- *    * Added OO-style API, to allow multiple physics models to coexist
- *      For now both APIs are supported
- *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -102,8 +92,8 @@ constexpr auto SOLVERRKGENERIC = "rkgeneric";
 enum class FieldCategories : std::uint8_t { VARS, DERIVS, MMS };
 enum class SOLVER_VAR_OP : std::uint8_t { LOAD, SET_ID, SAVE };
 
-BOUT_ENUM_CLASS_NS(bout
-    JacobianExportKind,
+BOUT_ENUM_CLASS_NS(
+    bout, JacobianExportKind,
     system, ///< Jacobian of the full nonlinear system solved by the solver
     scaled, ///< Jacobian after solver-coordinate transforms such as variable scaling
     rhs     ///< Jacobian of the raw model RHS in physical variables
