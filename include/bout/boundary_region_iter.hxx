@@ -245,8 +245,15 @@ public:
       return index.length;
     }
 
-    auto operator<=>(const Point& rhs) const { return _ind() <=> rhs._ind(); }
-    bool operator==(Point rhs) const { return _ind() == rhs._ind(); }
+    auto operator<=>(const Point& rhs) const {
+      // Ensure we're looking at the same boundary
+      ASSERT3(_dir == rhs._dir);
+      return _ind() <=> rhs._ind();
+    }
+    bool operator==(Point rhs) const {
+      ASSERT3(_dir == rhs._dir);
+      return _ind() == rhs._ind();
+    }
   };
 
   BoundaryRegionFCI(const std::string& name, const BndryLoc& loc, int dir, Mesh* mesh)
