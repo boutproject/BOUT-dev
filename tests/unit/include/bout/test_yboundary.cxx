@@ -222,21 +222,21 @@ TEST_F(YBTest, getAt_square) {
   Field3D test = makeField<Field3D>([&](auto& i) { return SQ(i.y() - 2); }, mesh);
   YBoundary sheath(YBndryType::all, nullptr, *mesh);
   sheath.iter([&](const BoundaryIterator auto& point) {
-    EXPECT_DOUBLE_EQ(point.getAt(test, 0), 4);
-    EXPECT_DOUBLE_EQ(point.getAt(test, 1), 1);
-    EXPECT_DOUBLE_EQ(point.getAt(test, 2), 0);
+    EXPECT_DOUBLE_EQ(point.at(test, 0), 4);
+    EXPECT_DOUBLE_EQ(point.at(test, 1), 1);
+    EXPECT_DOUBLE_EQ(point.at(test, 2), 0);
   });
 }
 
-TEST_F(YBTest, getAt_func) {
+TEST_F(YBTest, at_func) {
   Field3D test = makeField<Field3D>([&](auto& i) { return i.y() - 2; }, mesh);
   YBoundary sheath(YBndryType::all, nullptr, *mesh);
   auto square = [&]([[maybe_unused]] int yo, Ind3D ind) -> BoutReal {
     return SQ(test[ind]);
   };
   sheath.iter([&](const BoundaryIterator auto& point) {
-    EXPECT_DOUBLE_EQ(point.getAt(square, 0), 4);
-    EXPECT_DOUBLE_EQ(point.getAt(square, 1), 1);
-    EXPECT_DOUBLE_EQ(point.getAt(square, 2), 0);
+    EXPECT_DOUBLE_EQ(point.at(square, 0), 4);
+    EXPECT_DOUBLE_EQ(point.at(square, 1), 1);
+    EXPECT_DOUBLE_EQ(point.at(square, 2), 0);
   });
 }

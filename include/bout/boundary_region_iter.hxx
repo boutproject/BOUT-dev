@@ -25,7 +25,7 @@
 namespace bout {
 namespace boundary {
 
-/// Helper concept for `BoundaryRegionIterBase::getAt` function accessor overloads
+/// Helper concept for `BoundaryRegionIterBase::at` function accessor overloads
 ///
 /// This is a callable that takes two arguments:
 /// - `int yoffset`, the parallel slice offset
@@ -45,7 +45,7 @@ concept function_accessor =
 /// auto` as the parameter type.
 template <class Iter>
 concept BoundaryIterator = requires(Iter point, Field3D f) {
-  point.getAt(f, int{});
+  point.at(f, int{});
   point.next(f);
   point.current(f);
   point.prev(f);
@@ -103,45 +103,45 @@ public:
   ///    boundary
   template <bool check = true, class T>
     requires utils::is_Field_v<T>
-  const BoutReal& getAt(const T& f, int offset) const {
-    return impl().template _getAt<check>(f, offset);
+  const BoutReal& at(const T& f, int offset) const {
+    return impl().template _at<check>(f, offset);
   }
 
   template <bool check = true, class T>
     requires utils::is_Field_v<T>
-  BoutReal& getAt(T& f, int offset) const {
-    return impl().template _getAt<check>(f, offset);
+  BoutReal& at(T& f, int offset) const {
+    return impl().template _at<check>(f, offset);
   }
 
   /// Get the first point in the boundary
   template <class T>
     requires utils::is_Field_v<T>
   const BoutReal& next(const T& f) const {
-    return getAt(f, 0);
+    return at(f, 0);
   }
   /// Get the first point in the boundary
   template <class T>
     requires utils::is_Field_v<T>
   BoutReal& next(T& f) const {
-    return getAt(f, 0);
+    return at(f, 0);
   }
   /// Get the last point in the domain
   template <class T>
     requires utils::is_Field_v<T>
   const BoutReal& current(const T& f) const {
-    return getAt(f, 1);
+    return at(f, 1);
   }
   /// Get the last point in the domain
   template <class T>
     requires utils::is_Field_v<T>
   BoutReal& current(T& f) const {
-    return getAt(f, 1);
+    return at(f, 1);
   }
   /// Get the second to last point in the domain - this may not be valid and thus throw
   template <class T>
     requires utils::is_Field_v<T>
   const BoutReal& prev(const T& f) const {
-    return getAt(f, 2);
+    return at(f, 2);
   }
 
   /*
@@ -155,15 +155,15 @@ public:
   ///       |
   ///    boundary
   template <bool check = true>
-  BoutReal getAt(const function_accessor auto& func, int offset) const {
-    return impl().template _getAt<check>(func, offset);
+  BoutReal at(const function_accessor auto& func, int offset) const {
+    return impl().template _at<check>(func, offset);
   }
   /// Get the first point in the boundary
-  BoutReal next(const function_accessor auto& func) const { return getAt(func, 0); }
+  BoutReal next(const function_accessor auto& func) const { return at(func, 0); }
   /// Get the last point in the domain
-  BoutReal current(const function_accessor auto& func) const { return getAt(func, 1); }
+  BoutReal current(const function_accessor auto& func) const { return at(func, 1); }
   /// Get the second to last point in the domain - this may not be valid and thus throw
-  BoutReal prev(const function_accessor auto& func) const { return getAt(func, 2); }
+  BoutReal prev(const function_accessor auto& func) const { return at(func, 2); }
 
   void setSmallValue(BoutReal val) {
     ASSERT2(val > 0);
@@ -207,7 +207,7 @@ public:
 
     template <bool check = true, class T>
       requires utils::is_Field_v<T>
-    const BoutReal& _getAt(const T& f, int off) const {
+    const BoutReal& _at(const T& f, int off) const {
       ASSERT3(f.hasParallelSlices());
       if constexpr (check) {
         ASSERT3(_valid() > -off - 2);
@@ -218,7 +218,7 @@ public:
 
     template <bool check = true, class T>
       requires utils::is_Field_v<T>
-    BoutReal& _getAt(T& f, int off) const {
+    BoutReal& _at(T& f, int off) const {
       ASSERT3(f.hasParallelSlices());
       if constexpr (check) {
         ASSERT3(_valid() > -off - 2);
@@ -228,7 +228,7 @@ public:
     }
 
     template <bool check = true>
-    BoutReal _getAt(const function_accessor auto& f, int off) const {
+    BoutReal _at(const function_accessor auto& f, int off) const {
       if constexpr (check) {
         ASSERT3(valid() > -off - 2);
       }
@@ -344,7 +344,7 @@ public:
 
     template <bool check = true, class T>
       requires utils::is_Field_v<T>
-    const BoutReal& _getAt(const T& f, int off) const {
+    const BoutReal& _at(const T& f, int off) const {
       if constexpr (check) {
         ASSERT3(_valid() > -off - 2);
       }
@@ -354,7 +354,7 @@ public:
 
     template <bool check = true, class T>
       requires utils::is_Field_v<T>
-    BoutReal& _getAt(T& f, int off) const {
+    BoutReal& _at(T& f, int off) const {
       if constexpr (check) {
         ASSERT3(_valid() > -off - 2);
       }
@@ -363,7 +363,7 @@ public:
     }
 
     template <bool check = true>
-    BoutReal _getAt(const function_accessor auto& f, int off) const {
+    BoutReal _at(const function_accessor auto& f, int off) const {
       if constexpr (check) {
         ASSERT3(_valid() > -off - 2);
       }
@@ -629,7 +629,7 @@ BoutReal extrapolate_boundary_free(const Iter& point, const Field3D& f,
 template <BoundaryIterator Iter>
 void dirichlet_o1(const Iter& point, Field3D& f, BoutReal value) {
   for (int i = 0; i < point.boundary_width(); ++i) {
-    point.getAt(f, -i) = value;
+    point.at(f, -i) = value;
   }
 }
 
@@ -640,7 +640,7 @@ void dirichlet_o2(const Iter& point, Field3D& f, BoutReal value) {
     return dirichlet_o1(point, f, value);
   }
   for (int i = 0; i < point.boundary_width(); ++i) {
-    point.getAt(f, -i) = parallel_stencil::dirichlet_o2(
+    point.at(f, -i) = parallel_stencil::dirichlet_o2(
         i + 1, point.current(f), i + 1 - point.length(f.getLocation()), value);
   }
 }
@@ -654,12 +654,12 @@ void dirichlet_o3(const Iter& point, Field3D& f, BoutReal value) {
   }
   if (point.length(f.getLocation()) < point.smallValue()) {
     for (int i = 0; i < point.boundary_width(); ++i) {
-      point.getAt(f, -i) = parallel_stencil::dirichlet_o2(
+      point.at(f, -i) = parallel_stencil::dirichlet_o2(
           i + 2, point.prev(f), i + 1 - point.length(f.getLocation()), value);
     }
   } else {
     for (int i = 0; i < point.boundary_width(); ++i) {
-      point.getAt(f, -i) =
+      point.at(f, -i) =
           parallel_stencil::dirichlet_o3(i + 2, point.prev(f), i + 1, point.current(f),
                                          i + 1 - point.length(f.getLocation()), value);
     }
@@ -670,8 +670,8 @@ void dirichlet_o3(const Iter& point, Field3D& f, BoutReal value) {
 template <BoundaryIterator Iter>
 void limit_at_least(const Iter& point, Field3D& f, BoutReal value) {
   for (int i = 0; i < point.boundary_width(); ++i) {
-    if (point.getAt(f, -i) < value) {
-      point.getAt(f, -i) = value;
+    if (point.at(f, -i) < value) {
+      point.at(f, -i) = value;
     }
   }
 }
@@ -683,7 +683,7 @@ void limit_at_least(const Iter& point, Field3D& f, BoutReal value) {
 template <BoundaryIterator Iter>
 void neumann_o1(const Iter& point, Field3D& f, BoutReal value) {
   for (int i = 0; i < point.boundary_width(); ++i) {
-    point.getAt(f, -i) = point.current(f) + value * (i + 1);
+    point.at(f, -i) = point.current(f) + value * (i + 1);
   }
 }
 
@@ -695,7 +695,7 @@ void neumann_o2(const Iter& point, Field3D& f, BoutReal value) {
     return neumann_o1(point, f, value);
   }
   for (int i = 0; i < point.boundary_width(); ++i) {
-    point.getAt(f, -i) = point.prev(f) + (2 + i) * value;
+    point.at(f, -i) = point.prev(f) + (2 + i) * value;
   }
 }
 
@@ -707,7 +707,7 @@ void neumann_o3(const Iter& point, Field3D& f, BoutReal value) {
     return neumann_o2(point, f, value);
   }
   for (int i = 0; i < point.boundary_width(); ++i) {
-    point.getAt(f, -i) =
+    point.at(f, -i) =
         parallel_stencil::neumann_o3(i + 1 - point.length(f.getLocation()), value, i + 1,
                                      point.current(f), 2, point.prev(f));
   }
@@ -725,12 +725,12 @@ void set_free(const Iter& point, Field3D& f, BoundaryFreeExtrapolation mode) {
   if (mode == BoundaryFreeExtrapolation::linear) {
     for (int i = 0; i < point.boundary_width(); ++i) {
       val += fac;
-      point.getAt(f, -i) = val;
+      point.at(f, -i) = val;
     }
   } else {
     for (int i = 0; i < point.boundary_width(); ++i) {
       val *= fac;
-      point.getAt(f, -i) = val;
+      point.at(f, -i) = val;
     }
   }
 }
