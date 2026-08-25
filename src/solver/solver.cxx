@@ -52,6 +52,7 @@
 #include <cmath>
 #include <ctime>
 #include <fstream>
+#include <iterator>
 #include <memory>
 #include <numeric>
 #include <set>
@@ -1314,42 +1315,52 @@ void Solver::writeJacobianMetadataJson(const std::string& filename,
   }
 
   const auto metadata = getJacobianMetadata(solver_name);
-  std::ofstream json_file(filename);
-  if (!json_file.is_open()) {
+  std::ofstream output_file(filename);
+  if (!output_file.is_open()) {
     throw BoutException("Failed to open Jacobian metadata file '{}'", filename);
   }
 
+  std::string json_file;
+  json_file.reserve(512);
+
   auto write_variables = [&](const std::vector<JacobianVariableMetadata>& variables,
                              const char* name) {
-    json_file << "  \"" << name << "\": [\n";
+    fmt::format_to(std::back_inserter(json_file), "  \"{}\": [\n", name);
     for (std::size_t i = 0; i < variables.size(); ++i) {
       const auto& variable = variables[i];
-      json_file << "    {\"offset\": " << variable.offset << ", "
-                << "\"name\": \"" << jsonEscape(variable.name) << "\", "
-                << "\"location\": \"" << jsonEscape(variable.location) << "\", "
-                << "\"evolve_bndry\": " << (variable.evolve_bndry ? "true" : "false")
-                << ", "
-                << "\"constraint\": " << (variable.constraint ? "true" : "false") << ", "
-                << "\"description\": \"" << jsonEscape(variable.description) << "\"}";
+      fmt::format_to(
+          std::back_inserter(json_file),
+          "    {{\"offset\": {}, \"name\": \"{}\", \"location\": \"{}\", "
+          "\"evolve_bndry\": {}, \"constraint\": {}, \"description\": \"{}\"}}",
+          variable.offset, jsonEscape(variable.name), jsonEscape(variable.location),
+          variable.evolve_bndry ? "true" : "false",
+          variable.constraint ? "true" : "false", jsonEscape(variable.description));
       if (i + 1 != variables.size()) {
-        json_file << ",";
+        fmt::format_to(std::back_inserter(json_file), ",");
       }
-      json_file << "\n";
+      fmt::format_to(std::back_inserter(json_file), "\n");
     }
-    json_file << "  ]";
+    fmt::format_to(std::back_inserter(json_file), "  ]");
   };
 
-  json_file << "{\n"
-            << "  \"format_version\": " << metadata.format_version << ",\n"
-            << "  \"solver\": \"" << jsonEscape(metadata.solver_name) << "\",\n"
-            << "  \"n2d\": " << metadata.n2d << ",\n"
-            << "  \"n3d\": " << metadata.n3d << ",\n";
+  fmt::format_to(std::back_inserter(json_file),
+                 "{{\n"
+                 "  \"format_version\": {},\n"
+                 "  \"solver\": \"{}\",\n"
+                 "  \"n2d\": {},\n"
+                 "  \"n3d\": {},\n",
+                 metadata.format_version, jsonEscape(metadata.solver_name), metadata.n2d,
+                 metadata.n3d);
   write_variables(metadata.variables_2d, "variables_2d");
-  json_file << ",\n";
+  fmt::format_to(std::back_inserter(json_file), ",\n");
   write_variables(metadata.variables_3d, "variables_3d");
-  json_file << ",\n"
-            << "  \"ordering\": \"" << jsonEscape(metadata.ordering) << "\"\n"
-            << "}\n";
+  fmt::format_to(std::back_inserter(json_file),
+                 ",\n"
+                 "  \"ordering\": \"{}\"\n"
+                 "}}\n",
+                 jsonEscape(metadata.ordering));
+
+  output_file << json_file;
 }
 
 void Solver::writeOnceJacobianMetadata(const std::string& solver_name) {
