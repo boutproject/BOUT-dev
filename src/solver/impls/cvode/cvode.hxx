@@ -110,15 +110,14 @@ private:
                          N_Vector zvec, BoutReal gamma, BoutReal delta, int lr,
                          void* user_data);
   /// Write one Jacobian matrix and the shared metadata JSON.
-  PetscErrorCode exportMatrixAndMetadata(bout::JacobianExportKind kind, Mat jacobian);
+  void exportMatrixAndMetadata(bout::JacobianExportKind kind, Mat jacobian);
   /// Build and save a diagnostic Jacobian of the requested kind.
-  PetscErrorCode saveDiagnosticJacobian(bout::JacobianExportKind kind, Vec x, BoutReal t,
-                                        BoutReal gamma);
+  void saveDiagnosticJacobian(bout::JacobianExportKind kind, Vec x, BoutReal t,
+                              BoutReal gamma);
   /// Save Jacobians during CVODE linear solver setup callbacks.
-  PetscErrorCode maybeExportJacobian(Mat system_jacobian, Vec x, BoutReal t,
-                                     BoutReal gamma);
+  void maybeExportJacobian(Mat system_jacobian, Vec x, BoutReal t, BoutReal gamma);
   /// Save Jacobians once per solver output timestep.
-  PetscErrorCode maybeExportOutputJacobian(BoutReal t);
+  void maybeExportOutputJacobian(BoutReal t);
 #endif
 
   BoutReal hcur; //< Current internal timestep
@@ -179,10 +178,7 @@ private:
   bout::JacobianExportKind
       jacobian_export_kind; ///< Export ``system`` or ``rhs`` Jacobian
   bout::CvodeJacobianExportTrigger
-      jacobian_export_trigger;        ///< Export on ``output`` or ``linear_setup``
-  std::string jacobian_export_prefix; ///< Prefix for matrix files and ``*_metadata.json``
-  bout::PetscMatrixExportFormat
-      jacobian_export_format; ///< PETSc ``MatView`` format: binary or ascii
+      jacobian_export_trigger; ///< Export on ``output`` or ``linear_setup``
 
   // Diagnostics from CVODE
   int nsteps{0};

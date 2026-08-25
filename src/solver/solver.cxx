@@ -139,6 +139,13 @@ Solver::Solver(Options* opts)
               .doc("Write jacobian_index_base so saved PETSc Jacobians can be mapped "
                    "back to variables and cell indices in post-processing")
               .withDefault(false)),
+      jacobian_export_prefix((*options)["jacobian_export_prefix"]
+                                 .doc("Prefix for saved Jacobian matrix files")
+                                 .withDefault("jacobian")),
+      jacobian_export_format(
+          (*options)["jacobian_export_format"]
+              .doc("PETSc MatView format for saved Jacobians: binary or ascii")
+              .withDefault(bout::PetscMatrixExportFormat::binary)),
       is_nonsplit_model_diffusive(
           (*options)["is_nonsplit_model_diffusive"]
               .doc("If not a split operator, treat RHS as diffusive?")
@@ -1355,6 +1362,26 @@ void Solver::writeOnceJacobianMetadata(const std::string& solver_name) {
   output.write("Jacobian metadata written to {}\n", metadata_filename);
   writeJacobianMetadataJson(metadata_filename, solver_name);
   jacobian_metadata_written = true;
+}
+
+#if BOUT_HAS_PETSC
+void Solver::writeJacobianMatrix(bout::JacobianExportKind kind, Mat jacobian) {
+  BOUT_DO_PETSC(PetscPreconditioner::saveMatrix(
+      jacobian,
+      getJacobianMatrixFilename(this->jacobian_export_prefix, kind,
+                                this->jacobian_export_format),
+      this->jacobian_export_format));
+}
+#endif
+
+std::string Solver::getJacobianMatrixFilename(const std::string& jacobian_export_prefix,
+                                              bout::JacobianExportKind kind,
+                                              bout::PetscMatrixExportFormat format) {
+  // The directory the output data is stored in
+  const std::string datadir = Options::root()["datadir"];
+  const std::string stem = fmt::format("{}/{}_{}_{:06d}", datadir, jacobian_export_prefix,
+                                       toString(kind), this->jacobian_export_counter++);
+  return stem + (format == bout::PetscMatrixExportFormat::binary ? ".dat" : ".txt");
 }
 
 /**************************************************************************

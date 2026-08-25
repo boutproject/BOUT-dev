@@ -135,7 +135,7 @@ public:
   ///
   /// ``system`` exports the Jacobian used directly by SNES. ``scaled`` and ``rhs``
   /// build throwaway coloring Jacobians for diagnostics only.
-  PetscErrorCode maybeExportJacobian(Mat system_jacobian, Vec x_solver);
+  void maybeExportJacobian(Mat system_jacobian, Vec x_solver);
 
   /// Save diagnostics to output
   void outputVars(Options& output_options, bool save_repeat = true) override;
@@ -149,9 +149,9 @@ private:
   /// quantities are near zero then RTOL is used.
   PetscErrorCode rescale();
   /// Build and save a diagnostic Jacobian of the requested kind.
-  PetscErrorCode saveDiagnosticJacobian(bout::JacobianExportKind kind, Vec x_solver);
+  void saveDiagnosticJacobian(bout::JacobianExportKind kind, Vec x_solver);
   /// Write the matrix and shared JSON metadata for one diagnostic Jacobian.
-  PetscErrorCode exportMatrixAndMetadata(bout::JacobianExportKind kind, Mat jacobian);
+  void exportMatrixAndMetadata(bout::JacobianExportKind kind, Mat jacobian);
 
   BoutSnesOutput output_trigger; ///< Sets when outputs are written
 
@@ -305,9 +305,6 @@ private:
   bool save_jacobian; ///< Save Jacobian diagnostics to ``datadir``?
   bout::JacobianExportKind
       jacobian_export_kind; ///< Export ``system``, ``scaled``, or ``rhs`` Jacobian
-  std::string jacobian_export_prefix; ///< Prefix for matrix files and ``*_metadata.json``
-  bout::PetscMatrixExportFormat
-      jacobian_export_format; ///< PETSc ``MatView`` format: binary or ascii
 
   std::vector<Field2D>
       resid_2d; ///< Storage for residuals of SNES solve, unpacked from snes_f

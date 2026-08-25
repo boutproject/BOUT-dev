@@ -35,6 +35,7 @@
 #include "bout/mesh.hxx"
 #include "bout/monitor.hxx"
 #include "bout/options.hxx"
+#include "bout/petsc_preconditioner.hxx"
 #include "bout/region.hxx"
 
 #include <algorithm>
@@ -649,6 +650,10 @@ protected:
   /// Writes the Jacobian metadata on first call
   void writeOnceJacobianMetadata(const std::string& solver_name);
 
+#if BOUT_HAS_PETSC
+  void writeJacobianMatrix(bout::JacobianExportKind kind, Mat jacobian);
+#endif
+
   /// Maximum internal timestep
   BoutReal max_dt{-1.0};
 
@@ -716,6 +721,17 @@ private:
   bool save_jacobian_index_base{false};
   /// Has the Jacobian metadata file been written?
   bool jacobian_metadata_written{false};
+  /// Running counter appended to successive Jacobian saves
+  int jacobian_export_counter{0};
+  /// Prefix for matrix files and ``*_metadata.json``
+  std::string jacobian_export_prefix;
+  /// PETSc ``MatView`` format: binary or ascii
+  bout::PetscMatrixExportFormat jacobian_export_format;
+
+  /// Return the matrix filename including the extension for the selected format.
+  std::string getJacobianMatrixFilename(const std::string& jacobian_export_prefix,
+                                        bout::JacobianExportKind kind,
+                                        bout::PetscMatrixExportFormat format);
 
   /// Current iteration (output time-step) number
   int iteration{0};

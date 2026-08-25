@@ -99,21 +99,11 @@ public:
       const std::string& filename,
       bout::PetscMatrixExportFormat format = bout::PetscMatrixExportFormat::binary) const;
 
-  /// Return the matrix filename including the extension for the selected format.
-  static std::string getJacobianMatrixFilename(const std::string& jacobian_export_prefix,
-                                               bout::JacobianExportKind kind,
-                                               bout::PetscMatrixExportFormat format);
-
   void reset();
 
 private:
   Mat Jfd{nullptr};
   MatFDColoring fdcoloring{nullptr};
-
-  /// Running counter appended to successive Jacobian saves
-  /// This is shared between instances because diagnostic preconditioners
-  /// are created for each output.
-  static inline int jacobian_export_counter{0};
 };
 
 #else

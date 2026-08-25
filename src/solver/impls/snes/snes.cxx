@@ -384,76 +384,58 @@ SNESSolver::SNESSolver(Options* opts)
                         .withDefault<bool>(false)),
       jacobian_export_kind((*options)["jacobian_export_kind"]
                                .doc("Which Jacobian to save: system, scaled, or rhs")
-                               .withDefault(bout::JacobianExportKind::system)),
-      jacobian_export_prefix(
-          (*options)["jacobian_export_prefix"]
-              .doc("Prefix for saved Jacobian matrix files and shared metadata JSON")
-              .withDefault("jacobian")),
-      jacobian_export_format(
-          (*options)["jacobian_export_format"]
-              .doc("PETSc MatView format for saved Jacobians: binary or ascii")
-              .withDefault(bout::PetscMatrixExportFormat::binary)) {}
+                               .withDefault(bout::JacobianExportKind::system)) {}
 
-PetscErrorCode SNESSolver::exportMatrixAndMetadata(bout::JacobianExportKind kind,
-                                                   Mat jacobian) {
+void SNESSolver::exportMatrixAndMetadata(bout::JacobianExportKind kind, Mat jacobian) {
   Solver::writeOnceJacobianMetadata("snes");
-
-  PetscCall(PetscPreconditioner::saveMatrix(
-      jacobian,
-      PetscPreconditioner::getJacobianMatrixFilename(jacobian_export_prefix, kind,
-                                                     jacobian_export_format),
-      jacobian_export_format));
-  PetscFunctionReturn(PETSC_SUCCESS);
+  Solver::writeJacobianMatrix(kind, jacobian);
 }
 
-PetscErrorCode SNESSolver::saveDiagnosticJacobian(bout::JacobianExportKind kind,
-                                                  Vec x_solver) {
+void SNESSolver::saveDiagnosticJacobian(bout::JacobianExportKind kind, Vec x_solver) {
   PetscPreconditioner diagnostic_preconditioner;
   Field3D index = globalIndex(0);
-  PetscCall(diagnostic_preconditioner.createJacobianPattern(
+  BOUT_DO_PETSC(diagnostic_preconditioner.createJacobianPattern(
       index, *options, nlocal, n2Dvars(), n3Dvars(), BoutComm::get()));
 
   if (kind == bout::JacobianExportKind::rhs) {
-    PetscCall(diagnostic_preconditioner.updateColoring(FormRawFunctionForColoring, this));
+    BOUT_DO_PETSC(
+        diagnostic_preconditioner.updateColoring(FormRawFunctionForColoring, this));
   } else {
-    PetscCall(
+    BOUT_DO_PETSC(
         diagnostic_preconditioner.updateColoring(FormScaledFunctionForColoring, this));
   }
 
   Vec x_evaluate = x_solver;
   Vec physical_x{nullptr};
   if (kind == bout::JacobianExportKind::rhs) {
-    PetscCall(VecDuplicate(x_solver, &physical_x));
-    PetscCall(toPhysicalState(x_solver, physical_x));
+    BOUT_DO_PETSC(VecDuplicate(x_solver, &physical_x));
+    BOUT_DO_PETSC(toPhysicalState(x_solver, physical_x));
     x_evaluate = physical_x;
   }
 
   Mat diagnostic_jacobian = diagnostic_preconditioner.jacobian();
-  PetscCall(MatZeroEntries(diagnostic_jacobian));
-  PetscCall(SNESComputeJacobianDefaultColor(snes, x_evaluate, diagnostic_jacobian,
-                                            diagnostic_jacobian,
-                                            diagnostic_preconditioner.coloring()));
-  PetscCall(exportMatrixAndMetadata(kind, diagnostic_jacobian));
+  BOUT_DO_PETSC(MatZeroEntries(diagnostic_jacobian));
+  BOUT_DO_PETSC(SNESComputeJacobianDefaultColor(snes, x_evaluate, diagnostic_jacobian,
+                                                diagnostic_jacobian,
+                                                diagnostic_preconditioner.coloring()));
+  exportMatrixAndMetadata(kind, diagnostic_jacobian);
 
   if (physical_x != nullptr) {
-    PetscCall(VecDestroy(&physical_x));
+    BOUT_DO_PETSC(VecDestroy(&physical_x));
   }
-
-  PetscFunctionReturn(PETSC_SUCCESS);
 }
 
-PetscErrorCode SNESSolver::maybeExportJacobian(Mat system_jacobian, Vec x_solver) {
+void SNESSolver::maybeExportJacobian(Mat system_jacobian, Vec x_solver) {
   if (!save_jacobian) {
-    PetscFunctionReturn(PETSC_SUCCESS);
+    return;
   }
 
   if (jacobian_export_kind == bout::JacobianExportKind::system) {
-    PetscCall(exportMatrixAndMetadata(jacobian_export_kind, system_jacobian));
-
-    PetscFunctionReturn(PETSC_SUCCESS);
+    exportMatrixAndMetadata(jacobian_export_kind, system_jacobian);
+    return;
   }
 
-  PetscFunctionReturn(saveDiagnosticJacobian(jacobian_export_kind, x_solver));
+  saveDiagnosticJacobian(jacobian_export_kind, x_solver);
 }
 
 int SNESSolver::init() {
@@ -1768,7 +1750,8 @@ PetscErrorCode ComputeJacobianScaledColor(SNES snes, Vec x1, Mat Jac, Mat Jac_ne
 
   // Call the SNESSolver function
   PetscCall(fctx->scaleJacobian(Jac_new));
-  PetscFunctionReturn(fctx->maybeExportJacobian(Jac_new, x1));
+  fctx->maybeExportJacobian(Jac_new, x1);
+  PetscFunctionReturn(PETSC_SUCCESS);
 }
 
 PetscErrorCode ComputeJacobianDefaultMaybeExport(SNES snes, Vec x1, Mat Jac, Mat Jac_new,
@@ -1780,7 +1763,8 @@ PetscErrorCode ComputeJacobianDefaultMaybeExport(SNES snes, Vec x1, Mat Jac, Mat
     return err;
   }
 
-  PetscFunctionReturn(static_cast<SNESSolver*>(ctx)->maybeExportJacobian(Jac_new, x1));
+  static_cast<SNESSolver*>(ctx)->maybeExportJacobian(Jac_new, x1);
+  PetscFunctionReturn(PETSC_SUCCESS);
 }
 } // namespace
 
