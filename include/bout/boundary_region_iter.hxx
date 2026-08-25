@@ -248,9 +248,6 @@ public:
 
     auto operator<=>(const Iterator& rhs) const { return _ind() <=> rhs._ind(); }
     bool operator==(Iterator rhs) const { return _ind() == rhs._ind(); }
-
-    friend auto operator<=>(const Iterator& lhs, Ind3D ind) { return lhs._ind() <=> ind; }
-    friend bool operator==(Iterator lhs, Ind3D ind) { return lhs._ind() == ind; }
   };
 
   BoundaryRegionFCI(const std::string& name, const BndryLoc& loc, int dir, Mesh* mesh)
@@ -278,11 +275,9 @@ public:
 
   /// Return `true` if the boundary contains a point at the given index
   bool contains(int ix, int iy, int iz) {
-    const auto ind = xyz2ind(ix, iy, iz);
     ensureSorted();
-    const auto found =
-        std::lower_bound(std::begin(bndry_points), std::end(bndry_points), ind);
-    return found != std::end(bndry_points) and found->_ind() == ind;
+    return std::ranges::binary_search(bndry_points, xyz2ind(ix, iy, iz), {},
+                                      [](const auto& point) { return point._ind(); });
   }
 
   /// The direction of the boundary
