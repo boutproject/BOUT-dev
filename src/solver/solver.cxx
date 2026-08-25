@@ -1345,6 +1345,18 @@ void Solver::writeJacobianMetadataJson(const std::string& filename,
             << "}\n";
 }
 
+void Solver::writeOnceJacobianMetadata(const std::string& solver_name) {
+  if (jacobian_metadata_written) {
+    return;
+  }
+
+  const std::string datadir = Options::root()["datadir"];
+  const std::string metadata_filename = datadir + "/jacobian_metadata.json";
+  output.write("Jacobian metadata written to {}\n", metadata_filename);
+  writeJacobianMetadataJson(metadata_filename, solver_name);
+  jacobian_metadata_written = true;
+}
+
 /**************************************************************************
  * Running user-supplied functions
  **************************************************************************/

@@ -15,6 +15,13 @@
 
 BOUT_ENUM_CLASS_NS(bout, PetscMatrixExportFormat, binary, ascii);
 
+BOUT_ENUM_CLASS_NS(
+    bout, JacobianExportKind,
+    system, ///< Jacobian of the full nonlinear system solved by the solver
+    scaled, ///< Jacobian after solver-coordinate transforms such as variable scaling
+    rhs     ///< Jacobian of the raw model RHS in physical variables
+);
+
 #if BOUT_HAS_PETSC
 
 #include "bout/petsc_interface.hxx"
@@ -92,11 +99,21 @@ public:
       const std::string& filename,
       bout::PetscMatrixExportFormat format = bout::PetscMatrixExportFormat::binary) const;
 
+  /// Return the matrix filename including the extension for the selected format.
+  static std::string getJacobianMatrixFilename(const std::string& jacobian_export_prefix,
+                                               bout::JacobianExportKind kind,
+                                               bout::PetscMatrixExportFormat format);
+
   void reset();
 
 private:
   Mat Jfd{nullptr};
   MatFDColoring fdcoloring{nullptr};
+
+  /// Running counter appended to successive Jacobian saves
+  /// This is shared between instances because diagnostic preconditioners
+  /// are created for each output.
+  static inline int jacobian_export_counter{0};
 };
 
 #else

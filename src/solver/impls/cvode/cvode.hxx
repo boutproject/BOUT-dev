@@ -109,12 +109,8 @@ private:
   static int petscPSolve(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec,
                          N_Vector zvec, BoutReal gamma, BoutReal delta, int lr,
                          void* user_data);
-  /// Construct the basename used for Jacobian outputs in ``datadir``.
-  std::string getJacobianExportStem(bout::JacobianExportKind kind);
-  /// Return the matrix filename including the extension for the selected format.
-  std::string getJacobianMatrixFilename(const std::string& stem) const;
   /// Write one Jacobian matrix and the shared metadata JSON.
-  PetscErrorCode exportMatrixAndMetadata(Mat jacobian, const std::string& stem);
+  PetscErrorCode exportMatrixAndMetadata(bout::JacobianExportKind kind, Mat jacobian);
   /// Build and save a diagnostic Jacobian of the requested kind.
   PetscErrorCode saveDiagnosticJacobian(bout::JacobianExportKind kind, Vec x, BoutReal t,
                                         BoutReal gamma);
@@ -187,10 +183,6 @@ private:
   std::string jacobian_export_prefix; ///< Prefix for matrix files and ``*_metadata.json``
   bout::PetscMatrixExportFormat
       jacobian_export_format; ///< PETSc ``MatView`` format: binary or ascii
-  int jacobian_export_counter{
-      0}; ///< Running counter appended to successive Jacobian saves
-  bool jacobian_metadata_written{
-      false}; ///< Has the shared metadata JSON already been written?
 
   // Diagnostics from CVODE
   int nsteps{0};

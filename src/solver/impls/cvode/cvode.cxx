@@ -246,30 +246,17 @@ CvodeSolver::~CvodeSolver() {
 }
 
 #if BOUT_HAS_PETSC
-std::string CvodeSolver::getJacobianExportStem(bout::JacobianExportKind kind) {
-  const std::string datadir = Options::root()["datadir"];
-  return fmt::format("{}/{}_{}_{:06d}", datadir, jacobian_export_prefix, toString(kind),
-                     jacobian_export_counter++);
-}
+PetscErrorCode CvodeSolver::exportMatrixAndMetadata(bout::JacobianExportKind kind,
 
-std::string CvodeSolver::getJacobianMatrixFilename(const std::string& stem) const {
-  return stem
-         + (jacobian_export_format == bout::PetscMatrixExportFormat::binary ? ".dat"
-                                                                            : ".txt");
-}
+                                                    Mat jacobian) {
 
-PetscErrorCode CvodeSolver::exportMatrixAndMetadata(Mat jacobian,
-                                                    const std::string& stem) {
-  if (!jacobian_metadata_written) {
-    const std::string datadir = Options::root()["datadir"];
-    const std::string metadata_filename = datadir + "/jacobian_metadata.json";
-    output.write("Jacobian metadata written to {}\n", metadata_filename);
-    writeJacobianMetadataJson(metadata_filename, "cvode");
-    jacobian_metadata_written = true;
-  }
+  Solver::writeOnceJacobianMetadata("cvode");
 
-  PetscCall(PetscPreconditioner::saveMatrix(jacobian, getJacobianMatrixFilename(stem),
-                                            jacobian_export_format));
+  PetscCall(PetscPreconditioner::saveMatrix(
+      jacobian,
+      PetscPreconditioner::getJacobianMatrixFilename(jacobian_export_prefix, kind,
+                                                     jacobian_export_format),
+      jacobian_export_format));
   PetscFunctionReturn(PETSC_SUCCESS);
 }
 
@@ -310,7 +297,7 @@ PetscErrorCode CvodeSolver::saveDiagnosticJacobian(bout::JacobianExportKind kind
                                x, nullptr));
   PetscCall(MatAssemblyBegin(diagnostic_jacobian, MAT_FINAL_ASSEMBLY));
   PetscCall(MatAssemblyEnd(diagnostic_jacobian, MAT_FINAL_ASSEMBLY));
-  PetscCall(exportMatrixAndMetadata(diagnostic_jacobian, getJacobianExportStem(kind)));
+  PetscCall(exportMatrixAndMetadata(kind, diagnostic_jacobian));
   PetscCall(VecDestroy(&diagnostic_f));
 
   PetscFunctionReturn(PETSC_SUCCESS);
@@ -324,8 +311,7 @@ PetscErrorCode CvodeSolver::maybeExportJacobian(Mat system_jacobian, Vec x, Bout
   }
 
   if (jacobian_export_kind == bout::JacobianExportKind::system) {
-    PetscCall(exportMatrixAndMetadata(system_jacobian,
-                                      getJacobianExportStem(jacobian_export_kind)));
+    PetscCall(exportMatrixAndMetadata(jacobian_export_kind, system_jacobian));
     PetscFunctionReturn(PETSC_SUCCESS);
   }
 

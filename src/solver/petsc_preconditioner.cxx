@@ -21,6 +21,8 @@
 #include <utility>
 #include <vector>
 
+#include <fmt/format.h>
+
 namespace {
 class ColoringStencil {
 private:
@@ -93,10 +95,15 @@ PetscErrorCode PetscPreconditioner::saveMatrix(Mat matrix, const std::string& fi
   PetscFunctionReturn(PETSC_SUCCESS);
 }
 
-PetscErrorCode
-PetscPreconditioner::saveMatrix(const std::string& filename,
-                                bout::PetscMatrixExportFormat format) const {
-  return saveMatrix(Jfd, filename, format);
+std::string
+PetscPreconditioner::getJacobianMatrixFilename(const std::string& jacobian_export_prefix,
+                                               bout::JacobianExportKind kind,
+                                               bout::PetscMatrixExportFormat format) {
+  // The directory the output data is stored in
+  const std::string datadir = Options::root()["datadir"];
+  const std::string stem = fmt::format("{}/{}_{}_{:06d}", datadir, jacobian_export_prefix,
+                                       toString(kind), jacobian_export_counter++);
+  return stem + (format == bout::PetscMatrixExportFormat::binary ? ".dat" : ".txt");
 }
 
 PetscErrorCode PetscPreconditioner::createJacobianPattern(Field3D& index,

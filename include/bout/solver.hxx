@@ -92,13 +92,6 @@ constexpr auto SOLVERRKGENERIC = "rkgeneric";
 enum class FieldCategories : std::uint8_t { VARS, DERIVS, MMS };
 enum class SOLVER_VAR_OP : std::uint8_t { LOAD, SET_ID, SAVE };
 
-BOUT_ENUM_CLASS_NS(
-    bout, JacobianExportKind,
-    system, ///< Jacobian of the full nonlinear system solved by the solver
-    scaled, ///< Jacobian after solver-coordinate transforms such as variable scaling
-    rhs     ///< Jacobian of the raw model RHS in physical variables
-);
-
 /// A type to set where in the list monitors are added
 enum class MonitorPosition { BACK, FRONT };
 
@@ -653,6 +646,9 @@ protected:
   void writeJacobianMetadataJson(const std::string& filename,
                                  const std::string& solver_name) const;
 
+  /// Writes the Jacobian metadata on first call
+  void writeOnceJacobianMetadata(const std::string& solver_name);
+
   /// Maximum internal timestep
   BoutReal max_dt{-1.0};
 
@@ -718,6 +714,8 @@ private:
   bool save_repeat_run_id{false};
   /// Write ``jacobian_index_base`` to the dump files for Jacobian diagnostics.
   bool save_jacobian_index_base{false};
+  /// Has the Jacobian metadata file been written?
+  bool jacobian_metadata_written{false};
 
   /// Current iteration (output time-step) number
   int iteration{0};

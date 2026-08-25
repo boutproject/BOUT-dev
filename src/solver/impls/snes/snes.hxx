@@ -150,12 +150,8 @@ private:
   PetscErrorCode rescale();
   /// Build and save a diagnostic Jacobian of the requested kind.
   PetscErrorCode saveDiagnosticJacobian(bout::JacobianExportKind kind, Vec x_solver);
-  /// Construct the basename used for Jacobian outputs in ``datadir``.
-  std::string getJacobianExportStem(bout::JacobianExportKind kind);
-  /// Return the matrix filename including the extension for the selected format.
-  std::string getJacobianMatrixFilename(const std::string& stem) const;
   /// Write the matrix and shared JSON metadata for one diagnostic Jacobian.
-  PetscErrorCode exportMatrixAndMetadata(Mat jacobian, const std::string& stem);
+  PetscErrorCode exportMatrixAndMetadata(bout::JacobianExportKind kind, Mat jacobian);
 
   BoutSnesOutput output_trigger; ///< Sets when outputs are written
 
@@ -312,10 +308,6 @@ private:
   std::string jacobian_export_prefix; ///< Prefix for matrix files and ``*_metadata.json``
   bout::PetscMatrixExportFormat
       jacobian_export_format; ///< PETSc ``MatView`` format: binary or ascii
-  int jacobian_export_counter{
-      0}; ///< Running counter appended to successive Jacobian saves
-  bool jacobian_metadata_written{
-      false}; ///< Has the shared metadata JSON already been written?
 
   std::vector<Field2D>
       resid_2d; ///< Storage for residuals of SNES solve, unpacked from snes_f
