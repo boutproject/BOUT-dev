@@ -37,6 +37,7 @@
 #include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/build_config.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/globals.hxx"
@@ -45,6 +46,7 @@
 #include "bout/msg_stack.hxx"
 #include "bout/options.hxx"
 #include "bout/output.hxx"
+#include "bout/petsc_preconditioner.hxx"
 #include "bout/petsclib.hxx"
 #include "bout/region.hxx"
 #include "bout/solver.hxx"
@@ -52,6 +54,7 @@
 #include "bout/unused.hxx"
 
 #include "fmt/core.h"
+#include "fmt/format.h"
 
 #include <cvode/cvode.h>
 #include <cvode/cvode_bbdpre.h>
@@ -344,7 +347,7 @@ PetscErrorCode CvodeSolver::maybeExportOutputJacobian(BoutReal t) {
   save_vars(xdata);
   PetscCall(VecRestoreArray(x, &xdata));
 
-  PetscErrorCode ierr = saveDiagnosticJacobian(JacobianExportKind::rhs, x, t, 0.0);
+  const PetscErrorCode ierr = saveDiagnosticJacobian(JacobianExportKind::rhs, x, t, 0.0);
   PetscCall(VecDestroy(&x));
   PetscFunctionReturn(ierr);
 }

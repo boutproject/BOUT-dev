@@ -68,7 +68,7 @@ RegisterSolver<CvodeSolver> registersolvercvode("cvode");
 // Preconditioner selection for CVODE.
 // Note: String comparisons are case-insensitive so "Auto" avoids conflict with keyword
 BOUT_ENUM_CLASS(CvodePreconMethod, none, Auto, user, petsc, bbd);
-BOUT_ENUM_CLASS(CvodeJacobianExportTrigger,
+BOUT_ENUM_CLASS_NS(bout, CvodeJacobianExportTrigger,
                 output,      ///< Export once per solver output timestep
                 linear_setup ///< Export whenever CVODE rebuilds linear solver data
 );

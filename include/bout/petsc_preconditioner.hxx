@@ -13,7 +13,7 @@
 #include "bout/bout_enum_class.hxx"
 #include "bout/build_defines.hxx"
 
-BOUT_ENUM_CLASS(PetscMatrixExportFormat, binary, ascii);
+BOUT_ENUM_CLASS_NS(bout, PetscMatrixExportFormat, binary, ascii);
 
 #if BOUT_HAS_PETSC
 

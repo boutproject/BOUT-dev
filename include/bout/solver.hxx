@@ -102,7 +102,7 @@ constexpr auto SOLVERRKGENERIC = "rkgeneric";
 enum class FieldCategories : std::uint8_t { VARS, DERIVS, MMS };
 enum class SOLVER_VAR_OP : std::uint8_t { LOAD, SET_ID, SAVE };
 
-BOUT_ENUM_CLASS(
+BOUT_ENUM_CLASS_NS(bout
     JacobianExportKind,
     system, ///< Jacobian of the full nonlinear system solved by the solver
     scaled, ///< Jacobian after solver-coordinate transforms such as variable scaling
