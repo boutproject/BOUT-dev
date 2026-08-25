@@ -104,7 +104,7 @@ private:
   enum class ValueType { GEN, FIELD, REAL };
   const ValueType value_type{ValueType::REAL};
 
-  BoutReal getValue(const bout::boundary::BoundaryRegionFCI::Iterator& bndry, BoutReal t);
+  BoutReal getValue(const bout::boundary::BoundaryRegionFCI::Point& bndry, BoutReal t);
   BoutReal getValue(const bout::boundary::BoundaryRegionX::Iterator& bndry, BoutReal t);
   BoutReal getValue(const bout::boundary::BoundaryRegionY::Iterator& bndry, BoutReal t);
 

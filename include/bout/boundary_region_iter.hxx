@@ -183,16 +183,16 @@ private:
 /// This can't use the legacy iteration methods (`first()`, `next()`, and so on)
 class BoundaryRegionFCI : public BoundaryRegionBase {
 public:
-  /// Iterator over a `BoundaryRegionFCI`
-  class Iterator : public BoundaryRegionIterBase<Iterator> {
+  /// A single point in a `BoundaryRegionFCI`
+  class Point : public BoundaryRegionIterBase<Point> {
   private:
     parallel_boundary_region::Indices index;
     Mesh* localmesh_m;
     int _dir;
 
   public:
-    Iterator() = delete;
-    Iterator(parallel_boundary_region::Indices index, const BoundaryRegionFCI& rgn)
+    Point() = delete;
+    Point(parallel_boundary_region::Indices index, const BoundaryRegionFCI& rgn)
         : index(index), localmesh_m(rgn.localmesh), _dir(rgn._dir) {}
 
     void setValid(char valid) { index.valid = valid; };
@@ -245,8 +245,8 @@ public:
       return index.length;
     }
 
-    auto operator<=>(const Iterator& rhs) const { return _ind() <=> rhs._ind(); }
-    bool operator==(Iterator rhs) const { return _ind() == rhs._ind(); }
+    auto operator<=>(const Point& rhs) const { return _ind() <=> rhs._ind(); }
+    bool operator==(Point rhs) const { return _ind() == rhs._ind(); }
   };
 
   BoundaryRegionFCI(const std::string& name, const BndryLoc& loc, int dir, Mesh* mesh)
@@ -293,10 +293,10 @@ public:
   auto end() { return bndry_points.end(); }
 
 private:
-  friend class Iterator;
+  friend class Point;
   int _dir;
   // Vector of points in the boundary
-  std::vector<Iterator> bndry_points;
+  std::vector<Point> bndry_points;
   Mesh* localmesh;
   bool is_sorted{true};
   void ensureSorted() {

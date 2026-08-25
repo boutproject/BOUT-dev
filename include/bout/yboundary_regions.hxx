@@ -32,7 +32,7 @@ public:
   /// See also the documentation at ../../manual/sphinx/user_docs/boundary_options.rst
   template <class F>
     requires std::regular_invocable<F&, const BoundaryRegionY::Iterator&>
-             || std::regular_invocable<F&, const BoundaryRegionFCI::Iterator&>
+             || std::regular_invocable<F&, const BoundaryRegionFCI::Point&>
   void iter(F func) const {
     for (const auto& region : boundary_regions) {
       for (const auto& point : *region) {

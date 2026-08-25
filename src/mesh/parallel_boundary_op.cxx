@@ -8,7 +8,7 @@
 #include "bout/mesh.hxx"
 #include "bout/output.hxx"
 
-BoutReal BoundaryOpPar::getValue(const bout::boundary::BoundaryRegionFCI::Iterator& bndry,
+BoutReal BoundaryOpPar::getValue(const bout::boundary::BoundaryRegionFCI::Point& bndry,
                                  BoutReal t) {
   switch (value_type) {
   case ValueType::GEN:
