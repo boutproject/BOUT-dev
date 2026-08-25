@@ -26,8 +26,9 @@
 #ifndef BOUT_COORDINATES_H
 #define BOUT_COORDINATES_H
 
-#include "bout/assert.hxx"
 #include "bout/field_data.hxx"
+#include <bout/assert.hxx>
+#include <bout/boundary_region.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/build_defines.hxx>
 #include <bout/christoffel_symbols.hxx>

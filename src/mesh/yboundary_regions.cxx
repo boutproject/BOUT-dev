@@ -1,5 +1,6 @@
 #include "bout/yboundary_regions.hxx"
 
+#include "bout/boundary_region.hxx"
 #include "bout/boundary_region_iter.hxx"
 #include "bout/field_data.hxx"
 #include "bout/options.hxx"

@@ -2,6 +2,7 @@
 
 #include "bout/boundary_common.hxx"
 #include "bout/boundary_region.hxx"
+#include "bout/boundary_region_iter.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/field3d.hxx"
 #include "bout/region.hxx"

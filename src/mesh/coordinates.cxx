@@ -4,6 +4,7 @@
  * given the contravariant metric tensor terms
  **************************************************************************/
 
+#include "bout/boundary_region.hxx"
 #include "bout/christoffel_symbols.hxx"
 #include "bout/coordinates_accessor.hxx"
 #include "bout/field3d.hxx"

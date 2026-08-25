@@ -21,7 +21,6 @@
 #include <bout/region.hxx>
 #include <bout/sys/parallel_stencils.hxx>
 #include <bout/traits.hxx>
-#include <bout/utils.hxx>
 
 namespace bout {
 namespace boundary {
