@@ -35,15 +35,38 @@ See also PetscBinaryIO.__doc__ and methods therein.
 
 This module can also be used as a command line tool for converting matrices.
 Run with --help to see options.
+
+License
+=======
+Copyright (c) 1991-2021, UChicago Argonne, LLC and the PETSc Development Team
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright notice, this
+  list of conditions and the following disclaimer in the documentation and/or
+  other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 """
 
-import numpy as np
 import functools
+from contextlib import suppress
 
-try:
-    basestring  # Python-2 has basestring as a common parent of unicode and str
-except NameError:
-    basestring = str  # Python-3 is unicode through and through
+import numpy as np
 
 
 def update_wrapper_with_doc(wrapper, wrapped):
@@ -86,11 +109,8 @@ def decorate_with_conf(f):
         old_indices = self.indices
         old_complexscalars = self.complexscalars
 
-        try:
+        with suppress(KeyError):
             self.precision = kwargs.pop("precision")
-        except KeyError:
-            pass
-        else:
             changed = True
 
         try:
@@ -162,7 +182,7 @@ class MatSparse(tuple):
     _classid = 1211216
 
     def __repr__(self):
-        return "MatSparse: %s" % super(MatSparse, self).__repr__()
+        return f"MatSparse({repr(super())})"
 
 
 class IS(np.ndarray):
@@ -203,11 +223,8 @@ class PetscBinaryIO(object):
             defaultprecision, defaultindices, defaultcomplexscalars = (
                 petsc_conf.get_conf()
             )
-            if precision is None:
-                if defaultprecision is None:
-                    precision = "double"
-                else:
-                    precision = defaultprecision
+
+            precision = precision or defaultprecision or "double"
 
             if indices is None:
                 if defaultindices is None:
@@ -289,49 +306,58 @@ class PetscBinaryIO(object):
     def readMatSparse(self, fh):
         """Reads a PETSc Mat, returning a sparse representation of the data. Must be called after readObjectType()
 
-        (M,N), (I,J,V) = readMatSparse(fid)
+        (M,N), (row_offsets,column_indices,nonzero_values) = readMatSparse(fid)
 
         Input:
           fid : file handle to open binary file.
         Output:
           M,N : matrix size
-          I,J : arrays of row and column for each nonzero
-          V: nonzero value
+          row_offsets,column_indices : arrays of row and column for each nonzero
+          nonzero_values: nonzero value
         """
 
         try:
             M, N, nz = np.fromfile(fh, dtype=self._inttype, count=3)
-            I = np.empty(M + 1, dtype=self._inttype)
-            I[0] = 0
+            row_offsets = np.empty(M + 1, dtype=self._inttype)
+            row_offsets[0] = 0
             rownz = np.fromfile(fh, dtype=self._inttype, count=M)
-            np.cumsum(rownz, out=I[1:])
-            assert I[-1] == nz
+            np.cumsum(rownz, out=row_offsets[1:])
+            assert row_offsets[-1] == nz
 
-            J = np.fromfile(fh, dtype=self._inttype, count=nz)
-            assert len(J) == nz
-            V = np.fromfile(fh, dtype=self._scalartype, count=nz)
-            assert len(V) == nz
+            column_indices = np.fromfile(fh, dtype=self._inttype, count=nz)
+            assert len(column_indices) == nz
+            nonzero_values = np.fromfile(fh, dtype=self._scalartype, count=nz)
+            assert len(nonzero_values) == nz
         except (AssertionError, MemoryError, IndexError):
             raise IOError("Inconsistent or invalid Mat data in file")
 
-        return MatSparse(((M, N), (I, J, V)))
+        return MatSparse(((M, N), (row_offsets, column_indices, nonzero_values)))
 
     @decorate_with_conf
     def writeMatSparse(self, fh, mat):
         """Writes a Mat into a PETSc binary file handle"""
 
-        ((M, N), (I, J, V)) = mat
-        metadata = np.array([MatSparse._classid, M, N, I[-1]], dtype=self._inttype)
-        rownz = I[1:] - I[:-1]
+        ((M, N), (row_offsets, column_indices, nonzero_values)) = mat
+        metadata = np.array(
+            [MatSparse._classid, M, N, row_offsets[-1]], dtype=self._inttype
+        )
+        rownz = row_offsets[1:] - row_offsets[:-1]
 
-        assert len(J.shape) == len(V.shape) == len(I.shape) == 1
-        assert len(J) == len(V) == I[-1] == rownz.sum()
+        assert (
+            len(column_indices.shape)
+            == len(nonzero_values.shape)
+            == len(row_offsets.shape)
+            == 1
+        )
+        assert (
+            len(column_indices) == len(nonzero_values) == row_offsets[-1] == rownz.sum()
+        )
         assert (rownz > -1).all()
 
         metadata.tofile(fh)
         rownz.astype(self._inttype).tofile(fh)
-        J.astype(self._inttype).tofile(fh)
-        V.astype(self._scalartype).tofile(fh)
+        column_indices.astype(self._inttype).tofile(fh)
+        nonzero_values.astype(self._scalartype).tofile(fh)
         return
 
     @decorate_with_conf
@@ -340,32 +366,32 @@ class PetscBinaryIO(object):
 
         try:
             M, N, nz = np.fromfile(fh, dtype=self._inttype, count=3)
-            I = np.empty(M + 1, dtype=self._inttype)
-            I[0] = 0
+            row_offsets = np.empty(M + 1, dtype=self._inttype)
+            row_offsets[0] = 0
             rownz = np.fromfile(fh, dtype=self._inttype, count=M)
-            np.cumsum(rownz, out=I[1:])
-            assert I[-1] == nz
+            np.cumsum(rownz, out=row_offsets[1:])
+            assert row_offsets[-1] == nz
 
-            J = np.fromfile(fh, dtype=self._inttype, count=nz)
-            assert len(J) == nz
-            V = np.fromfile(fh, dtype=self._scalartype, count=nz)
-            assert len(V) == nz
+            column_indices = np.fromfile(fh, dtype=self._inttype, count=nz)
+            assert len(column_indices) == nz
+            nonzero_values = np.fromfile(fh, dtype=self._scalartype, count=nz)
+            assert len(nonzero_values) == nz
 
         except (AssertionError, MemoryError, IndexError):
             raise IOError("Inconsistent or invalid Mat data in file")
 
         mat = np.zeros((M, N), dtype=self._scalartype)
         for row in range(M):
-            rstart, rend = I[row : row + 2]
-            mat[row, J[rstart:rend]] = V[rstart:rend]
+            rstart, rend = row_offsets[row : row + 2]
+            mat[row, column_indices[rstart:rend]] = nonzero_values[rstart:rend]
         return mat.view(MatDense)
 
     @decorate_with_conf
     def readMatSciPy(self, fh):
         from scipy.sparse import csr_matrix
 
-        (M, N), (I, J, V) = self.readMatSparse(fh)
-        return csr_matrix((V, J, I), shape=(M, N))
+        (M, N), (row_offsets, column_indices, nonzero_values) = self.readMatSparse(fh)
+        return csr_matrix((nonzero_values, column_indices, row_offsets), shape=(M, N))
 
     @decorate_with_conf
     def writeMatSciPy(self, fh, mat):
@@ -374,10 +400,7 @@ class PetscBinaryIO(object):
         if hasattr(mat, "tocsr"):
             mat = mat.tocsr()
         assert isinstance(mat, csr_matrix)
-        V = mat.data
         M, N = mat.shape
-        J = mat.indices
-        I = mat.indptr
         return self.writeMatSparse(fh, (mat.shape, (mat.indptr, mat.indices, mat.data)))
 
     @decorate_with_conf
@@ -457,7 +480,7 @@ class PetscBinaryIO(object):
 
         close = False
 
-        if isinstance(fid, basestring):
+        if isinstance(fid, str):
             fid = open(fid, "rb")
             close = True
 
@@ -496,7 +519,7 @@ class PetscBinaryIO(object):
                     which must be of type Vec, IS, MatSparse, or MatSciPy.
         """
         close = False
-        if isinstance(fid, basestring):
+        if isinstance(fid, str):
             fid = open(fid, "wb")
             close = True
 
