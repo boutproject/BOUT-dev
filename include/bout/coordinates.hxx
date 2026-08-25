@@ -46,6 +46,7 @@
 
 class Mesh;
 class YBoundary;
+struct MetricNormaliser;
 
 /*!
  * Represents a coordinate system, and associated operators
@@ -159,8 +160,6 @@ public:
   /// get g_22 at the cell faces;
   const FieldMetric& g_22_ylow() const;
   const FieldMetric& g_22_yhigh() const;
-  FieldMetric& g_22_ylow();
-  FieldMetric& g_22_yhigh();
   // Cell Areas
   const FieldMetric& cell_area_xlow() const {
     if (_cell_area_xlow.has_value()) {
@@ -375,9 +374,15 @@ public:
   void setMetricTensor(const ContravariantMetricTensor& contravariant_metric_tensor,
                        const CovariantMetricTensor& covariant_metric_tensor);
 
+  void setMetricTensorJB(const ContravariantMetricTensor& contravariant_metric_tensor,
+                         const CovariantMetricTensor& covariant_metric_tensor,
+                         const FieldMetric& J, const FieldMetric& Bxy);
+
   void communicateMetricTensor();
 
   void communicateDz();
+
+  void normaliseMetric(const MetricNormaliser& norm);
 
   ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
   const FieldMetric& J() const;
@@ -547,5 +552,25 @@ protected:
 namespace bout {
 std::string parallelSliceFieldName(std::string_view field, int offset);
 }
+
+/// Represents a way to normalise the coordinate system
+/// If a component returns nothing, no normalisation is performed.
+/// Coordinate values are divided by the respective component from
+/// MetricNormaliser, with the exception of the contravariant metric
+/// tensor, which is multiplied by the normalisation factor.
+struct MetricNormaliser {
+  std::optional<BoutReal> g = std::nullopt;
+  std::optional<BoutReal> g11 = std::nullopt;
+  std::optional<BoutReal> g22 = std::nullopt;
+  std::optional<BoutReal> g33 = std::nullopt;
+  std::optional<BoutReal> g12 = std::nullopt;
+  std::optional<BoutReal> g13 = std::nullopt;
+  std::optional<BoutReal> g23 = std::nullopt;
+  std::optional<BoutReal> dx = std::nullopt;
+  std::optional<BoutReal> dy = std::nullopt;
+  std::optional<BoutReal> dz = std::nullopt;
+  std::optional<BoutReal> J = std::nullopt;
+  std::optional<BoutReal> Bxy = std::nullopt;
+};
 
 #endif // BOUT_COORDINATES_H

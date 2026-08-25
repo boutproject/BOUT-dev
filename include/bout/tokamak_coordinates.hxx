@@ -45,6 +45,9 @@ TokamakCoordinates set_tokamak_coordinates(Mesh& mesh, BoutReal Lbar = 1.0,
                                            BoutReal Bbar = 1.0, bool no_shear = false,
                                            BoutReal shear_factor = 1.0);
 
+MetricNormaliser TokamakOrFCIMetricNormaliser(const Mesh* mesh, BoutReal Bnorm,
+                                              BoutReal rho_s0);
+
 } // namespace bout
 
 #endif //BOUT_TOKAMAK_COORDINATES_HXX
