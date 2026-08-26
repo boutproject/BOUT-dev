@@ -408,11 +408,20 @@ public:
       return region->localmesh->ystart;
     }
     BoutReal _length(CELL_LOC loc) const {
-      if (loc == CELL_XLOW) {
-        if (dir() == 1) {
-          return 1;
+      if constexpr (isXtemp) {
+        if (loc == CELL_XLOW) {
+          if (dir() == 1) {
+            return 1;
+          }
+          return 0;
         }
-        return 0;
+      } else {
+        if (loc == CELL_YLOW) {
+          if (dir() == 1) {
+            return 1;
+          }
+          return 0;
+        }
       }
       return 0.5;
     }
