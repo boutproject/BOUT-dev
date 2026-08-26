@@ -406,12 +406,11 @@ public:
       }
       return region->localmesh->ystart;
     }
+
     BoutReal _length(CELL_LOC loc) const {
-      if (loc == CELL_XLOW) {
-        if (dir() == 1) {
-          return 1;
-        }
-        return 0;
+      // Account for staggered grids
+      if ((isXtemp and loc == CELL_XLOW) or (not isXtemp and loc == CELL_YLOW)) {
+        return (dir() == 1) ? 1 : 0;
       }
       return 0.5;
     }
