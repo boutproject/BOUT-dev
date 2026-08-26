@@ -192,30 +192,29 @@ public:
   /// A single point in a `BoundaryRegionFCI`
   class Point : public BoundaryRegionIterBase<Point> {
   private:
-    /// Indices of the boundary point
+    /// Index of the first boundary point
     Ind3D index;
+    Mesh* localmesh_m;
     /// Intersection with boundary in index space
     RealPoint intersection;
     /// Distance to intersection
     BoutReal length_m;
+    /// Direction to the boundary. Positive values are in the sense of the
+    /// increasing coordinate
+    int dir_m;
     /// How many points we can go in the opposite direction
     signed char valid_m;
     /// How many points we are away from the boundary
     signed char offset_m;
     unsigned char abs_offset_m;
 
-    Mesh* localmesh_m;
-    /// Direction to the boundary. Positive values are in the sense of the
-    /// increasing coordinate
-    int dir_m;
-
   public:
     Point() = delete;
     Point(Ind3D index, RealPoint intersection, BoutReal length, signed char valid,
           signed char offset, Mesh* mesh, int dir)
-        : index(index), intersection(intersection), length_m(length), valid_m(valid),
-          offset_m(offset), abs_offset_m(static_cast<unsigned char>(std::abs(offset))),
-          localmesh_m(mesh), dir_m(dir) {}
+        : index(index), localmesh_m(mesh), intersection(intersection), length_m(length),
+          dir_m(dir), valid_m(valid), offset_m(offset),
+          abs_offset_m(static_cast<unsigned char>(std::abs(offset))) {}
 
     void setValid(char valid) { valid_m = valid; };
 
