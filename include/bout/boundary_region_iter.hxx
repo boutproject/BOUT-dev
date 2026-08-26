@@ -1,14 +1,5 @@
 #pragma once
 
-#include <algorithm>
-#include <cmath>
-#include <concepts>
-#include <cstddef>
-#include <memory>
-#include <string>
-#include <type_traits>
-#include <vector>
-
 #include <bout/assert.hxx>
 #include <bout/boundary_common.hxx>
 #include <bout/boundary_region.hxx>
@@ -17,10 +8,19 @@
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
 #include <bout/field_data.hxx>
-#include <bout/parallel_boundary_region.hxx>
+#include <bout/mesh.hxx>
 #include <bout/region.hxx>
 #include <bout/sys/parallel_stencils.hxx>
 #include <bout/traits.hxx>
+
+#include <algorithm>
+#include <cmath>
+#include <concepts>
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <type_traits>
+#include <vector>
 
 namespace bout {
 namespace boundary {
@@ -182,28 +182,50 @@ private:
 ///
 /// This can't use the legacy iteration methods (`first()`, `next()`, and so on)
 class BoundaryRegionFCI : public BoundaryRegionBase {
+  struct RealPoint {
+    BoutReal s_x;
+    BoutReal s_y;
+    BoutReal s_z;
+  };
+
 public:
   /// A single point in a `BoundaryRegionFCI`
   class Point : public BoundaryRegionIterBase<Point> {
   private:
-    parallel_boundary_region::Indices index;
+    /// Indices of the boundary point
+    Ind3D index;
+    /// Intersection with boundary in index space
+    RealPoint intersection;
+    /// Distance to intersection
+    BoutReal length_m;
+    /// How many points we can go in the opposite direction
+    signed char valid_m;
+    /// How many points we are away from the boundary
+    signed char offset_m;
+    unsigned char abs_offset_m;
+
     Mesh* localmesh_m;
-    int _dir;
+    /// Direction to the boundary. Positive values are in the sense of the
+    /// increasing coordinate
+    int dir_m;
 
   public:
     Point() = delete;
-    Point(parallel_boundary_region::Indices index, const BoundaryRegionFCI& rgn)
-        : index(index), localmesh_m(rgn.localmesh), _dir(rgn._dir) {}
+    Point(Ind3D index, RealPoint intersection, BoutReal length, signed char valid,
+          signed char offset, Mesh* mesh, int dir)
+        : index(index), intersection(intersection), length_m(length), valid_m(valid),
+          offset_m(offset), abs_offset_m(static_cast<unsigned char>(std::abs(offset))),
+          localmesh_m(mesh), dir_m(dir) {}
 
-    void setValid(char valid) { index.valid = valid; };
+    void setValid(char valid) { valid_m = valid; };
 
-    BoutReal s_x() const { return index.intersection.s_x; };
-    BoutReal s_y() const { return index.intersection.s_y; };
-    BoutReal s_z() const { return index.intersection.s_z; };
+    BoutReal s_x() const { return intersection.s_x; };
+    BoutReal s_y() const { return intersection.s_y; };
+    BoutReal s_z() const { return intersection.s_z; };
 
     Mesh* localmesh() const { return localmesh_m; };
-    int dir() const { return _dir; }
-    bool _is_lower() const { return _dir < 0; }
+    int dir() const { return dir_m; }
+    bool _is_lower() const { return dir_m < 0; }
 
     template <bool check = true, class T>
       requires utils::is_Field_v<T>
@@ -212,7 +234,7 @@ public:
       if constexpr (check) {
         ASSERT3(_valid() > -off - 2);
       }
-      auto _off = _offset() - (off * _dir);
+      auto _off = _offset() - (off * dir_m);
       return f.ynext(_off)[_ind().yp(_off)];
     }
 
@@ -223,7 +245,7 @@ public:
       if constexpr (check) {
         ASSERT3(_valid() > -off - 2);
       }
-      auto _off = _offset() - (off * _dir);
+      auto _off = _offset() - (off * dir_m);
       return f.ynext(_off)[_ind().yp(_off)];
     }
 
@@ -232,26 +254,26 @@ public:
       if constexpr (check) {
         ASSERT3(valid() > -off - 2);
       }
-      auto _off = _offset() + (off * _dir);
+      auto _off = _offset() + (off * dir_m);
       return f(_off, _ind().yp(_off));
     }
 
-    signed char _offset() const { return index.offset; }
-    signed char _valid() const { return index.valid; }
-    Ind3D _ind() const { return index.index; }
-    int _boundary_width() const { return localmesh_m->ystart - index.abs_offset + 1; }
+    signed char _offset() const { return offset_m; }
+    signed char _valid() const { return valid_m; }
+    Ind3D _ind() const { return index; }
+    int _boundary_width() const { return localmesh_m->ystart - abs_offset_m + 1; }
     BoutReal _length([[maybe_unused]] CELL_LOC loc) const {
       ASSERT3(loc == CELL_CENTRE);
-      return index.length;
+      return length_m;
     }
 
     auto operator<=>(const Point& rhs) const {
       // Ensure we're looking at the same boundary
-      ASSERT3(_dir == rhs._dir);
+      ASSERT3(dir_m == rhs.dir_m);
       return _ind() <=> rhs._ind();
     }
     bool operator==(Point rhs) const {
-      ASSERT3(_dir == rhs._dir);
+      ASSERT3(dir_m == rhs.dir_m);
       return _ind() == rhs._ind();
     }
   };
@@ -267,10 +289,8 @@ public:
     if (!bndry_points.empty() && bndry_points.back()._ind() > ind) {
       is_sorted = false;
     }
-    auto index = parallel_boundary_region::Indices{
-        ind,    bout::parallel_boundary_region::RealPoint{x, y, z}, length, valid,
-        offset, static_cast<unsigned char>(std::abs(offset))};
-    bndry_points.emplace_back(index, *this);
+    bndry_points.emplace_back(ind, RealPoint{x, y, z}, length, valid, offset, localmesh,
+                              _dir);
   }
 
   /// Add a point to the boundary

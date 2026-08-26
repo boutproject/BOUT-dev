@@ -1,6 +1,5 @@
 #include "bout/assert.hxx"
 #include "bout/parallel_boundary_op.hxx"
-#include "bout/parallel_boundary_region.hxx"
 #include <bout/boundary_factory.hxx>
 #include <bout/boundary_region_iter.hxx>
 #include <bout/boundary_standard.hxx>
@@ -10,7 +9,6 @@
 
 #include <array>
 #include <list>
-#include <map>
 #include <memory>
 #include <string>
 using std::list;

@@ -4,7 +4,6 @@
 #include "bout/boundary_region_iter.hxx"
 #include "bout/field_data.hxx"
 #include "bout/options.hxx"
-#include "bout/parallel_boundary_region.hxx"
 
 #include <memory>
 

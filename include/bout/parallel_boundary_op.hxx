@@ -7,14 +7,10 @@
 #include "bout/boutexception.hxx"
 #include "bout/field3d.hxx"
 #include "bout/field_factory.hxx"
-#include "bout/parallel_boundary_region.hxx"
 #include "bout/sys/expressionparser.hxx"
 #include "bout/unused.hxx"
-#include "bout/utils.hxx"
 
-#include <map>
 #include <memory>
-#include <utility>
 
 //////////////////////////////////////////////////
 // Base class

@@ -43,8 +43,6 @@
 #include <string>
 #include <utility>
 
-#include "bout/parallel_boundary_op.hxx"
-#include "bout/parallel_boundary_region.hxx"
 #include <bout/assert.hxx>
 #include <bout/boundary_factory.hxx>
 #include <bout/boundary_op.hxx>
@@ -57,6 +55,7 @@
 #include <bout/interpolation.hxx>
 #include <bout/mesh.hxx>
 #include <bout/output.hxx>
+#include <bout/parallel_boundary_op.hxx>
 #include <bout/region.hxx>
 #include <bout/utils.hxx>
 

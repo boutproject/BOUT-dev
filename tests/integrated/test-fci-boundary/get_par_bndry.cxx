@@ -5,7 +5,6 @@
 #include "bout/options.hxx"
 #include "bout/options_io.hxx"
 #include "bout/output.hxx"
-#include "bout/parallel_boundary_region.hxx"
 #include "bout/yboundary_regions.hxx"
 
 #include <fmt/format.h>

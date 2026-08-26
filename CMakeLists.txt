@@ -180,7 +180,6 @@ set(BOUT_SOURCES
     ./include/bout/output.hxx
     ./include/bout/output_bout_types.hxx
     ./include/bout/parallel_boundary_op.hxx
-    ./include/bout/parallel_boundary_region.hxx
     ./include/bout/paralleltransform.hxx
     ./include/bout/petsc_interface.hxx
     ./include/bout/petsc_operators.hxx
