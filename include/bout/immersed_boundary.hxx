@@ -55,6 +55,12 @@ private:
   Field3D z_face_frac;
   Field3D fx_grad_offset;
   Field3D fz_grad_offset;
+  //Need traced data for in/out of bounds info.
+  Field3D forward_xt_prime;
+  Field3D forward_zt_prime;
+  Field3D backward_xt_prime;
+  Field3D backward_zt_prime;
+  bool IsTraceInside(BoutReal xt, BoutReal zt) const;
 
   //Ghost cell data arrays.
   int num_ghosts = 0;

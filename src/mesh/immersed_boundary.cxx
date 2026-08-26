@@ -43,6 +43,10 @@ ImmersedBoundary::ImmersedBoundary() {
   ASSERT0(mesh->get(z_face_frac,    "face_fac_z") == 0);
   ASSERT0(mesh->get(fx_grad_offset, "fx_grad_offset") == 0);
   ASSERT0(mesh->get(fz_grad_offset, "fz_grad_offset") == 0);
+  ASSERT0(mesh->get(forward_xt_prime,  "forward_xt_prime") == 0);
+  ASSERT0(mesh->get(forward_zt_prime,  "forward_zt_prime") == 0);
+  ASSERT0(mesh->get(backward_xt_prime, "backward_xt_prime") == 0);
+  ASSERT0(mesh->get(backward_zt_prime, "backward_zt_prime") == 0);
 
   if (num_weights <= 0 or num_ghosts <= 0 or num_bounds <= 0) {
     throw BoutException("Invalid number of ghost cells or weights or cut cells.");
@@ -125,6 +129,17 @@ ImmersedBoundary::ImmersedBoundary() {
                         "Boundary normal point is out of MPI bounds for cut cell ");
       CheckInterpOkWithMPI(GetGridInd(bbase_inds(bid, 2)), bid, proc_idx,
                         "Boundary normal point is out of MPI bounds for cut cell ");
+    }
+  }
+
+  //Temp check to make sure masks work in guard cells too. For checking cells in masks/etc. at y guards.
+  BOUT_FOR(i, bndry_mask.getRegion("RGN_NOY")) {
+    for (int offset = 1; offset <= mesh->ystart; ++offset) {
+      ASSERT0(IsInside(i) == IsInside(i.yp(offset)));
+      ASSERT0(IsInside(i) == IsInside(i.ym(offset)));
+
+      ASSERT0(IsGhost(i) == IsGhost(i.yp(offset)));
+      ASSERT0(IsGhost(i) == IsGhost(i.ym(offset)));
     }
   }
 }
@@ -266,10 +281,17 @@ void ImmersedBoundary::FieldSetup(Field3D& f) {
 
 void ImmersedBoundary::FloorField(Field3D& f, const float val) const {
   //Just floor plasma cells, not ghosts.
-  //IB_TODO: Reset boundary after flooring? Do outside afterwards on case-by-case basis currently.
+  //IB_TODO: Reset boundary after flooring?
   BOUT_FOR(i, f.getRegion("RGN_NO_IMM_BNDRY")) {
     if (f[i] < val) {
       f[i] = val;
+    }
+    //Note, dont floor anything outside the plasma in yup/ydown.
+    if (IsTraceInside(forward_xt_prime[i], forward_zt_prime[i]) && f.yup()[i.yp()] < val) {
+      f.yup()[i.yp()] = val;
+    }
+    if (IsTraceInside(backward_xt_prime[i], backward_zt_prime[i]) && f.ydown()[i.ym()] < val) {
+      f.ydown()[i.ym()] = val;
     }
   }
 }
@@ -481,4 +503,12 @@ BoutReal ImmersedBoundary::GetPolynomialGhostValue(Field3D& f, const int gid,
   }
 
   return ghost_val;
+}
+
+//Experimental test functionality to check traced points in domain.
+bool ImmersedBoundary::IsTraceInside(const BoutReal xt, const BoutReal zt) const {
+  return xt >= 0.0
+      && xt < static_cast<BoutReal>(mesh->GlobalNx)
+      && zt >= 0.0
+      && zt < static_cast<BoutReal>(mesh->LocalNz);
 }
