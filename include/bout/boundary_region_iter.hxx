@@ -203,11 +203,11 @@ public:
     /// How many points we are away from the boundary
     signed char offset_m;
     unsigned char abs_offset_m;
-
-    Mesh* localmesh_m;
     /// Direction to the boundary. Positive values are in the sense of the
     /// increasing coordinate
     int dir_m;
+    /// A pointer to the base mesh
+    Mesh* localmesh_m;
 
   public:
     Point() = delete;
