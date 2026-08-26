@@ -43,17 +43,21 @@ void checkCufft(cufftResult status, const char* call) {
 }
 
 template <class T>
-class CudaBuffer {
+class DeviceBuffer {
 public:
-  CudaBuffer() = default;
-  ~CudaBuffer() {
+  DeviceBuffer() = default;
+  ~DeviceBuffer() {
     if (data != nullptr) {
+#if BOUT_HAS_UMPIRE
+      umpire::ResourceManager::getInstance().deallocate(data);
+#else
       cudaFree(data);
+#endif
     }
   }
 
-  CudaBuffer(const CudaBuffer&) = delete;
-  CudaBuffer& operator=(const CudaBuffer&) = delete;
+  DeviceBuffer(const DeviceBuffer&) = delete;
+  DeviceBuffer& operator=(const DeviceBuffer&) = delete;
 
   T* get() { return data; }
   const T* get() const { return data; }
@@ -63,10 +67,20 @@ public:
       return;
     }
     if (data != nullptr) {
+#if BOUT_HAS_UMPIRE
+      umpire::ResourceManager::getInstance().deallocate(data);
+#else
       cudaFree(data);
+#endif
       data = nullptr;
     }
+#if BOUT_HAS_UMPIRE
+    auto allocator =
+        umpire::ResourceManager::getInstance().getAllocator(umpire::resource::Device);
+    data = static_cast<T*>(allocator.allocate(count * sizeof(T)));
+#else
     checkCuda(cudaMalloc(&data, count * sizeof(T)), "cudaMalloc");
+#endif
     capacity = count;
   }
 
@@ -144,8 +158,8 @@ public:
 
   Array<BoutReal> real_host;
   Array<dcomplex> complex_host;
-  CudaBuffer<cufftDoubleReal> real_device;
-  CudaBuffer<cufftDoubleComplex> complex_device;
+  DeviceBuffer<cufftDoubleReal> real_device;
+  DeviceBuffer<cufftDoubleComplex> complex_device;
   CufftPlan forward_plan;
   CufftPlan backward_plan;
   int real_host_size{0};

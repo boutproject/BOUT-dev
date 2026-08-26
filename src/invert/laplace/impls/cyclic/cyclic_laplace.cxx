@@ -83,18 +83,22 @@ void checkCufft(cufftResult status, const char* call) {
 }
 
 template <class T>
-class CudaBuffer {
+class DeviceBuffer {
 public:
-  CudaBuffer() = default;
-  explicit CudaBuffer(std::size_t count) { allocate(count); }
-  ~CudaBuffer() {
+  DeviceBuffer() = default;
+  explicit DeviceBuffer(std::size_t count) { ensure(count); }
+  ~DeviceBuffer() {
     if (data != nullptr) {
+#if BOUT_HAS_UMPIRE
+      umpire::ResourceManager::getInstance().deallocate(data);
+#else
       cudaFree(data);
+#endif
     }
   }
 
-  CudaBuffer(const CudaBuffer&) = delete;
-  CudaBuffer& operator=(const CudaBuffer&) = delete;
+  DeviceBuffer(const DeviceBuffer&) = delete;
+  DeviceBuffer& operator=(const DeviceBuffer&) = delete;
 
   T* get() { return data; }
   const T* get() const { return data; }
@@ -104,7 +108,11 @@ public:
       return;
     }
     if (data != nullptr) {
+#if BOUT_HAS_UMPIRE
+      umpire::ResourceManager::getInstance().deallocate(data);
+#else
       cudaFree(data);
+#endif
       data = nullptr;
     }
     allocate(count);
@@ -116,7 +124,13 @@ private:
     if (count == 0) {
       return;
     }
+#if BOUT_HAS_UMPIRE
+    auto allocator =
+        umpire::ResourceManager::getInstance().getAllocator(umpire::resource::Device);
+    data = static_cast<T*>(allocator.allocate(count * sizeof(T)));
+#else
     checkCuda(cudaMalloc(&data, count * sizeof(T)), "cudaMalloc");
+#endif
   }
 
   T* data{nullptr};
@@ -465,28 +479,28 @@ class LaplaceCyclicCusparseScratch {
 public:
   CusparseHandle handle;
   Array<BoutReal> real_host;
-  CudaBuffer<cuDoubleComplex> a;
-  CudaBuffer<cuDoubleComplex> b;
-  CudaBuffer<cuDoubleComplex> c;
-  CudaBuffer<cuDoubleComplex> rhs;
-  CudaBuffer<cuDoubleComplex> dl;
-  CudaBuffer<cuDoubleComplex> d;
-  CudaBuffer<cuDoubleComplex> du;
-  CudaBuffer<cuDoubleComplex> x;
-  CudaBuffer<cufftDoubleReal> real_device;
-  CudaBuffer<cufftDoubleComplex> spectral_device;
-  CudaBuffer<double> acoef;
-  CudaBuffer<double> c1coef;
-  CudaBuffer<double> c2coef;
-  CudaBuffer<double> dcoef;
-  CudaBuffer<double> g11;
-  CudaBuffer<double> g33;
-  CudaBuffer<double> g13;
-  CudaBuffer<double> G1;
-  CudaBuffer<double> G3;
-  CudaBuffer<double> dx;
-  CudaBuffer<double> int_shift_torsion;
-  CudaBuffer<char> buffer;
+  DeviceBuffer<cuDoubleComplex> a;
+  DeviceBuffer<cuDoubleComplex> b;
+  DeviceBuffer<cuDoubleComplex> c;
+  DeviceBuffer<cuDoubleComplex> rhs;
+  DeviceBuffer<cuDoubleComplex> dl;
+  DeviceBuffer<cuDoubleComplex> d;
+  DeviceBuffer<cuDoubleComplex> du;
+  DeviceBuffer<cuDoubleComplex> x;
+  DeviceBuffer<cufftDoubleReal> real_device;
+  DeviceBuffer<cufftDoubleComplex> spectral_device;
+  DeviceBuffer<double> acoef;
+  DeviceBuffer<double> c1coef;
+  DeviceBuffer<double> c2coef;
+  DeviceBuffer<double> dcoef;
+  DeviceBuffer<double> g11;
+  DeviceBuffer<double> g33;
+  DeviceBuffer<double> g13;
+  DeviceBuffer<double> G1;
+  DeviceBuffer<double> G3;
+  DeviceBuffer<double> dx;
+  DeviceBuffer<double> int_shift_torsion;
+  DeviceBuffer<char> buffer;
   CufftPlan forward_plan;
   CufftPlan backward_plan;
   int real_host_size{0};
@@ -538,7 +552,7 @@ const double* field2DData(const Field2D& field) {
   return view.data;
 }
 
-void copyField2DToDevice(CudaBuffer<double>& destination, const Field2D& source,
+void copyField2DToDevice(DeviceBuffer<double>& destination, const Field2D& source,
                          std::size_t size, const char* name) {
   checkCuda(cudaMemcpy(destination.get(), field2DData(source), size * sizeof(double),
                        cudaMemcpyHostToDevice),
