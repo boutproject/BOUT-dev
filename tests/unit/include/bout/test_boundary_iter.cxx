@@ -21,6 +21,26 @@ TEST_F(BoundaryIteratorTest, Contains) {
   ASSERT_FALSE(bndry.contains(3, 2, 1));
 }
 
+TEST_F(BoundaryIteratorTest, ContainsUnsorted) {
+  BoundaryRegionFCI bndry{"test", BndryLoc::yup, +1, bout::globals::mesh};
+
+  bndry.add_point(1, 0, 3, 0.0, 0.0, 0.0, 0.0, 0, 0);
+  bndry.add_point(1, 1, 3, 0.0, 0.0, 0.0, 0.0, 0, 0);
+  bndry.add_point(1, 2, 3, 0.0, 0.0, 0.0, 0.0, 0, 0);
+  bndry.add_point(0, 1, 0, 0.0, 0.0, 0.0, 0.0, 0, 0);
+  bndry.add_point(0, 1, 1, 0.0, 0.0, 0.0, 0.0, 0, 0);
+  bndry.add_point(0, 1, 2, 0.0, 0.0, 0.0, 0.0, 0, 0);
+  bndry.add_point(0, 1, 3, 0.0, 0.0, 0.0, 0.0, 0, 0);
+  bndry.add_point(0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0, 0);
+  bndry.add_point(0, 0, 1, 0.0, 0.0, 0.0, 0.0, 0, 0);
+  bndry.add_point(0, 0, 2, 0.0, 0.0, 0.0, 0.0, 0, 0);
+  bndry.add_point(0, 0, 3, 0.0, 0.0, 0.0, 0.0, 0, 0);
+
+  ASSERT_TRUE(bndry.contains(1, 2, 3));
+  ASSERT_FALSE(bndry.contains(1, 3, 3));
+  ASSERT_FALSE(bndry.contains(3, 2, 1));
+}
+
 TEST_F(BoundaryIteratorTest, SetValid) {
   BoundaryRegionFCI bndry{"test", BndryLoc::yup, +1, bout::globals::mesh};
 
