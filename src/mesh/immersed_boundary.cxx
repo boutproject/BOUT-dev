@@ -1,5 +1,6 @@
 #include <bout/immersed_boundary.hxx>
 
+#include <array>
 #include <regex>
 #include <sstream>
 
@@ -7,6 +8,7 @@
 #include <bout/field.hxx>
 #include <bout/globals.hxx>
 #include <bout/mesh.hxx>
+#include <bout/output.hxx>
 using bout::globals::mesh;
 
 ImmersedBoundary::ImmersedBoundary() {
@@ -45,6 +47,8 @@ ImmersedBoundary::ImmersedBoundary() {
   if (num_weights <= 0 or num_ghosts <= 0 or num_bounds <= 0) {
     throw BoutException("Invalid number of ghost cells or weights or cut cells.");
   }
+
+  LoadGhostPolyStencil();
 
   //Set up new boundary and plasma regions.
   Region<Ind3D>::RegionIndices xbndry_indices;
@@ -122,6 +126,25 @@ ImmersedBoundary::ImmersedBoundary() {
       CheckInterpOkWithMPI(GetGridInd(bbase_inds(bid, 2)), bid, proc_idx,
                         "Boundary normal point is out of MPI bounds for cut cell ");
     }
+  }
+}
+
+void ImmersedBoundary::LoadGhostPolyStencil() {
+  use_ghost_poly =
+      Options::root()["mesh"]["ib_use_ghost_poly"]
+          .doc("Use precomputed higher-order immersed-boundary ghost reconstruction "
+               "from ghost_poly_* grid metadata when available.")
+          .withDefault<bool>(false);
+  if (use_ghost_poly) {
+      ASSERT0(mesh->get(ghost_poly_valid_dir,     "ghost_poly_valid_dir") == 0);
+      ASSERT0(mesh->get(ghost_poly_valid_neu,     "ghost_poly_valid_neu") == 0);
+      ASSERT0(mesh->get(ghost_poly_stencil_count, "ghost_poly_stencil_count") == 0);
+      ASSERT0(mesh->get(ghost_poly_stencil_i,     "ghost_poly_stencil_i") == 0);
+      ASSERT0(mesh->get(ghost_poly_stencil_z,     "ghost_poly_stencil_z") == 0);
+      ASSERT0(mesh->get(ghost_poly_weights_dir,   "ghost_poly_weights_dir") == 0);
+      ASSERT0(mesh->get(ghost_poly_weights_neu,   "ghost_poly_weights_neu") == 0);
+      ASSERT0(mesh->get(ghost_poly_bc_weight_dir, "ghost_poly_bc_weight_dir") == 0);
+      ASSERT0(mesh->get(ghost_poly_bc_weight_neu, "ghost_poly_bc_weight_neu") == 0);
   }
 }
 
@@ -372,6 +395,14 @@ void ImmersedBoundary::SetBoundary(Field3D& f) {
     //NOTE: This is "Gauss–Seidel-like" because we update f in-place as we sweep.
     BOUT_FOR(i, f.getRegion("RGN_IMM_BNDRY_GST")) {
       const auto gid = get_as<int>(ghost_ids[i]);
+
+      if (use_ghost_poly && GhostPolyValid(gid, bc_type) && IsPolynomialGhostStencilLocal(gid)) {
+        if (it == 0) {
+          f[i] = GetPolynomialGhostValue(f, gid, i.y(), bc_val, bc_type);
+        }
+        continue;
+      }
+
       //If first iteration or more than 1 ghost (GS iteration to converge).
       //IB_TODO: Make GS iteration MPI compliant.
       if (it == 0 || get_as<bool>(ghost_use_gs[gid])) {
@@ -382,7 +413,7 @@ void ImmersedBoundary::SetBoundary(Field3D& f) {
     }
   }
 
-  //IB_TODO: Update to only guard cells when no longer axisymmetric and ny != 1.
+  //IB_TODO: Update to only MYG guard cells when no longer axisymmetric and ny != 1.
   BOUT_FOR(i, f.getRegion("RGN_IMM_BNDRY_GST")) {
     //Loop in case MYG > 1.
     for (int yoffset = 1; yoffset <= f.getMesh()->ystart; ++yoffset) {
@@ -390,4 +421,64 @@ void ImmersedBoundary::SetBoundary(Field3D& f) {
       f[i.ym(yoffset)] = f[i];
     }
   }
+}
+
+
+//Experimental higher order polynomial ghost stencil functions.
+//All experimental code GPT-generated and full of overkill checks...Needs major clean up.
+bool ImmersedBoundary::GhostPolyValid(const int gid,
+                          const BoundCond bc_type) const {
+  switch (bc_type) {
+    case BoundCond::DIRICHLET:
+      return get_as<bool>(ghost_poly_valid_dir[gid]);
+    case BoundCond::NEUMANN:
+      return get_as<bool>(ghost_poly_valid_neu[gid]);
+    default:
+      throw BoutException(bc_exception);
+  }
+}
+
+bool ImmersedBoundary::IsPolynomialGhostStencilLocal(const int gid) const {
+  //Many of these checks seem redundant and can be handled in python/grid generation.
+  const auto [ngi, nstencil] = ghost_poly_stencil_i.shape();
+
+  const int stencil_count = get_as<int>(ghost_poly_stencil_count[gid]);
+  if (stencil_count <= 0 || stencil_count > nstencil) {
+    return false;
+  }
+
+  for (int n = 0; n < stencil_count; ++n) {
+    const int global_x = get_as<int>(ghost_poly_stencil_i(gid, n));
+    const int local_x = mesh->getLocalXIndex(global_x);
+    const int z = get_as<int>(ghost_poly_stencil_z(gid, n));
+    if (local_x < 0 || local_x >= mesh->LocalNx || z < 0 || z >= mesh->LocalNz) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+BoutReal ImmersedBoundary::GetPolynomialGhostValue(Field3D& f, const int gid,
+                          const int y, const BoutReal bc_val,
+                          const BoundCond bc_type) const {
+  const auto& weights =
+      bc_type == BoundCond::DIRICHLET ? ghost_poly_weights_dir : ghost_poly_weights_neu;
+  const auto& bc_weight =
+      bc_type == BoundCond::DIRICHLET ? ghost_poly_bc_weight_dir : ghost_poly_bc_weight_neu;
+  const auto [ng, nstencil] = weights.shape();
+  if (gid >= ng) {
+    throw BoutException("Invalid immersed-boundary polynomial ghost id.");
+  }
+
+  const int stencil_count = get_as<int>(ghost_poly_stencil_count[gid]);
+  BoutReal ghost_val = bc_weight[gid] * bc_val;
+  for (int n = 0; n < stencil_count; ++n) {
+    const int global_x = get_as<int>(ghost_poly_stencil_i(gid, n));
+    const int local_x = mesh->getLocalXIndex(global_x);
+    const int z = get_as<int>(ghost_poly_stencil_z(gid, n));
+    ghost_val += weights(gid, n) * f(local_x, y, z);
+  }
+
+  return ghost_val;
 }

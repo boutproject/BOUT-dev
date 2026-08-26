@@ -3,19 +3,15 @@
 #define IMMERSED_BOUNDARY_H
 
 #include <cmath>
-#include <limits>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 
 #include <bout/array.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/field3d.hxx>
-#include <bout/region.hxx>
 #include <bout/utils.hxx>
 
 class Mesh;
@@ -96,6 +92,24 @@ private:
                     const BoutReal bc, const BoundCond bc_type) const;
   BoutReal GetImageValue(Field3D& f, const int gid, const BoutReal bc_val,
                     const BoundCond bc_type) const;
+
+  // Precomputed higher-order ghost reconstruction (experimental).
+  bool use_ghost_poly{false};
+  Array<BoutReal> ghost_poly_valid_dir;
+  Array<BoutReal> ghost_poly_valid_neu;
+  Array<BoutReal> ghost_poly_stencil_count;
+  Matrix<BoutReal> ghost_poly_stencil_i;
+  Matrix<BoutReal> ghost_poly_stencil_z;
+  Matrix<BoutReal> ghost_poly_weights_dir;
+  Matrix<BoutReal> ghost_poly_weights_neu;
+  Array<BoutReal> ghost_poly_bc_weight_dir;
+  Array<BoutReal> ghost_poly_bc_weight_neu;
+  //Higher order ghost solve functions (experimental).
+  void LoadGhostPolyStencil();
+  bool GhostPolyValid(const int gid, const BoundCond bc_type) const;
+  bool IsPolynomialGhostStencilLocal(const int gid) const;
+  BoutReal GetPolynomialGhostValue(Field3D& f, const int gid, const int y,
+                    const BoutReal bc_val, const BoundCond bc_type) const;
 
   const std::string bc_exception = "Invalid boundary condition specified for immersed boundary.";
   const std::string bc_key = "bndry_wall";
