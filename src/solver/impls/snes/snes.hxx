@@ -40,6 +40,7 @@ class SNESSolver;
 
 #include "mpi.h"
 
+#include <bout/array.hxx>
 #include <bout/bout_enum_class.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/field2d.hxx>
@@ -252,7 +253,6 @@ private:
 
   IS is_diff = nullptr; // is_dae == 1
   IS is_alg = nullptr;  // is_dae == 0 (phi constraint and any other algebraics)
-  bool have_is_maps = false;
 
   PetscLib lib; ///< Handles initialising, finalising PETSc
   Vec snes_f;   ///< Used by SNES to store function

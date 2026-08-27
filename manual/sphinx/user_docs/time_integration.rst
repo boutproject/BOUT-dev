@@ -597,6 +597,24 @@ Example:
    fieldsplit_alg_ksp_type = preonly
    fieldsplit_alg_pc_type = jacobi
 
+A more tailored setup can use different preconditioners for the two blocks, for
+example ILU on the differential variables and Hypre BoomerAMG on the algebraic
+variables:
+
+.. code-block:: ini
+
+   [solver]
+   type = snes
+   equation_form = backward_euler
+   matrix_free = false
+   pc_type = fieldsplit
+
+   [petsc]
+   pc_fieldsplit_type = additive
+   fieldsplit_diff_pc_type = ilu
+   fieldsplit_alg_pc_type = hypre
+   fieldsplit_alg_pc_hypre_type = boomeramg
+
 Adaptive Timestepping
 ~~~~~~~~~~~~~~~~~~~~~
 
