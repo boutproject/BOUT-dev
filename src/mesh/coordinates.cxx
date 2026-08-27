@@ -1048,10 +1048,6 @@ void Coordinates::invalidateMetricCaches() {
   g_values_cache.reset();
   Grad2_par2_DDY_invSgCache.clear();
   invSgCache.reset();
-  // For FCI we cannot just recompute J, as that would loose the parallel slices
-  if (jacobian_cache != nullptr and not jacobian_cache->isFci()) {
-    jacobian_cache.reset();
-  }
   invalidateCellGeometryCaches();
   invalidateAccessorCache();
 }
