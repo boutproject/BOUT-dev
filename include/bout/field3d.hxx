@@ -455,7 +455,7 @@ public:
   ///@}
 
   // FieldData virtual functions
-  bool is3D() const override { return true; }
+  FieldType field_type() const override { return FieldType::field3d; }
 
 #if CHECK > 0
   void doneComms() override { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }

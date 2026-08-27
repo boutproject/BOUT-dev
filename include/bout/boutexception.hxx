@@ -18,9 +18,9 @@ class BoutException : public std::exception {
 public:
   BoutException(std::string msg);
 
-  template <class S, class... Args>
-  BoutException(const S& format, const Args&... args)
-      : BoutException(fmt::format(format, args...)) {}
+  template <class... Args>
+  BoutException(fmt::format_string<Args...> format, Args&&... args)
+      : BoutException(fmt::vformat(format, fmt::make_format_args(args...))) {}
 
   ~BoutException() override;
 
@@ -45,17 +45,17 @@ private:
 class BoutRhsFail : public BoutException {
 public:
   BoutRhsFail(std::string message) : BoutException(std::move(message)) {}
-  template <class S, class... Args>
-  BoutRhsFail(const S& format, const Args&... args)
-      : BoutRhsFail(fmt::format(format, args...)) {}
+  template <class... Args>
+  BoutRhsFail(fmt::format_string<Args...> format, Args&&... args)
+      : BoutRhsFail(fmt::vformat(format, fmt::make_format_args(args...))) {}
 };
 
 class BoutIterationFail : public BoutException {
 public:
   BoutIterationFail(std::string message) : BoutException(std::move(message)) {}
-  template <class S, class... Args>
-  BoutIterationFail(const S& format, const Args&... args)
-      : BoutIterationFail(fmt::format(format, args...)) {}
+  template <class... Args>
+  BoutIterationFail(fmt::format_string<Args...> format, Args&&... args)
+      : BoutIterationFail(fmt::vformat(format, fmt::make_format_args(args...))) {}
 };
 
 #endif

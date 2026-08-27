@@ -344,10 +344,15 @@ public:
 
   // non-local communications
 
-  virtual int getNXPE() = 0;       ///< The number of processors in the X direction
-  virtual int getNYPE() = 0;       ///< The number of processors in the Y direction
-  virtual int getXProcIndex() = 0; ///< This processor's index in X direction
-  virtual int getYProcIndex() = 0; ///< This processor's index in Y direction
+  virtual int getNXPE() const = 0;       ///< The number of processors in the X direction
+  virtual int getNYPE() const = 0;       ///< The number of processors in the Y direction
+  virtual int getNZPE() const = 0;       ///< The number of processors in the Z direction
+  virtual int getXProcIndex() const = 0; ///< This processor's index in X direction
+  virtual int getYProcIndex() const = 0; ///< This processor's index in Y direction
+  virtual int getZProcIndex() const = 0; ///< This processor's index in Z direction
+
+  /// The rank of the processor at (\p X, \p Y, \p Z) in the processor grid
+  virtual int getProcIndex(int X, int Y, int Z) const = 0;
 
   // X communications
   virtual bool firstX()
@@ -393,6 +398,7 @@ public:
   } ///< Return communicator containing all processors in X
   virtual MPI_Comm getXcomm(int jy) const = 0; ///< Return X communicator
   virtual MPI_Comm getYcomm(int jx) const = 0; ///< Return Y communicator
+  virtual MPI_Comm getXZcomm() const = 0;      ///< Communicator in X-Z
 
   /// Return pointer to the mesh's MPI Wrapper object
   MpiWrapper& getMpi() { return *mpi; }
@@ -464,11 +470,11 @@ public:
 
   /// Is there a boundary on the lower guard cells in Y
   /// on any processor along the X direction?
-  bool hasBndryLowerY();
+  virtual bool hasBndryLowerY() const = 0;
 
   /// Is there a boundary on the upper guard cells in Y
   /// on any processor along the X direction?
-  bool hasBndryUpperY();
+  virtual bool hasBndryUpperY() const = 0;
   // Boundary regions
 
   /// Return a vector containing all the boundary regions on this processor
@@ -500,8 +506,10 @@ public:
 
   virtual BoutReal GlobalX(int jx) const = 0;      ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(int jy) const = 0;      ///< Continuous Y index (0 -> 1)
+  virtual BoutReal GlobalZ(int jz) const = 0;      ///< Continuous Z index (0 -> 1)
   virtual BoutReal GlobalX(BoutReal jx) const = 0; ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(BoutReal jy) const = 0; ///< Continuous Y index (0 -> 1)
+  virtual BoutReal GlobalZ(BoutReal jz) const = 0; ///< Continuous Z index (0 -> 1)
 
   //////////////////////////////////////////////////////////
 
@@ -802,8 +810,8 @@ protected:
   const std::vector<int> readInts(const std::string& name, int n);
 
   /// Calculates the size of a message for a given x and y range
-  int msg_len(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-              int ylt);
+  int msg_len(const std::vector<Field*>& var_list, int xge, int xlt, int yge,
+              int ylt) const;
 
   /// Initialise derivatives
   void derivs_init(Options* options);

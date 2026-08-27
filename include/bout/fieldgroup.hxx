@@ -13,10 +13,10 @@
 
 /// Group together fields for easier communication
 ///
-/// Note: The FieldData class is used as a base class,
-/// which is inherited by Field2D, Field3D, Vector2D and Vector3D
-/// however Vector2D and Vector3D are stored by reference to their
-/// components (x,y,z) as Field2D or Field3D objects.
+/// Note: The `Field` class is used as a base class,
+/// which is inherited by `Field2D`, `Field3D`, `FieldPerp`;
+/// however `Vector2D` and `Vector3D` are stored by reference to their
+/// components ``(x, y, z)`` as `Field2D` or `Field3D` objects.
 class FieldGroup {
 public:
   FieldGroup() = default;
@@ -25,8 +25,8 @@ public:
   FieldGroup& operator=(const FieldGroup& other) = default;
   FieldGroup& operator=(FieldGroup&& other) = default;
 
-  /// Constructor with a single FieldData \p f
-  FieldGroup(FieldData& f) { fvec.push_back(&f); }
+  /// Constructor with a single Field \p f
+  FieldGroup(Field& f) { fvec.push_back(&f); }
 
   /// Constructor with a single Field3D \p f
   FieldGroup(Field3D& f) {
@@ -56,7 +56,7 @@ public:
   }
 
   /// Variadic constructor. Allows an arbitrary number of
-  /// FieldData arguments
+  /// Field arguments
   ///
   /// The explicit keyword prevents FieldGroup being constructed with arbitrary
   /// types. In particular arguments to add() cannot be implicitly converted
@@ -78,12 +78,12 @@ public:
     return *this;
   }
 
-  /// Add a FieldData \p f to the group.
+  /// Add a Field \p f to the group.
   ///
   /// A pointer to this field will be stored internally,
   /// so the lifetime of this variable should be longer
   /// than the lifetime of this group.
-  void add(FieldData& f) { fvec.push_back(&f); }
+  void add(Field& f) { fvec.push_back(&f); }
 
   // Add a 3D field \p f, which goes into both vectors.
   //
@@ -126,7 +126,7 @@ public:
   /// treated as a special case. An arbitrary number of fields can be
   /// added.
   template <typename... Ts>
-  void add(FieldData& t, Ts&... ts) {
+  void add(Field& t, Ts&... ts) {
     add(t);     // Add the first using functions above
     add(ts...); // Add the rest
   }
@@ -165,16 +165,16 @@ public:
   }
 
   /// Iteration over all fields
-  using iterator = std::vector<FieldData*>::iterator;
+  using iterator = std::vector<Field*>::iterator;
   iterator begin() { return fvec.begin(); }
   iterator end() { return fvec.end(); }
 
   /// Const iteration over all fields
-  using const_iterator = std::vector<FieldData*>::const_iterator;
+  using const_iterator = std::vector<Field*>::const_iterator;
   const_iterator begin() const { return fvec.begin(); }
   const_iterator end() const { return fvec.end(); }
 
-  const std::vector<FieldData*>& get() const { return fvec; }
+  const std::vector<Field*>& get() const { return fvec; }
 
   /// Iteration over 3D fields
   const std::vector<Field3D*>& field3d() const { return f3vec; }
@@ -183,7 +183,7 @@ public:
   void makeUnique();
 
 private:
-  std::vector<FieldData*> fvec; // Vector of fields
+  std::vector<Field*> fvec;    // Vector of fields
   std::vector<Field3D*> f3vec;  // Vector of 3D fields
 };
 

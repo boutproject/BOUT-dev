@@ -194,14 +194,14 @@ MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Retu
   ixseps2   = ixseps2_;
 
   if (jyseps1_1 < 0 and jyseps2_2 >= ny - 1) {
-    return MeshTopology::CFL;
+    return MeshTopology::closed_field_line; //write whole thing
   } else if (jyseps2_1 == jyseps1_2) {
-    return MeshTopology::SN;
+    return MeshTopology::single_null;
   } else if (ixseps1 == ixseps2) {
-    return MeshTopology::CDN;
+    return MeshTopology::connected_double_null;
   } 
   else{
-    return MeshTopology::UDN;
+    return MeshTopology::unconnected_double_null;
    }
 }
 
@@ -220,7 +220,7 @@ namespace bout {
         jyseps1_1, jyseps2_1,
         jyseps1_2, jyseps2_2,
         ny_inner,
-        MeshTopology::UDN);
+        MeshTopology::unconnected_double_null);
   }
 
   } // namespace bout
@@ -246,7 +246,7 @@ namespace bout {
                                 jyseps1_1 + 1, num_local_y_points)};
     }
 
-    if (mesh_topology == MeshTopology::UDN || mesh_topology == MeshTopology::CDN){ 
+    if (mesh_topology == MeshTopology::unconnected_double_null || mesh_topology == MeshTopology::connected_double_null){ 
       if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
         return {
             false,
@@ -278,7 +278,16 @@ namespace bout {
                           "be a multiple of MYSUB ({:d})\n"),
                         jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, num_local_y_points)};
       }
+    }  else if ((mesh_topology == MeshTopology::single_null) || (mesh_topology == MeshTopology::closed_field_line)){
+    // Single Null or connected Double Null
+    if ((jyseps2_2 - jyseps1_1) % num_local_y_points != 0) {
+      return {
+          false,
+          fmt::format(_f("\t -> Core region jyseps2_2-jyseps1_1 ({:d}-{:d} = {:d}) must "
+                         "be a multiple of MYSUB ({:d})\n"),
+                      jyseps2_2, jyseps1_1, jyseps2_2 - jyseps1_1, num_local_y_points)};
     }
+  }
 
   if ((ny - 1 - jyseps2_2) % num_local_y_points != 0) {
     return {false, fmt::format(
@@ -368,7 +377,7 @@ namespace bout {
             for (int jyseps2_2 = jyseps2_2_start;
                 jyseps2_2 < ny; ++jyseps2_2) {
 
-              if (mesh_topology == MeshTopology::UDN || mesh_topology == MeshTopology::CDN){
+              if (mesh_topology == MeshTopology::unconnected_double_null || mesh_topology == MeshTopology::connected_double_null){
                 if (not (jyseps1_1 < jyseps2_1 &&
                   jyseps2_1 < ny_inner &&
                   ny_inner < jyseps1_2 &&
@@ -921,7 +930,7 @@ void BoutMesh::createCommunicators() {
 
   proc[2] = NXPE; // Stride in processor rank
   // Outer SOL regions
-  if (mesh_topology == MeshTopology::SN || mesh_topology == MeshTopology::CFL) {
+  if (mesh_topology == MeshTopology::single_null || mesh_topology == MeshTopology::closed_field_line) {
     // Single-null and CFL
     //All processors with same PE_XIND
     TRACE("Creating Outer SOL communicators for Single Null operation");
@@ -948,7 +957,7 @@ void BoutMesh::createCommunicators() {
       MPI_Group_free(&group);
     }
 
-  } else if (mesh_topology == MeshTopology::CDN || mesh_topology == MeshTopology::UDN) {
+  } else if (mesh_topology == MeshTopology::connected_double_null || mesh_topology == MeshTopology::unconnected_double_null) {
     // Double null
     // Difference with UCD and CDN comes from a secondary inner SOL region (ixseps1 != ixseps2)
     TRACE("Creating Outer SOL communicators for Double Null operation");
@@ -1011,7 +1020,7 @@ void BoutMesh::createCommunicators() {
     }
 
     //Only for CDN and UDN outer core region. Add check to ensure only created for these topologies. Maybe topology should go inside second if.
-    if (mesh_topology == MeshTopology::CDN || mesh_topology == MeshTopology::UDN){
+    if (mesh_topology == MeshTopology::connected_double_null || mesh_topology == MeshTopology::unconnected_double_null){
       if (jyseps2_2 > jyseps1_2) {
         proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
         proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
@@ -1127,7 +1136,8 @@ void BoutMesh::createXBoundaries() {
     //
     // For CDN/UDN the y-range (jyseps1_2, jyseps2_2] is the outer core leg,
     // so it gets a "core" boundary.
-    if ((mesh_topology == MeshTopology::CDN) or (mesh_topology == MeshTopology::UDN)){
+    if ((mesh_topology == MeshTopology::connected_double_null) or (mesh_topology == MeshTopology::unconnected_double_null)
+        or (mesh_topology == MeshTopology::closed_field_line)){
       // CDN/UDN have two core legs; CFL is all core (no X-points).
       // All three need both y-ranges checked.
       const bool in_core = ((yg > jyseps1_1) and (yg <= jyseps2_1))
@@ -1139,7 +1149,7 @@ void BoutMesh::createXBoundaries() {
         boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend, this));
       }
     }
-    else if (mesh_topology == MeshTopology::SN){
+    else if (mesh_topology == MeshTopology::single_null){
       //SN has only one core region, but it goes from (jyseps1_1, jyseps2_2], ny_inner = jyseps1_2 = jyseps2_1 are not relevant for that case. 
       const bool in_core = ((yg > jyseps1_1) and (yg <= jyseps2_2));
 
@@ -2295,7 +2305,7 @@ void BoutMesh::topology() {
                    true);                                 // Twist-shift this connection
     set_connection(jyseps1_1, jyseps2_2 + 1, 0, ixseps1); // No twist-shift in PF region
 
-  } else if (mesh_topology == MeshTopology::CDN || mesh_topology == MeshTopology::UDN) {
+  } else if (mesh_topology == MeshTopology::connected_double_null || mesh_topology == MeshTopology::unconnected_double_null) {
     /*************** DOUBLE NULL OPERATION *******************/
     /* UPPER LEGS: Do not have to be the same length as each
        other or lower legs, but do have to have an integer number
@@ -2375,7 +2385,7 @@ void BoutMesh::topology() {
     }
   }
 
-  if (mesh_topology == MeshTopology::UDN || mesh_topology == MeshTopology::CDN) {
+  if (mesh_topology == MeshTopology::unconnected_double_null || mesh_topology == MeshTopology::connected_double_null) {
       //This is for DN topologies
       if ((ixseps_inner > 0)
       && (((PE_YIND * MYSUB > jyseps1_1) && (PE_YIND * MYSUB <= jyseps2_1))
@@ -2551,14 +2561,14 @@ void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin
 int BoutMesh::pack_data(const std::vector<Field*>& var_list, int xge, int xlt, int yge,
                         int ylt, BoutReal* buffer) const {
 
-  using enum Field::FieldType;
+  using FieldType = Field::FieldType;
   int len = 0;
   const int zge = 0;
   const int zlt = LocalNz;
 
   for (const auto& var : var_list) {
     switch (var->field_type()) {
-    case field3d: {
+    case FieldType::field3d: {
       const auto* var3d_ref_ptr = dynamic_cast<Field3D*>(var);
       ASSERT0(var3d_ref_ptr != nullptr);
       const auto& var3d_ref = *var3d_ref_ptr;
@@ -2572,7 +2582,7 @@ int BoutMesh::pack_data(const std::vector<Field*>& var_list, int xge, int xlt, i
       }
       break;
     }
-    case field2d: {
+    case FieldType::field2d: {
       const auto* var2d_ref_ptr = dynamic_cast<Field2D*>(var);
       ASSERT0(var2d_ref_ptr != nullptr);
       const auto& var2d_ref = *var2d_ref_ptr;
@@ -2584,7 +2594,7 @@ int BoutMesh::pack_data(const std::vector<Field*>& var_list, int xge, int xlt, i
       }
       break;
     }
-    case fieldperp: {
+    case FieldType::fieldperp: {
       const auto* varperp_ref_ptr = dynamic_cast<FieldPerp*>(var);
       ASSERT0(varperp_ref_ptr != nullptr);
       const auto& varperp_ref = *varperp_ref_ptr;
@@ -2605,14 +2615,14 @@ int BoutMesh::pack_data(const std::vector<Field*>& var_list, int xge, int xlt, i
 int BoutMesh::unpack_data(const std::vector<Field*>& var_list, int xge, int xlt, int yge,
                           int ylt, const BoutReal* buffer) const {
 
-  using enum Field::FieldType;
+  using FieldType = Field::FieldType;
   int len = 0;
   const int zge = 0;
   const int zlt = LocalNz;
 
   for (const auto& var : var_list) {
     switch (var->field_type()) {
-    case field3d: {
+    case FieldType::field3d: {
       auto* var3d_ref_ptr = dynamic_cast<Field3D*>(var);
       ASSERT0(var3d_ref_ptr != nullptr);
       auto& var3d_ref = *var3d_ref_ptr;
@@ -2626,7 +2636,7 @@ int BoutMesh::unpack_data(const std::vector<Field*>& var_list, int xge, int xlt,
       }
       break;
     }
-    case field2d: {
+    case FieldType::field2d: {
       auto* var2d_ref_ptr = dynamic_cast<Field2D*>(var);
       ASSERT0(var2d_ref_ptr != nullptr);
       auto& var2d_ref = *var2d_ref_ptr;
@@ -2638,7 +2648,7 @@ int BoutMesh::unpack_data(const std::vector<Field*>& var_list, int xge, int xlt,
       }
       break;
     }
-    case fieldperp: {
+    case FieldType::fieldperp: {
       auto* varperp_ref_ptr = dynamic_cast<FieldPerp*>(var);
       ASSERT0(varperp_ref_ptr != nullptr);
       auto& varperp_ref = *varperp_ref_ptr;

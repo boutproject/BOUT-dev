@@ -172,7 +172,7 @@ public:
   CELL_LOC getLocation() const override;
 
   // FieldData virtual functions
-  bool is3D() const override { return true; }
+  FieldType field_type() const override { return FieldType::field3d; }
   int elementSize() const override { return 3; }
 
   void applyBoundary(bool init = false) override;

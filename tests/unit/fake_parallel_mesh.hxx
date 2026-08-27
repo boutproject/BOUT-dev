@@ -163,7 +163,7 @@ public:
   /// (representing other processors) to see if a corresponding field
   /// has been created for them which can be used to communicate guard
   /// cells with.
-  void registerField(FieldData& f, int id) {
+  void registerField(Field& f, int id) {
     registeredFields.emplace(&f, id);
     registeredFieldIds.emplace(id, &f);
   }
@@ -259,7 +259,7 @@ private:
   FakeParallelMesh *yUpMesh, *yDownMesh, *xInMesh, *xOutMesh;
   bool communicatingX = false, communicatingY = false;
   std::map<FieldData*, int> registeredFields;
-  std::map<int, FieldData*> registeredFieldIds;
+  std::map<int, Field*> registeredFieldIds;
   std::map<FieldPerp*, int> registeredFieldPerps;
   std::map<int, FieldPerp*> registeredFieldPerpIds;
   std::unique_ptr<FakeMpiWrapper> mpiSmart;

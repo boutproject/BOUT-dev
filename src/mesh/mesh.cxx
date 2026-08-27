@@ -377,16 +377,28 @@ void Mesh::communicate(FieldPerp& f) {
   wait(recv[1]);
 }
 
-int Mesh::msg_len(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-                  int ylt) {
+int Mesh::msg_len(const std::vector<Field*>& var_list, int xge, int xlt, int yge,
+                  int ylt) const {
   int len = 0;
+
+  using FieldType = Field::FieldType;
+
+  const auto x_length = xlt - xge;
+  const auto y_length = ylt - yge;
+  const auto z_length = LocalNz;
 
   /// Loop over variables
   for (const auto& var : var_list) {
-    if (var->is3D()) {
-      len += (xlt - xge) * (ylt - yge) * LocalNz * var->elementSize();
-    } else {
-      len += (xlt - xge) * (ylt - yge) * var->elementSize();
+    switch (var->field_type()) {
+    case FieldType::field3d:
+      len += x_length * y_length * z_length * var->elementSize();
+      break;
+    case FieldType::field2d:
+      len += x_length * y_length * var->elementSize();
+      break;
+    case FieldType::fieldperp:
+      len += x_length * z_length * var->elementSize();
+      break;
     }
   }
 
@@ -406,34 +418,6 @@ int Mesh::ySize(int jx) const {
   int all;
   mpi->MPI_Allreduce(&local, &all, 1, MPI_INT, MPI_SUM, comm);
   return all;
-}
-
-bool Mesh::hasBndryLowerY() {
-  static bool calc = false, answer;
-  if (calc) {
-    return answer; // Already calculated
-  }
-
-  int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
-  int allbndry;
-  mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
-  answer = static_cast<bool>(allbndry);
-  calc = true;
-  return answer;
-}
-
-bool Mesh::hasBndryUpperY() {
-  static bool calc = false, answer;
-  if (calc) {
-    return answer; // Already calculated
-  }
-
-  int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
-  int allbndry;
-  mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
-  answer = static_cast<bool>(allbndry);
-  calc = true;
-  return answer;
 }
 
 int Mesh::localSize3D() {

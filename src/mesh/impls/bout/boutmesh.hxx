@@ -21,10 +21,10 @@ class Field;
 /// conventions.
 
 BOUT_ENUM_CLASS(MeshTopology,
-                CFL,  // Closed field line
-                SN,   // Single null
-                UDN,  // Unconnected double null
-                CDN); // Connected double null
+                closed_field_line,  // Closed field line
+                single_null,   // Single null
+                unconnected_double_null,  // Unconnected double null
+                connected_double_null); // Connected double null
 
 
 class BoutMesh : public Mesh {

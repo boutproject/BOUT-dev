@@ -24,7 +24,7 @@ public:
   FieldSubClass(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
       : Field(localmesh, location_in, directions_in) {}
 
-  bool is3D() const override { return false; }
+  FieldType field_type() const override { return FieldType::field2d; }
   int size() const override { return 42; }
 };
 } // namespace
