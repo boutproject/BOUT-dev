@@ -1048,7 +1048,11 @@ void Coordinates::invalidateMetricCaches() {
   g_values_cache.reset();
   Grad2_par2_DDY_invSgCache.clear();
   invSgCache.reset();
-  jacobian_cache.reset();
+  if (jacobian_cache != nullptr) {
+    if (not jacobian_cache->isFci()) {
+      jacobian_cache.reset();
+    }
+  }
   invalidateCellGeometryCaches();
   invalidateAccessorCache();
 }
