@@ -524,8 +524,9 @@ Timestepping Modes
 
 The solver supports several timestepping strategies controlled by ``equation_form``:
 
-**Backward Euler (default)**
-   Standard implicit backward Euler method. Good for general timestepping.
+**Rearranged Backward Euler (default)**
+   Standard implicit backward Euler method written in a rearranged form that is
+   robust when driving a system to steady state.
 
    .. code-block:: ini
 
@@ -554,6 +555,47 @@ The solver supports several timestepping strategies controlled by ``equation_for
 
    This uses the same form as rearranged_backward_euler, but the time step
    can be different for each cell.
+
+Constraints (DAEs)
+~~~~~~~~~~~~~~~~~~
+
+BOUT++ can define algebraic constraints in a physics model using the
+``Solver::constraint(...)`` API. With the SNES solver these are treated as a
+differential-algebraic equation (DAE) system:
+
+- Differential variables include the usual timestepping terms for the selected
+  ``equation_form``.
+- Algebraic variables keep only the constraint residual ``G(x) = 0``.
+
+This is supported for all SNES equation forms. For ``direct_newton`` the full
+system is solved directly as a steady-state nonlinear problem, while for the
+timestepping forms only the differential variables receive the timestep terms.
+
+When constraints are enabled, the SNES solver can optionally split the
+preconditioner into differential and algebraic blocks using PETSc
+``fieldsplit``. The split names are:
+
+- ``diff``: differential variables
+- ``alg``: algebraic (constraint) variables
+
+Constraint splitting requires ``matrix_free = false``. ``matrix_free_operator``
+may still be used because the preconditioner matrix is still assembled.
+
+Example:
+
+.. code-block:: ini
+
+   [solver]
+   type = snes
+   equation_form = backward_euler
+   pc_type = fieldsplit
+
+   [petsc]
+   pc_fieldsplit_type = additive
+   fieldsplit_diff_ksp_type = preonly
+   fieldsplit_diff_pc_type = jacobi
+   fieldsplit_alg_ksp_type = preonly
+   fieldsplit_alg_pc_type = jacobi
 
 Adaptive Timestepping
 ~~~~~~~~~~~~~~~~~~~~~

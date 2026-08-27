@@ -388,6 +388,15 @@ SNESSolver::SNESSolver(Options* opts)
   has_constraints = true; // This solver can handle constraints
 }
 
+SNESSolver::~SNESSolver() {
+  if (is_diff != nullptr) {
+    ISDestroy(&is_diff);
+  }
+  if (is_alg != nullptr) {
+    ISDestroy(&is_alg);
+  }
+}
+
 void SNESSolver::exportMatrixAndMetadata(bout::JacobianExportKind kind, Mat jacobian) {
   Solver::writeOnceJacobianMetadata("snes");
   Solver::writeJacobianMatrix(kind, jacobian);
@@ -652,6 +661,9 @@ int SNESSolver::init() {
 #if PETSC_VERSION_GE(3, 8, 0)
   SNESSetForceIteration(snes, PETSC_TRUE);
 #endif
+
+  // Enable checking for domain errors in Jacobian evaluation
+  SNESSetCheckJacobianDomainError(snes, PETSC_TRUE);
 
   // Get KSP context from SNES
   KSP ksp;
@@ -1648,7 +1660,13 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
   // Call the RHS function
   if (scaled_rhs_function(x, f, linear) != PETSC_SUCCESS) {
     // Tell SNES that the input was out of domain
-    SNESSetFunctionDomainError(snes);
+    if (linear) {
+      // During Jacobian evaluation
+      SNESSetJacobianDomainError(snes);
+    } else {
+      // During function evaluation
+      SNESSetFunctionDomainError(snes);
+    }
     // Note: Returning non-zero error here leaves vectors in locked state
     return 0;
   }
@@ -1924,11 +1942,6 @@ BoutReal SNESSolver::pid(BoutReal timestep, int nl_its, BoutReal max_dt) {
 
   // clamp growth factor to avoid huge changes
   BoutReal fac = std::clamp(facP * facI * facD, 0.2, 5.0);
-
-  // Add slow growth when convergence is good and stable
-  if (nl_its <= target_its && nl_its_prev <= target_its) {
-    fac *= 1.1; // or 1.05 for more conservative growth
-  }
 
   if (pid_consider_failures && (fac > 1.0)) {
     // Reduce aggressiveness if recent steps have failed often

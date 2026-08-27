@@ -78,7 +78,7 @@ BOUT_ENUM_CLASS(BoutSnesOutput,
 class SNESSolver : public Solver {
 public:
   explicit SNESSolver(Options* opts = nullptr);
-  ~SNESSolver() override = default;
+  ~SNESSolver() override;
 
   int init() override;
   int run() override;
