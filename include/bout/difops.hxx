@@ -77,7 +77,7 @@ Field3D Grad_par(const Field3DParallel& var, CELL_LOC outloc = CELL_DEFAULT,
  * Combines the parallel and perpendicular calculation to include
  * grid-points at the corners.
  */
-Field3D Grad_parP(const Field3D& apar, const Field3D& f);
+Field3D Grad_parP(const Field3D& apar, const Field3DParallel& f);
 
 /*!
  * vpar times parallel derivative along unperturbed B-field (upwinding)
@@ -172,9 +172,9 @@ inline bout::FieldMetric Grad2_par2(const Field2D& f, CELL_LOC outloc,
   return Grad2_par2(f, outloc, toString(method));
 }
 
-Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+Field3D Grad2_par2(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
                    const std::string& method = "DEFAULT");
-inline Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method) {
+inline Field3D Grad2_par2(const Field3DParallel& f, CELL_LOC outloc, DIFF_METHOD method) {
   return Grad2_par2(f, outloc, toString(method));
 }
 
@@ -257,7 +257,7 @@ Field3D Laplace_perp(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
  *
  */
 bout::FieldMetric Laplace_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT);
-Field3D Laplace_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT);
+Field3D Laplace_par(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT);
 
 /*!
  * Full Laplacian operator (par + perp)
@@ -265,7 +265,7 @@ Field3D Laplace_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT);
 bout::FieldMetric Laplace(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                           const std::string& dfdy_boundary_condition = "free_o3",
                           const std::string& dfdy_region = "");
-Field3D Laplace(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+Field3D Laplace(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
                 const std::string& dfdy_boundary_condition = "free_o3",
                 const std::string& dfdy_region = "");
 
@@ -292,11 +292,11 @@ bout::FieldMetric b0xGrad_dot_Grad(const Field2D& phi, const Field2D& A,
  * @param[in] A   The field being advected
  * @param[in] outloc  The cell location where the result is defined. By default the same as A.
  */
-Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field2D& A,
+Field3D b0xGrad_dot_Grad(const Field3DParallel& phi, const Field2D& A,
                          CELL_LOC outloc = CELL_DEFAULT);
 Field3D b0xGrad_dot_Grad(const Field2D& phi, const Field3D& A,
                          CELL_LOC outloc = CELL_DEFAULT);
-Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field3D& A,
+Field3D b0xGrad_dot_Grad(const Field3DParallel& phi, const Field3D& A,
                          CELL_LOC outloc = CELL_DEFAULT);
 
 /*!

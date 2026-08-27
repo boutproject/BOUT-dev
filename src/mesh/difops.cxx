@@ -74,7 +74,7 @@ Field3D Grad_par(const Field3DParallel& var, CELL_LOC outloc, const std::string&
 * grid-points at the corners.
 *******************************************************************************/
 
-Field3D Grad_parP(const Field3D& apar, const Field3D& f) {
+Field3D Grad_parP(const Field3D& apar, const Field3DParallel& f) {
   ASSERT1_FIELDS_COMPATIBLE(apar, f);
   ASSERT1(f.hasParallelSlices());
 
@@ -301,7 +301,7 @@ bout::FieldMetric Grad2_par2(const Field2D& f, CELL_LOC outloc,
          + D2DY2(f, outloc, method) / coords.g_22();
 }
 
-Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc, const std::string& method) {
+Field3D Grad2_par2(const Field3DParallel& f, CELL_LOC outloc, const std::string& method) {
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
@@ -713,11 +713,10 @@ bout::FieldMetric Laplace_par(const Field2D& f, CELL_LOC outloc) {
                / coords.J();
 }
 
-Field3D Laplace_par(const Field3D& f, CELL_LOC outloc) {
+Field3D Laplace_par(const Field3DParallel& f, CELL_LOC outloc) {
   const auto& coords = *f.getCoordinates(outloc);
   return D2DY2(f, outloc) / coords.g_22()
-         + DDY(coords.J().asField3DParallel() / coords.g_22(), outloc) * DDY(f, outloc)
-               / coords.J();
+         + DDY(coords.J() / coords.g_22(), outloc) * DDY(f, outloc) / coords.J();
 }
 
 /*******************************************************************************
@@ -737,7 +736,7 @@ bout::FieldMetric Laplace(const Field2D& f, CELL_LOC outloc,
                         dfdy_region);
 }
 
-Field3D Laplace(const Field3D& f, CELL_LOC outloc,
+Field3D Laplace(const Field3DParallel& f, CELL_LOC outloc,
                 const std::string& dfdy_boundary_condition,
                 const std::string& dfdy_region) {
   const auto& coords = *f.getCoordinates(outloc);
@@ -900,7 +899,7 @@ Field3D b0xGrad_dot_Grad(const Field2D& phi, const Field3D& A, CELL_LOC outloc) 
   return result;
 }
 
-Field3D b0xGrad_dot_Grad(const Field3D& p, const Field2D& A, CELL_LOC outloc) {
+Field3D b0xGrad_dot_Grad(const Field3DParallel& p, const Field2D& A, CELL_LOC outloc) {
 
   if (outloc == CELL_DEFAULT) {
     outloc = A.getLocation();
@@ -934,7 +933,7 @@ Field3D b0xGrad_dot_Grad(const Field3D& p, const Field2D& A, CELL_LOC outloc) {
   return result;
 }
 
-Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field3D& A, CELL_LOC outloc) {
+Field3D b0xGrad_dot_Grad(const Field3DParallel& phi, const Field3D& A, CELL_LOC outloc) {
 
   if (outloc == CELL_DEFAULT) {
     outloc = A.getLocation();
