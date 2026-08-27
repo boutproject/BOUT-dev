@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#requires: all_tests
-
 for test in slab2d slab3d
 do
     if ! ./runtest-$test

@@ -6,7 +6,6 @@
  *
  */
 
-#include "bout/parallel_boundary_region.hxx"
 #include "bout/paralleltransform.hxx"
 #include <bout/boundary_region.hxx>
 #include <bout/constants.hxx>
@@ -14,8 +13,6 @@
 #include <bout/mesh.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
-
-#include <cmath>
 
 #if BOUT_HAS_CUDA
 #include <bout/twiddle.hxx>

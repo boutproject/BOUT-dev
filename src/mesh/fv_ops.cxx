@@ -31,7 +31,6 @@ Slices<T> makeslices(bool use_slices, const T& field) {
 
 namespace FV {
 
-// Div ( a Grad_perp(f) ) -- ∇ ⋅ ( a ∇⊥ f) --  Vorticity
 Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
   ASSERT2(a.getLocation() == f.getLocation());
 
@@ -45,22 +44,25 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
 
   const int xs = mesh->xstart - 1;
   const int xe = mesh->xend;
+  if (xs >= 0) {
+    for (int i = xs; i <= xe; i++) {
+      for (int j = mesh->ystart; j <= mesh->yend; j++) {
+        for (int k = mesh->zstart; k <= mesh->zend; k++) {
+          // Calculate flux from i to i+1
 
-  for (int i = xs; i <= xe; i++) {
-    for (int j = mesh->ystart; j <= mesh->yend; j++) {
-      for (int k = mesh->zstart; k <= mesh->zend; k++) {
-        // Calculate flux from i to i+1
+          const BoutReal fout = 0.5 * (a(i, j, k) + a(i + 1, j, k))
+                                * (coord->J(i, j, k) * coord->g11(i, j, k)
+                                   + coord->J(i + 1, j, k) * coord->g11(i + 1, j, k))
+                                * (f(i + 1, j, k) - f(i, j, k))
+                                / (coord->dx(i, j, k) + coord->dx(i + 1, j, k));
 
-        const BoutReal fout = 0.5 * (a(i, j, k) + a(i + 1, j, k))
-                              * (coord->J(i, j, k) * coord->g11(i, j, k)
-                                 + coord->J(i + 1, j, k) * coord->g11(i + 1, j, k))
-                              * (f(i + 1, j, k) - f(i, j, k))
-                              / (coord->dx(i, j, k) + coord->dx(i + 1, j, k));
-
-        result(i, j, k) += fout / (coord->dx(i, j, k) * coord->J(i, j, k));
-        result(i + 1, j, k) -= fout / (coord->dx(i + 1, j, k) * coord->J(i + 1, j, k));
+          result(i, j, k) += fout / (coord->dx(i, j, k) * coord->J(i, j, k));
+          result(i + 1, j, k) -= fout / (coord->dx(i + 1, j, k) * coord->J(i + 1, j, k));
+        }
       }
     }
+  } else {
+    ASSERT1(mesh->xend == 0);
   }
 
   const bool fci = f.hasParallelSlices() && a.hasParallelSlices();
@@ -69,10 +71,10 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
     // 3D Metric, need yup/ydown fields.
     // Requires previous communication of metrics
     // -- should insert communication here?
-    if (!coord->g23.hasParallelSlices() || !coord->g_23.hasParallelSlices()
-        || !coord->dy.hasParallelSlices() || !coord->dz.hasParallelSlices()
-        || !coord->Bxy.hasParallelSlices() || !coord->J.hasParallelSlices()) {
-      throw BoutException("metrics have no yup/down: Maybe communicate in init?");
+    if (!coord->g23().hasParallelSlices() || !coord->g_23().hasParallelSlices()
+        || !coord->dy().hasParallelSlices() || !coord->dz().hasParallelSlices()
+        || !coord->Bxy().hasParallelSlices() || !coord->J().hasParallelSlices()) {
+      throw BoutException("metrics have no yup/down!");
     }
   }
 
@@ -87,12 +89,12 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
 
   // Only in 3D case with FCI do the metrics have parallel slices
   const bool metric_fci = fci and bout::build::use_metric_3d;
-  const auto g23 = makeslices(metric_fci, coord->g23);
-  const auto g_23 = makeslices(metric_fci, coord->g_23);
-  const auto J = makeslices(metric_fci, coord->J);
-  const auto dy = makeslices(metric_fci, coord->dy);
-  const auto dz = makeslices(metric_fci, coord->dz);
-  const auto Bxy = makeslices(metric_fci, coord->Bxy);
+  const auto g23 = makeslices(metric_fci, coord->g23());
+  const auto g_23 = makeslices(metric_fci, coord->g_23());
+  const auto J = makeslices(metric_fci, coord->J());
+  const auto dy = makeslices(metric_fci, coord->dy());
+  const auto dz = makeslices(metric_fci, coord->dz());
+  const auto Bxy = makeslices(metric_fci, coord->Bxy());
 
   // Result of the Y and Z fluxes
   Field3D yzresult(0.0, mesh);
@@ -101,72 +103,75 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
   }
 
   // Y flux
+  if (mesh->ystart > 0) {
+    BOUT_FOR(i, yzresult.getRegion("RGN_NOBNDRY")) {
+      auto ikp = i.zp();
+      auto ikm = i.zm();
+      {
+        const BoutReal coef = 0.5
+                              * (g_23.c[i] / SQ(J.c[i] * Bxy.c[i])
+                                 + g_23.up[i.yp()] / SQ(J.up[i.yp()] * Bxy.up[i.yp()]));
 
-  BOUT_FOR(i, yzresult.getRegion("RGN_NOBNDRY")) {
-    auto ikp = i.zp();
-    auto ikm = i.zm();
-    {
-      const BoutReal coef = 0.5
-                            * (g_23.c[i] / SQ(J.c[i] * Bxy.c[i])
-                               + g_23.up[i.yp()] / SQ(J.up[i.yp()] * Bxy.up[i.yp()]));
+        // Calculate Z derivative at y boundary
+        const BoutReal dfdz = 0.5
+                              * (f_slice.c[ikp] - f_slice.c[ikm] + f_slice.up[ikp.yp()]
+                                 - f_slice.up[ikm.yp()])
+                              / (dz.c[i] + dz.up[i.yp()]);
 
-      // Calculate Z derivative at y boundary
-      const BoutReal dfdz = 0.5
-                            * (f_slice.c[ikp] - f_slice.c[ikm] + f_slice.up[ikp.yp()]
-                               - f_slice.up[ikm.yp()])
-                            / (dz.c[i] + dz.up[i.yp()]);
+        // Y derivative
+        const BoutReal dfdy =
+            2. * (f_slice.up[i.yp()] - f_slice.c[i]) / (dy.up[i.yp()] + dy.c[i]);
 
-      // Y derivative
-      const BoutReal dfdy =
-          2. * (f_slice.up[i.yp()] - f_slice.c[i]) / (dy.up[i.yp()] + dy.c[i]);
+        const BoutReal fout = 0.25 * (a_slice.c[i] + a_slice.up[i.yp()])
+                              * (J.c[i] * g23.c[i] + J.up[i.yp()] * g23.up[i.yp()])
+                              * (dfdz - coef * dfdy);
 
-      const BoutReal fout = 0.25 * (a_slice.c[i] + a_slice.up[i.yp()])
-                            * (J.c[i] * g23.c[i] + J.up[i.yp()] * g23.up[i.yp()])
-                            * (dfdz - coef * dfdy);
+        yzresult[i] += fout / (dy.c[i] * J.c[i]);
+      }
+      {
+        // Calculate flux between j and j-1
+        const BoutReal coef =
+            0.5
+            * (g_23.c[i] / SQ(J.c[i] * Bxy.c[i])
+               + g_23.down[i.ym()] / SQ(J.down[i.ym()] * Bxy.down[i.ym()]));
 
-      yzresult[i] += fout / (dy.c[i] * J.c[i]);
+        const BoutReal dfdz = 0.5
+                              * (f_slice.c[ikp] - f_slice.c[ikm] + f_slice.down[ikp.ym()]
+                                 - f_slice.down[ikm.ym()])
+                              / (dz.c[i] + dz.down[i.ym()]);
+
+        const BoutReal dfdy =
+            2. * (f_slice.c[i] - f_slice.down[i.ym()]) / (dy.c[i] + dy.down[i.ym()]);
+
+        const BoutReal fout = 0.25 * (a_slice.c[i] + a_slice.down[i.ym()])
+                              * (J.c[i] * g23.c[i] + J.down[i.ym()] * g23.down[i.ym()])
+                              * (dfdz - coef * dfdy);
+
+        yzresult[i] -= fout / (dy.c[i] * J.c[i]);
+      }
+      // Z flux
+      {
+
+        // Coefficient in front of df/dy term
+        const BoutReal coef = g_23.c[i] / (dy.up[i.yp()] + 2. * dy.c[i] + dy.down[i.ym()])
+                              / SQ(J.c[i] * Bxy.c[i]);
+
+        const BoutReal fout =
+            0.25 * (a_slice.c[i] + a_slice.c[ikp])
+            * (J.c[i] * coord->g33()[i] + J.c[ikp] * coord->g33()[ikp])
+            * ( // df/dz
+                (f_slice.c[ikp] - f_slice.c[i]) / dz.c[i]
+                // - g_yz * df/dy / SQ(J*B)
+                - coef
+                      * (f_slice.up[i.yp()] + f_slice.up[ikp.yp()] - f_slice.down[i.ym()]
+                         - f_slice.down[ikp.ym()]));
+
+        yzresult[i] += fout / (J.c[i] * dz.c[i]);
+        yzresult[ikp] -= fout / (J.c[ikp] * dz.c[ikp]);
+      }
     }
-    {
-      // Calculate flux between j and j-1
-      const BoutReal coef =
-          0.5
-          * (g_23.c[i] / SQ(J.c[i] * Bxy.c[i])
-             + g_23.down[i.ym()] / SQ(J.down[i.ym()] * Bxy.down[i.ym()]));
-
-      const BoutReal dfdz = 0.5
-                            * (f_slice.c[ikp] - f_slice.c[ikm] + f_slice.down[ikp.ym()]
-                               - f_slice.down[ikm.ym()])
-                            / (dz.c[i] + dz.down[i.ym()]);
-
-      const BoutReal dfdy =
-          2. * (f_slice.c[i] - f_slice.down[i.ym()]) / (dy.c[i] + dy.down[i.ym()]);
-
-      const BoutReal fout = 0.25 * (a_slice.c[i] + a_slice.down[i.ym()])
-                            * (J.c[i] * g23.c[i] + J.down[i.ym()] * g23.down[i.ym()])
-                            * (dfdz - coef * dfdy);
-
-      yzresult[i] -= fout / (dy.c[i] * J.c[i]);
-    }
-    // Z flux
-    {
-
-      // Coefficient in front of df/dy term
-      const BoutReal coef = g_23.c[i] / (dy.up[i.yp()] + 2. * dy.c[i] + dy.down[i.ym()])
-                            / SQ(J.c[i] * Bxy.c[i]);
-
-      const BoutReal fout =
-          0.25 * (a_slice.c[i] + a_slice.c[ikp])
-          * (J.c[i] * coord->g33[i] + J.c[ikp] * coord->g33[ikp])
-          * ( // df/dz
-              (f_slice.c[ikp] - f_slice.c[i]) / dz.c[i]
-              // - g_yz * df/dy / SQ(J*B)
-              - coef
-                    * (f_slice.up[i.yp()] + f_slice.up[ikp.yp()] - f_slice.down[i.ym()]
-                       - f_slice.down[ikp.ym()]));
-
-      yzresult[i] += fout / (J.c[i] * dz.c[i]);
-      yzresult[ikp] -= fout / (J.c[ikp] * dz.c[ikp]);
-    }
+  } else {
+    ASSERT1(mesh->yend == 0);
   }
 
   // Check if we need to transform back
@@ -209,31 +214,32 @@ Field3D Div_par_K_Grad_par(const Field3D& Kin, const Field3D& fin, bool bndry_fl
     if (bndry_flux || mesh->periodicY(i.x()) || !mesh->lastY(i.x())
         || (i.y() != mesh->yend)) {
 
-      const BoutReal c = 0.5 * (K[i] + Kup[iyp]);             // K at the upper boundary
-      const BoutReal J = 0.5 * (coord->J[i] + coord->J[iyp]); // Jacobian at boundary
-      const BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iyp]);
+      const BoutReal c = 0.5 * (K[i] + Kup[iyp]); // K at the upper boundary
+      const BoutReal J = 0.5 * (coord->J()[i] + coord->J()[iyp]); // Jacobian at boundary
+      const BoutReal g_22 = 0.5 * (coord->g_22()[i] + coord->g_22()[iyp]);
 
-      const BoutReal gradient = 2. * (fup[iyp] - f[i]) / (coord->dy[i] + coord->dy[iyp]);
+      const BoutReal gradient =
+          2. * (fup[iyp] - f[i]) / (coord->dy()[i] + coord->dy()[iyp]);
 
       const BoutReal flux = c * J * gradient / g_22;
 
-      result[i] += flux / (coord->dy[i] * coord->J[i]);
+      result[i] += flux / (coord->dy()[i] * coord->J()[i]);
     }
 
     // Calculate flux at lower surface
     if (bndry_flux || mesh->periodicY(i.x()) || !mesh->firstY(i.x())
         || (i.y() != mesh->ystart)) {
-      const BoutReal c = 0.5 * (K[i] + Kdown[iym]);           // K at the lower boundary
-      const BoutReal J = 0.5 * (coord->J[i] + coord->J[iym]); // Jacobian at boundary
+      const BoutReal c = 0.5 * (K[i] + Kdown[iym]); // K at the lower boundary
+      const BoutReal J = 0.5 * (coord->J()[i] + coord->J()[iym]); // Jacobian at boundary
 
-      const BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iym]);
+      const BoutReal g_22 = 0.5 * (coord->g_22()[i] + coord->g_22()[iym]);
 
       const BoutReal gradient =
-          2. * (f[i] - fdown[iym]) / (coord->dy[i] + coord->dy[iym]);
+          2. * (f[i] - fdown[iym]) / (coord->dy()[i] + coord->dy()[iym]);
 
       const BoutReal flux = c * J * gradient / g_22;
 
-      result[i] -= flux / (coord->dy[i] * coord->J[i]);
+      result[i] -= flux / (coord->dy()[i] * coord->J()[i]);
     }
   }
 
@@ -566,69 +572,102 @@ Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc) {
 
 // Explicit instantiations of flux-limited finite volume methods
 template Field3D Div_par_fvv<Upwind>(const Field3D& f_in, const Field3D& v_in,
-                                     const Field3D& wave_speed_in, bool fixflux = true);
+                                     const Field3D& wave_speed_in, bool fixflux);
 template Field3D Div_par<Upwind>(const Field3D& f_in, const Field3D& v_in,
-                                 const Field3D& wave_speed_in, bool fixflux = true);
+                                 const Field3D& wave_speed_in, bool fixflux);
 template Field3D Div_f_v<Upwind>(const Field3D& n_in, const Vector3D& v, bool bndry_flux);
 template Field3D Div_par_mod<Upwind>(const Field3D& f_in, const Field3D& v_in,
                                      const Field3D& wave_speed_in, Field3D& flow_ylow,
-                                     bool fixflux = true);
+                                     bool fixflux, bool dissipative);
+template Field3D Div_par_fvv_heating<Upwind>(const Field3D& f_in, const Field3D& v_in,
+                                             const Field3D& wave_speed_in,
+                                             Field3D& flow_ylow, bool fixflux);
+template Field3D Div_a_Grad_perp_limit<Upwind>(const Field3D& a, const Field3D& g,
+                                               const Field3D& f);
 
 template Field3D Div_par_fvv<Fromm>(const Field3D& f_in, const Field3D& v_in,
-                                    const Field3D& wave_speed_in, bool fixflux = true);
+                                    const Field3D& wave_speed_in, bool fixflux);
 template Field3D Div_par<Fromm>(const Field3D& f_in, const Field3D& v_in,
-                                const Field3D& wave_speed_in, bool fixflux = true);
+                                const Field3D& wave_speed_in, bool fixflux);
 template Field3D Div_f_v<Fromm>(const Field3D& n_in, const Vector3D& v, bool bndry_flux);
 template Field3D Div_par_mod<Fromm>(const Field3D& f_in, const Field3D& v_in,
                                     const Field3D& wave_speed_in, Field3D& flow_ylow,
-                                    bool fixflux = true);
+                                    bool fixflux, bool dissipative);
+template Field3D Div_par_fvv_heating<Fromm>(const Field3D& f_in, const Field3D& v_in,
+                                            const Field3D& wave_speed_in,
+                                            Field3D& flow_ylow, bool fixflux);
+template Field3D Div_a_Grad_perp_limit<Fromm>(const Field3D& a, const Field3D& g,
+                                              const Field3D& f);
 
 template Field3D Div_par_fvv<MinMod>(const Field3D& f_in, const Field3D& v_in,
-                                     const Field3D& wave_speed_in, bool fixflux = true);
+                                     const Field3D& wave_speed_in, bool fixflux);
 template Field3D Div_par<MinMod>(const Field3D& f_in, const Field3D& v_in,
-                                 const Field3D& wave_speed_in, bool fixflux = true);
+                                 const Field3D& wave_speed_in, bool fixflux);
 template Field3D Div_f_v<MinMod>(const Field3D& n_in, const Vector3D& v, bool bndry_flux);
 template Field3D Div_par_mod<MinMod>(const Field3D& f_in, const Field3D& v_in,
                                      const Field3D& wave_speed_in, Field3D& flow_ylow,
-                                     bool fixflux = true);
+                                     bool fixflux, bool dissipative);
+template Field3D Div_par_fvv_heating<MinMod>(const Field3D& f_in, const Field3D& v_in,
+                                             const Field3D& wave_speed_in,
+                                             Field3D& flow_ylow, bool fixflux);
+template Field3D Div_a_Grad_perp_limit<MinMod>(const Field3D& a, const Field3D& g,
+                                               const Field3D& f);
 
 template Field3D Div_par_fvv<MC>(const Field3D& f_in, const Field3D& v_in,
-                                 const Field3D& wave_speed_in, bool fixflux = true);
+                                 const Field3D& wave_speed_in, bool fixflux);
 template Field3D Div_par<MC>(const Field3D& f_in, const Field3D& v_in,
-                             const Field3D& wave_speed_in, bool fixflux = true);
+                             const Field3D& wave_speed_in, bool fixflux);
 template Field3D Div_f_v<MC>(const Field3D& n_in, const Vector3D& v, bool bndry_flux);
 template Field3D Div_par_mod<MC>(const Field3D& f_in, const Field3D& v_in,
                                  const Field3D& wave_speed_in, Field3D& flow_ylow,
-                                 bool fixflux = true);
+                                 bool fixflux, bool dissipative);
+template Field3D Div_par_fvv_heating<MC>(const Field3D& f_in, const Field3D& v_in,
+                                         const Field3D& wave_speed_in, Field3D& flow_ylow,
+                                         bool fixflux);
+template Field3D Div_a_Grad_perp_limit<MC>(const Field3D& a, const Field3D& g,
+                                           const Field3D& f);
 
 template Field3D Div_par_fvv<Superbee>(const Field3D& f_in, const Field3D& v_in,
-                                       const Field3D& wave_speed_in, bool fixflux = true);
+                                       const Field3D& wave_speed_in, bool fixflux);
 template Field3D Div_par<Superbee>(const Field3D& f_in, const Field3D& v_in,
-                                   const Field3D& wave_speed_in, bool fixflux = true);
+                                   const Field3D& wave_speed_in, bool fixflux);
 template Field3D Div_f_v<Superbee>(const Field3D& n_in, const Vector3D& v,
                                    bool bndry_flux);
 template Field3D Div_par_mod<Superbee>(const Field3D& f_in, const Field3D& v_in,
                                        const Field3D& wave_speed_in, Field3D& flow_ylow,
-                                       bool fixflux = true);
+                                       bool fixflux, bool dissipative);
+template Field3D Div_par_fvv_heating<Superbee>(const Field3D& f_in, const Field3D& v_in,
+                                               const Field3D& wave_speed_in,
+                                               Field3D& flow_ylow, bool fixflux);
+template Field3D Div_a_Grad_perp_limit<Superbee>(const Field3D& a, const Field3D& g,
+                                                 const Field3D& f);
 
 template Field3D Div_par_fvv<VanAlbada>(const Field3D& f_in, const Field3D& v_in,
-                                        const Field3D& wave_speed_in,
-                                        bool fixflux = true);
+                                        const Field3D& wave_speed_in, bool fixflux);
 template Field3D Div_par<VanAlbada>(const Field3D& f_in, const Field3D& v_in,
-                                    const Field3D& wave_speed_in, bool fixflux = true);
+                                    const Field3D& wave_speed_in, bool fixflux);
 template Field3D Div_f_v<VanAlbada>(const Field3D& n_in, const Vector3D& v,
                                     bool bndry_flux);
 template Field3D Div_par_mod<VanAlbada>(const Field3D& f_in, const Field3D& v_in,
                                         const Field3D& wave_speed_in, Field3D& flow_ylow,
-                                        bool fixflux = true);
+                                        bool fixflux, bool dissipative);
+template Field3D Div_par_fvv_heating<VanAlbada>(const Field3D& f_in, const Field3D& v_in,
+                                                const Field3D& wave_speed_in,
+                                                Field3D& flow_ylow, bool fixflux);
+template Field3D Div_a_Grad_perp_limit<VanAlbada>(const Field3D& a, const Field3D& g,
+                                                  const Field3D& f);
 
 template Field3D Div_par_fvv<WENO3>(const Field3D& f_in, const Field3D& v_in,
-                                    const Field3D& wave_speed_in, bool fixflux = true);
+                                    const Field3D& wave_speed_in, bool fixflux);
 template Field3D Div_par<WENO3>(const Field3D& f_in, const Field3D& v_in,
-                                const Field3D& wave_speed_in, bool fixflux = true);
+                                const Field3D& wave_speed_in, bool fixflux);
 template Field3D Div_f_v<WENO3>(const Field3D& n_in, const Vector3D& v, bool bndry_flux);
 template Field3D Div_par_mod<WENO3>(const Field3D& f_in, const Field3D& v_in,
                                     const Field3D& wave_speed_in, Field3D& flow_ylow,
-                                    bool fixflux = true);
-
+                                    bool fixflux, bool dissipative);
+template Field3D Div_par_fvv_heating<WENO3>(const Field3D& f_in, const Field3D& v_in,
+                                            const Field3D& wave_speed_in,
+                                            Field3D& flow_ylow, bool fixflux);
+template Field3D Div_a_Grad_perp_limit<WENO3>(const Field3D& a, const Field3D& g,
+                                              const Field3D& f);
 } // Namespace FV

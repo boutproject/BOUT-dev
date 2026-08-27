@@ -17,7 +17,7 @@ TEST(SolverFactoryTest, GetDefaultSolverType) {
 TEST(SolverFactoryTest, RegisterSolver) {
   auto available = SolverFactory::getInstance().listAvailable();
 
-  auto found_fake = std::find(begin(available), end(available), "fake_solver");
+  auto found_fake = std::ranges::find(available, "fake_solver");
 
   EXPECT_NE(found_fake, end(available));
 }

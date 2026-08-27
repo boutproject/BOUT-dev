@@ -51,11 +51,14 @@
 
 #include <cmath>
 #include <ctime>
+#include <fstream>
+#include <iterator>
 #include <memory>
 #include <numeric>
 #include <set>
 #include <string>
 #include <utility>
+#include <vector>
 
 // Implementations:
 #include "impls/adams_bashforth/adams_bashforth.hxx"
@@ -79,6 +82,44 @@
 int* Solver::pargc = nullptr;
 char*** Solver::pargv = nullptr;
 
+namespace {
+std::string jsonEscape(const std::string& input) {
+  std::string escaped;
+  escaped.reserve(input.size());
+
+  for (const char ch : input) {
+    switch (ch) {
+    case '\\':
+      escaped += "\\\\";
+      break;
+    case '"':
+      escaped += "\\\"";
+      break;
+    case '\b':
+      escaped += "\\b";
+      break;
+    case '\f':
+      escaped += "\\f";
+      break;
+    case '\n':
+      escaped += "\\n";
+      break;
+    case '\r':
+      escaped += "\\r";
+      break;
+    case '\t':
+      escaped += "\\t";
+      break;
+    default:
+      escaped += ch;
+      break;
+    }
+  }
+
+  return escaped;
+}
+} // namespace
+
 /**************************************************************************
  * Constructor
  **************************************************************************/
@@ -94,6 +135,18 @@ Solver::Solver(Options* opts)
                                   "timestep, to make it easier to concatenate output "
                                   "data sets in time")
                              .withDefault(false)),
+      save_jacobian_index_base(
+          (*options)["save_jacobian_index_base"]
+              .doc("Write jacobian_index_base so saved PETSc Jacobians can be mapped "
+                   "back to variables and cell indices in post-processing")
+              .withDefault(false)),
+      jacobian_export_prefix((*options)["jacobian_export_prefix"]
+                                 .doc("Prefix for saved Jacobian matrix files")
+                                 .withDefault("jacobian")),
+      jacobian_export_format(
+          (*options)["jacobian_export_format"]
+              .doc("PETSc MatView format for saved Jacobians: binary or ascii")
+              .withDefault(bout::PetscMatrixExportFormat::binary)),
       is_nonsplit_model_diffusive(
           (*options)["is_nonsplit_model_diffusive"]
               .doc("If not a split operator, treat RHS as diffusive?")
@@ -705,6 +758,14 @@ void Solver::outputVars(Options& output_options, bool save_repeat) {
            "or the previous run did not have a run_id.")
       .assignRepeat(run_restart_from, "t", save_repeat and save_repeat_run_id, "Solver");
 
+  if (initialised and save_jacobian_index_base) {
+    // The Jacobian index base offsets are not time-dependent
+    // Only need to calculate once, but can only be calculated
+    // once the solver has been initialised. This outputVars
+    // is called once at the start before Solver is initialised.
+    output_options["jacobian_index_base"].force(jacobianIndexBase(), "Solver");
+  }
+
   // Add 2D and 3D evolving fields to output file
   for (const auto& f : f2d) {
     // Add to dump file (appending)
@@ -1205,6 +1266,133 @@ Field3D Solver::globalIndex(int localStart) {
   mesh->communicate(index);
 
   return index;
+}
+
+Field3D Solver::jacobianIndexBase(int localStart) { return globalIndex(localStart); }
+
+std::vector<Solver::JacobianVariableMetadata> Solver::getJacobianMetadata2D() const {
+  std::vector<JacobianVariableMetadata> metadata;
+  metadata.reserve(f2d.size());
+
+  for (int i = 0; i < static_cast<int>(f2d.size()); ++i) {
+    metadata.push_back(JacobianVariableMetadata{i, f2d[i].name, toString(f2d[i].location),
+                                                f2d[i].evolve_bndry, f2d[i].constraint,
+                                                f2d[i].description});
+  }
+
+  return metadata;
+}
+
+std::vector<Solver::JacobianVariableMetadata> Solver::getJacobianMetadata3D() const {
+  std::vector<JacobianVariableMetadata> metadata;
+  metadata.reserve(f3d.size());
+
+  for (int i = 0; i < static_cast<int>(f3d.size()); ++i) {
+    metadata.push_back(JacobianVariableMetadata{i, f3d[i].name, toString(f3d[i].location),
+                                                f3d[i].evolve_bndry, f3d[i].constraint,
+                                                f3d[i].description});
+  }
+
+  return metadata;
+}
+
+Solver::JacobianMetadata
+Solver::getJacobianMetadata(const std::string& solver_name) const {
+  return JacobianMetadata{1,
+                          solver_name,
+                          n2Dvars(),
+                          n3Dvars(),
+                          getJacobianMetadata2D(),
+                          getJacobianMetadata3D(),
+                          "For each (x,y): 2D variables at z=0, then 3D variables for "
+                          "z=0..Nz-1; evolved boundary points precede RGN_NOBNDRY"};
+}
+
+void Solver::writeJacobianMetadataJson(const std::string& filename,
+                                       const std::string& solver_name) const {
+  if (MYPE != 0) {
+    return;
+  }
+
+  const auto metadata = getJacobianMetadata(solver_name);
+  std::ofstream output_file(filename);
+  if (!output_file.is_open()) {
+    throw BoutException("Failed to open Jacobian metadata file '{}'", filename);
+  }
+
+  std::string json_file;
+  json_file.reserve(512);
+
+  auto write_variables = [&](const std::vector<JacobianVariableMetadata>& variables,
+                             const char* name) {
+    fmt::format_to(std::back_inserter(json_file), "  \"{}\": [\n", name);
+    for (std::size_t i = 0; i < variables.size(); ++i) {
+      const auto& variable = variables[i];
+      fmt::format_to(
+          std::back_inserter(json_file),
+          "    {{\"offset\": {}, \"name\": \"{}\", \"location\": \"{}\", "
+          "\"evolve_bndry\": {}, \"constraint\": {}, \"description\": \"{}\"}}",
+          variable.offset, jsonEscape(variable.name), jsonEscape(variable.location),
+          variable.evolve_bndry ? "true" : "false",
+          variable.constraint ? "true" : "false", jsonEscape(variable.description));
+      if (i + 1 != variables.size()) {
+        fmt::format_to(std::back_inserter(json_file), ",");
+      }
+      fmt::format_to(std::back_inserter(json_file), "\n");
+    }
+    fmt::format_to(std::back_inserter(json_file), "  ]");
+  };
+
+  fmt::format_to(std::back_inserter(json_file),
+                 "{{\n"
+                 "  \"format_version\": {},\n"
+                 "  \"solver\": \"{}\",\n"
+                 "  \"n2d\": {},\n"
+                 "  \"n3d\": {},\n",
+                 metadata.format_version, jsonEscape(metadata.solver_name), metadata.n2d,
+                 metadata.n3d);
+  write_variables(metadata.variables_2d, "variables_2d");
+  fmt::format_to(std::back_inserter(json_file), ",\n");
+  write_variables(metadata.variables_3d, "variables_3d");
+  fmt::format_to(std::back_inserter(json_file),
+                 ",\n"
+                 "  \"ordering\": \"{}\"\n"
+                 "}}\n",
+                 jsonEscape(metadata.ordering));
+
+  output_file << json_file;
+}
+
+void Solver::writeOnceJacobianMetadata(const std::string& solver_name) {
+  if (jacobian_metadata_written) {
+    return;
+  }
+
+  const std::string datadir = Options::root()["datadir"];
+  const std::string metadata_filename = datadir + "/jacobian_metadata.json";
+  output.write("Jacobian metadata written to {}\n", metadata_filename);
+  writeJacobianMetadataJson(metadata_filename, solver_name);
+  jacobian_metadata_written = true;
+}
+
+#if BOUT_HAS_PETSC
+void Solver::writeJacobianMatrix(bout::JacobianExportKind kind, Mat jacobian) {
+  BOUT_DO_PETSC(PetscPreconditioner::saveMatrix(
+      jacobian,
+      getJacobianMatrixFilename(this->jacobian_export_prefix, kind,
+                                this->jacobian_export_format),
+      this->jacobian_export_format));
+}
+#endif
+
+std::string Solver::getJacobianMatrixFilename(const std::string& jacobian_export_prefix,
+                                              bout::JacobianExportKind kind,
+                                              bout::PetscMatrixExportFormat format) {
+  // The directory the output data is stored in
+  const std::string datadir = Options::root()["datadir"];
+  const std::string stem = fmt::format("{}/{}_{}_{:06d}", datadir, jacobian_export_prefix,
+                                       toString(kind), this->jacobian_export_counter++);
+  return stem + (format == bout::PetscMatrixExportFormat::binary ? ".dat" : ".txt");
 }
 
 /**************************************************************************

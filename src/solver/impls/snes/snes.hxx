@@ -35,6 +35,7 @@
 
 class SNESSolver;
 
+#include <string>
 #include <vector>
 
 #include "mpi.h"
@@ -110,6 +111,32 @@ public:
   /// finite difference approximated Jacobian.
   PetscErrorCode scaleJacobian(Mat Jac_new);
 
+  /// Convert solver coordinates into the physical variables used by the model.
+  ///
+  /// This applies any active solver-space transforms, for example variable
+  /// scaling or ``asinh`` variables, before the model RHS is evaluated.
+  PetscErrorCode toPhysicalState(Vec x, Vec physical_x);
+
+  /// Evaluate the bare model RHS in physical variables.
+  ///
+  /// This loads ``x`` into the BOUT++ evolving fields, calls ``run_rhs()``, and
+  /// stores the resulting derivatives in ``f`` without applying solver-space
+  /// transforms.
+  PetscErrorCode raw_rhs_function(Vec x, Vec f, bool linear);
+
+  /// Evaluate the RHS in solver coordinates.
+  ///
+  /// This maps ``x`` into physical variables, calls ``raw_rhs_function()``, then
+  /// transforms the derivatives back into the coordinate system used internally by
+  /// SNES.
+  PetscErrorCode scaled_rhs_function(Vec x, Vec f, bool linear);
+
+  /// Save a diagnostic Jacobian if enabled by ``solver:save_jacobian``.
+  ///
+  /// ``system`` exports the Jacobian used directly by SNES. ``scaled`` and ``rhs``
+  /// build throwaway coloring Jacobians for diagnostics only.
+  void maybeExportJacobian(Mat system_jacobian, Vec x_solver);
+
   /// Save diagnostics to output
   void outputVars(Options& output_options, bool save_repeat = true) override;
 
@@ -120,14 +147,11 @@ private:
 
   /// Rescale state (snes_x) so that all quantities are around 1. If
   /// quantities are near zero then RTOL is used.
-  PetscErrorCode rescale(int& saved_jacobian_lag);
-
-  /// Call the physics model RHS function
-  ///
-  /// @param[in] x       The state vector. Will be scaled if scale_vars=true
-  /// @param[out] f      The vector for the result f(x)
-  /// @param[in] linear  Specifies that the SNES solver is in a linear (KSP) inner loop
-  PetscErrorCode rhs_function(Vec x, Vec f, bool linear);
+  PetscErrorCode rescale();
+  /// Build and save a diagnostic Jacobian of the requested kind.
+  void saveDiagnosticJacobian(bout::JacobianExportKind kind, Vec x_solver);
+  /// Write the matrix and shared JSON metadata for one diagnostic Jacobian.
+  void exportMatrixAndMetadata(bout::JacobianExportKind kind, Mat jacobian);
 
   BoutSnesOutput output_trigger; ///< Sets when outputs are written
 
@@ -284,6 +308,10 @@ private:
 
   bool asinh_vars; ///< Evolve asinh(vars) to compress magnitudes while preserving signs
   const BoutReal asinh_scale = 1e-5; // Scale below which asinh response becomes ~linear
+
+  bool save_jacobian; ///< Save Jacobian diagnostics to ``datadir``?
+  bout::JacobianExportKind
+      jacobian_export_kind; ///< Export ``system``, ``scaled``, or ``rhs`` Jacobian
 
   std::vector<Field2D>
       resid_2d; ///< Storage for residuals of SNES solve, unpacked from snes_f

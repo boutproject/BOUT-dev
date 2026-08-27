@@ -2,7 +2,7 @@
  * Class for 2D vectors. Built on the Field2D class,
  * all operators relating to vectors are here (none in Field classes)
  *
- * As with Field2D, Vector2D are constant in z (toroidal angle) 
+ * As with Field2D, Vector2D are constant in z (toroidal angle)
  *
  * B.Dudson, October 2007
  *
@@ -10,7 +10,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -28,16 +28,26 @@
  *
  **************************************************************************/
 
-#include <bout/globals.hxx>
-
+#include <bout/assert.hxx>
 #include <bout/boundary_op.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/coordinates.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field_data.hxx>
+#include <bout/globals.hxx>
 #include <bout/interpolation.hxx>
+#include <bout/metric_tensor.hxx>
+#include <bout/region.hxx>
 #include <bout/scorepwrapper.hxx>
 #include <bout/vector2d.hxx>
 
+#include <cmath>
+#include <cstdlib>
+#include <string>
+
 Vector2D::Vector2D(const Vector2D& f)
-    : FieldData(f), x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),
+    : FieldData(f), x(f.x), y(f.y), z(f.z), covariant(f.covariant),
       location(f.getLocation()) {}
 
 Vector2D::Vector2D(Mesh* localmesh, bool covariant, CELL_LOC location)
@@ -67,10 +77,9 @@ void Vector2D::toCovariant() {
     Mesh* localmesh = getMesh();
 
     if (location == CELL_VSHIFT) {
-      Coordinates *metric_x, *metric_y, *metric_z;
-      metric_x = localmesh->getCoordinates(CELL_XLOW);
-      metric_y = localmesh->getCoordinates(CELL_YLOW);
-      metric_z = localmesh->getCoordinates(CELL_ZLOW);
+      const auto* metric_x = localmesh->getCoordinates(CELL_XLOW);
+      const auto* metric_y = localmesh->getCoordinates(CELL_YLOW);
+      const auto* metric_z = localmesh->getCoordinates(CELL_ZLOW);
 
       // Fields at different locations so we need to interpolate
       // Note : Could reduce peak memory requirement here by just
@@ -86,23 +95,28 @@ void Vector2D::toCovariant() {
 
       // multiply by g_{ij}
       BOUT_FOR(i, x.getRegion("RGN_ALL")) {
-        x[i] = metric_x->g_11[i] * x[i] + metric_x->g_12[i] * y_at_x[i]
-               + metric_x->g_13[i] * z_at_x[i];
-        y[i] = metric_y->g_22[i] * y[i] + metric_y->g_12[i] * x_at_y[i]
-               + metric_y->g_23[i] * z_at_y[i];
-        z[i] = metric_z->g_33[i] * z[i] + metric_z->g_13[i] * x_at_z[i]
-               + metric_z->g_23[i] * y_at_z[i];
+        x[i] = (metric_x->g_11()[i] * x[i]) + (metric_x->g_12()[i] * y_at_x[i])
+               + (metric_x->g_13()[i] * z_at_x[i]);
+        y[i] = (metric_y->g_22()[i] * y[i]) + (metric_y->g_12()[i] * x_at_y[i])
+               + (metric_y->g_23()[i] * z_at_y[i]);
+        z[i] = (metric_z->g_33()[i] * z[i]) + (metric_z->g_13()[i] * x_at_z[i])
+               + (metric_z->g_23()[i] * y_at_z[i]);
       };
     } else {
-      const auto metric = localmesh->getCoordinates(location);
+      auto* const metric = localmesh->getCoordinates(location);
 
       // Need to use temporary arrays to store result
-      Coordinates::FieldMetric gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
+      bout::FieldMetric gx{emptyFrom(x)};
+      bout::FieldMetric gy{emptyFrom(y)};
+      bout::FieldMetric gz{emptyFrom(z)};
 
       BOUT_FOR(i, x.getRegion("RGN_ALL")) {
-        gx[i] = metric->g_11[i] * x[i] + metric->g_12[i] * y[i] + metric->g_13[i] * z[i];
-        gy[i] = metric->g_22[i] * y[i] + metric->g_12[i] * x[i] + metric->g_23[i] * z[i];
-        gz[i] = metric->g_33[i] * z[i] + metric->g_13[i] * x[i] + metric->g_23[i] * y[i];
+        gx[i] = (metric->g_11()[i] * x[i]) + (metric->g_12()[i] * y[i])
+                + (metric->g_13()[i] * z[i]);
+        gy[i] = (metric->g_22()[i] * y[i]) + (metric->g_12()[i] * x[i])
+                + (metric->g_23()[i] * z[i]);
+        gz[i] = (metric->g_33()[i] * z[i]) + (metric->g_13()[i] * x[i])
+                + (metric->g_23()[i] * y[i]);
       };
 
       x = gx;
@@ -120,11 +134,9 @@ void Vector2D::toContravariant() {
     Mesh* localmesh = getMesh();
 
     if (location == CELL_VSHIFT) {
-      Coordinates *metric_x, *metric_y, *metric_z;
-
-      metric_x = localmesh->getCoordinates(CELL_XLOW);
-      metric_y = localmesh->getCoordinates(CELL_YLOW);
-      metric_z = localmesh->getCoordinates(CELL_ZLOW);
+      const auto* metric_x = localmesh->getCoordinates(CELL_XLOW);
+      const auto* metric_y = localmesh->getCoordinates(CELL_YLOW);
+      const auto* metric_z = localmesh->getCoordinates(CELL_ZLOW);
 
       // Fields at different locations so we need to interpolate
       // Note : Could reduce peak memory requirement here by just
@@ -140,24 +152,29 @@ void Vector2D::toContravariant() {
 
       // multiply by g_{ij}
       BOUT_FOR(i, x.getRegion("RGN_ALL")) {
-        x[i] = metric_x->g11[i] * x[i] + metric_x->g12[i] * y_at_x[i]
-               + metric_x->g13[i] * z_at_x[i];
-        y[i] = metric_y->g22[i] * y[i] + metric_y->g12[i] * x_at_y[i]
-               + metric_y->g23[i] * z_at_y[i];
-        z[i] = metric_z->g33[i] * z[i] + metric_z->g13[i] * x_at_z[i]
-               + metric_z->g23[i] * y_at_z[i];
+        x[i] = (metric_x->g11()[i] * x[i]) + (metric_x->g12()[i] * y_at_x[i])
+               + (metric_x->g13()[i] * z_at_x[i]);
+        y[i] = (metric_y->g22()[i] * y[i]) + (metric_y->g12()[i] * x_at_y[i])
+               + (metric_y->g23()[i] * z_at_y[i]);
+        z[i] = (metric_z->g33()[i] * z[i]) + (metric_z->g13()[i] * x_at_z[i])
+               + (metric_z->g23()[i] * y_at_z[i]);
       };
 
     } else {
-      const auto metric = localmesh->getCoordinates(location);
+      auto* const metric = localmesh->getCoordinates(location);
 
       // Need to use temporary arrays to store result
-      Coordinates::FieldMetric gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
+      bout::FieldMetric gx{emptyFrom(x)};
+      bout::FieldMetric gy{emptyFrom(y)};
+      bout::FieldMetric gz{emptyFrom(z)};
 
       BOUT_FOR(i, x.getRegion("RGN_ALL")) {
-        gx[i] = metric->g11[i] * x[i] + metric->g12[i] * y[i] + metric->g13[i] * z[i];
-        gy[i] = metric->g22[i] * y[i] + metric->g12[i] * x[i] + metric->g23[i] * z[i];
-        gz[i] = metric->g33[i] * z[i] + metric->g13[i] * x[i] + metric->g23[i] * y[i];
+        gx[i] = (metric->g11()[i] * x[i]) + (metric->g12()[i] * y[i])
+                + (metric->g13()[i] * z[i]);
+        gy[i] = (metric->g22()[i] * y[i]) + (metric->g12()[i] * x[i])
+                + (metric->g23()[i] * z[i]);
+        gz[i] = (metric->g33()[i] * z[i]) + (metric->g13()[i] * x[i])
+                + (metric->g23()[i] * y[i]);
       };
 
       x = gx;
@@ -197,7 +214,7 @@ Vector2D* Vector2D::timeDeriv() {
 }
 
 /***************************************************************
- *                         OPERATORS 
+ *                         OPERATORS
  ***************************************************************/
 
 /////////////////// ASSIGNMENT ////////////////////
@@ -303,7 +320,7 @@ Vector2D& Vector2D::operator/=(const Field2D& rhs) {
 }
 
 /***************************************************************
- *                      BINARY OPERATORS 
+ *                      BINARY OPERATORS
  ***************************************************************/
 
 ////////////////// ADDITION //////////////////////
@@ -386,22 +403,22 @@ const Coordinates::FieldMetric Vector2D::operator*(const Vector2D& rhs) const {
     result = x * rhs.x + y * rhs.y + z * rhs.z;
   } else {
     // Both are covariant or contravariant
-    Coordinates* metric = localmesh->getCoordinates(location);
+    const Coordinates* metric = localmesh->getCoordinates(location);
 
     if (covariant) {
       // Both covariant
-      result =
-          x * rhs.x * metric->g11 + y * rhs.y * metric->g22 + z * rhs.z * metric->g33;
-      result += (x * rhs.y + y * rhs.x) * metric->g12
-                + (x * rhs.z + z * rhs.x) * metric->g13
-                + (y * rhs.z + z * rhs.y) * metric->g23;
+      result = x * rhs.x * metric->g11() + y * rhs.y * metric->g22()
+               + z * rhs.z * metric->g33();
+      result += (x * rhs.y + y * rhs.x) * metric->g12()
+                + (x * rhs.z + z * rhs.x) * metric->g13()
+                + (y * rhs.z + z * rhs.y) * metric->g23();
     } else {
       // Both contravariant
-      result =
-          x * rhs.x * metric->g_11 + y * rhs.y * metric->g_22 + z * rhs.z * metric->g_33;
-      result += (x * rhs.y + y * rhs.x) * metric->g_12
-                + (x * rhs.z + z * rhs.x) * metric->g_13
-                + (y * rhs.z + z * rhs.y) * metric->g_23;
+      result = x * rhs.x * metric->g_11() + y * rhs.y * metric->g_22()
+               + z * rhs.z * metric->g_33();
+      result += (x * rhs.y + y * rhs.x) * metric->g_12()
+                + (x * rhs.z + z * rhs.x) * metric->g_13()
+                + (y * rhs.z + z * rhs.y) * metric->g_23();
     }
   }
 

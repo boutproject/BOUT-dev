@@ -33,10 +33,12 @@ class Field;
 #include <cstdio>
 #include <optional>
 #include <string>
+#include <type_traits>
 
 #include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/build_config.hxx"
 #include "bout/field_data.hxx"
 #include "bout/region.hxx"
 #include "bout/traits.hxx"
@@ -134,12 +136,15 @@ public:
   virtual void setRegion([[maybe_unused]] std::optional<size_t> regionID) {}
   virtual void setRegion([[maybe_unused]] const std::string& region_name) {}
   virtual void resetRegion() {}
+  virtual void resetRegionParallel([[maybe_unused]] bool force) {};
   virtual std::optional<size_t> getRegionID() const { return {}; }
   virtual bool hasParallelSlices() const { return true; }
   virtual void calcParallelSlices() {}
   virtual void splitParallelSlices() {}
   virtual void clearParallelSlices() {}
   virtual size_t numberParallelSlices() const { return 0; }
+  virtual bool areCalcParallelSlicesAllowed() const { return false; }
+  virtual void disallowCalcParallelSlices() {}
 
 private:
   /// Labels for the type of coordinate system this field is defined over
@@ -539,53 +544,233 @@ inline BoutReal mean(const BinaryExpr<ResT, L, R, Func>& f, bool allpe = false,
   return bout::reduce::Mean::finalize(state);
 }
 
+namespace bout::op {
+struct Pow {
+  template <typename LView, typename RView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx, const LView& L,
+                                                        const RView& R) const {
+    return ::pow(L(idx), R(idx));
+  }
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(BoutReal a, BoutReal b) const {
+    return ::pow(a, b);
+  }
+};
+}; // namespace bout::op
+
+namespace bout::detail {
+template <typename T>
+std::optional<int> getPerpYIndex(const T& value);
+
+template <typename ResT, typename L, typename R, typename Func>
+std::optional<int> getPerpYIndex(const BinaryExpr<ResT, L, R, Func>& expr);
+
+template <typename ResT>
+std::optional<size_t> getPowRegionID(const Mesh* mesh, const std::string& region_name) {
+  if constexpr (std::is_same_v<ResT, Field3D>) {
+    return bout::detail::getField3DRegionID(mesh, region_name);
+  } else {
+    return std::nullopt;
+  }
+}
+
+template <typename ResT, typename L, typename R, typename LView, typename RView,
+          typename IndType>
+auto makePowExpr(const LView& lhs_view, const RView& rhs_view, Mesh* mesh,
+                 CELL_LOC location, DirectionTypes directions,
+                 std::optional<size_t> regionID, const Region<IndType>& region,
+                 std::optional<int> yindex = std::nullopt) {
+  return BinaryExpr<ResT, L, R, bout::op::Pow>{lhs_view, rhs_view, bout::op::Pow{},
+                                               mesh,     location, directions,
+                                               regionID, region,   yindex};
+}
+} // namespace bout::detail
+
 /// Exponent: pow(lhs, lhs) is \p lhs raised to the power of \p rhs
 ///
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument)
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-template <typename T, typename = bout::utils::EnableIfField<T>>
-T pow(const T& lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
-
-  ASSERT1(areFieldsCompatible(lhs, rhs));
-
-  T result{emptyFrom(lhs)};
-
-  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
-
-  checkData(result);
-  return result;
+template <typename L, typename R>
+std::enable_if_t<is_expr_field2d_v<L> && is_expr_field2d_v<R>,
+                 BinaryExpr<Field2D, L, R, bout::op::Pow>>
+pow(const L& lhs, const R& rhs) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  return bout::detail::makePowExpr<Field2D, L, R>(
+      static_cast<typename L::View>(lhs), static_cast<typename R::View>(rhs),
+      lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), std::nullopt,
+      lhs.getMesh()->getRegion2D("RGN_ALL"));
 }
 
-template <typename T, typename = bout::utils::EnableIfField<T>>
-T pow(const T& lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL") {
-
-  // Check if the inputs are allocated
-  checkData(lhs);
-  checkData(rhs);
-
-  T result{emptyFrom(lhs)};
-
-  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs); }
-
-  checkData(result);
-  return result;
+template <typename L, typename R>
+std::enable_if_t<is_expr_field2d_v<L> && is_expr_field2d_v<R>,
+                 BinaryExpr<Field2D, L, R, bout::op::Pow>>
+pow(const L& lhs, const R& rhs, const std::string& rgn) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  return bout::detail::makePowExpr<Field2D, L, R>(
+      static_cast<typename L::View>(lhs), static_cast<typename R::View>(rhs),
+      lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), std::nullopt,
+      lhs.getMesh()->getRegion2D(rgn));
 }
 
-template <typename T, typename = bout::utils::EnableIfField<T>>
-T pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
+template <typename L, typename R>
+std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>,
+                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
+pow(const L& lhs, const R& rhs) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
+  return bout::detail::makePowExpr<Field3D, L, R>(
+      static_cast<typename L::View>(lhs), static_cast<typename R::View>(rhs),
+      lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), regionID,
+      (regionID.has_value() ? lhs.getMesh()->getRegion(regionID.value())
+                            : lhs.getMesh()->getRegion("RGN_ALL")),
+      bout::detail::getPerpYIndex(lhs));
+}
 
-  // Check if the inputs are allocated
-  checkData(lhs);
-  checkData(rhs);
+template <typename L, typename R>
+std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>,
+                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
+pow(const L& lhs, const R& rhs, const std::string& rgn) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  return bout::detail::makePowExpr<Field3D, L, R>(
+      static_cast<typename L::View>(lhs), static_cast<typename R::View>(rhs),
+      lhs.getMesh(), lhs.getLocation(), lhs.getDirections(),
+      bout::detail::getPowRegionID<Field3D>(lhs.getMesh(), rgn),
+      lhs.getMesh()->getRegion(rgn), bout::detail::getPerpYIndex(lhs));
+}
 
-  // Define and allocate the output result
-  T result{emptyFrom(rhs)};
+template <typename L, typename R>
+std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>,
+                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
+pow(const L& lhs, const R& rhs) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  int mesh_nz = lhs.getMesh()->LocalNz;
+  return bout::detail::makePowExpr<Field3D, L, R>(
+      static_cast<typename L::View>(lhs),
+      static_cast<typename R::View>(rhs).setScale(1, mesh_nz), lhs.getMesh(),
+      lhs.getLocation(), lhs.getDirections(), lhs.getRegionID(),
+      lhs.getMesh()->getRegion("RGN_ALL"), bout::detail::getPerpYIndex(lhs));
+}
 
-  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs, rhs[i]); }
+template <typename L, typename R>
+std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>,
+                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
+pow(const L& lhs, const R& rhs, const std::string& rgn) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  int mesh_nz = lhs.getMesh()->LocalNz;
+  return bout::detail::makePowExpr<Field3D, L, R>(
+      static_cast<typename L::View>(lhs),
+      static_cast<typename R::View>(rhs).setScale(1, mesh_nz), lhs.getMesh(),
+      lhs.getLocation(), lhs.getDirections(),
+      bout::detail::getPowRegionID<Field3D>(lhs.getMesh(), rgn),
+      lhs.getMesh()->getRegion(rgn), bout::detail::getPerpYIndex(lhs));
+}
 
-  checkData(result);
-  return result;
+template <typename L, typename R>
+std::enable_if_t<is_expr_field2d_v<L> && is_expr_field3d_v<R>,
+                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
+pow(const L& lhs, const R& rhs) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  int mesh_nz = rhs.getMesh()->LocalNz;
+  return bout::detail::makePowExpr<Field3D, L, R>(
+      static_cast<typename L::View>(lhs).setScale(1, mesh_nz),
+      static_cast<typename R::View>(rhs), rhs.getMesh(), rhs.getLocation(),
+      rhs.getDirections(), rhs.getRegionID(), rhs.getMesh()->getRegion("RGN_ALL"),
+      bout::detail::getPerpYIndex(rhs));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_field2d_v<L> && is_expr_field3d_v<R>,
+                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
+pow(const L& lhs, const R& rhs, const std::string& rgn) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  int mesh_nz = rhs.getMesh()->LocalNz;
+  return bout::detail::makePowExpr<Field3D, L, R>(
+      static_cast<typename L::View>(lhs).setScale(1, mesh_nz),
+      static_cast<typename R::View>(rhs), rhs.getMesh(), rhs.getLocation(),
+      rhs.getDirections(), bout::detail::getPowRegionID<Field3D>(rhs.getMesh(), rgn),
+      rhs.getMesh()->getRegion(rgn), bout::detail::getPerpYIndex(rhs));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_field2d_v<L> && is_expr_constant_v<R>,
+                 BinaryExpr<Field2D, L, Constant<R>, bout::op::Pow>>
+pow(const L& lhs, R rhs) {
+  return bout::detail::makePowExpr<Field2D, L, Constant<R>>(
+      static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
+      lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), std::nullopt,
+      lhs.getMesh()->getRegion2D("RGN_ALL"));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_field2d_v<L> && is_expr_constant_v<R>,
+                 BinaryExpr<Field2D, L, Constant<R>, bout::op::Pow>>
+pow(const L& lhs, R rhs, const std::string& rgn) {
+  return bout::detail::makePowExpr<Field2D, L, Constant<R>>(
+      static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
+      lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), std::nullopt,
+      lhs.getMesh()->getRegion2D(rgn));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_constant_v<L> && is_expr_field2d_v<R>,
+                 BinaryExpr<Field2D, Constant<L>, R, bout::op::Pow>>
+pow(L lhs, const R& rhs) {
+  return bout::detail::makePowExpr<Field2D, Constant<L>, R>(
+      static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
+      rhs.getMesh(), rhs.getLocation(), rhs.getDirections(), std::nullopt,
+      rhs.getMesh()->getRegion2D("RGN_ALL"));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_constant_v<L> && is_expr_field2d_v<R>,
+                 BinaryExpr<Field2D, Constant<L>, R, bout::op::Pow>>
+pow(L lhs, const R& rhs, const std::string& rgn) {
+  return bout::detail::makePowExpr<Field2D, Constant<L>, R>(
+      static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
+      rhs.getMesh(), rhs.getLocation(), rhs.getDirections(), std::nullopt,
+      rhs.getMesh()->getRegion2D(rgn));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_field3d_v<L> && is_expr_constant_v<R>,
+                 BinaryExpr<Field3D, L, Constant<R>, bout::op::Pow>>
+pow(const L& lhs, R rhs) {
+  return bout::detail::makePowExpr<Field3D, L, Constant<R>>(
+      static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
+      lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), lhs.getRegionID(),
+      lhs.getMesh()->getRegion("RGN_ALL"), bout::detail::getPerpYIndex(lhs));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_field3d_v<L> && is_expr_constant_v<R>,
+                 BinaryExpr<Field3D, L, Constant<R>, bout::op::Pow>>
+pow(const L& lhs, R rhs, const std::string& rgn) {
+  return bout::detail::makePowExpr<Field3D, L, Constant<R>>(
+      static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
+      lhs.getMesh(), lhs.getLocation(), lhs.getDirections(),
+      bout::detail::getPowRegionID<Field3D>(lhs.getMesh(), rgn),
+      lhs.getMesh()->getRegion(rgn), bout::detail::getPerpYIndex(lhs));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_constant_v<L> && is_expr_field3d_v<R>,
+                 BinaryExpr<Field3D, Constant<L>, R, bout::op::Pow>>
+pow(L lhs, const R& rhs) {
+  return bout::detail::makePowExpr<Field3D, Constant<L>, R>(
+      static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
+      rhs.getMesh(), rhs.getLocation(), rhs.getDirections(), rhs.getRegionID(),
+      rhs.getMesh()->getRegion("RGN_ALL"), bout::detail::getPerpYIndex(rhs));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_constant_v<L> && is_expr_field3d_v<R>,
+                 BinaryExpr<Field3D, Constant<L>, R, bout::op::Pow>>
+pow(L lhs, const R& rhs, const std::string& rgn) {
+  return bout::detail::makePowExpr<Field3D, Constant<L>, R>(
+      static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
+      rhs.getMesh(), rhs.getLocation(), rhs.getDirections(),
+      bout::detail::getPowRegionID<Field3D>(rhs.getMesh(), rgn),
+      rhs.getMesh()->getRegion(rgn), bout::detail::getPerpYIndex(rhs));
 }
 
 /*!
@@ -608,6 +793,20 @@ class Field3DParallel;
 class FieldPerp;
 
 namespace bout::detail {
+template <typename T>
+using UnaryFieldResult_t =
+    std::conditional_t<std::is_same_v<std::decay_t<T>, ::Field3DParallel>, ::Field3D,
+                       std::decay_t<T>>;
+
+template <typename T>
+std::optional<size_t> getUnaryRegionID(const Mesh* mesh, const std::string& region_name) {
+  if constexpr (std::is_same_v<UnaryFieldResult_t<T>, ::Field3D>) {
+    return bout::detail::getField3DRegionID(mesh, region_name);
+  } else {
+    return std::nullopt;
+  }
+}
+
 template <typename T>
 std::optional<int> getPerpYIndex(const T& value) {
   if constexpr (std::is_same_v<std::decay_t<T>, ::FieldPerp>) {
@@ -641,35 +840,23 @@ std::optional<int> getPerpYIndex(const BinaryExpr<ResT, L, R, Func>& expr) {
   };                                                                                    \
   template <typename T, typename = bout::utils::EnableIfField<T>>                       \
   inline auto name(const T& f, const std::string& rgn = "RGN_ALL") {                    \
-    if constexpr (std::is_same_v<T, Field3DParallel>) {                                 \
-      /* Check if the input is allocated */                                             \
-      checkData(f);                                                                     \
-      /* Define and allocate the output result */                                       \
-      T result{emptyFrom(f)};                                                           \
-      BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }                    \
-      for (int i = 0; i < f.numberParallelSlices(); ++i) {                              \
-        result.yup(i) = func(f.yup(i));                                                 \
-        result.ydown(i) = func(f.ydown(i));                                             \
-      }                                                                                 \
-      result.name = std::string(#name "(") + f.name + std::string(")");                 \
-      checkData(result);                                                                \
-      return result;                                                                    \
-    } else {                                                                            \
-      return BinaryExpr<T, T, T, bout::op::name>{static_cast<typename T::View>(f),      \
-                                                 static_cast<typename T::View>(f),      \
-                                                 bout::op::name{},                      \
-                                                 f.getMesh(),                           \
-                                                 f.getLocation(),                       \
-                                                 f.getDirections(),                     \
-                                                 std::nullopt,                          \
-                                                 f.getRegion(rgn),                      \
-                                                 bout::detail::getPerpYIndex(f)};       \
-    }                                                                                   \
+    using ResT = bout::detail::UnaryFieldResult_t<T>;                                   \
+    return BinaryExpr<ResT, T, T, bout::op::name>{                                      \
+        static_cast<typename T::View>(f),                                               \
+        static_cast<typename T::View>(f),                                               \
+        bout::op::name{},                                                               \
+        f.getMesh(),                                                                    \
+        f.getLocation(),                                                                \
+        f.getDirections(),                                                              \
+        bout::detail::getUnaryRegionID<T>(f.getMesh(), rgn),                            \
+        f.getMesh()->template getRegion<ResT>(rgn),                                     \
+        bout::detail::getPerpYIndex(f)};                                                \
   }                                                                                     \
   template <typename ResT, typename L, typename R, typename Func>                       \
   inline auto name(const BinaryExpr<ResT, L, R, Func>& f) {                             \
-    return BinaryExpr<ResT, BinaryExpr<ResT, L, R, Func>, BinaryExpr<ResT, L, R, Func>, \
-                      bout::op::name>{                                                  \
+    using UnaryResT = bout::detail::UnaryFieldResult_t<ResT>;                           \
+    return BinaryExpr<UnaryResT, BinaryExpr<ResT, L, R, Func>,                          \
+                      BinaryExpr<ResT, L, R, Func>, bout::op::name>{                    \
         static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),                    \
         static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),                    \
         bout::op::name{},                                                               \
@@ -682,7 +869,18 @@ std::optional<int> getPerpYIndex(const BinaryExpr<ResT, L, R, Func>& expr) {
   }                                                                                     \
   template <typename ResT, typename L, typename R, typename Func>                       \
   inline auto name(const BinaryExpr<ResT, L, R, Func>& f, const std::string& rgn) {     \
-    return name(ResT{f}, rgn);                                                          \
+    using UnaryResT = bout::detail::UnaryFieldResult_t<ResT>;                           \
+    return BinaryExpr<UnaryResT, BinaryExpr<ResT, L, R, Func>,                          \
+                      BinaryExpr<ResT, L, R, Func>, bout::op::name>{                    \
+        static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),                    \
+        static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),                    \
+        bout::op::name{},                                                               \
+        f.getMesh(),                                                                    \
+        f.getLocation(),                                                                \
+        f.getDirections(),                                                              \
+        bout::detail::getUnaryRegionID<UnaryResT>(f.getMesh(), rgn),                    \
+        f.getMesh()->template getRegion<UnaryResT>(rgn),                                \
+        bout::detail::getPerpYIndex(f)};                                                \
   }
 #endif
 
@@ -694,40 +892,41 @@ struct Square {
     return ::SQ(value);
   }
 };
+
+struct Floor {
+  template <typename LView, typename RView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx, const LView& L,
+                                                        const RView& R) const {
+    const BoutReal value = L(idx);
+    const BoutReal floor_value = R(idx);
+    return value < floor_value ? floor_value : value;
+  }
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(BoutReal value,
+                                                        BoutReal floor_value) const {
+    return value < floor_value ? floor_value : value;
+  }
+};
 }; // namespace bout::op
 
 template <typename T, typename = bout::utils::EnableIfField<T>>
 inline auto SQ(const T& f, const std::string& rgn = "RGN_ALL") {
-  if constexpr (std::is_same_v<T, Field3DParallel>) {
-    checkData(f);
-    T result{emptyFrom(f)};
-    if (f.hasParallelSlices() and !result.hasParallelSlices()) {
-      result.splitParallelSlices();
-    }
-    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = ::SQ(f[d]); }
-    for (size_t i = 0; i < f.numberParallelSlices(); ++i) {
-      result.yup(i) = SQ(f.yup(i), rgn);
-      result.ydown(i) = SQ(f.ydown(i), rgn);
-    }
-    result.name = std::string("SQ(") + f.name + std::string(")");
-    checkData(result);
-    return result;
-  } else {
-    return BinaryExpr<T, T, T, bout::op::Square>{static_cast<typename T::View>(f),
-                                                 static_cast<typename T::View>(f),
-                                                 bout::op::Square{},
-                                                 f.getMesh(),
-                                                 f.getLocation(),
-                                                 f.getDirections(),
-                                                 std::nullopt,
-                                                 f.getRegion(rgn),
-                                                 bout::detail::getPerpYIndex(f)};
-  }
+  using ResT = bout::detail::UnaryFieldResult_t<T>;
+  return BinaryExpr<ResT, T, T, bout::op::Square>{
+      static_cast<typename T::View>(f),
+      static_cast<typename T::View>(f),
+      bout::op::Square{},
+      f.getMesh(),
+      f.getLocation(),
+      f.getDirections(),
+      bout::detail::getUnaryRegionID<T>(f.getMesh(), rgn),
+      f.getMesh()->template getRegion<ResT>(rgn),
+      bout::detail::getPerpYIndex(f)};
 }
 
 template <typename ResT, typename L, typename R, typename Func>
 inline auto SQ(const BinaryExpr<ResT, L, R, Func>& f) {
-  return BinaryExpr<ResT, BinaryExpr<ResT, L, R, Func>, BinaryExpr<ResT, L, R, Func>,
+  using UnaryResT = bout::detail::UnaryFieldResult_t<ResT>;
+  return BinaryExpr<UnaryResT, BinaryExpr<ResT, L, R, Func>, BinaryExpr<ResT, L, R, Func>,
                     bout::op::Square>{
       static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),
       static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),
@@ -742,7 +941,18 @@ inline auto SQ(const BinaryExpr<ResT, L, R, Func>& f) {
 
 template <typename ResT, typename L, typename R, typename Func>
 inline auto SQ(const BinaryExpr<ResT, L, R, Func>& f, const std::string& rgn) {
-  return SQ(ResT{f}, rgn);
+  using UnaryResT = bout::detail::UnaryFieldResult_t<ResT>;
+  return BinaryExpr<UnaryResT, BinaryExpr<ResT, L, R, Func>, BinaryExpr<ResT, L, R, Func>,
+                    bout::op::Square>{
+      static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),
+      static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(f),
+      bout::op::Square{},
+      f.getMesh(),
+      f.getLocation(),
+      f.getDirections(),
+      bout::detail::getUnaryRegionID<UnaryResT>(f.getMesh(), rgn),
+      f.getMesh()->template getRegion<UnaryResT>(rgn),
+      bout::detail::getPerpYIndex(f)};
 }
 
 /// Square root of \p f over region \p rgn
@@ -770,7 +980,7 @@ FIELD_FUNC(exp, ::exp)
 /// Natural logarithm of \p f over region \p rgn, inverse of
 /// exponential
 ///
-///     \f$\ln(\exp(f)) = f\f$
+/// \f[\ln(\exp(f)) = f\f]
 ///
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the rgn argument)
@@ -874,46 +1084,51 @@ class Field3DParallel;
 /// @param[in] f    The floor value
 /// @param[in] rgn  The region to calculate the result over
 template <typename T, typename = bout::utils::EnableIfField<T>>
-inline T floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
-  checkData(var);
-  T result = copy(var);
+inline auto floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
+  using ResT = bout::detail::UnaryFieldResult_t<T>;
+  return BinaryExpr<ResT, T, Constant<BoutReal>, bout::op::Floor>{
+      static_cast<typename T::View>(var),
+      static_cast<typename Constant<BoutReal>::View>(f),
+      bout::op::Floor{},
+      var.getMesh(),
+      var.getLocation(),
+      var.getDirections(),
+      bout::detail::getUnaryRegionID<T>(var.getMesh(), rgn),
+      var.getMesh()->template getRegion<ResT>(rgn),
+      bout::detail::getPerpYIndex(var)};
+}
 
-  BOUT_FOR(d, var.getRegion(rgn)) {
-    if (result[d] < f) {
-      result[d] = f;
-    }
-  }
-  if constexpr (std::is_same_v<T, Field3DParallel>) {
-    if (var.hasParallelSlices()) {
-      for (size_t i = 0; i < result.numberParallelSlices(); ++i) {
-        if (result.yup(i).isAllocated()) {
-          BOUT_FOR(d, result.yup(i).getRegion(rgn)) {
-            if (result.yup(i)[d] < f) {
-              result.yup(i)[d] = f;
-            }
-          }
-        } else {
-          if (result.isFci()) {
-            throw BoutException("Expected parallel slice to be allocated");
-          }
-        }
-        if (result.ydown(i).isAllocated()) {
-          BOUT_FOR(d, result.ydown(i).getRegion(rgn)) {
-            if (result.ydown(i)[d] < f) {
-              result.ydown(i)[d] = f;
-            }
-          }
-        } else {
-          if (result.isFci()) {
-            throw BoutException("Expected parallel slice to be allocated");
-          }
-        }
-      }
-    }
-  } else {
-    result.clearParallelSlices();
-  }
-  return result;
+template <typename ResT, typename L, typename R, typename Func>
+inline auto floor(const BinaryExpr<ResT, L, R, Func>& var, BoutReal f) {
+  using UnaryResT = bout::detail::UnaryFieldResult_t<ResT>;
+  return BinaryExpr<UnaryResT, BinaryExpr<ResT, L, R, Func>, Constant<BoutReal>,
+                    bout::op::Floor>{
+      static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(var),
+      static_cast<typename Constant<BoutReal>::View>(f),
+      bout::op::Floor{},
+      var.getMesh(),
+      var.getLocation(),
+      var.getDirections(),
+      var.getRegionID(),
+      var.indices,
+      bout::detail::getPerpYIndex(var)};
+}
+
+template <typename ResT, typename L, typename R, typename Func>
+inline auto floor(const BinaryExpr<ResT, L, R, Func>& var, BoutReal f,
+                  const std::string& rgn) {
+  using UnaryResT = bout::detail::UnaryFieldResult_t<ResT>;
+  return BinaryExpr<UnaryResT, BinaryExpr<ResT, L, R, Func>, Constant<BoutReal>,
+                    bout::op::Floor>{
+      static_cast<typename BinaryExpr<ResT, L, R, Func>::View>(var),
+      static_cast<typename Constant<BoutReal>::View>(f),
+      bout::op::Floor{},
+      var.getMesh(),
+      var.getLocation(),
+      var.getDirections(),
+      bout::detail::getUnaryRegionID<UnaryResT>(var.getMesh(), rgn),
+      var.getMesh()->template getRegion<UnaryResT>(rgn),
+      bout::detail::getPerpYIndex(var)};
 }
 
 #undef FIELD_FUNC

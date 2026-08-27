@@ -23,7 +23,7 @@ then
     test . != ".$2" && mpi="$2" || mpi=openmpi
     time $cmd pull ghcr.io/boutproject/bout-container-base:main
     time $cmd create --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
-	 --shm-size 256M \
+	 --shm-size 1G \
          --name mobydick ghcr.io/boutproject/bout-container-base:main \
 	     /tmp/BOUT-dev/.ci_fedora.sh $mpi
     time $cmd cp ${TRAVIS_BUILD_DIR:-$(pwd)} mobydick:/tmp/BOUT-dev
@@ -37,9 +37,15 @@ test . != ".$1" && mpi="$1" || mpi=openmpi
     cp -a /tmp/BOUT-dev /home/test/
     . /etc/profile.d/modules.sh
     module load mpi/${1}-x86_64
-    export OMPI_MCA_rmaps_base_oversubscribe=yes
+    sudo dnf install -y python3-pytest python3-pytest-xdist
+    # OpenMPI Oversubscription Overrides
+    export OMPI_MCA_rmaps_base_oversubscribe=1
+    export OMPI_MCA_hwloc_base_binding_policy=none
+    export OMPI_MCA_rmaps_base_mapping_policy=core:OVERSUBSCRIBE
+    export PRTE_MCA_rmaps_default_mapping_policy=core:OVERSUBSCRIBE
     export PRTE_MCA_rmaps_default_mapping_policy=:oversubscribe
     export TRAVIS=true
+    export CI=true
     # Try limiting openmp threads
     export FLEXIBLAS=NETLIB
     export MKL_NUM_THREADS=1
@@ -58,4 +64,4 @@ test . != ".$1" && mpi="$1" || mpi=openmpi
 	 -DBOUT_USE_SYSTEM_CPPTRACE=ON
 
     time make -C build build-check -j 2
-    cd build && time ctest --output-on-failure --timeout 300
+    cd build && time cmake --build . --target check

@@ -1,20 +1,10 @@
 /**************************************************************************
  * Base class for all solvers. Specifies required interface functions
  *
- * Changelog:
- *
- * 2009-08 Ben Dudson, Sean Farley
- *    * Major overhaul, and changed API. Trying to make consistent
- *      interface to PETSc and SUNDIALS solvers
- *
- * 2013-08 Ben Dudson
- *    * Added OO-style API, to allow multiple physics models to coexist
- *      For now both APIs are supported
- *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -38,18 +28,21 @@
 
 #include "bout/build_defines.hxx"
 
+#include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/globals.hxx"
 #include "bout/mesh.hxx"
 #include "bout/monitor.hxx"
 #include "bout/options.hxx"
+#include "bout/petsc_preconditioner.hxx"
 #include "bout/region.hxx"
-#include "bout/unused.hxx"
 
+#include <algorithm>
 #include <cstdint>
 #include <iterator>
 #include <memory>
+#include <vector>
 
 ///////////////////////////////////////////////////////////////////
 // C function pointer types
@@ -367,6 +360,35 @@ public:
 protected:
   friend class SundialsNVectorInterface;
 
+  /// Per-variable metadata written alongside Jacobian diagnostics.
+  ///
+  /// ``offset`` gives the variable position within the per-cell ordering used by
+  /// the PETSc matrix. The full row/column mapping is reconstructed by combining
+  /// these records with ``jacobian_index_base`` from the dump files.
+  struct JacobianVariableMetadata {
+    int offset{0};
+    std::string name;
+    std::string location;
+    bool evolve_bndry{false};
+    bool constraint{false};
+    std::string description;
+  };
+
+  /// Top-level JSON description of a saved Jacobian.
+  ///
+  /// This metadata is intentionally compact: per-variable properties are stored
+  /// once here, while per-cell offsets are reconstructed from
+  /// ``jacobian_index_base`` in the output data files.
+  struct JacobianMetadata {
+    int format_version{1};
+    std::string solver_name;
+    int n2d{0};
+    int n3d{0};
+    std::vector<JacobianVariableMetadata> variables_2d;
+    std::vector<JacobianVariableMetadata> variables_3d;
+    std::string ordering;
+  };
+
   /// Number of command-line arguments
   static int* pargc;
   /// Command-line arguments
@@ -469,24 +491,7 @@ protected:
     difference_type operator-(const VarIterator& b) { return it - b.it; }
     reference operator[](difference_type n) { return *VarIterator(it[n]); }
 
-    friend bool operator==(const VarIterator& a, const VarIterator& b) {
-      return a.it == b.it;
-    }
-    friend bool operator!=(const VarIterator& a, const VarIterator& b) {
-      return a.it != b.it;
-    }
-    friend bool operator<(const VarIterator& a, const VarIterator& b) {
-      return a.it < b.it;
-    }
-    friend bool operator>(const VarIterator& a, const VarIterator& b) {
-      return a.it > b.it;
-    }
-    friend bool operator<=(const VarIterator& a, const VarIterator& b) {
-      return a.it <= b.it;
-    }
-    friend bool operator>=(const VarIterator& a, const VarIterator& b) {
-      return a.it >= b.it;
-    }
+    auto operator<=>(const VarIterator& rhs) const = default;
 
   private:
     underlying_iterator it{};
@@ -514,8 +519,7 @@ protected:
   /// Does \p vars contain a field with \p name?
   template <class T>
   bool contains(const std::vector<VarStr<T>>& vars, const std::string& name) {
-    const auto in_vars = std::find(begin(vars), end(vars), name);
-    return in_vars != end(vars);
+    return std::ranges::find(vars, name, &VarStr<T>::name) != std::ranges::end(vars);
   }
 
   /// Vectors of variables to evolve
@@ -604,8 +608,34 @@ protected:
   void save_derivs(BoutReal* dudata);
   void set_id(BoutReal* udata);
 
-  /// Returns a Field3D containing the global indices
+  /// Returns a Field3D containing the global indices for each locally-owned DOF.
   Field3D globalIndex(int localStart);
+  /// Returns the base global index for the Jacobian ordering in each cell.
+  ///
+  /// Combined with the variable metadata JSON written by
+  /// ``writeJacobianMetadataJson()``, this allows PETSc matrix rows/columns to be
+  /// mapped back to variable names and ``(x, y, z)`` coordinates in Python.
+  Field3D jacobianIndexBase(int localStart = 0);
+  /// Return compact metadata for all evolved ``Field2D`` variables.
+  std::vector<JacobianVariableMetadata> getJacobianMetadata2D() const;
+  /// Return compact metadata for all evolved ``Field3D`` variables.
+  std::vector<JacobianVariableMetadata> getJacobianMetadata3D() const;
+  /// Build the complete Jacobian metadata record for JSON export.
+  JacobianMetadata getJacobianMetadata(const std::string& solver_name) const;
+  /// Write Jacobian metadata as JSON on rank 0.
+  ///
+  /// The JSON file is solver-independent; solver-specific matrix files and the
+  /// ``jacobian_index_base`` output together provide the remaining information
+  /// needed to reconstruct a labeled Jacobian in post-processing.
+  void writeJacobianMetadataJson(const std::string& filename,
+                                 const std::string& solver_name) const;
+
+  /// Writes the Jacobian metadata on first call
+  void writeOnceJacobianMetadata(const std::string& solver_name);
+
+#if BOUT_HAS_PETSC
+  void writeJacobianMatrix(bout::JacobianExportKind kind, Mat jacobian);
+#endif
 
   /// Maximum internal timestep
   BoutReal max_dt{-1.0};
@@ -670,6 +700,21 @@ private:
   std::string run_restart_from = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy";
   /// Save `run_id` and `run_restart_from` every output
   bool save_repeat_run_id{false};
+  /// Write ``jacobian_index_base`` to the dump files for Jacobian diagnostics.
+  bool save_jacobian_index_base{false};
+  /// Has the Jacobian metadata file been written?
+  bool jacobian_metadata_written{false};
+  /// Running counter appended to successive Jacobian saves
+  int jacobian_export_counter{0};
+  /// Prefix for matrix files and ``*_metadata.json``
+  std::string jacobian_export_prefix;
+  /// PETSc ``MatView`` format: binary or ascii
+  bout::PetscMatrixExportFormat jacobian_export_format;
+
+  /// Return the matrix filename including the extension for the selected format.
+  std::string getJacobianMatrixFilename(const std::string& jacobian_export_prefix,
+                                        bout::JacobianExportKind kind,
+                                        bout::PetscMatrixExportFormat format);
 
   /// Current iteration (output time-step) number
   int iteration{0};

@@ -1,8 +1,8 @@
+/// \file
+/// Perpendicular Laplacian inversion. Parallel code using FFT
+/// and tridiagonal solver.
+
 /**************************************************************************
- * Perpendicular Laplacian inversion. Parallel code using FFT
- * and tridiagonal solver.
- *
- **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk

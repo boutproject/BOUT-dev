@@ -5,23 +5,19 @@
 #ifndef BOUT_FV_OPS_H
 #define BOUT_FV_OPS_H
 
-#include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
-#include "bout/build_defines.hxx"
-#include "bout/coordinates.hxx"
 #include "bout/field.hxx"
 #include "bout/field3d.hxx"
-#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
 #include "bout/output_bout_types.hxx" // NOLINT(unused-includes, misc-include-cleaner)
-#include "bout/region.hxx"
-#include "bout/utils.hxx"
 #include "bout/vector2d.hxx"
 
 namespace FV {
-/*!
- * Div ( a Grad_perp(f) ) -- ∇⊥ ( a ⋅ ∇⊥ f) -- Vorticity
- */
+/// Vorticity:
+/// \f[
+///   \nabla (a \cdot \nabla_\perp(f))
+/// \f]
+// Div ( a Grad_perp(f) ) -- ∇⊥ ( a ⋅ ∇⊥ f) -- Vorticity
 Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f);
 
 [[deprecated("Please use Div_a_Grad_perp instead")]] inline Field3D
@@ -29,61 +25,67 @@ Div_a_Laplace_perp(const Field3D& a, const Field3D& f) {
   return Div_a_Grad_perp(a, f);
 }
 
-/*!
-   * Divergence of a parallel diffusion Div( k * Grad_par(f) )
-   */
+/// Divergence of a parallel diffusion
+/// \f[
+///   \nabla_\parallel(k \cdot \nabla_\parallel(f) )
+/// \f]
 Field3D Div_par_K_Grad_par(const Field3D& k, const Field3D& f, bool bndry_flux = true);
 
-/*!
-   * 4th-order derivative in Y, using derivatives
-   * on cell boundaries.
-   *
-   * A one-sided 3rd-order derivative, given a value
-   * at a boundary is:
-   *
-   * d3f/dx3 ~= 16/5 f_b - 6 f_0 + 4 f_1 - 6/5 f_2
-   *
-   * where f_b is the value on the boundary; f_0 is the cell
-   * to the left of the boundary; f_1 to the left of f_0 and f_2
-   * to the left of f_1
-   *
-   *    f_2 | f_1 | f_0 |
-   *                   f_b
-   *
-   * NB: Uses to/from FieldAligned coordinates
-   *
-   * No fluxes through domain boundaries
-   */
+/// 4th-order derivative in Y, using derivatives
+/// on cell boundaries.
+///
+/// A one-sided 3rd-order derivative, given a value
+/// at a boundary is:
+///
+/// \f[
+/// \frac{d^3f}{dx^3} \simeq \tfrac{16}{5} f_b - 6 f_0 + 4 f_1 - \tfrac{6}{5} f_2
+/// \f]
+///
+/// where:
+///
+/// - \f$f_b\f$ is the value on the boundary,
+/// - \f$f_0\f$ is the cell to the left of the boundary,
+/// - \f$f_1\f$ to the left of \f$f_0\f$, and
+/// - \f$f_2\f$ to the left of f_1:
+///
+/// .. code:: text
+///    f_2 | f_1 | f_0 |
+///                   f_b
+///
+/// NB: Uses to/from FieldAligned coordinates
+///
+/// No fluxes through domain boundaries
+
 Field3D D4DY4(const Field3D& d, const Field3D& f);
 
-/*!
-   * 4th-order dissipation term
-   *
-   *
-   * A one-sided 3rd-order derivative, given a value
-   * at a boundary is:
-   *
-   * d3f/dx3 ~= 16/5 f_b - 6 f_0 + 4 f_1 - 6/5 f_2
-   *
-   * where f_b is the value on the boundary; f_0 is the cell
-   * to the left of the boundary; f_1 to the left of f_0 and f_2
-   * to the left of f_1
-   *
-   *    f_2 | f_1 | f_0 |
-   *                   f_b
-   */
+/// 4th-order dissipation term
+///
+/// \f[
+/// \frac{d^3f}{dx^3} \simeq \tfrac{16}{5} f_b - 6 f_0 + 4 f_1 - \tfrac{6}{5} f_2
+/// \f]
+///
+/// where:
+///
+/// - \f$f_b\f$ is the value on the boundary,
+/// - \f$f_0\f$ is the cell to the left of the boundary,
+/// - \f$f_1\f$ to the left of \f$f_0\f$, and
+/// - \f$f_2\f$ to the left of f_1:
+///
+/// .. code:: text
+///    f_2 | f_1 | f_0 |
+///                   f_b
 Field3D D4DY4_Index(const Field3D& f, bool bndry_flux = true);
 
 // Forward declarations of flux limiters
 // If you want to use your own flux limiter, you need to
 // #include <bout/fv_ops_impl.hxx> to instantiate the templates.
-class Upwind;
-class Fromm;
-class MinMod;
-class MC;
-class Superbee;
-class VanAlbada;
-class WENO3;
+struct Upwind;
+struct Fromm;
+struct MinMod;
+struct MC;
+struct Superbee;
+struct VanAlbada;
+struct WENO3;
 
 /*!
    * Communicate fluxes between processors
@@ -154,8 +156,8 @@ Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc = CELL_
 ///                          For FCI fields this diagnostic is currently set to zero.
 template <typename CellEdges = MC>
 Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
-                    const Field3D& wave_speed_in, Field3D& flow_ylow,
-                    bool fixflux = true);
+                    const Field3D& wave_speed_in, Field3D& flow_ylow, bool fixflux = true,
+                    bool dissipative = false);
 
 /// This operator calculates Div_par(f v v)
 /// It is used primarily (only?) in the parallel momentum equation.
@@ -166,5 +168,22 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
 template <typename CellEdges = MC>
 Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
                     const Field3D& wave_speed_in, bool fixflux = true);
+
+/// Calculates viscous heating due to numerical momentum fluxes
+/// and flow of kinetic energy (in flow_ylow)
+template <typename CellEdges = MC>
+Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
+                            const Field3D& wave_speed_in, Field3D& flow_ylow,
+                            bool fixflux = true);
+
+/// Div ( a g Grad_perp(f) )  -- Perpendicular gradient-driven advection
+///
+/// This version uses a slope limiter to calculate cell edge values of g in X,
+/// the advects the upwind cell edge.
+///
+/// 1st order upwinding is used in Y.
+template <typename CellEdges = MC>
+Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D& f);
+
 } // namespace FV
 #endif // BOUT_FV_OPS_H
