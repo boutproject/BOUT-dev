@@ -185,5 +185,37 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
 template <typename CellEdges = MC>
 Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D& f);
 
+/// Div ( a g Grad_perp(f) )
+///
+/// This version uses pre-computed coefficient. It can also be used
+class dagp_fv {
+public:
+  Field3D operator()(const Field3D& a, const Field3D& f, Field3D& low_xlow,
+                     Field3D& flow_zlow, bool upwinding);
+  Field3D operator()(const Field3D& a, const Field3D& f, bool upwinding);
+  dagp_fv(Mesh& mesh);
+  dagp_fv& operator*=(BoutReal fac);
+  dagp_fv& operator/=(BoutReal fac);
+
+private:
+  template <bool extra, bool upwinding>
+  Field3D operator()(const Field3D& a, const Field3D& f, Field3D* low_xlow,
+                     Field3D* flow_zlow);
+  Field3D fac_XX;
+  Field3D fac_XZ;
+  Field3D fac_ZX;
+  Field3D fac_ZZ;
+  Field3D volume;
+
+  bool isNormalised{false};
+
+  template <bool upwinding>
+  BoutReal xflux(const Field3D& a, const Field3D& f, const Ind3D& i);
+  template <bool upwinding>
+  BoutReal zflux(const Field3D& a, const Field3D& f, const Ind3D& i);
+};
+
+std::shared_ptr<dagp_fv> getDagp_fv(Mesh* mesh, BoutReal rho_s0);
+
 } // namespace FV
 #endif // BOUT_FV_OPS_H

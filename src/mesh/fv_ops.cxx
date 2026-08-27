@@ -678,4 +678,125 @@ template Field3D Div_par_fvv_heating<WENO3>(const Field3D& f_in, const Field3D& 
                                             Field3D& flow_ylow, bool fixflux);
 template Field3D Div_a_Grad_perp_limit<WENO3>(const Field3D& a, const Field3D& g,
                                               const Field3D& f);
+
+std::map<Mesh*, std::weak_ptr<dagp_fv>> dagp_fv_cache;
+
+std::shared_ptr<dagp_fv> getDagp_fv(Mesh* mesh, BoutReal rho_s0) {
+  if (auto search = dagp_fv_cache.find(mesh); search != dagp_fv_cache.end()) {
+    if (std::shared_ptr<dagp_fv> spt = search->second.lock()) {
+      return spt;
+    } else {
+      output_warn.write("\tPreformance Warning: DAGP_FV needs to be re-created!\n");
+    }
+  }
+  auto dagp = std::make_shared<dagp_fv>(*mesh);
+  *dagp *= rho_s0;
+  dagp_fv_cache[mesh] = dagp;
+  return dagp;
+}
+
+dagp_fv::dagp_fv(Mesh& mesh)
+    : fac_XX(&mesh), fac_XZ(&mesh), fac_ZX(&mesh), fac_ZZ(&mesh), volume(&mesh) {
+  ASSERT0(mesh.get(fac_XX, "dagp_fv_XX", 0.0, false) == 0);
+  ASSERT0(mesh.get(fac_XZ, "dagp_fv_XZ", 0.0, false) == 0);
+  ASSERT0(mesh.get(fac_ZX, "dagp_fv_ZX", 0.0, false) == 0);
+  ASSERT0(mesh.get(fac_ZZ, "dagp_fv_ZZ", 0.0, false) == 0);
+  ASSERT0(volume.hasParallelSlices() == false);
+  ASSERT0(mesh.get(volume, "dagp_fv_volume", 0.0, false) == 0);
+  ASSERT0(volume.hasParallelSlices() == false);
+  volume.setRegion("RGN_NOBNDRY");
+  if (!mesh.hasRegion3D("RGN_dapg_fv_xbndry")) {
+    mesh.addRegion("RGN_dapg_fv_xbndry",
+                   Region<>(mesh.xstart - 1, mesh.xstart - 1, mesh.ystart, mesh.yend,
+                            mesh.zstart, mesh.zend, mesh.LocalNy, mesh.LocalNz));
+  }
+}
+Field3D dagp_fv::operator()(const Field3D& a, const Field3D& f, Field3D& flow_xlow,
+                            Field3D& flow_zlow, bool upwinding) {
+  if (upwinding) {
+    return operator()<true, true>(a, f, &flow_xlow, &flow_zlow);
+  } else {
+    return operator()<true, false>(a, f, &flow_xlow, &flow_zlow);
+  }
+}
+Field3D dagp_fv::operator()(const Field3D& a, const Field3D& f, bool upwinding) {
+  if (upwinding) {
+    return operator()<false, true>(a, f, nullptr, nullptr);
+  } else {
+    return operator()<false, false>(a, f, nullptr, nullptr);
+  }
+}
+template <bool extra, bool upwinding>
+Field3D dagp_fv::operator()(const Field3D& a, const Field3D& f, Field3D* flow_xlow,
+                            Field3D* flow_zlow) {
+  auto result{zeroFrom(f)};
+  ASSERT1_FIELDS_COMPATIBLE(a, f);
+  if constexpr (extra) {
+    flow_xlow->allocate();
+    flow_zlow->allocate();
+  }
+  BOUT_FOR(i, f.getRegion("RGN_dapg_fv_xbndry")) {
+    const auto xf = xflux<upwinding>(a, f, i);
+    result[i.xp()] = xf;
+    if constexpr (extra) {
+      (*flow_xlow)[i.xp()] = xf;
+    }
+  }
+  BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
+    const auto xf = xflux<upwinding>(a, f, i);
+    result[i.xp()] = xf;
+    result[i] -= xf;
+    if constexpr (extra) {
+      (*flow_xlow)[i.xp()] = xf;
+    }
+    const auto zf = zflux<upwinding>(a, f, i);
+    result[i.zp()] += zf;
+    result[i] -= zf;
+    if constexpr (extra) {
+      (*flow_zlow)[i.zp()] = zf;
+    }
+  }
+  result.setRegion("RGN_NOBNDRY");
+  if constexpr (extra) {
+    flow_xlow->setRegion("RGN_NOBNDRY");
+    flow_zlow->setRegion("RGN_NOBNDRY");
+    *flow_xlow /= volume;
+    *flow_zlow /= volume;
+  }
+  result /= volume;
+  return result;
+}
+template <bool upwinding>
+inline BoutReal dagp_fv::xflux(const Field3D& a, const Field3D& f, const Ind3D& i) {
+  const auto ixp = i.xp();
+  const auto dx = f[ixp] - f[i];
+  BoutReal av;
+  if constexpr (upwinding) {
+    av = dx > 0 ? a[ixp] : a[i];
+  } else {
+    av = 0.5 * (a[i] + a[ixp]);
+  };
+  const auto dz = 0.5 * (f[i.zp()] - f[i.zm()] + f[i.zp().xp()] - f[i.zm().xp()]);
+  return -(fac_XX[i] * dx + fac_XZ[i] * dz) * av;
+}
+template <bool upwinding>
+inline BoutReal dagp_fv::zflux(const Field3D& a, const Field3D& f, const Ind3D& i) {
+  const auto izp = i.zp();
+  const auto dz = f[izp] - f[i];
+  BoutReal av;
+  if constexpr (upwinding) {
+    av = dz > 0 ? a[izp] : a[i];
+  } else {
+    av = 0.5 * (a[i] + a[izp]);
+  }
+  const auto dx = 0.5 * (f[i.xp()] - f[i.xm()] + f[izp.xp()] - f[izp.xm()]);
+  return -(fac_ZX[i] * dx + fac_ZZ[i] * dz) * av;
+}
+dagp_fv& dagp_fv::operator*=(BoutReal fac) {
+  ASSERT2(not isNormalised);
+  isNormalised = true;
+  volume /= fac * fac;
+  return *this;
+}
+dagp_fv& dagp_fv::operator/=(BoutReal fac) { return operator*=(1 / fac); }
 } // Namespace FV
