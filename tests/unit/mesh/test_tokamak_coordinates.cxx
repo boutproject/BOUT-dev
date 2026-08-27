@@ -15,15 +15,7 @@ using bout::globals::mesh;
 
 using TokamakCoordinatesTestFCI = FakeMeshFixtureFCI;
 
-class TokamakCoordinatesTest : public FakeMeshFixture {
-public:
-  using FieldMetric = Coordinates::FieldMetric;
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
-  WithQuietOutput progress{output_progress};
-};
-
-constexpr BoutReal default_dz{TWOPI / TokamakCoordinatesTest::nz};
+using TokamakCoordinatesTest = FakeMeshFixture;
 
 TEST_F(TokamakCoordinatesTest, Normalisation) {
   const auto norm = bout::TokamakOrFCIMetricNormaliser(mesh, 2.0, 3.0);
