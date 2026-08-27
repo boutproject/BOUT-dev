@@ -7,14 +7,14 @@
 #include <cmath>
 
 class Diffusion : public PhysicsModel {
+  Field3D N;
+
 protected:
   int init(bool UNUSED(restarting)) override;
   int rhs(BoutReal t) override;
 };
 
 using bout::globals::mesh;
-
-Field3D N;
 
 BoutReal mu_N; // Parallel collisional diffusion coefficient
 BoutReal Lx, Ly, Lz;

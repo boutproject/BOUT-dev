@@ -475,7 +475,9 @@ struct BinaryExpr {
       } else if constexpr (is_expr_constant_v<R>) {
         return lhs.numberParallelSlices();
       } else {
+#ifndef __CUDA_ARCH__
         ASSERT2(lhs.numberParallelSlices() == rhs.numberParallelSlices());
+#endif
         return lhs.numberParallelSlices();
       }
     }
