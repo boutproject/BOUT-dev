@@ -144,6 +144,11 @@ public:
     return at(f, 2);
   }
 
+  template <class T>
+    requires utils::is_Field_v<T>
+  BoutReal& prev(T& f) const {
+    return at(f, 2);
+  }
   /*
    *         FUNCTIONS ACCESSORS
    */
