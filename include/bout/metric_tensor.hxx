@@ -11,8 +11,10 @@
 namespace bout {
 #if BOUT_USE_METRIC_3D
 using FieldMetric = Field3D;
+using FieldMetricParallel = Field3DParallel;
 #else
 using FieldMetric = Field2D;
+using FieldMetricParallel = Field2D;
 #endif
 } // namespace bout
 
