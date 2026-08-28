@@ -1334,7 +1334,7 @@ void Coordinates::normaliseMetric(const MetricNormaliser& norm) {
   if (norm.dz.has_value()) {
     setDz(dz() / *norm.dz);
   }
-  invalidateMetricCaches();
+  recalculateAndReset(false, false);
   if (norm.g.has_value() or norm.g22.has_value()) {
     if (Bxy().isFci()) {
       // No we compute g_22_* - they must not be cleared. If they get
