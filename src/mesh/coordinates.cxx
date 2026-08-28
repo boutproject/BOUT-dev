@@ -1313,16 +1313,32 @@ void Coordinates::normaliseMetric(const MetricNormaliser& norm) {
 
   if (norm.J.has_value()) {
     if (J().hasParallelSlices()) {
-      setJ(FieldMetricParallel{J() / *norm.J});
+      if (norm.J_mul) {
+        setJ(FieldMetricParallel{J() * *norm.J});
+      } else {
+        setJ(FieldMetricParallel{J() / *norm.J});
+      }
     } else {
-      setJ(J() / *norm.J);
+      if (norm.J_mul) {
+        setJ(J() * *norm.J);
+      } else {
+        setJ(J() / *norm.J);
+      }
     }
   }
   if (norm.Bxy.has_value()) {
     if (Bxy().hasParallelSlices()) {
-      setBxy(FieldMetricParallel{Bxy() / *norm.Bxy});
+      if (norm.Bxy_mul) {
+        setBxy(FieldMetricParallel{Bxy() * *norm.Bxy});
+      } else {
+        setBxy(FieldMetricParallel{Bxy() / *norm.Bxy});
+      }
     } else {
-      setBxy(Bxy() / *norm.Bxy);
+      if (norm.Bxy_mul) {
+        setBxy(Bxy() * *norm.Bxy);
+      } else {
+        setBxy(Bxy() / *norm.Bxy);
+      }
     }
   }
   if (norm.dx.has_value()) {
@@ -1343,9 +1359,14 @@ void Coordinates::normaliseMetric(const MetricNormaliser& norm) {
       g_22_ylow();
       g_22_yhigh();
       ASSERT2(_g_22_ylow.has_value());
-      (*_g_22_ylow) /= g22;
       ASSERT2(_g_22_yhigh.has_value());
-      (*_g_22_yhigh) /= g22;
+      if (norm.g.has_value() ? norm.g_mul : norm.g22_mul) {
+        (*_g_22_ylow) *= g22;
+        (*_g_22_yhigh) *= g22;
+      } else {
+        (*_g_22_ylow) /= g22;
+        (*_g_22_yhigh) /= g22;
+      }
     }
   }
 }

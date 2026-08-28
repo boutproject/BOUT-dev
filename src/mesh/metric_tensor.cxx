@@ -152,40 +152,56 @@ auto ContravariantMetricTensor::inverse(const std::string& region, bool communic
 template <class F>
 void MetricTensor::normaliseMetric(const MetricNormaliser& norm, const F& op) {
   if (norm.g.has_value()) {
-    op(g11_m, norm.g);
-    op(g22_m, norm.g);
-    op(g33_m, norm.g);
-    op(g12_m, norm.g);
-    op(g13_m, norm.g);
-    op(g23_m, norm.g);
+    op(g11_m, norm.g, norm.g_mul);
+    op(g22_m, norm.g, norm.g_mul);
+    op(g33_m, norm.g, norm.g_mul);
+    op(g12_m, norm.g, norm.g_mul);
+    op(g13_m, norm.g, norm.g_mul);
+    op(g23_m, norm.g, norm.g_mul);
   } else {
-    op(g11_m, norm.g11);
-    op(g22_m, norm.g22);
-    op(g33_m, norm.g33);
-    op(g12_m, norm.g12);
-    op(g13_m, norm.g13);
-    op(g23_m, norm.g23);
+    op(g11_m, norm.g11, norm.g11_mul);
+    op(g22_m, norm.g22, norm.g22_mul);
+    op(g33_m, norm.g33, norm.g33_mul);
+    op(g12_m, norm.g12, norm.g12_mul);
+    op(g13_m, norm.g13, norm.g13_mul);
+    op(g23_m, norm.g23, norm.g23_mul);
   }
 }
 
 void ContravariantMetricTensor::normaliseMetric(const MetricNormaliser& norm) {
-  MetricTensor::normaliseMetric(norm, [](FieldMetric& f, auto fac) {
+  MetricTensor::normaliseMetric(norm, [](FieldMetric& f, auto fac, bool fac_mul) {
     if (fac.has_value()) {
       if (f.hasParallelSlices()) {
-        f.asField3DParallel() *= fac.value();
+        if (fac_mul) {
+          f.asField3DParallel() /= fac.value();
+        } else {
+          f.asField3DParallel() *= fac.value();
+        }
       } else {
-        f *= fac.value();
+        if (fac_mul) {
+          f /= fac.value();
+        } else {
+          f *= fac.value();
+        }
       }
     }
   });
 }
 void CovariantMetricTensor::normaliseMetric(const MetricNormaliser& norm) {
-  MetricTensor::normaliseMetric(norm, [](FieldMetric& f, auto fac) {
+  MetricTensor::normaliseMetric(norm, [](FieldMetric& f, auto fac, bool fac_mul) {
     if (fac.has_value()) {
       if (f.hasParallelSlices()) {
-        f.asField3DParallel() /= fac.value();
+        if (fac_mul) {
+          f.asField3DParallel() *= fac.value();
+        } else {
+          f.asField3DParallel() /= fac.value();
+        }
       } else {
-        f /= fac.value();
+        if (fac_mul) {
+          f *= fac.value();
+        } else {
+          f /= fac.value();
+        }
       }
     }
   });
