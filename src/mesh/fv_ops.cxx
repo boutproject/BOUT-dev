@@ -685,30 +685,31 @@ template Field3D Div_a_Grad_perp_limit<WENO3>(const Field3D& a, const Field3D& g
                                               const Field3D& f);
 
 namespace {
-std::map<Mesh*, std::weak_ptr<dagp_fv>> dagp_fv_cache;
+std::map<Mesh*, std::weak_ptr<Div_a_Grad_perp>> Div_a_Grad_perp_cache;
 }
 
-std::shared_ptr<dagp_fv> getDagp_fv(Mesh* mesh, BoutReal rho_s0) {
-  if (auto search = dagp_fv_cache.find(mesh); search != dagp_fv_cache.end()) {
-    if (std::shared_ptr<dagp_fv> spt = search->second.lock()) {
+std::shared_ptr<Div_a_Grad_perp> Div_a_Grad_perp::create(Mesh* mesh, BoutReal rho_s0) {
+  if (auto search = Div_a_Grad_perp_cache.find(mesh);
+      search != Div_a_Grad_perp_cache.end()) {
+    if (std::shared_ptr<Div_a_Grad_perp> spt = search->second.lock()) {
       return spt;
     }
-    output_warn.write("\tPreformance Warning: DAGP_FV needs to be re-created!\n");
+    output_warn.write("\tPreformance Warning: DIV_A_GRAD_PERP needs to be re-created!\n");
   }
-  auto dagp = std::make_shared<dagp_fv>(*mesh);
-  *dagp *= rho_s0;
-  dagp_fv_cache[mesh] = dagp;
+  auto dagp = std::make_shared<Div_a_Grad_perp>(*mesh);
+  dagp->volume /= rho_s0 * rho_s0;
+  Div_a_Grad_perp_cache[mesh] = dagp;
   return dagp;
 }
 
-dagp_fv::dagp_fv(Mesh& mesh)
+Div_a_Grad_perp::Div_a_Grad_perp(Mesh& mesh)
     : fac_XX(&mesh), fac_XZ(&mesh), fac_ZX(&mesh), fac_ZZ(&mesh), volume(&mesh) {
-  ASSERT0(mesh.get(fac_XX, "dagp_fv_XX", 0.0, false) == 0);
-  ASSERT0(mesh.get(fac_XZ, "dagp_fv_XZ", 0.0, false) == 0);
-  ASSERT0(mesh.get(fac_ZX, "dagp_fv_ZX", 0.0, false) == 0);
-  ASSERT0(mesh.get(fac_ZZ, "dagp_fv_ZZ", 0.0, false) == 0);
+  ASSERT0(mesh.get(fac_XX, "Div_a_Grad_perp_XX", 0.0, false) == 0);
+  ASSERT0(mesh.get(fac_XZ, "Div_a_Grad_perp_XZ", 0.0, false) == 0);
+  ASSERT0(mesh.get(fac_ZX, "Div_a_Grad_perp_ZX", 0.0, false) == 0);
+  ASSERT0(mesh.get(fac_ZZ, "Div_a_Grad_perp_ZZ", 0.0, false) == 0);
   ASSERT0(volume.hasParallelSlices() == false);
-  ASSERT0(mesh.get(volume, "dagp_fv_volume", 0.0, false) == 0);
+  ASSERT0(mesh.get(volume, "Div_a_Grad_perp_volume", 0.0, false) == 0);
   ASSERT0(volume.hasParallelSlices() == false);
   volume.setRegion("RGN_NOBNDRY");
   if (!mesh.hasRegion3D("RGN_dapg_fv_xbndry")) {
@@ -717,22 +718,23 @@ dagp_fv::dagp_fv(Mesh& mesh)
                             mesh.zstart, mesh.zend, mesh.LocalNy, mesh.LocalNz));
   }
 }
-Field3D dagp_fv::operator()(const Field3D& a, const Field3D& f, Field3D& flow_xlow,
-                            Field3D& flow_zlow, bool upwinding) {
+Field3D Div_a_Grad_perp::operator()(const Field3D& a, const Field3D& f,
+                                    Field3D& flow_xlow, Field3D& flow_zlow,
+                                    bool upwinding) {
   if (upwinding) {
     return operator()<true, true>(a, f, &flow_xlow, &flow_zlow);
   }
   return operator()<true, false>(a, f, &flow_xlow, &flow_zlow);
 }
-Field3D dagp_fv::operator()(const Field3D& a, const Field3D& f, bool upwinding) {
+Field3D Div_a_Grad_perp::operator()(const Field3D& a, const Field3D& f, bool upwinding) {
   if (upwinding) {
     return operator()<false, true>(a, f, nullptr, nullptr);
   }
   return operator()<false, false>(a, f, nullptr, nullptr);
 }
 template <bool extra, bool upwinding>
-Field3D dagp_fv::operator()(const Field3D& a, const Field3D& f, Field3D* flow_xlow,
-                            Field3D* flow_zlow) {
+Field3D Div_a_Grad_perp::operator()(const Field3D& a, const Field3D& f,
+                                    Field3D* flow_xlow, Field3D* flow_zlow) {
   auto result{zeroFrom(f)};
   ASSERT1_FIELDS_COMPATIBLE(a, f);
   if constexpr (extra) {
@@ -767,11 +769,11 @@ Field3D dagp_fv::operator()(const Field3D& a, const Field3D& f, Field3D* flow_xl
     *flow_xlow /= volume;
     *flow_zlow /= volume;
   }
-  result /= volume;
-  return result;
+  return result / volume;
 }
 template <bool upwinding>
-inline BoutReal dagp_fv::xflux(const Field3D& a, const Field3D& f, const Ind3D& i) {
+inline BoutReal Div_a_Grad_perp::xflux(const Field3D& a, const Field3D& f,
+                                       const Ind3D& i) {
   const auto ixp = i.xp();
   const auto dx = f[ixp] - f[i];
   BoutReal av = BoutNaN;
@@ -784,7 +786,8 @@ inline BoutReal dagp_fv::xflux(const Field3D& a, const Field3D& f, const Ind3D& 
   return -((fac_XX[i] * dx) + (fac_XZ[i] * dz)) * av;
 }
 template <bool upwinding>
-inline BoutReal dagp_fv::zflux(const Field3D& a, const Field3D& f, const Ind3D& i) {
+inline BoutReal Div_a_Grad_perp::zflux(const Field3D& a, const Field3D& f,
+                                       const Ind3D& i) {
   const auto izp = i.zp();
   const auto dz = f[izp] - f[i];
   BoutReal av = BoutNaN;
@@ -796,11 +799,4 @@ inline BoutReal dagp_fv::zflux(const Field3D& a, const Field3D& f, const Ind3D& 
   const auto dx = 0.5 * (f[i.xp()] - f[i.xm()] + f[izp.xp()] - f[izp.xm()]);
   return -((fac_ZX[i] * dx) + (fac_ZZ[i] * dz)) * av;
 }
-dagp_fv& dagp_fv::operator*=(BoutReal fac) {
-  ASSERT2(not isNormalised);
-  isNormalised = true;
-  volume /= fac * fac;
-  return *this;
-}
-dagp_fv& dagp_fv::operator/=(BoutReal fac) { return operator*=(1 / fac); }
 } // Namespace FV
