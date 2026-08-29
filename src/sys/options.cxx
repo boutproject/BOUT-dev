@@ -3,6 +3,7 @@
 #include "bout/array.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/deriv_store.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/field_factory.hxx" // Used for parsing expressions
@@ -45,7 +46,15 @@ Options& Options::root() {
   return root_instance;
 }
 
-void Options::cleanup() { root() = Options{}; }
+void Options::cleanup() {
+  root() = Options{};
+
+  // Derivative defaults are configured from options and stored in global singletons.
+  // Restore their option-derived defaults without clearing the registered kernels.
+  Options defaults;
+  DerivativeStore<Field2D>::getInstance().initialise(&defaults);
+  DerivativeStore<Field3D>::getInstance().initialise(&defaults);
+}
 
 Options Options::copy() const {
   Options result;

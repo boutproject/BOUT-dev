@@ -308,6 +308,8 @@ struct DerivativeStore {
   };
 
   void initialise(Options* options) {
+    defaultMethods.clear();
+    setDefaults();
 
     // To replicate the existing behaviour we first search for a section called
     //"dd?" and if the option isn't in there we search a section called "diff"
@@ -355,6 +357,11 @@ struct DerivativeStore {
           backupSection->get(derivName, theDefault, "");
         }
 
+        if (uppercase(theDefault) == toString(DIFF_DEFAULT)) {
+          throw BoutException("Default derivative options must resolve to a concrete "
+                              "method");
+        }
+
         // Now we have the default method we should store it in defaultMethods
         theDefault = uppercase(theDefault);
         defaultMethods[getKey(theDirection, STAGGER::None, theDerivTypeString)] =
@@ -375,6 +382,11 @@ struct DerivativeStore {
         // found then we leave the default as for the non-staggered version
         if (specificSection->isSet(derivName)) {
           specificSection->get(derivName, theDefault, "");
+        }
+
+        if (uppercase(theDefault) == toString(DIFF_DEFAULT)) {
+          throw BoutException("Default derivative options must resolve to a concrete "
+                              "method");
         }
 
         // Now we have the default method we should store it in defaultMethods

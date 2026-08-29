@@ -14,6 +14,7 @@
 class MeshTest : public ::testing::Test {
 public:
   MeshTest() : localmesh(nx, ny, nz) {}
+  ~MeshTest() override { Options::cleanup(); }
   static const int nx = 3;
   static const int ny = 5;
   static const int nz = 7;
