@@ -363,7 +363,7 @@ class GEM : public PhysicsModel {
       if (curv_logB) {
         Grad_par_logB = Grad_par(logB);
       } else {
-        Grad_par_logB = Grad_par(log(coord->Bxy));
+        Grad_par_logB = Grad_par(log(coord->Bxy()));
       }
     } else {
       Grad_par_logB = 0.;
@@ -1116,7 +1116,7 @@ class GEM : public PhysicsModel {
     if (curv_logB) {
       return -bracket(2. * logB, f, BRACKET_ARAKAWA);
     }
-    return -bracket(2. * log(coord->Bxy), f, BRACKET_ARAKAWA);
+    return -bracket(2. * log(coord->Bxy()), f, BRACKET_ARAKAWA);
   }
 
   ////////////////////////////////////////////////////////////////////////
@@ -1131,7 +1131,7 @@ class GEM : public PhysicsModel {
     delp2.applyBoundary("neumann");
     mesh->communicate(delp2);
 
-    return nu_perp * Delp2(delp2 * SQ(SQ(1. / coord->Bxy)))
+    return nu_perp * Delp2(delp2 * SQ(SQ(1. / coord->Bxy())))
            - nu_par * Grad2_par2(f) // NB: This should be changed for variable B
         ;
   }
@@ -1147,8 +1147,8 @@ class GEM : public PhysicsModel {
   }
 
   const Field3D Div_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) {
-    return interp_to(coord->Bxy, loc)
-           * Grad_parP(f / interp_to(coord->Bxy, f.getLocation()), loc);
+    return interp_to(coord->Bxy(), loc)
+           * Grad_parP(f / interp_to(coord->Bxy(), f.getLocation()), loc);
   }
 };
 

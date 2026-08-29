@@ -48,6 +48,8 @@ constexpr auto use_msgstack = static_cast<bool>(BOUT_USE_MSGSTACK);
 #undef STRINGIFY1
 #undef STRINGIFY
 
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
+// These defines are used to provide compiler-specific flags
 #if BOUT_HAS_CUDA && defined(__CUDACC__)
 #define BOUT_HOST_DEVICE __host__ __device__
 #define BOUT_HOST __host__
@@ -69,5 +71,36 @@ constexpr auto use_msgstack = static_cast<bool>(BOUT_USE_MSGSTACK);
 #define BOUT_DEVICE
 #define BOUT_FORCEINLINE inline
 #endif
+
+#if defined(__has_cpp_attribute) && __has_cpp_attribute(assume) >= 202207L
+#define BOUT_ASSUME(condition) [[assume(condition)]]
+#elif defined(_MSC_VER)
+#define BOUT_ASSUME(condition) __assume(condition)
+#elif defined(__clang__)
+#if __has_builtin(__builtin_assume)
+#define BOUT_ASSUME(condition) __builtin_assume(condition)
+#else
+#define BOUT_ASSUME(condition) ((void)0)
+#endif
+#elif defined(__GNUC__)
+#define BOUT_ASSUME(condition) \
+  do {                         \
+    if (!(condition)) {        \
+      __builtin_unreachable(); \
+    }                          \
+  } while (false)
+#else
+#define BOUT_ASSUME(condition) ((void)0)
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+#define BOUT_UNREACHABLE() __builtin_unreachable()
+#elif defined(_MSC_VER)
+#define BOUT_UNREACHABLE() __assume(false)
+#else
+// Cannot call std::abort in device code
+#define BOUT_UNREACHABLE()
+#endif
+// NOLINTEND(cppcoreguidelines-macro-usage)
 
 #endif // BOUT_BUILD_OPTIONS_HXX

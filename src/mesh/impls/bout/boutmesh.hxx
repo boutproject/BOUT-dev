@@ -169,7 +169,7 @@ public:
   bool hasBndryUpperY() const override { return has_boundary_upper_y; }
 
   // Boundary regions
-  std::vector<BoundaryRegionBase*> getBoundaries() override;
+  std::vector<std::shared_ptr<BoundaryRegionBase>> getBoundaries() const override;
   std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>
   getBoundariesPar(BoundaryParType type) const override;
   void addBoundaryPar(std::shared_ptr<bout::boundary::BoundaryRegionFCI> bndry,
@@ -255,6 +255,8 @@ protected:
     int jyseps1_2;
     int jyseps2_2;
     int ny_inner;
+
+    auto operator<=>(const YDecompositionIndices&) const = default;
   };
 
   /// Version of `setYDecompositionindices` that returns the values
@@ -353,6 +355,8 @@ protected:
     int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
     int DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT;
     int IDATA_DEST, ODATA_DEST; // X inner and outer destinations
+
+    auto operator<=>(const ConnectionInfo&) const = default;
   };
 
   /// Return the communication parameters as calculated by `topology`
@@ -416,7 +420,7 @@ protected:
   void addBoundaryRegions();
 
 private:
-  std::vector<BoundaryRegionBase*> boundary; // Vector of boundary regions
+  std::vector<std::shared_ptr<BoundaryRegionBase>> boundary; // Vector of boundary regions
   std::array<std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>,
              static_cast<int>(BoundaryParType::SIZE)>
       par_boundary; // Vector of parallel boundary regions

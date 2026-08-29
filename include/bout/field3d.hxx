@@ -31,6 +31,7 @@ class Field3D;
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/build_config.hxx"
 #include "bout/field.hxx"
 #include "bout/field2d.hxx"
@@ -355,7 +356,7 @@ public:
   const Region<Ind3D>& getValidRegionWithDefault(const std::string& region_name) const;
   void setRegion(const std::string& region_name) override;
   void resetRegion() override { regionID.reset(); };
-  void resetRegionParallel(bool force = false);
+  void resetRegionParallel(bool force = false) override;
   void setRegion(size_t id) override { regionID = id; };
   void setRegion(std::optional<size_t> id) override { regionID = id; };
   std::optional<size_t> getRegionID() const override { return regionID; };
@@ -371,6 +372,14 @@ public:
   Region<Ind3D>::RegionIndices::const_iterator end() const {
     return std::end(getRegion("RGN_ALL"));
   };
+
+  /// Convert (x, y, z) to an Ind3D
+  /// Requires mesh size.
+  Ind3D indexAt(int x, int y, int z) const {
+    const int ny = this->getNy();
+    const int nz = this->getNz();
+    return Ind3D{(((x * ny) + y) * nz) + z, ny, nz};
+  }
 
   BoutReal& operator[](const Ind3D& d) { return data[d.ind]; }
   const BoutReal& operator[](const Ind3D& d) const { return data[d.ind]; }
@@ -457,23 +466,53 @@ public:
 
   struct View {
     BoutReal* data;
-    int mul = 1;
-    int div = 1;
+    const Field3D* yup_fields{nullptr};
+    const Field3D* ydown_fields{nullptr};
+    int num_parallel_slices{0};
+    std::optional<size_t> regionID;
+
     BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx) const {
-      return data[(idx * mul) / div];
+      return data[idx];
     }
     BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal& operator[](int idx) const {
-      return data[(idx * mul) / div];
+      return data[idx];
     }
 
-    View& setScale(int mul, int div) {
-      this->mul = mul;
-      this->div = div;
+    template <typename Mul, typename Div>
+    View& setScale(Mul /*unused*/, Div /*unused*/) {
+      static_assert(!std::is_same_v<Mul, Mul>,
+                    "Field3D::View does not support setScale()");
       return *this;
     }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE bool hasParallelSlices() const {
+      return num_parallel_slices > 0;
+    }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE int numberParallelSlices() const {
+      return num_parallel_slices;
+    }
+    /// Not a DEVICE function because it dereferences a Field3D pointer
+    BOUT_FORCEINLINE View yup(int slice = 0) const {
+      ASSERT2(slice < num_parallel_slices);
+      ASSERT2(yup_fields[slice].isAllocated());
+      return static_cast<Field3D::View>(yup_fields[slice]);
+    }
+    /// Not a DEVICE function because it dereferences a Field3D pointer
+    BOUT_FORCEINLINE View ydown(int slice = 0) const {
+      ASSERT2(slice < num_parallel_slices);
+      ASSERT2(ydown_fields[slice].isAllocated());
+      return static_cast<Field3D::View>(ydown_fields[slice]);
+    }
+
+    std::optional<size_t> getRegionID() const { return regionID; }
   };
-  operator View() { return View{&data[0]}; }
-  operator View() const { return View{const_cast<BoutReal*>(&data[0])}; }
+  operator View() {
+    return View{&data[0], yup_fields.data(), ydown_fields.data(),
+                static_cast<int>(numberParallelSlices()), regionID};
+  }
+  operator View() const {
+    return View{const_cast<BoutReal*>(&data[0]), yup_fields.data(), ydown_fields.data(),
+                static_cast<int>(numberParallelSlices()), regionID};
+  }
   //operator View() const { return View{&data[0]}; }
 
   /////////////////////////////////////////////////////////
@@ -594,6 +633,8 @@ public:
   friend class Vector2D;
 
   void calcParallelSlices() override;
+  bool areCalcParallelSlicesAllowed() const override { return _allowCalcParallelSlices; };
+  void disallowCalcParallelSlices() override { _allowCalcParallelSlices = false; };
 
   void applyBoundary(bool init = false) override;
   void applyBoundary(BoutReal t);
@@ -625,9 +666,6 @@ public:
   int size() const override { return nx * ny * nz; };
 
   std::weak_ptr<Options> getTracking() { return tracking; };
-
-  bool areCalcParallelSlicesAllowed() const { return _allowCalcParallelSlices; };
-  void disallowCalcParallelSlices() { _allowCalcParallelSlices = false; };
 
   inline Field3DParallel asField3DParallel();
   inline Field3DParallel asField3DParallel() const;
@@ -849,31 +887,6 @@ if_else(bool condition, const L& lhs, const R& rhs) {
       rhs.getMesh()->getRegion("RGN_ALL")};
 }
 
-Field3DParallel operator+(const Field3D& lhs, const Field3DParallel& rhs);
-Field3DParallel operator-(const Field3D& lhs, const Field3DParallel& rhs);
-Field3DParallel operator*(const Field3D& lhs, const Field3DParallel& rhs);
-Field3DParallel operator/(const Field3D& lhs, const Field3DParallel& rhs);
-
-Field3DParallel operator+(const Field3DParallel& lhs, const Field3D& rhs);
-Field3DParallel operator-(const Field3DParallel& lhs, const Field3D& rhs);
-Field3DParallel operator*(const Field3DParallel& lhs, const Field3D& rhs);
-Field3DParallel operator/(const Field3DParallel& lhs, const Field3D& rhs);
-
-Field3DParallel operator+(const Field3DParallel& lhs, const Field3DParallel& rhs);
-Field3DParallel operator-(const Field3DParallel& lhs, const Field3DParallel& rhs);
-Field3DParallel operator*(const Field3DParallel& lhs, const Field3DParallel& rhs);
-Field3DParallel operator/(const Field3DParallel& lhs, const Field3DParallel& rhs);
-
-Field3DParallel operator+(BoutReal lhs, const Field3DParallel& rhs);
-Field3DParallel operator-(BoutReal lhs, const Field3DParallel& rhs);
-Field3DParallel operator*(BoutReal lhs, const Field3DParallel& rhs);
-Field3DParallel operator/(BoutReal lhs, const Field3DParallel& rhs);
-
-Field3DParallel operator+(const Field3DParallel& lhs, BoutReal rhs);
-Field3DParallel operator-(const Field3DParallel& lhs, BoutReal rhs);
-Field3DParallel operator*(const Field3DParallel& lhs, BoutReal rhs);
-Field3DParallel operator/(const Field3DParallel& lhs, BoutReal rhs);
-
 /*!
  * Unary minus. Returns the negative of given field,
  * iterates over whole domain including guard/boundary cells.
@@ -900,24 +913,6 @@ inline auto operator-(const Field3D& f) {
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-template <typename L, typename R>
-std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>,
-                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
-pow(const L& lhs, const R& rhs, const std::string& rgn = "RGN_ALL") {
-  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
-  auto regionID = bout::detail::getExpressionRegionID(lhs, rhs, rgn);
-  int mesh_nz = lhs.getMesh()->LocalNz;
-  return BinaryExpr<Field3D, L, R, bout::op::Pow>{
-      static_cast<typename L::View>(lhs),
-      static_cast<typename R::View>(rhs).setScale(1, mesh_nz),
-      bout::op::Pow{},
-      lhs.getMesh(),
-      lhs.getLocation(),
-      lhs.getDirections(),
-      regionID,
-      (regionID.has_value() ? lhs.getMesh()->getRegion(regionID.value())
-                            : lhs.getMesh()->getRegion(rgn))};
-}
 FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs,
               const std::string& rgn = "RGN_ALL");
 
@@ -1034,6 +1029,13 @@ public:
   explicit Field3DParallel(Types... args) : Field3D(std::move(args)...) {
     ensureFieldAligned();
   }
+  template <typename L, typename R, typename Func,
+            typename = std::enable_if_t<is_expr_field3d_v<L> || is_expr_field3d_v<R>>>
+  Field3DParallel(const BinaryExpr<Field3D, L, R, Func>& expr)
+      : Field3DParallel(expr.getMesh(), expr.getLocation(), expr.getDirections(),
+                        expr.getRegionID()) {
+    *this = expr;
+  }
   Field3DParallel(const Field3D& f) : Field3D(f) { ensureFieldAligned(); }
   Field3DParallel(const Field3D& f, bool isRef) : Field3D(f), isRef(isRef) {
     ensureFieldAligned();
@@ -1062,6 +1064,46 @@ public:
   Field3D& asField3D() { return *this; }
   const Field3D& asField3D() const { return *this; }
 
+  struct View {
+    Field3D::View base;
+
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx) const {
+      return base(idx);
+    }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal& operator[](int idx) const {
+      return base[idx];
+    }
+
+    template <typename Mul, typename Div>
+    View& setScale(Mul /*unused*/, Div /*unused*/) {
+      static_assert(!std::is_same_v<Mul, Mul>,
+                    "Field3DParallel::View does not support setScale()");
+      return *this;
+    }
+
+    BOUT_FORCEINLINE bool hasParallelSlices() const { return base.hasParallelSlices(); }
+    BOUT_FORCEINLINE int numberParallelSlices() const {
+      return base.numberParallelSlices();
+    }
+    /// Not a DEVICE function because it dereferences a Field3D pointer
+    BOUT_FORCEINLINE View yup(int slice = 0) const {
+      ASSERT2(slice < base.num_parallel_slices);
+      ASSERT2(base.yup_fields[slice].isAllocated());
+      return View{static_cast<Field3D::View>(base.yup_fields[slice])};
+    }
+    /// Not a DEVICE function because it dereferences a Field3D pointer
+    BOUT_FORCEINLINE View ydown(int slice = 0) const {
+      ASSERT2(slice < base.num_parallel_slices);
+      ASSERT2(base.ydown_fields[slice].isAllocated());
+      return View{static_cast<Field3D::View>(base.ydown_fields[slice])};
+    }
+
+    std::optional<size_t> getRegionID() const { return base.regionID; }
+  };
+
+  operator View() { return View{static_cast<Field3D::View>(*this)}; }
+  operator View() const { return View{static_cast<Field3D::View>(*this)}; }
+
   Field3DParallel& operator*=(const Field3D&);
   Field3DParallel& operator/=(const Field3D&);
   Field3DParallel& operator+=(const Field3D&);
@@ -1082,6 +1124,45 @@ public:
   Field3DParallel& operator=(Field3D&& rhs) {
     Field3D::operator=(std::move(rhs));
     ensureFieldAligned();
+    return *this;
+  }
+  template <typename ResT, typename L, typename R, typename Func>
+  std::enable_if_t<is_expr_field3d_v<L> || is_expr_field3d_v<R>, Field3DParallel&>
+  operator=(const BinaryExpr<ResT, L, R, Func>& expr) {
+    if (getMesh() != expr.getMesh()) {
+      clearParallelSlices();
+      fieldmesh = expr.getMesh();
+      data = Array<BoutReal>{};
+    }
+    if (isFci()) {
+      if (!hasParallelSlices()) {
+        splitParallelSlices();
+      }
+    } else if (hasParallelSlices()) {
+      clearParallelSlices();
+    }
+
+    setRegion(expr.getRegionID());
+    setLocation(expr.getLocation());
+    setDirections(expr.getDirections());
+    allocate();
+    expr.evaluate(static_cast<Field3D::View>(*this).data);
+
+    if (isFci()) {
+      ASSERT2(expr.hasParallelSlices());
+      ASSERT2(expr.numberParallelSlices() == static_cast<int>(numberParallelSlices()));
+      for (int i = 0; i < expr.numberParallelSlices(); ++i) {
+        yup(i).allocate();
+        ydown(i).allocate();
+        auto expr_yup = expr.yup(i);
+        auto expr_ydown = expr.ydown(i);
+        yup(i).setRegion(expr_yup.getRegionID());
+        ydown(i).setRegion(expr_ydown.getRegionID());
+        expr_yup.evaluate(static_cast<Field3D::View>(yup(i)).data);
+        expr_ydown.evaluate(static_cast<Field3D::View>(ydown(i)).data);
+      }
+    }
+
     return *this;
   }
   Field3DParallel& operator=(BoutReal);
@@ -1128,16 +1209,6 @@ template <typename ResT, typename L, typename R, typename Fun>
 struct is_expr_field3d<BinaryExpr<ResT, L, R, Fun>>
     : std::integral_constant<bool, is_expr_field3d<std::decay_t<L>>::value
                                        || is_expr_field3d_v<std::decay_t<R>>> {};
-
-Field3D operator+(const Field2D& lhs, const Field3DParallel& rhs);
-Field3D operator-(const Field2D& lhs, const Field3DParallel& rhs);
-Field3D operator*(const Field2D& lhs, const Field3DParallel& rhs);
-Field3D operator/(const Field2D& lhs, const Field3DParallel& rhs);
-
-Field3D operator+(const Field3DParallel& lhs, const Field2D& rhs);
-Field3D operator-(const Field3DParallel& lhs, const Field2D& rhs);
-Field3D operator*(const Field3DParallel& lhs, const Field2D& rhs);
-Field3D operator/(const Field3DParallel& lhs, const Field2D& rhs);
 
 inline Field3DParallel
 filledFrom(const Field3DParallel& f,

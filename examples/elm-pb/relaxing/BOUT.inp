@@ -75,7 +75,7 @@ fft_measurement_flag = measure  # If using FFTW, perform tests to determine fast
 atol = 1.0e-8 # absolute tolerance
 rtol = 1.0e-5  # relative tolerance
 
-use_precon = false    # Use preconditioner: User-supplied or BBD
+cvode_precon_method = none  # Disable CVODE preconditioning
 
 mxstep = 50000   # Number of internal steps between outputs
 
@@ -296,4 +296,3 @@ bndry_core = neumann
 bndry_xin = none
 bndry_xout = none
 #bndry_target = neumann
-

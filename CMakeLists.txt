@@ -31,7 +31,7 @@ endif()
 # Set the version here, strip any extra tags to use in `project`
 # We try to use git to get a full description, inspired by setuptools_scm
 set(_bout_previous_version "5.2.0")
-set(_bout_next_version "5.2.1")
+set(_bout_next_version "6.0.0")
 execute_process(
   COMMAND "git" describe --tags --match=v${_bout_previous_version}
   COMMAND sed -e s/${_bout_previous_version}-/${_bout_next_version}.dev/ -e
@@ -116,10 +116,11 @@ set(BOUT_SOURCES
     ./include/bout/bout.hxx
     ./include/bout/bout_enum_class.hxx
     ./include/bout/bout_types.hxx
-    ./include/bout/build_config.hxx
     ./include/bout/boutcomm.hxx
     ./include/bout/boutexception.hxx
+    ./include/bout/build_config.hxx
     ./include/bout/caliper_wrapper.hxx
+    ./include/bout/christoffel_symbols.hxx
     ./include/bout/constants.hxx
     ./include/bout/coordinates.hxx
     ./include/bout/coordinates_accessor.hxx
@@ -128,7 +129,6 @@ set(BOUT_SOURCES
     ./include/bout/deriv_store.hxx
     ./include/bout/derivs.hxx
     ./include/bout/difops.hxx
-    ./include/bout/expr.hxx
     ./include/bout/fft.hxx
     ./include/bout/field.hxx
     ./include/bout/field2d.hxx
@@ -136,17 +136,21 @@ set(BOUT_SOURCES
     ./include/bout/field_accessor.hxx
     ./include/bout/field_data.hxx
     ./include/bout/field_factory.hxx
-    ./include/bout/fieldops.hxx
     ./include/bout/fieldgroup.hxx
+    ./include/bout/fieldops.hxx
     ./include/bout/fieldperp.hxx
     ./include/bout/fv_ops.hxx
+    ./include/bout/fv_ops_impl.hxx
+    ./include/bout/g_values.hxx
     ./include/bout/generic_factory.hxx
+    ./include/bout/git_metadata.hxx
     ./include/bout/globalfield.hxx
     ./include/bout/globalindexer.hxx
     ./include/bout/globals.hxx
     ./include/bout/griddata.hxx
     ./include/bout/gyro_average.hxx
     ./include/bout/hypre_interface.hxx
+    ./include/bout/hyprelib.hxx
     ./include/bout/index_derivs.hxx
     ./include/bout/index_derivs_interface.hxx
     ./include/bout/initialprofiles.hxx
@@ -163,6 +167,7 @@ set(BOUT_SOURCES
     ./include/bout/macro_for_each.hxx
     ./include/bout/mask.hxx
     ./include/bout/mesh.hxx
+    ./include/bout/metric_tensor.hxx
     ./include/bout/monitor.hxx
     ./include/bout/mpi_wrapper.hxx
     ./include/bout/msg_stack.hxx
@@ -175,9 +180,9 @@ set(BOUT_SOURCES
     ./include/bout/output.hxx
     ./include/bout/output_bout_types.hxx
     ./include/bout/parallel_boundary_op.hxx
-    ./include/bout/parallel_boundary_region.hxx
     ./include/bout/paralleltransform.hxx
     ./include/bout/petsc_interface.hxx
+    ./include/bout/petsc_operators.hxx
     ./include/bout/petsclib.hxx
     ./include/bout/physicsmodel.hxx
     ./include/bout/rajalib.hxx
@@ -214,8 +219,9 @@ set(BOUT_SOURCES
     ./include/bout/vector2d.hxx
     ./include/bout/vector3d.hxx
     ./include/bout/where.hxx
-    ./src/bout++.cxx
+    ./include/bout/yboundary_regions.hxx
     ./src/bout++-time.hxx
+    ./src/bout++.cxx
     ./src/field/field.cxx
     ./src/field/field2d.cxx
     ./src/field/field3d.cxx
@@ -238,6 +244,8 @@ set(BOUT_SOURCES
     ./src/invert/laplace/common_transform.hxx
     ./src/invert/laplace/impls/cyclic/cyclic_laplace.cxx
     ./src/invert/laplace/impls/cyclic/cyclic_laplace.hxx
+    ./src/invert/laplace/impls/hypre3d/hypre3d_laplace.cxx
+    ./src/invert/laplace/impls/hypre3d/hypre3d_laplace.hxx
     ./src/invert/laplace/impls/iterative_parallel_tri/iterative_parallel_tri.cxx
     ./src/invert/laplace/impls/iterative_parallel_tri/iterative_parallel_tri.hxx
     ./src/invert/laplace/impls/multigrid/multigrid_alg.cxx
@@ -260,8 +268,6 @@ set(BOUT_SOURCES
     ./src/invert/laplace/impls/serial_tri/serial_tri.hxx
     ./src/invert/laplace/impls/spt/spt.cxx
     ./src/invert/laplace/impls/spt/spt.hxx
-    ./src/invert/laplace/impls/hypre3d/hypre3d_laplace.cxx
-    ./src/invert/laplace/impls/hypre3d/hypre3d_laplace.hxx
     ./src/invert/laplace/invert_laplace.cxx
     ./src/invert/laplacexy/impls/hypre/laplacexy-hypre.cxx
     ./src/invert/laplacexy/impls/hypre/laplacexy-hypre.hxx
@@ -284,23 +290,26 @@ set(BOUT_SOURCES
     ./src/mesh/boundary_factory.cxx
     ./src/mesh/boundary_region.cxx
     ./src/mesh/boundary_standard.cxx
+    ./src/mesh/christoffel_symbols.cxx
     ./src/mesh/coordinates.cxx
     ./src/mesh/coordinates_accessor.cxx
     ./src/mesh/data/gridfromfile.cxx
     ./src/mesh/data/gridfromoptions.cxx
     ./src/mesh/difops.cxx
     ./src/mesh/fv_ops.cxx
+    ./src/mesh/g_values.cxx
     ./src/mesh/impls/bout/boutmesh.cxx
     ./src/mesh/impls/bout/boutmesh.hxx
     ./src/mesh/index_derivs.cxx
-    ./src/mesh/interpolation_xz.cxx
     ./src/mesh/interpolation/bilinear_xz.cxx
     ./src/mesh/interpolation/hermite_spline_xz.cxx
     ./src/mesh/interpolation/hermite_spline_z.cxx
     ./src/mesh/interpolation/interpolation_z.cxx
     ./src/mesh/interpolation/lagrange_4pt_xz.cxx
+    ./src/mesh/interpolation_xz.cxx
     ./src/mesh/invert3x3.hxx
     ./src/mesh/mesh.cxx
+    ./src/mesh/metric_tensor.cxx
     ./src/mesh/parallel/fci.cxx
     ./src/mesh/parallel/fci.hxx
     ./src/mesh/parallel/fci_comm.cxx
@@ -311,8 +320,10 @@ set(BOUT_SOURCES
     ./src/mesh/parallel/shiftedmetricinterp.hxx
     ./src/mesh/parallel_boundary_op.cxx
     ./src/mesh/parallel_boundary_region.cxx
+    ./src/mesh/petsc_operators.cxx
     ./src/mesh/surfaceiter.cxx
     ./src/mesh/tokamak_coordinates.cxx
+    ./src/mesh/yboundary_regions.cxx
     ./src/physics/gyro_average.cxx
     ./src/physics/physicsmodel.cxx
     ./src/physics/smoothing.cxx
@@ -357,6 +368,7 @@ set(BOUT_SOURCES
     ./src/solver/impls/snes/snes.hxx
     ./src/solver/impls/split-rk/split-rk.cxx
     ./src/solver/impls/split-rk/split-rk.hxx
+    ./src/solver/petsc_preconditioner.cxx
     ./src/solver/solver.cxx
     ./src/sys/adios_object.cxx
     ./src/sys/bout_types.cxx
@@ -365,18 +377,17 @@ set(BOUT_SOURCES
     ./src/sys/derivs.cxx
     ./src/sys/expressionparser.cxx
     ./src/sys/generator_context.cxx
-    ./include/bout/hyprelib.hxx
     ./src/sys/hyprelib.cxx
     ./src/sys/msg_stack.cxx
     ./src/sys/options.cxx
     ./src/sys/options/optionparser.hxx
+    ./src/sys/options/options_adios.cxx
+    ./src/sys/options/options_adios.hxx
     ./src/sys/options/options_ini.cxx
     ./src/sys/options/options_ini.hxx
     ./src/sys/options/options_io.cxx
     ./src/sys/options/options_netcdf.cxx
     ./src/sys/options/options_netcdf.hxx
-    ./src/sys/options/options_adios.cxx
-    ./src/sys/options/options_adios.hxx
     ./src/sys/optionsreader.cxx
     ./src/sys/output.cxx
     ./src/sys/output_bout_types.cxx
@@ -508,17 +519,34 @@ else()
 endif()
 set(BOUT_USE_PYTHON ${BOUT_ENABLE_PYTHON})
 
+set_source_files_properties(
+  ${CMAKE_CURRENT_BINARY_DIR}/git_metadata.cxx PROPERTIES GENERATED TRUE
+)
+add_custom_target(
+  bout++-git-metadata
+  COMMAND
+    ${CMAKE_COMMAND} -DOUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/git_metadata.cxx
+    -DSOURCE_DIR=${PROJECT_SOURCE_DIR} -DGIT_EXECUTABLE=${GIT_EXECUTABLE} -P
+    "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateGitMetadata.cmake"
+  BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/git_metadata.cxx
+  COMMENT "Generating git metadata source"
+)
+
 # Ensure that the compile date/time is up-to-date when any of the sources change
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bout++-time.cxx
   COMMAND ${CMAKE_COMMAND} -P
           "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateDateTimeFile.cmake"
-  DEPENDS ${BOUT_SOURCES}
+  DEPENDS ${BOUT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/git_metadata.cxx
   MAIN_DEPENDENCY "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateDateTimeFile.cmake"
 )
 
-add_library(bout++ ${BOUT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/bout++-time.cxx)
+add_library(
+  bout++ ${BOUT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/bout++-time.cxx
+         ${CMAKE_CURRENT_BINARY_DIR}/git_metadata.cxx
+)
 add_library(bout++::bout++ ALIAS bout++)
+add_dependencies(bout++ bout++-git-metadata)
 target_link_libraries(bout++ PUBLIC MPI::MPI_CXX)
 target_include_directories(
   bout++
@@ -563,6 +591,7 @@ set(BOUT_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(BOUT_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 
 # Get the git commit
+find_package(Git QUIET)
 include(GetGitRevisionDescription)
 get_git_head_revision(GIT_REFSPEC BOUT_REVISION)
 if(BOUT_REVISION STREQUAL "GITDIR-NOTFOUND")
@@ -750,6 +779,7 @@ option(
   OFF
 )
 if(BOUT_TESTS)
+  set(CMAKE_CTEST_ARGUMENTS "--output-on-failure" "--timeout" "300")
   enable_testing()
   # Targets for just building the tests
   # Tests need to add themselves as dependencies to these targets
@@ -777,7 +807,8 @@ if(BOUT_TESTS)
   endif()
 
   add_custom_target(
-    check-integrated-tests COMMAND ctest -R "test-" --output-on-failure
+    check-integrated-tests
+    COMMAND bash "${PROJECT_BINARY_DIR}/tests/run_integrated_tests.sh"
   )
   add_dependencies(check-integrated-tests build-check-integrated-tests)
 
@@ -790,6 +821,30 @@ if(BOUT_TESTS)
   if(BOUT_ENABLE_UNIT_TESTS)
     add_dependencies(check check-unit-tests)
   endif()
+
+  # Copy the pytest config file
+  configure_file(
+    "${PROJECT_SOURCE_DIR}/tests/conftest.py"
+    "${PROJECT_BINARY_DIR}/tests/conftest.py"
+  )
+
+  # Copy the pyproject.toml file
+  configure_file(
+    "${PROJECT_SOURCE_DIR}/pyproject.toml"
+    "${PROJECT_BINARY_DIR}/pyproject.toml"
+  )
+
+  # Copy the pytest config file for the boutpp tests
+  configure_file(
+    "${PROJECT_SOURCE_DIR}/tests/integrated/test-boutpp/conftest.py"
+    "${PROJECT_BINARY_DIR}/tests/integrated/test-boutpp/conftest.py"
+  )
+
+  # Copy the pytest shell script
+  configure_file(
+    "${PROJECT_SOURCE_DIR}/tests/run_integrated_tests.sh"
+    "${PROJECT_BINARY_DIR}/tests/run_integrated_tests.sh" @ONLY
+  )
 
 endif()
 

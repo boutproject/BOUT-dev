@@ -25,6 +25,7 @@
  **************************************************************************/
 
 #include "bout/build_defines.hxx"
+#include <cstddef>
 
 #include "cvode.hxx"
 
@@ -36,6 +37,7 @@
 #include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/build_config.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/globals.hxx"
@@ -44,10 +46,15 @@
 #include "bout/msg_stack.hxx"
 #include "bout/options.hxx"
 #include "bout/output.hxx"
+#include "bout/petsc_preconditioner.hxx"
+#include "bout/petsclib.hxx"
+#include "bout/region.hxx"
+#include "bout/solver.hxx"
 #include "bout/sundials_backports.hxx"
 #include "bout/unused.hxx"
 
 #include "fmt/core.h"
+#include "fmt/format.h"
 
 #include <cvode/cvode.h>
 #include <cvode/cvode_bbdpre.h>
@@ -59,14 +66,15 @@
 
 #include <algorithm>
 #include <iterator>
+#include <memory>
 #include <numeric>
 #include <string>
 #include <vector>
 
-BOUT_ENUM_CLASS(positivity_constraint, none, positive, non_negative, negative,
-                non_positive);
+BOUT_ENUM_CLASS_NS(bout, positivity_constraint, none, positive, non_negative, negative,
+                   non_positive);
 
-BOUT_ENUM_CLASS(linear_solver, gmres, fgmres, tfqmr, bcgs);
+BOUT_ENUM_CLASS_NS(bout, linear_solver, gmres, fgmres, tfqmr, bcgs);
 
 // NOLINTBEGIN(readability-identifier-length)
 namespace {
@@ -119,6 +127,16 @@ CvodeSolver::CvodeSolver(Options* opts)
               .doc("Maximum number of nonlinear iterations allowed by CVODE before "
                    "reducing timestep.")
               .withDefault(3)),
+      lsetup_frequency(
+          (*options)["cvode_lsetup_frequency"]
+              .doc("Linear solver setup frequency (CVodeSetLSetupFrequency). "
+                   "0 uses the SUNDIALS default.")
+              .withDefault(0)),
+      jac_eval_frequency((*options)["cvode_jac_eval_frequency"]
+                             .doc("Jacobian/preconditioner evaluation frequency "
+                                  "(CVodeSetJacEvalFrequency). "
+                                  "0 uses the SUNDIALS default.")
+                             .withDefault(0)),
       apply_positivity_constraints(
           (*options)["apply_positivity_constraints"]
               .doc("Use CVODE function CVodeSetConstraints to constrain variables - the "
@@ -128,11 +146,17 @@ CvodeSolver::CvodeSolver(Options* opts)
                    "each variable")
               .withDefault(false)),
       maxl((*options)["maxl"].doc("Maximum number of linear iterations").withDefault(5)),
-      use_precon((*options)["use_precon"].doc("Use preconditioner?").withDefault(false)),
       rightprec((*options)["rightprec"]
                     .doc("Use right preconditioner? Otherwise use left.")
                     .withDefault(false)),
       use_jacobian((*options)["use_jacobian"].withDefault(false)),
+      precon_method(
+          (*options)["cvode_precon_method"]
+              .doc("Preconditioner to use with CVODE Newton iteration. "
+                   "Choices: none (default), auto, user, petsc, bbd. "
+                   "auto prefers user (if supplied), then petsc (if available), "
+                   "then bbd.")
+              .withDefault(CvodePreconMethod::none)),
       nvector_type((*options)["nvector"]
                        .doc("N_Vector backend to use: sundials or manyvector")
                        .withDefault(NVectorType::Sundials)),
@@ -145,9 +169,27 @@ CvodeSolver::CvodeSolver(Options* opts)
               .doc("Factor by which the Krylov linear solver’s convergence test constant "
                    "is reduced from the nonlinear solver test constant.")
               .withDefault(0.05)),
+      save_jacobian((*options)["save_jacobian"]
+                        .doc("Save PETSc Jacobian diagnostics to datadir")
+                        .withDefault(false)),
+      jacobian_export_kind((*options)["jacobian_export_kind"]
+                               .doc("Which Jacobian to save for CVODE: system or rhs "
+                                    "(scaled is not supported)")
+                               .withDefault(bout::JacobianExportKind::system)),
+      jacobian_export_trigger(
+          (*options)["jacobian_export_trigger"]
+              .doc("When to save CVODE Jacobians: output or linear_setup")
+              .withDefault(bout::CvodeJacobianExportTrigger::linear_setup)),
       suncontext(createSUNContext(BoutComm::get())) {
   has_constraints = false; // This solver doesn't have constraints
   canReset = true;
+
+  if ((*options)["use_precon"].isSet()) {
+    throw BoutException("solver:use_precon is deprecated for CVODE and is now "
+                        "ignored. To reproduce behaviour of use_precon=true, "
+                        "set cvode_precon_method=user. This enables the Hermes-3 "
+                        "physical preconditioners.\n");
+  }
 
   // Add diagnostics to output
   // Needs to be in constructor not init() because init() is called after
@@ -175,8 +217,112 @@ CvodeSolver::~CvodeSolver() {
     CVodeFree(&cvode_mem);
     SUNLinSolFree(sun_solver);
     SUNNonlinSolFree(nonlinear_solver);
+#if BOUT_HAS_PETSC
+    if (petsc_ksp != nullptr) {
+      KSPDestroy(&petsc_ksp);
+    }
+    if (petsc_r != nullptr) {
+      VecDestroy(&petsc_r);
+    }
+    if (petsc_z != nullptr) {
+      VecDestroy(&petsc_z);
+    }
+    if (petsc_x != nullptr) {
+      VecDestroy(&petsc_x);
+    }
+    if (petsc_f != nullptr) {
+      VecDestroy(&petsc_f);
+    }
+#endif
   }
 }
+
+#if BOUT_HAS_PETSC
+void CvodeSolver::exportMatrixAndMetadata(bout::JacobianExportKind kind,
+
+                                          Mat jacobian) {
+
+  Solver::writeOnceJacobianMetadata("cvode");
+  Solver::writeJacobianMatrix(kind, jacobian);
+}
+
+void CvodeSolver::saveDiagnosticJacobian(bout::JacobianExportKind kind, Vec x, BoutReal t,
+                                         BoutReal gamma) {
+  if (kind == bout::JacobianExportKind::scaled) {
+    throw BoutException("solver:jacobian_export_kind=scaled is not supported for CVODE");
+  }
+
+  petsc_t = t;
+  petsc_gamma = gamma;
+
+  PetscPreconditioner diagnostic_preconditioner;
+  Field3D index = globalIndex(0);
+  BOUT_DO_PETSC(diagnostic_preconditioner.createJacobianPattern(
+      index, *options, getLocalN(), n2Dvars(), n3Dvars(), BoutComm::get()));
+
+  if (kind == bout::JacobianExportKind::rhs) {
+    BOUT_DO_PETSC(diagnostic_preconditioner.updateColoring(
+        CvodeSolver::petscFormRhsFunction, this));
+  } else {
+    BOUT_DO_PETSC(
+        diagnostic_preconditioner.updateColoring(CvodeSolver::petscFormFunction, this));
+  }
+
+  Vec diagnostic_f{nullptr};
+  BOUT_DO_PETSC(VecDuplicate(x, &diagnostic_f));
+  if (kind == bout::JacobianExportKind::rhs) {
+    BOUT_DO_PETSC(CvodeSolver::petscFormRhsFunction(nullptr, x, diagnostic_f, this));
+  } else {
+    BOUT_DO_PETSC(CvodeSolver::petscFormFunction(nullptr, x, diagnostic_f, this));
+  }
+  BOUT_DO_PETSC(MatFDColoringSetF(diagnostic_preconditioner.coloring(), diagnostic_f));
+
+  Mat diagnostic_jacobian = diagnostic_preconditioner.jacobian();
+  BOUT_DO_PETSC(MatZeroEntries(diagnostic_jacobian));
+  BOUT_DO_PETSC(MatFDColoringApply(diagnostic_jacobian,
+                                   diagnostic_preconditioner.coloring(), x, nullptr));
+  BOUT_DO_PETSC(MatAssemblyBegin(diagnostic_jacobian, MAT_FINAL_ASSEMBLY));
+  BOUT_DO_PETSC(MatAssemblyEnd(diagnostic_jacobian, MAT_FINAL_ASSEMBLY));
+  exportMatrixAndMetadata(kind, diagnostic_jacobian);
+  BOUT_DO_PETSC(VecDestroy(&diagnostic_f));
+}
+
+void CvodeSolver::maybeExportJacobian(Mat system_jacobian, Vec x, BoutReal t,
+                                      BoutReal gamma) {
+  if (!save_jacobian
+      or jacobian_export_trigger != bout::CvodeJacobianExportTrigger::linear_setup) {
+    return;
+  }
+
+  if (jacobian_export_kind == bout::JacobianExportKind::system) {
+    exportMatrixAndMetadata(jacobian_export_kind, system_jacobian);
+    return;
+  }
+
+  saveDiagnosticJacobian(jacobian_export_kind, x, t, gamma);
+}
+
+void CvodeSolver::maybeExportOutputJacobian(BoutReal t) {
+  if (!save_jacobian
+      or jacobian_export_trigger != bout::CvodeJacobianExportTrigger::output) {
+    return;
+  }
+
+  Vec x{nullptr};
+  BOUT_DO_PETSC(VecCreate(BoutComm::get(), &x));
+  BOUT_DO_PETSC(VecSetSizes(x, getLocalN(), PETSC_DETERMINE));
+  BOUT_DO_PETSC(VecSetType(x, VECMPI));
+  BOUT_DO_PETSC(VecSetUp(x));
+
+  BoutReal* xdata = nullptr;
+  BOUT_DO_PETSC(VecGetArray(x, &xdata));
+  save_vars(xdata);
+  BOUT_DO_PETSC(VecRestoreArray(x, &xdata));
+
+  saveDiagnosticJacobian(bout::JacobianExportKind::rhs, x, t, 0.0);
+  BOUT_DO_PETSC(VecDestroy(&x));
+}
+#endif
 
 /**************************************************************************
  * Initialise
@@ -194,9 +340,10 @@ int CvodeSolver::init() {
   const int local_N = getLocalN();
 
   // Get total problem size
-  int neq;
+  int neq{0};
   if (bout::globals::mpi->MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM,
-                                        BoutComm::get())) {
+                                        BoutComm::get())
+      != 0) {
     throw BoutException("Allreduce localN -> GlobalN failed!\n");
   }
 
@@ -313,6 +460,12 @@ int CvodeSolver::init() {
     throw BoutException("CVodeSetMaxNonlinIters failed\n");
   }
 
+#if SUNDIALS_VERSION_MAJOR >= 6
+  if (CVodeSetLSetupFrequency(cvode_mem, lsetup_frequency) != CV_SUCCESS) {
+    throw BoutException("CVodeSetLSetupFrequency failed\n");
+  }
+#endif
+
   if (apply_positivity_constraints) {
     auto f2d_constraints = create_constraints(f2d);
     auto f3d_constraints = create_constraints(f3d);
@@ -329,6 +482,57 @@ int CvodeSolver::init() {
     N_VDestroy(constraints_vec);
   }
 
+  CvodePreconMethod selected_precon = precon_method;
+  if (selected_precon == CvodePreconMethod::Auto) {
+    if (hasPreconditioner()) {
+      selected_precon = CvodePreconMethod::user;
+    } else if (bout::build::has_petsc) {
+      selected_precon = CvodePreconMethod::petsc;
+    } else {
+      selected_precon = CvodePreconMethod::bbd;
+    }
+  }
+
+  if (save_jacobian) {
+#if !BOUT_HAS_PETSC
+    throw BoutException("solver:save_jacobian for CVODE requires PETSc support.");
+#else
+    if (jacobian_export_kind == bout::JacobianExportKind::scaled) {
+      throw BoutException(
+          "solver:jacobian_export_kind=scaled is not supported for CVODE because "
+          "CVODE does not currently apply solver-coordinate scaling.");
+    }
+    if (jacobian_export_kind == bout::JacobianExportKind::system
+        and jacobian_export_trigger != bout::CvodeJacobianExportTrigger::linear_setup) {
+      throw BoutException("solver:jacobian_export_kind=system for CVODE requires "
+                          "solver:jacobian_export_trigger=linear_setup.");
+    }
+    if (jacobian_export_trigger == bout::CvodeJacobianExportTrigger::output
+        and jacobian_export_kind != bout::JacobianExportKind::rhs) {
+      throw BoutException("solver:jacobian_export_trigger=output for CVODE currently "
+                          "supports only solver:jacobian_export_kind=rhs.");
+    }
+    if (jacobian_export_trigger == bout::CvodeJacobianExportTrigger::linear_setup) {
+      if (func_iter) {
+        throw BoutException("solver:jacobian_export_trigger=linear_setup for CVODE "
+                            "requires Newton iteration (set solver:func_iter=false).");
+      }
+      if (nvector_type == NVectorType::ManyVector) {
+        throw BoutException("solver:jacobian_export_trigger=linear_setup for CVODE is "
+                            "not supported with solver:nvector=manyvector.");
+      }
+      if (selected_precon != CvodePreconMethod::petsc) {
+        throw BoutException("solver:jacobian_export_trigger=linear_setup for CVODE "
+                            "currently requires solver:cvode_precon_method=petsc "
+                            "(or auto resolving to petsc).");
+      }
+    }
+    if (!petsc_lib) {
+      petsc_lib = std::make_unique<PetscLib>();
+    }
+#endif
+  }
+
   /// Newton method can include Preconditioners and Jacobian function
   if (func_iter) {
     output_info.write("\tUsing Functional iteration\n");
@@ -343,23 +547,29 @@ int CvodeSolver::init() {
   } else {
     output_info.write("\tUsing Newton iteration\n");
 
-    const auto prectype =
-        use_precon ? (rightprec ? SUN_PREC_RIGHT : SUN_PREC_LEFT) : SUN_PREC_NONE;
+    auto prectype = SUN_PREC_NONE;
+    if (selected_precon != CvodePreconMethod::none) {
+      if (rightprec) {
+        prectype = SUN_PREC_RIGHT;
+      } else {
+        prectype = SUN_PREC_LEFT;
+      }
+    }
 
     switch ((*options)["linear_solver"]
                 .doc("Set linear solver type. Default is gmres.")
-                .withDefault(linear_solver::gmres)) {
-    case linear_solver::gmres:
+                .withDefault(bout::linear_solver::gmres)) {
+    case bout::linear_solver::gmres:
       sun_solver = callWithSUNContext(SUNLinSol_SPGMR, suncontext, uvec, prectype, maxl);
       break;
-    case linear_solver::fgmres:
+    case bout::linear_solver::fgmres:
       sun_solver = callWithSUNContext(SUNLinSol_SPFGMR, suncontext, uvec, prectype, maxl);
       break;
-    case linear_solver::tfqmr:
+    case bout::linear_solver::tfqmr:
       sun_solver =
           callWithSUNContext(SUNLinSol_SPTFQMR, suncontext, uvec, prectype, maxl);
       break;
-    case linear_solver::bcgs:
+    case bout::linear_solver::bcgs:
       sun_solver = callWithSUNContext(SUNLinSol_SPBCGS, suncontext, uvec, prectype, maxl);
       break;
     };
@@ -370,42 +580,94 @@ int CvodeSolver::init() {
       throw BoutException("CVodeSetLinearSolver failed\n");
     }
 
-    if (use_precon) {
-      if (hasPreconditioner()) {
-        output_info.write("\tUsing user-supplied preconditioner\n");
+#if SUNDIALS_VERSION_MAJOR >= 6
+    if (CVodeSetJacEvalFrequency(cvode_mem, jac_eval_frequency) != CVLS_SUCCESS) {
+      throw BoutException("CVodeSetJacEvalFrequency failed\n");
+    }
+#endif
 
-        if (CVodeSetPreconditioner(cvode_mem, nullptr, cvode_pre) != CVLS_SUCCESS) {
-          throw BoutException("CVodeSetPreconditioner failed\n");
-        }
-      } else {
-        output_info.write("\tUsing BBD preconditioner\n");
-
-        /// Get options
-        // Compute band_width_default from actually added fields, to allow for multiple
-        // Mesh objects
-        //
-        // Previous implementation was equivalent to:
-        //   int MXSUB = mesh->xend - mesh->xstart + 1;
-        //   int band_width_default = n3Dvars()*(MXSUB+2);
-        const int band_width_default = std::accumulate(
-            begin(f3d), end(f3d), 0, [](int a, const VarStr<Field3D>& fvar) {
-              const Mesh* localmesh = fvar.var->getMesh();
-              return a + localmesh->xend - localmesh->xstart + 3;
-            });
-
-        const auto mudq = (*options)["mudq"].withDefault(band_width_default);
-        const auto mldq = (*options)["mldq"].withDefault(band_width_default);
-        const auto mukeep = (*options)["mukeep"].withDefault(n3Dvars() + n2Dvars());
-        const auto mlkeep = (*options)["mlkeep"].withDefault(n3Dvars() + n2Dvars());
-
-        if (CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, mukeep, mlkeep, 0.0,
-                          cvode_bbd_rhs, nullptr)
-            != CVLS_SUCCESS) {
-          throw BoutException("CVBBDPrecInit failed\n");
-        }
-      }
-    } else {
+    if (selected_precon == CvodePreconMethod::none) {
       output_info.write("\tNo preconditioning\n");
+
+    } else if (selected_precon == CvodePreconMethod::user) {
+      if (!hasPreconditioner()) {
+        throw BoutException(
+            "solver:cvode_precon_method=user requested, but no user preconditioner "
+            "has been supplied.");
+      }
+
+      output_info.write("\tUsing user-supplied preconditioner\n");
+
+      if (CVodeSetPreconditioner(cvode_mem, nullptr, cvode_pre) != CVLS_SUCCESS) {
+        throw BoutException("CVodeSetPreconditioner failed\n");
+      }
+    } else if (selected_precon == CvodePreconMethod::petsc) {
+#if !BOUT_HAS_PETSC
+      throw BoutException(
+          "solver:cvode_precon_method=petsc requested, but BOUT++ was not "
+          "configured with PETSc.");
+#else
+      output_info.write("\tUsing PETSc coloring preconditioner\n");
+
+      if (!petsc_lib) {
+        petsc_lib = std::make_unique<PetscLib>();
+      }
+
+      petsc_global_N = neq;
+      petsc_rhs_tmp.resize(local_N);
+
+      if (petsc_ksp == nullptr) {
+        PetscCall(KSPCreate(BoutComm::get(), &petsc_ksp));
+        PetscCall(KSPSetType(petsc_ksp, KSPPREONLY));
+        PetscCall(KSPSetOptionsPrefix(petsc_ksp, "cvode_petscpre_"));
+        PetscCall(KSPSetFromOptions(petsc_ksp));
+      }
+
+      if (petsc_x == nullptr) {
+        PetscCall(VecCreateMPI(BoutComm::get(), local_N, petsc_global_N, &petsc_x));
+        PetscCall(VecDuplicate(petsc_x, &petsc_f));
+        PetscCall(VecCreateMPI(BoutComm::get(), local_N, petsc_global_N, &petsc_r));
+        PetscCall(VecCreateMPI(BoutComm::get(), local_N, petsc_global_N, &petsc_z));
+      }
+
+      Field3D index = globalIndex(0);
+      PetscCall(petsc_preconditioner.createJacobianPattern(
+          index, *options, local_N, n2Dvars(), n3Dvars(), BoutComm::get()));
+      PetscCall(
+          petsc_preconditioner.updateColoring(CvodeSolver::petscFormFunction, this));
+      PetscCall(MatFDColoringSetF(petsc_preconditioner.coloring(), petsc_f));
+
+      if (CVodeSetPreconditioner(cvode_mem, petscPSetup, petscPSolve) != CVLS_SUCCESS) {
+        throw BoutException("CVodeSetPreconditioner (PETSc coloring) failed\n");
+      }
+#endif // BOUT_HAS_PETSC
+
+    } else if (selected_precon == CvodePreconMethod::bbd) {
+      output_info.write("\tUsing BBD preconditioner\n");
+
+      /// Get options
+      // Compute band_width_default from actually added fields, to allow for multiple
+      // Mesh objects
+      //
+      // Previous implementation was equivalent to:
+      //   int MXSUB = mesh->xend - mesh->xstart + 1;
+      //   int band_width_default = n3Dvars()*(MXSUB+2);
+      const int band_width_default = std::accumulate(
+          begin(f3d), end(f3d), 0, [](int a, const VarStr<Field3D>& fvar) {
+            const Mesh* localmesh = fvar.var->getMesh();
+            return a + localmesh->xend - localmesh->xstart + 3;
+          });
+
+      const auto mudq = (*options)["mudq"].withDefault(band_width_default);
+      const auto mldq = (*options)["mldq"].withDefault(band_width_default);
+      const auto mukeep = (*options)["mukeep"].withDefault(n3Dvars() + n2Dvars());
+      const auto mlkeep = (*options)["mlkeep"].withDefault(n3Dvars() + n2Dvars());
+
+      if (CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, mukeep, mlkeep, 0.0,
+                        cvode_bbd_rhs, nullptr)
+          != CVLS_SUCCESS) {
+        throw BoutException("CVBBDPrecInit failed\n");
+      }
     }
 
     /// Set Jacobian-vector multiplication function
@@ -456,17 +718,17 @@ CvodeSolver::create_constraints(const std::vector<VarStr<FieldType>>& fields) {
                                             "positive, non_negative, negative, or "
                                             "non_positive.",
                                             f.name))
-                           .withDefault(positivity_constraint::none);
+                           .withDefault(bout::positivity_constraint::none);
                    switch (value) {
-                   case positivity_constraint::none:
+                   case bout::positivity_constraint::none:
                      return 0.0;
-                   case positivity_constraint::positive:
+                   case bout::positivity_constraint::positive:
                      return 2.0;
-                   case positivity_constraint::non_negative:
+                   case bout::positivity_constraint::non_negative:
                      return 1.0;
-                   case positivity_constraint::negative:
+                   case bout::positivity_constraint::negative:
                      return -2.0;
-                   case positivity_constraint::non_positive:
+                   case bout::positivity_constraint::non_positive:
                      return -1.0;
                    default:
                      throw BoutException("Incorrect value for "
@@ -551,7 +813,7 @@ int CvodeSolver::run() {
 
     /// Call the monitor function
 
-    if (call_monitors(simtime, i, getNumberOutputSteps())) {
+    if (call_monitors(simtime, i, getNumberOutputSteps()) != 0) {
       // User signalled to quit
       break;
     }
@@ -598,13 +860,17 @@ BoutReal CvodeSolver::run(BoutReal tout) {
   // Copy variables
   backend.copy_state_from_vector(uvec);
 
-  // Call rhs function to get extra variables at this time
-  run_rhs(simtime);
-
   if (flag < 0) {
     throw BoutException("ERROR CVODE solve failed at t = {:e}, flag = {:d}\n", simtime,
                         flag);
   }
+
+#if BOUT_HAS_PETSC
+  maybeExportOutputJacobian(simtime);
+#endif
+
+  // Call rhs function to get extra variables at this time
+  run_rhs(simtime);
 
   return simtime;
 }
@@ -630,6 +896,23 @@ void CvodeSolver::rhs(BoutReal t, N_Vector u, N_Vector du, bool linear) {
   // Save derivatives to dudata
   backend.copy_state_to_vector(u);
   backend.copy_deriv_to_vector(du);
+}
+
+void CvodeSolver::rhs(BoutReal t, BoutReal* u, BoutReal* du, bool linear) {
+  TRACE("Running RHS: CvodeSolver::res({})", t);
+
+  // Load state
+  load_vars(u);
+
+  // Get the current timestep
+  // Note: CVodeGetCurrentStep updated too late in older versions
+  CVodeGetLastStep(cvode_mem, &hcur);
+
+  // Call RHS function
+  run_rhs(t, linear);
+
+  // Save derivatives to du
+  save_derivs(du);
 }
 
 /**************************************************************************
@@ -750,6 +1033,168 @@ int cvode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector UNUSED(f
 } // namespace
 // NOLINTEND(readability-identifier-length)
 
+#if BOUT_HAS_PETSC
+PetscErrorCode CvodeSolver::petscFormFunction(void* UNUSED(dummy), Vec x, Vec f,
+                                              void* ctx) {
+  auto* s = static_cast<CvodeSolver*>(ctx);
+
+  PetscInt length = 0;
+  PetscCall(VecGetLocalSize(x, &length));
+  s->petsc_rhs_tmp.resize(static_cast<std::size_t>(length));
+
+  const BoutReal* xdata = nullptr;
+  PetscCall(VecGetArrayRead(x, &xdata));
+
+  BoutReal* fdata = nullptr;
+  PetscCall(VecGetArray(f, &fdata));
+
+  try {
+    s->rhs(s->petsc_t, const_cast<BoutReal*>(xdata), s->petsc_rhs_tmp.data(), true);
+  } catch (BoutRhsFail&) {
+    PetscCall(VecRestoreArrayRead(x, &xdata));
+    PetscCall(VecRestoreArray(f, &fdata));
+    return 1;
+  }
+
+  for (PetscInt i = 0; i < length; ++i) {
+    fdata[i] = xdata[i] - (s->petsc_gamma * s->petsc_rhs_tmp[i]);
+  }
+
+  PetscCall(VecRestoreArrayRead(x, &xdata));
+  PetscCall(VecRestoreArray(f, &fdata));
+
+  return PETSC_SUCCESS;
+}
+
+PetscErrorCode CvodeSolver::petscFormRhsFunction(void* UNUSED(dummy), Vec x, Vec f,
+                                                 void* ctx) {
+  auto* s = static_cast<CvodeSolver*>(ctx);
+
+  PetscInt length = 0;
+  PetscCall(VecGetLocalSize(x, &length));
+  s->petsc_rhs_tmp.resize(static_cast<std::size_t>(length));
+
+  const BoutReal* xdata = nullptr;
+  PetscCall(VecGetArrayRead(x, &xdata));
+
+  BoutReal* fdata = nullptr;
+  PetscCall(VecGetArray(f, &fdata));
+
+  try {
+    s->rhs(s->petsc_t, const_cast<BoutReal*>(xdata), s->petsc_rhs_tmp.data(), true);
+  } catch (BoutRhsFail&) {
+    PetscCall(VecRestoreArrayRead(x, &xdata));
+    PetscCall(VecRestoreArray(f, &fdata));
+    return 1;
+  }
+
+  for (PetscInt i = 0; i < length; ++i) {
+    fdata[i] = s->petsc_rhs_tmp[i];
+  }
+
+  PetscCall(VecRestoreArrayRead(x, &xdata));
+  PetscCall(VecRestoreArray(f, &fdata));
+
+  return PETSC_SUCCESS;
+}
+
+int CvodeSolver::petscPSetup(BoutReal t, N_Vector yy, N_Vector UNUSED(yp),
+                             CvodeBool UNUSED(jok), CvodeBool* jcurPtr, BoutReal gamma,
+                             void* user_data) {
+  auto* s = static_cast<CvodeSolver*>(user_data);
+
+  s->petsc_t = t;
+  s->petsc_gamma = gamma;
+
+  if (s->nvector_type == NVectorType::ManyVector) {
+    throw BoutException("solver:cvode_precon_method=petsc is not supported with "
+                        "solver:nvector=manyvector");
+  }
+
+  auto* ydata = N_VGetArrayPointer(yy);
+
+  PetscErrorCode ierr = VecPlaceArray(s->petsc_x, ydata);
+  if (ierr != 0) {
+    return 1;
+  }
+
+  ierr = petscFormFunction(nullptr, s->petsc_x, s->petsc_f, s);
+  if (ierr != 0) {
+    VecResetArray(s->petsc_x);
+    return 1;
+  }
+
+  ierr = MatFDColoringSetF(s->petsc_preconditioner.coloring(), s->petsc_f);
+  if (ierr != 0) {
+    VecResetArray(s->petsc_x);
+    return 1;
+  }
+
+  Mat J = s->petsc_preconditioner.jacobian();
+  ierr = MatZeroEntries(J);
+  if (ierr != 0) {
+    VecResetArray(s->petsc_x);
+    return 1;
+  }
+
+  ierr = MatFDColoringApply(J, s->petsc_preconditioner.coloring(), s->petsc_x, nullptr);
+  if (ierr != 0) {
+    VecResetArray(s->petsc_x);
+    return 1;
+  }
+
+  ierr = MatAssemblyBegin(J, MAT_FINAL_ASSEMBLY);
+  if (ierr == 0) {
+    ierr = MatAssemblyEnd(J, MAT_FINAL_ASSEMBLY);
+  }
+  if (ierr != 0) {
+    VecResetArray(s->petsc_x);
+    return 1;
+  }
+
+  s->maybeExportJacobian(J, s->petsc_x, t, gamma);
+
+  ierr = KSPSetOperators(s->petsc_ksp, J, J);
+  if (ierr == 0) {
+    ierr = KSPSetUp(s->petsc_ksp);
+  }
+
+  VecResetArray(s->petsc_x);
+
+  if (ierr != 0) {
+    return 1;
+  }
+
+  if (jcurPtr != nullptr) {
+    *jcurPtr = 1;
+  }
+
+  return 0;
+}
+
+int CvodeSolver::petscPSolve(BoutReal UNUSED(t), N_Vector UNUSED(yy), N_Vector UNUSED(yp),
+                             N_Vector rvec, N_Vector zvec, BoutReal UNUSED(gamma),
+                             BoutReal UNUSED(delta), int UNUSED(lr), void* user_data) {
+  auto* s = static_cast<CvodeSolver*>(user_data);
+
+  auto* rdata = N_VGetArrayPointer(rvec);
+  auto* zdata = N_VGetArrayPointer(zvec);
+
+  PetscErrorCode ierr = VecPlaceArray(s->petsc_r, rdata);
+  if (ierr == 0) {
+    ierr = VecPlaceArray(s->petsc_z, zdata);
+  }
+  if (ierr == 0) {
+    ierr = KSPSolve(s->petsc_ksp, s->petsc_r, s->petsc_z);
+  }
+
+  VecResetArray(s->petsc_r);
+  VecResetArray(s->petsc_z);
+
+  return ierr == 0 ? 0 : 1;
+}
+#endif
+
 void CvodeSolver::resetInternalFields() {
   const auto backend = nvector_backend();
 
@@ -759,5 +1204,4 @@ void CvodeSolver::resetInternalFields() {
     throw BoutException("CVodeReInit failed\n");
   }
 }
-
 #endif

@@ -503,6 +503,8 @@ neglected if :math:`g_{xy}` and :math:`g_{yz}` are non-zero. An
 example of usage of the brackets can be found in for example
 ``examples/MMS/advection`` or ``examples/blob2d``.
 
+.. _sec-finite-volume-operators:
+
 Finite volume, conservative finite difference methods
 -----------------------------------------------------
 
@@ -528,7 +530,7 @@ cell is added to another. There are several caveats to this:
   precision.
 
 The methods can be used by including the
-:doc:`header<../_breathe_autogen/file/fv__ops_8cxx>`::
+:doc:`header<../_breathe_autogen/file/fv__ops_8hxx>`::
 
    #include "bout/fv_ops.hxx"
 
@@ -537,6 +539,8 @@ The methods can be used by including the
 
 Some methods (those with templates) are defined in the header, but others
 are defined in :doc:`src/mesh/fv_ops.cxx<../_breathe_autogen/file/fv__ops_8cxx>`.
+These operators use derived geometric quantities such as cell-face areas and
+cell volumes; see :ref:`sec-derived-geometric-quantities`.
 
 
 Parallel divergence ``Div_par``
@@ -568,6 +572,105 @@ be changed at compile time e.g::
 
 
 A list of available limiters is given in section :ref:`sec-slope-limiters` below.
+
+
+Modified parallel divergence ``Div_par_mod``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is a modified version of ``FV::Div_par`` which applies the limiter to both
+the advected field and the velocity. This typically gives smaller overshoots
+than ``FV::Div_par`` for the same limiter choice.
+
+::
+
+   template<typename CellEdges = MC>
+   Field3D Div_par_mod(const Field3D &f_in, const Field3D &v_in,
+                       const Field3D &a, Field3D &flow_ylow,
+                       bool fixflux=true, bool dissipative=false);
+
+
+The extra output argument ``flow_ylow`` stores the flow through the lower
+:math:`y` cell boundary, including the area factor. This can be useful as a
+diagnostic in energy or flux budgets. For FCI fields this diagnostic is
+currently returned as zero. The flag ``dissipative`` activates a local
+Rusanov-flux if used in Fci.
+
+
+Parallel momentum flux ``Div_par_fvv``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This operator calculates the divergence of :math:`f v v`, and is mainly useful
+for the parallel momentum equation:
+
+::
+
+   template<typename CellEdges = MC>
+   Field3D Div_par_fvv(const Field3D &f_in, const Field3D &v_in,
+                       const Field3D &a, bool fixflux=true);
+
+
+This is provided separately rather than forming :math:`fv` first, so that the
+reconstructed values of :math:`f` and :math:`v` remain consistent with the
+other finite-volume advection operators.
+
+
+Parallel momentum-flux heating ``Div_par_fvv_heating``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This operator is a companion to ``FV::Div_par_fvv``. It calculates the heating
+associated with the numerical momentum-flux discretisation, and returns a
+diagnostic for the kinetic-energy flow through the lower :math:`y` cell face:
+
+::
+
+   template<typename CellEdges = MC>
+   Field3D Div_par_fvv_heating(const Field3D &f_in, const Field3D &v_in,
+                               const Field3D &a, Field3D &flow_ylow,
+                               bool fixflux=true);
+
+
+The returned field is intended for use in parallel momentum and energy systems
+where ``FV::Div_par_fvv`` is used in the momentum equation. The extra output
+argument ``flow_ylow`` stores the lower-face kinetic-energy flow, including the
+area factor. For FCI fields this diagnostic is currently returned as zero.
+
+As with the other finite-volume parallel operators, ``fixflux=true`` adjusts
+boundary fluxes to remain consistent with the imposed boundary values.
+
+
+Perpendicular finite-volume operators
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The finite-volume operators in ``bout/fv_ops.hxx`` also include conservative
+perpendicular operators. The baseline operator
+``FV::Div_a_Grad_perp(a, f)`` calculates
+:math:`\nabla \cdot \left( a \nabla_\perp f \right)` in flux-conservative form:
+
+::
+
+   Field3D Div_a_Grad_perp(const Field3D &a, const Field3D &f);
+
+
+There is also a limited variant:
+
+::
+
+   template<typename CellEdges = MC>
+   Field3D Div_a_Grad_perp_limit(const Field3D &a, const Field3D &g,
+                                 const Field3D &f);
+
+
+This calculates :math:`\nabla \cdot \left( a g \nabla_\perp f \right)` using a
+limited reconstruction of :math:`g` on cell faces. The arguments are:
+
+* ``a`` - the transport coefficient
+* ``g`` - the factor reconstructed and upwinded at cell faces
+* ``f`` - the field whose perpendicular gradient is used
+
+In the :math:`x` direction, the chosen ``CellEdges`` limiter is used to
+reconstruct cell-edge values of :math:`g`. In the :math:`y` direction,
+first-order upwinding is used. As with ``FV::Div_par``, the template parameter
+selects the limiter family described in :ref:`sec-slope-limiters`.
 
 
 Example and convergence test
@@ -619,6 +722,28 @@ The parallel diffusion operator calculates :math:`\nabla_{||}\left[k\partial_||\
 This is done by calculating the flux :math:`k\partial_{||}\left(f\right)` on cell boundaries
 using central differencing.
 
+For FCI meshes there is also a PETSc-based support-operator implementation
+which constructs sparse matrix parallel operators from grid metadata. That
+interface is documented separately in :ref:`sec-parallel-operators-petsc-fci`.
+
+
+Parallel diffusion with flow diagnostic ``Div_par_K_Grad_par_mod``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This variant of the parallel diffusion operator also returns a lower-face flow
+diagnostic:
+
+::
+
+   Field3D Div_par_K_Grad_par_mod(const Field3D &k, const Field3D &f,
+                                  Field3D &flow_ylow,
+                                  bool bndry_flux=true);
+
+
+As for ``Div_par_mod``, ``flow_ylow`` stores the lower :math:`y` boundary flow
+including the area factor. For FCI fields this diagnostic is currently returned
+as zero.
+
 
 Advection in 3D
 ~~~~~~~~~~~~~~~
@@ -666,6 +791,10 @@ values. Several slope limiters are defined in ``fv_ops.hxx``:
   between central, upwind and downwind differencing in a similar way
   to ``MinMod``. It has smaller dissipation than ``MinMod`` so is the
   default.
+
+* ``Superbee`` - A more compressive TVD limiter than ``MC`` or ``MinMod``.
+  It tends to sharpen steep gradients and contacts more aggressively, at the
+  cost of being less smooth.
 
 * ``VanAlbada`` - A smooth (differentiable) symmetric slope limiter which
   avoids piecewise branches at extrema. This can be useful for nonlinear

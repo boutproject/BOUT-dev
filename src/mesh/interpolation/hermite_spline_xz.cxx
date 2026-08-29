@@ -120,8 +120,12 @@ XZHermiteSplineBase<monotonic, imp_type>::XZHermiteSplineBase(int y_offset, Mesh
     if (options == nullptr) {
       options = &Options::root()["mesh:paralleltransform:xzinterpolation"];
     }
-    abs_fac_monotonic = (*options)["abs_tol"].withDefault(abs_fac_monotonic);
-    rel_fac_monotonic = (*options)["rel_tol"].withDefault(rel_fac_monotonic);
+    abs_fac_monotonic = (*options)["atol"]
+                            .doc("Absolute tolerance for clipping overshoot")
+                            .withDefault(abs_fac_monotonic);
+    rel_fac_monotonic = (*options)["rtol"]
+                            .doc("Relative tolerance for clipping overshoot")
+                            .withDefault(rel_fac_monotonic);
   }
 
   // Index arrays contain guard cells in order to get subscripts right

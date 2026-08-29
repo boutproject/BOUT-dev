@@ -69,6 +69,7 @@ set(serial_tests_source
     ./include/bout/test_array.cxx
     ./include/bout/test_assert.cxx
     ./include/bout/test_bout_enum_class.cxx
+    ./include/bout/test_boundary_iter.cxx
     ./include/bout/test_deriv_store.cxx
     ./include/bout/test_fv_ops.cxx
     ./include/bout/test_generic_factory.cxx
@@ -84,6 +85,7 @@ set(serial_tests_source
     ./include/bout/test_stencil.cxx
     ./include/bout/test_template_combinations.cxx
     ./include/bout/test_traits.cxx
+    ./include/bout/test_yboundary.cxx
     ./include/test_cyclic_reduction.cxx
     ./include/test_derivs.cxx
     ./include/test_mask.cxx
@@ -100,6 +102,7 @@ set(serial_tests_source
     ./mesh/test_invert3x3.cxx
     ./mesh/test_mesh.cxx
     ./mesh/test_paralleltransform.cxx
+    ./mesh/test_petsc_operators.cxx
     ./solver/test_fakesolver.cxx
     ./solver/test_fakesolver.hxx
     ./solver/test_nvector.cxx

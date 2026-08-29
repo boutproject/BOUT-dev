@@ -258,16 +258,27 @@ Options& Options::operator=(Options&& other) noexcept {
 
   value = std::move(other.value);
   attributes = std::move(other.attributes);
-  full_name = std::move(other.full_name);
   is_section = other.is_section;
   children = std::move(other.children);
   value_used = other.value_used;
+
+  size_t len = other.full_name.size();
+  std::string new_prefix = full_name;
+  if (len == 0 and not full_name.empty()) {
+    // Append section delimiter to new name
+    new_prefix += ":";
+  } else if (len != 0 and full_name.empty()) {
+    // Remove extraneous section delimiter from old name
+    len += 1;
+  }
 
   // Ensure that this is the parent of all children,
   // otherwise will point to the original Options instance
   for (auto& child : children) {
     child.second.parent_instance = this;
+    child.second.recursively_update_names(len, new_prefix);
   }
+
   return *this;
 }
 
@@ -749,49 +760,110 @@ namespace {
 template <class Container>
 struct ConvertContainer;
 
-/// Visitor to convert an int, BoutReal or Array/Matrix/Tensor to the
-/// appropriate container. Templated on both the container class C
-/// and scalar type Scalar.
-template <template <class> class C, class Scalar>
-struct ConvertContainer<C<Scalar>> {
-  using Container = C<Scalar>;
-  ConvertContainer(std::string error, Container similar_to_)
+template <class Container>
+struct ConvertContainerBase {
+  using Scalar = typename Container::data_type;
+
+  ConvertContainerBase(std::string error, Container similar_to_)
       : error_message(std::move(error)), similar_to(std::move(similar_to_)) {}
 
   Container operator()(int value) {
     Container result(similar_to);
-    std::fill(std::begin(result), std::end(result), static_cast<Scalar>(value));
+    std::ranges::fill(result, static_cast<Scalar>(value));
     return result;
   }
 
   Container operator()(BoutReal value) {
     Container result(similar_to);
-    std::fill(std::begin(result), std::end(result), static_cast<Scalar>(value));
+    std::ranges::fill(result, static_cast<Scalar>(value));
     return result;
   }
 
   Container operator()(const Container& value) { return value; }
 
-  // Convert between scalar types: C<OtherScalar> -> C<Scalar>
-  // The size of the returned result will be the same as the input value
-  template <class OtherScalar>
-  Container operator()(const C<OtherScalar>& value) {
+  // Convert between scalar types while preserving the shape of the input.
+  template <class OtherContainer>
+  Container convert(const OtherContainer& value) {
     Container result(similar_to);
     result.reshape(value.shape()); // Resize to shape of input
 
-    std::transform(std::begin(value), std::end(value), std::begin(result),
-                   [](const OtherScalar& x) { return static_cast<Scalar>(x); });
+    std::ranges::transform(value, std::begin(result),
+                           [](const auto& x) { return static_cast<Scalar>(x); });
     return result;
   }
 
   template <class Other>
-  Container operator()([[maybe_unused]] const Other& value) {
+  Container incompatible([[maybe_unused]] const Other& value) {
     throw BoutException(error_message);
   }
 
 private:
   std::string error_message;
   Container similar_to;
+};
+
+/// Visitor to convert an int, BoutReal or Array to the appropriate Array type.
+template <class Scalar, class Backing>
+struct ConvertContainer<Array<Scalar, Backing>>
+    : ConvertContainerBase<Array<Scalar, Backing>> {
+  using Container = Array<Scalar, Backing>;
+  using Base = ConvertContainerBase<Container>;
+
+  using Base::Base;
+  using Base::operator();
+
+  // The size of the returned result will be the same as the input value
+  template <class OtherScalar, class OtherBacking>
+  Container operator()(const Array<OtherScalar, OtherBacking>& value) {
+    return this->convert(value);
+  }
+
+  template <class Other>
+  Container operator()([[maybe_unused]] const Other& value) {
+    return this->incompatible(value);
+  }
+};
+
+/// Visitor to convert an int, BoutReal or Matrix to the appropriate Matrix type.
+template <class Scalar>
+struct ConvertContainer<Matrix<Scalar>> : ConvertContainerBase<Matrix<Scalar>> {
+  using Container = Matrix<Scalar>;
+  using Base = ConvertContainerBase<Container>;
+
+  using Base::Base;
+  using Base::operator();
+
+  // The size of the returned result will be the same as the input value
+  template <class OtherScalar>
+  Container operator()(const Matrix<OtherScalar>& value) {
+    return this->convert(value);
+  }
+
+  template <class Other>
+  Container operator()([[maybe_unused]] const Other& value) {
+    return this->incompatible(value);
+  }
+};
+
+/// Visitor to convert an int, BoutReal or Tensor to the appropriate Tensor type.
+template <class Scalar>
+struct ConvertContainer<Tensor<Scalar>> : ConvertContainerBase<Tensor<Scalar>> {
+  using Container = Tensor<Scalar>;
+  using Base = ConvertContainerBase<Container>;
+
+  using Base::Base;
+  using Base::operator();
+
+  // The size of the returned result will be the same as the input value
+  template <class OtherScalar>
+  Container operator()(const Tensor<OtherScalar>& value) {
+    return this->convert(value);
+  }
+
+  template <class Other>
+  Container operator()([[maybe_unused]] const Other& value) {
+    return this->incompatible(value);
+  }
 };
 } // namespace
 
@@ -877,8 +949,8 @@ Options Options::getUnused(const std::vector<std::string>& exclude_sources) cons
       return false;
     }
     const auto source = option.attributes.at("source").as<std::string>();
-    return std::find(exclude_sources.begin(), exclude_sources.end(), source)
-           != exclude_sources.end();
+    return std::ranges::find(exclude_sources, source)
+           != std::ranges::end(exclude_sources);
   };
 
   const auto conditionally_used = [](const Options& option) -> bool {
@@ -1028,6 +1100,13 @@ std::vector<int> Options::getShape() const {
   return lazy_shape;
 }
 
+void Options::recursively_update_names(size_t len, const std::string& new_prefix) {
+  full_name.replace(0, len, new_prefix);
+  for (auto& [_, child] : children) {
+    child.recursively_update_names(len, new_prefix);
+  }
+}
+
 fmt::format_context::iterator
 bout::details::OptionsFormatterBase::format(const Options& options,
                                             fmt::format_context& ctx) const {
@@ -1053,9 +1132,9 @@ bout::details::OptionsFormatterBase::format(const Options& options,
       fmt::format_to(ctx.out(), " = {}", as_str);
     }
 
-    const bool has_doc = options.attributes.count("doc") != 0U;
-    const bool has_source = options.attributes.count("source") != 0U;
-    const bool has_type = options.attributes.count("type") != 0U;
+    const bool has_doc = options.attributes.contains("doc");
+    const bool has_source = options.attributes.contains("source");
+    const bool has_type = options.attributes.contains("type");
 
     std::vector<std::string> comments;
 

@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <limits>
 #include <optional>
+#include <string>
 #include <type_traits>
 
 #if BOUT_HAS_CUDA
@@ -23,6 +24,16 @@ class Field3D;
 class Field3DParallel;
 class Field2D;
 class FieldPerp;
+
+namespace bout::detail {
+// This is defined in field3d.cxx
+// It is used because Mesh is an incomplete type so methods cannot be called
+// in the template functions in this header file.
+const Region<Ind3D>& getField3DRegion(const Mesh* mesh, std::optional<size_t> regionID);
+size_t getField3DRegionID(const Mesh* mesh, const std::string& region_name);
+std::optional<size_t> meshGetCommonRegionID(Mesh* mesh, std::optional<size_t> regionID1,
+                                            std::optional<size_t> regionID2);
+} // namespace bout::detail
 
 template <typename T>
 struct is_expr_field2d : std::false_type {};
@@ -369,7 +380,7 @@ struct BinaryExpr {
   BinaryExpr& operator=(const BinaryExpr&) = delete;
   BinaryExpr& operator=(BinaryExpr&&) = delete;
 
-  BOUT_HOST_DEVICE BOUT_FORCEINLINE int size() const { return indices.size(); }
+  BOUT_FORCEINLINE int size() const { return indices.size(); }
   BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx) const {
     return f(idx, lhs, rhs); // single‐pass fusion
   }
@@ -384,13 +395,66 @@ struct BinaryExpr {
   }
   BOUT_HOST_DEVICE BOUT_FORCEINLINE int regionIdx(int idx) const { return indices[idx]; }
 
-  //operator ResT() { return ResT{*this}; }
+  bool hasParallelSlices() const {
+    if constexpr (is_expr_constant_v<L> && is_expr_constant_v<R>) {
+      return false;
+    } else if constexpr (is_expr_constant_v<L>) {
+      return rhs.hasParallelSlices();
+    } else if constexpr (is_expr_constant_v<R>) {
+      return lhs.hasParallelSlices();
+    } else {
+      return lhs.hasParallelSlices() && rhs.hasParallelSlices();
+    }
+  }
+  int numberParallelSlices() const {
+    if (!hasParallelSlices()) {
+      return 0;
+    }
+    if constexpr (is_expr_constant_v<L> && is_expr_constant_v<R>) {
+      return 0;
+    } else if constexpr (is_expr_constant_v<L>) {
+      return rhs.numberParallelSlices();
+    } else if constexpr (is_expr_constant_v<R>) {
+      return lhs.numberParallelSlices();
+    } else {
+      ASSERT2(lhs.numberParallelSlices() == rhs.numberParallelSlices());
+      return lhs.numberParallelSlices();
+    }
+  }
+  auto yup(int slice = 0) const {
+    return BinaryExpr<ResT, L, R, Func>{
+        lhs.yup(slice),
+        rhs.yup(slice),
+        f,
+        mesh,
+        location,
+        directions,
+        bout::detail::meshGetCommonRegionID(mesh, lhs.yup(slice).getRegionID(),
+                                            rhs.yup(slice).getRegionID()),
+        indices,
+        yindex};
+  }
+  auto ydown(int slice = 0) const {
+    return BinaryExpr<ResT, L, R, Func>{
+        lhs.ydown(slice),
+        rhs.ydown(slice),
+        f,
+        mesh,
+        location,
+        directions,
+        bout::detail::meshGetCommonRegionID(mesh, lhs.ydown(slice).getRegionID(),
+                                            rhs.ydown(slice).getRegionID()),
+        indices,
+        yindex};
+  }
+
   struct View {
     typename L::View lhs;
     typename R::View rhs;
     const int* indices;
     int num_indices;
     Func f;
+    std::optional<size_t> regionID;
     int mul = 1;
     int div = 1;
 
@@ -399,18 +463,59 @@ struct BinaryExpr {
       this->div = div;
       return *this;
     }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE bool hasParallelSlices() const {
+      if constexpr (is_expr_constant_v<L> && is_expr_constant_v<R>) {
+        return false;
+      } else if constexpr (is_expr_constant_v<L>) {
+        return rhs.hasParallelSlices();
+      } else if constexpr (is_expr_constant_v<R>) {
+        return lhs.hasParallelSlices();
+      } else {
+        return lhs.hasParallelSlices() && rhs.hasParallelSlices();
+      }
+    }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE int numberParallelSlices() const {
+      if (!hasParallelSlices()) {
+        return 0;
+      }
+      if constexpr (is_expr_constant_v<L> && is_expr_constant_v<R>) {
+        return 0;
+      } else if constexpr (is_expr_constant_v<L>) {
+        return rhs.numberParallelSlices();
+      } else if constexpr (is_expr_constant_v<R>) {
+        return lhs.numberParallelSlices();
+      } else {
+        ASSERT2(lhs.numberParallelSlices() == rhs.numberParallelSlices());
+        return lhs.numberParallelSlices();
+      }
+    }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE auto yup(int slice = 0) const {
+      auto result = *this;
+      result.lhs = lhs.yup(slice);
+      result.rhs = rhs.yup(slice);
+      return result;
+    }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE auto ydown(int slice = 0) const {
+      auto result = *this;
+      result.lhs = lhs.ydown(slice);
+      result.rhs = rhs.ydown(slice);
+      return result;
+    }
     BOUT_HOST_DEVICE BOUT_FORCEINLINE int size() const { return num_indices; }
     BOUT_HOST_DEVICE BOUT_FORCEINLINE int regionIdx(int idx) const {
       return indices[idx];
     }
     BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx) const {
       return f((idx * mul) / div, lhs, rhs); // single‐pass fusion
-      //return f(lhs((idx * mul) / div), rhs((idx * mul) / div)); // single‐pass fusion
     }
+
+    std::optional<size_t> getRegionID() const { return regionID; }
   };
 
-  operator View() { return View{lhs, rhs, &indices[0], indices.size(), f}; }
-  operator View() const { return View{lhs, rhs, &indices[0], indices.size(), f}; }
+  operator View() { return View{lhs, rhs, &indices[0], indices.size(), f, regionID}; }
+  operator View() const {
+    return View{lhs, rhs, &indices[0], indices.size(), f, regionID};
+  }
 
   void evaluate(BoutReal* data) const {
 #if BOUT_HAS_CUDA && defined(__CUDACC__)
@@ -420,10 +525,29 @@ struct BinaryExpr {
     cudaStreamSynchronize(stream);
     streams.put(stream);
 #else
-    int e = size();
-    for (int i = 0; i < e; ++i) {
-      int idx = regionIdx(i);
-      data[idx] = operator()(idx); // single‐pass fusion
+    if constexpr (std::is_same_v<ResT, Field3D>) {
+      // Optimize common case of Field3D on CPUs.
+      // Get the Region without directly using incomplete Mesh type
+      const auto& region = bout::detail::getField3DRegion(mesh, regionID);
+      for (auto block = region.getBlocks().cbegin(), end = region.getBlocks().cend();
+           block < end; ++block) {
+        const int block_begin = block->first.ind;
+        const int block_end = block->second.ind;
+
+        // Help optimizer establish loop bounds
+        BOUT_ASSUME(block_begin >= 0);
+        BOUT_ASSUME(block_begin <= block_end);
+
+        for (int idx = block_begin; idx < block_end; ++idx) {
+          data[idx] = operator()(idx);
+        }
+      }
+    } else {
+      int e = size();
+      for (int i = 0; i < e; ++i) {
+        int idx = regionIdx(i);
+        data[idx] = operator()(idx); // single‐pass fusion
+      }
     }
 #endif
   }

@@ -27,6 +27,7 @@
 #define BOUT_ARRAY_H
 
 #include <algorithm>
+#include <initializer_list>
 #include <map>
 #include <memory>
 #include <tuple>
@@ -36,6 +37,7 @@
 #include <omp.h>
 #endif
 
+#include "bout/build_config.hxx"
 #include "bout/build_defines.hxx"
 
 #if BOUT_HAS_UMPIRE
@@ -97,7 +99,7 @@ struct ArrayData {
   }
   iterator<T> begin() const { return data; }
   iterator<T> end() const { return data + len; }
-  int size() const { return len; }
+  BOUT_FORCEINLINE int size() const { return len; }
 
   /// Copy assignment
   /// Copy the underlying data from one array to the other
@@ -188,9 +190,22 @@ public:
   Array() noexcept : ptr(nullptr) {}
 
   /*!
-   * Create an array of given length
+   * Create an array of given length.
    */
-  Array(size_type len) { ptr = get(len); }
+  Array(size_type len) : ptr(get(len)) {}
+
+  /*!
+   * Create an array with initializer list.
+   * This is explicit to avoid confusion with (size_type) constructor.
+   */
+  static Array fromValues(std::initializer_list<T> init) {
+    if (init.size() == 0) {
+      return Array();
+    }
+    Array array(init.size());
+    std::copy(init.begin(), init.end(), array.begin());
+    return array;
+  }
 
   /*!
    * Destructor. Releases the underlying dataBlock
@@ -200,7 +215,7 @@ public:
   /*!
    * Copy constructor
    */
-  Array(const Array& other) noexcept { ptr = other.ptr; }
+  Array(const Array& other) noexcept : ptr(other.ptr) {}
 
   /*!
    * Assignment operator

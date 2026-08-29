@@ -1,17 +1,29 @@
 #include "gtest/gtest.h"
 
+#include "fake_mesh.hxx"
 #include "test_extras.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/constants.hxx"
+#include "bout/coordinates.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/field_factory.hxx"
+#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
+#include "bout/options_io.hxx"
 #include "bout/output.hxx"
 #include "bout/paralleltransform.hxx"
+#include "bout/sys/expressionparser.hxx"
+#include "bout/sys/generator_context.hxx"
 #include "bout/traits.hxx"
+#include "bout/utils.hxx"
 
 #include "fake_mesh_fixture.hxx"
+#include "test_tmpfiles.hxx"
+
+#include <memory>
+#include <string>
 
 // The unit tests use the global mesh
 using namespace bout::globals;
@@ -553,8 +565,6 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
       Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
       Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
       Field2D{0.0}, Field2D{0.0}));
-  // No call to Coordinates::geometry() needed here
-
   localmesh.getCoordinates()->setParallelTransform(
       bout::utils::make_unique<ParallelTransformIdentity>(localmesh));
 
@@ -770,7 +780,7 @@ TEST_F(FieldFactoryTest, Recursion) {
   opt["input"]["max_recursion_depth"] = 4; // Should be sufficient for n=6
 
   // Create a factory with a max_recursion_depth != 0
-  FieldFactory factory_rec(nullptr, &opt);
+  const FieldFactory factory_rec(nullptr, &opt);
 
   // Fibonacci sequence: 1 1 2 3 5 8
   opt["fib"] = "where({n} - 2.5, [n={n}-1](fib) + [n={n}-2](fib), 1)";
@@ -802,7 +812,7 @@ TEST_F(FieldFactoryTest, ResolveLocalOptions) {
   options["f"] = "2 + 2";
   options["g"] = "f * f";
 
-  FieldFactoryExposer factory_local(mesh, &options);
+  const FieldFactoryExposer factory_local(mesh, &options);
   auto g = factory_local.resolve("g");
 
   EXPECT_EQ(g->generate({}), 16);
@@ -820,57 +830,6 @@ TEST_F(FieldFactoryTest, FuzzyFind) {
   EXPECT_EQ(CAPS_matches.size(), 1);
 }
 
-// A mock ParallelTransform to test transform_from_field_aligned
-// property of FieldFactory. For now, the transform just returns the
-// negative of the input. Ideally, this will get moved to GoogleMock
-// when we start using it.
-//
-// Can turn off the ability to do the transform. Should still be valid
-class MockParallelTransform : public ParallelTransform {
-public:
-  MockParallelTransform(Mesh& mesh, bool allow_transform_)
-      : ParallelTransform(mesh), allow_transform(allow_transform_) {}
-  ~MockParallelTransform() = default;
-
-  void calcParallelSlices(Field3D&) override {}
-
-  bool canToFromFieldAligned() const override { return allow_transform; }
-
-  bool requiresTwistShift(bool, YDirectionType) override { return false; }
-
-  void checkInputGrid() override {}
-
-  Field3D fromFieldAligned(const Field3D& f, const std::string&) override {
-    if (f.getDirectionY() != YDirectionType::Aligned) {
-      throw BoutException("Unaligned field passed to fromFieldAligned");
-    }
-    return -f;
-  }
-
-  FieldPerp fromFieldAligned(const FieldPerp& f, const std::string&) override {
-    if (f.getDirectionY() != YDirectionType::Aligned) {
-      throw BoutException("Unaligned field passed to fromFieldAligned");
-    }
-    return -f;
-  }
-
-  Field3D toFieldAligned(const Field3D& f, const std::string&) override {
-    if (f.getDirectionY() != YDirectionType::Standard) {
-      throw BoutException("Aligned field passed to toFieldAligned");
-    }
-    return -f;
-  }
-  FieldPerp toFieldAligned(const FieldPerp& f, const std::string&) override {
-    if (f.getDirectionY() != YDirectionType::Standard) {
-      throw BoutException("Aligned field passed to toFieldAligned");
-    }
-    return -f;
-  }
-
-private:
-  const bool allow_transform;
-};
-
 class FieldFactoryCreateAndTransformTest : public FakeMeshFixture {
 public:
   WithQuietOutput quiet_info{output_info};
@@ -881,7 +840,7 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create2D) {
   mesh->getCoordinates()->setParallelTransform(
       bout::utils::make_unique<MockParallelTransform>(*mesh, true));
 
-  FieldFactory factory;
+  const FieldFactory factory;
 
   auto output = factory.create2D("x");
 
@@ -896,7 +855,7 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create3D) {
   mesh->getCoordinates()->setParallelTransform(
       bout::utils::make_unique<MockParallelTransform>(*mesh, true));
 
-  FieldFactory factory;
+  const FieldFactory factory;
 
   auto output = factory.create3D("x");
 
@@ -912,7 +871,7 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create2DNoTransform) {
 
   Options options;
   options["input"]["transform_from_field_aligned"] = false;
-  FieldFactory factory{mesh, &options};
+  const FieldFactory factory{mesh, &options};
 
   auto output = factory.create2D("x");
 
@@ -929,7 +888,7 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create3DNoTransform) {
 
   Options options;
   options["input"]["transform_from_field_aligned"] = false;
-  FieldFactory factory{mesh, &options};
+  const FieldFactory factory{mesh, &options};
 
   auto output = factory.create3D("x");
 
@@ -943,7 +902,7 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create2DCantTransform) {
   mesh->getCoordinates()->setParallelTransform(
       bout::utils::make_unique<MockParallelTransform>(*mesh, false));
 
-  FieldFactory factory{mesh};
+  const FieldFactory factory{mesh};
 
   auto output = factory.create2D("x");
 
@@ -1026,4 +985,130 @@ TYPED_TEST(FieldFactoryCreationTest, CreatePeriodicYacrossSeparatrix) {
       &localmesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+struct FieldFactoryFieldVariableTest : public FakeMeshFixture {
+  WithQuietOutput quiet{output_info};
+};
+
+TEST_F(FieldFactoryFieldVariableTest, CreateField3D) {
+  const bout::testing::TempFile filename;
+
+  {
+    // Write some fields to a grid file
+    const FieldFactory factory{mesh};
+    const auto rho = factory.create3D("sqrt(x^2 + y^2)");
+    const auto theta = factory.create3D("atan(y, x)");
+    const Options grid{{"rho", rho},          {"theta", theta},
+                       {"nx", mesh->LocalNx}, {"ny", mesh->LocalNy - 2},
+                       {"nz", mesh->LocalNz}, {"y_boundary_guards", 1}};
+    bout::OptionsIO::create(filename)->write(grid);
+  }
+
+  {
+    Options options{
+        {"mesh", {{"file", filename.string()}}},
+        {"input", {{"grid_variables", {{"rho", "field3d"}, {"theta", "field3d"}}}}}};
+
+    dynamic_cast<FakeMesh*>(mesh)->setGridDataSource(new GridFile{filename});
+    auto factory = FieldFactory{mesh, &options};
+
+    const auto output = factory.create3D("gridvar:rho * cos(gridvar:theta)");
+    const auto x = factory.create3D("x");
+    EXPECT_TRUE(IsFieldEqual(output, x, "RGN_NOBNDRY", 1e-14));
+  }
+}
+
+TEST_F(FieldFactoryFieldVariableTest, CreateField2D) {
+  const bout::testing::TempFile filename;
+
+  {
+    // Write some fields to a grid file
+    const FieldFactory factory{mesh};
+    const auto rho = factory.create2D("sqrt(x^2 + y^2)");
+    const auto theta = factory.create2D("atan(y, x)");
+    const Options grid{{"rho", rho},          {"theta", theta},
+                       {"nx", mesh->LocalNx}, {"ny", mesh->LocalNy - 2},
+                       {"nz", mesh->LocalNz}, {"y_boundary_guards", 1}};
+    bout::OptionsIO::create(filename)->write(grid);
+  }
+
+  {
+    Options options{
+        {"mesh", {{"file", filename.string()}}},
+        {"input", {{"grid_variables", {{"rho", "field2d"}, {"theta", "field2d"}}}}}};
+
+    dynamic_cast<FakeMesh*>(mesh)->setGridDataSource(new GridFile{filename});
+    auto factory = FieldFactory{mesh, &options};
+
+    const auto output = factory.create2D("gridvar:rho * cos(gridvar:theta)");
+    const auto x = factory.create2D("x");
+    EXPECT_TRUE(IsFieldEqual(output, x, "RGN_ALL", 1e-14));
+  }
+}
+
+TEST_F(FieldFactoryFieldVariableTest, ReadBoutReal) {
+  const bout::testing::TempFile filename;
+
+  {
+    const Options grid{{"rho", 4},
+                       {"theta", 5},
+                       {"nx", mesh->LocalNx},
+                       {"ny", mesh->LocalNy},
+                       {"nz", mesh->LocalNz}};
+    bout::OptionsIO::create(filename)->write(grid);
+  }
+
+  {
+    Options options{
+        {"mesh", {{"file", filename.string()}}},
+        {"input", {{"grid_variables", {{"rho", "boutreal"}, {"theta", "boutreal"}}}}}};
+
+    dynamic_cast<FakeMesh*>(mesh)->setGridDataSource(new GridFile{filename});
+    auto factory = FieldFactory{mesh, &options};
+
+    const auto output = factory.create3D("rho * theta");
+    EXPECT_TRUE(IsFieldEqual(output, 4 * 5));
+  }
+}
+
+TEST_F(FieldFactoryFieldVariableTest, NoMeshFile) {
+  Options options{{"input", {{"grid_variables", {{"rho", "field3d"}}}}}};
+
+  EXPECT_THROW((FieldFactory(mesh, &options)), BoutException);
+}
+
+TEST_F(FieldFactoryFieldVariableTest, NoMeshAvailable) {
+  auto* old_mesh = bout::globals::mesh;
+  bout::globals::mesh = nullptr;
+
+  Options options{{"input", {{"grid_variables", {{"rho", "field3d"}}}}}};
+
+  EXPECT_THROW((FieldFactory(nullptr, &options)), BoutException);
+
+  bout::globals::mesh = old_mesh;
+}
+
+TEST_F(FieldFactoryFieldVariableTest, MissingVariable) {
+  const bout::testing::TempFile filename;
+
+  {
+    // Write some fields to a grid file
+    const FieldFactory factory{mesh};
+    const auto rho = factory.create3D("sqrt(x^2 + y^2)");
+    const Options grid{{"rho", rho},
+                       {"nx", mesh->LocalNx},
+                       {"ny", mesh->LocalNy},
+                       {"nz", mesh->LocalNz}};
+    bout::OptionsIO::create(filename)->write(grid);
+  }
+
+  {
+    Options options{
+        {"mesh", {{"file", filename.string()}}},
+        {"input", {{"grid_variables", {{"rho", "field3d"}, {"theta", "field3d"}}}}}};
+
+    dynamic_cast<FakeMesh*>(mesh)->setGridDataSource(new GridFile{filename});
+    EXPECT_THROW((FieldFactory{mesh, &options}), BoutException);
+  }
 }

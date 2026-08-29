@@ -34,7 +34,6 @@
 #include <bout/boundary_region_iter.hxx>
 #include <bout/interpolation_xz.hxx>
 #include <bout/mask.hxx>
-#include <bout/parallel_boundary_region.hxx>
 #include <bout/paralleltransform.hxx>
 #include <bout/unused.hxx>
 
@@ -125,8 +124,6 @@ public:
 
     return false;
   }
-
-  void loadParallelMetrics(Coordinates* coords) override;
 
 protected:
   void checkInputGrid() override;

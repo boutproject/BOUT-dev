@@ -100,7 +100,7 @@ A number of functions are defined, listed in table
 is that if a number comes before a symbol or an opening bracket (``(``)
 then a multiplication is assumed: ``2x+3y^2`` is the same as
 ``2*x + 3*y^2``, which with the usual precedence rules is the same as
-``(2*x) + (3*(y^2))``. 
+``(2*x) + (3*(y^2))``.
 
 Expressions can span more than one line, which can make long expressions
 easier to read:
@@ -139,10 +139,10 @@ Boolean expressions
 Boolean values must be "true", "false", "True", "False", "1" or
 "0". All lowercase ("true"/"false") is preferred, but the uppercase
 versions are allowed to support Python string conversions. Booleans
-can be combined into expressions using binary operators `&` (logical
-AND), `|` (logical OR), and unary operator `!` (logical NOT). For
-example "true & false" evaluates to `false`; "!false" evaluates to
-`true`.  Like real values and integers, boolean expressions can refer
+can be combined into expressions using binary operators ``&`` (logical
+AND), ``|`` (logical OR), and unary operator ``!`` (logical NOT). For
+example "true & false" evaluates to ``false``; "!false" evaluates to
+``true``. Like real values and integers, boolean expressions can refer
 to other variables:
 
 .. code-block:: cfg
@@ -150,8 +150,8 @@ to other variables:
    switch = true
    other_switch = !switch
 
-Boolean expressions can be formed by comparing real values using
-`>` and `<` comparison operators:
+Boolean expressions can be formed by comparing real values using ``>``
+and ``<`` comparison operators:
 
 .. code-block:: cfg
 
@@ -160,15 +160,15 @@ Boolean expressions can be formed by comparing real values using
    is_false = value < 2
 
 .. note::
-   Previous BOUT++ versions (v5.1.0 and earlier) were case
-   insensitive when reading boolean values, so would read "True" or
-   "yEs" as `true`, and "False" or "No" as `false`. These earlier
-   versions did not allow boolean expressions.
+   Previous BOUT++ versions (v5.1.0 and earlier) were case insensitive
+   when reading boolean values, so would read "True" or "yEs" as
+   ``true``, and "False" or "No" as ``false``. These earlier versions
+   did not allow boolean expressions.
 
-Internally, booleans are evaluated as real values, with `true` being 1
-and `false` being 0. Logical operators (`&`, `|`, `!`) check that
-their left and right arguments are either close to 0 or close to 1
-(like integers, "close to" is within 1e-3).
+Internally, booleans are evaluated as real values, with ``true`` being
+1 and ``false`` being 0. Logical operators (``&``, ``|``, ``!``) check
+that their left and right arguments are either close to 0 or close to
+1 (like integers, "close to" is within 1e-3).
 
 Special symbols in Option names
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -176,7 +176,7 @@ Special symbols in Option names
 If option names start with numbers or ``.`` or contain symbols such as
 ``+`` and ``-`` then these symbols need to be escaped in expressions
 or they will be treated as arithmetic operators like addition or
-subtraction. To escape a single character 
+subtraction. To escape a single character
 ``\`` (backslash) can be used, for example ``plasma\-density * 10``
 would read the option ``plasma-density`` and multiply it
 by 10 e.g
@@ -247,13 +247,13 @@ combinations of the format codes::
 
   // [section1]
   // value1 = 42
-  // value2 = hello		# doc: This says hello
+  // value2 = hello            # doc: This says hello
   //
   // [section2]
   // value5 = 3
   //
   // [section2:subsection1]
-  // value3 = true		# type: bool, doc: This is a bool
+  // value3 = true             # type: bool, doc: This is a bool
   // value4 = 3.2
 
   // Only keys, inline sections, and 'doc', 'type', and 'source' attributes.
@@ -261,9 +261,9 @@ combinations of the format codes::
   output.write("{:kids}", options);
 
   // section1:value1
-  // section1:value2		# doc: This says hello
+  // section1:value2           # doc: This says hello
   // section2:value5
-  // section2:subsection1:value3		# type: bool, doc: This is a bool, source: a test
+  // section2:subsection1:value3       # type: bool, doc: This is a bool, source: a test
   // section2:subsection1:value4
 
 
@@ -561,7 +561,7 @@ in table :numref:`tab-outputopts`.
 
 .. _tab-outputopts:
 .. table:: Output file options
-	   
+
    +----------------------+-----------------------------------------+----------------+
    | Option               | Description                             | Default value  |
    +======================+=========================================+================+
@@ -597,7 +597,7 @@ Implementation
 To control the behaviour of BOUT++ a set of options is used, with
 options organised into sections which can be nested. To represent this
 tree structure there is the `Options` class defined in
-``bout++/include/options.hxx``. 
+``bout++/include/options.hxx``.
 
 To access the options, there is a static function (singleton)::
 
@@ -610,7 +610,7 @@ assigning, treating options as a map or dictionary::
 
     options["nout"] = 10;    // Integer
     options["restart"] = true;  // bool
-    
+
 Internally these values are stored in a variant type, which supports commonly
 used types including strings, integers, real numbers and fields (2D and
 3D). Since strings can be stored, any type can be assigned, so long as it can be
@@ -783,7 +783,7 @@ currently supported, but use of the newer interface above is
 encouraged.
 
 To access the options, there is a static function (singleton)::
-  
+
     Options *options = Options::getRoot();
 
 which gives the top-level (root) options class. Setting options is done
@@ -909,10 +909,10 @@ Note that by default reading as ``Field2D`` or ``Field3D`` will use the global
 pass a field which the result should be similar to::
 
   Field3D example = ... // Some existing field
-  
+
   Field3D f3d = fields_in["f3d"].as<Field3D>(example);
 
-Meta data like ``Mesh`` pointer, will be taken from ``example``. 
+Meta data like ``Mesh`` pointer, will be taken from ``example``.
 
 Currently converting from ``Matrix`` or ``Tensor`` types only works if
 the data in the ``Matrix`` or ``Tensor`` is the same size as the
@@ -938,17 +938,17 @@ automatically set the ``"time_dimension"`` attribute::
   data["scalar"] = 1.0;
   // You can set the attribute manually like so:
   data["scalar"].attributes["time_dimension"] = "t";
-  
+
   // Or use `assignRepeat` to do it automatically:
   data["field"].assignRepeat(Field3D(2.0));
-  
+
   bout::OptionsIO::create("time.nc")->write(data);
-  
+
   // Update time-dependent values. This can be done without `force` if the time_dimension
   // attribute is set
   data["scalar"] = 2.0;
   data["field"] = Field3D(3.0);
-  
+
   // Append data to file
   bout::OptionsIO::create({{"file", "time.nc"}, {"append", true}})->write(data);
 

@@ -1,8 +1,12 @@
+/// \file
+/// Interface to PETSc solver
+/// NOTE: This class needs tidying, generalising to use FieldData interface
+
 /**************************************************************************
  * Interface to PETSc solver
  *
  **************************************************************************
- * Copyright 2010 - 2025 BOUT++ contributors
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -42,6 +46,7 @@ class PetscSolver;
 
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
+#include <bout/petsc_preconditioner.hxx>
 #include <bout/petsclib.hxx>
 #include <bout/vector2d.hxx>
 #include <bout/vector3d.hxx>
@@ -93,13 +98,14 @@ private:
 
   PetscLib lib; ///< Handles initialising, finalising PETSc
 
-  Vec u{nullptr};                    ///< PETSc solution vector
-  TS ts{nullptr};                    ///< PETSc timestepper object
-  SNES snes{nullptr};                ///< PETSc nonlinear solver object
-  KSP ksp{nullptr};                  ///< PETSc linear solver
-  Mat Jmf{nullptr};                  ///< Matrix Free Jacobian
-  Mat Jfd{nullptr};                  ///< Finite Difference Jacobian
-  MatFDColoring fdcoloring{nullptr}; ///< Matrix coloring context
+  Vec u{nullptr};     ///< PETSc solution vector
+  TS ts{nullptr};     ///< PETSc timestepper object
+  SNES snes{nullptr}; ///< PETSc nonlinear solver object
+  KSP ksp{nullptr};   ///< PETSc linear solver
+  Mat Jmf{nullptr};   ///< Matrix Free Jacobian
+  Mat Jfd{nullptr}; ///< Finite Difference Jacobian (brute-force, when not using coloring)
+  PetscPreconditioner
+      petsc_preconditioner; ///< Coloring-based FD Jacobian + MatFDColoring
 
   BoutReal next_output; ///< When the monitor should be called next
 
