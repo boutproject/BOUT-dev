@@ -30,7 +30,7 @@ upwind = W3
 
 [mesh:ddz]
 
-first = FFT
+first = C4
 second = FFT
 upwind = W3
 
