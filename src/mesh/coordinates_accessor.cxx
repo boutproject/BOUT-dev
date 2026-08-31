@@ -57,6 +57,7 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
   for (const auto& ind : coords->dx().getRegion("RGN_ALL")) {
     COPY_STRIPE(dx, dy, dz);
     COPY_STRIPE(d1_dx, d1_dy, d1_dz);
+    COPY_STRIPE(IntShiftTorsion);
     COPY_STRIPE(J);
 
     if (coords->Bxy().isAllocated()) {
@@ -70,10 +71,23 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
             coords->Bxy().ydown()[ind];
       }
     }
-
-    COPY_STRIPE(G1, G3);
     COPY_STRIPE(g11, g12, g13, g22, g23, g33);
     COPY_STRIPE(g_11, g_12, g_13, g_22, g_23, g_33);
+  }
+
+  // G1/G3 may be computed from derivatives of the metric coefficients. Populate the
+  // base coordinate data first so any recursive accessor construction during that work
+  // reuses this seeded cache rather than trying to build a second incomplete copy.
+  const auto& G1 = coords->G1();
+  const auto& G3 = coords->G3();
+
+  for (const auto& ind : coords->dx().getRegion("RGN_ALL")) {
+    if (G1.isAllocated()) {
+      COPY_STRIPE(G1);
+    }
+    if (G3.isAllocated()) {
+      COPY_STRIPE(G3);
+    }
   }
 }
 

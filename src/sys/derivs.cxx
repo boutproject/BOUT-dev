@@ -60,20 +60,6 @@
 
 ////////////// X DERIVATIVE /////////////////
 
-Field3D DDX(const Field3D& f, CELL_LOC outloc, const std::string& method,
-            const std::string& region) {
-  const auto& coords = *f.getCoordinates(outloc);
-
-  Field3D result = bout::derivatives::index::DDX(f, outloc, method, region) / coords.dx();
-
-  if (f.getMesh()->IncIntShear) {
-    // Using BOUT-06 style shifting
-    result += coords.IntShiftTorsion() * DDZ(f, outloc, method, region);
-  }
-
-  return result;
-}
-
 bout::FieldMetric DDX(const Field2D& f, CELL_LOC outloc, const std::string& method,
                       const std::string& region) {
   ASSERT1(f.getLocation() == outloc || outloc == CELL_DEFAULT);
@@ -144,7 +130,7 @@ Vector3D DDZ(const Vector3D& v, CELL_LOC outloc, DIFF_METHOD method,
 
 Vector3D DDZ(const Vector3D& v, CELL_LOC outloc, const std::string& method,
              const std::string& region) {
-  return DDZ(v, outloc, parseDDZMethodString(method), region);
+  return DDZ(v, outloc, parseField3DMethodString(method), region);
 }
 
 Vector2D DDZ(const Vector2D& v, CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSED(method),
@@ -165,7 +151,7 @@ Vector2D DDZ(const Vector2D& v, CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSED(meth
 
 Vector2D DDZ(const Vector2D& v, CELL_LOC outloc, const std::string& method,
              const std::string& region) {
-  return DDZ(v, outloc, parseDDZMethodString(method), region);
+  return DDZ(v, outloc, parseField3DMethodString(method), region);
 }
 
 /*******************************************************************************

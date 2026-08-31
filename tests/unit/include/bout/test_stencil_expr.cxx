@@ -3,6 +3,7 @@
 #include "test_extras.hxx"
 
 #include "bout/derivs.hxx"
+#include "bout/index_derivs_interface.hxx"
 #include "bout/stencil_expr.hxx"
 
 #include <string>
@@ -23,6 +24,52 @@ Field3D makeTestField(Mesh* mesh, CELL_LOC location) {
   return result;
 }
 
+Field3D expectedDDX(const Field3D& input, CELL_LOC outloc, const std::string& method,
+                    const std::string& region = "RGN_NOBNDRY") {
+  const auto resolved_outloc = (outloc == CELL_DEFAULT) ? input.getLocation() : outloc;
+  const auto* coords = input.getCoordinates(resolved_outloc);
+  auto dx = Field3D{coords->dx()}.setLocation(resolved_outloc);
+  Field3D result = bout::derivatives::index::DDX(input, resolved_outloc, method, region);
+  result /= dx;
+
+  if (input.getMesh()->IncIntShear) {
+    auto dz = Field3D{coords->dz()}.setLocation(resolved_outloc);
+    auto torsion = Field3D{coords->IntShiftTorsion()}.setLocation(resolved_outloc);
+    auto torsion_term =
+        bout::derivatives::index::DDZ(input, resolved_outloc, method, region);
+    torsion_term /= dz;
+    torsion_term *= torsion;
+    result += torsion_term;
+  }
+
+  return result;
+}
+
+class DDXDispatchExprTest : public FakeMeshFixture_tmpl<7, 5, 7> {
+public:
+  DDXDispatchExprTest() {
+    for (auto* current_mesh : {bout::globals::mesh, mesh_staggered}) {
+      current_mesh->xstart = 2;
+      current_mesh->xend = current_mesh->LocalNx - 3;
+      current_mesh->addRegion3D(x_safe_region, Region<Ind3D>(2, current_mesh->LocalNx - 3,
+                                                             0, current_mesh->LocalNy - 1,
+                                                             0, current_mesh->LocalNz - 1,
+                                                             current_mesh->LocalNy,
+                                                             current_mesh->LocalNz));
+    }
+  }
+
+  static constexpr auto x_safe_region = "RGN_XSAFE";
+};
+
+class DDXDispatchExprParamTest
+    : public DDXDispatchExprTest,
+      public ::testing::WithParamInterface<std::tuple<CELL_LOC, CELL_LOC, DIFF_METHOD>> {
+};
+
+class DDXDispatchExprMethodTest : public DDXDispatchExprTest,
+                                  public ::testing::WithParamInterface<DIFF_METHOD> {};
+
 class DDZDispatchExprTest : public FakeMeshFixture {};
 
 class DDZDispatchExprParamTest
@@ -36,7 +83,26 @@ std::string paramToString(
   return toString(inloc) + "_to_" + toString(outloc) + "_" + toString(method);
 }
 
+std::string methodToString(const ::testing::TestParamInfo<DIFF_METHOD>& param) {
+  return toString(param.param);
+}
+
 } // namespace
+
+INSTANTIATE_TEST_SUITE_P(
+    SupportedLocations, DDXDispatchExprParamTest,
+    ::testing::Values(std::make_tuple(CELL_CENTRE, CELL_CENTRE, DIFF_C2),
+                      std::make_tuple(CELL_CENTRE, CELL_CENTRE, DIFF_C4),
+                      std::make_tuple(CELL_CENTRE, CELL_XLOW, DIFF_C2),
+                      std::make_tuple(CELL_CENTRE, CELL_XLOW, DIFF_C4),
+                      std::make_tuple(CELL_XLOW, CELL_CENTRE, DIFF_C2),
+                      std::make_tuple(CELL_XLOW, CELL_CENTRE, DIFF_C4),
+                      std::make_tuple(CELL_XLOW, CELL_XLOW, DIFF_C2),
+                      std::make_tuple(CELL_XLOW, CELL_XLOW, DIFF_C4)),
+    paramToString);
+
+INSTANTIATE_TEST_SUITE_P(SupportedMethods, DDXDispatchExprMethodTest,
+                         ::testing::Values(DIFF_W2, DIFF_W3, DIFF_S2), methodToString);
 
 INSTANTIATE_TEST_SUITE_P(
     SupportedLocations, DDZDispatchExprParamTest,
@@ -50,6 +116,31 @@ INSTANTIATE_TEST_SUITE_P(
                       std::make_tuple(CELL_ZLOW, CELL_ZLOW, DIFF_C4)),
     paramToString);
 
+TEST_P(DDXDispatchExprParamTest, MatchesDDX) {
+  const auto [inloc, outloc, method] = GetParam();
+  auto input = makeTestField(mesh_staggered, inloc);
+
+  const auto actual =
+      Field3D{DDX(input, outloc, method, DDXDispatchExprTest::x_safe_region)};
+  const auto expected =
+      expectedDDX(input, outloc, toString(method), DDXDispatchExprTest::x_safe_region);
+
+  EXPECT_EQ(actual.getLocation(), outloc);
+  EXPECT_TRUE(IsFieldEqual(actual, expected, DDXDispatchExprTest::x_safe_region));
+}
+
+TEST_P(DDXDispatchExprMethodTest, MatchesDDX) {
+  auto input = makeTestField(mesh_staggered, CELL_CENTRE);
+
+  const auto actual =
+      Field3D{DDX(input, CELL_CENTRE, GetParam(), DDXDispatchExprTest::x_safe_region)};
+  const auto expected = expectedDDX(input, CELL_CENTRE, toString(GetParam()),
+                                    DDXDispatchExprTest::x_safe_region);
+
+  EXPECT_EQ(actual.getLocation(), CELL_CENTRE);
+  EXPECT_TRUE(IsFieldEqual(actual, expected, DDXDispatchExprTest::x_safe_region));
+}
+
 TEST_P(DDZDispatchExprParamTest, MatchesDDZ) {
   const auto [inloc, outloc, method] = GetParam();
   auto input = makeTestField(mesh_staggered, inloc);
@@ -59,6 +150,71 @@ TEST_P(DDZDispatchExprParamTest, MatchesDDZ) {
 
   EXPECT_EQ(actual.getLocation(), outloc);
   EXPECT_TRUE(IsFieldEqual(actual, expected, "RGN_NOBNDRY"));
+}
+
+TEST_F(DDXDispatchExprTest, UsesRequestedRegion) {
+  auto input = makeTestField(mesh_staggered, CELL_CENTRE);
+
+  const auto actual = Field3D{DDX(input, CELL_XLOW, DIFF_C2, x_safe_region)};
+  const auto expected = expectedDDX(input, CELL_XLOW, "C2", x_safe_region);
+
+  EXPECT_EQ(actual.getLocation(), CELL_XLOW);
+  EXPECT_TRUE(IsFieldEqual(actual, expected, x_safe_region));
+}
+
+TEST_F(DDXDispatchExprTest, RejectsUnsupportedMethods) {
+  auto input = makeTestField(mesh_staggered, CELL_CENTRE);
+
+  EXPECT_THROW((void)DDX(input, CELL_DEFAULT, DIFF_U1), BoutException);
+}
+
+TEST_F(DDXDispatchExprTest, RejectsUnsupportedShearMethods) {
+  auto input = makeTestField(mesh_staggered, CELL_CENTRE);
+
+  mesh_staggered->IncIntShear = true;
+
+  EXPECT_THROW((void)DDX(input, CELL_DEFAULT, DIFF_W2), BoutException);
+}
+
+TEST_F(DDXDispatchExprTest, ResolvesCentredDefaultMethodFromMesh) {
+  auto input = makeTestField(mesh_staggered, CELL_CENTRE);
+
+  Options diff_options{{"ddx", {{"first", "C4"}}}, {"ddxstag", {{"first", "C2"}}}};
+  static_cast<FakeMesh*>(mesh_staggered)->initDerivs(&diff_options);
+
+  EXPECT_EQ(mesh_staggered->getDefaultMethod(DIRECTION::X, DERIV::Standard), DIFF_C4);
+  const auto centre_actual =
+      Field3D{DDX(input, CELL_CENTRE, DIFF_DEFAULT, x_safe_region)};
+  const auto centre_expected = expectedDDX(input, CELL_CENTRE, "C4", x_safe_region);
+  EXPECT_TRUE(IsFieldEqual(centre_actual, centre_expected, x_safe_region));
+}
+
+TEST_F(DDXDispatchExprTest, ResolvesStaggeredDefaultMethodFromMesh) {
+  auto input = makeTestField(mesh_staggered, CELL_CENTRE);
+
+  Options diff_options{{"ddx", {{"first", "C4"}}}, {"ddxstag", {{"first", "C2"}}}};
+  static_cast<FakeMesh*>(mesh_staggered)->initDerivs(&diff_options);
+
+  EXPECT_EQ(mesh_staggered->getDefaultMethod(DIRECTION::X, DERIV::Standard, STAGGER::C2L),
+            DIFF_C2);
+  const auto staggered_actual =
+      Field3D{DDX(input, CELL_XLOW, DIFF_DEFAULT, x_safe_region)};
+  const auto staggered_expected = expectedDDX(input, CELL_XLOW, "C2", x_safe_region);
+  EXPECT_TRUE(IsFieldEqual(staggered_actual, staggered_expected, x_safe_region));
+}
+
+TEST_F(DDXDispatchExprTest, IncludesIntegratedShearCorrection) {
+  auto input = makeTestField(mesh_staggered, CELL_CENTRE);
+
+  mesh_staggered->IncIntShear = true;
+  auto torsion = bout::FieldMetric(0.125, mesh_staggered);
+  mesh_staggered->getCoordinates()->setIntShiftTorsion(torsion);
+  CoordinatesAccessor::clear(mesh_staggered->getCoordinates());
+
+  const auto actual = Field3D{DDX(input, CELL_CENTRE, DIFF_C2, x_safe_region)};
+  const auto expected = expectedDDX(input, CELL_CENTRE, "C2", x_safe_region);
+
+  EXPECT_TRUE(IsFieldEqual(actual, expected, x_safe_region));
 }
 
 TEST_F(DDZDispatchExprTest, UsesRequestedRegion) {

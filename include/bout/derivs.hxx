@@ -54,10 +54,6 @@
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-Field3D DDX(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-            const std::string& method = "DEFAULT",
-            const std::string& region = "RGN_NOBNDRY");
-
 /// Calculate first partial derivative in X
 ///
 ///   \f$\partial / \partial x\f$
