@@ -47,6 +47,7 @@
 #include <bout/derivs.hxx>
 #include <bout/difops.hxx>
 #include <bout/field.hxx>
+#include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
 #include <bout/globals.hxx>
 #include <bout/invert_laplace.hxx>
@@ -146,24 +147,24 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
 
   Field3D rhsOverD = rhs / Dcoef;
 
-  Field3D C1TimesD = C1coef * Dcoef; // This is needed several times
+  const Field3D C1TimesD = C1coef * Dcoef; // This is needed several times
 
   // x-component of 1./(C1*D) * Grad_perp(C2)
-  Field3D coef_x = DDX(C2coef, location, DIFF_C2) / C1TimesD;
+  const Field3D coef_x = DDX(C2coef, location, DIFF_C2) / C1TimesD;
 
   // y-component of 1./(C1*D) * Grad_perp(C2)
-  Field3D coef_y = DDY(C2coef, location, "C2") / C1TimesD;
+  const Field3D coef_y = DDY(C2coef, location, "C2") / C1TimesD;
 
   // z-component of 1./(C1*D) * Grad_perp(C2)
   Field3D coef_z = DDZ(C2coef, location, DIFF_FFT) / C1TimesD;
 
-  Field3D AOverD = Acoef / Dcoef;
+  const Field3D AOverD = Acoef / Dcoef;
 
   // Split coefficients into DC and AC parts so that delp2solver can use DC part.
   // This allows all-Neumann boundary conditions as long as AOverD_DC is non-zero
 
-  Field2D C1coefTimesD_DC = DC(C1TimesD);
-  Field2D C2coef_DC = DC(C2coef);
+  const Field2D C1coefTimesD_DC = DC(C1TimesD);
+  const Field2D C2coef_DC = DC(C2coef);
 
   // Our naming is slightly misleading here, as coef_x_AC may actually have a
   // DC component, as the AC components of C2coef and C1coefTimesD are not

@@ -50,6 +50,7 @@
 #include <bout/index_derivs_interface.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/metric_tensor.hxx>
+#include <bout/stencil_expr.hxx>
 #include <bout/unused.hxx>
 
 #include <string>

@@ -4,10 +4,9 @@
  * Definition of derivative methods storage class
  *
  **************************************************************************
- * Copyright 2018
- *    D.Dickinson, P.Hill, B.Dudson
+ * Copyright 2018 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -26,22 +25,24 @@
  *
  **************************************************************************/
 
-#ifndef __DERIV_STORE_HXX__
-#define __DERIV_STORE_HXX__
+#ifndef DERIV_STORE_HXX
+#define DERIV_STORE_HXX
 
 #include <cstddef>
 #include <functional>
 #include <map>
 #include <set>
+#include <string>
 #include <type_traits>
 #include <unordered_map>
 
-#include "bout/field3d.hxx"
-#include <bout/scorepwrapper.hxx>
-
 #include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/field3d.hxx>
 #include <bout/options.hxx>
+#include <bout/output.hxx>
+#include <bout/scorepwrapper.hxx>
+#include <bout/utils.hxx>
 
 /// Here we have a templated singleton that is used to store DerivativeFunctions
 /// for all types of derivatives. It is templated on the FieldType (2D or 3D) as
@@ -100,9 +101,8 @@ struct DerivativeStore {
     auto key = getKey(direction, stagger, toString(derivType));
     if (isEmpty(key)) {
       return std::set<std::string>{};
-    } else {
-      return registeredMethods.at(key);
     }
+    return registeredMethods.at(key);
   };
 
   /// Outputs a list of all registered method names for the
@@ -313,18 +313,18 @@ struct DerivativeStore {
 
     // To replicate the existing behaviour we first search for a section called
     //"dd?" and if the option isn't in there we search a section called "diff"
-    auto backupSection = options->getSection("diff");
+    auto* backupSection = options->getSection("diff");
 
-    std::map<DIRECTION, std::string> directions = {{DIRECTION::X, "ddx"},
-                                                   {DIRECTION::Y, "ddy"},
-                                                   {DIRECTION::YOrthogonal, "ddy"},
-                                                   {DIRECTION::Z, "ddz"}};
+    const std::map<DIRECTION, std::string> directions = {{DIRECTION::X, "ddx"},
+                                                         {DIRECTION::Y, "ddy"},
+                                                         {DIRECTION::YOrthogonal, "ddy"},
+                                                         {DIRECTION::Z, "ddz"}};
 
-    std::map<DERIV, std::string> derivTypes = {{DERIV::Standard, "first"},
-                                               {DERIV::StandardSecond, "second"},
-                                               {DERIV::StandardFourth, "fourth"},
-                                               {DERIV::Upwind, "upwind"},
-                                               {DERIV::Flux, "flux"}};
+    const std::map<DERIV, std::string> derivTypes = {{DERIV::Standard, "first"},
+                                                     {DERIV::StandardSecond, "second"},
+                                                     {DERIV::StandardFourth, "fourth"},
+                                                     {DERIV::Upwind, "upwind"},
+                                                     {DERIV::Flux, "flux"}};
 
     for (const auto& direction : directions) {
       for (const auto& deriv : derivTypes) {
@@ -344,7 +344,7 @@ struct DerivativeStore {
         //-------------------------------------------------------------
 
         // The direction specific section to consider
-        auto specificSection = options->getSection(direction.second);
+        auto* specificSection = options->getSection(direction.second);
 
         // Find the appropriate value for theDefault either from
         // the input file or if not found then use the value in

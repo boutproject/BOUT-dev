@@ -1,5 +1,9 @@
 #include "bout/coordinates_accessor.hxx"
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/build_defines.hxx"
+#include "bout/coordinates.hxx"
 #include "bout/macro_for_each.hxx"
 #include "bout/mesh.hxx"
 
@@ -40,10 +44,10 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
 
   // Copy data from Coordinates variable into data array
   // Uses the symbol to look up the corresponding Offset
-#define COPY_STRIPE1(symbol)                                         \
-  if (coords->symbol().isAllocated()) {                              \
-    data[stripe_size * ind.ind + static_cast<int>(Offset::symbol)] = \
-        coords->symbol()[ind];                                       \
+#define COPY_STRIPE1(symbol)                                           \
+  if (coords->symbol().isAllocated()) {                                \
+    data[(stripe_size * ind.ind) + static_cast<int>(Offset::symbol)] = \
+        coords->symbol()[ind];                                         \
   }
 
   // Implement copy for each argument

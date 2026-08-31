@@ -19,8 +19,8 @@ g_22 = 1.1 + 0.2*cos(y)
 g22 = 1 / g_22
 
 [mesh:ddz]
-first = c4
-second = c4
+first = fft
+second = fft
 
 [solver]
 # Test of parallel tridiagonal solver
