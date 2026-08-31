@@ -692,10 +692,10 @@ inline bout::stencil::DDZExprC4 DDZ_C4(const Field3D& f) {
       f.getMesh()->getRegion("RGN_NOBNDRY")};
 }
 
-inline bout::stencil::DDZDispatchExpr DDZ(const Field3D& f,
-                                          CELL_LOC outloc = CELL_DEFAULT,
-                                          DIFF_METHOD method = DIFF_DEFAULT,
-                                          const std::string& region = "RGN_NOBNDRY") {
+inline bout::stencil::DDZDispatchExpr
+DDZ_stencil(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+            DIFF_METHOD method = DIFF_DEFAULT,
+            const std::string& region = "RGN_NOBNDRY") {
   checkData(f);
 
   const auto resolved_outloc = (outloc == CELL_DEFAULT) ? f.getLocation() : outloc;
@@ -707,7 +707,7 @@ inline bout::stencil::DDZDispatchExpr DDZ(const Field3D& f,
   }
 
   if ((method != DIFF_C2) && (method != DIFF_C4)) {
-    throw BoutException("DDZ only supports DIFF_C2 and DIFF_C4, got {:s}",
+    throw BoutException("DDZ_stencil only supports DIFF_C2 and DIFF_C4, got {:s}",
                         toString(method));
   }
 
@@ -726,10 +726,10 @@ inline bout::stencil::DDZDispatchExpr DDZ(const Field3D& f,
       f.getMesh()->getRegion(region)};
 }
 
-inline bout::stencil::DDZDispatchExpr DDZ(const Field3D& f, CELL_LOC outloc,
-                                          const std::string& method,
-                                          const std::string& region = "RGN_NOBNDRY") {
-  return DDZ(f, outloc, parseField3DMethodString(method), region);
+inline bout::stencil::DDZDispatchExpr
+DDZ_stencil(const Field3D& f, CELL_LOC outloc, const std::string& method,
+            const std::string& region = "RGN_NOBNDRY") {
+  return DDZ_stencil(f, outloc, parseField3DMethodString(method), region);
 }
 
 inline bout::stencil::BracketArakawaExpr bracket_arakawa(const Field3D& f,

@@ -84,9 +84,24 @@ bout::FieldMetric DDY(const Field2D& f, CELL_LOC outloc, const std::string& meth
 
 ////////////// Z DERIVATIVE /////////////////
 
+Field3D DDZ(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method,
+            const std::string& region) {
+  const auto resolved_outloc = (outloc == CELL_DEFAULT) ? f.getLocation() : outloc;
+  return bout::derivatives::index::DDZ(f, outloc, toString(method), region)
+         / interp_to(f.getCoordinates(resolved_outloc)->dz(), resolved_outloc, region);
+}
+
+Field3D DDZ(const Field3D& f, CELL_LOC outloc, const std::string& method,
+            const std::string& region) {
+  const auto resolved_outloc = (outloc == CELL_DEFAULT) ? f.getLocation() : outloc;
+  return bout::derivatives::index::DDZ(f, outloc, method, region)
+         / interp_to(f.getCoordinates(resolved_outloc)->dz(), resolved_outloc, region);
+}
+
 Field3D DDZ_FFT(const Field3D& f, CELL_LOC outloc, const std::string& region) {
+  const auto resolved_outloc = (outloc == CELL_DEFAULT) ? f.getLocation() : outloc;
   return bout::derivatives::index::DDZ(f, outloc, "FFT", region)
-         / f.getCoordinates(outloc)->dz();
+         / f.getCoordinates(resolved_outloc)->dz();
 }
 
 bout::FieldMetric DDZ(const Field2D& f, CELL_LOC UNUSED(outloc),
@@ -383,13 +398,15 @@ bout::FieldMetric D2DYDZ(const Field2D& f, CELL_LOC outloc,
 #endif
 }
 
-Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc,
-               [[maybe_unused]] const std::string& method, const std::string& region) {
+Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc, const std::string& method,
+               const std::string& region) {
   // If staggering in z, take y-derivative at f's location.
   const auto y_location =
       (outloc == CELL_ZLOW or f.getLocation() == CELL_ZLOW) ? CELL_DEFAULT : outloc;
+  const auto y_method =
+      (parseField3DMethodString(method) == DIFF_FFT) ? std::string{"DEFAULT"} : method;
 
-  return DDZ(DDY(f, y_location, method, region), outloc, method, region);
+  return DDZ(DDY(f, y_location, y_method, region), outloc, method, region);
 }
 
 /*******************************************************************************

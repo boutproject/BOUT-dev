@@ -145,7 +145,7 @@ TEST_P(DDZDispatchExprParamTest, MatchesDDZ) {
   const auto [inloc, outloc, method] = GetParam();
   auto input = makeTestField(mesh_staggered, inloc);
 
-  const auto actual = Field3D{DDZ(input, outloc, method)};
+  const auto actual = Field3D{DDZ_stencil(input, outloc, method)};
   const auto expected = DDZ(input, outloc, toString(method));
 
   EXPECT_EQ(actual.getLocation(), outloc);
@@ -220,7 +220,7 @@ TEST_F(DDXDispatchExprTest, IncludesIntegratedShearCorrection) {
 TEST_F(DDZDispatchExprTest, UsesRequestedRegion) {
   auto input = makeTestField(mesh_staggered, CELL_CENTRE);
 
-  const auto actual = Field3D{DDZ(input, CELL_ZLOW, DIFF_C2, "RGN_ALL")};
+  const auto actual = Field3D{DDZ_stencil(input, CELL_ZLOW, DIFF_C2, "RGN_ALL")};
   const auto expected = DDZ(input, CELL_ZLOW, "C2", "RGN_ALL");
 
   EXPECT_EQ(actual.getLocation(), CELL_ZLOW);
@@ -230,7 +230,7 @@ TEST_F(DDZDispatchExprTest, UsesRequestedRegion) {
 TEST_F(DDZDispatchExprTest, RejectsUnsupportedMethods) {
   auto input = makeTestField(mesh_staggered, CELL_CENTRE);
 
-  EXPECT_THROW((void)DDZ(input, CELL_DEFAULT, DIFF_FFT), BoutException);
+  EXPECT_THROW((void)DDZ_stencil(input, CELL_DEFAULT, DIFF_FFT), BoutException);
 }
 
 TEST_F(DDZDispatchExprTest, ResolvesDefaultMethodFromMesh) {
@@ -239,11 +239,11 @@ TEST_F(DDZDispatchExprTest, ResolvesDefaultMethodFromMesh) {
   Options diff_options{{"ddz", {{"first", "C4"}}}, {"ddzstag", {{"first", "C2"}}}};
   static_cast<FakeMesh*>(mesh_staggered)->initDerivs(&diff_options);
 
-  const auto centre_actual = Field3D{DDZ(input, CELL_CENTRE, DIFF_DEFAULT)};
+  const auto centre_actual = Field3D{DDZ_stencil(input, CELL_CENTRE, DIFF_DEFAULT)};
   const auto centre_expected = DDZ(input, CELL_CENTRE, "C4");
   EXPECT_TRUE(IsFieldEqual(centre_actual, centre_expected, "RGN_NOBNDRY"));
 
-  const auto staggered_actual = Field3D{DDZ(input, CELL_ZLOW, DIFF_DEFAULT)};
+  const auto staggered_actual = Field3D{DDZ_stencil(input, CELL_ZLOW, DIFF_DEFAULT)};
   const auto staggered_expected = DDZ(input, CELL_ZLOW, "C2");
   EXPECT_TRUE(IsFieldEqual(staggered_actual, staggered_expected, "RGN_NOBNDRY"));
 }
