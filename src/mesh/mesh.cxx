@@ -586,6 +586,7 @@ std::shared_ptr<Coordinates> Mesh::getCoordinatesSmart(CELL_LOC location) {
 
   inserted.first->second->communicateMetricTensor();
   inserted.first->second->communicateDz();
+  inserted.first->second->g_values();
 
   return inserted.first->second;
 }

@@ -33,6 +33,7 @@
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/metric_tensor.hxx"
+#include "bout/stencil_expr.hxx"
 #include "bout/vector2d.hxx"
 #include "bout/vector3d.hxx"
 
@@ -53,10 +54,6 @@
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-Field3D DDX(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-            const std::string& method = "DEFAULT",
-            const std::string& region = "RGN_NOBNDRY");
-
 /// Calculate first partial derivative in X
 ///
 ///   \f$\partial / \partial x\f$
@@ -124,22 +121,6 @@ bout::FieldMetric DDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-Field3D DDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-            const std::string& method = "DEFAULT",
-            const std::string& region = "RGN_NOBNDRY");
-
-/// Calculate first partial derivative in Z
-///
-///   \f$\partial / \partial z\f$
-///
-/// @param[in] f       The field to be differentiated
-/// @param[in] outloc  The cell location where the result is desired. If
-///                    staggered grids is not enabled then this has no effect
-///                    If not given, defaults to CELL_DEFAULT
-/// @param[in] method  Differencing method to use. This overrides the default
-///                    If not given, defaults to DIFF_DEFAULT
-/// @param[in] region  What region is expected to be calculated
-///                    If not given, defaults to RGN_NOBNDRY
 bout::FieldMetric DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                       const std::string& method = "DEFAULT",
                       const std::string& region = "RGN_NOBNDRY");
@@ -156,6 +137,38 @@ bout::FieldMetric DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
+Field3D DDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+            DIFF_METHOD method = DIFF_DEFAULT, const std::string& region = "RGN_NOBNDRY");
+
+/// Compatibility overload for string-based callers.
+Field3D DDZ(const Field3D& f, CELL_LOC outloc, const std::string& method,
+            const std::string& region = "RGN_NOBNDRY");
+
+/// Calculate the Z derivative using the FFT-based implementation.
+///
+/// This is kept separate from the stencil-expression `DDZ_stencil` overload
+/// because FFT differentiation cannot be represented by the stencil-expression
+/// machinery.
+Field3D DDZ_FFT(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                const std::string& region = "RGN_NOBNDRY");
+
+/// Calculate first partial derivative in Z
+///
+///   \f$\partial / \partial z\f$
+///
+/// @param[in] f       The field to be differentiated
+/// @param[in] outloc  The cell location where the result is desired. If
+///                    staggered grids is not enabled then this has no effect
+///                    If not given, defaults to CELL_DEFAULT
+/// @param[in] method  Differencing method to use. This overrides the default
+///                    If not given, defaults to DIFF_DEFAULT
+/// @param[in] region  What region is expected to be calculated
+///                    If not given, defaults to RGN_NOBNDRY
+Vector3D DDZ(const Vector3D& f, CELL_LOC outloc = CELL_DEFAULT,
+             DIFF_METHOD method = DIFF_DEFAULT,
+             const std::string& region = "RGN_NOBNDRY");
+
+/// Compatibility overload for string-based callers.
 Vector3D DDZ(const Vector3D& v, CELL_LOC outloc = CELL_DEFAULT,
              const std::string& method = "DEFAULT",
              const std::string& region = "RGN_NOBNDRY");
@@ -172,6 +185,11 @@ Vector3D DDZ(const Vector3D& v, CELL_LOC outloc = CELL_DEFAULT,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
+Vector2D DDZ(const Vector2D& f, CELL_LOC outloc = CELL_DEFAULT,
+             DIFF_METHOD method = DIFF_DEFAULT,
+             const std::string& region = "RGN_NOBNDRY");
+
+/// Compatibility overload for string-based callers.
 Vector2D DDZ(const Vector2D& v, CELL_LOC outloc = CELL_DEFAULT,
              const std::string& method = "DEFAULT",
              const std::string& region = "RGN_NOBNDRY");

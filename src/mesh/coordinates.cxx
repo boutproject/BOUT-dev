@@ -358,6 +358,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
   }
 }
 
+Coordinates::~Coordinates() { CoordinatesAccessor::clear(this); }
+
 void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
   if (options == nullptr) {
     options = Options::getRoot()->getSection("mesh");

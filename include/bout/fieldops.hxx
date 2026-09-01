@@ -129,6 +129,16 @@ struct Div {
     return a / b;
   }
 };
+struct Pow {
+  template <typename LView, typename RView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx, const LView& L,
+                                                        const RView& R) const {
+    return ::pow(L(idx), R(idx));
+  }
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(BoutReal a, BoutReal b) const {
+    return ::pow(a, b);
+  }
+};
 struct IfElse {
   bool condition;
 

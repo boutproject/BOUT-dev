@@ -14,6 +14,7 @@
 class MeshTest : public ::testing::Test {
 public:
   MeshTest() : localmesh(nx, ny, nz) {}
+  ~MeshTest() override { Options::cleanup(); }
   static const int nx = 3;
   static const int ny = 5;
   static const int nz = 7;
@@ -199,6 +200,44 @@ TEST_F(MeshTest, GetStringNoSource) {
   std::string string_value;
   EXPECT_NE(localmesh.get(string_value, "no_source"), 0);
   EXPECT_EQ(string_value, "");
+}
+
+TEST_F(MeshTest, GetDefaultMethodUsesBuiltinDefaults) {
+  Options options;
+
+  localmesh.initDerivs(&options);
+
+  EXPECT_EQ(localmesh.getDefaultMethod(DIRECTION::X, DERIV::Standard), DIFF_C2);
+  EXPECT_EQ(localmesh.getDefaultMethod(DIRECTION::Y, DERIV::StandardSecond), DIFF_C2);
+  EXPECT_EQ(localmesh.getDefaultMethod(DIRECTION::Z, DERIV::StandardFourth), DIFF_C2);
+  EXPECT_EQ(localmesh.getDefaultMethod(DIRECTION::Z, DERIV::Upwind), DIFF_U1);
+  EXPECT_EQ(localmesh.getDefaultMethod(DIRECTION::Z, DERIV::Flux), DIFF_U1);
+  EXPECT_EQ(localmesh.getDefaultMethod(DIRECTION::Z, DERIV::Standard, STAGGER::C2L),
+            DIFF_C2);
+  EXPECT_EQ(localmesh.getDefaultMethod(DIRECTION::Z, DERIV::Standard, STAGGER::L2C),
+            DIFF_C2);
+}
+
+TEST_F(MeshTest, GetDefaultMethodReadsDirectionAndStaggeredOptions) {
+  Options options{{"diff", {{"first", "W2"}, {"upwind", "U2"}}},
+                  {"ddz", {{"first", "C4"}}},
+                  {"ddzstag", {{"first", "S2"}}}};
+
+  localmesh.initDerivs(&options);
+
+  EXPECT_EQ(localmesh.getDefaultMethod(DIRECTION::X, DERIV::Standard), DIFF_W2);
+  EXPECT_EQ(localmesh.getDefaultMethod(DIRECTION::Y, DERIV::Upwind), DIFF_U2);
+  EXPECT_EQ(localmesh.getDefaultMethod(DIRECTION::Z, DERIV::Standard), DIFF_C4);
+  EXPECT_EQ(localmesh.getDefaultMethod(DIRECTION::Z, DERIV::Standard, STAGGER::C2L),
+            DIFF_S2);
+  EXPECT_EQ(localmesh.getDefaultMethod(DIRECTION::Z, DERIV::Standard, STAGGER::L2C),
+            DIFF_S2);
+}
+
+TEST_F(MeshTest, GetDefaultMethodRejectsDefaultOptionValue) {
+  Options options{{"ddz", {{"first", "DEFAULT"}}}};
+
+  EXPECT_THROW(localmesh.initDerivs(&options), BoutException);
 }
 
 TEST_F(MeshTest, GetStringNoSourceWithDefault) {
