@@ -66,11 +66,11 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
 
     if (coords->Bxy().isAllocated()) {
       data[(stripe_size * ind.ind) + static_cast<int>(Offset::B)] = coords->Bxy()[ind];
-      if (coords->Bxy().yup().isAllocated()) {
+      if (coords->Bxy().hasParallelSlices() && coords->Bxy().yup().isAllocated()) {
         data[stripe_size * ind.ind + static_cast<int>(Offset::Byup)] =
             coords->Bxy().yup()[ind];
       }
-      if (coords->Bxy().ydown().isAllocated()) {
+      if (coords->Bxy().hasParallelSlices() && coords->Bxy().ydown().isAllocated()) {
         data[stripe_size * ind.ind + static_cast<int>(Offset::Bydown)] =
             coords->Bxy().ydown()[ind];
       }
