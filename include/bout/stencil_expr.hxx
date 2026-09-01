@@ -745,10 +745,12 @@ inline bout::stencil::DDXDispatchExpr DDX(const Field3D& f, CELL_LOC outloc,
   return DDX(f, outloc, parseField3DMethodString(method), region);
 }
 
+namespace detail {
+
+template <typename FieldType>
 inline bout::stencil::DDYDispatchExpr
-DDY_stencil(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-            DIFF_METHOD method = DIFF_DEFAULT,
-            const std::string& region = "RGN_NOBNDRY") {
+makeDDYStencilExpr(const FieldType& f, CELL_LOC outloc, DIFF_METHOD method,
+                   const std::string& region) {
   checkData(f);
 
   if (!f.hasParallelSlices()) {
@@ -799,8 +801,37 @@ DDY_stencil(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
       f.getMesh()->getRegion(region)};
 }
 
+} // namespace detail
+
 inline bout::stencil::DDYDispatchExpr
-DDY_stencil(const Field3D& f, CELL_LOC outloc, const std::string& method,
+DDY_stencil(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
+            DIFF_METHOD method = DIFF_DEFAULT,
+            const std::string& region = "RGN_NOBNDRY") {
+  return detail::makeDDYStencilExpr(f, outloc, method, region);
+}
+
+inline bout::stencil::DDYDispatchExpr
+DDY_stencil(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+            DIFF_METHOD method = DIFF_DEFAULT,
+            const std::string& region = "RGN_NOBNDRY") {
+  if (!f.hasParallelSlices()) {
+    throw BoutException("DDY_stencil requires parallel slices. Use eager DDY for "
+                        "field-aligned transforms or communicate/apply parallel "
+                        "boundaries before calling DDY_stencil.");
+  }
+
+  return detail::makeDDYStencilExpr(f, outloc, method, region);
+}
+
+inline bout::stencil::DDYDispatchExpr
+DDY_stencil(const Field3DParallel& f, CELL_LOC outloc, const std::string& method,
+            const std::string& region = "RGN_NOBNDRY") {
+  return DDY_stencil(f, outloc, parseField3DMethodString(method), region);
+}
+
+inline bout::stencil::DDYDispatchExpr
+DDY_stencil(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+            const std::string& method = "DEFAULT",
             const std::string& region = "RGN_NOBNDRY") {
   return DDY_stencil(f, outloc, parseField3DMethodString(method), region);
 }
