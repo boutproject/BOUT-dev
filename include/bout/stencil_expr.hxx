@@ -316,6 +316,77 @@ struct DDX_Dispatch_Op {
   }
 };
 
+struct DDY_C2_Op {
+  CoordinatesAccessor coords;
+  int nz{0};
+
+  template <typename LView, typename RView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx, const LView& lhs,
+                                                        const RView&) const {
+    const int iyp = i_yp(idx, nz);
+    const int iym = i_ym(idx, nz);
+
+    return 0.5 * (lhs.yup(0)(iyp) - lhs.ydown(0)(iym)) / coords.dy(idx);
+  }
+};
+
+struct DDY_C4_Op {
+  CoordinatesAccessor coords;
+  int nz{0};
+
+  template <typename LView, typename RView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx, const LView& lhs,
+                                                        const RView&) const {
+    const int iyp = i_yp(idx, nz);
+    const int iym = i_ym(idx, nz);
+    const int iyp2 = i_yp(iyp, nz);
+    const int iym2 = i_ym(iym, nz);
+
+    return (-lhs.yup(1)(iyp2) + 8.0 * lhs.yup(0)(iyp) - 8.0 * lhs.ydown(0)(iym)
+            + lhs.ydown(1)(iym2))
+           / (12.0 * coords.dy(idx));
+  }
+};
+
+struct DDY_Dispatch_Op {
+  CoordinatesAccessor coords;
+  int nz{0};
+  DIFF_METHOD method{DIFF_DEFAULT};
+
+  template <typename LView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal apply_c2(int idx, const LView& lhs) const {
+    const int iyp = i_yp(idx, nz);
+    const int iym = i_ym(idx, nz);
+
+    return 0.5 * (lhs.yup(0)(iyp) - lhs.ydown(0)(iym)) / coords.dy(idx);
+  }
+
+  template <typename LView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal apply_c4(int idx, const LView& lhs) const {
+    const int iyp = i_yp(idx, nz);
+    const int iym = i_ym(idx, nz);
+    const int iyp2 = i_yp(iyp, nz);
+    const int iym2 = i_ym(iym, nz);
+
+    return (-lhs.yup(1)(iyp2) + 8.0 * lhs.yup(0)(iyp) - 8.0 * lhs.ydown(0)(iym)
+            + lhs.ydown(1)(iym2))
+           / (12.0 * coords.dy(idx));
+  }
+
+  template <typename LView, typename RView>
+  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx, const LView& lhs,
+                                                        const RView&) const {
+    switch (method) {
+    case DIFF_C2:
+      return apply_c2(idx, lhs);
+    case DIFF_C4:
+      return apply_c4(idx, lhs);
+    default:
+      return 0.0;
+    }
+  }
+};
+
 struct DDZ_C2_Op {
   CoordinatesAccessor coords;
   int nz{0};
@@ -490,6 +561,9 @@ struct BracketArakawaOp {
 using DDZExprC2 = BinaryExpr<Field3D, Field3D, Field3D, DDZ_C2_Op>;
 using DDZExprC4 = BinaryExpr<Field3D, Field3D, Field3D, DDZ_C4_Op>;
 using DDZDispatchExpr = BinaryExpr<Field3D, Field3D, Field3D, DDZ_Dispatch_Op>;
+using DDYExprC2 = BinaryExpr<Field3D, Field3D, Field3D, DDY_C2_Op>;
+using DDYExprC4 = BinaryExpr<Field3D, Field3D, Field3D, DDY_C4_Op>;
+using DDYDispatchExpr = BinaryExpr<Field3D, Field3D, Field3D, DDY_Dispatch_Op>;
 using DDXExprC2 = BinaryExpr<Field3D, Field3D, Field3D, DDX_C2_Op>;
 using DDXExprC4 = BinaryExpr<Field3D, Field3D, Field3D, DDX_C4_Op>;
 using DDXDispatchExpr = BinaryExpr<Field3D, Field3D, Field3D, DDX_Dispatch_Op>;
@@ -518,6 +592,17 @@ inline int requiredDDXGuards(DIFF_METHOD method, STAGGER stagger) {
   case DIFF_C4:
   case DIFF_W3:
   case DIFF_S2:
+    return 2;
+  default:
+    return -1;
+  }
+}
+
+inline int requiredDDYParallelSlices(DIFF_METHOD method) {
+  switch (method) {
+  case DIFF_C2:
+    return 1;
+  case DIFF_C4:
     return 2;
   default:
     return -1;
@@ -658,6 +743,66 @@ inline bout::stencil::DDXDispatchExpr DDX(const Field3D& f, CELL_LOC outloc,
                                           const std::string& method,
                                           const std::string& region = "RGN_NOBNDRY") {
   return DDX(f, outloc, parseField3DMethodString(method), region);
+}
+
+inline bout::stencil::DDYDispatchExpr
+DDY_stencil(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+            DIFF_METHOD method = DIFF_DEFAULT,
+            const std::string& region = "RGN_NOBNDRY") {
+  checkData(f);
+
+  if (!f.hasParallelSlices()) {
+    throw BoutException("DDY_stencil requires parallel slices. Use eager DDY for "
+                        "field-aligned transforms or communicate/apply parallel "
+                        "boundaries before calling DDY_stencil.");
+  }
+
+  ASSERT1(f.getDirectionY() == YDirectionType::Standard);
+
+  const auto resolved_outloc = (outloc == CELL_DEFAULT) ? f.getLocation() : outloc;
+  const auto stagger =
+      f.getMesh()->getStagger(f.getLocation(), resolved_outloc, CELL_YLOW);
+
+  if (stagger != STAGGER::None) {
+    throw BoutException("DDY_stencil currently only supports unstaggered outputs, got "
+                        "{:s} to {:s}",
+                        toString(f.getLocation()), toString(resolved_outloc));
+  }
+
+  if (method == DIFF_DEFAULT) {
+    method = f.getMesh()->getDefaultMethod(DIRECTION::Y, DERIV::Standard, stagger);
+  }
+
+  const auto required_slices = requiredDDYParallelSlices(method);
+  if (required_slices < 0) {
+    throw BoutException("DDY_stencil only supports DIFF_C2 and DIFF_C4, got {:s}",
+                        toString(method));
+  }
+
+  if (static_cast<int>(f.numberParallelSlices()) < required_slices) {
+    throw BoutException("DDY_stencil with {:s} requires {:d} parallel slice pair(s), "
+                        "but field only has {:d}",
+                        toString(method), required_slices, f.numberParallelSlices());
+  }
+
+  const auto region_id = f.getMesh()->getRegionID(region);
+
+  return bout::stencil::DDYDispatchExpr{
+      static_cast<Field3D::View>(f),
+      static_cast<Field3D::View>(f),
+      bout::stencil::DDY_Dispatch_Op{
+          CoordinatesAccessor{f.getCoordinates(resolved_outloc)}, f.getNz(), method},
+      f.getMesh(),
+      resolved_outloc,
+      f.getDirections(),
+      region_id,
+      f.getMesh()->getRegion(region)};
+}
+
+inline bout::stencil::DDYDispatchExpr
+DDY_stencil(const Field3D& f, CELL_LOC outloc, const std::string& method,
+            const std::string& region = "RGN_NOBNDRY") {
+  return DDY_stencil(f, outloc, parseField3DMethodString(method), region);
 }
 
 inline bout::stencil::DDZExprC2 DDZ_C2(const Field3D& f) {
