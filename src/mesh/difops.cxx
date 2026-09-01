@@ -44,6 +44,7 @@
 #include <bout/solver.hxx>
 #include <bout/unused.hxx>
 #include <bout/utils.hxx>
+#include <bout/yboundary_regions.hxx>
 
 #include <cmath>
 #include <limits>
@@ -386,23 +387,32 @@ Field3D Div_par_K_Grad_par_mod_impl(const Field3DParallel& Kin,
     Field3D result{zeroFrom(fin)};
     flow_ylow = zeroFrom(fin);
 
+    const auto yboundary = coord->getYBoundary();
+
     BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
       const auto iyp = i.yp();
       const auto iym = i.ym();
 
       // Upper cell edge
-      const BoutReal c_up = 0.5 * (Kin[i] + K_up[iyp]); // K at the upper boundary
-      const BoutReal gradient_up =
-          (f_up[iyp] - fin[i]) / (coord->dy()[i] * sqrt(coord->g_22_yhigh()[i]));
+      BoutReal flux_up = 0;
+      if (bndry_flux or not yboundary.contains<+1>(i)) {
+        const BoutReal c_up = 0.5 * (Kin[i] + K_up[iyp]); // K at the upper boundary
 
-      const BoutReal flux_up = c_up * gradient_up * coord->cell_area_yhigh()[i];
+        const BoutReal gradient_up =
+            (f_up[iyp] - fin[i]) / (coord->dy()[i] * sqrt(coord->g_22_yhigh()[i]));
+
+        flux_up = c_up * gradient_up * coord->cell_area_yhigh()[i];
+      }
 
       // Lower cell edge
-      const BoutReal c_down = 0.5 * (Kin[i] + K_down[iym]); // K at the lower boundary
-      const BoutReal gradient_down =
-          (fin[i] - f_down[iym]) / (coord->dy()[i] * sqrt(coord->g_22_ylow()[i]));
+      BoutReal flux_down = 0;
+      if (bndry_flux or not yboundary.contains<-1>(i)) {
+        const BoutReal c_down = 0.5 * (Kin[i] + K_down[iym]); // K at the lower boundary
+        const BoutReal gradient_down =
+            (fin[i] - f_down[iym]) / (coord->dy()[i] * sqrt(coord->g_22_ylow()[i]));
 
-      const BoutReal flux_down = c_down * gradient_down * coord->cell_area_ylow()[i];
+        flux_down = c_down * gradient_down * coord->cell_area_ylow()[i];
+      }
 
       // Add the fluxes
       result[i] = (flux_up - flux_down) / (coord->cell_volume()[i]);
