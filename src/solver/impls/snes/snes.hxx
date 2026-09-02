@@ -40,6 +40,7 @@ class SNESSolver;
 
 #include "mpi.h"
 
+#include <bout/array.hxx>
 #include <bout/bout_enum_class.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/field2d.hxx>
@@ -78,7 +79,7 @@ BOUT_ENUM_CLASS(BoutSnesOutput,
 class SNESSolver : public Solver {
 public:
   explicit SNESSolver(Options* opts = nullptr);
-  ~SNESSolver() override = default;
+  ~SNESSolver() override;
 
   int init() override;
   int run() override;
@@ -246,6 +247,12 @@ private:
 
   int nlocal; ///< Number of variables on local processor
   int neq;    ///< Number of variables in total
+
+  bool have_constraints;  ///< Are there any constraint variables?
+  Array<BoutReal> is_dae; ///< If using constraints, 1 -> DAE, 0 -> AE
+
+  IS is_diff = nullptr; // is_dae == 1
+  IS is_alg = nullptr;  // is_dae == 0 (phi constraint and any other algebraics)
 
   PetscLib lib; ///< Handles initialising, finalising PETSc
   Vec snes_f;   ///< Used by SNES to store function
