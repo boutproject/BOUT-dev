@@ -12,6 +12,8 @@
 #include "bout/output_bout_types.hxx" // NOLINT(unused-includes, misc-include-cleaner)
 #include "bout/region.hxx"
 #include "bout/vector2d.hxx"
+
+#include <map>
 #include <memory>
 
 namespace FV {
