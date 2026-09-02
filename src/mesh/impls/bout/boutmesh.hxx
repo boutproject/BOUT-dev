@@ -40,6 +40,19 @@ public:
                                         int jyseps2_2_, int ny_inner_, int ixseps1_,
                                         int ixseps2_);
 
+  /// Read the `topology` string written by INGRID into the grid file, and
+  /// store it in `IngridTopology`.
+  ///
+  /// The string is trimmed of surrounding whitespace and converted to upper
+  /// case, so downstream comparisons can assume e.g. "SF45" rather than
+  /// " sf45 ". If the grid file has no `topology` variable (older grids, or
+  /// grids from other tools such as hypnotoad), `IngridTopology` is set to the
+  /// empty string and a warning is printed: callers must fall back to working
+  /// the topology out from the separatrix indices.
+  ///
+  /// @returns The value stored in `IngridTopology`
+  std::string readIngridTopology();
+
   /////////////////////////////////////////////
   // Communicate variables
 
@@ -348,6 +361,11 @@ private:
 protected:
   // These are protected so we can make them public in the test suite
   // for testing
+
+  /// Topology label written into the grid file by INGRID, e.g. "SN", "UDN",
+  /// "SF45", "SF165". Empty if the grid file doesn't provide one.
+  /// Set by `readIngridTopology()`.
+  std::string IngridTopology;
 
   // Processor number, local <-> global translation
   /// Returns the processor number, given X (\p xind) and Y (\p yind)

@@ -55,6 +55,7 @@
 #include <fmt/ranges.h>
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstddef>
 #include <iterator>
@@ -178,6 +179,42 @@ void BoutMesh::setXDecompositionIndices(const XDecompositionIndices& indices) {
   ixseps2 = indices.ixseps2;
 }
 
+
+std::string BoutMesh::readIngridTopology() {
+  TRACE("BoutMesh::readIngridTopology");
+
+  // INGRID labels the configuration it built the grid for in a string variable
+  // called "topology". Not every grid file has one, so a missing variable is
+  // not an error here: it just leaves IngridTopology empty.
+  std::string topology_string;
+  const bool found = Mesh::get(topology_string, "topology", "") == 0;
+
+  // Trim surrounding whitespace and normalise to upper case, so that callers
+  // can compare against "SF45" and friends without worrying about how the
+  // string was written.
+  const auto first = topology_string.find_first_not_of(" \t\n\r");
+  if (first == std::string::npos) {
+    topology_string.clear();
+  } else {
+    const auto last = topology_string.find_last_not_of(" \t\n\r");
+    topology_string = topology_string.substr(first, last - first + 1);
+    std::transform(topology_string.begin(), topology_string.end(),
+                   topology_string.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+  }
+
+  IngridTopology = topology_string;
+
+  if (!found or IngridTopology.empty()) {
+    output_warn.write(_("\tWARNING: Grid file has no 'topology' variable. "
+                        "Topology will be determined from the separatrix "
+                        "indices instead\n"));
+  } else {
+    output_info.write(_f("\tINGRID topology = {:s}\n"), IngridTopology);
+  }
+
+  return IngridTopology;
+}
 
 MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Returns MeshTopology that is type enum
                                       int jyseps1_2_, int jyseps2_2_,
@@ -788,6 +825,9 @@ int BoutMesh::load() {
   Mesh::get(jyseps2_1, "jyseps2_1", jyseps1_2);
   Mesh::get(jyseps2_2, "jyseps2_2", ny - 1);
   Mesh::get(ny_inner, "ny_inner", jyseps2_1);
+
+  // Topology label from the grid generator, if it provides one
+  readIngridTopology();
 
   mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1,
                                 jyseps1_2, jyseps2_2,
@@ -1665,7 +1705,7 @@ void BoutMesh::createXBoundaries() {
         boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend, this));
       }
     }
-    else{ //SF has one core region at (jyseps1_1, jyseps2_1]. 
+    else{ //SF has one core region at (jyseps1_1, jyseps2_1].  TODO: This is only true for HFS SF config. another one should be added
 
       const bool in_core = ((yg > jyseps1_1) and (yg <= jyseps2_1));
 
@@ -2914,7 +2954,7 @@ void BoutMesh::topology() {
       ixseps_inner = ixseps_lower = ixseps2;
       ixseps_outer = ixseps_upper = ixseps1;
     } else {
-      /*************** SF Reverse configuration **********************/
+      /*************** SF Reverse configuration **********************/ //TODO: Reverse configuration might mean LFS SF. Look into it. 
       output_info.write("\tSF Reverse configuration\n");
       ixseps_inner = ixseps_upper = ixseps1;
       ixseps_outer = ixseps_lower = ixseps2;
@@ -4205,6 +4245,7 @@ void BoutMesh::outputVars(Options& output_options) {
   output_options["jyseps2_2"].force(jyseps2_2, "BoutMesh");
   output_options["ny_inner"].force(ny_inner, "BoutMesh");
   output_options["mesh_topology"].force(mesh_topology, "BoutMesh");
+  output_options["IngridTopology"].force(IngridTopology, "BoutMesh");
 
   getCoordinates()->outputVars(output_options);
 

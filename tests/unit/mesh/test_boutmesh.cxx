@@ -9,7 +9,11 @@
 #include "fake_mesh.hxx"
 
 #include <array>
+#include <iostream>
 #include <ostream>
+#include <sstream>
+#include <streambuf>
+#include <string>
 
 /// Forward declaration so we can construct a `BoutMeshExposer` from this
 struct BoutMeshParameters;
@@ -27,6 +31,10 @@ public:
       : BoutMesh((nxpe * (nx - 2)) + 2, nype * ny, nz, 1, 1, nxpe, nype, pe_xind, pe_yind,
                  create_topology, symmetric_X, symmetric_Y) {}
   BoutMeshExposer(const BoutMeshParameters& inputs, bool periodicX_ = false);
+  /// Construct from a grid data source, for testing the `Mesh::get`-based
+  /// readers
+  explicit BoutMeshExposer(GridDataSource* source, Options* options = nullptr)
+      : BoutMesh(source, options) {}
   // Make protected methods public for testing
   using BoutMesh::add_target;
   using BoutMesh::addBoundaryRegions;
@@ -48,6 +56,7 @@ public:
   using BoutMesh::YDecompositionIndices;
   using BoutMesh::YPROC;
   using BoutMesh::getMeshTopology;
+  using BoutMesh::IngridTopology;
 };
 
 /// Minimal parameters need to construct a grid useful for testing
@@ -793,6 +802,130 @@ TEST(getMeshTopologyTest, ReturnsCDNWhenTwoXPointsSameIndices) {
   mesh.numberOfXPoints = 2;
   // ny_inner not between jyseps1_2 and jyseps2_2 but ixseps1 == ixseps2
   EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 25, 1, 1), MeshTopology::CDN);
+}
+
+// readIngridTopology
+/// deliberately *not* using `WithQuietOutput` on `output_warn`, because the
+struct ReadIngridTopologyTest : public ::testing::Test {
+  ReadIngridTopologyTest() : old_cout_buffer(std::cout.rdbuf()) {
+    std::cout.rdbuf(buffer.rdbuf());
+  }
+  ~ReadIngridTopologyTest() override { std::cout.rdbuf(old_cout_buffer); }
+  static constexpr auto missing_topology_warning = "no 'topology' variable";
+
+  /// Make a grid source containing `topology = some_value`
+  static GridDataSource* gridWithTopology(const std::string& value) {
+    Options values;
+    values["topology"] = value;
+    return new FakeGridDataSource{values};
+  }
+
+  std::stringstream buffer;
+  std::streambuf* old_cout_buffer;
+};
+
+struct IngridTopologyParameters {
+  std::string grid_value; // Value of `topology` in the grid file
+  std::string expected;   // Expected value of `BoutMesh::IngridTopology`
+  std::string test_name;
+};
+
+std::ostream& operator<<(std::ostream& out, const IngridTopologyParameters& value) {
+  return out << "IngridTopologyParameters{grid_value='" << value.grid_value
+             << "', expected='" << value.expected << "'}";
+}
+
+std::string IngridTopologyParametersToString(
+    const ::testing::TestParamInfo<IngridTopologyParameters>& param) {
+  return param.param.test_name;
+}
+
+struct ReadIngridTopologyParameterisedTest
+    : public ReadIngridTopologyTest,
+      public ::testing::WithParamInterface<IngridTopologyParameters> {};
+
+INSTANTIATE_TEST_SUITE_P(
+    KnownTopologies, ReadIngridTopologyParameterisedTest,
+    ::testing::Values(
+        IngridTopologyParameters{"LSN", "LSN", "LowerSingleNull"},
+        IngridTopologyParameters{"UDN", "UDN", "UnconnectedDoubleNull"},
+        IngridTopologyParameters{"SF75", "SF75", "SF75"},
+        IngridTopologyParameters{"SF165", "SF165", "SF165"},
+        IngridTopologyParameters{"SF+", "SF+", "SFplus"},
+        IngridTopologyParameters{"SF-", "SF-", "SFminus"}),
+    IngridTopologyParametersToString);
+
+
+INSTANTIATE_TEST_SUITE_P(
+    NormalizedTopologies, ReadIngridTopologyParameterisedTest,
+    ::testing::Values(
+        IngridTopologyParameters{"sf75", "SF75", "LowerCase"},
+        IngridTopologyParameters{"Sf165", "SF165", "MixedCase"},
+        IngridTopologyParameters{"  SF+  ", "SF+", "SurroundingSpaces"},
+        IngridTopologyParameters{"\tsf-\n", "SF-", "SurroundingWhitespaceAndLowerCase"},
+        IngridTopologyParameters{" udn ", "UDN", "UDNWithSpaces"}),
+    IngridTopologyParametersToString);
+
+TEST_P(ReadIngridTopologyParameterisedTest, ReadsTopologyFromGrid) {
+  const auto params = GetParam();
+
+  BoutMeshExposer mesh{gridWithTopology(params.grid_value), nullptr};
+
+  EXPECT_EQ(mesh.readIngridTopology(), params.expected);
+  EXPECT_EQ(mesh.IngridTopology, params.expected);
+
+  // A grid that has no topology should not warn about a missing one
+  EXPECT_THAT(buffer.str(),
+              ::testing::Not(::testing::HasSubstr(missing_topology_warning)));
+}
+
+TEST_F(ReadIngridTopologyTest, NoTopologyInGridWarnsAndLeavesEmpty) {
+  BoutMeshExposer mesh{new FakeGridDataSource, nullptr};
+
+  EXPECT_EQ(mesh.readIngridTopology(), "");
+  EXPECT_EQ(mesh.IngridTopology, "");
+  EXPECT_THAT(buffer.str(), ::testing::HasSubstr(missing_topology_warning));
+}
+
+TEST_F(ReadIngridTopologyTest, EmptyTopologyStringWarnsAndLeavesEmpty) {
+  // `topology` is present but empty
+  BoutMeshExposer mesh{gridWithTopology(""), nullptr};
+
+  EXPECT_EQ(mesh.readIngridTopology(), "");
+  EXPECT_EQ(mesh.IngridTopology, "");
+  EXPECT_THAT(buffer.str(), ::testing::HasSubstr(missing_topology_warning));
+}
+
+TEST_F(ReadIngridTopologyTest, WhitespaceOnlyTopologyWarnsAndLeavesEmpty) {
+  // Trimming a whitespace-only string leaves nothing, so treat it as absent
+  BoutMeshExposer mesh{gridWithTopology("  \t\n "), nullptr};
+
+  EXPECT_EQ(mesh.readIngridTopology(), "");
+  EXPECT_EQ(mesh.IngridTopology, "");
+  EXPECT_THAT(buffer.str(), ::testing::HasSubstr(missing_topology_warning));
+}
+
+TEST_F(ReadIngridTopologyTest, NoTopologyIsNotFatal) {
+  BoutMeshExposer mesh{new FakeGridDataSource, nullptr};
+
+  EXPECT_NO_THROW(mesh.readIngridTopology());
+}
+
+TEST_F(ReadIngridTopologyTest, UnrecognisedTopologyIsPassedThroughUnchanged) {
+  // A new INGRID configuration doesn't break loading the grid
+  BoutMeshExposer mesh{gridWithTopology("SF-ideal"), nullptr};
+
+  EXPECT_EQ(mesh.readIngridTopology(), "SF-IDEAL");
+  EXPECT_THAT(buffer.str(),
+              ::testing::Not(::testing::HasSubstr(missing_topology_warning)));
+}
+
+TEST_F(ReadIngridTopologyTest, RereadingOverwritesPreviousValue) {
+  BoutMeshExposer mesh{gridWithTopology("SF165"), nullptr};
+
+  EXPECT_EQ(mesh.readIngridTopology(), "SF165");
+  EXPECT_EQ(mesh.readIngridTopology(), "SF165");
+  EXPECT_EQ(mesh.IngridTopology, "SF165");
 }
 
 struct FindProcessorParameters {
