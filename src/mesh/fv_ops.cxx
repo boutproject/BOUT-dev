@@ -14,6 +14,9 @@
 #include "bout/utils.hxx"
 #include <bout/yboundary_regions.hxx>
 
+#include <map>
+#include <memory>
+
 namespace {
 template <class T>
 struct Slices {
