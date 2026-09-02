@@ -25,7 +25,6 @@ sense:
 - Unary algebraic operators such as ``sqrt``, ``abs``, ``exp``, ``log``,
   ``sin``, ``cos``, ``tan``, ``sinh``, ``cosh``, ``tanh``, and ``SQ``
 - Simple conditionals with ``if_else`` and ``if_else_zero``
-- Reductions such as ``min``, ``max``, and ``mean``
 
 For example::
 

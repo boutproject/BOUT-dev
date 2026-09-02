@@ -220,6 +220,7 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   addGenerator("power", std::make_shared<FieldGenTwoArg<pow>>(nullptr, nullptr));
 
   addGenerator("round", std::make_shared<FieldRound>(nullptr));
+  addGenerator("unit_integral", std::make_shared<FieldUnitIntegral>());
 
   // Ballooning transform
   addGenerator("ballooning", std::make_shared<FieldBallooning>(fieldmesh));

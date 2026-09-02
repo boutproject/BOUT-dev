@@ -3,6 +3,7 @@
 #include "fake_mesh.hxx"
 #include "test_extras.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/constants.hxx"
 #include "bout/coordinates.hxx"
@@ -28,6 +29,43 @@
 // The unit tests use the global mesh
 using namespace bout::globals;
 using bout::generator::Context;
+
+namespace {
+BoutReal volumeIntegral(const Field3D& field) {
+  const auto* coords = field.getCoordinates();
+  if (coords == nullptr) {
+    throw BoutException("Field has no coordinates");
+  }
+
+  BoutReal local = 0.0;
+  BOUT_FOR(i, field.getRegion("RGN_NOBNDRY")) {
+    local +=
+        field[i] * coords->J()[i] * coords->dx()[i] * coords->dy()[i] * coords->dz()[i];
+  }
+
+  BoutReal global = 0.0;
+  MPI_Allreduce(&local, &global, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get());
+  return global;
+}
+
+BoutReal totalVolume(Mesh* localmesh, CELL_LOC location = CELL_CENTRE) {
+  auto* coords = localmesh->getCoordinates(location);
+  if (coords == nullptr) {
+    throw BoutException("Mesh has no coordinates");
+  }
+
+  BoutReal local = 0.0;
+  Field3D ones{localmesh};
+  ones.allocate();
+  BOUT_FOR(i, ones.getRegion("RGN_NOBNDRY")) {
+    local += coords->J()[i] * coords->dx()[i] * coords->dy()[i] * coords->dz()[i];
+  }
+
+  BoutReal global = 0.0;
+  MPI_Allreduce(&local, &global, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get());
+  return global;
+}
+} // namespace
 
 // Reuse the "standard" fixture for FakeMesh
 template <typename T>
@@ -59,6 +97,8 @@ public:
 using Fields = ::testing::Types<Field2D, Field3D>;
 
 TYPED_TEST_SUITE(FieldFactoryCreationTest, Fields);
+
+using FieldFactory3DCreationTest = FieldFactoryCreationTest<Field3D>;
 
 TYPED_TEST(FieldFactoryCreationTest, CreateFromValueGenerator) {
   auto value = BoutReal{4.};
@@ -177,6 +217,40 @@ TYPED_TEST(FieldFactoryCreationTest, CreateZ) {
       mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+TEST_F(FieldFactory3DCreationTest, CreateUnitIntegralConstant) {
+  const auto expected = 1.0 / totalVolume(mesh);
+
+  auto output = this->factory.create3D("unit_integral(1)");
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+  EXPECT_NEAR(volumeIntegral(output), 1.0, 1e-12);
+}
+
+TEST_F(FieldFactory3DCreationTest, CreateUnitIntegralUsesCellVolume) {
+  Field2D dy{mesh};
+  dy.allocate();
+  BOUT_FOR(i, dy.getRegion("RGN_ALL")) { dy[i] = static_cast<BoutReal>(i.y() + 1); }
+  mesh->getCoordinates()->setDy(dy);
+
+  const auto expected = 1.0 / totalVolume(mesh);
+  auto output = this->factory.create3D("unit_integral(1)");
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+  EXPECT_NEAR(volumeIntegral(output), 1.0, 1e-12);
+}
+
+TEST_F(FieldFactory3DCreationTest, CreateUnitIntegralRefreshesCachedParseAtNewTime) {
+  auto output_t0 =
+      this->factory.create3D("unit_integral(y + t)", nullptr, mesh, CELL_CENTRE, 0.0);
+  auto output_t1 =
+      this->factory.create3D("unit_integral(y + t)", nullptr, mesh, CELL_CENTRE, 1.0);
+
+  EXPECT_NEAR(volumeIntegral(output_t0), 1.0, 1e-12);
+  EXPECT_NEAR(volumeIntegral(output_t1), 1.0, 1e-12);
+  EXPECT_NE(output_t0(mesh->xstart, mesh->ystart, 0),
+            output_t1(mesh->xstart, mesh->ystart, 0));
 }
 
 TYPED_TEST(FieldFactoryCreationTest, CreateXStaggered) {
