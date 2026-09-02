@@ -1047,6 +1047,7 @@ void Coordinates::invalidateMetricCaches() {
   christoffel_symbols_cache.reset();
   g_values_cache.reset();
   Grad2_par2_DDY_invSgCache.clear();
+  jacobian_cache.reset();
   invSgCache.reset();
   invalidateCellGeometryCaches();
   invalidateAccessorCache();
@@ -1274,9 +1275,9 @@ void Coordinates::setMetricTensorJB(
     const FieldMetric& Bxy) {
   contravariantMetricTensor = contravariant_metric_tensor;
   covariantMetricTensor = covariant_metric_tensor;
+  invalidateMetricCaches();
   setJ(J);
   setBxy(Bxy);
-  invalidateMetricCaches();
 }
 
 void Coordinates::communicateMetricTensor() {
@@ -1303,12 +1304,13 @@ void Coordinates::normaliseMetric(const MetricNormaliser& norm) {
 #else
   using FieldMetricParallel = Field2D;
 #endif
-
+  const auto Jval = J();
+  invalidateMetricCaches();
   if (norm.J.has_value()) {
-    if (J().hasParallelSlices()) {
-      setJ(FieldMetricParallel{J() / *norm.J});
+    if (Jval.hasParallelSlices()) {
+      setJ(FieldMetricParallel{Jval / *norm.J});
     } else {
-      setJ(J() / *norm.J);
+      setJ(Jval / *norm.J);
     }
   }
   if (norm.Bxy.has_value()) {
@@ -1327,7 +1329,6 @@ void Coordinates::normaliseMetric(const MetricNormaliser& norm) {
   if (norm.dz.has_value()) {
     setDz(dz() / *norm.dz);
   }
-  invalidateMetricCaches();
   if (norm.g.has_value() or norm.g22.has_value()) {
     if (Bxy().isFci()) {
       // No we compute g_22_* - they must not be cleared. If they get
