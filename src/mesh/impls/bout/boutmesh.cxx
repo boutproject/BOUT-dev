@@ -67,6 +67,12 @@
 #include <utility>
 #include <vector>
 
+namespace {
+bool contains(const std::string& haystack, const std::string& needle) {
+  return haystack.find(needle) != std::string::npos;
+}
+} // namespace
+
 /// MPI type of BoutReal for communications
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
@@ -182,16 +188,10 @@ void BoutMesh::setXDecompositionIndices(const XDecompositionIndices& indices) {
 
 std::string BoutMesh::readIngridTopology() {
   TRACE("BoutMesh::readIngridTopology");
-
-  // INGRID labels the configuration it built the grid for in a string variable
-  // called "topology". Not every grid file has one, so a missing variable is
-  // not an error here: it just leaves IngridTopology empty.
   std::string topology_string;
   const bool found = Mesh::get(topology_string, "topology", "") == 0;
 
-  // Trim surrounding whitespace and normalise to upper case, so that callers
-  // can compare against "SF45" and friends without worrying about how the
-  // string was written.
+  // Trim surrounding whitespace and normalize to upper case
   const auto first = topology_string.find_first_not_of(" \t\n\r");
   if (first == std::string::npos) {
     topology_string.clear();
@@ -200,15 +200,15 @@ std::string BoutMesh::readIngridTopology() {
     topology_string = topology_string.substr(first, last - first + 1);
     std::transform(topology_string.begin(), topology_string.end(),
                    topology_string.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+                   [](unsigned char c) { return std::toupper(c); });
   }
 
   IngridTopology = topology_string;
 
   if (!found or IngridTopology.empty()) {
-    output_warn.write(_("\tWARNING: Grid file has no 'topology' variable. "
-                        "Topology will be determined from the separatrix "
-                        "indices instead\n"));
+    output_warn.write(_f("\tWARNING: Grid file has no 'topology' variable. "
+                         "Topology will be determined from the separatrix "
+                         "indices instead\n"));
   } else {
     output_info.write(_f("\tINGRID topology = {:s}\n"), IngridTopology);
   }
@@ -219,8 +219,8 @@ std::string BoutMesh::readIngridTopology() {
 MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Returns MeshTopology that is type enum
                                       int jyseps1_2_, int jyseps2_2_,
                                       int ny_inner_, int ixseps1_,
-                                      int ixseps2_) {
-                                  
+                                      int ixseps2_, const std::string IngridTopology) {
+
   // Set member variables
   jyseps1_1 = jyseps1_1_;
   jyseps2_1 = jyseps2_1_;
@@ -230,6 +230,26 @@ MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Retu
   ixseps1   = ixseps1_;
   ixseps2   = ixseps2_;
 
+  // Use the INGRID topology setting
+  if (!IngridTopology.empty()) {
+    if (IngridTopology == "CFL") {
+      return MeshTopology::CFL;
+    } else if (contains(IngridTopology, "SN")) {
+      return MeshTopology::SN;
+    } else if (IngridTopology == "UDN") {
+      return MeshTopology::UDN;
+    } else if (IngridTopology == "CDN") {
+      return MeshTopology::CDN;
+    } else if (contains(IngridTopology, "SF")) {
+      return MeshTopology::SF;
+    }
+    output_warn.write(_f("\tWARNING: Unrecognised 'topology' value '{:s}' in grid "
+                         "file. Topology will be determined from the separatrix "
+                         "indices instead\n"),
+                      IngridTopology);
+  }
+
+  // Determine topology from the separatrix indices
   if (jyseps1_1 < 0 and jyseps2_2 >= ny - 1) {
     return MeshTopology::CFL;
   } else if (jyseps2_1 == jyseps1_2) {
@@ -238,10 +258,32 @@ MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Retu
     return MeshTopology::CDN;
   } else if (jyseps1_2 <= ny_inner_ && ny_inner_ <= jyseps2_2) {
     return MeshTopology::SF;
-  }
-  else{
+  } else {
     return MeshTopology::UDN;
-   }
+  }
+}
+
+SnowflakeType BoutMesh::getSnowflakeType(MeshTopology mesh_topology_,
+                                         const std::string IngridTopology) {
+  if (mesh_topology_ != MeshTopology::SF) {
+    return SnowflakeType::SF;
+  }
+
+  if (contains(IngridTopology, "105")) {
+    return SnowflakeType::SF105; //SF+ HFS
+  } else if (contains(IngridTopology, "135")) {
+    return SnowflakeType::SF135; //SF+ HFS
+  } else if (contains(IngridTopology, "165")) {
+    return SnowflakeType::SF165; //SF- HFS
+  } else if (contains(IngridTopology, "15")) {
+    return SnowflakeType::SF15; //SF- LFS
+  } else if (contains(IngridTopology, "45")) {
+    return SnowflakeType::SF45; //SF+ LFS
+  } else if (contains(IngridTopology, "75")) {
+    return SnowflakeType::SF75; //SF+ LFS
+  } else {
+    return SnowflakeType::SF; //Return a generic snowflake type if no specific type is found
+  }
 }
 
 
@@ -318,7 +360,6 @@ namespace bout {
                         jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, num_local_y_points)};
       }
     } else if (mesh_topology == MeshTopology::SF){
-      //Ask peter about this bit
 
       //Check Core region
       if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
@@ -827,13 +868,18 @@ int BoutMesh::load() {
   Mesh::get(ny_inner, "ny_inner", jyseps2_1);
 
   // Topology label from the grid generator, if it provides one
-  readIngridTopology();
-
+  IngridTopology = readIngridTopology();
   mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1,
                                 jyseps1_2, jyseps2_2,
-                                ny_inner, ixseps1, ixseps2);
+                                ny_inner, ixseps1, ixseps2, IngridTopology);
   output_info << _("Detected mesh topology = ")
          << toString(mesh_topology) << std::endl;
+  
+  if (mesh_topology == MeshTopology::SF) {
+    snowflake_type = getSnowflakeType(mesh_topology, IngridTopology);
+    output_info << _("Detected snowflake type = ")
+         << toString(snowflake_type) << std::endl;
+  }
 
   // Check inputs
   setYDecompositionIndices(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
@@ -2604,9 +2650,11 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
 
   periodicX = periodic_X_;
   setYDecompositionIndices(jyseps1_1_, jyseps2_1_, jyseps1_2_, jyseps2_2_, ny_inner_);
+  IngridTopology = readIngridTopology();
   mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1,
                                 jyseps1_2, jyseps2_2,
-                                ny_inner, ixseps1, ixseps2);
+                                ny_inner, ixseps1, ixseps2, IngridTopology);
+  snowflake_type = getSnowflakeType(mesh_topology, IngridTopology);
   setDerivedGridSizes();
   topology();
   if (create_regions) {

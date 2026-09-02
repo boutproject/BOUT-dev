@@ -28,6 +28,17 @@ BOUT_ENUM_CLASS(MeshTopology,
                 CDN); // Connected double null
 
 
+//New SF class for classifying snowflake family members.              
+BOUT_ENUM_CLASS(SnowflakeType,
+                SF15, //SF- LFS
+                SF45, //SF+ LFS
+                SF75, //SF- HFS
+                SF105, //SF+ HFS
+                SF135, //SF+ HFS
+                SF165, //SF- HFS
+                SF);
+
+
 class BoutMesh : public Mesh {
 public:
   BoutMesh(GridDataSource* s, Options* options = nullptr);
@@ -38,20 +49,13 @@ public:
 
   MeshTopology getMeshTopology(int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
                                         int jyseps2_2_, int ny_inner_, int ixseps1_,
-                                        int ixseps2_);
+                                        int ixseps2_, std::string IngridTopology);
 
-  /// Read the `topology` string written by INGRID into the grid file, and
-  /// store it in `IngridTopology`.
-  ///
-  /// The string is trimmed of surrounding whitespace and converted to upper
-  /// case, so downstream comparisons can assume e.g. "SF45" rather than
-  /// " sf45 ". If the grid file has no `topology` variable (older grids, or
-  /// grids from other tools such as hypnotoad), `IngridTopology` is set to the
-  /// empty string and a warning is printed: callers must fall back to working
-  /// the topology out from the separatrix indices.
-  ///
-  /// @returns The value stored in `IngridTopology`
+
   std::string readIngridTopology();
+
+  SnowflakeType getSnowflakeType(MeshTopology mesh_topology_,
+                                 const std::string IngridTopology);
 
   /////////////////////////////////////////////
   // Communicate variables
@@ -358,13 +362,12 @@ private:
 
   MeshTopology mesh_topology;
 
+  SnowflakeType snowflake_type;
+
 protected:
   // These are protected so we can make them public in the test suite
   // for testing
 
-  /// Topology label written into the grid file by INGRID, e.g. "SN", "UDN",
-  /// "SF45", "SF165". Empty if the grid file doesn't provide one.
-  /// Set by `readIngridTopology()`.
   std::string IngridTopology;
 
   // Processor number, local <-> global translation
