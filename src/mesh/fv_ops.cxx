@@ -684,32 +684,30 @@ template Field3D Div_par_fvv_heating<WENO3>(const Field3D& f_in, const Field3D& 
 template Field3D Div_a_Grad_perp_limit<WENO3>(const Field3D& a, const Field3D& g,
                                               const Field3D& f);
 
-namespace {
-std::map<Mesh*, std::weak_ptr<Div_a_Grad_perp>> Div_a_Grad_perp_cache;
-}
-
-std::shared_ptr<Div_a_Grad_perp> Div_a_Grad_perp::create(Mesh* mesh, BoutReal rho_s0) {
-  if (auto search = Div_a_Grad_perp_cache.find(mesh);
-      search != Div_a_Grad_perp_cache.end()) {
-    if (std::shared_ptr<Div_a_Grad_perp> spt = search->second.lock()) {
+std::map<Mesh*, std::weak_ptr<Div_a_Grad_perp_pre>> Div_a_Grad_perp_pre::op_cache;
+std::shared_ptr<Div_a_Grad_perp_pre> Div_a_Grad_perp_pre::create(Mesh* mesh,
+                                                                 BoutReal rho_s0) {
+  if (auto search = Div_a_Grad_perp_pre::op_cache.find(mesh);
+      search != Div_a_Grad_perp_pre::op_cache.end()) {
+    if (std::shared_ptr<Div_a_Grad_perp_pre> spt = search->second.lock()) {
       return spt;
     }
     output_warn.write("\tPreformance Warning: DIV_A_GRAD_PERP needs to be re-created!\n");
   }
-  auto dagp = std::make_shared<Div_a_Grad_perp>(*mesh);
+  auto dagp = std::make_shared<Div_a_Grad_perp_pre>(*mesh);
   dagp->volume /= rho_s0 * rho_s0;
-  Div_a_Grad_perp_cache[mesh] = dagp;
+  Div_a_Grad_perp_pre::op_cache[mesh] = dagp;
   return dagp;
 }
 
-Div_a_Grad_perp::Div_a_Grad_perp(Mesh& mesh)
+Div_a_Grad_perp_pre::Div_a_Grad_perp_pre(Mesh& mesh)
     : fac_XX(&mesh), fac_XZ(&mesh), fac_ZX(&mesh), fac_ZZ(&mesh), volume(&mesh) {
-  ASSERT0(mesh.get(fac_XX, "Div_a_Grad_perp_XX", 0.0, false) == 0);
-  ASSERT0(mesh.get(fac_XZ, "Div_a_Grad_perp_XZ", 0.0, false) == 0);
-  ASSERT0(mesh.get(fac_ZX, "Div_a_Grad_perp_ZX", 0.0, false) == 0);
-  ASSERT0(mesh.get(fac_ZZ, "Div_a_Grad_perp_ZZ", 0.0, false) == 0);
+  ASSERT0(mesh.get(fac_XX, "dagp_fv_XX", 0.0, false) == 0);
+  ASSERT0(mesh.get(fac_XZ, "dagp_fv_XZ", 0.0, false) == 0);
+  ASSERT0(mesh.get(fac_ZX, "dagp_fv_ZX", 0.0, false) == 0);
+  ASSERT0(mesh.get(fac_ZZ, "dagp_fv_ZZ", 0.0, false) == 0);
   ASSERT0(volume.hasParallelSlices() == false);
-  ASSERT0(mesh.get(volume, "Div_a_Grad_perp_volume", 0.0, false) == 0);
+  ASSERT0(mesh.get(volume, "dagp_fv_volume", 0.0, false) == 0);
   ASSERT0(volume.hasParallelSlices() == false);
   volume.setRegion("RGN_NOBNDRY");
   if (!mesh.hasRegion3D("RGN_dapg_fv_xbndry")) {
@@ -718,23 +716,24 @@ Div_a_Grad_perp::Div_a_Grad_perp(Mesh& mesh)
                             mesh.zstart, mesh.zend, mesh.LocalNy, mesh.LocalNz));
   }
 }
-Field3D Div_a_Grad_perp::operator()(const Field3D& a, const Field3D& f,
-                                    Field3D& flow_xlow, Field3D& flow_zlow,
-                                    bool upwinding) {
+Field3D Div_a_Grad_perp_pre::operator()(const Field3D& a, const Field3D& f,
+                                        Field3D& flow_xlow, Field3D& flow_zlow,
+                                        bool upwinding) const {
   if (upwinding) {
     return operator()<true, true>(a, f, &flow_xlow, &flow_zlow);
   }
   return operator()<true, false>(a, f, &flow_xlow, &flow_zlow);
 }
-Field3D Div_a_Grad_perp::operator()(const Field3D& a, const Field3D& f, bool upwinding) {
+Field3D Div_a_Grad_perp_pre::operator()(const Field3D& a, const Field3D& f,
+                                        bool upwinding) const {
   if (upwinding) {
     return operator()<false, true>(a, f, nullptr, nullptr);
   }
   return operator()<false, false>(a, f, nullptr, nullptr);
 }
 template <bool extra, bool upwinding>
-Field3D Div_a_Grad_perp::operator()(const Field3D& a, const Field3D& f,
-                                    Field3D* flow_xlow, Field3D* flow_zlow) {
+Field3D Div_a_Grad_perp_pre::operator()(const Field3D& a, const Field3D& f,
+                                        Field3D* flow_xlow, Field3D* flow_zlow) const {
   auto result{zeroFrom(f)};
   ASSERT1_FIELDS_COMPATIBLE(a, f);
   if constexpr (extra) {
@@ -772,8 +771,8 @@ Field3D Div_a_Grad_perp::operator()(const Field3D& a, const Field3D& f,
   return result / volume;
 }
 template <bool upwinding>
-inline BoutReal Div_a_Grad_perp::xflux(const Field3D& a, const Field3D& f,
-                                       const Ind3D& i) {
+inline BoutReal Div_a_Grad_perp_pre::xflux(const Field3D& a, const Field3D& f,
+                                           const Ind3D& i) const {
   const auto ixp = i.xp();
   const auto dx = f[ixp] - f[i];
   BoutReal av = BoutNaN;
@@ -786,8 +785,8 @@ inline BoutReal Div_a_Grad_perp::xflux(const Field3D& a, const Field3D& f,
   return -((fac_XX[i] * dx) + (fac_XZ[i] * dz)) * av;
 }
 template <bool upwinding>
-inline BoutReal Div_a_Grad_perp::zflux(const Field3D& a, const Field3D& f,
-                                       const Ind3D& i) {
+inline BoutReal Div_a_Grad_perp_pre::zflux(const Field3D& a, const Field3D& f,
+                                           const Ind3D& i) const {
   const auto izp = i.zp();
   const auto dz = f[izp] - f[i];
   BoutReal av = BoutNaN;
