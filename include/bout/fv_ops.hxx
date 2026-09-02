@@ -10,7 +10,9 @@
 #include "bout/field3d.hxx"
 #include "bout/mesh.hxx"
 #include "bout/output_bout_types.hxx" // NOLINT(unused-includes, misc-include-cleaner)
+#include "bout/region.hxx"
 #include "bout/vector2d.hxx"
+#include <memory>
 
 namespace FV {
 /// Vorticity:

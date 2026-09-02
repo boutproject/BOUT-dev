@@ -10,11 +10,13 @@
 #include "bout/field3d.hxx"
 #include "bout/globals.hxx"
 #include "bout/msg_stack.hxx"
+#include "bout/output.hxx"
 #include "bout/region.hxx"
 #include "bout/utils.hxx"
 #include <bout/yboundary_regions.hxx>
 
 #include <map>
+#include <math.h>
 #include <memory>
 
 namespace {
@@ -682,15 +684,16 @@ template Field3D Div_par_fvv_heating<WENO3>(const Field3D& f_in, const Field3D& 
 template Field3D Div_a_Grad_perp_limit<WENO3>(const Field3D& a, const Field3D& g,
                                               const Field3D& f);
 
+namespace {
 std::map<Mesh*, std::weak_ptr<dagp_fv>> dagp_fv_cache;
+}
 
 std::shared_ptr<dagp_fv> getDagp_fv(Mesh* mesh, BoutReal rho_s0) {
   if (auto search = dagp_fv_cache.find(mesh); search != dagp_fv_cache.end()) {
     if (std::shared_ptr<dagp_fv> spt = search->second.lock()) {
       return spt;
-    } else {
-      output_warn.write("\tPreformance Warning: DAGP_FV needs to be re-created!\n");
     }
+    output_warn.write("\tPreformance Warning: DAGP_FV needs to be re-created!\n");
   }
   auto dagp = std::make_shared<dagp_fv>(*mesh);
   *dagp *= rho_s0;
@@ -718,16 +721,14 @@ Field3D dagp_fv::operator()(const Field3D& a, const Field3D& f, Field3D& flow_xl
                             Field3D& flow_zlow, bool upwinding) {
   if (upwinding) {
     return operator()<true, true>(a, f, &flow_xlow, &flow_zlow);
-  } else {
-    return operator()<true, false>(a, f, &flow_xlow, &flow_zlow);
   }
+  return operator()<true, false>(a, f, &flow_xlow, &flow_zlow);
 }
 Field3D dagp_fv::operator()(const Field3D& a, const Field3D& f, bool upwinding) {
   if (upwinding) {
     return operator()<false, true>(a, f, nullptr, nullptr);
-  } else {
-    return operator()<false, false>(a, f, nullptr, nullptr);
   }
+  return operator()<false, false>(a, f, nullptr, nullptr);
 }
 template <bool extra, bool upwinding>
 Field3D dagp_fv::operator()(const Field3D& a, const Field3D& f, Field3D* flow_xlow,
@@ -773,27 +774,27 @@ template <bool upwinding>
 inline BoutReal dagp_fv::xflux(const Field3D& a, const Field3D& f, const Ind3D& i) {
   const auto ixp = i.xp();
   const auto dx = f[ixp] - f[i];
-  BoutReal av;
+  BoutReal av = BoutNaN;
   if constexpr (upwinding) {
     av = dx > 0 ? a[ixp] : a[i];
   } else {
     av = 0.5 * (a[i] + a[ixp]);
   };
   const auto dz = 0.5 * (f[i.zp()] - f[i.zm()] + f[i.zp().xp()] - f[i.zm().xp()]);
-  return -(fac_XX[i] * dx + fac_XZ[i] * dz) * av;
+  return -((fac_XX[i] * dx) + (fac_XZ[i] * dz)) * av;
 }
 template <bool upwinding>
 inline BoutReal dagp_fv::zflux(const Field3D& a, const Field3D& f, const Ind3D& i) {
   const auto izp = i.zp();
   const auto dz = f[izp] - f[i];
-  BoutReal av;
+  BoutReal av = BoutNaN;
   if constexpr (upwinding) {
     av = dz > 0 ? a[izp] : a[i];
   } else {
     av = 0.5 * (a[i] + a[izp]);
   }
   const auto dx = 0.5 * (f[i.xp()] - f[i.xm()] + f[izp.xp()] - f[izp.xm()]);
-  return -(fac_ZX[i] * dx + fac_ZZ[i] * dz) * av;
+  return -((fac_ZX[i] * dx) + (fac_ZZ[i] * dz)) * av;
 }
 dagp_fv& dagp_fv::operator*=(BoutReal fac) {
   ASSERT2(not isNormalised);
