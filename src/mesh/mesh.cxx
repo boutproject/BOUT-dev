@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <filesystem>
 #include <iterator>
 #include <memory>
 #include <optional>
@@ -36,6 +37,8 @@
 #include <vector>
 
 #include "impls/bout/boutmesh.hxx"
+
+namespace fs = std::filesystem;
 
 MeshFactory::ReturnType MeshFactory::create(Options* options,
                                             GridDataSource* source) const {
@@ -67,14 +70,22 @@ MeshFactory::ReturnType MeshFactory::create(const std::string& type, Options* op
             grid_name1, grid_name);
       }
     }
-    output << "\nGetting grid data from file " << grid_name << "\n";
 
-    // Create a grid file, using specified format if given
-    const auto grid_ext =
-        (*options)["format"].withDefault(Options::root()["format"].withDefault(""));
+    // Test whether the file is relative to the data directory
+    const auto datadir = fs::path(Options::root()["datadir"]);
+    const auto grid_path = fs::path(grid_name);
+    auto full_path = datadir / grid_path;
+
+    if (!fs::exists(full_path)) {
+      // Use the path relative to the current directory,
+      // typically where the executable was run from.
+      full_path = grid_path;
+    }
+
+    output << "\nGetting grid data from file " << full_path << "\n";
 
     // Create a grid file
-    source = static_cast<GridDataSource*>(new GridFile(grid_name));
+    source = static_cast<GridDataSource*>(new GridFile(full_path));
   } else {
     output << "\nGetting grid data from options\n";
     source = static_cast<GridDataSource*>(new GridFromOptions(options));
