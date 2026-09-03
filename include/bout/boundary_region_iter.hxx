@@ -50,12 +50,13 @@ concept BoundaryIterator = requires(Iter point, Field3D f) {
   point.current(f);
   point.prev(f);
 
-  point.ind();
-  point.length(CELL_LOC{});
-  point.valid();
   point.boundary_width();
+  point.dir();
+  point.ind();
   point.is_lower();
+  point.length(CELL_LOC{});
   point.offset();
+  point.valid();
 
   point.smallValue();
 };
@@ -84,11 +85,12 @@ public:
   signed char valid() const { return impl()._valid(); }
   /// Get the width of the boundary at the current point
   int boundary_width() const { return impl()._boundary_width(); }
-  /// Is this the lower boundary?
-  bool is_lower() const { return impl()._is_lower(); }
   /// Get the offset from the last point in the domain
   /// For FA this is always ±1, for FCI this can be up to ±MYG, excluding 0
   int offset() const { return impl()._offset(); }
+
+  /// Is this the lower boundary?
+  bool is_lower() const { return impl().dir() < 0; }
 
   /// Get the value at a given \p offset of a field \p f.
   ///
@@ -229,7 +231,6 @@ public:
 
     Mesh* localmesh() const { return localmesh_m; };
     int dir() const { return dir_m; }
-    bool _is_lower() const { return dir_m < 0; }
 
     template <bool check = true, class T>
       requires utils::is_Field_v<T>
@@ -371,7 +372,6 @@ public:
     Iterator(const BoundaryRegionXY<isXtemp>* reg, bool isstart)
         : region(reg), pos(isstart ? 0 : reg->rgn.size()) {}
     int dir() const { return region->_dir; }
-    Ind3D ind() const { return _ind(); }
 
     template <bool check = true, class T>
       requires utils::is_Field_v<T>
