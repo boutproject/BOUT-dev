@@ -1,52 +1,22 @@
 #include "bout/yboundary_regions.hxx"
 
-#include "bout/boundary_region.hxx"
 #include "bout/boundary_region_iter.hxx"
 #include "bout/field_data.hxx"
-#include "bout/options.hxx"
+#include "bout/mesh.hxx"
 
 #include <memory>
 
 namespace bout::boundary {
-YBoundary::YBoundary(YBndryType type, Options* options_ptr, const Mesh& mesh)
+YBoundary::YBoundary(const Mesh& mesh, bool lower_y, bool upper_y)
     : _contains_low(&mesh, false), _contains_high(&mesh, false) {
-  bool lower_y = true;
-  bool upper_y = true;
-  bool outer_x = true;
-  bool inner_x = false;
-  if (options_ptr != nullptr) {
-    auto& options = *options_ptr;
-    if (!mesh.isFci()) {
-      lower_y = options["lower_y"].doc("Boundary on lower y?").withDefault<bool>(lower_y);
-      upper_y = options["upper_y"].doc("Boundary on upper y?").withDefault<bool>(upper_y);
-    } else {
-      outer_x = options["outer_x"].doc("Boundary on outer x?").withDefault<bool>(outer_x);
-      inner_x = options["inner_x"].doc("Boundary on inner x?").withDefault<bool>(inner_x);
-    }
-  }
-  switch (type) {
-  case YBndryType::sheath:
-    break;
-  case YBndryType::not_sheath:
-    lower_y = !lower_y;
-    upper_y = !upper_y;
-    outer_x = !outer_x;
-    inner_x = !inner_x;
-    break;
-  case YBndryType::all:
-    lower_y = true;
-    upper_y = true;
-    outer_x = true;
-    inner_x = true;
-  }
 
   if (mesh.isFci()) {
-    if (outer_x) {
+    if (lower_y) {
       for (auto& bndry : mesh.getBoundariesPar(BoundaryParType::xout)) {
         boundary_regions_par.push_back(bndry);
       }
     }
-    if (inner_x) {
+    if (upper_y) {
       for (auto& bndry : mesh.getBoundariesPar(BoundaryParType::xin)) {
         boundary_regions_par.push_back(bndry);
       }
@@ -60,6 +30,7 @@ YBoundary::YBoundary(YBndryType type, Options* options_ptr, const Mesh& mesh)
       }
     }
   }
+
   // Cache boundary regions
   iter([&](const BoundaryIterator auto& point) {
     if (point.dir() == 1) {
