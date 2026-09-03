@@ -1223,13 +1223,45 @@ void Coordinates::_compute_cell_volume() const {
   }
 }
 
-const bout::boundary::YBoundary& Coordinates::getYBoundary(YBndryType type) const {
-  using bout::boundary::YBoundary;
-  const auto itype = static_cast<int>(type);
-  if (ybndrys.at(itype) == nullptr) {
-    ybndrys.at(itype) = std::make_shared<YBoundary>(type, localoptions, *localmesh);
+const bout::boundary::YBoundary& Coordinates::getYBoundary(Options* options) const {
+  Options* opts = (options == nullptr) ? localoptions : options;
+
+  const bool lower_y =
+      localmesh->isFci()
+          ? (*opts)["outer_x"].doc("Boundary on outer x?").withDefault<bool>(true)
+          : (*opts)["lower_y"].doc("Boundary on lower y?").withDefault<bool>(true);
+  const bool upper_y =
+      localmesh->isFci()
+          ? (*opts)["inner_x"].doc("Boundary on inner x?").withDefault<bool>(false)
+          : (*opts)["upper_y"].doc("Boundary on upper y?").withDefault<bool>(true);
+
+  return getYBoundary(lower_y, upper_y);
+}
+
+namespace {
+std::size_t boundary_bools_to_index(bool lower_y, bool upper_y) {
+  if (lower_y and upper_y) {
+    return 2;
   }
-  return *ybndrys.at(itype);
+  if (upper_y) {
+    return 1;
+  }
+  if (lower_y) {
+    return 0;
+  }
+  return 3;
+}
+} // namespace
+
+const bout::boundary::YBoundary& Coordinates::getYBoundary(bool lower_y,
+                                                           bool upper_y) const {
+  const auto index = boundary_bools_to_index(lower_y, upper_y);
+  if (ybndrys.at(index) == nullptr) {
+    ybndrys.at(index) =
+        std::make_shared<bout::boundary::YBoundary>(*localmesh, lower_y, upper_y);
+  }
+
+  return *ybndrys.at(index);
 }
 
 void Coordinates::setBxy(FieldMetric Bxy, const bool communicate) {

@@ -11,8 +11,6 @@
 #include <memory>
 #include <vector>
 
-class Options;
-
 namespace bout {
 namespace boundary {
 /// This class allows to simplify iterating over y-boundaries.
@@ -24,7 +22,7 @@ namespace boundary {
 /// ../../manual/sphinx/user_docs/boundary_options.rst
 class YBoundary {
 public:
-  YBoundary(YBndryType type, Options* options_ptr, const Mesh& mesh);
+  YBoundary(const Mesh& mesh, bool lower_y, bool upper_y);
 
   /// Iterate over the boundary.
   /// This function takes a lamda / templated function, that applies the boundary on the given point.

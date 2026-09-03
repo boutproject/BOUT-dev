@@ -37,10 +37,11 @@
 #include <bout/g_values.hxx>
 #include <bout/metric_tensor.hxx>
 #include <bout/paralleltransform.hxx>
-#include <optional>
 
 #include <array>
+#include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -473,8 +474,17 @@ public:
 
   FieldMetric recalculateJacobian() const;
 
-  const bout::boundary::YBoundary&
-  getYBoundary(YBndryType type = YBndryType::sheath) const;
+  /// Return the `bout::boundary::YBoundary` with \p name.
+  ///
+  /// The values of ``lower_y``, ``upper_y`` are taken from \p options, or the
+  /// `Options` this `Coordinates` was created with if not passed.
+  ///
+  /// If using FCI, uses ``outer_x``/``inner_x`` instead.
+  const bout::boundary::YBoundary& getYBoundary(Options* options = nullptr) const;
+
+  /// Return the `bout::boundary::YBoundary` with \p name with boundaries at the
+  /// lower/upper end of Y corresponding to \p lower_y, \p upper_y respectively.
+  const bout::boundary::YBoundary& getYBoundary(bool lower_y, bool upper_y) const;
 
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
@@ -533,7 +543,12 @@ private:
   void invalidateCellGeometryCaches();
   void invalidateAccessorCache() const;
 
-  mutable std::array<std::shared_ptr<bout::boundary::YBoundary>, 3> ybndrys;
+  /// Cache of Y-boundary iterators. There are four possible values:
+  /// - lower boundary, index 0
+  /// - upper boundary, index 1
+  /// - both, index 2
+  /// - neither, index 3 -- but note, this is not a sensible value!
+  mutable std::array<std::shared_ptr<bout::boundary::YBoundary>, 4> ybndrys;
 
   FieldMetric recalculateBxy() const;
 
