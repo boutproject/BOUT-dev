@@ -398,7 +398,7 @@ struct DecompositionTestParameters {
 DecompositionTestParameters
 makeDecompositionTestParameters(const BoutMeshParameters& inputs,
                                 const std::string& name,
-                                MeshTopology mesh_topology = MeshTopology::SF) { // default to SF
+                                MeshTopology mesh_topology = MeshTopology::snowflake) { // default to snowflake
   return {inputs.grid.total_processors,
           inputs.grid.nype,
           inputs.grid.total_ny,
@@ -444,23 +444,23 @@ struct BoutMeshDecompositionTest
 INSTANTIATE_TEST_SUITE_P(
     GoodDecompositions, BoutMeshDecompositionTest,
     ::testing::Values(
-        DecompositionTestParameters{1, 1, 1, 1, {-1, 0, 0, 0, 0}, "", "OnePoint", MeshTopology::SN},
-        DecompositionTestParameters{1, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPoints", MeshTopology::SN},
+        DecompositionTestParameters{1, 1, 1, 1, {-1, 0, 0, 0, 0}, "", "OnePoint", MeshTopology::single_null},
+        DecompositionTestParameters{1, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPoints", MeshTopology::single_null},
         DecompositionTestParameters{
-            2, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCores", MeshTopology::SN},
+            2, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCores", MeshTopology::single_null},
         DecompositionTestParameters{
-            2, 2, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCoresNYPE2", MeshTopology::SN},
+            2, 2, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCoresNYPE2", MeshTopology::single_null},
         // The following should basically all work by construction
-        makeDecompositionTestParameters(createCore({4, 4, 2, 2, 1, 1}), "Core", MeshTopology::SN),
-        makeDecompositionTestParameters(createSOL({4, 4, 2, 2, 1, 1}), "SOL", MeshTopology::SN),
-        makeDecompositionTestParameters(createLimiter({4, 4, 2, 2, 1, 1}), "Limiter", MeshTopology::SN),
-        makeDecompositionTestParameters(createXPoint({4, 4, 2, 2, 1, 4}), "XPoint", MeshTopology::SN),
+        makeDecompositionTestParameters(createCore({4, 4, 2, 2, 1, 1}), "Core", MeshTopology::single_null),
+        makeDecompositionTestParameters(createSOL({4, 4, 2, 2, 1, 1}), "SOL", MeshTopology::single_null),
+        makeDecompositionTestParameters(createLimiter({4, 4, 2, 2, 1, 1}), "Limiter", MeshTopology::single_null),
+        makeDecompositionTestParameters(createXPoint({4, 4, 2, 2, 1, 4}), "XPoint", MeshTopology::single_null),
         makeDecompositionTestParameters(createSingleNull({4, 4, 2, 2, 1, 3}),
-                                        "SingleNull", MeshTopology::SN),
+                                        "SingleNull", MeshTopology::single_null),
         makeDecompositionTestParameters(createDoubleNull({4, 4, 2, 2, 1, 6}),
-                                        "DoubleNull", MeshTopology::CDN),
+                                        "DoubleNull", MeshTopology::connected_double_null),
         makeDecompositionTestParameters(createDisconnectedDoubleNull({12, 4, 2, 2, 1, 6}),
-                                        "DisconnectedDoubleNull", MeshTopology::UDN)),
+                                        "DisconnectedDoubleNull", MeshTopology::unconnected_double_null)),
     DecompositionTestParametersToString);
 
 
@@ -469,11 +469,11 @@ INSTANTIATE_TEST_SUITE_P(
     GoodSnowflake, BoutMeshDecompositionTest,
     ::testing::Values(
         // Snowflake with 6 procesors in y, which is the minimum for a snowflake with the standard assumptions about where the separatrices are.
-        DecompositionTestParameters{6, 6, 48, 1, {-1, 15, 23, 31, 24}, "", "SF48PointsNYPE6", MeshTopology::SF},
+        DecompositionTestParameters{6, 6, 48, 1, {-1, 15, 23, 31, 24}, "", "SF48PointsNYPE6", MeshTopology::snowflake},
 
-        // A slightly more realistic SF grid
+        // A slightly more realistic snowflake grid
         makeDecompositionTestParameters(createSnowflake({4, 6, 2, 2, 1, 9}), 
-                                            "Snowflake", MeshTopology::SF)
+                                            "Snowflake", MeshTopology::snowflake)
     ),
     DecompositionTestParametersToString);
 
@@ -508,15 +508,15 @@ INSTANTIATE_TEST_SUITE_P(
     BadDoubleNull, BadBoutMeshDecompositionTest,
     ::testing::Values(
         DecompositionTestParameters{
-            1, 1, 4, 1, {3, 5, 6, 10, 0}, "Core region jyseps2_1", "CoreRegion1", MeshTopology::UDN},
+            1, 1, 4, 1, {3, 5, 6, 10, 0}, "Core region jyseps2_1", "CoreRegion1", MeshTopology::unconnected_double_null},
         DecompositionTestParameters{
-            1, 1, 4, 1, {3, 7, 8, 11, 0}, "Core region jyseps2_2", "CoreRegion2", MeshTopology::UDN},
+            1, 1, 4, 1, {3, 7, 8, 11, 0}, "Core region jyseps2_2", "CoreRegion2", MeshTopology::unconnected_double_null},
         DecompositionTestParameters{
-            1, 1, 4, 1, {3, 7, 8, 12, 11}, "leg region ny_inner", "UpperLeg1", MeshTopology::UDN},
+            1, 1, 4, 1, {3, 7, 8, 12, 11}, "leg region ny_inner", "UpperLeg1", MeshTopology::unconnected_double_null},
         DecompositionTestParameters{
-            1, 1, 4, 1, {3, 7, 8, 12, 8}, "leg region jyseps1_2-ny_inner+1", "UpperLeg2", MeshTopology::UDN},
+            1, 1, 4, 1, {3, 7, 8, 12, 8}, "leg region jyseps1_2-ny_inner+1", "UpperLeg2", MeshTopology::unconnected_double_null},
         DecompositionTestParameters{
-            1, 6, 25, 1, {3, 7, 15, 19, 12}, "leg region ny-jyseps2_2-1", "LegRegion", MeshTopology::UDN}),
+            1, 6, 25, 1, {3, 7, 15, 19, 12}, "leg region ny-jyseps2_2-1", "LegRegion", MeshTopology::unconnected_double_null}),
     DecompositionTestParametersToString);
 
 INSTANTIATE_TEST_SUITE_P(
@@ -535,16 +535,16 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(
         // Core region
         DecompositionTestParameters{
-          2, 2, 16, 1, {7, 14, 6, 9, 7}, "Core region jyseps2_1", "SF_CoreRegion1", MeshTopology::SF},
+          2, 2, 16, 1, {7, 14, 6, 9, 7}, "Core region jyseps2_1", "SF_CoreRegion1", MeshTopology::snowflake},
 
         // E-leg region
         DecompositionTestParameters{
-          6, 6, 48, 1, {7, 15, 19, 25, 23}, "leg region jyseps2_2", "SF_ELeg1", MeshTopology::SF},
+          6, 6, 48, 1, {7, 15, 19, 25, 23}, "leg region jyseps2_2", "SF_ELeg1", MeshTopology::snowflake},
         DecompositionTestParameters{
-          8, 8, 32, 1, {3, 7, 9, 15, 12}, "leg region ny_inner - 1", "SF_ELeg2", MeshTopology::SF},
+          8, 8, 32, 1, {3, 7, 9, 15, 12}, "leg region ny_inner - 1", "SF_ELeg2", MeshTopology::snowflake},
         // W-leg region
         DecompositionTestParameters{
-          6, 6, 48, 1, {7, 15, 24, 40, 33}, "leg region jyseps1_2", "SF_WLeg1", MeshTopology::SF}
+          6, 6, 48, 1, {7, 15, 24, 40, 33}, "leg region jyseps1_2", "SF_WLeg1", MeshTopology::snowflake}
 
 
         // Central region violation not possible if the others are correct
@@ -582,7 +582,7 @@ TEST_P(BadBoutMeshDecompositionTest, BadSingleCoreYDecomposition) {
   int jyseps2_2_start = 12;
   int ny_inner_start = 8;
 
-  MeshTopology mesh_topology = MeshTopology::SF;
+  MeshTopology mesh_topology = MeshTopology::snowflake;
 
   auto result = bout::findValidYDecomposition(ny, num_y_processors, num_y_guards,
                                         jyseps1_1_start, jyseps2_1_start,
@@ -603,7 +603,7 @@ TEST(BoutMeshDecompositionTest, InvalidYDecompositionBecuaseofNYPE) {
   int jyseps2_2_start = 0;
   int ny_inner_start = 0;
 
-  MeshTopology mesh_topology = MeshTopology::SF;
+  MeshTopology mesh_topology = MeshTopology::snowflake;
 
   auto result = bout::findValidYDecomposition(ny, num_y_processors, num_y_guards,
                                         jyseps1_1_start, jyseps2_1_start,
@@ -624,7 +624,7 @@ TEST(BoutMeshDecompositionTest, InvalidYDecompositionBecuaseofTopologyUDN) {
   int jyseps2_2_start = 1;
   int ny_inner_start = 1;
 
-  MeshTopology mesh_topology = MeshTopology::UDN;
+  MeshTopology mesh_topology = MeshTopology::unconnected_double_null;
 
   auto result = bout::findValidYDecomposition(ny, num_y_processors, num_y_guards,
                                         jyseps1_1_start, jyseps2_1_start,
@@ -644,7 +644,7 @@ TEST(BoutMeshDecompositionTest, InvalidYDecompositionBecuaseofTopologySF) {
   int jyseps2_2_start = 1;
   int ny_inner_start = 17;
 
-  MeshTopology mesh_topology = MeshTopology::SF;
+  MeshTopology mesh_topology = MeshTopology::snowflake;
 
   auto result = bout::findValidYDecomposition(ny, num_y_processors, num_y_guards,
                                         jyseps1_1_start, jyseps2_1_start,
@@ -774,34 +774,34 @@ TEST_F(BoutMeshTest, ChooseProcessorSplitNYPE) {
 TEST(getMeshTopologyTest, ReturnsCFLWhenNoXPoints) {
   BoutMeshExposer mesh(8, 8, 1, 1, 1);
   mesh.numberOfXPoints = 0;
-  EXPECT_EQ(mesh.getMeshTopology(-1, 2, 3, 10, 5, 6, 7, ""), MeshTopology::CFL);
+  EXPECT_EQ(mesh.getMeshTopology(-1, 2, 3, 10, 5, 6, 7, ""), MeshTopology::closed_field_line);
 }
 
 TEST(getMeshTopologyTest, ReturnsSNWhenOneXPoint) {
   BoutMeshExposer mesh(8, 8, 1, 1, 1);
   mesh.numberOfXPoints = 1;
-  EXPECT_EQ(mesh.getMeshTopology(1, 2, 2, 4, 5, 6, 7, ""), MeshTopology::SN);
+  EXPECT_EQ(mesh.getMeshTopology(1, 2, 2, 4, 5, 6, 7, ""), MeshTopology::single_null);
 }
 
 TEST(getMeshTopologyTest, ReturnsSFWhenSnowflakeConditionMet) {
   BoutMeshExposer mesh(8, 8, 1, 1, 1);
   mesh.numberOfXPoints = 2;
   // ny_inner between jyseps1_2 and jyseps2_2
-  EXPECT_EQ(mesh.getMeshTopology(7, 39, 45, 63, 56, 8, 5, ""), MeshTopology::SF);
+  EXPECT_EQ(mesh.getMeshTopology(7, 39, 45, 63, 56, 8, 5, ""), MeshTopology::snowflake);
 }
 
 TEST(getMeshTopologyTest, ReturnsUDNWhenTwoXPointsDifferentIndices) {
   BoutMeshExposer mesh(8, 8, 1, 1, 1);
   mesh.numberOfXPoints = 2;
   // ny_inner not between jyseps1_2 and jyseps2_2
-  EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 25, 1, 2, ""), MeshTopology::UDN);
+  EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 25, 1, 2, ""), MeshTopology::unconnected_double_null);
 }
 
 TEST(getMeshTopologyTest, ReturnsCDNWhenTwoXPointsSameIndices) {
   BoutMeshExposer mesh(8, 8, 1, 1, 1);
   mesh.numberOfXPoints = 2;
   // ny_inner not between jyseps1_2 and jyseps2_2 but ixseps1 == ixseps2
-  EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 25, 1, 1, ""), MeshTopology::CDN);
+  EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 25, 1, 1, ""), MeshTopology::connected_double_null);
 }
 
 struct SnowflakeTypeParameters {
@@ -827,12 +827,12 @@ struct GetSnowflakeTypeTest : public ::testing::TestWithParam<SnowflakeTypeParam
 INSTANTIATE_TEST_SUITE_P(
     SnowflakeFamily, GetSnowflakeTypeTest,
     ::testing::Values(
-        SnowflakeTypeParameters{MeshTopology::SF, "SF15", SnowflakeType::SF15, "SF15"},
-        SnowflakeTypeParameters{MeshTopology::SF, "SF45", SnowflakeType::SF45, "SF45"},
-        SnowflakeTypeParameters{MeshTopology::SF, "SF75", SnowflakeType::SF75, "SF75"},
-        SnowflakeTypeParameters{MeshTopology::SF, "SF105", SnowflakeType::SF105, "SF105"},
-        SnowflakeTypeParameters{MeshTopology::SF, "SF135", SnowflakeType::SF135, "SF135"},
-        SnowflakeTypeParameters{MeshTopology::SF, "SF165", SnowflakeType::SF165,
+        SnowflakeTypeParameters{MeshTopology::snowflake, "SF15", SnowflakeType::SF15, "SF15"},
+        SnowflakeTypeParameters{MeshTopology::snowflake, "SF45", SnowflakeType::SF45, "SF45"},
+        SnowflakeTypeParameters{MeshTopology::snowflake, "SF75", SnowflakeType::SF75, "SF75"},
+        SnowflakeTypeParameters{MeshTopology::snowflake, "SF105", SnowflakeType::SF105, "SF105"},
+        SnowflakeTypeParameters{MeshTopology::snowflake, "SF135", SnowflakeType::SF135, "SF135"},
+        SnowflakeTypeParameters{MeshTopology::snowflake, "SF165", SnowflakeType::SF165,
                                 "SF165"}),
     SnowflakeTypeParametersToString);
 
@@ -850,23 +850,23 @@ INSTANTIATE_TEST_SUITE_P(
 INSTANTIATE_TEST_SUITE_P(
     GenericSnowflake, GetSnowflakeTypeTest,
     ::testing::Values(
-        SnowflakeTypeParameters{MeshTopology::SF, "SF", SnowflakeType::SF, "PlainSF"},
-        SnowflakeTypeParameters{MeshTopology::SF, "", SnowflakeType::SF, "EmptyString"},
-        SnowflakeTypeParameters{MeshTopology::SF, "SF-IDEAL", SnowflakeType::SF,
+        SnowflakeTypeParameters{MeshTopology::snowflake, "SF", SnowflakeType::SF, "PlainSF"},
+        SnowflakeTypeParameters{MeshTopology::snowflake, "", SnowflakeType::SF, "EmptyString"},
+        SnowflakeTypeParameters{MeshTopology::snowflake, "SF-IDEAL", SnowflakeType::SF,
                                 "SFideal"},
-        SnowflakeTypeParameters{MeshTopology::SF, "SF999", SnowflakeType::SF,
+        SnowflakeTypeParameters{MeshTopology::snowflake, "SF999", SnowflakeType::SF,
                                 "UnknownFamilyAngle"}),
     SnowflakeTypeParametersToString);
 
 INSTANTIATE_TEST_SUITE_P(
     NotASnowflake, GetSnowflakeTypeTest,
     ::testing::Values(
-        SnowflakeTypeParameters{MeshTopology::CFL, "CFL", SnowflakeType::SF,
+        SnowflakeTypeParameters{MeshTopology::closed_field_line, "closed_field_line", SnowflakeType::SF,
                                 "ClosedFieldLine"},
-        SnowflakeTypeParameters{MeshTopology::SN, "SN", SnowflakeType::SF, "SingleNull"},
-        SnowflakeTypeParameters{MeshTopology::UDN, "UDN", SnowflakeType::SF,
+        SnowflakeTypeParameters{MeshTopology::single_null, "single_null", SnowflakeType::SF, "SingleNull"},
+        SnowflakeTypeParameters{MeshTopology::unconnected_double_null, "unconnected_double_null", SnowflakeType::SF,
                                 "UnconnectedDoubleNull"},
-        SnowflakeTypeParameters{MeshTopology::CDN, "CDN", SnowflakeType::SF,
+        SnowflakeTypeParameters{MeshTopology::connected_double_null, "connected_double_null", SnowflakeType::SF,
                                 "ConnectedDoubleNull"}),
     SnowflakeTypeParametersToString);
 
@@ -2378,7 +2378,7 @@ TEST_F(BoutMeshTest, CreateXBoundariesDoubleNullInsideOutsideCore) {
   EXPECT_EQ(boundaries[1]->label, "sol");
 }
 
-//New SF tests for X boundaries
+//New snowflake tests for X boundaries
 TEST_F(BoutMeshTest, CreateXBoundariesSnowflakeOuterSOL) {
   WithQuietOutput info{output_info};
   // Snowflake topology: outer X boundary below ny_inner is SOL
@@ -2616,7 +2616,7 @@ TEST_F(BoutMeshTest, GetPossibleBoundariesDND) {
   EXPECT_EQ(mesh_DND_32x64.getPossibleBoundaries(), boundaries);
 }
 
-//New SF tests for possible boundaries: Needs modifying of more functions.
+//New snowflake tests for possible boundaries: Needs modifying of more functions.
 /*
 TEST(BoutMeshTest, GetPossibleBoundariesSnowflake) {
   WithQuietOutput info{output_info};

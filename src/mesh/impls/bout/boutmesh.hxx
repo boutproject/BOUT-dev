@@ -21,22 +21,22 @@ class Field;
 /// conventions.
 
 BOUT_ENUM_CLASS(MeshTopology,
-                CFL,  // Closed field line
-                SN,   // Single null
-                SF,   // Snowflake
-                UDN,  // Unconnected double null
-                CDN,
+                closed_field_line,  // Closed field line
+                single_null,   // Single null
+                snowflake,   // Snowflake
+                unconnected_double_null,  // Unconnected double null
+                connected_double_null,
                 XPoint_target); // Connected double null
 
 
-//New SF class for classifying snowflake family members.              
+//New snowflake class for classifying snowflake family members.              
 BOUT_ENUM_CLASS(SnowflakeType,
-                SF15, //SF- LFS
-                SF45, //SF+ LFS
-                SF75, //SF- HFS
-                SF105, //SF+ HFS
-                SF135, //SF+ HFS
-                SF165, //SF- HFS
+                SF15, //snowflake- LFS
+                SF45, //snowflake+ LFS
+                SF75, //snowflake- HFS
+                SF105, //snowflake+ HFS
+                SF135, //snowflake+ HFS
+                SF165, //snowflake- HFS
                 SF,    //Generic snowflake type
                 XPT);  //X-Point Target is topologically the same as a snowflake minus, but has a different separatrix structure and a bigger X-Point separation
 

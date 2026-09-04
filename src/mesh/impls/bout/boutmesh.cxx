@@ -236,16 +236,16 @@ MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Retu
 
   // Use the INGRID topology setting
   if (!IngridTopology.empty()) {
-    if (IngridTopology == "CFL") {
-      return MeshTopology::CFL;
-    } else if (contains(IngridTopology, "SN")) {
-      return MeshTopology::SN;
-    } else if (IngridTopology == "UDN") {
-      return MeshTopology::UDN;
-    } else if (IngridTopology == "CDN") {
-      return MeshTopology::CDN;
+    if (IngridTopology == "closed_field_line") {
+      return MeshTopology::closed_field_line;
+    } else if (contains(IngridTopology, "single_null")) {
+      return MeshTopology::single_null;
+    } else if (IngridTopology == "unconnected_double_null") {
+      return MeshTopology::unconnected_double_null;
+    } else if (IngridTopology == "connected_double_null") {
+      return MeshTopology::connected_double_null;
     } else if (contains(IngridTopology, "SF")) {
-      return MeshTopology::SF;
+      return MeshTopology::snowflake;
     } else if (contains(IngridTopology, "XPoint_target")) {
       return MeshTopology::XPoint_target;
     }
@@ -257,32 +257,32 @@ MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Retu
 
   // Determine topology from the separatrix indices
   if (jyseps1_1 < 0 and jyseps2_2 >= ny - 1) {
-    return MeshTopology::CFL;
+    return MeshTopology::closed_field_line;
   } else if (jyseps2_1 == jyseps1_2) {
-    return MeshTopology::SN;
+    return MeshTopology::single_null;
   } else if (ixseps1 == ixseps2) {
-    return MeshTopology::CDN;
+    return MeshTopology::connected_double_null;
   } else if (jyseps1_2 <= ny_inner_ && ny_inner_ <= jyseps2_2) {
-    return MeshTopology::SF;
+    return MeshTopology::snowflake;
   } else {
-    return MeshTopology::UDN;
+    return MeshTopology::unconnected_double_null;
   }
 }
 
 SnowflakeType BoutMesh::getSnowflakeType(MeshTopology mesh_topology_,
                                          const std::string IngridTopology) {
   if (contains(IngridTopology, "105")) {
-    return SnowflakeType::SF105; //SF+ HFS
+    return SnowflakeType::SF105; //snowflake+ HFS
   } else if (contains(IngridTopology, "135")) {
-    return SnowflakeType::SF135; //SF+ HFS
+    return SnowflakeType::SF135; //snowflake+ HFS
   } else if (contains(IngridTopology, "165")) {
-    return SnowflakeType::SF165; //SF- HFS
+    return SnowflakeType::SF165; //snowflake- HFS
   } else if (contains(IngridTopology, "15")) {
-    return SnowflakeType::SF15; //SF- LFS
+    return SnowflakeType::SF15; //snowflake- LFS
   } else if (contains(IngridTopology, "45")) {
-    return SnowflakeType::SF45; //SF+ LFS
+    return SnowflakeType::SF45; //snowflake+ LFS
   } else if (contains(IngridTopology, "75")) {
-    return SnowflakeType::SF75; //SF+ LFS
+    return SnowflakeType::SF75; //snowflake+ LFS
   } else if (contains(IngridTopology, "target")) {
     return SnowflakeType::XPT; //X-Point Target is topologically the same as a snowflake minus, but has a different separatrix structure and a bigger X-Point separation
   } else {
@@ -305,7 +305,7 @@ namespace bout {
         jyseps1_1, jyseps2_1,
         jyseps1_2, jyseps2_2,
         ny_inner,
-        MeshTopology::UDN);
+        MeshTopology::unconnected_double_null);
   }
 
   } // namespace bout
@@ -331,7 +331,7 @@ namespace bout {
                                 jyseps1_1 + 1, num_local_y_points)};
     }
 
-    if (mesh_topology == MeshTopology::UDN || mesh_topology == MeshTopology::CDN){ 
+    if (mesh_topology == MeshTopology::unconnected_double_null || mesh_topology == MeshTopology::connected_double_null){ 
       if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
         return {
             false,
@@ -363,7 +363,7 @@ namespace bout {
                           "be a multiple of MYSUB ({:d})\n"),
                         jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, num_local_y_points)};
       }
-    } else if (mesh_topology == MeshTopology::SF){
+    } else if (mesh_topology == MeshTopology::snowflake){
 
       //Check Core region
       if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
@@ -427,7 +427,7 @@ namespace bout {
                           "be a multiple of MYSUB ({:d})\n"),
                       ny, ny_inner, ny - ny_inner, num_local_y_points)};
       }
-    }  else if ((mesh_topology == MeshTopology::SN) || (mesh_topology == MeshTopology::CFL)){
+    }  else if ((mesh_topology == MeshTopology::single_null) || (mesh_topology == MeshTopology::closed_field_line)){
     // Single Null or connected Double Null
     if ((jyseps2_2 - jyseps1_1) % num_local_y_points != 0) {
       return {
@@ -526,14 +526,14 @@ namespace bout {
             for (int jyseps2_2 = jyseps2_2_start;
                 jyseps2_2 < ny; ++jyseps2_2) {
 
-              if (mesh_topology == MeshTopology::UDN || mesh_topology == MeshTopology::CDN){
+              if (mesh_topology == MeshTopology::unconnected_double_null || mesh_topology == MeshTopology::connected_double_null){
                 if (not (jyseps1_1 < jyseps2_1 &&
                   jyseps2_1 < ny_inner &&
                   ny_inner < jyseps1_2 &&
                   jyseps1_2 < jyseps2_2)){
                   continue;
                   }}
-              else if (mesh_topology == MeshTopology::SF){
+              else if (mesh_topology == MeshTopology::snowflake){
                 if (not (jyseps1_1 < jyseps2_1 &&
                   jyseps2_1 < ny_inner &&
                   jyseps1_2 < ny_inner &&
@@ -879,7 +879,7 @@ int BoutMesh::load() {
   output_info << _("Detected mesh topology = ")
          << toString(mesh_topology) << std::endl;
   
-  if (mesh_topology == MeshTopology::SF) {
+  if (mesh_topology == MeshTopology::snowflake) {
     snowflake_type = getSnowflakeType(mesh_topology, IngridTopology);
     output_info << _("Detected snowflake type = ")
          << toString(snowflake_type) << std::endl;
@@ -1096,8 +1096,8 @@ void BoutMesh::createCommunicators() {
 
   proc[2] = NXPE; // Stride in processor rank
   // Outer SOL regions
-  if (mesh_topology == MeshTopology::SN || mesh_topology == MeshTopology::CFL) {
-    // Single-null and CFL
+  if (mesh_topology == MeshTopology::single_null || mesh_topology == MeshTopology::closed_field_line) {
+    // Single-null and closed_field_line
     //All processors with same PE_XIND
     TRACE("Creating Outer SOL communicators for Single Null operation");
 
@@ -1123,9 +1123,9 @@ void BoutMesh::createCommunicators() {
       MPI_Group_free(&group);
     }
 
-  } else if (mesh_topology == MeshTopology::CDN || mesh_topology == MeshTopology::UDN) {
+  } else if (mesh_topology == MeshTopology::connected_double_null || mesh_topology == MeshTopology::unconnected_double_null) {
     // Double null
-    // Difference with UCD and CDN comes from a secondary inner SOL region (ixseps1 != ixseps2)
+    // Difference with UCD and connected_double_null comes from a secondary inner SOL region (ixseps1 != ixseps2)
     TRACE("Creating Outer SOL communicators for Double Null operation");
 
     for (int i = 0; i < NXPE; i++) {
@@ -1158,8 +1158,8 @@ void BoutMesh::createCommunicators() {
       MPI_Group_free(&group);
     }
   }
-  else if (mesh_topology == MeshTopology::SF){
-    //Will be closer to SN since there is only 1 outter SOL region.
+  else if (mesh_topology == MeshTopology::snowflake){
+    //Will be closer to single_null since there is only 1 outter SOL region.
     TRACE("Creating Outer SOL communicators for Snowflake operation");
 
       for (int i = 0; i < NXPE; i++) {
@@ -1167,7 +1167,7 @@ void BoutMesh::createCommunicators() {
         proc[0] = PROC_NUM(i, 0);
         proc[1] = PROC_NUM(i, YPROC(ny_inner - 1));
 
-        output_debug << "SF outer SOL " << proc[0] << ", " << proc[1] << endl;
+        output_debug << "snowflake outer SOL " << proc[0] << ", " << proc[1] << endl;
 
         if (MPI_Group_range_incl(group_world, 1, &proc, &group) != MPI_SUCCESS) {
           throw BoutException("MPI_Group_range_incl failed for xp = {:d}", NXPE);
@@ -1184,7 +1184,7 @@ void BoutMesh::createCommunicators() {
           proc[0] = PROC_NUM(i, YPROC(ny_inner));
           proc[1] = PROC_NUM(i, NYPE - 1);
 
-          output_debug << "SF south PFR " << proc[0] << ", " << proc[1] << endl;
+          output_debug << "snowflake south PFR " << proc[0] << ", " << proc[1] << endl;
 
           MPI_Group_range_incl(group_world, 1, &proc, &group);
           MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
@@ -1201,7 +1201,7 @@ void BoutMesh::createCommunicators() {
     }
 
   for (int i = 0; i < NXPE; i++) {
-    if (mesh_topology != MeshTopology::SF){
+    if (mesh_topology != MeshTopology::snowflake){
       // Lower PF region
 
       if ((jyseps1_1 >= 0) || (jyseps2_2 + 1 < ny)) {
@@ -1264,7 +1264,7 @@ void BoutMesh::createCommunicators() {
       }
 
       if (jyseps2_1 != jyseps1_2) { //CHANGE: Sebastian
-        // ONly possible topology is UDN or CDN here
+        // ONly possible topology is unconnected_double_null or connected_double_null here
           // Upper PF region
           // Note need to order processors so that a continuous surface is formed
           TRACE("Creating upper PF communicators for xp={:d}", i);
@@ -1313,7 +1313,7 @@ void BoutMesh::createCommunicators() {
 
           output_debug << "done upper PF\n";
       }
-     } else if (mesh_topology == MeshTopology::SF){
+     } else if (mesh_topology == MeshTopology::snowflake){
         // Snowflake upper PF region communicators. Note there are 4 regions to consider here (Central, East, West, South).
 
           MPI_Comm comm_pf_w{};
@@ -1499,7 +1499,7 @@ void BoutMesh::createCommunicators() {
             MPI_Group_free(&pf_group);
           }
         }
-      output_debug << "SF PF rank "
+      output_debug << "snowflake PF rank "
              << PE_XIND << "," << PE_YIND
              << " W=" << (comm_pf_w != MPI_COMM_NULL)
              << " E=" << (comm_pf_e != MPI_COMM_NULL)
@@ -1510,7 +1510,7 @@ void BoutMesh::createCommunicators() {
 
     // Core region
     TRACE("Creating core communicators");
-    //Works for all topologies. SN and SF is the complete core region. For CDN and UDN its the inner core region.
+    //Works for all topologies. single_null and snowflake is the complete core region. For connected_double_null and unconnected_double_null its the inner core region.
     group_tmp1 = MPI_GROUP_EMPTY;
     group_tmp2 = MPI_GROUP_EMPTY;
 
@@ -1529,8 +1529,8 @@ void BoutMesh::createCommunicators() {
       group_tmp1 = MPI_GROUP_EMPTY;
     }
 
-    //Only for CDN and UDN outer core region. Add check to ensure only created for these topologies. Maybe topology should go inside second if.
-    if (mesh_topology == MeshTopology::CDN || mesh_topology == MeshTopology::UDN){
+    //Only for connected_double_null and unconnected_double_null outer core region. Add check to ensure only created for these topologies. Maybe topology should go inside second if.
+    if (mesh_topology == MeshTopology::connected_double_null || mesh_topology == MeshTopology::unconnected_double_null){
       if (jyseps2_2 > jyseps1_2) {
         proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
         proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
@@ -1625,7 +1625,7 @@ void BoutMesh::createCommunicators() {
       }
     }
   }
-  // For SF topology the "unbalanced lower" communicator above spans
+  // For snowflake topology the "unbalanced lower" communicator above spans
   // union(YPROC 0..YPROC(jyseps2_1), YPROC(jyseps1_2+1)..NYPE-1), which
   // skips the YPROC range covering y = jyseps2_1+1..jyseps1_2 (the W_PFR
   // middle segment / upper half of the C_PFR).  Create a dedicated C_PFR
@@ -1635,8 +1635,8 @@ void BoutMesh::createCommunicators() {
   // comm_middle.  For processors already covered by the unbalanced loop
   // (YPROC 0 and YPROC 6) this overwrites with a more physically correct
   // communicator; for YPROC 5 it fills the gap that caused the crash.
-  if (mesh_topology == MeshTopology::SF) {
-    TRACE("Creating SF C_PFR comm_middle communicators");
+  if (mesh_topology == MeshTopology::snowflake) {
+    TRACE("Creating snowflake C_PFR comm_middle communicators");
     for (int i = 0; i < NXPE; i++) {
       // Lower C_PFR: y = 0..jyseps1_1  (West target, YPROC 0)
       proc[0] = PROC_NUM(i, 0);
@@ -1664,7 +1664,7 @@ void BoutMesh::createCommunicators() {
     }
   }
 
-  // For SF topology, create a dedicated "South PFR" comm_middle for the
+  // For snowflake topology, create a dedicated "South PFR" comm_middle for the
   // south strip (H1 = YPROC covering ny_inner..jyseps2_2, South East target
   // at its lower face; I1 = YPROC covering jyseps2_2+1..ny-1, South West
   // target at its upper face).
@@ -1676,8 +1676,8 @@ void BoutMesh::createCommunicators() {
   // comm_middle for H1 and I1 with a two-processor communicator where:
   //   rank 0 = H1  →  firstY=true  (ys=ystart, no lower extension at SE target)
   //   rank 1 = I1  →  lastY=true   (ye=yend,   no upper extension at SW target) 
-  if (mesh_topology == MeshTopology::SF) {
-    TRACE("Creating SF S_PFR comm_middle communicators");
+  if (mesh_topology == MeshTopology::snowflake) {
+    TRACE("Creating snowflake S_PFR comm_middle communicators");
     for (int i = 0; i < NXPE; i++) {
       // H1: y = ny_inner .. jyseps2_2  (SE target at lower face)
       proc[0] = PROC_NUM(i, YPROC(ny_inner));
@@ -1727,14 +1727,14 @@ void BoutMesh::createXBoundaries() {
   if (PE_XIND == 0) {
     // Inner x face: either core or PF boundary.
     //
-    // For CDN/UDN the y-range (jyseps1_2, jyseps2_2] is the outer core leg,
-    // so it gets a "core" boundary.  For SF topology that same y-range is the
+    // For connected_double_null/unconnected_double_null the y-range (jyseps1_2, jyseps2_2] is the outer core leg,
+    // so it gets a "core" boundary.  For snowflake topology that same y-range is the
     // East PFR (G1 = jyseps1_2+1..ny_inner-1, H1 = ny_inner..jyseps2_2),
     // which lies south of the inner separatrix and must get a "pf" boundary
     // just like the West PFR.
-    if ((mesh_topology == MeshTopology::CDN) or (mesh_topology == MeshTopology::UDN)
-        or (mesh_topology == MeshTopology::CFL)){
-      // CDN/UDN have two core legs; CFL is all core (no X-points).
+    if ((mesh_topology == MeshTopology::connected_double_null) or (mesh_topology == MeshTopology::unconnected_double_null)
+        or (mesh_topology == MeshTopology::closed_field_line)){
+      // connected_double_null/unconnected_double_null have two core legs; closed_field_line is all core (no X-points).
       // All three need both y-ranges checked.
       const bool in_core = ((yg > jyseps1_1) and (yg <= jyseps2_1))
           or ((yg > jyseps1_2) and (yg <= jyseps2_2));
@@ -1745,8 +1745,8 @@ void BoutMesh::createXBoundaries() {
         boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend, this));
       }
     }
-    else if (mesh_topology == MeshTopology::SN){
-      //SN has only one core region, but it goes from (jyseps1_1, jyseps2_2], ny_inner = jyseps1_2 = jyseps2_1 are not relevant for that case. 
+    else if (mesh_topology == MeshTopology::single_null){
+      //single_null has only one core region, but it goes from (jyseps1_1, jyseps2_2], ny_inner = jyseps1_2 = jyseps2_1 are not relevant for that case. 
       const bool in_core = ((yg > jyseps1_1) and (yg <= jyseps2_2));
 
       if (in_core) {
@@ -1755,7 +1755,7 @@ void BoutMesh::createXBoundaries() {
         boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend, this));
       }
     }
-    else{ //SF has one core region at (jyseps1_1, jyseps2_1].  TODO: This is only true for HFS SF config. another one should be added
+    else{ //snowflake has one core region at (jyseps1_1, jyseps2_1].  TODO: This is only true for HFS snowflake config. another one should be added
 
       const bool in_core = ((yg > jyseps1_1) and (yg <= jyseps2_1));
 
@@ -1768,9 +1768,9 @@ void BoutMesh::createXBoundaries() {
   }
 
   if (PE_XIND == (NXPE - 1)) {
-    // In SF topology the region above ny_inner at the outer X face is the South PFR,
+    // In snowflake topology the region above ny_inner at the outer X face is the South PFR,
     // not the outer SOL.
-    if (mesh_topology == MeshTopology::SF and yg > ny_inner) {
+    if (mesh_topology == MeshTopology::snowflake and yg > ny_inner) {
       boundary.push_back(new BoundaryRegionXOut("south_pf_outer", ystart, yend, this));
     } else {
       boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend, this));
@@ -2441,7 +2441,7 @@ bool BoutMesh::firstY(int xpos) const {
     comm = comm_outer;
   }
 
-  // Communicator may be MPI_COMM_NULL for some processors in SF topology.
+  // Communicator may be MPI_COMM_NULL for some processors in snowflake topology.
   // E_PFR processors (G1/H1) now have comm_inner = comm_pf_e so this
   // fallback should not be reached in normal operation.  As a defence,
   // check whether a physical target exists at the lower Y face
@@ -2474,7 +2474,7 @@ bool BoutMesh::lastY(int xpos) const {
     comm = comm_outer;
   }
 
-  // Communicator may be MPI_COMM_NULL for some processors in SF topology.
+  // Communicator may be MPI_COMM_NULL for some processors in snowflake topology.
   // E_PFR processors (G1/H1) now have comm_inner = comm_pf_e so this
   // fallback should not be reached in normal operation.  As a defence,
   // check whether a physical target exists at the upper Y face
@@ -2934,7 +2934,7 @@ void BoutMesh::topology() {
                    true);                                 // Twist-shift this connection
     set_connection(jyseps1_1, jyseps2_2 + 1, 0, ixseps1); // No twist-shift in PF region
 
-  } else if (mesh_topology == MeshTopology::CDN || mesh_topology == MeshTopology::UDN) {
+  } else if (mesh_topology == MeshTopology::connected_double_null || mesh_topology == MeshTopology::unconnected_double_null) {
     /*************** DOUBLE NULL OPERATION *******************/
     /* UPPER LEGS: Do not have to be the same length as each
        other or lower legs, but do have to have an integer number
@@ -2982,7 +2982,7 @@ void BoutMesh::topology() {
     // Add target plates at the top
     add_target(ny_inner - 1, 0, nx);
 
-  } else if (mesh_topology == MeshTopology::SF) {
+  } else if (mesh_topology == MeshTopology::snowflake) {
     /*************** Snowflake OPERATION *******************/
     /* Each PFR does not have to be the same length as each
        other, but do have to have an integer number
@@ -3001,12 +3001,12 @@ void BoutMesh::topology() {
       throw BoutException("\t Topology error: Snowflake topology can't have the two same separatrices\n");
 
     } else if (ixseps2 < ixseps1) {
-      /*************** SF Usual configuration **********************/
+      /*************** snowflake Usual configuration **********************/
       output_info.write("\tSF Usual configuration\n");
       ixseps_inner = ixseps_lower = ixseps2;
       ixseps_outer = ixseps_upper = ixseps1;
     } else {
-      /*************** SF Reverse configuration **********************/ //TODO: Reverse configuration might mean LFS SF. Look into it. 
+      /*************** snowflake Reverse configuration **********************/ //TODO: Reverse configuration might mean LFS snowflake. Look into it. 
       output_info.write("\tSF Reverse configuration\n");
       ixseps_inner = ixseps_upper = ixseps1;
       ixseps_outer = ixseps_lower = ixseps2;
@@ -3014,7 +3014,7 @@ void BoutMesh::topology() {
 
     /* Following code works for any Snowflake */
 
-    /********* SF CONNECTIONS **********/
+    /********* snowflake CONNECTIONS **********/
     default_connections();
     set_connection(jyseps1_2 + 1, jyseps2_2, 0, ixseps_lower,
                    ixseps2 <= ixseps1);                        /* E_PFR */
@@ -3060,7 +3060,7 @@ void BoutMesh::topology() {
     }
   }
 
-  if (mesh_topology == MeshTopology::SF) {
+  if (mesh_topology == MeshTopology::snowflake) {
     if (ixseps_inner > 0 &&
         (PE_YIND * MYSUB > jyseps1_1) &&
         (PE_YIND * MYSUB <= jyseps2_1)) {
@@ -3406,7 +3406,7 @@ int BoutMesh::ySize(int xpos) const {
   int yglobal = getGlobalYIndexNoBoundaries(MYG);
 
   //Old divisions working for all other topologies. 
-  if (mesh_topology == MeshTopology::SF) {
+  if (mesh_topology == MeshTopology::snowflake) {
     if (xglobal < ixseps_lower) {
       if ((yglobal <= jyseps1_1) || (yglobal > jyseps2_2) || 
         (yglobal <= jyseps1_2 && yglobal > jyseps2_1)) {
@@ -3449,7 +3449,7 @@ int BoutMesh::ySize(int xpos) const {
       return jyseps1_2 - jyseps2_1;
 
     } else if (xglobal < ixseps_inner) {
-      // Core (should there not be a division here between SN and DN?)
+      // Core (should there not be a division here between single_null and DN?)
       return (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 
     } else if (jyseps2_1 == jyseps1_2) {
@@ -4094,7 +4094,7 @@ BoutReal BoutMesh::GlobalX(BoutReal jx) const {
 }
 
 BoutReal BoutMesh::GlobalY(int jy) const {
-  if (mesh_topology == MeshTopology::SF){
+  if (mesh_topology == MeshTopology::snowflake){
     if (symmetricGlobalY) {
     BoutReal yi = getGlobalYIndexNoBoundaries(jy);
     int nycore = (jyseps2_1 - jyseps1_1);
@@ -4111,7 +4111,7 @@ BoutReal BoutMesh::GlobalY(int jy) const {
 
     if (MYPE_IN_CORE) {
       // Turn ly into an index over the core cells only
-      ly -= jyseps1_1 + 1; //Only core bit in SF case
+      ly -= jyseps1_1 + 1; //Only core bit in snowflake case
     } else {
       // Not in core. Need to get the last "core" value
       if (ly <= jyseps1_1) {
@@ -4168,7 +4168,7 @@ BoutReal BoutMesh::GlobalY(int jy) const {
 }
 
 BoutReal BoutMesh::GlobalY(BoutReal jy) const {
-  if (mesh_topology == MeshTopology::SF){
+  if (mesh_topology == MeshTopology::snowflake){
     // Get global Y index as a BoutReal
     BoutReal yglo;
     YGLOBAL(jy, yglo);
