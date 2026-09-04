@@ -76,6 +76,34 @@ TEST_F(OptionsAdios2Test, ReadWriteString) {
   EXPECT_EQ(data["test"], std::string("hello"));
 }
 
+TEST_F(OptionsAdios2Test, ReadThenOverwriteSameFileTwice) {
+  {
+    Options options;
+    options["scalar"] = 1;
+    options["field"] = Field3D(2.0);
+
+    OptionsIO::create(file_options)->write(options);
+  }
+
+  for (int expected = 1; expected <= 2; ++expected) {
+    Options data = OptionsIO::create(file_options)->read();
+
+    EXPECT_EQ(data["scalar"], expected);
+    EXPECT_DOUBLE_EQ(data["field"].as<Field3D>(bout::globals::mesh)(0, 0, 0),
+                     expected + 1.0);
+
+    data["scalar"] = expected + 1;
+    data["field"] = Field3D(expected + 2.0);
+
+    OptionsIO::create(file_options)->write(data);
+  }
+
+  Options data = OptionsIO::create(file_options)->read();
+
+  EXPECT_EQ(data["scalar"], 3);
+  EXPECT_DOUBLE_EQ(data["field"].as<Field3D>(bout::globals::mesh)(0, 0, 0), 4.0);
+}
+
 TEST_F(OptionsAdios2Test, ReadWriteField2D) {
   {
     Options options;
