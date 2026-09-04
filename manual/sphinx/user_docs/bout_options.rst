@@ -476,17 +476,19 @@ minimises ``abs(sqrt(NPES * (nx - 4) / ny) - NXPE)``).
 
 If you need to specify complex input values, e.g. numerical values
 from experiment, you may want to use a grid file. The grid file to use
-is specified relative to the root directory where the simulation is
-run (i.e. running “``ls ./data/BOUT.inp``” gives the options
-file). You can use the global option ``grid``, or ``mesh:file``:
+can be set with the global option ``grid``, or ``mesh:file``:
 
 .. code-block:: cfg
 
-    grid = "data/cbm18_8_y064_x260.nc"
+    grid = "cbm18_8_y064_x260.nc"
 
     # Alternatively:
     [mesh]
-    file = "data/cbm18_8_y064_x260.nc"
+    file = "cbm18_8_y064_x260.nc"
+
+Relative grid paths are resolved relative to ``datadir`` and the current working directory. If matching files exist in both places,
+BOUT++ throws an error rather than guessing which one to use. To avoid
+ambiguity, an explicit absolute path for the grid file can be used.
 
 
 Communications
