@@ -69,7 +69,11 @@
 
 namespace {
 bool contains(const std::string& haystack, const std::string& needle) {
-  return haystack.find(needle) != std::string::npos;
+  return std::search(haystack.begin(), haystack.end(), needle.begin(), needle.end(),
+                     [](unsigned char a, unsigned char b) {
+                       return std::toupper(a) == std::toupper(b);
+                     })
+         != haystack.end();
 }
 } // namespace
 
@@ -242,6 +246,8 @@ MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Retu
       return MeshTopology::CDN;
     } else if (contains(IngridTopology, "SF")) {
       return MeshTopology::SF;
+    } else if (contains(IngridTopology, "XPoint_target")) {
+      return MeshTopology::XPoint_target;
     }
     output_warn.write(_f("\tWARNING: Unrecognised 'topology' value '{:s}' in grid "
                          "file. Topology will be determined from the separatrix "
@@ -265,10 +271,6 @@ MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Retu
 
 SnowflakeType BoutMesh::getSnowflakeType(MeshTopology mesh_topology_,
                                          const std::string IngridTopology) {
-  if (mesh_topology_ != MeshTopology::SF) {
-    return SnowflakeType::SF;
-  }
-
   if (contains(IngridTopology, "105")) {
     return SnowflakeType::SF105; //SF+ HFS
   } else if (contains(IngridTopology, "135")) {
@@ -281,10 +283,12 @@ SnowflakeType BoutMesh::getSnowflakeType(MeshTopology mesh_topology_,
     return SnowflakeType::SF45; //SF+ LFS
   } else if (contains(IngridTopology, "75")) {
     return SnowflakeType::SF75; //SF+ LFS
+  } else if (contains(IngridTopology, "target")) {
+    return SnowflakeType::XPT; //X-Point Target is topologically the same as a snowflake minus, but has a different separatrix structure and a bigger X-Point separation
   } else {
     return SnowflakeType::SF; //Return a generic snowflake type if no specific type is found
   }
-}
+} //No option for ideal snowflake yet since we haven't found a gridding tool that can handle that.
 
 
 namespace bout {

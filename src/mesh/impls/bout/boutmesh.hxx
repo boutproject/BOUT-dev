@@ -25,7 +25,8 @@ BOUT_ENUM_CLASS(MeshTopology,
                 SN,   // Single null
                 SF,   // Snowflake
                 UDN,  // Unconnected double null
-                CDN); // Connected double null
+                CDN,
+                XPoint_target); // Connected double null
 
 
 //New SF class for classifying snowflake family members.              
@@ -36,7 +37,8 @@ BOUT_ENUM_CLASS(SnowflakeType,
                 SF105, //SF+ HFS
                 SF135, //SF+ HFS
                 SF165, //SF- HFS
-                SF);
+                SF,    //Generic snowflake type
+                XPT);  //X-Point Target is topologically the same as a snowflake minus, but has a different separatrix structure and a bigger X-Point separation
 
 
 class BoutMesh : public Mesh {

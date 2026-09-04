@@ -804,6 +804,81 @@ TEST(getMeshTopologyTest, ReturnsCDNWhenTwoXPointsSameIndices) {
   EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 25, 1, 1, ""), MeshTopology::CDN);
 }
 
+struct SnowflakeTypeParameters {
+  MeshTopology mesh_topology;
+  std::string ingrid_topology;
+  SnowflakeType expected;
+  std::string test_name;
+};
+
+std::ostream& operator<<(std::ostream& out, const SnowflakeTypeParameters& value) {
+  return out << "SnowflakeTypeParameters{mesh_topology=" << toString(value.mesh_topology)
+             << ", ingrid_topology='" << value.ingrid_topology
+             << "', expected=" << toString(value.expected) << "}";
+}
+
+std::string SnowflakeTypeParametersToString(
+    const ::testing::TestParamInfo<SnowflakeTypeParameters>& param) {
+  return param.param.test_name;
+}
+
+struct GetSnowflakeTypeTest : public ::testing::TestWithParam<SnowflakeTypeParameters> {};
+
+INSTANTIATE_TEST_SUITE_P(
+    SnowflakeFamily, GetSnowflakeTypeTest,
+    ::testing::Values(
+        SnowflakeTypeParameters{MeshTopology::SF, "SF15", SnowflakeType::SF15, "SF15"},
+        SnowflakeTypeParameters{MeshTopology::SF, "SF45", SnowflakeType::SF45, "SF45"},
+        SnowflakeTypeParameters{MeshTopology::SF, "SF75", SnowflakeType::SF75, "SF75"},
+        SnowflakeTypeParameters{MeshTopology::SF, "SF105", SnowflakeType::SF105, "SF105"},
+        SnowflakeTypeParameters{MeshTopology::SF, "SF135", SnowflakeType::SF135, "SF135"},
+        SnowflakeTypeParameters{MeshTopology::SF, "SF165", SnowflakeType::SF165,
+                                "SF165"}),
+    SnowflakeTypeParametersToString);
+
+INSTANTIATE_TEST_SUITE_P(
+    XPointTarget, GetSnowflakeTypeTest,
+    ::testing::Values(
+        SnowflakeTypeParameters{MeshTopology::XPoint_target, "XPOINT_TARGET",
+                                SnowflakeType::XPT, "NormalisedFromGrid"},
+        SnowflakeTypeParameters{MeshTopology::XPoint_target, "XPoint_target",
+                                SnowflakeType::XPT, "AsWrittenInGrid"},
+        SnowflakeTypeParameters{MeshTopology::XPoint_target, "xpoint_target",
+                                SnowflakeType::XPT, "LowerCase"}),
+    SnowflakeTypeParametersToString);
+
+INSTANTIATE_TEST_SUITE_P(
+    GenericSnowflake, GetSnowflakeTypeTest,
+    ::testing::Values(
+        SnowflakeTypeParameters{MeshTopology::SF, "SF", SnowflakeType::SF, "PlainSF"},
+        SnowflakeTypeParameters{MeshTopology::SF, "", SnowflakeType::SF, "EmptyString"},
+        SnowflakeTypeParameters{MeshTopology::SF, "SF-IDEAL", SnowflakeType::SF,
+                                "SFideal"},
+        SnowflakeTypeParameters{MeshTopology::SF, "SF999", SnowflakeType::SF,
+                                "UnknownFamilyAngle"}),
+    SnowflakeTypeParametersToString);
+
+INSTANTIATE_TEST_SUITE_P(
+    NotASnowflake, GetSnowflakeTypeTest,
+    ::testing::Values(
+        SnowflakeTypeParameters{MeshTopology::CFL, "CFL", SnowflakeType::SF,
+                                "ClosedFieldLine"},
+        SnowflakeTypeParameters{MeshTopology::SN, "SN", SnowflakeType::SF, "SingleNull"},
+        SnowflakeTypeParameters{MeshTopology::UDN, "UDN", SnowflakeType::SF,
+                                "UnconnectedDoubleNull"},
+        SnowflakeTypeParameters{MeshTopology::CDN, "CDN", SnowflakeType::SF,
+                                "ConnectedDoubleNull"}),
+    SnowflakeTypeParametersToString);
+
+TEST_P(GetSnowflakeTypeTest, ClassifiesSnowflakeFamilyMember) {
+  const auto params = GetParam();
+
+  BoutMeshExposer mesh(8, 8, 1, 1, 1);
+
+  EXPECT_EQ(mesh.getSnowflakeType(params.mesh_topology, params.ingrid_topology),
+            params.expected);
+}
+
 // readIngridTopology
 /// deliberately *not* using `WithQuietOutput` on `output_warn`, because the
 struct ReadIngridTopologyTest : public ::testing::Test {
