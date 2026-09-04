@@ -47,6 +47,7 @@ public:
   using BoutMesh::XPROC;
   using BoutMesh::YDecompositionIndices;
   using BoutMesh::YPROC;
+  using BoutMesh::getMeshTopology;
 };
 
 /// Minimal parameters need to construct a grid useful for testing
@@ -92,6 +93,27 @@ BoutMeshExposer::BoutMeshExposer(const BoutMeshParameters& inputs, bool periodic
                inputs.x_indices.ixseps2, inputs.y_indices.jyseps1_1,
                inputs.y_indices.jyseps2_1, inputs.y_indices.jyseps1_2,
                inputs.y_indices.jyseps2_2, inputs.y_indices.ny_inner) {}
+
+/// Equality operator to help testing
+bool operator==(const BoutMeshExposer::YDecompositionIndices& lhs,
+                const BoutMeshExposer::YDecompositionIndices& rhs) {
+  return (lhs.jyseps1_1 == rhs.jyseps1_1) and (lhs.jyseps2_1 == rhs.jyseps2_1)
+         and (lhs.jyseps1_2 == rhs.jyseps1_2) and (lhs.jyseps2_2 == rhs.jyseps2_2)
+         and (lhs.ny_inner == rhs.ny_inner);
+}
+
+bool operator==(const BoutMeshExposer::ConnectionInfo& lhs,
+                const BoutMeshExposer::ConnectionInfo& rhs) {
+  return (lhs.TS_up_in == rhs.TS_up_in) and (lhs.TS_up_out == rhs.TS_up_out)
+         and (lhs.TS_down_in == rhs.TS_down_in) and (lhs.TS_down_out == rhs.TS_down_out)
+         and (lhs.UDATA_INDEST == rhs.UDATA_INDEST)
+         and (lhs.UDATA_OUTDEST == rhs.UDATA_OUTDEST)
+         and (lhs.UDATA_XSPLIT == rhs.UDATA_XSPLIT)
+         and (lhs.DDATA_INDEST == rhs.DDATA_INDEST)
+         and (lhs.DDATA_OUTDEST == rhs.DDATA_OUTDEST)
+         and (lhs.DDATA_XSPLIT == rhs.DDATA_XSPLIT) and (lhs.IDATA_DEST == rhs.IDATA_DEST)
+         and (lhs.ODATA_DEST == rhs.ODATA_DEST);
+}
 
 /// Stream operator to print a nice message instead of bytes if a test fails
 std::ostream& operator<<(std::ostream& out,
@@ -218,6 +240,44 @@ BoutMeshParameters createDisconnectedDoubleNull(const BoutMeshGridInfo& grid) {
            grid.total_ny - grid.local_ny - 1, ny_inner}};
 }
 
+BoutMeshParameters createSnowflake(const BoutMeshGridInfo& grid) {
+  // Need at least 6 y-subdomains for a minimal snowflake
+  if (grid.nype < 6) {
+    throw BoutException(
+        "createSnowflake: Not enough processors for snowflake topology "
+        "(nype={}, needs at least 6)",
+        grid.nype);
+  }
+
+  if ((grid.total_nx / 2) + 4 > grid.total_nx) {
+  throw BoutException(
+      "createSnowflake: Not enough points in x-direction "
+      "(need ixseps2 = ((nxpe * (local_nx - 2)) + 2) / 2 + 4 = {} to "
+      "be less than total_nx = (nxpe * (local_nx - 2)) + 2 = {}; nxpe={}, local_nx={}",
+      (grid.total_nx / 2) + 4, grid.total_nx, grid.nxpe, grid.local_nx);
+}
+
+  const int ny_inner = 4 * grid.local_ny;
+  // Separatrix indices
+  const int jyseps1_1 = grid.local_ny - 1;
+  const int jyseps2_1 = ny_inner - 2 * grid.local_ny - 1;
+  const int jyseps1_2 = ny_inner - grid.local_ny - 1;
+  const int jyseps2_2 = grid.total_ny - grid.local_ny - 1;
+
+  return {
+      grid,
+      // X separatrices (same as standard snowflake assumption)
+      {grid.total_nx / 2, grid.total_nx / 2 + 4},
+      // Y separatrices + ny_inner
+      {jyseps1_1,
+       jyseps2_1,
+       jyseps1_2,
+       jyseps2_2,
+       ny_inner}
+  };
+}
+
+
 ////////////////////////////////////////////////////////////
 // Start of tests
 
@@ -248,6 +308,7 @@ TEST_F(BoutMeshTest, SingleCoreDecomposition) {
   delete bout::globals::mpi;
   bout::globals::mpi = nullptr;
 }
+
 
 struct SetYDecompositionTestParameters {
   BoutMeshExposer::YDecompositionIndices input;
@@ -311,6 +372,8 @@ TEST_F(BoutMeshTest, SetYDecompositionIndicesJyseps22LowInconsistent) {
   EXPECT_THROW(mesh.setYDecompositionIndices({3, 7, 32, 8, 12}), BoutException);
 }
 
+//New bit: 
+
 struct DecompositionTestParameters {
   int total_processors;
   int num_y_processors;
@@ -320,19 +383,23 @@ struct DecompositionTestParameters {
   std::string expected_message; // Expect this fragment to be in the result.reason for bad
                                 // decompositions
   std::string name;
+  MeshTopology mesh_topology; // New: topology enum
 };
 
 DecompositionTestParameters
 makeDecompositionTestParameters(const BoutMeshParameters& inputs,
-                                const std::string& name) {
+                                const std::string& name,
+                                MeshTopology mesh_topology = MeshTopology::unconnected_double_null) { // default to unconnected_double_null
   return {inputs.grid.total_processors,
           inputs.grid.nype,
           inputs.grid.total_ny,
           inputs.grid.num_y_guards,
           inputs.y_indices,
           "",
-          name};
+          name,
+          mesh_topology};
 }
+
 
 std::ostream& operator<<(std::ostream& out, const DecompositionTestParameters& value) {
   return out << fmt::format(
@@ -346,16 +413,19 @@ std::ostream& operator<<(std::ostream& out, const DecompositionTestParameters& v
              "jyseps1_2 = {}, "
              "jyseps2_2 = {}, "
              "ny_inner = {}, "
+             "topology = {}, "
              "expected_message = {} }}",
              value.total_processors, value.num_y_processors, value.ny, value.num_y_guards,
              value.indices.jyseps1_1, value.indices.jyseps2_1, value.indices.jyseps1_2,
-             value.indices.jyseps2_2, value.indices.ny_inner, value.expected_message);
+             value.indices.jyseps2_2, value.indices.ny_inner, toString(value.mesh_topology),
+             value.expected_message);
 }
 
 std::string DecompositionTestParametersToString(
     const ::testing::TestParamInfo<DecompositionTestParameters>& param) {
   return param.param.name;
 }
+
 
 struct BoutMeshDecompositionTest
     : public testing::TestWithParam<DecompositionTestParameters> {
@@ -365,35 +435,38 @@ struct BoutMeshDecompositionTest
 INSTANTIATE_TEST_SUITE_P(
     GoodDecompositions, BoutMeshDecompositionTest,
     ::testing::Values(
-        DecompositionTestParameters{1, 1, 1, 1, {-1, 0, 0, 0, 0}, "", "OnePoint"},
-        DecompositionTestParameters{1, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPoints"},
+        DecompositionTestParameters{1, 1, 1, 1, {-1, 0, 0, 0, 0}, "", "OnePoint", MeshTopology::single_null},
+        DecompositionTestParameters{1, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPoints", MeshTopology::single_null},
         DecompositionTestParameters{
-            2, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCores"},
+            2, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCores", MeshTopology::single_null},
         DecompositionTestParameters{
-            2, 2, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCoresNYPE2"},
+            2, 2, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCoresNYPE2", MeshTopology::single_null},
         // The following should basically all work by construction
-        makeDecompositionTestParameters(createCore({4, 4, 2, 2, 1, 1}), "Core"),
-        makeDecompositionTestParameters(createSOL({4, 4, 2, 2, 1, 1}), "SOL"),
-        makeDecompositionTestParameters(createLimiter({4, 4, 2, 2, 1, 1}), "Limiter"),
-        makeDecompositionTestParameters(createXPoint({4, 4, 2, 2, 1, 4}), "XPoint"),
+        makeDecompositionTestParameters(createCore({4, 4, 2, 2, 1, 1}), "Core", MeshTopology::single_null),
+        makeDecompositionTestParameters(createSOL({4, 4, 2, 2, 1, 1}), "SOL", MeshTopology::single_null),
+        makeDecompositionTestParameters(createLimiter({4, 4, 2, 2, 1, 1}), "Limiter", MeshTopology::single_null),
+        makeDecompositionTestParameters(createXPoint({4, 4, 2, 2, 1, 4}), "XPoint", MeshTopology::single_null),
         makeDecompositionTestParameters(createSingleNull({4, 4, 2, 2, 1, 3}),
-                                        "SingleNull"),
+                                        "SingleNull", MeshTopology::single_null),
         makeDecompositionTestParameters(createDoubleNull({4, 4, 2, 2, 1, 6}),
-                                        "DoubleNull"),
+                                        "DoubleNull", MeshTopology::connected_double_null),
         makeDecompositionTestParameters(createDisconnectedDoubleNull({12, 4, 2, 2, 1, 6}),
-                                        "DisconnectedDoubleNull")),
+                                        "DisconnectedDoubleNull", MeshTopology::unconnected_double_null)),
     DecompositionTestParametersToString);
 
 TEST_P(BoutMeshDecompositionTest, CheckYDecomposition) {
   const auto params = GetParam();
   auto result = bout::checkBoutMeshYDecomposition(
-      params.num_y_processors, params.ny, 1, params.indices.jyseps1_1,
-      params.indices.jyseps2_1, params.indices.jyseps1_2, params.indices.jyseps2_2,
-      params.indices.ny_inner);
+      params.num_y_processors, params.ny, 1,
+      params.indices.jyseps1_1, params.indices.jyseps2_1,
+      params.indices.jyseps1_2, params.indices.jyseps2_2,
+      params.indices.ny_inner,
+      params.mesh_topology); // <- pass topology
 
   EXPECT_TRUE(result.success);
   EXPECT_TRUE(result.reason.empty());
 }
+
 
 using BadBoutMeshDecompositionTest = BoutMeshDecompositionTest;
 
@@ -410,40 +483,116 @@ INSTANTIATE_TEST_SUITE_P(
     BadDoubleNull, BadBoutMeshDecompositionTest,
     ::testing::Values(
         DecompositionTestParameters{
-            1, 1, 4, 1, {3, 5, 6, 10, 0}, "Core region jyseps2_1", "CoreRegion1"},
+            1, 1, 4, 1, {3, 5, 6, 10, 0}, "Core region jyseps2_1", "CoreRegion1", MeshTopology::unconnected_double_null},
         DecompositionTestParameters{
-            1, 1, 4, 1, {3, 7, 8, 11, 0}, "Core region jyseps2_2", "CoreRegion2"},
+            1, 1, 4, 1, {3, 7, 8, 11, 0}, "Core region jyseps2_2", "CoreRegion2", MeshTopology::unconnected_double_null},
         DecompositionTestParameters{
-            1, 1, 4, 1, {3, 7, 8, 12, 11}, "leg region ny_inner", "UpperLeg1"},
+            1, 1, 4, 1, {3, 7, 8, 12, 11}, "leg region ny_inner", "UpperLeg1", MeshTopology::unconnected_double_null},
         DecompositionTestParameters{
-            1, 1, 4, 1, {3, 7, 8, 12, 8}, "leg region jyseps1_2-ny_inner+1", "UpperLeg2"},
+            1, 1, 4, 1, {3, 7, 8, 12, 8}, "leg region jyseps1_2-ny_inner+1", "UpperLeg2", MeshTopology::unconnected_double_null},
         DecompositionTestParameters{
-            1, 6, 25, 1, {3, 7, 15, 19, 12}, "leg region ny-jyseps2_2-1", "LegRegion"}),
+            1, 6, 25, 1, {3, 7, 15, 19, 12}, "leg region ny-jyseps2_2-1", "LegRegion", MeshTopology::unconnected_double_null}),
     DecompositionTestParametersToString);
 
 INSTANTIATE_TEST_SUITE_P(
     BadSingleNull, BadBoutMeshDecompositionTest,
     ::testing::Values(
         DecompositionTestParameters{
-            1, 1, 4, 1, {3, 4, 4, 6, 0}, "Core region jyseps2_2-jyseps1_1", "CoreRegion"},
+            1, 1, 4, 1, {3, 4, 4, 6, 0}, "Core region jyseps2_2-jyseps1_1", "CoreRegion", MeshTopology::single_null},
         DecompositionTestParameters{
-            1, 3, 13, 1, {3, 4, 4, 7, 0}, "leg region ny-jyseps2_2-1", "LegRegion"}),
+            1, 3, 13, 1, {3, 4, 4, 7, 0}, "leg region ny-jyseps2_2-1", "LegRegion", MeshTopology::single_null}),
     DecompositionTestParametersToString);
 
 TEST_P(BadBoutMeshDecompositionTest, BadSingleCoreYDecomposition) {
   const auto params = GetParam();
   auto result = bout::checkBoutMeshYDecomposition(
-      params.num_y_processors, params.ny, params.num_y_guards, params.indices.jyseps1_1,
-      params.indices.jyseps2_1, params.indices.jyseps1_2, params.indices.jyseps2_2,
-      params.indices.ny_inner);
+      params.num_y_processors, params.ny, params.num_y_guards,
+      params.indices.jyseps1_1, params.indices.jyseps2_1,
+      params.indices.jyseps1_2, params.indices.jyseps2_2,
+      params.indices.ny_inner,
+      params.mesh_topology); // <- pass topology
 
   using ::testing::HasSubstr;
 
   EXPECT_FALSE(result.success);
+  //Ask Peter about baddecomtest
   EXPECT_THAT(result.reason, HasSubstr(params.expected_message));
 }
 
-TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPETooManyXProcs) {
+TEST(BoutMeshDecompositionTest, InvalidYDecompositionBecuaseofTopologyUDN) {
+  int ny = 18;
+  int num_y_processors = 9;
+  int num_y_guards = 1;
+
+  int jyseps1_1_start = 1;
+  int jyseps2_1_start = 1;
+  int jyseps1_2_start = 17;
+  int jyseps2_2_start = 1;
+  int ny_inner_start = 1;
+
+  MeshTopology mesh_topology = MeshTopology::unconnected_double_null;
+
+  auto result = bout::findValidYDecomposition(ny, num_y_processors, num_y_guards,
+                                        jyseps1_1_start, jyseps2_1_start,
+                                        jyseps1_2_start, jyseps2_2_start,
+                                        ny_inner_start, mesh_topology);
+  EXPECT_FALSE(result.success);
+}
+
+
+TEST(BoutMeshDecompositionTest, BasicValidProcessDecompositionDefaults) {
+  // 8x6 grid, up to 16 processors
+  auto result = bout::findValidProcessorNum(/*ny=*/8, /*nx=*/6, /*NPES=*/16);
+  using ::testing::HasSubstr;
+  EXPECT_TRUE(result.success);
+  EXPECT_THAT(result.reason, HasSubstr("NPES=16"));
+  EXPECT_THAT(result.reason, HasSubstr("NXPE=2"));
+  EXPECT_THAT(result.reason, HasSubstr("NYPE=8"));
+}
+
+TEST(BoutMeshDecompositionTest, RespectsNXPE) {
+  int NXPE=2;
+  auto result = bout::findValidProcessorNum(/*ny=*/8, /*nx=*/8, /*NPES=*/16,
+                    NXPE);
+  using ::testing::HasSubstr;
+  EXPECT_TRUE(result.success);
+  EXPECT_THAT(result.reason, HasSubstr("NPES=16"));
+  EXPECT_THAT(result.reason, HasSubstr("NXPE=2"));
+  EXPECT_THAT(result.reason, HasSubstr("NYPE=8"));
+}
+
+TEST(BoutMeshDecompositionTest, RespectsNYPE) {
+  int NYPE=16;
+  auto result = bout::findValidProcessorNum(/*ny=*/16, /*nx=*/8, /*NPES=*/16,
+                    NYPE);
+  using ::testing::HasSubstr;
+  EXPECT_TRUE(result.success);
+  EXPECT_THAT(result.reason, HasSubstr("NPES=16"));
+  EXPECT_THAT(result.reason, HasSubstr("NXPE=1"));
+  EXPECT_THAT(result.reason, HasSubstr("NYPE=16"));
+}
+
+
+TEST(BoutMeshDecompositionTest, NoValidDecomposition) {
+  // Prime sizes, limited processors
+  auto result = bout::findValidProcessorNum(/*ny=*/7, /*nx=*/8, /*NPES=*/5);
+  using ::testing::HasSubstr;
+  EXPECT_FALSE(result.success);
+  EXPECT_THAT(result.reason, HasSubstr("No valid processor decomposition found"));
+}
+
+TEST(BoutMeshDecompositionTest, SingleProcessorOnly) {
+  auto result = bout::findValidProcessorNum(/*ny=*/10, /*nx=*/10, /*NPES=*/1);
+  using ::testing::HasSubstr;
+  EXPECT_TRUE(result.success);
+  EXPECT_THAT(result.reason, HasSubstr("NPES=1"));
+}
+
+  //End of new bit
+
+//End of the test
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPE) {
+  WithQuietOutput info{output_info};
   Options options{{"NXPE", 3}};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1, 8);
@@ -452,6 +601,7 @@ TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPETooManyXProcs) {
 }
 
 TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPETooManyYProcs) {
+  WithQuietOutput info{output_info};
   Options options{{"NYPE", 7}};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1, 8);
@@ -459,34 +609,16 @@ TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPETooManyYProcs) {
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
 
-TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPENotDivisible_0) {
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPENotDivisibleByNYPE) {
   WithQuietOutput info{output_info};
   Options options{{"NXPE", 5}};
 
-  BoutMeshExposer mesh(5, 24, 1, 1, 1, 8);
+  BoutMeshExposer mesh(4, 24, 1, 1, 1, 8);
 
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
 
-TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisible_0) {
-  WithQuietOutput info{output_info};
-  Options options{{"NYPE", 5}};
-
-  BoutMeshExposer mesh(5, 5, 1, 1, 1, 8);
-
-  EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
-}
-
-TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPENotDivisible_1) {
-  WithQuietOutput info{output_info};
-  Options options{{"NXPE", 5}};
-
-  BoutMeshExposer mesh(5, 24, 1, 1, 1, 8);
-
-  EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
-}
-
-TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisible_1) {
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisibleByNYPE) {
   WithQuietOutput info{output_info};
   Options options{{"NYPE", 5}};
 
@@ -498,7 +630,7 @@ TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisible_1) {
 TEST_F(BoutMeshTest, ChooseProcessorSplitNXPE) {
   Options options{{"NXPE", 4}};
 
-  BoutMeshExposer mesh(6, 24, 1, 1, 1, 8);
+  BoutMeshExposer mesh(4, 24, 1, 1, 1, 8);
 
   EXPECT_NO_THROW(mesh.chooseProcessorSplit(options));
 
@@ -523,6 +655,33 @@ TEST_F(BoutMeshTest, ChooseProcessorSplitNYPE) {
 
   EXPECT_EQ(mesh.getNXPE(), 2);
   EXPECT_EQ(mesh.getNYPE(), 4);
+}
+
+TEST(getMeshTopologyTest, ReturnsCFLWhenNoXPoints) {
+  BoutMeshExposer mesh(8, 8, 1, 1, 1);
+  mesh.numberOfXPoints = 0;
+  EXPECT_EQ(mesh.getMeshTopology(-1, 2, 3, 10, 5, 6, 7), MeshTopology::closed_field_line);
+}
+
+TEST(getMeshTopologyTest, ReturnsSNWhenOneXPoint) {
+  BoutMeshExposer mesh(8, 8, 1, 1, 1);
+  mesh.numberOfXPoints = 1;
+  EXPECT_EQ(mesh.getMeshTopology(1, 2, 2, 4, 5, 6, 7), MeshTopology::single_null);
+}
+
+
+TEST(getMeshTopologyTest, ReturnsUDNWhenTwoXPointsDifferentIndices) {
+  BoutMeshExposer mesh(8, 8, 1, 1, 1);
+  mesh.numberOfXPoints = 2;
+  // ny_inner not between jyseps1_2 and jyseps2_2
+  EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 25, 1, 2), MeshTopology::unconnected_double_null);
+}
+
+TEST(getMeshTopologyTest, ReturnsCDNWhenTwoXPointsSameIndices) {
+  BoutMeshExposer mesh(8, 8, 1, 1, 1);
+  mesh.numberOfXPoints = 2;
+  // ny_inner not between jyseps1_2 and jyseps2_2 but ixseps1 == ixseps2
+  EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 25, 1, 1), MeshTopology::connected_double_null);
 }
 
 struct FindProcessorParameters {
@@ -696,7 +855,7 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(BoutMeshProcNumTest, ProcNum) {
   WithQuietOutput info{output_info};
-  BoutMeshExposer mesh(6, 4, 1, 1, 1, 4);
+  BoutMeshExposer mesh(4, 4, 1, 1, 1, 4);
 
   const auto params = GetParam();
   Options options{{"NXPE", params.nxpe}};
@@ -1899,6 +2058,7 @@ TEST_F(BoutMeshTest, CreateXBoundariesDoubleNullInsideOutsideCore) {
   EXPECT_EQ(boundaries[0]->label, "core");
   EXPECT_EQ(boundaries[1]->label, "sol");
 }
+
 
 TEST_F(BoutMeshTest, CreateYBoundariesNoGuards) {
   BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 0, 1, 6, 0, 0}));

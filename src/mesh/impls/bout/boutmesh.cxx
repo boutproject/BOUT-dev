@@ -27,10 +27,7 @@
 #include "boutmesh.hxx"
 
 #include <bout/assert.hxx>
-#include <bout/assert.hxx>
 #include <bout/boundary_region.hxx>
-#include <bout/boundary_region_iter.hxx>
-#include <bout/bout_types.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
@@ -43,18 +40,10 @@
 #include <bout/field_data.hxx>
 #include <bout/fieldgroup.hxx>
 #include <bout/globals.hxx>
-#include <bout/field2d.hxx>
-#include <bout/field3d.hxx>
-#include <bout/field_data.hxx>
-#include <bout/fieldgroup.hxx>
-#include <bout/globals.hxx>
 #include <bout/griddata.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>
-#include <bout/region.hxx>
-#include <bout/sys/gettext.hxx>
-#include <bout/sys/range.hxx>
 #include <bout/parallel_boundary_region.hxx>
 #include <bout/region.hxx>
 #include <bout/sys/gettext.hxx>
@@ -65,25 +54,14 @@
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 
-#include <fmt/format.h>
-#include <fmt/ranges.h>
-
 #include <algorithm>
-#include <cmath>
-#include <cstddef>
 #include <cmath>
 #include <cstddef>
 #include <iterator>
 #include <list>
 #include <memory>
 #include <ostream>
-#include <list>
-#include <memory>
-#include <ostream>
 #include <set>
-#include <string>
-#include <utility>
-#include <vector>
 #include <string>
 #include <utility>
 #include <vector>
@@ -102,8 +80,6 @@ If you want the old setting, you have to specify mesh:symmetricGlobalY=false in 
   OPTION(options, symmetricGlobalY, true);
   OPTION(options, symmetricGlobalZ, false); // The default should be updated to true but
                                             // this breaks backwards compatibility
-  OPTION(options, symmetricGlobalZ, false); // The default should be updated to true but
-                                            // this breaks backwards compatibility
 
   comm_x = MPI_COMM_NULL;
   comm_inner = MPI_COMM_NULL;
@@ -117,6 +93,11 @@ BoutMesh::~BoutMesh() {
   // Delete the communication handles
   clear_handles();
 
+  // Delete the boundary regions
+  for (const auto& bndry : boundary) {
+    delete bndry;
+  }
+
   if (comm_x != MPI_COMM_NULL) {
     MPI_Comm_free(&comm_x);
   }
@@ -125,9 +106,6 @@ BoutMesh::~BoutMesh() {
   }
   if (comm_outer != MPI_COMM_NULL) {
     MPI_Comm_free(&comm_outer);
-  }
-  if (comm_xz != MPI_COMM_NULL) {
-    MPI_Comm_free(&comm_xz);
   }
   if (comm_xz != MPI_COMM_NULL) {
     MPI_Comm_free(&comm_xz);
@@ -216,14 +194,14 @@ MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Retu
   ixseps2   = ixseps2_;
 
   if (jyseps1_1 < 0 and jyseps2_2 >= ny - 1) {
-    return MeshTopology::CFL;
+    return MeshTopology::closed_field_line; //write whole thing
   } else if (jyseps2_1 == jyseps1_2) {
-    return MeshTopology::SN;
+    return MeshTopology::single_null;
   } else if (ixseps1 == ixseps2) {
-    return MeshTopology::CDN;
+    return MeshTopology::connected_double_null;
   } 
   else{
-    return MeshTopology::UDN;
+    return MeshTopology::unconnected_double_null;
    }
 }
 
@@ -242,7 +220,7 @@ namespace bout {
         jyseps1_1, jyseps2_1,
         jyseps1_2, jyseps2_2,
         ny_inner,
-        MeshTopology::UDN);
+        MeshTopology::unconnected_double_null);
   }
 
   } // namespace bout
@@ -268,7 +246,7 @@ namespace bout {
                                 jyseps1_1 + 1, num_local_y_points)};
     }
 
-    if (mesh_topology == MeshTopology::UDN || mesh_topology == MeshTopology::CDN){ 
+    if (mesh_topology == MeshTopology::unconnected_double_null || mesh_topology == MeshTopology::connected_double_null){ 
       if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
         return {
             false,
@@ -300,7 +278,16 @@ namespace bout {
                           "be a multiple of MYSUB ({:d})\n"),
                         jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, num_local_y_points)};
       }
+    }  else if ((mesh_topology == MeshTopology::single_null) || (mesh_topology == MeshTopology::closed_field_line)){
+    // Single Null or connected Double Null
+    if ((jyseps2_2 - jyseps1_1) % num_local_y_points != 0) {
+      return {
+          false,
+          fmt::format(_f("\t -> Core region jyseps2_2-jyseps1_1 ({:d}-{:d} = {:d}) must "
+                         "be a multiple of MYSUB ({:d})\n"),
+                      jyseps2_2, jyseps1_1, jyseps2_2 - jyseps1_1, num_local_y_points)};
     }
+  }
 
   if ((ny - 1 - jyseps2_2) % num_local_y_points != 0) {
     return {false, fmt::format(
@@ -390,7 +377,7 @@ namespace bout {
             for (int jyseps2_2 = jyseps2_2_start;
                 jyseps2_2 < ny; ++jyseps2_2) {
 
-              if (mesh_topology == MeshTopology::UDN || mesh_topology == MeshTopology::CDN){
+              if (mesh_topology == MeshTopology::unconnected_double_null || mesh_topology == MeshTopology::connected_double_null){
                 if (not (jyseps1_1 < jyseps2_1 &&
                   jyseps2_1 < ny_inner &&
                   ny_inner < jyseps1_2 &&
@@ -852,25 +839,6 @@ int BoutMesh::load() {
   // Initialize default coordinates
   getCoordinates();
 
-  // Set cached values
-  if (isFci()) {
-    has_boundary_lower_y = false;
-    has_boundary_upper_y = false;
-  } else {
-    {
-      int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
-      int allbndry = 0;
-      mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
-      has_boundary_lower_y = static_cast<bool>(allbndry);
-    }
-    {
-      int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
-      int allbndry = 0;
-      mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
-      has_boundary_upper_y = static_cast<bool>(allbndry);
-    }
-  }
-
   output_info.write(_("\tdone\n"));
 
   return 0;
@@ -962,7 +930,7 @@ void BoutMesh::createCommunicators() {
 
   proc[2] = NXPE; // Stride in processor rank
   // Outer SOL regions
-  if (mesh_topology == MeshTopology::SN || mesh_topology == MeshTopology::CFL) {
+  if (mesh_topology == MeshTopology::single_null || mesh_topology == MeshTopology::closed_field_line) {
     // Single-null and CFL
     //All processors with same PE_XIND
     TRACE("Creating Outer SOL communicators for Single Null operation");
@@ -989,7 +957,7 @@ void BoutMesh::createCommunicators() {
       MPI_Group_free(&group);
     }
 
-  } else if (mesh_topology == MeshTopology::CDN || mesh_topology == MeshTopology::UDN) {
+  } else if (mesh_topology == MeshTopology::connected_double_null || mesh_topology == MeshTopology::unconnected_double_null) {
     // Double null
     // Difference with UCD and CDN comes from a secondary inner SOL region (ixseps1 != ixseps2)
     TRACE("Creating Outer SOL communicators for Double Null operation");
@@ -1052,7 +1020,7 @@ void BoutMesh::createCommunicators() {
     }
 
     //Only for CDN and UDN outer core region. Add check to ensure only created for these topologies. Maybe topology should go inside second if.
-    if (mesh_topology == MeshTopology::CDN || mesh_topology == MeshTopology::UDN){
+    if (mesh_topology == MeshTopology::connected_double_null || mesh_topology == MeshTopology::unconnected_double_null){
       if (jyseps2_2 > jyseps1_2) {
         proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
         proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
@@ -1168,7 +1136,8 @@ void BoutMesh::createXBoundaries() {
     //
     // For CDN/UDN the y-range (jyseps1_2, jyseps2_2] is the outer core leg,
     // so it gets a "core" boundary.
-    if ((mesh_topology == MeshTopology::CDN) or (mesh_topology == MeshTopology::UDN)){
+    if ((mesh_topology == MeshTopology::connected_double_null) or (mesh_topology == MeshTopology::unconnected_double_null)
+        or (mesh_topology == MeshTopology::closed_field_line)){
       // CDN/UDN have two core legs; CFL is all core (no X-points).
       // All three need both y-ranges checked.
       const bool in_core = ((yg > jyseps1_1) and (yg <= jyseps2_1))
@@ -1180,7 +1149,7 @@ void BoutMesh::createXBoundaries() {
         boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend, this));
       }
     }
-    else if (mesh_topology == MeshTopology::SN){
+    else if (mesh_topology == MeshTopology::single_null){
       //SN has only one core region, but it goes from (jyseps1_1, jyseps2_2], ny_inner = jyseps1_2 = jyseps2_1 are not relevant for that case. 
       const bool in_core = ((yg > jyseps1_1) and (yg <= jyseps2_2));
 
@@ -1217,21 +1186,21 @@ void BoutMesh::createYBoundaries() {
       (include_corner_cells and ODATA_DEST == -1) ? LocalNx - 1 : xend;
 
   if ((UDATA_INDEST < 0) && (UDATA_XSPLIT > yboundary_xstart)) {
-    boundary.push_back(bout::boundary::NewBoundaryRegionYUp(
-        "upper_target", yboundary_xstart, UDATA_XSPLIT - 1, this));
+    boundary.push_back(
+        new BoundaryRegionYUp("upper_target", yboundary_xstart, UDATA_XSPLIT - 1, this));
   }
   if ((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= yboundary_xend)) {
-    boundary.push_back(bout::boundary::NewBoundaryRegionYUp("upper_target", UDATA_XSPLIT,
-                                                            yboundary_xend, this));
+    boundary.push_back(
+        new BoundaryRegionYUp("upper_target", UDATA_XSPLIT, yboundary_xend, this));
   }
 
   if ((DDATA_INDEST < 0) && (DDATA_XSPLIT > yboundary_xstart)) {
-    boundary.push_back(bout::boundary::NewBoundaryRegionYDown(
-        "lower_target", yboundary_xstart, DDATA_XSPLIT - 1, this));
+    boundary.push_back(new BoundaryRegionYDown("lower_target", yboundary_xstart,
+                                               DDATA_XSPLIT - 1, this));
   }
   if ((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= yboundary_xend)) {
-    boundary.push_back(bout::boundary::NewBoundaryRegionYDown(
-        "lower_target", DDATA_XSPLIT, yboundary_xend, this));
+    boundary.push_back(
+        new BoundaryRegionYDown("lower_target", DDATA_XSPLIT, yboundary_xend, this));
   }
 }
 
@@ -1282,9 +1251,7 @@ std::set<std::string> BoutMesh::getPossibleBoundaries() const {
         auto boundaries = mesh_copy.getBoundaries();
         std::transform(boundaries.begin(), boundaries.end(),
                        std::inserter(all_boundaries, all_boundaries.begin()),
-                       [](const std::shared_ptr<BoundaryRegionBase>& boundary) {
-                         return boundary->label;
-                       });
+                       [](BoundaryRegionBase* boundary) { return boundary->label; });
       };
 
   // This is sufficient to get the SOL boundary, if it exists
@@ -2338,7 +2305,7 @@ void BoutMesh::topology() {
                    true);                                 // Twist-shift this connection
     set_connection(jyseps1_1, jyseps2_2 + 1, 0, ixseps1); // No twist-shift in PF region
 
-  } else if (mesh_topology == MeshTopology::CDN || mesh_topology == MeshTopology::UDN) {
+  } else if (mesh_topology == MeshTopology::connected_double_null || mesh_topology == MeshTopology::unconnected_double_null) {
     /*************** DOUBLE NULL OPERATION *******************/
     /* UPPER LEGS: Do not have to be the same length as each
        other or lower legs, but do have to have an integer number
@@ -2385,38 +2352,6 @@ void BoutMesh::topology() {
 
     // Add target plates at the top
     add_target(ny_inner - 1, 0, nx);
-  }
-
-  // Additional limiters
-  // Each limiter needs 3 indices: A Y index, start and end X indices
-  int limiter_count = 0;
-  Mesh::get(limiter_count, "limiter_count", 0);
-  if (limiter_count > 0) {
-    std::vector<int> limiter_yinds;
-    if (!source->get(this, limiter_yinds, "limiter_yinds", limiter_count)) {
-      throw BoutException("Couldn't read limiter_yinds vector of length {} from mesh",
-                          limiter_count);
-    }
-    std::vector<int> limiter_xstarts;
-    if (!source->get(this, limiter_xstarts, "limiter_xstarts", limiter_count)) {
-      throw BoutException("Couldn't read limiter_xstarts vector of length {} from mesh",
-                          limiter_count);
-    }
-    std::vector<int> limiter_xends;
-    if (!source->get(this, limiter_xends, "limiter_xends", limiter_count)) {
-      throw BoutException("Couldn't read limiter_xend vector of length {} from mesh",
-                          limiter_count);
-    }
-
-    for (int i = 0; i < limiter_count; ++i) {
-      const int yind = limiter_yinds[i];
-      const int xstart = limiter_xstarts[i];
-      const int xend = limiter_xends[i];
-      output_info.write("Adding a limiter between y={} and {}. X indices {} to {}\n",
-                        yind, yind + 1, xstart, xend);
-      add_target(yind, xstart, xend);
-    }
-  }
   } 
 
   // Additional limiters
@@ -2450,7 +2385,7 @@ void BoutMesh::topology() {
     }
   }
 
-  if (mesh_topology == MeshTopology::UDN || mesh_topology == MeshTopology::CDN) {
+  if (mesh_topology == MeshTopology::unconnected_double_null || mesh_topology == MeshTopology::connected_double_null) {
       //This is for DN topologies
       if ((ixseps_inner > 0)
       && (((PE_YIND * MYSUB > jyseps1_1) && (PE_YIND * MYSUB <= jyseps2_1))
@@ -2626,14 +2561,14 @@ void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin
 int BoutMesh::pack_data(const std::vector<Field*>& var_list, int xge, int xlt, int yge,
                         int ylt, BoutReal* buffer) const {
 
-  using enum Field::FieldType;
+  using FieldType = Field::FieldType;
   int len = 0;
   const int zge = 0;
   const int zlt = LocalNz;
 
   for (const auto& var : var_list) {
     switch (var->field_type()) {
-    case field3d: {
+    case FieldType::field3d: {
       const auto* var3d_ref_ptr = dynamic_cast<Field3D*>(var);
       ASSERT0(var3d_ref_ptr != nullptr);
       const auto& var3d_ref = *var3d_ref_ptr;
@@ -2647,7 +2582,7 @@ int BoutMesh::pack_data(const std::vector<Field*>& var_list, int xge, int xlt, i
       }
       break;
     }
-    case field2d: {
+    case FieldType::field2d: {
       const auto* var2d_ref_ptr = dynamic_cast<Field2D*>(var);
       ASSERT0(var2d_ref_ptr != nullptr);
       const auto& var2d_ref = *var2d_ref_ptr;
@@ -2659,7 +2594,7 @@ int BoutMesh::pack_data(const std::vector<Field*>& var_list, int xge, int xlt, i
       }
       break;
     }
-    case fieldperp: {
+    case FieldType::fieldperp: {
       const auto* varperp_ref_ptr = dynamic_cast<FieldPerp*>(var);
       ASSERT0(varperp_ref_ptr != nullptr);
       const auto& varperp_ref = *varperp_ref_ptr;
@@ -2680,14 +2615,14 @@ int BoutMesh::pack_data(const std::vector<Field*>& var_list, int xge, int xlt, i
 int BoutMesh::unpack_data(const std::vector<Field*>& var_list, int xge, int xlt, int yge,
                           int ylt, const BoutReal* buffer) const {
 
-  using enum Field::FieldType;
+  using FieldType = Field::FieldType;
   int len = 0;
   const int zge = 0;
   const int zlt = LocalNz;
 
   for (const auto& var : var_list) {
     switch (var->field_type()) {
-    case field3d: {
+    case FieldType::field3d: {
       auto* var3d_ref_ptr = dynamic_cast<Field3D*>(var);
       ASSERT0(var3d_ref_ptr != nullptr);
       auto& var3d_ref = *var3d_ref_ptr;
@@ -2701,7 +2636,7 @@ int BoutMesh::unpack_data(const std::vector<Field*>& var_list, int xge, int xlt,
       }
       break;
     }
-    case field2d: {
+    case FieldType::field2d: {
       auto* var2d_ref_ptr = dynamic_cast<Field2D*>(var);
       ASSERT0(var2d_ref_ptr != nullptr);
       auto& var2d_ref = *var2d_ref_ptr;
@@ -2713,7 +2648,7 @@ int BoutMesh::unpack_data(const std::vector<Field*>& var_list, int xge, int xlt,
       }
       break;
     }
-    case fieldperp: {
+    case FieldType::fieldperp: {
       auto* varperp_ref_ptr = dynamic_cast<FieldPerp*>(var);
       ASSERT0(varperp_ref_ptr != nullptr);
       auto& varperp_ref = *varperp_ref_ptr;
@@ -2753,8 +2688,9 @@ bool BoutMesh::periodicY(int jx, BoutReal& ts) const {
 int BoutMesh::numberOfYBoundaries() const {
   if (jyseps2_1 != jyseps1_2) {
     return 2;
+  } else {
+    return 1;
   }
-  return 1;
 }
 
 std::pair<bool, BoutReal> BoutMesh::hasBranchCutLower(int jx) const {
@@ -3194,11 +3130,6 @@ void BoutMesh::addBoundaryRegions() {
 }
 
 RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
-#if CHECK > 0
-  if (this->isFci()) {
-    throw BoutException("FCI should never use this iterator");
-  }
-#endif
 
   int xs = 0;
   int xe = LocalNx - 1;
@@ -3234,11 +3165,6 @@ RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
-#if CHECK > 0
-  if (this->isFci()) {
-    throw BoutException("FCI should never use this iterator");
-  }
-#endif
 
   int xs = 0;
   int xe = LocalNx - 1;
@@ -3273,12 +3199,6 @@ RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryLowerY() const {
-#if CHECK > 0
-  if (this->isFci()) {
-    throw BoutException("FCI should never use this iterator");
-  }
-#endif
-
   int xs = 0;
   int xe = LocalNx - 1;
   if ((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart)) {
@@ -3308,12 +3228,6 @@ RangeIterator BoutMesh::iterateBndryLowerY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
-#if CHECK > 0
-  if (this->isFci()) {
-    throw BoutException("FCI should never use this iterator");
-  }
-#endif
-
   int xs = 0;
   int xe = LocalNx - 1;
 
@@ -3348,12 +3262,6 @@ RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
-#if CHECK > 0
-  if (this->isFci()) {
-    throw BoutException("FCI should never use this iterator");
-  }
-#endif
-
   int xs = 0;
   int xe = LocalNx - 1;
 
@@ -3388,12 +3296,6 @@ RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryUpperY() const {
-#if CHECK > 0
-  if (this->isFci()) {
-    throw BoutException("FCI should never use this iterator");
-  }
-#endif
-
   int xs = 0;
   int xe = LocalNx - 1;
   if ((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart)) {
@@ -3422,16 +3324,14 @@ RangeIterator BoutMesh::iterateBndryUpperY() const {
   return RangeIterator(xs, xe);
 }
 
-std::vector<std::shared_ptr<BoundaryRegionBase>> BoutMesh::getBoundaries() const {
-  return boundary;
-}
+std::vector<BoundaryRegion*> BoutMesh::getBoundaries() { return boundary; }
 
-using bout::boundary::BoundaryRegionFCI;
-std::vector<std::shared_ptr<BoundaryRegionFCI>>
-BoutMesh::getBoundariesPar(BoundaryParType type) const {
+std::vector<std::shared_ptr<BoundaryRegionPar>>
+BoutMesh::getBoundariesPar(BoundaryParType type) {
   return par_boundary[static_cast<int>(type)];
 }
-void BoutMesh::addBoundaryPar(std::shared_ptr<BoundaryRegionFCI> bndry,
+
+void BoutMesh::addBoundaryPar(std::shared_ptr<BoundaryRegionPar> bndry,
                               BoundaryParType type) {
   output_info << "Adding new parallel boundary: " << bndry->label << endl;
   switch (type) {

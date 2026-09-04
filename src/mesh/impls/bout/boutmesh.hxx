@@ -5,18 +5,13 @@
 #include "mpi.h"
 
 #include "bout/bout_types.hxx"
-#include "bout/field_data.hxx"
 #include "bout/unused.hxx"
 #include <bout/mesh.hxx>
 
-#include <array>
 #include <list>
-#include <memory>
 #include <set>
 #include <string>
 #include <vector>
-
-class Field;
 
 class Field;
 
@@ -26,10 +21,10 @@ class Field;
 /// conventions.
 
 BOUT_ENUM_CLASS(MeshTopology,
-                CFL,  // Closed field line
-                SN,   // Single null
-                UDN,  // Unconnected double null
-                CDN); // Connected double null
+                closed_field_line,  // Closed field line
+                single_null,   // Single null
+                unconnected_double_null,  // Unconnected double null
+                connected_double_null); // Connected double null
 
 
 class BoutMesh : public Mesh {
@@ -84,13 +79,6 @@ public:
   int getYProcIndex() const override; ///< This processor's index in Y direction
   int getZProcIndex() const override; ///< This processor's index in Z direction
   int getProcIndex(int X, int Y, int Z) const override;
-  int getNXPE() const override;       ///< The number of processors in the X direction
-  int getNYPE() const override;       ///< The number of processors in the Y direction
-  int getNZPE() const override;       ///< The number of processors in the Z direction
-  int getXProcIndex() const override; ///< This processor's index in X direction
-  int getYProcIndex() const override; ///< This processor's index in Y direction
-  int getZProcIndex() const override; ///< This processor's index in Z direction
-  int getProcIndex(int X, int Y, int Z) const override;
 
   /////////////////////////////////////////////
   // X communications
@@ -134,7 +122,6 @@ public:
   MPI_Comm getXcomm(int UNUSED(jy)) const override { return comm_x; }
   /// Return communicator containing all processors in Y
   MPI_Comm getYcomm(int xpos) const override;
-  MPI_Comm getXZcomm() const override { return comm_xz; }
   MPI_Comm getXZcomm() const override { return comm_xz; }
 
   /// Is local X index \p jx periodic in Y?
@@ -190,14 +177,11 @@ public:
   bool hasBndryLowerY() const override { return has_boundary_lower_y; }
   bool hasBndryUpperY() const override { return has_boundary_upper_y; }
 
-  bool hasBndryLowerY() const override { return has_boundary_lower_y; }
-  bool hasBndryUpperY() const override { return has_boundary_upper_y; }
-
   // Boundary regions
-  std::vector<std::shared_ptr<BoundaryRegionBase>> getBoundaries() const override;
-  std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>
-  getBoundariesPar(BoundaryParType type) const override;
-  void addBoundaryPar(std::shared_ptr<bout::boundary::BoundaryRegionFCI> bndry,
+  std::vector<BoundaryRegion*> getBoundaries() override;
+  std::vector<std::shared_ptr<BoundaryRegionPar>>
+  getBoundariesPar(BoundaryParType type) override;
+  void addBoundaryPar(std::shared_ptr<BoundaryRegionPar> bndry,
                       BoundaryParType type) override;
   std::set<std::string> getPossibleBoundaries() const override;
 
@@ -207,10 +191,8 @@ public:
   BoutReal GlobalX(int jx) const override;
   BoutReal GlobalY(int jy) const override;
   BoutReal GlobalZ(int jz) const override;
-  BoutReal GlobalZ(int jz) const override;
   BoutReal GlobalX(BoutReal jx) const override;
   BoutReal GlobalY(BoutReal jy) const override;
-  BoutReal GlobalZ(BoutReal jz) const override;
   BoutReal GlobalZ(BoutReal jz) const override;
 
   BoutReal getIxseps1() const { return ixseps1; }
@@ -244,7 +226,6 @@ protected:
   /// `getPossibleBoundaries`. \p create_regions controls whether or
   /// not the various `Region`s are created on the new mesh
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
-           int pe_xind, int pe_yind, bool symmetric_X, bool symmetric_Y, bool periodic_X_,
            int pe_xind, int pe_yind, bool symmetric_X, bool symmetric_Y, bool periodic_X_,
            int ixseps1_, int ixseps2_, int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
            int jyseps2_2_, int ny_inner_, bool create_regions = true);
@@ -283,8 +264,6 @@ protected:
     int jyseps1_2;
     int jyseps2_2;
     int ny_inner;
-
-    auto operator<=>(const YDecompositionIndices&) const = default;
   };
 
   /// Version of `setYDecompositionindices` that returns the values
@@ -340,27 +319,15 @@ private:
   int PE_XIND; ///< X index of this processor
   int NXPE;    ///< Number of processors in the X direction
 
-  int PE_XIND; ///< X index of this processor
-  int NXPE;    ///< Number of processors in the X direction
-
   int PE_YIND; ///< Y index of this processor
   int NYPE;    ///< Number of processors in the Y direction
-  int NYPE;    ///< Number of processors in the Y direction
 
-  int PE_ZIND{0}; ///< Z index of this processor
-  int NZPE{1};    ///< Number of processors in the Z direction
   int PE_ZIND{0}; ///< Z index of this processor
   int NZPE{1};    ///< Number of processors in the Z direction
 
   /// Is this processor in the core region?
   bool MYPE_IN_CORE{false};
 
-  /// Returns the global X index given a local index
-  BoutReal getGlobalXIndex(BoutReal xloc) const;
-  /// Returns the global Y index given a local index
-  BoutReal getGlobalYIndex(BoutReal yloc) const;
-  /// Returns the global Z index given a local index
-  BoutReal getGlobalZIndex(BoutReal zloc) const;
   /// Returns the global X index given a local index
   BoutReal getGlobalXIndex(BoutReal xloc) const;
   /// Returns the global Y index given a local index
@@ -398,8 +365,6 @@ protected:
     int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
     int DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT;
     int IDATA_DEST, ODATA_DEST; // X inner and outer destinations
-
-    auto operator<=>(const ConnectionInfo&) const = default;
   };
 
   /// Return the communication parameters as calculated by `topology`
@@ -421,9 +386,6 @@ private:
   // Settings
   bool TwistShift; // Use a twist-shift condition in core?
 
-  bool symmetricGlobalX;        ///< Use a symmetric definition in `GlobalX()` function
-  bool symmetricGlobalY;        ///< Use a symmetric definition in `GlobalY()` function
-  bool symmetricGlobalZ{false}; ///< Use a symmetric definition in `GlobalZ()` function
   bool symmetricGlobalX;        ///< Use a symmetric definition in `GlobalX()` function
   bool symmetricGlobalY;        ///< Use a symmetric definition in `GlobalY()` function
   bool symmetricGlobalZ{false}; ///< Use a symmetric definition in `GlobalZ()` function
@@ -468,13 +430,11 @@ protected:
   //void findValidProcessorNum(int ny, int nx);
 
 private:
-  std::vector<std::shared_ptr<BoundaryRegionBase>> boundary; // Vector of boundary regions
-  std::array<std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>,
+  std::vector<BoundaryRegion*> boundary; // Vector of boundary regions
+  std::array<std::vector<std::shared_ptr<BoundaryRegionPar>>,
              static_cast<int>(BoundaryParType::SIZE)>
       par_boundary; // Vector of parallel boundary regions
 
-  bool has_boundary_lower_y{false};
-  bool has_boundary_upper_y{false};
   bool has_boundary_lower_y{false};
   bool has_boundary_upper_y{false};
   //////////////////////////////////////////////////
@@ -544,6 +504,7 @@ private:
   /// Copy data from a buffer back into the fields
   int unpack_data(const std::vector<Field*>& var_list, int xge, int xlt, int yge, int ylt,
                   const BoutReal* buffer) const;
+
 };
 
 namespace {
