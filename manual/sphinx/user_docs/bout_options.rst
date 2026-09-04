@@ -486,12 +486,9 @@ can be set with the global option ``grid``, or ``mesh:file``:
     [mesh]
     file = "cbm18_8_y064_x260.nc"
 
-Relative grid paths are first resolved relative to ``datadir``. If that
-file does not exist, BOUT++ falls back to resolving the path relative to
-the current working directory. If matching files exist in both places,
+Relative grid paths are resolved relative to ``datadir`` and the current working directory. If matching files exist in both places,
 BOUT++ throws an error rather than guessing which one to use. To avoid
-ambiguity entirely, use an explicit absolute path when the grid file is
-not inside ``datadir``.
+ambiguity, an explicit absolute path for the grid file can be used.
 
 
 Communications
