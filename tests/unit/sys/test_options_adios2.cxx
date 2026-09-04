@@ -92,7 +92,7 @@ TEST_F(OptionsAdios2Test, ReadThenOverwriteSameFileTwice) {
     EXPECT_DOUBLE_EQ(data["field"].as<Field3D>(bout::globals::mesh)(0, 0, 0),
                      expected + 1.0);
 
-    data["scalar"] = expected + 1;
+    data["scalar"].force(expected + 1);
     data["field"] = Field3D(expected + 2.0);
 
     OptionsIO::create(file_options)->write(data);
