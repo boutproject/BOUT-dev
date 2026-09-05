@@ -549,7 +549,8 @@ class HypreMatrix {
   std::vector<HYPRE_BigInt>* I;
   std::vector<std::vector<HYPRE_BigInt>>* J;
   std::vector<std::vector<HYPRE_Complex>>* V;
-  bool elimBE{false};
+  /// Enable reduction of boundary equations before assembling the Hypre matrix.
+  bool use_boundary_elimination{false};
   BoundaryEliminationPtr boundary_elimination;
   HypreLib hyprelib{};
 
@@ -575,7 +576,8 @@ public:
         initialised(other.initialised), yoffset(other.yoffset),
         parallel_transform(other.parallel_transform), assembled(other.assembled),
         num_rows(other.num_rows), I(other.I), J(other.J), V(other.V),
-        elimBE(other.elimBE), boundary_elimination(other.boundary_elimination) {
+        use_boundary_elimination(other.use_boundary_elimination),
+        boundary_elimination(other.boundary_elimination) {
     std::swap(hypre_matrix, other.hypre_matrix);
     std::swap(parallel_matrix, other.parallel_matrix);
   }
@@ -596,7 +598,7 @@ public:
     I = other.I;
     J = other.J;
     V = other.V;
-    elimBE = other.elimBE;
+    use_boundary_elimination = other.use_boundary_elimination;
     boundary_elimination = other.boundary_elimination;
     return *this;
   }
@@ -896,7 +898,8 @@ public:
     return Element(*this, global_row, global_column, positions, weights);
   }
 
-  void setElimBE() { elimBE = true; }
+  /// Enable elimination of boundary equations during matrix assembly.
+  void setUseBoundaryElimination() { use_boundary_elimination = true; }
 
   void assemble() {
     CALI_CXX_MARK_FUNCTION;
@@ -928,7 +931,7 @@ public:
     }
 
     // Eliminate boundary condition equations in hypre SetValues input arguments
-    if (elimBE) {
+    if (use_boundary_elimination) {
       HYPRE_Int* bi_array;
       HYPRE_Int* row_indexes;
       int nb = index_converter->getRegionBndry().size();
@@ -995,7 +998,7 @@ public:
     result.I = I; // We want the pointer to transfer so this works like a view
     result.J = J;
     result.V = V;
-    result.elimBE = elimBE;
+    result.use_boundary_elimination = use_boundary_elimination;
     result.boundary_elimination = boundary_elimination;
 
     return result;

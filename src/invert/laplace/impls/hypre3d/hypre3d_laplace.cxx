@@ -423,7 +423,7 @@ void LaplaceHypre3d::updateMatrix3D() {
     operator3D.ydown(ydown)(l, l.ym().zp()) += -C_d2f_dydz;
     operator3D.ydown(ydown)(l, l.ym().zm()) += C_d2f_dydz;
   }
-  operator3D.setElimBE();
+  operator3D.setUseBoundaryElimination();
   operator3D.assemble();
 
   if (print_matrix) {
