@@ -152,6 +152,15 @@ within the physics module using ``setGlobalFlags``,
     lap->setOuterBoundaryFlags(Outer_Flags_Value);
     lap->setFlags(Flags_Value);
 
+.. note::
+
+   Known issue: ``LaplaceHypre3d`` currently uses boundary-equation elimination in
+   its Hypre backend. At domain corners where an x-boundary and y-boundary
+   condition meet, the reduced system does not preserve both corner constraints
+   exactly. The returned corner values from ``LaplaceHypre3d`` should therefore be
+   treated as unreliable. This is usually acceptable because those corner values
+   are not normally used elsewhere in BOUT++ calculations.
+
 
 .. _tab-laplacesettings:
 .. table:: Laplacian inversion options

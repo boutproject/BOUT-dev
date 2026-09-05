@@ -378,6 +378,7 @@ set(BOUT_SOURCES
     ./src/sys/expressionparser.cxx
     ./src/sys/generator_context.cxx
     ./src/sys/hyprelib.cxx
+    ./src/sys/hypre_interface.cxx
     ./src/sys/msg_stack.cxx
     ./src/sys/options.cxx
     ./src/sys/options/optionparser.hxx

@@ -1,15 +1,19 @@
+#include "bout/build_defines.hxx"
+
 #if BOUT_HAS_HYPRE
 
 #include "HYPRE.h"
 #include "HYPRE_IJ_mv.h"
 #include "HYPRE_parcsr_ls.h"
 
+#include <array>
 #include <cmath>
+#include <set>
+#include <vector>
 
 #include "fake_mesh_fixture.hxx"
 #include "test_extras.hxx"
 
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include "bout/field3d.hxx"
@@ -154,13 +158,30 @@ TYPED_TEST(HypreVectorTest, Swap) {
 //////////////////////////////////////////////////
 // HypreMatrix tests
 
-class MockTransform : public ParallelTransformIdentity {
+class TestParallelTransform : public ParallelTransformIdentity {
 public:
-  explicit MockTransform(Mesh& mesh_in) : ParallelTransformIdentity(mesh_in){};
-  MOCK_METHOD(std::vector<PositionsAndWeights>, getWeightsForYUpApproximation,
-              (int i, int j, int k), (override));
-  MOCK_METHOD(std::vector<PositionsAndWeights>, getWeightsForYDownApproximation,
-              (int i, int j, int k), (override));
+  explicit TestParallelTransform(Mesh& mesh_in) : ParallelTransformIdentity(mesh_in) {}
+
+  std::vector<PositionsAndWeights> getWeightsForYUpApproximation(int i, int j,
+                                                                 int k) override {
+    last_up = {i, j, k};
+    up_calls += 1;
+    return y_up_weights;
+  }
+
+  std::vector<PositionsAndWeights> getWeightsForYDownApproximation(int i, int j,
+                                                                   int k) override {
+    last_down = {i, j, k};
+    down_calls += 1;
+    return y_down_weights;
+  }
+
+  std::vector<PositionsAndWeights> y_up_weights;
+  std::vector<PositionsAndWeights> y_down_weights;
+  std::array<int, 3> last_up{-1, -1, -1};
+  std::array<int, 3> last_down{-1, -1, -1};
+  int up_calls{0};
+  int down_calls{0};
 };
 
 template <class T>
@@ -169,7 +190,7 @@ public:
   WithQuietOutput all{output};
   T field;
   IndexerPtr<T> indexer;
-  MockTransform* pt{nullptr};
+  TestParallelTransform* pt{nullptr};
   std::vector<ParallelTransform::PositionsAndWeights> yUpWeights, yDownWeights;
   using ind_type = typename T::ind_type;
   ind_type indexA, indexB, iWU0, iWU1, iWU2, iWD0, iWD1, iWD2;
@@ -199,7 +220,8 @@ public:
     iWU1 = indexB;
     iWU2 = indexB.xp();
 
-    auto transform = bout::utils::make_unique<MockTransform>(*bout::globals::mesh);
+    auto transform =
+        bout::utils::make_unique<TestParallelTransform>(*bout::globals::mesh);
     ParallelTransform::PositionsAndWeights wUp0 = {iWU0.x(), iWU0.y(), iWU0.z(), 0.5},
                                            wUp1 = {iWU1.x(), iWU1.y(), iWU1.z(), 1.0},
                                            wUp2 = {iWU2.x(), iWU2.y(), iWU2.z(), 0.5},
@@ -208,8 +230,14 @@ public:
                                            wDown2 = {iWD2.x(), iWD2.y(), iWD2.z(), 0.5};
     yUpWeights = {wUp0, wUp1, wUp2};
     yDownWeights = {wDown0, wDown1, wDown2};
-    pt = transform.get();
-    field.getCoordinates()->setParallelTransform(std::move(transform));
+    transform->y_up_weights = yUpWeights;
+    transform->y_down_weights = yDownWeights;
+    bout::globals::mesh->getCoordinates()->setParallelTransform(std::move(transform));
+    pt = dynamic_cast<TestParallelTransform*>(
+        &bout::globals::mesh->getCoordinates()->getParallelTransform());
+    if (pt == nullptr) {
+      throw BoutException("Failed to install TestParallelTransform in HypreMatrixTest");
+    }
   }
   virtual ~HypreMatrixTest() = default;
 };
@@ -307,7 +335,9 @@ TYPED_TEST(HypreMatrixTest, SetElements) {
       HYPRE_Int ncolumns{1};
       HYPRE_Complex value;
       BOUT_OMP_SAFE(critical)
-      { HYPRE_IJMatrixGetValues(raw_matrix, 1, &ncolumns, &i_index, &j_index, &value); }
+      {
+        HYPRE_IJMatrixGetValues(raw_matrix, 1, &ncolumns, &i_index, &j_index, &value);
+      }
       if (i == j) {
         EXPECT_EQ(static_cast<BoutReal>(value),
                   static_cast<BoutReal>(this->indexer->getGlobal(i)));
@@ -382,8 +412,6 @@ auto IsHypreMatrixEqual(const HypreMatrix<T>& matrix, const HypreMatrix<T>& refe
 }
 
 TYPED_TEST(HypreMatrixTest, YUp) {
-  using namespace ::testing;
-
   HypreMatrix<TypeParam> matrix(this->indexer);
 
   if constexpr (std::is_same_v<TypeParam, FieldPerp>) {
@@ -392,21 +420,24 @@ TYPED_TEST(HypreMatrixTest, YUp) {
   }
 
   HypreMatrix<TypeParam> expected(this->indexer);
-  MockTransform* transform = this->pt;
   const BoutReal value = 42.0;
 
   if constexpr (std::is_same_v<TypeParam, Field2D>) {
     expected(this->indexA, this->indexB) = value;
   } else {
-    EXPECT_CALL(*transform, getWeightsForYUpApproximation(
-                                this->indexB.x(), this->indexA.y(), this->indexB.z()))
-        .WillOnce(Return(this->yUpWeights));
     expected(this->indexA, this->iWU0) = this->yUpWeights[0].weight * value;
     expected(this->indexA, this->iWU1) = this->yUpWeights[1].weight * value;
     expected(this->indexA, this->iWU2) = this->yUpWeights[2].weight * value;
   }
 
   matrix.yup()(this->indexA, this->indexB) = value;
+
+  if constexpr (std::is_same_v<TypeParam, Field3D>) {
+    EXPECT_EQ(this->pt->up_calls, 1);
+    EXPECT_EQ(this->pt->last_up[0], this->indexB.x());
+    EXPECT_EQ(this->pt->last_up[1], this->indexA.y());
+    EXPECT_EQ(this->pt->last_up[2], this->indexB.z());
+  }
 
   expected.assemble();
   matrix.assemble();
@@ -415,8 +446,6 @@ TYPED_TEST(HypreMatrixTest, YUp) {
 }
 
 TYPED_TEST(HypreMatrixTest, YDown) {
-  using namespace ::testing;
-
   HypreMatrix<TypeParam> matrix(this->indexer);
 
   if constexpr (std::is_same_v<TypeParam, FieldPerp>) {
@@ -425,21 +454,24 @@ TYPED_TEST(HypreMatrixTest, YDown) {
   }
 
   HypreMatrix<TypeParam> expected(this->indexer);
-  MockTransform* transform = this->pt;
   const BoutReal value = 42.0;
 
   if constexpr (std::is_same_v<TypeParam, Field2D>) {
     expected(this->indexB, this->indexA) = value;
   } else {
-    EXPECT_CALL(*transform, getWeightsForYDownApproximation(
-                                this->indexA.x(), this->indexB.y(), this->indexA.z()))
-        .WillOnce(Return(this->yDownWeights));
     expected(this->indexB, this->iWD0) = this->yDownWeights[0].weight * value;
     expected(this->indexB, this->iWD1) = this->yDownWeights[1].weight * value;
     expected(this->indexB, this->iWD2) = this->yDownWeights[2].weight * value;
   }
 
   matrix.ydown()(this->indexB, this->indexA) = value;
+
+  if constexpr (std::is_same_v<TypeParam, Field3D>) {
+    EXPECT_EQ(this->pt->down_calls, 1);
+    EXPECT_EQ(this->pt->last_down[0], this->indexA.x());
+    EXPECT_EQ(this->pt->last_down[1], this->indexB.y());
+    EXPECT_EQ(this->pt->last_down[2], this->indexA.z());
+  }
 
   expected.assemble();
   matrix.assemble();
@@ -460,6 +492,221 @@ TYPED_TEST(HypreMatrixTest, YNext0) {
   matrix.assemble();
 
   EXPECT_TRUE(IsHypreMatrixEqual(matrix, expected));
+}
+
+namespace {
+
+struct RawBoundaryEliminationSystem {
+  std::vector<HYPRE_Int> ncols;
+  std::vector<HYPRE_BigInt> rows;
+  std::vector<HYPRE_BigInt> cols;
+  std::vector<HYPRE_Complex> values;
+  std::vector<HYPRE_Int> boundary_rows;
+  HYPRE_Int* row_indexes{nullptr};
+  std::unique_ptr<bout::BoundaryElimination> elimination;
+
+  RawBoundaryEliminationSystem(std::initializer_list<HYPRE_Int> ncols_in,
+                               std::initializer_list<HYPRE_BigInt> rows_in,
+                               std::initializer_list<HYPRE_BigInt> cols_in,
+                               std::initializer_list<HYPRE_Complex> values_in,
+                               std::initializer_list<HYPRE_Int> boundary_rows_in)
+      : ncols(ncols_in), rows(rows_in), cols(cols_in), values(values_in),
+        boundary_rows(boundary_rows_in) {
+    elimination = std::make_unique<bout::BoundaryElimination>(
+        static_cast<HYPRE_Int>(rows.size()), ncols.data(), rows.data(), &row_indexes,
+        cols.data(), values.data(), static_cast<HYPRE_Int>(boundary_rows.size()),
+        boundary_rows.data());
+  }
+
+  ~RawBoundaryEliminationSystem() {
+    if (row_indexes != nullptr) {
+      HypreFree(row_indexes);
+    }
+  }
+};
+
+RawBoundaryEliminationSystem makeSingleBoundarySystem() {
+  return {{2, 3, 2},
+          {0, 1, 2},
+          {0, 1, 0, 1, 2, 1, 2},
+          {2.0, 3.0, 5.0, 7.0, 11.0, 13.0, 17.0},
+          {0}};
+}
+
+RawBoundaryEliminationSystem makeMultiCoupledBoundarySystem() {
+  return {{2, 3, 3, 2},
+          {0, 1, 2, 3},
+          {0, 1, 0, 1, 3, 0, 1, 2, 2, 3},
+          {2.0, 3.0, 5.0, 7.0, 11.0, 13.0, 17.0, 19.0, 23.0, 29.0},
+          {0}};
+}
+
+RawBoundaryEliminationSystem makeBackwardCoupledRowSystem() {
+  return {{2, 3, 3, 2},
+          {0, 1, 2, 3},
+          {0, 2, 1, 2, 3, 0, 2, 3, 1, 3},
+          {2.0, 3.0, 31.0, 37.0, 29.0, 5.0, 7.0, 11.0, 23.0, 19.0},
+          {0, 3}};
+}
+
+} // namespace
+
+TEST(BoundaryEliminationTest, TransformsSingleBoundarySystem) {
+  auto system = makeSingleBoundarySystem();
+
+  EXPECT_EQ(system.ncols[0], 1);
+  EXPECT_EQ(system.values[0], -1.0);
+  EXPECT_EQ(system.values[1], 0.0);
+  EXPECT_EQ(system.values[2], 0.0);
+  EXPECT_DOUBLE_EQ(system.values[3], -0.5);
+  EXPECT_EQ(system.values[4], 11.0);
+  EXPECT_EQ(system.values[5], 13.0);
+  EXPECT_EQ(system.values[6], 17.0);
+
+  ASSERT_NE(system.elimination, nullptr);
+  EXPECT_EQ(system.elimination->binum_array[0], 0);
+  EXPECT_EQ(system.elimination->bjnum_array[0], 1);
+  EXPECT_EQ(system.elimination->bdep_array[0], -1);
+  EXPECT_EQ(system.elimination->bii_array[0], 2.0);
+  EXPECT_EQ(system.elimination->bij_array[0], 3.0);
+  EXPECT_EQ(system.elimination->aoffset_array[0], 0);
+  EXPECT_EQ(system.elimination->aoffset_array[1], 1);
+  EXPECT_EQ(system.elimination->aknum_array[0], 1);
+  EXPECT_EQ(system.elimination->aki_array[0], 5.0);
+}
+
+TEST(BoundaryEliminationTest, ReducesRightHandSideForSingleBoundarySystem) {
+  auto system = makeSingleBoundarySystem();
+  std::array<HYPRE_Complex, 3> rhs{{19.0, 23.0, 29.0}};
+
+  auto brhs = system.elimination->reduceRightHandSideInPlace(rhs.data());
+
+  ASSERT_NE(brhs, nullptr);
+  EXPECT_EQ(brhs->data[0], 19.0);
+  EXPECT_EQ(rhs[0], 19.0);
+  EXPECT_DOUBLE_EQ(rhs[1], -24.5);
+  EXPECT_EQ(rhs[2], 29.0);
+}
+
+TEST(BoundaryEliminationTest, ExpandsSolutionForSingleBoundarySystem) {
+  auto system = makeSingleBoundarySystem();
+  auto brhs = std::make_shared<bout::HypreComplexArray>(1);
+  brhs->data[0] = 19.0;
+  std::array<HYPRE_Complex, 3> solution{{0.0, 2.0, 3.0}};
+
+  system.elimination->expandSolutionInPlace(brhs, solution.data());
+
+  EXPECT_DOUBLE_EQ(solution[0], 6.5);
+  EXPECT_EQ(solution[1], 2.0);
+  EXPECT_EQ(solution[2], 3.0);
+}
+
+TEST(BoundaryEliminationTest, ReconstructsMatvecForSingleBoundarySystem) {
+  auto system = makeSingleBoundarySystem();
+  std::array<HYPRE_Complex, 3> x{{1.0, 2.0, 3.0}};
+  std::array<HYPRE_Complex, 3> reduced_result{{-1.0, 32.0, 77.0}};
+  auto boundary_values = system.elimination->evaluateBoundaryEquations(x.data());
+
+  system.elimination->expandMatvecResultInPlace(boundary_values, boundary_values,
+                                                reduced_result.data());
+
+  EXPECT_EQ(reduced_result[0], 8.0);
+  EXPECT_EQ(reduced_result[1], 52.0);
+  EXPECT_EQ(reduced_result[2], 77.0);
+}
+
+TEST(BoundaryEliminationTest, EliminatesBoundaryCouplingsFromAllAffectedRows) {
+  auto system = makeMultiCoupledBoundarySystem();
+
+  EXPECT_EQ(system.ncols[0], 1);
+  EXPECT_EQ(system.values[0], -1.0);
+  EXPECT_EQ(system.values[1], 0.0);
+  EXPECT_EQ(system.values[2], 0.0);
+  EXPECT_DOUBLE_EQ(system.values[3], -0.5);
+  EXPECT_EQ(system.values[4], 11.0);
+  EXPECT_EQ(system.values[5], 0.0);
+  EXPECT_DOUBLE_EQ(system.values[6], -2.5);
+  EXPECT_EQ(system.values[7], 19.0);
+  EXPECT_EQ(system.values[8], 23.0);
+  EXPECT_EQ(system.values[9], 29.0);
+
+  EXPECT_EQ(system.elimination->na, 2);
+  EXPECT_EQ(system.elimination->aoffset_array[0], 0);
+  EXPECT_EQ(system.elimination->aoffset_array[1], 2);
+  EXPECT_EQ(system.elimination->aknum_array[0], 1);
+  EXPECT_EQ(system.elimination->aknum_array[1], 2);
+  EXPECT_EQ(system.elimination->aki_array[0], 5.0);
+  EXPECT_EQ(system.elimination->aki_array[1], 13.0);
+}
+
+TEST(BoundaryEliminationTest, ReducesRightHandSideForMultipleAffectedRows) {
+  auto system = makeMultiCoupledBoundarySystem();
+  std::array<HYPRE_Complex, 4> rhs{{19.0, 23.0, 31.0, 37.0}};
+
+  auto brhs = system.elimination->reduceRightHandSideInPlace(rhs.data());
+
+  ASSERT_NE(brhs, nullptr);
+  EXPECT_EQ(brhs->data[0], 19.0);
+  EXPECT_EQ(rhs[0], 19.0);
+  EXPECT_DOUBLE_EQ(rhs[1], -24.5);
+  EXPECT_DOUBLE_EQ(rhs[2], -92.5);
+  EXPECT_EQ(rhs[3], 37.0);
+}
+
+TEST(BoundaryEliminationTest, ReconstructsMatvecForMultipleAffectedRows) {
+  auto system = makeMultiCoupledBoundarySystem();
+  std::array<HYPRE_Complex, 4> x{{1.0, 2.0, 3.0, 4.0}};
+  std::array<HYPRE_Complex, 4> reduced_result{{-1.0, 32.0, 52.0, 185.0}};
+  auto boundary_values = system.elimination->evaluateBoundaryEquations(x.data());
+
+  system.elimination->expandMatvecResultInPlace(boundary_values, boundary_values,
+                                                reduced_result.data());
+
+  EXPECT_EQ(reduced_result[0], 8.0);
+  EXPECT_EQ(reduced_result[1], 52.0);
+  EXPECT_EQ(reduced_result[2], 104.0);
+  EXPECT_EQ(reduced_result[3], 185.0);
+}
+
+TEST(BoundaryEliminationTest, HandlesBackwardCoupledRows) {
+  auto system = makeBackwardCoupledRowSystem();
+
+  EXPECT_EQ(system.ncols[0], 1);
+  EXPECT_EQ(system.ncols[3], 1);
+  EXPECT_EQ(system.values[0], -1.0);
+  EXPECT_EQ(system.values[1], 0.0);
+  EXPECT_DOUBLE_EQ(system.values[2], 31.0 - (29.0 * 23.0 / 19.0));
+  EXPECT_EQ(system.values[4], 0.0);
+  EXPECT_EQ(system.values[5], 0.0);
+  EXPECT_DOUBLE_EQ(system.values[6], -0.5);
+  EXPECT_EQ(system.values[8], 0.0);
+  EXPECT_EQ(system.values[9], -1.0);
+
+  EXPECT_EQ(system.elimination->aoffset_array[0], 0);
+  EXPECT_EQ(system.elimination->aoffset_array[1], 1);
+  EXPECT_EQ(system.elimination->aoffset_array[2], 2);
+  EXPECT_EQ(system.elimination->aknum_array[0], 2);
+  EXPECT_EQ(system.elimination->aknum_array[1], 1);
+}
+
+TEST(BoundaryEliminationTest, DifferentEliminationObjectsProduceDifferentReducedSystems) {
+  auto system_a = makeSingleBoundarySystem();
+  RawBoundaryEliminationSystem system_b{{2, 3, 2},
+                                        {0, 1, 2},
+                                        {0, 1, 0, 1, 2, 1, 2},
+                                        {4.0, -1.0, 6.0, 9.0, 10.0, 13.0, 17.0},
+                                        {0}};
+  std::array<HYPRE_Complex, 3> rhs_a{{19.0, 23.0, 29.0}};
+  std::array<HYPRE_Complex, 3> rhs_b = rhs_a;
+
+  auto brhs_a = system_a.elimination->reduceRightHandSideInPlace(rhs_a.data());
+  auto brhs_b = system_b.elimination->reduceRightHandSideInPlace(rhs_b.data());
+
+  EXPECT_EQ(brhs_a->data[0], 19.0);
+  EXPECT_EQ(brhs_b->data[0], 19.0);
+  EXPECT_DOUBLE_EQ(rhs_a[1], -24.5);
+  EXPECT_DOUBLE_EQ(rhs_b[1], -5.5);
+  EXPECT_NE(rhs_a[1], rhs_b[1]);
 }
 
 #endif // BOUT_HAS_HYPRE
