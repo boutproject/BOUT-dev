@@ -931,9 +931,7 @@ public:
     if (elimBE) {
       HYPRE_Int* bi_array;
       HYPRE_Int* row_indexes;
-      // There must be an easier way to get nb
-      int nb = 0;
-      BOUT_FOR_SERIAL(i, index_converter->getRegionBndry()) { nb++; }
+      int nb = index_converter->getRegionBndry().size();
       HypreMalloc(bi_array, nb * sizeof(HYPRE_Int));
       nb = 0;
       BOUT_FOR_SERIAL(i, index_converter->getRegionBndry()) {
