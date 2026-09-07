@@ -10,11 +10,14 @@ class Diffusion : public PhysicsModel {
 protected:
   int init(bool UNUSED(restarting)) override;
   int rhs(BoutReal t) override;
+
+private:
+  // Keep Umpire-backed field storage owned by the model so that it is
+  // released before BoutFinalise() tears down BOUT++'s array storage.
+  Field3D N;
 };
 
 using bout::globals::mesh;
-
-Field3D N;
 
 BoutReal mu_N; // Parallel collisional diffusion coefficient
 BoutReal Lx, Ly, Lz;

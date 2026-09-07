@@ -489,6 +489,26 @@ void ShiftedMetric::calcParallelSlices(Field3D& f) {
   f.splitParallelSlices();
 
 #if BOUT_HAS_CUDA
+  const bool cuda_fft_supported =
+      mesh.LocalNz == 16 || mesh.LocalNz == 64 || mesh.LocalNz == 128
+      || mesh.LocalNz == 256 || mesh.LocalNz == 512;
+
+  if (!cuda_fft_supported) {
+    for (const auto& phase : parallel_slice_phases) {
+      auto& f_slice = f.ynext(phase.y_offset);
+      f_slice.allocate();
+
+      BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
+        const int ix = i.x();
+        const int iy = i.y();
+        const int iy_offset = iy + phase.y_offset;
+        shiftZ(&(f(ix, iy_offset, 0)), &(phase.phase_shift(ix, iy, 0)),
+               &(f_slice(ix, iy_offset, 0)));
+      }
+    }
+    return;
+  }
+
   auto& region = mesh.getRegion2D("RGN_NOY");
   static size_t nblocks = region.getBlocks().size();
   if (nblocks != region.getBlocks().size()) {
