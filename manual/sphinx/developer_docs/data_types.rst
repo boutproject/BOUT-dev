@@ -515,37 +515,44 @@ central type is ``BinaryExpr``, which stores:
   result
 - a cached list of linear region indices describing where the
   expression is valid
+- for 3D expressions, any parallel-slice structure needed to evaluate
+  matching ``yup`` and ``ydown`` expressions
 
-`Field2D`, `Field3D`, and `FieldPerp` act as expression leaves by
-providing lightweight ``View`` types. Those views are the device- and
-backend-friendly objects used by the expression evaluator.
+`Field2D`, `Field3D`, `Field3DParallel`, and `FieldPerp` act as
+expression leaves by providing lightweight ``View`` types. Constants are
+also wrapped in small view objects so they can participate in the same
+expression machinery. These views are the device- and backend-friendly
+objects used by the expression evaluator.
 
 Materialization happens when a field is constructed or assigned from an
 expression, when an expression is stored in `Options`, or when a scalar
 reduction such as ``min`` or ``mean`` is requested. The same mechanism
 is also used to propagate metadata such as mesh, staggered location,
-directions, and `FieldPerp` y-index.
+directions, `FieldPerp` y-index, and for `Field3DParallel` the
+forward/backward parallel slices on FCI meshes.
 
 The unary algebraic helpers in ``include/bout/field.hxx`` build on the
 same mechanism. Functions such as ``sqrt``, ``abs``, ``SQ``,
-``if_else``, ``if_else_zero``, ``min``, ``max``, and ``mean`` can all
-operate directly on lazy expressions.
+``pow``, ``floor``, ``if_else``, ``if_else_zero``, ``min``, ``max``,
+and ``mean`` can all operate directly on lazy expressions.
 
 Generated eager operators
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The eager arithmetic operators and in-place update paths are still
-generated automatically using the `Jinja`_ templating system. The main
-files are:
+The remaining eager arithmetic operators and in-place update paths are
+still generated automatically using the `Jinja`_ templating system. The
+main files are:
 
 - ``src/field/gen_fieldops.jinja``
 - ``src/field/gen_fieldops.py``
 - ``src/field/generated_fieldops.cxx``
 
-The generated code handles the broad matrix of combinations between
-`BoutReal`, `Field2D`, `Field3D`, `Field3DParallel`, and `FieldPerp`,
-including several mixed-rank and in-place cases where hand-maintaining
-all overloads would be error-prone.
+The generated code still handles combinations between `BoutReal`,
+`Field2D`, `Field3D`, `Field3DParallel`, and `FieldPerp`, especially the
+eager `FieldPerp` wrappers and in-place update operators where
+hand-maintaining all overloads would be error-prone. More free
+non-member arithmetic now lives in the header-defined lazy-expression
+path, so the generator covers a smaller subset than it used to.
 
 The generated loops now also depend on the configured execution backend.
 At configure time, the generator is told whether to emit RAJA-based,

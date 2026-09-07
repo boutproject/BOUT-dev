@@ -1,3 +1,4 @@
+#include "bout/assert.hxx"
 #include <bout/array.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
@@ -27,6 +28,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <filesystem>
 #include <iterator>
 #include <memory>
 #include <optional>
@@ -35,6 +37,8 @@
 #include <vector>
 
 #include "impls/bout/boutmesh.hxx"
+
+namespace fs = std::filesystem;
 
 MeshFactory::ReturnType MeshFactory::create(Options* options,
                                             GridDataSource* source) const {
@@ -66,14 +70,37 @@ MeshFactory::ReturnType MeshFactory::create(const std::string& type, Options* op
             grid_name1, grid_name);
       }
     }
-    output << "\nGetting grid data from file " << grid_name << "\n";
 
-    // Create a grid file, using specified format if given
-    const auto grid_ext =
-        (*options)["format"].withDefault(Options::root()["format"].withDefault(""));
+    // Resolve mesh files relative to datadir first, then the current directory.
+    const auto datadir = fs::path(Options::root()["datadir"].withDefault("data"));
+    const auto grid_path = fs::path(grid_name);
+    auto full_path = datadir / grid_path;
+
+    const bool full_path_exists = fs::exists(full_path);
+    const bool grid_path_exists = fs::exists(grid_path);
+
+    if (full_path_exists and grid_path_exists and !fs::equivalent(full_path, grid_path)) {
+      throw BoutException(
+          "Ambiguous grid file path `{:s}`: found both `{:s}` (relative to "
+          "`datadir`) and `{:s}` (relative to the current working directory).\n"
+          "Please specify an explicit path.",
+          grid_name, full_path.string(), grid_path.string());
+    }
+
+    if (!full_path_exists and !grid_path_exists) {
+      throw BoutException(
+          "Could not find grid file `{:s}`.\n"
+          "Looked for `{:s}` (relative to `datadir`) and `{:s}` (relative to "
+          "the current working directory).",
+          grid_name, full_path.string(), grid_path.string());
+    }
+
+    const auto resolved_path = full_path_exists ? full_path : grid_path;
+
+    output << "\nGetting grid data from file " << resolved_path << "\n";
 
     // Create a grid file
-    source = static_cast<GridDataSource*>(new GridFile(grid_name));
+    source = static_cast<GridDataSource*>(new GridFile(resolved_path));
   } else {
     output << "\nGetting grid data from options\n";
     source = static_cast<GridDataSource*>(new GridFromOptions(options));
@@ -554,12 +581,39 @@ Mesh::createDefaultCoordinates(const CELL_LOC location,
   if (location == CELL_CENTRE || location == CELL_DEFAULT) {
     // Initialize coordinates from input
     return std::make_shared<Coordinates>(this, options);
-  } else {
-    // Interpolate coordinates from CELL_CENTRE version
-    return std::make_shared<Coordinates>(this, options, location,
-                                         getCoordinates(CELL_CENTRE),
-                                         force_interpolate_from_centre);
   }
+  // Interpolate coordinates from CELL_CENTRE version
+  return std::make_shared<Coordinates>(this, options, location,
+                                       getCoordinates(CELL_CENTRE),
+                                       force_interpolate_from_centre);
+}
+
+std::shared_ptr<Coordinates> Mesh::getCoordinatesSmart(CELL_LOC location) {
+  ASSERT1(location != CELL_DEFAULT);
+  ASSERT1(location != CELL_VSHIFT);
+
+  auto found = coords_map.find(location);
+  if (found != coords_map.end()) {
+    // True branch most common, returns immediately
+    return found->second;
+  }
+
+  // No coordinate system set. Create default
+  // Note that this can't be allocated here due to incomplete type
+  // (circular dependency between Mesh and Coordinates)
+  auto inserted = coords_map.emplace(location, nullptr);
+  auto force_interpolate_from_centre = false;
+  inserted.first->second =
+      createDefaultCoordinates(location, force_interpolate_from_centre);
+
+  auto recalculate_staggered = false;
+  inserted.first->second->recalculateAndReset(recalculate_staggered,
+                                              force_interpolate_from_centre);
+
+  inserted.first->second->communicateMetricTensor();
+  inserted.first->second->communicateDz();
+
+  return inserted.first->second;
 }
 
 const Region<>& Mesh::getRegion3D(const std::string& region_name) const {
@@ -772,8 +826,14 @@ void Mesh::recalculateStaggeredCoordinates() {
       continue;
     }
 
-    *coords_map[location] = std::move(*createDefaultCoordinates(location, true));
-    coords_map[location]->geometry(false, true);
+    auto force_interpolate_from_centre = true;
+    Coordinates& new_coordinates =
+        *createDefaultCoordinates(location, force_interpolate_from_centre);
+
+    auto recalculate_staggered = false;
+    new_coordinates.recalculateAndReset(recalculate_staggered,
+                                        force_interpolate_from_centre);
+    *coords_map[location] = std::move(new_coordinates);
   }
 }
 
@@ -863,3 +923,10 @@ std::optional<size_t> Mesh::getCommonRegion(std::optional<size_t> lhs,
   }
   return region3Dintersect[pos];
 }
+
+namespace bout::detail {
+std::optional<size_t> meshGetCommonRegionID(Mesh* mesh, std::optional<size_t> regionID1,
+                                            std::optional<size_t> regionID2) {
+  return mesh->getCommonRegion(regionID1, regionID2);
+}
+} // namespace bout::detail

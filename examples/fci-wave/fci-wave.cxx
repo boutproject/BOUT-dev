@@ -1,6 +1,15 @@
+#include <bout/boundary_region_iter.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/coordinates.hxx>
+#include <bout/difops.hxx>
+#include <bout/field3d.hxx>
+#include <bout/options.hxx>
+#include <bout/output.hxx>
+#include <bout/physicsmodel.hxx>
+#include <bout/unused.hxx>
+#include <bout/yboundary_regions.hxx>
 
-#include "bout/parallel_boundary_region.hxx"
-#include "bout/physicsmodel.hxx"
+#include <cmath>
 
 class FCIwave : public PhysicsModel {
 private:
@@ -19,35 +28,26 @@ private:
     Field3D f_B = f / Bxyz;
 
     f_B.splitParallelSlices();
-    mesh->getCoordinates()->getParallelTransform().integrateParallelSlices(f_B);
+    const Coordinates* coord = mesh->getCoordinates();
+    coord->getParallelTransform().integrateParallelSlices(f_B);
 
     // integrateParallelSlices replaces all yup/down points, so the boundary conditions
     // now need to be applied. If Bxyz has neumann parallel boundary conditions
     // then the boundary condition is simpler since f = 0 gives f_B=0 boundary condition.
 
-    /// Loop over the mesh boundary regions
-    for (const auto& reg : mesh->getBoundariesPar()) {
-      Field3D& f_B_next = f_B.ynext(reg->dir);
-      const Field3D& f_next = f.ynext(reg->dir);
-      const Field3D& B_next = Bxyz.ynext(reg->dir);
-
-      for (reg->first(); !reg->isDone(); reg->next()) {
-        f_B_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z()) =
-            f_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z())
-            / B_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z());
-      }
-    }
+    const auto ybndry = coord->getYBoundary();
+    ybndry.iter([&](const bout::boundary::BoundaryIterator auto& point) {
+      point.next(f_B) = point.next(f) / point.next(Bxyz);
+    });
 
     Field3D result;
     result.allocate();
 
-    Coordinates* coord = mesh->getCoordinates();
-
     for (auto i : result.getRegion(RGN_NOBNDRY)) {
       result[i] = Bxyz[i] * (f_B.yup()[i.yp()] - f_B.ydown()[i.ym()])
-                  / (2. * coord->dy[i] * sqrt(coord->g_22[i]));
+                  / (2. * coord->dy()[i] * sqrt(coord->g_22()[i]));
 
-      if (!finite(result[i])) {
+      if (!std::isfinite(result[i])) {
         output.write("[{:d},{:d},{:d}]: {:e}, {:e} -> {:e}\n", i.x(), i.y(), i.z(),
                      f_B.yup()[i.yp()], f_B.ydown()[i.ym()], result[i]);
       }
@@ -65,7 +65,7 @@ protected:
     auto& options = Options::root()["fciwave"];
     div_integrate = options["div_integrate"].withDefault(true);
     log_density = options["log_density"].withDefault(false);
-    background = options["background"].withDefault(false);
+    background = options["background"].withDefault(0.0);
     log_background = log(background);
 
     // Neumann boundaries simplifies parallel derivatives
@@ -117,38 +117,16 @@ protected:
     // between v, nv and momentum flux
 
     momflux.splitParallelSlices();
-    for (const auto& reg : mesh->getBoundariesPar()) {
+    const auto ybndry = mesh->getCoordinates()->getYBoundary();
+    ybndry.iter([&](const bout::boundary::BoundaryIterator auto& point) {
       // Using the values of density and velocity on the boundary
-      const Field3D& n_next = n.ynext(reg->dir);
-      const Field3D& v_next = v.ynext(reg->dir);
+      const BoutReal n_b = 0.5 * point.next(n) + point.current(n);
+      const BoutReal v_b = 0.5 * point.next(v) + point.current(v);
 
       // Set the momentum and momentum flux
-      Field3D& nv_next = nv.ynext(reg->dir);
-      Field3D& momflux_next = momflux.ynext(reg->dir);
-      momflux_next.allocate();
-
-      for (reg->first(); !reg->isDone(); reg->next()) {
-        // Density at the boundary
-        // Note: If evolving density, this should interpolate logn
-        // but neumann boundaries are used here anyway.
-        BoutReal n_b =
-            0.5
-            * (n_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z())
-               + n(reg->ind().x(), reg->ind().y(), reg->ind().z()));
-        // Velocity at the boundary
-        BoutReal v_b =
-            0.5
-            * (v_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z())
-               + v(reg->ind().x(), reg->ind().y(), reg->ind().z()));
-
-        nv_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z()) =
-            2. * n_b * v_b - nv(reg->ind().x(), reg->ind().y(), reg->ind().z());
-
-        momflux_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z()) =
-            2. * n_b * v_b * v_b
-            - momflux(reg->ind().x(), reg->ind().y(), reg->ind().z());
-      }
-    }
+      point.next(nv) = 2. * n_b * v_b - point.current(nv);
+      point.next(momflux) = 2. * n_b * v_b * v_b - point.current(momflux);
+    });
 
     // Momentum
     ddt(nv) = -Div_par_integrate(momflux) - Grad_par(n) + Grad2_par2(nv);

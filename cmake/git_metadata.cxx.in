@@ -1,0 +1,16 @@
+#include "bout/git_metadata.hxx"
+
+namespace bout {
+namespace version {
+namespace {
+constexpr bool git_metadata_available_value = @git_metadata_available@;
+constexpr bool git_dirty_value = @git_dirty@;
+constexpr char git_diff_value[] =
+"@git_diff_escaped@";
+} // namespace
+
+auto git_metadata_available() -> bool { return git_metadata_available_value; }
+auto git_dirty() -> bool { return git_dirty_value; }
+auto git_diff() -> std::string_view { return git_diff_value; }
+} // namespace version
+} // namespace bout

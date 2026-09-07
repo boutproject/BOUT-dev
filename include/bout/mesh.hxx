@@ -486,7 +486,7 @@ public:
   // Boundary regions
 
   /// Return a vector containing all the boundary regions on this processor
-  virtual std::vector<BoundaryRegionBase*> getBoundaries() const = 0;
+  virtual std::vector<std::shared_ptr<BoundaryRegionBase>> getBoundaries() const = 0;
 
   /// Get the set of all possible boundaries in this configuration
   virtual std::set<std::string> getPossibleBoundaries() const {
@@ -494,7 +494,7 @@ public:
   };
 
   /// Add a boundary region to this processor
-  virtual void addBoundary(BoundaryRegionBase* UNUSED(bndry)) {
+  virtual void addBoundary(std::shared_ptr<BoundaryRegionBase> UNUSED(bndry)) {
     throw BoutException("This has never been implemented");
   };
 
@@ -624,25 +624,7 @@ public:
     return getCoordinatesSmart(location).get();
   };
 
-  std::shared_ptr<Coordinates>
-  getCoordinatesSmart(const CELL_LOC location = CELL_CENTRE) {
-    ASSERT1(location != CELL_DEFAULT);
-    ASSERT1(location != CELL_VSHIFT);
-
-    auto found = coords_map.find(location);
-    if (found != coords_map.end()) {
-      // True branch most common, returns immediately
-      return found->second;
-    }
-
-    // No coordinate system set. Create default
-    // Note that this can't be allocated here due to incomplete type
-    // (circular dependency between Mesh and Coordinates)
-    auto inserted = coords_map.emplace(location, nullptr);
-    inserted.first->second = createDefaultCoordinates(location);
-    inserted.first->second->geometry(false);
-    return inserted.first->second;
-  }
+  std::shared_ptr<Coordinates> getCoordinatesSmart(CELL_LOC location = CELL_CENTRE);
 
   std::shared_ptr<Coordinates>
   getCoordinatesConst(const CELL_LOC location = CELL_CENTRE) const {
@@ -850,7 +832,8 @@ public:
   // Switch for communication of corner guard and boundary cells
   const bool include_corner_cells;
 
-  std::optional<size_t> getCommonRegion(std::optional<size_t>, std::optional<size_t>);
+  std::optional<size_t> getCommonRegion(std::optional<size_t> lhs,
+                                        std::optional<size_t> rhs);
   size_t getRegionID(const std::string& region) const;
   const Region<Ind3D>& getRegion(size_t RegionID) const { return region3D[RegionID]; }
   const Region<Ind3D>& getRegion(std::optional<size_t> RegionID) const {

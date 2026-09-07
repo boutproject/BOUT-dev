@@ -1,15 +1,15 @@
-///
+/// \file
 /// Variant utilities
 ///
 /// All in namespace bout::utils
-///    variant
-///    visit
-///    holds_alternative
-///    get
 ///
-///    variantEqualTo
-///    variantStaticCastOrThrow
-///    variantToString
+/// - `variant`
+/// - `visit`
+/// - `holds_alternative`
+/// - `get`
+/// - `variantEqualTo`
+/// - `variantStaticCastOrThrow`
+/// - `variantToString`
 ///
 /// Internal implementation in bout::utils::details
 

@@ -31,6 +31,7 @@
 #include "bout/field2d.hxx"
 
 #include "bout/index_derivs_interface.hxx"
+#include "bout/yboundary_regions.hxx"
 #include <bout/boutcomm.hxx>
 #include <bout/globals.hxx>
 
@@ -42,8 +43,6 @@
 #include <string>
 #include <utility>
 
-#include "bout/parallel_boundary_op.hxx"
-#include "bout/parallel_boundary_region.hxx"
 #include <bout/assert.hxx>
 #include <bout/boundary_factory.hxx>
 #include <bout/boundary_op.hxx>
@@ -56,6 +55,7 @@
 #include <bout/interpolation.hxx>
 #include <bout/mesh.hxx>
 #include <bout/output.hxx>
+#include <bout/parallel_boundary_op.hxx>
 #include <bout/region.hxx>
 #include <bout/utils.hxx>
 
@@ -513,9 +513,9 @@ void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices,
       for (auto& region : fieldmesh->getBoundariesPar()) {
         for (const auto& point : *region) {
           // Interpolate midpoint value in f3d
-          const BoutReal val = point.interpolate_boundary_o2(f3d);
+          const BoutReal val = interpolate_boundary_o2(point, f3d);
           // Set the same boundary value in this field
-          point.dirichlet_o1(*this, val);
+          dirichlet_o1(point, *this, val);
         }
       }
     }
@@ -526,9 +526,10 @@ void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices,
   // Loop over boundary regions
   for (const auto& newreg : fieldmesh->getBoundaries()) {
     if (newreg->isX) {
-      bout::boundary::iter_boundary(newreg, [&](auto& point) {
-        const BoutReal val = point.interpolate_boundary_o2(f3d);
-        point.dirichlet_o2(*this, val);
+      using namespace bout::boundary;
+      iter_boundary(newreg, [&](BoundaryIterator auto& point) {
+        const BoutReal val = interpolate_boundary_o2(point, f3d);
+        dirichlet_o2(point, *this, val);
       });
       if (forceLegacy) {
         // get the old, potentially wrong behaviour
@@ -619,7 +620,7 @@ void Field3D::applyParallelBoundary(const std::string& condition) {
   /// Loop over the mesh boundary regions
   for (const auto& reg : fieldmesh->getBoundariesPar()) {
     auto op = std::unique_ptr<BoundaryOpPar>{
-        dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg.get()))};
+        dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
     op->apply(*this);
   }
 }
@@ -642,7 +643,7 @@ void Field3D::applyParallelBoundary(const std::string& region,
   for (const auto& reg : fieldmesh->getBoundariesPar()) {
     if (reg->label == region) {
       auto op = std::unique_ptr<BoundaryOpPar>{
-          dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg.get()))};
+          dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
       op->apply(*this);
       break;
     }
@@ -669,7 +670,7 @@ void Field3D::applyParallelBoundary(const std::string& region,
       // BoundaryFactory can't create boundaries using Field3Ds, so get temporary
       // boundary of the right type
       auto tmp = std::unique_ptr<BoundaryOpPar>{
-          dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg.get()))};
+          dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
       // then clone that with the actual argument
       auto op = std::unique_ptr<BoundaryOpPar>{tmp->clone(reg.get(), f)};
       op->apply(*this);
@@ -685,22 +686,6 @@ void Field3D::swapData(Field3D& other) { std::swap(data, other.data); }
  ***************************************************************/
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
-
-Field3D pow(const Field3D& lhs, const Field2D& rhs, const std::string& rgn) {
-
-  // Check if the inputs are allocated
-  checkData(lhs);
-  checkData(rhs);
-  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
-
-  // Define and allocate the output result
-  Field3D result{emptyFrom(lhs)};
-
-  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
-
-  checkData(result);
-  return result;
-}
 
 FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs, const std::string& rgn) {
 
@@ -934,6 +919,11 @@ const Region<Ind3D>& getField3DRegion(const Mesh* mesh, std::optional<size_t> re
     return mesh->getRegion(regionID.value());
   }
   return mesh->getRegion("RGN_ALL");
+}
+
+size_t getField3DRegionID(const Mesh* mesh, const std::string& region_name) {
+  ASSERT1(mesh != nullptr);
+  return mesh->getRegionID(region_name);
 }
 
 } // namespace bout::detail

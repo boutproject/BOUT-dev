@@ -108,11 +108,12 @@ y-index. The expectation is that the other processors would all save an invalid
 `FieldPerp` variable, with a `yindex_global` that is more negative than the
 lowest y-boundary guard cell [2]_. The reason for saving the invalid `FieldPerp` variables
 is so that all variables are present in every dump file (even if they are not allocated or
-used); in particular the Python `collect` routine assumes that any variable will be found
-in the first output file, which `collect` uses to get its type and dimensions.
+used); in particular the Python :py:func:`boutdata.collect.collect` routine assumes that
+any variable will be found in the first output file, which
+:py:func:`boutdata.collect.collect` uses to get its type and dimensions.
 
 .. [2] Actually, the C++ I/O code should work fine even if a `FieldPerp` object is defined
        with different y-indices on different processors. This may be useful for diagnostic
-       or debugging purposes. However, Python routines like `collect` and
-       :py:`boutdata.restart.redistribute` will fail because they find inconsistent
+       or debugging purposes. However, Python routines like :py:func:`collect` and
+       :py:func:`boutdata.restart.redistribute` will fail because they find inconsistent
        `yindex_global` values.

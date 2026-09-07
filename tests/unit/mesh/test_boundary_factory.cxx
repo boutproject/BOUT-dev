@@ -39,21 +39,20 @@ public:
 
     fac->add(new TestBoundary(), "testboundary");
 
-    region = new BoundaryRegionXIn{"test_region", 0, 1, mesh};
+    region = std::make_shared<BoundaryRegionXIn>("test_region", 0, 1, mesh);
   }
 
   virtual ~BoundaryFactoryTest() {
     delete mesh;
     mesh = nullptr;
 
-    delete region;
     BoundaryFactory::cleanup();
 
     delete boundary;
   }
 
   BoundaryFactory* fac{BoundaryFactory::getInstance()};
-  BoundaryRegionXIn* region{nullptr};
+  std::shared_ptr<BoundaryRegionXIn> region;
   BoundaryOpBase* boundary{nullptr};
 };
 

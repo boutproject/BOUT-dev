@@ -93,27 +93,6 @@ BoutMeshExposer::BoutMeshExposer(const BoutMeshParameters& inputs, bool periodic
                inputs.y_indices.jyseps2_1, inputs.y_indices.jyseps1_2,
                inputs.y_indices.jyseps2_2, inputs.y_indices.ny_inner) {}
 
-/// Equality operator to help testing
-bool operator==(const BoutMeshExposer::YDecompositionIndices& lhs,
-                const BoutMeshExposer::YDecompositionIndices& rhs) {
-  return (lhs.jyseps1_1 == rhs.jyseps1_1) and (lhs.jyseps2_1 == rhs.jyseps2_1)
-         and (lhs.jyseps1_2 == rhs.jyseps1_2) and (lhs.jyseps2_2 == rhs.jyseps2_2)
-         and (lhs.ny_inner == rhs.ny_inner);
-}
-
-bool operator==(const BoutMeshExposer::ConnectionInfo& lhs,
-                const BoutMeshExposer::ConnectionInfo& rhs) {
-  return (lhs.TS_up_in == rhs.TS_up_in) and (lhs.TS_up_out == rhs.TS_up_out)
-         and (lhs.TS_down_in == rhs.TS_down_in) and (lhs.TS_down_out == rhs.TS_down_out)
-         and (lhs.UDATA_INDEST == rhs.UDATA_INDEST)
-         and (lhs.UDATA_OUTDEST == rhs.UDATA_OUTDEST)
-         and (lhs.UDATA_XSPLIT == rhs.UDATA_XSPLIT)
-         and (lhs.DDATA_INDEST == rhs.DDATA_INDEST)
-         and (lhs.DDATA_OUTDEST == rhs.DDATA_OUTDEST)
-         and (lhs.DDATA_XSPLIT == rhs.DDATA_XSPLIT) and (lhs.IDATA_DEST == rhs.IDATA_DEST)
-         and (lhs.ODATA_DEST == rhs.ODATA_DEST);
-}
-
 /// Stream operator to print a nice message instead of bytes if a test fails
 std::ostream& operator<<(std::ostream& out,
                          const BoutMeshExposer::YDecompositionIndices& value) {

@@ -660,6 +660,19 @@ TEST_F(OptionsTest, AssignOption) {
   EXPECT_EQ(option2.as<int>(), 42);
 }
 
+TEST_F(OptionsTest, AssignOptionName) {
+  Options option1, option2, option3;
+
+  option1 = 42;
+
+  option2 = option1.copy();
+  option3["key"] = option1.copy();
+
+  EXPECT_EQ(option2.str(), "");
+  EXPECT_EQ(option3.str(), "");
+  EXPECT_EQ(option3["key"].str(), "key");
+}
+
 TEST_F(OptionsTest, AssignSection) {
   Options option1, option2;
 
@@ -669,6 +682,19 @@ TEST_F(OptionsTest, AssignSection) {
 
   EXPECT_EQ(option2["key"].as<int>(), 42);
   EXPECT_TRUE(option2["key"].isValue());
+}
+
+TEST_F(OptionsTest, AssignSectionName) {
+  Options option1, option2, option3;
+
+  option1["key"] = 42;
+
+  option2 = option1.copy();
+  option3 = option1["key"].copy();
+
+  EXPECT_EQ(option2.str(), "");
+  EXPECT_EQ(option2["key"].str(), "key");
+  EXPECT_EQ(option3.str(), "");
 }
 
 TEST_F(OptionsTest, AssignSectionReplace) {
@@ -700,6 +726,22 @@ TEST_F(OptionsTest, AssignSubSection) {
   option2["key2"] = option1.copy();
 
   EXPECT_EQ(option2["key2"]["key1"].as<int>(), 42);
+}
+
+TEST_F(OptionsTest, AssignSubSectionName) {
+  Options option1, option2, option3, option4;
+
+  option1["key1"] = 42;
+  option2["key2"] = option1.copy();
+  option3["key3"] = option2["key2"].copy();
+  option4 = option2["key2"].copy();
+
+  EXPECT_EQ(option2["key2"].str(), "key2");
+  EXPECT_EQ(option2["key2"]["key1"].str(), "key2:key1");
+  EXPECT_EQ(option3["key3"]["key2"].str(), "key3:key2");
+  EXPECT_EQ(option3["key3"]["key2"]["key1"].str(), "key3:key2:key1");
+  EXPECT_EQ(option4.str(), "");
+  EXPECT_EQ(option4["key1"].str(), "key1");
 }
 
 TEST_F(OptionsTest, AssignSubSectionParent) {

@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+
+#
+# Run the test, check it completed successfully
+#
+
+from boututils.run_wrapper import shell, launch
+
+
+flags_src = [
+    dict(acoef=1, bcoef=0, ccoef=0, dcoef=0, ecoef=0),
+    dict(acoef=1.5, bcoef="'2.*sin(2*y)'"),
+    dict(acoef=1),
+    dict(acoef=1, bcoef=2),
+    dict(ccoef=1.793),
+    dict(ccoef=3, bcoef=0),
+    dict(dcoef=3.5),
+    dict(ecoef=-1),
+    dict(input_field="'ballooning(exp(-y*y)*cos(z)*gauss(x,0.2))'"),
+]
+
+
+def test_invpar():
+    global i, f, r, code
+    flags = ""
+    for i, f in enumerate(flags_src):
+        fl = {"acoef": 1}
+        fl.update(f)
+        for k, v in fl.items():
+            flags += f" {k}_{i}={v}"
+
+    regions = ["", " mesh:ixseps1=0 mesh:ixseps2=0"]
+    flags = [flags + r for r in regions]
+
+    code = 0  # Return code
+    for nproc in [1, 2, 4]:
+        cmd = "./test_invpar"
+
+        print("   %d processors...." % (nproc))
+        r = 0
+        for f in flags:
+            shell(["rm data/BOUT.dmp.* 2> err.log"])
+
+            # Run the case
+            s, _ = launch(cmd + " -q -q -q " + f, nproc=nproc, mthread=1)
+
+            code += s
+            print(
+                "Run with flags {f} and {nproc} cores {'PASSED' if s == 0 else 'FAILED'}"
+            )
+    assert code == 0, "Some tests failed"

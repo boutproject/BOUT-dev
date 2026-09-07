@@ -1,4 +1,4 @@
-bout_add_mms_test(
+bout_add_integrated_test(
   test-fci-mpi
   SOURCES fci_mpi.cxx
   USE_RUNTEST USE_DATA_BOUT_INP

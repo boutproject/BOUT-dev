@@ -17,7 +17,7 @@ private:
 
 public:
   void add(std::basic_ostream<char_type, traits>& str) {
-    auto pos = std::find(streams_.begin(), streams_.end(), &str);
+    auto pos = std::ranges::find(streams_, &str);
 
     // Already been added
     if (pos != streams_.end()) {
@@ -28,7 +28,7 @@ public:
   }
 
   void remove(std::basic_ostream<char_type, traits>& str) {
-    auto pos = std::find(streams_.begin(), streams_.end(), &str);
+    auto pos = std::ranges::find(streams_, &str);
 
     if (pos != streams_.end()) {
       streams_.erase(pos);
@@ -74,8 +74,8 @@ private:
 
 public:
   multiostream()
-      : multioutbuf_init(), std::basic_ostream<char_type, traits>(
-                                multioutbuf_init::buf()) {}
+      : multioutbuf_init(),
+        std::basic_ostream<char_type, traits>(multioutbuf_init::buf()) {}
 
   void add(std::basic_ostream<char_type, traits>& str) {
     multioutbuf_init::buf()->add(str);

@@ -61,10 +61,10 @@ protected:
       // This code results in ddt(Ne) depending on y+2, y-2
       // which are not (currently) included in the coloring
       // The result is that IMEX-BDF2 with coloring doesn't converge
-      
+
     Ve = ( Grad_par(phi) - Grad_par(Ne) ) / nu;
     mesh->communicate(Ve);
-    
+
     ddt(Ne) = -Div_par(Ve);
     ddt(Vort) = -Div_par(Ve);
     */
@@ -82,7 +82,7 @@ protected:
     // ddt(phi) = Delp2(phi) - Vort;
 
     // This version uses central differencing for Delp2
-    ddt(phi) = (coord->g11 * D2DX2(phi) + coord->g33 * D2DZ2(phi)) - Vort;
+    ddt(phi) = (coord->g11() * D2DX2(phi) + coord->g33() * D2DZ2(phi)) - Vort;
 
     return 0;
   }

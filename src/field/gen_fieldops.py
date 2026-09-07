@@ -254,6 +254,21 @@ def returnType(f1, f2):
         return copy(field3D)
 
 
+def emit_free_binary_wrapper(out):
+    """Return True if this operator still needs an eager non-member wrapper."""
+    return out.field_type == "FieldPerp"
+
+
+def emit_update_inplace(lhs, out):
+    """Return True if this operator needs a Field3D update_*_inplace definition."""
+    return out.field_type == lhs.field_type and lhs.field_type == "Field3D"
+
+
+def emit_member_operator_equals(lhs, out):
+    """Return True if this operator needs an in-place operator definition."""
+    return out.field_type == lhs.field_type
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Generate code for the Field arithmetic operators"
@@ -365,6 +380,9 @@ if __name__ == "__main__":
                 "out": out,
                 "lhs": lhs,
                 "rhs": rhs,
+                "emit_free_binary": emit_free_binary_wrapper(out),
+                "emit_update_inplace": emit_update_inplace(lhs, out),
+                "emit_member_op_equals": emit_member_operator_equals(lhs, out),
                 #
                 "region_loop": region_loop,
                 "region_name": region_name,

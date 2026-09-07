@@ -1,14 +1,14 @@
 /************************************************************************
  * Inversion of parallel derivatives
- * 
- * Inverts a matrix of the form 
+ *
+ * Inverts a matrix of the form
  *
  * A + B * Grad2_par2 + C*D2DYDZ + + D*D2DZ2 + E*DDY
- * 
+ *
  * Parallel algorithm, using Cyclic Reduction
  *
  * Author: Ben Dudson, University of York, Oct 2011
- * 
+ *
  * Known issues:
  * ------------
  *
@@ -17,7 +17,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -58,7 +58,7 @@ InvertParCR::InvertParCR(Options* opt, CELL_LOC location, Mesh* mesh_in)
   // Number of k equations to solve for each x location
   nsys = 1 + (localmesh->LocalNz) / 2;
 
-  sg = sqrt(localmesh->getCoordinates(location)->g_22);
+  sg = sqrt(localmesh->getCoordinates(location)->g_22());
   sg = DDY(1. / sg) / sg;
 }
 
@@ -160,7 +160,7 @@ const Field3D InvertParCR::solve(const Field3D& f) {
         BoutReal ecoef = E(x, y + local_ystart)
                          + sg(x, y + local_ystart) * B(x, y + local_ystart); // ddy
 
-        if (coord->non_uniform) {
+        if (coord->non_uniform()) {
           ecoef += bcoef * coord->d1_dy(x, y + local_ystart);
         }
 

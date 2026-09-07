@@ -2,9 +2,6 @@
 
 import boutpp
 
-# requires boutpp
-# requires not make
-
 import numpy as np
 import itertools
 from sys import exit

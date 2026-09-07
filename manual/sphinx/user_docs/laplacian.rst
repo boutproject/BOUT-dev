@@ -183,7 +183,7 @@ within the physics module using ``setGlobalFlags``,
    +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
    | ``flags``                | DEPRECATED. Sets global solver options and boundary                     | ``0``                                        |
    |                          | conditions. See :ref:`Laplace flags<tab-laplaceflags>` or               |                                              |
-   |                          | :doc:`invert_laplace.cxx<../_breathe_autogen/file/invert__laplace_8cxx>`|                                              |
+   |                          | :doc:`invert_laplace.hxx<../_breathe_autogen/file/invert__laplace_8hxx>`|                                              |
    +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
    | ``include_yguards``      | Perform inversion in :math:`y`\ -boundary guard cells                   | ``false``                                    |
    +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
@@ -847,7 +847,7 @@ subdomain using the Thomas algorithm.
 
 **Constraints.** This method requires that:
 
-* ``NXPE`` is a power of 2. 
+* ``NXPE`` is a power of 2.
 * ``NXPE > 2^(max_levels+1)``
 
 .. _sec-LaplaceXY:

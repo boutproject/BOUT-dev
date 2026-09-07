@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-#
-# requires: petsc
-
-python3 -m pytest .

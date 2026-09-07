@@ -1,3 +1,7 @@
+/// \file
+/// Interface to PETSc solver
+/// NOTE: This class needs tidying, generalising to use FieldData interface
+
 /**************************************************************************
  * Interface to PETSc solver
  *

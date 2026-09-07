@@ -82,6 +82,13 @@
  * either by including boutmain.hxx or by including bout/physicsmodel.hxx
  * and using the BOUTMAIN macro.
  *
+ * Outputs
+ * -------
+ *
+ * Any non-zero return value should halt the simulation. If the return value is
+ * less than zero, the exit status from BOUT++ is 0, otherwise it is the return
+ * value of BoutInitialise.
+ *
  */
 int BoutInitialise(int& argc, char**& argv);
 

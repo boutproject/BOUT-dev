@@ -1,3 +1,4 @@
+/// \file
 /// Support for i18n using GNU gettext
 
 #ifndef BOUT_GETTEXT_H

@@ -1,22 +1,8 @@
-/*!
- * \file lapack_routines.cxx
- *
- * Serial code to invert a complex tridiagonal system
- *
- * Complex banded matrix solver
- *
- * Solves a banded matrix given the matrix in compact form
- * a[0...(n-1)][0...(m1+m2)]
- * and the rhs vector
- * b[0...(n-1)]
- * 
- * a is overwritten, and b is replaced by the solution
- *
- **************************************************************************
+/**************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -111,7 +97,7 @@ int tridag(const dcomplex* a, const dcomplex* b, const dcomplex* c, const dcompl
 }
 
 /* Real tridiagonal solver
- * 
+ *
  * Returns true on success
  */
 bool tridag(const BoutReal* a, const BoutReal* b, const BoutReal* c, const BoutReal* r,
@@ -162,7 +148,7 @@ bool tridag(const BoutReal* a, const BoutReal* b, const BoutReal* c, const BoutR
 }
 
 /* Real cyclic tridiagonal solver
- * 
+ *
  * Uses Sherman-Morrison formula
  */
 void cyclic_tridag(BoutReal* a, BoutReal* b, BoutReal* c, BoutReal* r, BoutReal* x,
@@ -212,7 +198,7 @@ void cyclic_tridag(BoutReal* a, BoutReal* b, BoutReal* c, BoutReal* r, BoutReal*
 }
 
 /*! Complex band solver using ZGBSV
- * 
+ *
  * n      Size of the matrix (number of equations)
  * kl     Number of subdiagonals
  * ku     Number of superdiagonals

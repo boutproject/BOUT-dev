@@ -3,7 +3,6 @@
 from boutdata import collect
 from boututils.datafile import DataFile
 from matplotlib import pyplot
-import numpy
 from sys import exit
 
 # Set default colormap

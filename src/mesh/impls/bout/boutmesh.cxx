@@ -45,7 +45,6 @@
 #include <bout/msg_stack.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>
-#include <bout/parallel_boundary_region.hxx>
 #include <bout/region.hxx>
 #include <bout/sys/gettext.hxx>
 #include <bout/sys/range.hxx>
@@ -93,11 +92,6 @@ If you want the old setting, you have to specify mesh:symmetricGlobalY=false in 
 BoutMesh::~BoutMesh() {
   // Delete the communication handles
   clear_handles();
-
-  // Delete the boundary regions
-  for (const auto& bndry : boundary) {
-    delete bndry;
-  }
 
   if (comm_x != MPI_COMM_NULL) {
     MPI_Comm_free(&comm_x);
@@ -1177,7 +1171,9 @@ std::set<std::string> BoutMesh::getPossibleBoundaries() const {
         auto boundaries = mesh_copy.getBoundaries();
         std::transform(boundaries.begin(), boundaries.end(),
                        std::inserter(all_boundaries, all_boundaries.begin()),
-                       [](BoundaryRegionBase* boundary) { return boundary->label; });
+                       [](const std::shared_ptr<BoundaryRegionBase>& boundary) {
+                         return boundary->label;
+                       });
       };
 
   // This is sufficient to get the SOL boundary, if it exists
@@ -3249,7 +3245,9 @@ RangeIterator BoutMesh::iterateBndryUpperY() const {
   return RangeIterator(xs, xe);
 }
 
-std::vector<BoundaryRegionBase*> BoutMesh::getBoundaries() const { return boundary; }
+std::vector<std::shared_ptr<BoundaryRegionBase>> BoutMesh::getBoundaries() const {
+  return boundary;
+}
 
 using bout::boundary::BoundaryRegionFCI;
 std::vector<std::shared_ptr<BoundaryRegionFCI>>

@@ -1,6 +1,5 @@
 #include "bout/assert.hxx"
 #include "bout/parallel_boundary_op.hxx"
-#include "bout/parallel_boundary_region.hxx"
 #include <bout/boundary_factory.hxx>
 #include <bout/boundary_region_iter.hxx>
 #include <bout/boundary_standard.hxx>
@@ -10,7 +9,7 @@
 
 #include <array>
 #include <list>
-#include <map>
+#include <memory>
 #include <string>
 using std::list;
 using std::string;
@@ -20,15 +19,18 @@ using std::string;
 BoundaryFactory* BoundaryFactory::instance = nullptr;
 
 BoundaryFactory::BoundaryFactory() {
-  add(new BoundaryDirichlet(), "dirichlet");
-  add(new BoundaryDirichlet(), "dirichlet_o2"); // Synonym for "dirichlet"
+  add(new BoundaryDirichlet(), "dirichlet");       // Default
+  add(new BoundaryDirichlet_O1(), "dirichlet_o1"); // Old implementation in v3
+  add(new BoundaryDirichlet(), "dirichlet_o2");    // Synonym for "dirichlet"
   add(new BoundaryDirichlet_O3(), "dirichlet_o3");
   add(new BoundaryDirichlet_O4(), "dirichlet_o4");
   add(new BoundaryDirichlet_4thOrder(), "dirichlet_4thorder");
-  add(new BoundaryNeumann(), "neumann");
-  add(new BoundaryNeumann(), "neumann_O2"); // Synonym for "neumann"
+
+  add(new BoundaryNeumann(), "neumann");       // Default
+  add(new BoundaryNeumann_O1(), "neumann_o1"); // Old implementation in v3
+  add(new BoundaryNeumann(), "neumann_o2");    // Synonym for "neumann"
   add(new BoundaryNeumann_4thOrder(), "neumann_4thorder");
-  add(new BoundaryNeumann_O4(), "neumann_O4");
+  add(new BoundaryNeumann_O4(), "neumann_o4");
   add(new BoundaryNeumannPar(), "neumannpar");
   add(new BoundaryNeumann_NonOrthogonal(), "neumann_nonorthogonal");
   add(new BoundaryRobin(), "robin");
@@ -85,7 +87,9 @@ void BoundaryFactory::cleanup() {
   instance = nullptr;
 }
 
-BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* region) {
+BoundaryOpBase*
+BoundaryFactory::create(const string& name,
+                        const std::shared_ptr<BoundaryRegionBase>& region) {
 
   // Search for a string of the form: modifier(operation)
   auto pos = name.find('(');
@@ -107,8 +111,8 @@ BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* 
       // Clone the boundary operation, passing the region to operate over,
       // an empty args list and empty keyword map
       list<string> args;
-      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionFCI*>(region), args,
-                        {});
+      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionFCI*>(region.get()),
+                        args, {});
     } else {
       // Perpendicular boundary
       BoundaryOp* op = findBoundaryOp(trim(name));
@@ -199,16 +203,16 @@ BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* 
   if (pop != nullptr) {
     // An operation with arguments
     if (region->isParallel) {
-      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionFCI*>(region), arglist,
-                        keywords);
+      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionFCI*>(region.get()),
+                        arglist, keywords);
     }
     if (region->isX) {
-      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionX*>(region), arglist,
-                        keywords);
+      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionX*>(region.get()),
+                        arglist, keywords);
     }
     if (region->isY) {
-      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionY*>(region), arglist,
-                        keywords);
+      return pop->clone(dynamic_cast<bout::boundary::BoundaryRegionY*>(region.get()),
+                        arglist, keywords);
     }
   }
   if (!region->isParallel) {
@@ -227,12 +231,15 @@ BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* 
   return nullptr;
 }
 
-BoundaryOpBase* BoundaryFactory::create(const char* name, BoundaryRegionBase* region) {
+BoundaryOpBase*
+BoundaryFactory::create(const char* name,
+                        const std::shared_ptr<BoundaryRegionBase>& region) {
   return create(string(name), region);
 }
 
-BoundaryOpBase* BoundaryFactory::createFromOptions(const string& varname,
-                                                   BoundaryRegionBase* region) {
+BoundaryOpBase*
+BoundaryFactory::createFromOptions(const string& varname,
+                                   const std::shared_ptr<BoundaryRegionBase>& region) {
   if (region == nullptr) {
     return nullptr;
   }
@@ -357,8 +364,9 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string& varname,
   // values. If a user want to override, specify "none" or "null"
 }
 
-BoundaryOpBase* BoundaryFactory::createFromOptions(const char* varname,
-                                                   BoundaryRegionBase* region) {
+BoundaryOpBase*
+BoundaryFactory::createFromOptions(const char* varname,
+                                   const std::shared_ptr<BoundaryRegionBase>& region) {
   return createFromOptions(string(varname), region);
 }
 
