@@ -453,7 +453,7 @@ struct BinaryExpr {
       this->div = div;
       return *this;
     }
-    BOUT_HOST_DEVICE BOUT_FORCEINLINE bool hasParallelSlices() const {
+    BOUT_FORCEINLINE bool hasParallelSlices() const {
       if constexpr (is_expr_constant_v<L> && is_expr_constant_v<R>) {
         return false;
       } else if constexpr (is_expr_constant_v<L>) {
@@ -464,7 +464,7 @@ struct BinaryExpr {
         return lhs.hasParallelSlices() && rhs.hasParallelSlices();
       }
     }
-    BOUT_HOST_DEVICE BOUT_FORCEINLINE int numberParallelSlices() const {
+    BOUT_FORCEINLINE int numberParallelSlices() const {
       if (!hasParallelSlices()) {
         return 0;
       }

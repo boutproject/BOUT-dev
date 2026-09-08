@@ -257,6 +257,8 @@ __global__ void fft_block_cooperative(const BoutReal** __restrict__ in,
   const double2* twiddles;
   if constexpr (NZ == 16) {
     twiddles = c_twiddle_16;
+  } else if constexpr (NZ == 32) {
+    twiddles = c_twiddle_32;
   } else if constexpr (NZ == 64) {
     twiddles = c_twiddle_64;
   } else if constexpr (NZ == 128) {
@@ -266,8 +268,9 @@ __global__ void fft_block_cooperative(const BoutReal** __restrict__ in,
   } else if constexpr (NZ == 512) {
     twiddles = c_twiddle_512;
   } else {
-    static_assert(NZ == 16 || NZ == 64 || NZ == 128 || NZ == 256 || NZ == 512,
-                  "Unsupported NZ");
+    static_assert(
+        NZ == 16 || NZ == 32 || NZ == 64 || NZ == 128 || NZ == 256 || NZ == 512,
+        "Unsupported NZ");
   }
 
   // Each block processes FFTS_PER_BLOCK FFTs
@@ -429,6 +432,15 @@ static void shiftZ_block_fft(const int Nz, const BoutReal** in, BoutReal** out,
 
     fft_block_cooperative<16, FFTS_PER_BLOCK>
         <<<grid, block, 0, stream>>>(in, out, phs, nbatches, nblocks);
+  } else if (Nz == 32) {
+    constexpr int FFTS_PER_BLOCK = 8;
+    constexpr int THREADS_PER_FFT = 32;
+
+    dim3 block(THREADS_PER_FFT, FFTS_PER_BLOCK);
+    dim3 grid((total_ffts + FFTS_PER_BLOCK - 1) / FFTS_PER_BLOCK);
+
+    fft_block_cooperative<32, FFTS_PER_BLOCK>
+        <<<grid, block, 0, stream>>>(in, out, phs, nbatches, nblocks);
   } else if (Nz == 64) {
     constexpr int FFTS_PER_BLOCK = 4;
     constexpr int THREADS_PER_FFT = 64;
@@ -489,6 +501,26 @@ void ShiftedMetric::calcParallelSlices(Field3D& f) {
   f.splitParallelSlices();
 
 #if BOUT_HAS_CUDA
+  const bool cuda_fft_supported =
+      mesh.LocalNz == 16 || mesh.LocalNz == 32 || mesh.LocalNz == 64 ||
+      mesh.LocalNz == 128 || mesh.LocalNz == 256 || mesh.LocalNz == 512;
+
+  if (!cuda_fft_supported) {
+    for (const auto& phase : parallel_slice_phases) {
+      auto& f_slice = f.ynext(phase.y_offset);
+      f_slice.allocate();
+
+      BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
+        const int ix = i.x();
+        const int iy = i.y();
+        const int iy_offset = iy + phase.y_offset;
+        shiftZ(&(f(ix, iy_offset, 0)), &(phase.phase_shift(ix, iy, 0)),
+               &(f_slice(ix, iy_offset, 0)));
+      }
+    }
+    return;
+  }
+
   auto& region = mesh.getRegion2D("RGN_NOY");
   static size_t nblocks = region.getBlocks().size();
   if (nblocks != region.getBlocks().size()) {
