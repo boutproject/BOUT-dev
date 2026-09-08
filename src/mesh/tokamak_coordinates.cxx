@@ -81,14 +81,18 @@ MetricNormaliser TokamakOrFCIMetricNormaliser(const Mesh* mesh, BoutReal Bnorm,
   if (mesh->isFci()) {
     return {.g{SQ(rho_s0)}, .J{rho_s0 * rho_s0 * rho_s0}, .Bxy{Bnorm}};
   }
-  return {.g11{1 / SQ(Bnorm * rho_s0)},
+  return {.g11{SQ(Bnorm * rho_s0)},
+          .g11_mul{true},
           .g22{SQ(rho_s0)},
           .g33{SQ(rho_s0)},
-          .g12{1 / Bnorm},
-          .g13{1 / Bnorm},
+          .g12{Bnorm},
+          .g12_mul{true},
+          .g13{Bnorm},
+          .g13_mul{true},
           .g23{SQ(rho_s0)},
           .dx{rho_s0 * rho_s0 * Bnorm},
-          .J{rho_s0 / Bnorm},
+          .J{Bnorm / rho_s0},
+          .J_mul{true},
           .Bxy{Bnorm}};
 }
 

@@ -564,17 +564,26 @@ std::string parallelSliceFieldName(std::string_view field, int offset);
 /// tensor, which is multiplied by the normalisation factor.
 struct MetricNormaliser {
   std::optional<BoutReal> g = std::nullopt;
+  bool g_mul = false;
   std::optional<BoutReal> g11 = std::nullopt;
+  bool g11_mul = false;
   std::optional<BoutReal> g22 = std::nullopt;
+  bool g22_mul = false;
   std::optional<BoutReal> g33 = std::nullopt;
+  bool g33_mul = false;
   std::optional<BoutReal> g12 = std::nullopt;
+  bool g12_mul = false;
   std::optional<BoutReal> g13 = std::nullopt;
+  bool g13_mul = false;
   std::optional<BoutReal> g23 = std::nullopt;
+  bool g23_mul = false;
   std::optional<BoutReal> dx = std::nullopt;
   std::optional<BoutReal> dy = std::nullopt;
   std::optional<BoutReal> dz = std::nullopt;
   std::optional<BoutReal> J = std::nullopt;
+  bool J_mul = false;
   std::optional<BoutReal> Bxy = std::nullopt;
+  bool Bxy_mul = false;
 };
 
 #endif // BOUT_COORDINATES_H
