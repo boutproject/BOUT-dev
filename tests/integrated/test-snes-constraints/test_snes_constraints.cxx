@@ -7,6 +7,20 @@ namespace {
 constexpr BoutReal constraint_factor = 0.5;
 }
 
+/// Solves a Differential-Algebraic Equation (DAE) system
+///
+/// du/dt = -u + phi
+/// phi - constraint_factor * u = 0
+///
+/// Eliminating phi gives the continuous reduced equation
+///   du/dt = (-1 + constraint_factor) * u
+///
+/// with exact solution
+///   u = u0 * exp( (-1 + constraint_factor) * t)
+///
+/// This integrated test advances a single implicit timestep with the SNES
+/// solver, so the checked value is the one-step backward-Euler result rather
+/// than the continuous exact solution.
 class TestSnesConstraints : public PhysicsModel {
 public:
   Field3D u;
