@@ -6,7 +6,7 @@ if [[ ! -d $HOME/local/include/sundials ]]; then
     echo "****************************************"
     echo "Building SUNDIALS"
     echo "****************************************"
-    sundials_ver=4.1.0
+    sundials_ver=7.9.0
     tarball_name=sundials-${sundials_ver}.tar.gz
     llnl_url=https://computation.llnl.gov/projects/sundials/download/${tarball_name}
     github_url=https://github.com/LLNL/sundials/releases/download/v${sundials_ver}/${tarball_name}
