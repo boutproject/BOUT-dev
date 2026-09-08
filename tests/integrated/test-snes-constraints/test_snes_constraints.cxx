@@ -22,7 +22,7 @@ public:
   Field3D u;
   Field3D phi;
 
-  constexpr BoutReal constraint_factor = 0.5;
+  static constexpr BoutReal constraint_factor = 0.5;
 
   int init(bool UNUSED(restarting)) override {
     solver->add(u, "u");

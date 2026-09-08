@@ -248,8 +248,8 @@ private:
   int nlocal; ///< Number of variables on local processor
   int neq;    ///< Number of variables in total
 
-  bool has_constraint_variables; ///< Are there any constraint variables?
-  Array<BoutReal> is_dae;        ///< If using constraints, 1 -> DAE, 0 -> AE
+  bool has_constraint_variables{false}; ///< Are there any constraint variables?
+  Array<BoutReal> is_dae;               ///< If using constraints, 1 -> DAE, 0 -> AE
 
   IS is_diff = nullptr; // is_dae == 1
   IS is_alg = nullptr;  // is_dae == 0 (phi constraint and any other algebraics)

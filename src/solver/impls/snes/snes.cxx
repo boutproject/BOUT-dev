@@ -510,7 +510,6 @@ int SNESSolver::init() {
                     n3Dvars(), n2Dvars(), neq, nlocal);
 
   // Check if there are any constraints
-  has_constraint_variables = false;
 
   for (int i = 0; i < n2Dvars(); i++) {
     if (f2d[i].constraint) {
