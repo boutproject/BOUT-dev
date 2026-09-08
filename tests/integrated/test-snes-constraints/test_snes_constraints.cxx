@@ -28,7 +28,7 @@ public:
 
   int init(bool UNUSED(restarting)) override {
     solver->add(u, "u");
-    solver->constraint(phi, ddt(phi), "phi");
+    solver->constraint(phi, residual(phi), "phi");
 
     u = 1.0;
     phi = constraint_factor;
@@ -38,7 +38,7 @@ public:
 
   int rhs(BoutReal UNUSED(time)) override {
     ddt(u) = -u + phi;
-    ddt(phi) = phi - constraint_factor * u;
+    residual(phi) = phi - constraint_factor * u;
 
     return 0;
   }
