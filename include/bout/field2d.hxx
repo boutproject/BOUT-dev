@@ -601,6 +601,9 @@ inline Field2D DC(const Field2D& f) { return f; }
 /// Wrapper around member function f.timeDeriv()
 inline Field2D& ddt(Field2D& f) { return *(f.timeDeriv()); }
 
+/// Alias for ddt that is more readable for constraints
+inline Field2D& residual(Field2D& f) { return *(f.timeDeriv()); }
+
 /// toString template specialisation
 /// Defined in utils.hxx
 template <>

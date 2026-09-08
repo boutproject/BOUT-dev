@@ -85,7 +85,7 @@ IdaSolver::IdaSolver(Options* opts)
                        .doc("N_Vector backend to use: sundials or manyvector")
                        .withDefault(NVectorType::Sundials)),
       suncontext(createSUNContext(BoutComm::get())) {
-  has_constraints = true; // This solver has constraints
+  supports_constraints = true; // This solver has constraints
 }
 
 IdaSolver::~IdaSolver() {

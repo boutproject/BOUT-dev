@@ -258,8 +258,8 @@ public:
   virtual void add(Vector3D& v, const std::string& name,
                    const std::string& description = "");
 
-  /// Returns true if constraints available
-  virtual bool constraints() { return has_constraints; }
+  /// Returns true if this solver supports constraint variables
+  virtual bool constraints() { return supports_constraints; }
 
   /// Add constraint functions (optional). These link a variable v to
   /// a control parameter C_v such that v is adjusted to keep C_v = 0.
@@ -549,7 +549,7 @@ protected:
   };
 
   /// Can this solver handle constraints? Set to true if so.
-  bool has_constraints{false};
+  bool supports_constraints{false};
   /// Has init been called yet?
   bool initialised{false};
   /// If calling user RHS for the first time

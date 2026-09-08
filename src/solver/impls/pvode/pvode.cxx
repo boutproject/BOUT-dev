@@ -101,7 +101,7 @@ PvodeSolver::PvodeSolver(Options* opts)
           (*options)["mxstep"].doc("Maximum number of internal steps").withDefault(500)),
       abstol((*options)["atol"].doc("Absolute tolerance").withDefault(1.0e-12)),
       reltol((*options)["rtol"].doc("Relative tolerance").withDefault(1.0e-5)) {
-  has_constraints = false; ///< This solver doesn't have constraints
+  supports_constraints = false; ///< This solver doesn't have constraints
 }
 
 PvodeSolver::~PvodeSolver() {
