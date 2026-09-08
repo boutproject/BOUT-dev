@@ -3,10 +3,6 @@
 #include <bout/physicsmodel.hxx>
 #include <bout/unused.hxx>
 
-namespace {
-constexpr BoutReal constraint_factor = 0.5;
-}
-
 /// Solves a Differential-Algebraic Equation (DAE) system
 ///
 /// du/dt = -u + phi
@@ -25,6 +21,8 @@ class TestSnesConstraints : public PhysicsModel {
 public:
   Field3D u;
   Field3D phi;
+
+  constexpr BoutReal constraint_factor = 0.5;
 
   int init(bool UNUSED(restarting)) override {
     solver->add(u, "u");

@@ -426,7 +426,7 @@ SNESSolver::SNESSolver(Options* opts)
       jacobian_export_kind((*options)["jacobian_export_kind"]
                                .doc("Which Jacobian to save: system, scaled, or rhs")
                                .withDefault(bout::JacobianExportKind::system)) {
-  has_constraints = true; // This solver can handle constraints
+  supports_constraints = true; // This solver can handle constraints
 }
 
 SNESSolver::~SNESSolver() {
@@ -510,22 +510,22 @@ int SNESSolver::init() {
                     n3Dvars(), n2Dvars(), neq, nlocal);
 
   // Check if there are any constraints
-  have_constraints = false;
+  has_constraint_variables = false;
 
   for (int i = 0; i < n2Dvars(); i++) {
     if (f2d[i].constraint) {
-      have_constraints = true;
+      has_constraint_variables = true;
       break;
     }
   }
   for (int i = 0; i < n3Dvars(); i++) {
     if (f3d[i].constraint) {
-      have_constraints = true;
+      has_constraint_variables = true;
       break;
     }
   }
 
-  if (have_constraints) {
+  if (has_constraint_variables) {
     is_dae.reallocate(nlocal);
     // Call the Solver function, which sets the array
     // to one when not a constraint, zero for constraint
@@ -596,7 +596,7 @@ int SNESSolver::init() {
   local_residual_2d = 0.0;
   global_residual = 0.0;
 
-  if (have_constraints) {
+  if (has_constraint_variables) {
     // CreatePETSc-native index sets representing the two parts of your DAE.
     PetscInt istart, iend;
     PetscCall(VecGetOwnershipRange(snes_x, &istart, &iend));
@@ -756,7 +756,7 @@ int SNESSolver::init() {
     }
   }
 
-  if (have_constraints && !matrix_free && pc_type == "fieldsplit") {
+  if (has_constraint_variables && !matrix_free && pc_type == "fieldsplit") {
     output_info.write("Using PCFieldSplit preconditioner for DAE system\n");
 
     // Use PETSc fieldsplit
@@ -1703,7 +1703,7 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
     return 0;
   }
 
-  ASSERT2(!have_constraints || is_diff != nullptr);
+  ASSERT2(!has_constraint_variables || is_diff != nullptr);
 
   switch (equation_form) {
   case BoutSnesEquationForm::rearranged_backward_euler: {
@@ -1719,7 +1719,7 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
           PetscCall(VecAXPY(f_part, -1.0 / dt, delta_x_part));
           return PETSC_SUCCESS;
         },
-        have_constraints ? is_diff : nullptr, x, x0, delta_x, f));
+        has_constraint_variables ? is_diff : nullptr, x, x0, delta_x, f));
     break;
   }
   case BoutSnesEquationForm::pseudo_transient: {
@@ -1738,7 +1738,7 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
           PetscCall(VecAXPY(f_part, -1.0, delta_x_part));
           return PETSC_SUCCESS;
         },
-        have_constraints ? is_diff : nullptr, x, x0, delta_x, f, dt_vec));
+        has_constraint_variables ? is_diff : nullptr, x, x0, delta_x, f, dt_vec));
     break;
   }
   case BoutSnesEquationForm::backward_euler: {
@@ -1754,7 +1754,7 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
           PetscCall(VecAXPY(f_part, -1.0, x0_part));
           return PETSC_SUCCESS;
         },
-        have_constraints ? is_diff : nullptr, x, x0, f));
+        has_constraint_variables ? is_diff : nullptr, x, x0, f));
     break;
   }
   case BoutSnesEquationForm::direct_newton: {

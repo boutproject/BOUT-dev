@@ -148,7 +148,7 @@ std::string formatEig(BoutReal reEig, BoutReal imEig) {
 }
 
 SlepcSolver::SlepcSolver(Options* options) {
-  has_constraints = false;
+  supports_constraints = false;
   initialised = false;
   stIsShell = PETSC_FALSE;
 
