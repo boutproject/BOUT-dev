@@ -1482,19 +1482,20 @@ similar way to time integrated variables. For example
 
     Field3D phi;
     ...
-    solver->constraint(phi, ddt(phi), "phi");
+    solver->constraint(phi, residual(phi), "phi");
 
 The first argument is the variable to be solved for (constrained). The
 second argument is the field to contain the residual (error). In this
-example the time derivative field ``ddt(phi)`` is used, but it could
-be another `Field3D` variable. The solver will attempt to
+example ``residual(phi)`` is used, which is an alias for the same
+storage as ``ddt(phi)`` but makes the algebraic role clearer. It could
+also be another ``Field3D`` variable. The solver will attempt to
 find a solution to the first argument (``phi`` here) such that the
-second argument (``ddt(phi)``) is zero to within tolerances.
+second argument (``residual(phi)`` here) is zero to within tolerances.
 
 In the RHS function the residual should be calculated. In this example
 (``examples/constraints/drift-wave-constraint``) we have::
 
-    ddt(phi) = Delp2(phi) - Vort;
+    residual(phi) = Delp2(phi) - Vort;
 
 so the time integration solver includes the algebraic constraint
 ``Delp2(phi) = Vort`` i.e. (:math:`\nabla_\perp^2\phi = \omega`).
