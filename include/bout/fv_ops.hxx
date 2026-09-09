@@ -204,14 +204,14 @@ Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D&
 ///                          This field is optional
 /// @param[in]  upwinding    Use upwinding to to calculate the fluxes
 
-class Div_a_Grad_perp_pre {
+class Div_a_Grad_perp_FCI {
 public:
   Field3D operator()(const Field3D& a, const Field3D& f, Field3D& low_xlow,
                      Field3D& flow_zlow, bool upwinding) const;
   Field3D operator()(const Field3D& a, const Field3D& f, bool upwinding) const;
-  Div_a_Grad_perp_pre(Mesh& mesh);
+  Div_a_Grad_perp_FCI(Mesh& mesh);
 
-  static std::shared_ptr<Div_a_Grad_perp_pre> create(Mesh* mesh, BoutReal rho_s0);
+  static std::shared_ptr<Div_a_Grad_perp_FCI> create(Mesh* mesh, BoutReal rho_s0);
 
 private:
   template <bool extra, bool upwinding>
@@ -227,7 +227,7 @@ private:
   BoutReal xflux(const Field3D& a, const Field3D& f, const Ind3D& i) const;
   template <bool upwinding>
   BoutReal zflux(const Field3D& a, const Field3D& f, const Ind3D& i) const;
-  static std::map<Mesh*, std::weak_ptr<Div_a_Grad_perp_pre>> op_cache;
+  static std::map<Mesh*, std::weak_ptr<Div_a_Grad_perp_FCI>> op_cache;
 };
 
 } // namespace FV
