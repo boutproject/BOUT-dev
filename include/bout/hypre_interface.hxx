@@ -15,10 +15,12 @@
 #include "bout/field2d.hxx"
 #include "bout/globalindexer.hxx"
 #include "bout/hyprelib.hxx"
+#include "bout/msg_stack.hxx"
 #include "bout/options.hxx"
 #include "bout/output.hxx"
 #include "bout/paralleltransform.hxx"
 #include "bout/region.hxx"
+#include "bout/unused.hxx"
 #include "bout/utils.hxx"
 
 #include "HYPRE.h"
@@ -26,12 +28,12 @@
 #include "HYPRE_parcsr_ls.h"
 #include "HYPRE_parcsr_mv.h"
 #include "HYPRE_utilities.h"
-#include "_hypre_utilities.h"
 
 #include <algorithm>
 #include <cmath>
 #include <iterator>
 #include <memory>
+#include <utility>
 #include <vector>
 
 // BOUT_ENUM_CLASS does not work inside namespaces
@@ -48,7 +50,7 @@ namespace bout {
 
 namespace {
 int checkHypreError(int error) {
-  if (error) {
+  if (error != 0) {
     // Aaron Fisher warns that it is possible that the error code is non-zero even
     // though a solve was successful. If this occurs, we might want to make this a
     // warning, or otherwise investigate further.
@@ -217,7 +219,7 @@ class HypreVector {
   HYPRE_Complex* V{nullptr};
   HYPRE_Complex* workV{nullptr};
   bool cache_current{false};
-  HypreLib hyprelib{};
+  HypreLib hyprelib;
 
 public:
   static_assert(bout::utils::is_Field_v<T>, "HypreVector only works with Fields");
@@ -241,7 +243,7 @@ public:
   HypreVector(const HypreVector<T>&) = delete;
   auto operator=(const HypreVector<T>&) = delete;
 
-  HypreVector(HypreVector<T>&& other)
+  HypreVector(HypreVector<T>&& other) noexcept
       : comm(other.comm), jlower(other.jlower), jupper(other.jupper), vsize(other.vsize),
         indexConverter(other.indexConverter), location(other.location),
         initialised(other.initialised), have_indices(other.have_indices), I(other.I),
@@ -312,7 +314,8 @@ public:
   }
 
   /// Construct a vector with given index set, but don't set any values
-  explicit HypreVector(IndexerPtr<T> indConverter) : indexConverter(indConverter) {
+  explicit HypreVector(IndexerPtr<T> indConverter)
+      : indexConverter(indConverter), location(CELL_LOC::centre) {
     Mesh& mesh = *indConverter->getMesh();
     const MPI_Comm comm =
         std::is_same_v<T, FieldPerp> ? mesh.getXZcomm() : BoutComm::get();
@@ -325,7 +328,6 @@ public:
     checkHypreError(HYPRE_IJVectorSetObjectType(hypre_vector, HYPRE_PARCSR));
     checkHypreError(HYPRE_IJVectorInitialize(hypre_vector));
     initialised = true;
-    location = CELL_LOC::centre;
     HypreMalloc(I, vsize * sizeof(HYPRE_BigInt));
     HypreMalloc(V, vsize * sizeof(HYPRE_Complex));
     HypreMalloc(workV, vsize * sizeof(HYPRE_Complex));
@@ -546,13 +548,13 @@ class HypreMatrix {
   ParallelTransform* parallel_transform{nullptr};
   bool assembled{false};
   HYPRE_BigInt num_rows;
-  std::vector<HYPRE_BigInt>* I;
-  std::vector<std::vector<HYPRE_BigInt>>* J;
-  std::vector<std::vector<HYPRE_Complex>>* V;
+  std::shared_ptr<std::vector<HYPRE_BigInt>> I;
+  std::shared_ptr<std::vector<std::vector<HYPRE_BigInt>>> J;
+  std::shared_ptr<std::vector<std::vector<HYPRE_Complex>>> V;
   /// Enable reduction of boundary equations before assembling the Hypre matrix.
   bool use_boundary_elimination{false};
   BoundaryEliminationPtr boundary_elimination;
-  HypreLib hyprelib{};
+  HypreLib hyprelib;
 
   // todo also take care of I,J,V
   struct MatrixDeleter {
@@ -575,8 +577,8 @@ public:
         index_converter(other.index_converter), location(other.location),
         initialised(other.initialised), yoffset(other.yoffset),
         parallel_transform(other.parallel_transform), assembled(other.assembled),
-        num_rows(other.num_rows), I(other.I), J(other.J), V(other.V),
-        use_boundary_elimination(other.use_boundary_elimination),
+        num_rows(other.num_rows), I(std::move(other.I)), J(std::move(other.J)),
+        V(std::move(other.V)), use_boundary_elimination(other.use_boundary_elimination),
         boundary_elimination(other.boundary_elimination) {
     std::swap(hypre_matrix, other.hypre_matrix);
     std::swap(parallel_matrix, other.parallel_matrix);
@@ -595,9 +597,9 @@ public:
     parallel_transform = other.parallel_transform;
     assembled = other.assembled;
     num_rows = other.num_rows;
-    I = other.I;
-    J = other.J;
-    V = other.V;
+    I = std::move(other.I);
+    J = std::move(other.J);
+    V = std::move(other.V);
     use_boundary_elimination = other.use_boundary_elimination;
     boundary_elimination = other.boundary_elimination;
     return *this;
@@ -608,27 +610,21 @@ public:
   ///
   /// note: preallocate not currently used, but here to match PetscMatrix interface
   explicit HypreMatrix(IndexerPtr<T> indConverter, bool UNUSED(preallocate) = true)
-      : hypre_matrix(new HYPRE_IJMatrix, MatrixDeleter{}), index_converter(indConverter) {
+      : ilower(indConverter->getGlobalStart()),
+        iupper(ilower + indConverter->size() - 1), // inclusive end
+        hypre_matrix(new HYPRE_IJMatrix, MatrixDeleter{}), index_converter(indConverter),
+        num_rows(iupper - ilower + 1),
+        I(std::make_shared<std::vector<HYPRE_BigInt>>(num_rows)),
+        J(std::make_shared<std::vector<std::vector<HYPRE_BigInt>>>(num_rows)),
+        V(std::make_shared<std::vector<std::vector<HYPRE_Complex>>>(num_rows)) {
     Mesh* mesh = indConverter->getMesh();
     const MPI_Comm comm =
         std::is_same_v<T, FieldPerp> ? mesh->getXZcomm() : BoutComm::get();
     parallel_transform = &mesh->getCoordinates()->getParallelTransform();
 
-    ilower = indConverter->getGlobalStart();
-    iupper = ilower + indConverter->size() - 1; // inclusive end
-    num_rows = iupper - ilower + 1;
-
-    I = new std::vector<HYPRE_BigInt>;
-    J = new std::vector<std::vector<HYPRE_BigInt>>;
-    V = new std::vector<std::vector<HYPRE_Complex>>;
-    (*I).resize(num_rows);
-    (*J).resize(num_rows);
-    (*V).resize(num_rows);
     for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
       (*I)[i] = ilower + i;
-      (*J)[i].resize(0);
       (*J)[i].reserve(10);
-      (*V)[i].resize(0);
       (*V)[i].reserve(10);
     }
 
@@ -659,8 +655,8 @@ public:
     Element(HypreMatrix<T>& matrix_, HYPRE_BigInt row_, HYPRE_BigInt column_,
             std::vector<HYPRE_BigInt> positions_ = {},
             std::vector<BoutReal> weights_ = {})
-        : hypre_matrix(matrix_.get()), row(row_), column(column_), positions(positions_),
-          weights(weights_) {
+        : hypre_matrix(matrix_.get()), row(row_), column(column_),
+          positions(std::move(positions_)), weights(std::move(weights_)) {
 #if CHECK > 2
       for (const auto val : weights) {
         ASSERT3(std::isfinite(val));
@@ -1032,7 +1028,7 @@ public:
         const HYPRE_Complex operator_value = elimination_state.interior_values->data[i];
         elimination_state.interior_values->data[i] = alpha * operator_value;
         elimination_state.boundary_values->data[i] =
-            alpha * operator_value
+            (alpha * operator_value)
             + (y_boundary_values != nullptr ? beta * y_boundary_values->data[i] : 0.0);
       }
     }
@@ -1073,7 +1069,7 @@ private:
   HYPRE_Solver precon;
   bool solver_setup{false};
   HYPRE_SOLVER_TYPE solver_type = HYPRE_SOLVER_TYPE::gmres;
-  HypreLib hyprelib{};
+  HypreLib hyprelib;
 
   // Basically a manual vtable for the various implementations of the
   // HYPRE solver methods. By storing function pointers and setting
@@ -1092,13 +1088,12 @@ private:
   decltype(HYPRE_ParCSRGMRESSolve)* solverSolve{nullptr};
 
 public:
-  HypreSystem(Mesh& mesh, Options& options) {
+  HypreSystem(Mesh& mesh, Options& options)
+      : comm(std::is_same_v<T, FieldPerp> ? mesh.getXZcomm() : BoutComm::get()) {
     solver_type = options["hypre_solver_type"]
                       .doc("Type of solver to use when solving Hypre system. Possible "
                            "values are: gmres, bicgstab, pcg")
                       .withDefault(HYPRE_SOLVER_TYPE::bicgstab);
-
-    comm = std::is_same_v<T, FieldPerp> ? mesh.getXZcomm() : BoutComm::get();
 
     auto print_level =
         options["hypre_print_level"]

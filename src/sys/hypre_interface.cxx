@@ -3,10 +3,17 @@
 
 #if BOUT_HAS_HYPRE
 
+#include <HYPRE_utilities.h>
+
+#include "bout/boutexception.hxx"
 #include "bout/hypre_interface.hxx"
 
+#include <algorithm>
+#include <iterator>
+#include <memory>
 #include <numeric>
 #include <unordered_map>
+#include <vector>
 
 namespace bout {
 
@@ -15,9 +22,8 @@ BoundaryElimination::BoundaryElimination(HYPRE_Int nrows, HYPRE_Int* ncols,
                                          HYPRE_BigInt* cols, HYPRE_Complex* values,
                                          HYPRE_Int nb, HYPRE_Int* bi_array)
     : nb(nb) {
-  HYPRE_Int* row_indexes;
   const auto find_local_row = [nrows, rows](HYPRE_BigInt row) -> HYPRE_Int {
-    auto row_position = std::lower_bound(rows, rows + nrows, row);
+    auto* row_position = std::lower_bound(rows, rows + nrows, row);
     if ((row_position == rows + nrows) || (*row_position != row)) {
       throw BoutException("Could not find local row {} while constructing boundary "
                           "elimination data",
@@ -27,6 +33,7 @@ BoundaryElimination::BoundaryElimination(HYPRE_Int nrows, HYPRE_Int* ncols,
   };
 
   // Create the row_indexes array
+  HYPRE_Int* row_indexes{nullptr};
   HypreMalloc(row_indexes, sizeof(HYPRE_Int) * nrows);
   row_indexes[0] = 0;
   for (HYPRE_Int i = 1; i < nrows; i++) {
@@ -71,7 +78,7 @@ BoundaryElimination::BoundaryElimination(HYPRE_Int nrows, HYPRE_Int* ncols,
     // Get boundary equation information and adjust boundary equations
     HYPRE_Int i = bi_array[bnum];
     const HYPRE_Int binum = find_local_row(i);
-    HYPRE_Int bcoeffnum = row_indexes[binum];
+    const HYPRE_Int bcoeffnum = row_indexes[binum];
     HYPRE_Complex bii{0.0}, bij{0.0};
     HYPRE_BigInt j = -1;
 
@@ -148,11 +155,11 @@ BoundaryElimination::BoundaryElimination(HYPRE_Int nrows, HYPRE_Int* ncols,
 
   na = static_cast<HYPRE_Int>(aknums.size());
   HypreMalloc(aoffset_array, sizeof(HYPRE_Int) * (nb + 1));
-  std::copy(aoffsets.begin(), aoffsets.end(), aoffset_array);
+  std::ranges::copy(aoffsets, aoffset_array);
   HypreMalloc(aknum_array, sizeof(HYPRE_Int) * na);
-  std::copy(aknums.begin(), aknums.end(), aknum_array);
+  std::ranges::copy(aknums, aknum_array);
   HypreMalloc(aki_array, sizeof(HYPRE_Complex) * na);
-  std::copy(akis.begin(), akis.end(), aki_array);
+  std::ranges::copy(akis, aki_array);
 
   std::vector<HYPRE_Int> dependency_depth(nb, -1);
   const auto get_depth = [&dependency_depth, this](const auto& self,
@@ -174,15 +181,14 @@ BoundaryElimination::BoundaryElimination(HYPRE_Int nrows, HYPRE_Int* ncols,
 
   expansion_order.resize(nb);
   std::iota(expansion_order.begin(), expansion_order.end(), 0);
-  std::sort(expansion_order.begin(), expansion_order.end(),
-            [&dependency_depth](HYPRE_Int lhs, HYPRE_Int rhs) {
-              if (dependency_depth[lhs] != dependency_depth[rhs]) {
-                return dependency_depth[lhs] < dependency_depth[rhs];
-              }
-              return lhs < rhs;
-            });
+  std::ranges::sort(expansion_order, [&dependency_depth](HYPRE_Int lhs, HYPRE_Int rhs) {
+    if (dependency_depth[lhs] != dependency_depth[rhs]) {
+      return dependency_depth[lhs] < dependency_depth[rhs];
+    }
+    return lhs < rhs;
+  });
   reduction_order = expansion_order;
-  std::reverse(reduction_order.begin(), reduction_order.end());
+  std::ranges::reverse(reduction_order);
 
   // Set return arguments
   *row_indexes_ptr = row_indexes;
@@ -216,9 +222,9 @@ BCValuesPtr BoundaryElimination::reduceRightHandSideInPlace(HYPRE_Complex* rhs) 
   // Allocate array to store boundary row values
   BCValuesPtr brhs = copyBoundaryRowValues(rhs);
 
-  for (HYPRE_Int bnum : reduction_order) {
+  for (const HYPRE_Int bnum : reduction_order) {
     for (HYPRE_Int anum = aoffset_array[bnum]; anum < aoffset_array[bnum + 1]; anum++) {
-      HYPRE_Int aknum = aknum_array[anum];
+      const HYPRE_Int aknum = aknum_array[anum];
       rhs[aknum] -= aki_array[anum] * brhs->data[bnum] / bii_array[bnum];
     }
     if (bdep_array[bnum] >= 0) {
@@ -232,9 +238,9 @@ BCValuesPtr BoundaryElimination::reduceRightHandSideInPlace(HYPRE_Complex* rhs) 
 void BoundaryElimination::expandSolutionInPlace(BCValuesPtr brhs,
                                                 HYPRE_Complex* solution) const {
 
-  for (HYPRE_Int bnum : expansion_order) {
-    HYPRE_Int binum = binum_array[bnum];
-    HYPRE_Int bjnum = bjnum_array[bnum];
+  for (const HYPRE_Int bnum : expansion_order) {
+    const HYPRE_Int binum = binum_array[bnum];
+    const HYPRE_Int bjnum = bjnum_array[bnum];
     solution[binum] =
         (brhs->data[bnum] - bij_array[bnum] * solution[bjnum]) / bii_array[bnum];
   }
@@ -245,7 +251,7 @@ void BoundaryElimination::expandMatvecResultInPlace(BCValuesPtr boundary_operato
                                                     HYPRE_Complex* result) const {
   for (HYPRE_Int bnum = 0; bnum < nb; bnum++) {
     for (HYPRE_Int anum = aoffset_array[bnum]; anum < aoffset_array[bnum + 1]; anum++) {
-      HYPRE_Int aknum = aknum_array[anum];
+      const HYPRE_Int aknum = aknum_array[anum];
       result[aknum] +=
           aki_array[anum] * boundary_operator_values->data[bnum] / bii_array[bnum];
     }
