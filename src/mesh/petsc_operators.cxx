@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <utility>
@@ -129,6 +130,33 @@ PetscCellMapping::PetscCellMapping(const Field3D& cell_number,
   push_region(ydown_region, this->backward_cell_number);
   buildPermutation(static_cast<PetscInt>(local_indices.size()), total_cells,
                    local_indices);
+}
+
+IS PetscCellMapping::makeEvolvingIS() const {
+  // Collect global PETSc indices in mapOwnedInteriorCells order.
+  // Reserve the known count up front to avoid reallocation.
+  std::vector<PetscInt> indices;
+  indices.reserve(static_cast<std::size_t>(evolving_region.size()));
+
+  mapOwnedInteriorCells(
+      [&](PetscInt row, const Ind3D& /*i*/, int /*stored*/) { indices.push_back(row); });
+
+  IS is;
+  BOUT_DO_PETSC(ISCreateGeneral(BoutComm::get(), static_cast<PetscInt>(indices.size()),
+                                indices.data(), PETSC_COPY_VALUES, &is));
+  return is;
+}
+
+Mat PetscCellMapping::extractEvolvingSubmatrix(
+    const PetscOperator<CellSpaceTag, CellSpaceTag>& op) const {
+  IS is = makeEvolvingIS();
+
+  Mat sub;
+  BOUT_DO_PETSC(MatCreateSubMatrix(op.raw(), is, is, MAT_INITIAL_MATRIX, &sub));
+
+  BOUT_DO_PETSC(ISDestroy(&is));
+
+  return sub;
 }
 
 PetscLegMapping::PetscLegMapping(int total_legs, std::vector<int> local_leg_indices) {
