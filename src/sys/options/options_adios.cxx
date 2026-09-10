@@ -193,6 +193,13 @@ bool readAttribute(adios2::IO& io, const std::string& name, const std::string& t
     attrname = name.substr(pos + 1);
   }
 
+  // ADIOS uses this internal attribute to reconstruct array dimensions.
+  // BOUT++ already regenerates it when writing arrays/fields, and reading it
+  // back as a single string loses the full dimension list.
+  if (attrname == "__xarray_dimensions__") {
+    return false;
+  }
+
   if (type == adios2::GetType<int>()) {
     result.attributes[attrname] = *io.InquireAttribute<int>(name).Data().data();
     return true;
@@ -375,6 +382,10 @@ void writeGroup(const Options& options, bout::ADIOSStream& stream,
           for (const auto& attribute : child.attributes) {
             const std::string& att_name = attribute.first;
             const auto& att = attribute.second;
+
+            if (att_name == "__xarray_dimensions__") {
+              continue;
+            }
 
             bout::utils::visit(ADIOSPutAttVisitor(varname, att_name, stream), att);
           }

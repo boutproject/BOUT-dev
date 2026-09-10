@@ -7,13 +7,14 @@
 
 #include <adios2.h>
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 
 namespace bout {
 
 static ADIOSPtr adios = nullptr;
-static std::unordered_map<std::string, ADIOSStream> adiosStreams;
+static std::unordered_map<std::string, std::unique_ptr<ADIOSStream>> adiosStreams;
 
 namespace {
 std::string GetIOName(const std::string& fname, adios2::Mode mode) {
@@ -62,28 +63,24 @@ ADIOSPtr GetADIOSPtr() {
   return adios;
 }
 
-ADIOSStream::~ADIOSStream() {
-  if (engine_) {
-    if (isInStep) {
-      engine_.EndStep();
-      isInStep = false;
-    }
-    engine_.Close();
-  }
-}
+ADIOSStream::~ADIOSStream() { finish(); }
 
 ADIOSStream::ADIOSStream(const std::string& fname, adios2::Mode mode,
                          const std::string& engineType)
-    : io(GetIO(fname, mode, engineType)), fname(fname), file_mode(mode) {}
+    : io(GetIO(fname, mode, engineType)), fname(fname), io_name(GetIOName(fname, mode)),
+      file_mode(mode) {}
 
 ADIOSStream& ADIOSStream::ADIOSGetStream(const std::string& fname, adios2::Mode mode,
                                          const std::string& engineType) {
   const auto key = GetIOName(fname, mode);
   auto it = adiosStreams.find(key);
-  if (it == adiosStreams.end()) {
-    it = adiosStreams.emplace(key, ADIOSStream(fname, mode, engineType)).first;
+  if (it == adiosStreams.end() || it->second->isRetired()) {
+    it = adiosStreams
+             .insert_or_assign(key, std::unique_ptr<ADIOSStream>(
+                                        new ADIOSStream(fname, mode, engineType)))
+             .first;
   }
-  return it->second;
+  return *it->second;
 }
 
 } // namespace bout
