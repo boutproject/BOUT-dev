@@ -44,7 +44,7 @@ upwind = U1 # u*d/dy (f)
 # Methods used for the azimuthal (z) derivative terms
 [mesh:ddz]
 first = FFT # d/dz (f)
-second = FTT # d^2/dz^2 (f)
+second = FFT # d^2/dz^2 (f)
 ###############################################################################
 
 

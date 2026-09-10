@@ -544,18 +544,8 @@ inline BoutReal mean(const BinaryExpr<ResT, L, R, Func>& f, bool allpe = false,
   return bout::reduce::Mean::finalize(state);
 }
 
-namespace bout::op {
-struct Pow {
-  template <typename LView, typename RView>
-  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(int idx, const LView& L,
-                                                        const RView& R) const {
-    return ::pow(L(idx), R(idx));
-  }
-  BOUT_HOST_DEVICE BOUT_FORCEINLINE BoutReal operator()(BoutReal a, BoutReal b) const {
-    return ::pow(a, b);
-  }
-};
-}; // namespace bout::op
+class Field3DParallel;
+class FieldPerp;
 
 namespace bout::detail {
 template <typename T>
@@ -692,61 +682,91 @@ pow(const L& lhs, const R& rhs, const std::string& rgn) {
 }
 
 template <typename L, typename R>
+std::enable_if_t<is_expr_fieldperp_v<L> && is_expr_fieldperp_v<R>,
+                 BinaryExpr<FieldPerp, L, R, bout::op::Pow>>
+pow(const L& lhs, const R& rhs) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  ASSERT1(lhs.getIndex() == rhs.getIndex());
+  return bout::detail::makePowExpr<FieldPerp, L, R>(
+      static_cast<typename L::View>(lhs), static_cast<typename R::View>(rhs),
+      lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), std::nullopt,
+      lhs.getMesh()->template getRegion<FieldPerp>("RGN_ALL"),
+      bout::detail::getPerpYIndex(lhs));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_fieldperp_v<L> && is_expr_fieldperp_v<R>,
+                 BinaryExpr<FieldPerp, L, R, bout::op::Pow>>
+pow(const L& lhs, const R& rhs, const std::string& rgn) {
+  ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
+  ASSERT1(lhs.getIndex() == rhs.getIndex());
+  return bout::detail::makePowExpr<FieldPerp, L, R>(
+      static_cast<typename L::View>(lhs), static_cast<typename R::View>(rhs),
+      lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), std::nullopt,
+      lhs.getMesh()->template getRegion<FieldPerp>(rgn),
+      bout::detail::getPerpYIndex(lhs));
+}
+
+template <typename L, typename R>
 std::enable_if_t<is_expr_field2d_v<L> && is_expr_constant_v<R>,
-                 BinaryExpr<Field2D, L, Constant<R>, bout::op::Pow>>
+                 BinaryExpr<Field2D, L, Constant<BoutReal>, bout::op::Pow>>
 pow(const L& lhs, R rhs) {
-  return bout::detail::makePowExpr<Field2D, L, Constant<R>>(
-      static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
+  return bout::detail::makePowExpr<Field2D, L, Constant<BoutReal>>(
+      static_cast<typename L::View>(lhs),
+      static_cast<typename Constant<BoutReal>::View>(static_cast<BoutReal>(rhs)),
       lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), std::nullopt,
       lhs.getMesh()->getRegion2D("RGN_ALL"));
 }
 
 template <typename L, typename R>
 std::enable_if_t<is_expr_field2d_v<L> && is_expr_constant_v<R>,
-                 BinaryExpr<Field2D, L, Constant<R>, bout::op::Pow>>
+                 BinaryExpr<Field2D, L, Constant<BoutReal>, bout::op::Pow>>
 pow(const L& lhs, R rhs, const std::string& rgn) {
-  return bout::detail::makePowExpr<Field2D, L, Constant<R>>(
-      static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
+  return bout::detail::makePowExpr<Field2D, L, Constant<BoutReal>>(
+      static_cast<typename L::View>(lhs),
+      static_cast<typename Constant<BoutReal>::View>(static_cast<BoutReal>(rhs)),
       lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), std::nullopt,
       lhs.getMesh()->getRegion2D(rgn));
 }
 
 template <typename L, typename R>
 std::enable_if_t<is_expr_constant_v<L> && is_expr_field2d_v<R>,
-                 BinaryExpr<Field2D, Constant<L>, R, bout::op::Pow>>
+                 BinaryExpr<Field2D, Constant<BoutReal>, R, bout::op::Pow>>
 pow(L lhs, const R& rhs) {
-  return bout::detail::makePowExpr<Field2D, Constant<L>, R>(
-      static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
-      rhs.getMesh(), rhs.getLocation(), rhs.getDirections(), std::nullopt,
-      rhs.getMesh()->getRegion2D("RGN_ALL"));
+  return bout::detail::makePowExpr<Field2D, Constant<BoutReal>, R>(
+      static_cast<typename Constant<BoutReal>::View>(static_cast<BoutReal>(lhs)),
+      static_cast<typename R::View>(rhs), rhs.getMesh(), rhs.getLocation(),
+      rhs.getDirections(), std::nullopt, rhs.getMesh()->getRegion2D("RGN_ALL"));
 }
 
 template <typename L, typename R>
 std::enable_if_t<is_expr_constant_v<L> && is_expr_field2d_v<R>,
-                 BinaryExpr<Field2D, Constant<L>, R, bout::op::Pow>>
+                 BinaryExpr<Field2D, Constant<BoutReal>, R, bout::op::Pow>>
 pow(L lhs, const R& rhs, const std::string& rgn) {
-  return bout::detail::makePowExpr<Field2D, Constant<L>, R>(
-      static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
-      rhs.getMesh(), rhs.getLocation(), rhs.getDirections(), std::nullopt,
-      rhs.getMesh()->getRegion2D(rgn));
+  return bout::detail::makePowExpr<Field2D, Constant<BoutReal>, R>(
+      static_cast<typename Constant<BoutReal>::View>(static_cast<BoutReal>(lhs)),
+      static_cast<typename R::View>(rhs), rhs.getMesh(), rhs.getLocation(),
+      rhs.getDirections(), std::nullopt, rhs.getMesh()->getRegion2D(rgn));
 }
 
 template <typename L, typename R>
 std::enable_if_t<is_expr_field3d_v<L> && is_expr_constant_v<R>,
-                 BinaryExpr<Field3D, L, Constant<R>, bout::op::Pow>>
+                 BinaryExpr<Field3D, L, Constant<BoutReal>, bout::op::Pow>>
 pow(const L& lhs, R rhs) {
-  return bout::detail::makePowExpr<Field3D, L, Constant<R>>(
-      static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
+  return bout::detail::makePowExpr<Field3D, L, Constant<BoutReal>>(
+      static_cast<typename L::View>(lhs),
+      static_cast<typename Constant<BoutReal>::View>(static_cast<BoutReal>(rhs)),
       lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), lhs.getRegionID(),
       lhs.getMesh()->getRegion("RGN_ALL"), bout::detail::getPerpYIndex(lhs));
 }
 
 template <typename L, typename R>
 std::enable_if_t<is_expr_field3d_v<L> && is_expr_constant_v<R>,
-                 BinaryExpr<Field3D, L, Constant<R>, bout::op::Pow>>
+                 BinaryExpr<Field3D, L, Constant<BoutReal>, bout::op::Pow>>
 pow(const L& lhs, R rhs, const std::string& rgn) {
-  return bout::detail::makePowExpr<Field3D, L, Constant<R>>(
-      static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
+  return bout::detail::makePowExpr<Field3D, L, Constant<BoutReal>>(
+      static_cast<typename L::View>(lhs),
+      static_cast<typename Constant<BoutReal>::View>(static_cast<BoutReal>(rhs)),
       lhs.getMesh(), lhs.getLocation(), lhs.getDirections(),
       bout::detail::getPowRegionID<Field3D>(lhs.getMesh(), rgn),
       lhs.getMesh()->getRegion(rgn), bout::detail::getPerpYIndex(lhs));
@@ -754,23 +774,72 @@ pow(const L& lhs, R rhs, const std::string& rgn) {
 
 template <typename L, typename R>
 std::enable_if_t<is_expr_constant_v<L> && is_expr_field3d_v<R>,
-                 BinaryExpr<Field3D, Constant<L>, R, bout::op::Pow>>
+                 BinaryExpr<Field3D, Constant<BoutReal>, R, bout::op::Pow>>
 pow(L lhs, const R& rhs) {
-  return bout::detail::makePowExpr<Field3D, Constant<L>, R>(
-      static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
-      rhs.getMesh(), rhs.getLocation(), rhs.getDirections(), rhs.getRegionID(),
-      rhs.getMesh()->getRegion("RGN_ALL"), bout::detail::getPerpYIndex(rhs));
+  return bout::detail::makePowExpr<Field3D, Constant<BoutReal>, R>(
+      static_cast<typename Constant<BoutReal>::View>(static_cast<BoutReal>(lhs)),
+      static_cast<typename R::View>(rhs), rhs.getMesh(), rhs.getLocation(),
+      rhs.getDirections(), rhs.getRegionID(), rhs.getMesh()->getRegion("RGN_ALL"),
+      bout::detail::getPerpYIndex(rhs));
 }
 
 template <typename L, typename R>
 std::enable_if_t<is_expr_constant_v<L> && is_expr_field3d_v<R>,
-                 BinaryExpr<Field3D, Constant<L>, R, bout::op::Pow>>
+                 BinaryExpr<Field3D, Constant<BoutReal>, R, bout::op::Pow>>
 pow(L lhs, const R& rhs, const std::string& rgn) {
-  return bout::detail::makePowExpr<Field3D, Constant<L>, R>(
-      static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
-      rhs.getMesh(), rhs.getLocation(), rhs.getDirections(),
-      bout::detail::getPowRegionID<Field3D>(rhs.getMesh(), rgn),
+  return bout::detail::makePowExpr<Field3D, Constant<BoutReal>, R>(
+      static_cast<typename Constant<BoutReal>::View>(static_cast<BoutReal>(lhs)),
+      static_cast<typename R::View>(rhs), rhs.getMesh(), rhs.getLocation(),
+      rhs.getDirections(), bout::detail::getPowRegionID<Field3D>(rhs.getMesh(), rgn),
       rhs.getMesh()->getRegion(rgn), bout::detail::getPerpYIndex(rhs));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_fieldperp_v<L> && is_expr_constant_v<R>,
+                 BinaryExpr<FieldPerp, L, Constant<BoutReal>, bout::op::Pow>>
+pow(const L& lhs, R rhs) {
+  return bout::detail::makePowExpr<FieldPerp, L, Constant<BoutReal>>(
+      static_cast<typename L::View>(lhs),
+      static_cast<typename Constant<BoutReal>::View>(static_cast<BoutReal>(rhs)),
+      lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), std::nullopt,
+      lhs.getMesh()->template getRegion<FieldPerp>("RGN_ALL"),
+      bout::detail::getPerpYIndex(lhs));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_fieldperp_v<L> && is_expr_constant_v<R>,
+                 BinaryExpr<FieldPerp, L, Constant<BoutReal>, bout::op::Pow>>
+pow(const L& lhs, R rhs, const std::string& rgn) {
+  return bout::detail::makePowExpr<FieldPerp, L, Constant<BoutReal>>(
+      static_cast<typename L::View>(lhs),
+      static_cast<typename Constant<BoutReal>::View>(static_cast<BoutReal>(rhs)),
+      lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), std::nullopt,
+      lhs.getMesh()->template getRegion<FieldPerp>(rgn),
+      bout::detail::getPerpYIndex(lhs));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_constant_v<L> && is_expr_fieldperp_v<R>,
+                 BinaryExpr<FieldPerp, Constant<BoutReal>, R, bout::op::Pow>>
+pow(L lhs, const R& rhs) {
+  return bout::detail::makePowExpr<FieldPerp, Constant<BoutReal>, R>(
+      static_cast<typename Constant<BoutReal>::View>(static_cast<BoutReal>(lhs)),
+      static_cast<typename R::View>(rhs), rhs.getMesh(), rhs.getLocation(),
+      rhs.getDirections(), std::nullopt,
+      rhs.getMesh()->template getRegion<FieldPerp>("RGN_ALL"),
+      bout::detail::getPerpYIndex(rhs));
+}
+
+template <typename L, typename R>
+std::enable_if_t<is_expr_constant_v<L> && is_expr_fieldperp_v<R>,
+                 BinaryExpr<FieldPerp, Constant<BoutReal>, R, bout::op::Pow>>
+pow(L lhs, const R& rhs, const std::string& rgn) {
+  return bout::detail::makePowExpr<FieldPerp, Constant<BoutReal>, R>(
+      static_cast<typename Constant<BoutReal>::View>(static_cast<BoutReal>(lhs)),
+      static_cast<typename R::View>(rhs), rhs.getMesh(), rhs.getLocation(),
+      rhs.getDirections(), std::nullopt,
+      rhs.getMesh()->template getRegion<FieldPerp>(rgn),
+      bout::detail::getPerpYIndex(rhs));
 }
 
 /*!
@@ -789,9 +858,6 @@ pow(L lhs, const R& rhs, const std::string& rgn) {
  * result for non-finite numbers
  *
  */
-class Field3DParallel;
-class FieldPerp;
-
 namespace bout::detail {
 template <typename T>
 using UnaryFieldResult_t =
@@ -825,7 +891,6 @@ std::optional<int> getPerpYIndex(const BinaryExpr<ResT, L, R, Func>& expr) {
   }
 }
 } // namespace bout::detail
-
 #ifdef FIELD_FUNC
 #error This macro has already been defined
 #else

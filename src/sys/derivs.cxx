@@ -50,6 +50,7 @@
 #include <bout/index_derivs_interface.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/metric_tensor.hxx>
+#include <bout/stencil_expr.hxx>
 #include <bout/unused.hxx>
 
 #include <string>
@@ -59,20 +60,6 @@
  *******************************************************************************/
 
 ////////////// X DERIVATIVE /////////////////
-
-Field3D DDX(const Field3D& f, CELL_LOC outloc, const std::string& method,
-            const std::string& region) {
-  const auto& coords = *f.getCoordinates(outloc);
-
-  Field3D result = bout::derivatives::index::DDX(f, outloc, method, region) / coords.dx();
-
-  if (f.getMesh()->IncIntShear) {
-    // Using BOUT-06 style shifting
-    result += coords.IntShiftTorsion() * DDZ(f, outloc, method, region);
-  }
-
-  return result;
-}
 
 bout::FieldMetric DDX(const Field2D& f, CELL_LOC outloc, const std::string& method,
                       const std::string& region) {
@@ -98,10 +85,24 @@ bout::FieldMetric DDY(const Field2D& f, CELL_LOC outloc, const std::string& meth
 
 ////////////// Z DERIVATIVE /////////////////
 
+Field3D DDZ(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method,
+            const std::string& region) {
+  const auto resolved_outloc = (outloc == CELL_DEFAULT) ? f.getLocation() : outloc;
+  return bout::derivatives::index::DDZ(f, outloc, toString(method), region)
+         / interp_to(f.getCoordinates(resolved_outloc)->dz(), resolved_outloc, region);
+}
+
 Field3D DDZ(const Field3D& f, CELL_LOC outloc, const std::string& method,
             const std::string& region) {
+  const auto resolved_outloc = (outloc == CELL_DEFAULT) ? f.getLocation() : outloc;
   return bout::derivatives::index::DDZ(f, outloc, method, region)
-         / f.getCoordinates(outloc)->dz();
+         / interp_to(f.getCoordinates(resolved_outloc)->dz(), resolved_outloc, region);
+}
+
+Field3D DDZ_FFT(const Field3D& f, CELL_LOC outloc, const std::string& region) {
+  const auto resolved_outloc = (outloc == CELL_DEFAULT) ? f.getLocation() : outloc;
+  return bout::derivatives::index::DDZ(f, outloc, "FFT", region)
+         / f.getCoordinates(resolved_outloc)->dz();
 }
 
 bout::FieldMetric DDZ(const Field2D& f, CELL_LOC UNUSED(outloc),
@@ -112,7 +113,7 @@ bout::FieldMetric DDZ(const Field2D& f, CELL_LOC UNUSED(outloc),
   return tmp;
 }
 
-Vector3D DDZ(const Vector3D& v, CELL_LOC outloc, const std::string& method,
+Vector3D DDZ(const Vector3D& v, CELL_LOC outloc, DIFF_METHOD method,
              const std::string& region) {
   Vector3D result(v.getMesh());
   const Coordinates* metric = v.x.getCoordinates(outloc);
@@ -143,8 +144,13 @@ Vector3D DDZ(const Vector3D& v, CELL_LOC outloc, const std::string& method,
   return result;
 }
 
-Vector2D DDZ(const Vector2D& v, CELL_LOC UNUSED(outloc),
-             const std::string& UNUSED(method), const std::string& UNUSED(region)) {
+Vector3D DDZ(const Vector3D& v, CELL_LOC outloc, const std::string& method,
+             const std::string& region) {
+  return DDZ(v, outloc, parseField3DMethodString(method), region);
+}
+
+Vector2D DDZ(const Vector2D& v, CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSED(method),
+             const std::string& UNUSED(region)) {
   Vector2D result(v.getMesh());
 
   result.covariant = v.covariant;
@@ -157,6 +163,11 @@ Vector2D DDZ(const Vector2D& v, CELL_LOC UNUSED(outloc),
   result.z = 0.;
 
   return result;
+}
+
+Vector2D DDZ(const Vector2D& v, CELL_LOC outloc, const std::string& method,
+             const std::string& region) {
+  return DDZ(v, outloc, parseField3DMethodString(method), region);
 }
 
 /*******************************************************************************
@@ -388,13 +399,15 @@ bout::FieldMetric D2DYDZ(const Field2D& f, CELL_LOC outloc,
 #endif
 }
 
-Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc,
-               [[maybe_unused]] const std::string& method, const std::string& region) {
+Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc, const std::string& method,
+               const std::string& region) {
   // If staggering in z, take y-derivative at f's location.
   const auto y_location =
       (outloc == CELL_ZLOW or f.getLocation() == CELL_ZLOW) ? CELL_DEFAULT : outloc;
+  const auto y_method =
+      (parseField3DMethodString(method) == DIFF_FFT) ? std::string{"DEFAULT"} : method;
 
-  return DDZ(DDY(f, y_location, method, region), outloc, method, region);
+  return DDZ(DDY(f, y_location, y_method, region), outloc, method, region);
 }
 
 /*******************************************************************************

@@ -92,6 +92,9 @@ public:
   void setCoordinates(std::shared_ptr<Coordinates> coords,
                       CELL_LOC location = CELL_CENTRE) {
     coords_map[location] = std::move(coords);
+    if (coords_map[location] != nullptr) {
+      coords_map[location]->g_values();
+    }
   }
 
   void setGridDataSource(GridDataSource* source_in) { source = source_in; }
