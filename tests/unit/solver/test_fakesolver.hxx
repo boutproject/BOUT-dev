@@ -3,15 +3,20 @@
 
 #include "gtest/gtest.h"
 
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/field2d.hxx"
+#include "bout/options.hxx"
 #include "bout/solver.hxx"
 
 #include <algorithm>
+#include <iterator>
 #include <string>
 #include <vector>
 
 class FakeSolver : public Solver {
 public:
-  FakeSolver(Options* options) : Solver(options) { has_constraints = true; }
+  FakeSolver(Options* options) : Solver(options) { supports_constraints = true; }
   ~FakeSolver() = default;
 
   int run() override {
@@ -37,7 +42,7 @@ public:
   }
   bool init_called{false};
 
-  void changeHasConstraints(bool new_value) { has_constraints = new_value; }
+  void changeHasConstraints(bool new_value) { supports_constraints = new_value; }
 
   auto listField2DNames() -> std::vector<std::string> {
     std::vector<std::string> result{};

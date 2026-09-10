@@ -524,8 +524,9 @@ Timestepping Modes
 
 The solver supports several timestepping strategies controlled by ``equation_form``:
 
-**Backward Euler (default)**
-   Standard implicit backward Euler method. Good for general timestepping.
+**Rearranged Backward Euler (default)**
+   Standard implicit backward Euler method written in a rearranged form that is
+   robust when driving a system to steady state.
 
    .. code-block:: ini
 
@@ -554,6 +555,65 @@ The solver supports several timestepping strategies controlled by ``equation_for
 
    This uses the same form as rearranged_backward_euler, but the time step
    can be different for each cell.
+
+Constraints (DAEs)
+~~~~~~~~~~~~~~~~~~
+
+BOUT++ can define algebraic constraints in a physics model using the
+``Solver::constraint(...)`` API. With the SNES solver these are treated as a
+differential-algebraic equation (DAE) system:
+
+- Differential variables include the usual timestepping terms for the selected
+  ``equation_form``.
+- Algebraic variables keep only the constraint residual ``G(x) = 0``.
+
+This is supported for all SNES equation forms. For ``direct_newton`` the full
+system is solved directly as a steady-state nonlinear problem, while for the
+timestepping forms only the differential variables receive the timestep terms.
+
+When constraints are enabled, the SNES solver can optionally split the
+preconditioner into differential and algebraic blocks using PETSc
+``fieldsplit``. The split names are:
+
+- ``diff``: differential variables
+- ``alg``: algebraic (constraint) variables
+
+Constraint splitting requires ``matrix_free = false``. ``matrix_free_operator``
+may still be used because the preconditioner matrix is still assembled.
+
+Example:
+
+.. code-block:: ini
+
+   [solver]
+   type = snes
+   equation_form = backward_euler
+   pc_type = fieldsplit
+
+   [petsc]
+   pc_fieldsplit_type = additive
+   fieldsplit_diff_ksp_type = preonly
+   fieldsplit_diff_pc_type = jacobi
+   fieldsplit_alg_ksp_type = preonly
+   fieldsplit_alg_pc_type = jacobi
+
+A more tailored setup can use different preconditioners for the two blocks, for
+example ILU on the differential variables and Hypre BoomerAMG on the algebraic
+variables:
+
+.. code-block:: ini
+
+   [solver]
+   type = snes
+   equation_form = backward_euler
+   matrix_free = false
+   pc_type = fieldsplit
+
+   [petsc]
+   pc_fieldsplit_type = additive
+   fieldsplit_diff_pc_type = ilu
+   fieldsplit_alg_pc_type = hypre
+   fieldsplit_alg_pc_hypre_type = boomeramg
 
 Adaptive Timestepping
 ~~~~~~~~~~~~~~~~~~~~~
@@ -1209,19 +1269,20 @@ similar way to time integrated variables. For example
 
     Field3D phi;
     ...
-    solver->constraint(phi, ddt(phi), "phi");
+    solver->constraint(phi, residual(phi), "phi");
 
 The first argument is the variable to be solved for (constrained). The
 second argument is the field to contain the residual (error). In this
-example the time derivative field ``ddt(phi)`` is used, but it could
-be another `Field3D` variable. The solver will attempt to
+example ``residual(phi)`` is used, which is an alias for the same
+storage as ``ddt(phi)`` but makes the algebraic role clearer. It could
+also be another ``Field3D`` variable. The solver will attempt to
 find a solution to the first argument (``phi`` here) such that the
-second argument (``ddt(phi)``) is zero to within tolerances.
+second argument (``residual(phi)`` here) is zero to within tolerances.
 
 In the RHS function the residual should be calculated. In this example
 (``examples/constraints/drift-wave-constraint``) we have::
 
-    ddt(phi) = Delp2(phi) - Vort;
+    residual(phi) = Delp2(phi) - Vort;
 
 so the time integration solver includes the algebraic constraint
 ``Delp2(phi) = Vort`` i.e. (:math:`\nabla_\perp^2\phi = \omega`).

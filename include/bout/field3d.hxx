@@ -995,6 +995,9 @@ inline void invalidateGuards([[maybe_unused]] Field3D& var) {}
 /// Wrapper around member function f.timeDeriv()
 inline Field3D& ddt(Field3D& f) { return *(f.timeDeriv()); }
 
+/// Alias for ddt that is more readable for constraints
+inline Field3D& residual(Field3D& f) { return *(f.timeDeriv()); }
+
 /// toString template specialisation
 /// Defined in utils.hxx
 template <>
