@@ -21,6 +21,14 @@ public:
   WithQuietOutput progress{output_progress};
 };
 
+class CoordinatesTestFCI : public FakeMeshFixtureFCI {
+public:
+  using FieldMetric = Coordinates::FieldMetric;
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  WithQuietOutput progress{output_progress};
+};
+
 constexpr BoutReal default_dz{TWOPI / CoordinatesTest::nz};
 
 TEST_F(CoordinatesTest, ZLength) {
@@ -632,6 +640,51 @@ TEST_F(CoordinatesTest, SetCovariantMetricTensor) {
   }
 }
 
+// `setMetricTensorJB()` must invalidate all derived geometry caches so values
+// recompute from the new metric, Jacobian, and Bxy instead of stale state.
+TEST_F(CoordinatesTest, SetMetricTensorJBClearsDependentCaches) {
+  Coordinates coords{mesh,
+                     FieldMetric{1.0},  // dx
+                     FieldMetric{1.0},  // dy
+                     FieldMetric{1.0},  // dz
+                     FieldMetric{6.0},  // J
+                     FieldMetric{1.0},  // Bxy
+                     FieldMetric{1.0},  // g11
+                     FieldMetric{1.0},  // g22
+                     FieldMetric{1.0},  // g33
+                     FieldMetric{0.0},  // g12
+                     FieldMetric{0.0},  // g13
+                     FieldMetric{0.0},  // g23
+                     FieldMetric{4.0},  // g_11
+                     FieldMetric{1.0},  // g_22
+                     FieldMetric{9.0},  // g_33
+                     FieldMetric{0.0},  // g_12
+                     FieldMetric{0.0},  // g_13
+                     FieldMetric{0.0},  // g_23
+                     FieldMetric{0.0},  // ShiftTorsion
+                     FieldMetric{0.0}}; // IntShiftTorsion
+
+  EXPECT_TRUE(IsFieldEqual(coords.J(), 6.0));
+  EXPECT_TRUE(IsFieldEqual(coords.invSg(), 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_xlow(), 3.0, "RGN_NOX"));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_ylow(), 6.0, "RGN_NOY"));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_zlow(), 2.0, "RGN_NOZ"));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_volume(), 6.0));
+
+  coords.setMetricTensorJB(
+      ContravariantMetricTensor(1.0 / 9.0, 1.0 / 4.0, 1.0 / 16.0, 0.0, 0.0, 0.0),
+      CovariantMetricTensor(9.0, 4.0, 16.0, 0.0, 0.0, 0.0), FieldMetric{24.0},
+      FieldMetric{8.0});
+
+  EXPECT_TRUE(IsFieldEqual(coords.J(), 24.0));
+  EXPECT_TRUE(IsFieldEqual(coords.Bxy(), 8.0));
+  EXPECT_TRUE(IsFieldEqual(coords.invSg(), 0.5));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_xlow(), 8.0, "RGN_NOX"));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_ylow(), 12.0, "RGN_NOY"));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_zlow(), 6.0, "RGN_NOZ"));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_volume(), 24.0));
+}
+
 TEST_F(CoordinatesTest, IndexedAccessors) {
 
   int x = mesh->xstart;
@@ -677,6 +730,40 @@ TEST_F(CoordinatesTest, IndexedAccessors) {
 #endif
 }
 
+// `normaliseMetric()` must rescale the currently cached Jacobian rather than
+// forcing a recomputation from already-normalised metric components.
+TEST_F(CoordinatesTest, NormaliseMetricPreservesAndRescalesCachedJ) {
+  Coordinates coords{mesh,
+                     FieldMetric{1.0},  // dx
+                     FieldMetric{1.0},  // dy
+                     FieldMetric{1.0},  // dz
+                     FieldMetric{5.0},  // J
+                     FieldMetric{1.0},  // Bxy
+                     FieldMetric{1.0},  // g11
+                     FieldMetric{1.0},  // g22
+                     FieldMetric{1.0},  // g33
+                     FieldMetric{0.0},  // g12
+                     FieldMetric{0.0},  // g13
+                     FieldMetric{0.0},  // g23
+                     FieldMetric{4.0},  // g_11
+                     FieldMetric{1.0},  // g_22
+                     FieldMetric{9.0},  // g_33
+                     FieldMetric{0.0},  // g_12
+                     FieldMetric{0.0},  // g_13
+                     FieldMetric{0.0},  // g_23
+                     FieldMetric{0.0},  // ShiftTorsion
+                     FieldMetric{0.0}}; // IntShiftTorsion
+
+  EXPECT_TRUE(IsFieldEqual(coords.J(), 5.0));
+
+  coords.normaliseMetric({.g = 2.0, .J = 10.0});
+
+  EXPECT_TRUE(IsFieldEqual(coords.J(), 0.5));
+  EXPECT_TRUE(IsFieldEqual(coords.g_11(), 2.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_22(), 0.5));
+  EXPECT_TRUE(IsFieldEqual(coords.g_33(), 4.5));
+}
+
 TEST_F(CoordinatesTest, NormaliseG) {
   {
     // Set initial values for the metric tensor in the Coordinates constructor
@@ -720,6 +807,133 @@ TEST_F(CoordinatesTest, NormaliseG) {
     EXPECT_TRUE(IsFieldEqual(coords.g23(), 4.0));
   }
 }
+
+// In FCI mode, `.g` normalisation must also rescale preloaded staggered g_22
+// face caches from the grid file, not just the cell-centred metric.
+TEST_F(CoordinatesTestFCI, NormaliseGScalesStaggeredG22Caches) {
+  static_cast<FakeMesh*>(mesh)->setGridDataSource(
+      new FakeGridDataSource({{"g_22_cell_ylow", 15.0}, {"g_22_cell_yhigh", 18.0}}));
+
+  Coordinates coords{mesh,
+                     FieldMetric{1.0},  // dx
+                     FieldMetric{1.0},  // dy
+                     FieldMetric{1.0},  // dz
+                     FieldMetric{2.0},  // J
+                     FieldMetric{3.0},  // Bxy
+                     FieldMetric{4.0},  // g11
+                     FieldMetric{5.0},  // g22
+                     FieldMetric{6.0},  // g33
+                     FieldMetric{0.0},  // g12
+                     FieldMetric{0.0},  // g13
+                     FieldMetric{0.0},  // g23
+                     FieldMetric{7.0},  // g_11
+                     FieldMetric{12.0}, // g_22
+                     FieldMetric{8.0},  // g_33
+                     FieldMetric{0.0},  // g_12
+                     FieldMetric{0.0},  // g_13
+                     FieldMetric{0.0},  // g_23
+                     FieldMetric{0.0},  // ShiftTorsion
+                     FieldMetric{0.0}}; // IntShiftTorsion
+  coords.setParallelTransform(std::make_unique<MockParallelTransform>(*mesh, false));
+
+  ASSERT_TRUE(coords.Bxy().isFci());
+  EXPECT_TRUE(IsFieldEqual(coords.g_22_ylow(), 15.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_22_yhigh(), 18.0));
+
+  coords.normaliseMetric({.g = 3.0});
+
+  EXPECT_TRUE(IsFieldEqual(coords.g_22(), 4.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_22_ylow(), 5.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_22_yhigh(), 6.0));
+}
+
+// In FCI mode, component-wise `.g22` normalisation must keep staggered g_22
+// face caches consistent with the new cell-centred g_22 value.
+TEST_F(CoordinatesTestFCI, NormaliseG22ScalesStaggeredG22Caches) {
+  static_cast<FakeMesh*>(mesh)->setGridDataSource(
+      new FakeGridDataSource({{"g_22_cell_ylow", 15.0}, {"g_22_cell_yhigh", 18.0}}));
+
+  Coordinates coords{mesh,
+                     FieldMetric{1.0},  // dx
+                     FieldMetric{1.0},  // dy
+                     FieldMetric{1.0},  // dz
+                     FieldMetric{2.0},  // J
+                     FieldMetric{3.0},  // Bxy
+                     FieldMetric{4.0},  // g11
+                     FieldMetric{5.0},  // g22
+                     FieldMetric{6.0},  // g33
+                     FieldMetric{0.0},  // g12
+                     FieldMetric{0.0},  // g13
+                     FieldMetric{0.0},  // g23
+                     FieldMetric{7.0},  // g_11
+                     FieldMetric{12.0}, // g_22
+                     FieldMetric{8.0},  // g_33
+                     FieldMetric{0.0},  // g_12
+                     FieldMetric{0.0},  // g_13
+                     FieldMetric{0.0},  // g_23
+                     FieldMetric{0.0},  // ShiftTorsion
+                     FieldMetric{0.0}}; // IntShiftTorsion
+  coords.setParallelTransform(std::make_unique<MockParallelTransform>(*mesh, false));
+
+  ASSERT_TRUE(coords.Bxy().isFci());
+  EXPECT_TRUE(IsFieldEqual(coords.g_22_ylow(), 15.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_22_yhigh(), 18.0));
+
+  coords.normaliseMetric({.g22 = 4.0});
+
+  EXPECT_TRUE(IsFieldEqual(coords.g_22(), 3.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_22_ylow(), 3.75));
+  EXPECT_TRUE(IsFieldEqual(coords.g_22_yhigh(), 4.5));
+}
+
+#if BOUT_USE_METRIC_3D
+// When J and Bxy carry parallel slices, `normaliseMetric()` must scale the
+// centre field and the yup/ydown slices together.
+TEST_F(CoordinatesTest, NormaliseMetricScalesParallelSlicesForJAndBxy) {
+  auto J = FieldMetric{8.0};
+  J.splitParallelSlices();
+  J.yup() = 10.0;
+  J.ydown() = 12.0;
+
+  auto Bxy = FieldMetric{20.0};
+  Bxy.splitParallelSlices();
+  Bxy.yup() = 24.0;
+  Bxy.ydown() = 28.0;
+
+  Coordinates coords{mesh,
+                     FieldMetric{1.0}, // dx
+                     FieldMetric{1.0}, // dy
+                     FieldMetric{1.0}, // dz
+                     J,
+                     Bxy,
+                     FieldMetric{1.0},  // g11
+                     FieldMetric{1.0},  // g22
+                     FieldMetric{1.0},  // g33
+                     FieldMetric{0.0},  // g12
+                     FieldMetric{0.0},  // g13
+                     FieldMetric{0.0},  // g23
+                     FieldMetric{1.0},  // g_11
+                     FieldMetric{1.0},  // g_22
+                     FieldMetric{1.0},  // g_33
+                     FieldMetric{0.0},  // g_12
+                     FieldMetric{0.0},  // g_13
+                     FieldMetric{0.0},  // g_23
+                     FieldMetric{0.0},  // ShiftTorsion
+                     FieldMetric{0.0}}; // IntShiftTorsion
+
+  ASSERT_TRUE(coords.J().hasParallelSlices());
+  ASSERT_TRUE(coords.Bxy().hasParallelSlices());
+
+  coords.normaliseMetric({.J = 2.0, .Bxy = 4.0});
+
+  EXPECT_TRUE(IsFieldEqual(coords.J(), 4.0));
+  EXPECT_TRUE(IsFieldEqual(coords.J().yup(), 5.0, "RGN_YPAR_+1"));
+  EXPECT_TRUE(IsFieldEqual(coords.J().ydown(), 6.0, "RGN_YPAR_-1"));
+  EXPECT_TRUE(IsFieldEqual(coords.Bxy(), 5.0));
+  EXPECT_TRUE(IsFieldEqual(coords.Bxy().yup(), 6.0, "RGN_YPAR_+1"));
+  EXPECT_TRUE(IsFieldEqual(coords.Bxy().ydown(), 7.0, "RGN_YPAR_-1"));
+}
+#endif
 
 TEST_F(CoordinatesTest, NormaliseGUnreal) {
   {
