@@ -26,8 +26,9 @@
 #ifndef BOUT_COORDINATES_H
 #define BOUT_COORDINATES_H
 
-#include "bout/assert.hxx"
 #include "bout/field_data.hxx"
+#include <bout/assert.hxx>
+#include <bout/boundary_region.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/build_defines.hxx>
 #include <bout/christoffel_symbols.hxx>
@@ -45,8 +46,11 @@
 #include <utility>
 
 class Mesh;
-class YBoundary;
 struct MetricNormaliser;
+
+namespace bout::boundary {
+class YBoundary;
+}
 
 /*!
  * Represents a coordinate system, and associated operators
@@ -469,10 +473,10 @@ public:
 
   FieldMetric recalculateJacobian() const;
 
-  friend std::shared_ptr<YBoundary> getYBoundary(Coordinates* coords, YBndryType type);
+  const bout::boundary::YBoundary&
+  getYBoundary(YBndryType type = YBndryType::sheath) const;
 
 private:
-  std::shared_ptr<YBoundary> makeYBoundary(YBndryType type) const;
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;
   Options* localoptions{nullptr};
@@ -529,7 +533,7 @@ private:
   void invalidateCellGeometryCaches();
   void invalidateAccessorCache() const;
 
-  mutable std::array<std::shared_ptr<YBoundary>, 3> ybndrys;
+  mutable std::array<std::shared_ptr<bout::boundary::YBoundary>, 3> ybndrys;
 
   FieldMetric recalculateBxy() const;
 

@@ -2328,12 +2328,22 @@ TEST_F(Field3DTestFCI, MulField3DParallelPreservesParallelSlices) {
   EXPECT_FALSE(prod.hasParallelSlices());
   EXPECT_TRUE(IsFieldEqual(prod, 6.0));
 
-  const Field3DParallel prodpar = field.asField3DParallel() * rhs;
-  EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(prodpar)>, Field3DParallel>));
-  EXPECT_TRUE(prodpar.hasParallelSlices());
-  EXPECT_TRUE(IsFieldEqual(prodpar, 6.0));
-  EXPECT_TRUE(IsFieldEqual(prodpar.yup(), 12.0, "RGN_YPAR_+1"));
-  EXPECT_TRUE(IsFieldEqual(prodpar.ydown(), 20.0, "RGN_YPAR_-1"));
+  {
+    const Field3DParallel prodpar = field.asField3DParallel() * rhs;
+    EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(prodpar)>, Field3DParallel>));
+    EXPECT_TRUE(prodpar.hasParallelSlices());
+    EXPECT_TRUE(IsFieldEqual(prodpar, 6.0));
+    EXPECT_TRUE(IsFieldEqual(prodpar.yup(), 12.0, "RGN_YPAR_+1"));
+    EXPECT_TRUE(IsFieldEqual(prodpar.ydown(), 20.0, "RGN_YPAR_-1"));
+  }
+  {
+    const Field3DParallel prodpar = field * rhs;
+    EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(prodpar)>, Field3DParallel>));
+    EXPECT_TRUE(prodpar.hasParallelSlices());
+    EXPECT_TRUE(IsFieldEqual(prodpar, 6.0));
+    EXPECT_TRUE(IsFieldEqual(prodpar.yup(), 12.0, "RGN_YPAR_+1"));
+    EXPECT_TRUE(IsFieldEqual(prodpar.ydown(), 20.0, "RGN_YPAR_-1"));
+  }
 }
 
 TEST_F(Field3DTestFCI, DivField3DParallelPreservesParallelSlices) {

@@ -14,13 +14,18 @@
 #include <bout/output.hxx>
 #include <bout/output_bout_types.hxx>
 #include <bout/petsc_interface.hxx>
+#include <bout/petsc_preconditioner.hxx>
 #include <bout/solver.hxx>
 #include <bout/unused.hxx>
 #include <bout/utils.hxx>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
+#include <fmt/format.h>
+#include <string>
+#include <tuple>
 #include <vector>
 
 #include "petscerror.h"
@@ -61,6 +66,54 @@ PetscErrorCode FormFunctionForColoring(void* UNUSED(snes), Vec x, Vec f, void* c
   return static_cast<SNESSolver*>(ctx)->snes_function(x, f, true);
 }
 
+PetscErrorCode FormRawFunctionForColoring(void* UNUSED(snes), Vec x, Vec f, void* ctx) {
+  return static_cast<SNESSolver*>(ctx)->raw_rhs_function(x, f, true);
+}
+
+PetscErrorCode FormScaledFunctionForColoring(void* UNUSED(snes), Vec x, Vec f,
+                                             void* ctx) {
+  return static_cast<SNESSolver*>(ctx)->scaled_rhs_function(x, f, true);
+}
+
+/// Apply a PETSc vector operation either to whole vectors or to matching
+/// constrained subvectors selected by ``indices``.
+///
+/// This keeps the constrained and unconstrained paths in ``snes_function()``
+/// identical while ensuring any acquired subvectors are always restored.
+template <typename Func, typename... Args>
+PetscErrorCode withOptionalSubvectors(Func operation, IS indices, Args... args) {
+  if (indices == nullptr) {
+    return operation(args...);
+  }
+
+  constexpr std::size_t N = sizeof...(Args);
+  std::array<Vec, N> vectors{args...};
+  std::array<Vec, N> subvectors{};
+
+  PetscErrorCode ierr = PETSC_SUCCESS;
+  std::size_t acquired = 0;
+  for (; acquired < N; ++acquired) {
+    ierr = VecGetSubVector(vectors[acquired], indices, &subvectors[acquired]);
+    if (ierr != PETSC_SUCCESS) {
+      break;
+    }
+  }
+
+  if (ierr == PETSC_SUCCESS) {
+    ierr = std::apply(operation, subvectors);
+  }
+
+  for (std::size_t i = acquired; i > 0; --i) {
+    PetscErrorCode restore_ierr =
+        VecRestoreSubVector(vectors[i - 1], indices, &subvectors[i - 1]);
+    if (ierr == PETSC_SUCCESS) {
+      ierr = restore_ierr;
+    }
+  }
+
+  return ierr;
+}
+
 PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
   // Get the context
   SNESSolver* s;
@@ -71,6 +124,8 @@ PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
 
 PetscErrorCode ComputeJacobianScaledColor(SNES snes, Vec x1, Mat Jac, Mat Jac_new,
                                           void* ctx);
+PetscErrorCode ComputeJacobianDefaultMaybeExport(SNES snes, Vec x1, Mat Jac, Mat Jac_new,
+                                                 void* ctx);
 } // namespace
 
 PetscErrorCode SNESSolver::FDJinitialise() {
@@ -111,9 +166,9 @@ PetscErrorCode SNESSolver::FDJinitialise() {
         nullptr, &Jfd);
 
     if (matrix_free_operator) {
-      SNESSetJacobian(snes, Jmf, Jfd, SNESComputeJacobianDefault, this);
+      SNESSetJacobian(snes, Jmf, Jfd, ComputeJacobianDefaultMaybeExport, this);
     } else {
-      SNESSetJacobian(snes, Jfd, Jfd, SNESComputeJacobianDefault, this);
+      SNESSetJacobian(snes, Jfd, Jfd, ComputeJacobianDefaultMaybeExport, this);
     }
 
     MatSetOption(Jfd, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
@@ -364,7 +419,76 @@ SNESSolver::SNESSolver(Options* opts)
                             .withDefault<BoutReal>(100.)),
       asinh_vars((*options)["asinh_vars"]
                      .doc("Apply asinh() to all variables?")
-                     .withDefault<bool>(false)) {}
+                     .withDefault<bool>(false)),
+      save_jacobian((*options)["save_jacobian"]
+                        .doc("Save PETSc Jacobian diagnostics to datadir")
+                        .withDefault<bool>(false)),
+      jacobian_export_kind((*options)["jacobian_export_kind"]
+                               .doc("Which Jacobian to save: system, scaled, or rhs")
+                               .withDefault(bout::JacobianExportKind::system)) {
+  supports_constraints = true; // This solver can handle constraints
+}
+
+SNESSolver::~SNESSolver() {
+  if (is_diff != nullptr) {
+    ISDestroy(&is_diff);
+  }
+  if (is_alg != nullptr) {
+    ISDestroy(&is_alg);
+  }
+}
+
+void SNESSolver::exportMatrixAndMetadata(bout::JacobianExportKind kind, Mat jacobian) {
+  Solver::writeOnceJacobianMetadata("snes");
+  Solver::writeJacobianMatrix(kind, jacobian);
+}
+
+void SNESSolver::saveDiagnosticJacobian(bout::JacobianExportKind kind, Vec x_solver) {
+  PetscPreconditioner diagnostic_preconditioner;
+  Field3D index = globalIndex(0);
+  BOUT_DO_PETSC(diagnostic_preconditioner.createJacobianPattern(
+      index, *options, nlocal, n2Dvars(), n3Dvars(), BoutComm::get()));
+
+  if (kind == bout::JacobianExportKind::rhs) {
+    BOUT_DO_PETSC(
+        diagnostic_preconditioner.updateColoring(FormRawFunctionForColoring, this));
+  } else {
+    BOUT_DO_PETSC(
+        diagnostic_preconditioner.updateColoring(FormScaledFunctionForColoring, this));
+  }
+
+  Vec x_evaluate = x_solver;
+  Vec physical_x{nullptr};
+  if (kind == bout::JacobianExportKind::rhs) {
+    BOUT_DO_PETSC(VecDuplicate(x_solver, &physical_x));
+    BOUT_DO_PETSC(toPhysicalState(x_solver, physical_x));
+    x_evaluate = physical_x;
+  }
+
+  Mat diagnostic_jacobian = diagnostic_preconditioner.jacobian();
+  BOUT_DO_PETSC(MatZeroEntries(diagnostic_jacobian));
+  BOUT_DO_PETSC(SNESComputeJacobianDefaultColor(snes, x_evaluate, diagnostic_jacobian,
+                                                diagnostic_jacobian,
+                                                diagnostic_preconditioner.coloring()));
+  exportMatrixAndMetadata(kind, diagnostic_jacobian);
+
+  if (physical_x != nullptr) {
+    BOUT_DO_PETSC(VecDestroy(&physical_x));
+  }
+}
+
+void SNESSolver::maybeExportJacobian(Mat system_jacobian, Vec x_solver) {
+  if (!save_jacobian) {
+    return;
+  }
+
+  if (jacobian_export_kind == bout::JacobianExportKind::system) {
+    exportMatrixAndMetadata(jacobian_export_kind, system_jacobian);
+    return;
+  }
+
+  saveDiagnosticJacobian(jacobian_export_kind, x_solver);
+}
 
 int SNESSolver::init() {
   Solver::init();
@@ -384,6 +508,28 @@ int SNESSolver::init() {
 
   output_info.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
                     n3Dvars(), n2Dvars(), neq, nlocal);
+
+  // Check if there are any constraints
+
+  for (int i = 0; i < n2Dvars(); i++) {
+    if (f2d[i].constraint) {
+      has_constraint_variables = true;
+      break;
+    }
+  }
+  for (int i = 0; i < n3Dvars(); i++) {
+    if (f3d[i].constraint) {
+      has_constraint_variables = true;
+      break;
+    }
+  }
+
+  if (has_constraint_variables) {
+    is_dae.reallocate(nlocal);
+    // Call the Solver function, which sets the array
+    // to one when not a constraint, zero for constraint
+    set_id(std::begin(is_dae));
+  }
 
   // Initialise fields for storing residual of nonlinear solves
   if (diagnose) {
@@ -448,6 +594,32 @@ int SNESSolver::init() {
   local_residual = 0.0;
   local_residual_2d = 0.0;
   global_residual = 0.0;
+
+  if (has_constraint_variables) {
+    // CreatePETSc-native index sets representing the two parts of your DAE.
+    PetscInt istart, iend;
+    PetscCall(VecGetOwnershipRange(snes_x, &istart, &iend));
+    ASSERT2(iend - istart == nlocal);
+
+    std::vector<PetscInt> diff_idx;
+    std::vector<PetscInt> alg_idx;
+    diff_idx.reserve(nlocal);
+    alg_idx.reserve(nlocal);
+
+    for (PetscInt i = 0; i < nlocal; ++i) {
+      const PetscInt gi = istart + i;
+      if (is_dae[i] > 0.5) { // differential
+        diff_idx.push_back(gi);
+      } else { // algebraic constraint (i.e. phi)
+        alg_idx.push_back(gi);
+      }
+    }
+
+    PetscCall(ISCreateGeneral(BoutComm::get(), diff_idx.size(), diff_idx.data(),
+                              PETSC_COPY_VALUES, &is_diff));
+    PetscCall(ISCreateGeneral(BoutComm::get(), alg_idx.size(), alg_idx.data(),
+                              PETSC_COPY_VALUES, &is_alg));
+  }
 
   // Nonlinear solver interface (SNES)
   output_info.write("Create SNES\n");
@@ -528,6 +700,9 @@ int SNESSolver::init() {
   SNESSetForceIteration(snes, PETSC_TRUE);
 #endif
 
+  // Enable checking for domain errors in Jacobian evaluation
+  SNESSetCheckJacobianDomainError(snes, PETSC_TRUE);
+
   // Get KSP context from SNES
   KSP ksp;
   SNESGetKSP(snes, &ksp);
@@ -578,6 +753,17 @@ int SNESSolver::init() {
 #endif
       }
     }
+  }
+
+  if (has_constraint_variables && !matrix_free && pc_type == "fieldsplit") {
+    output_info.write("Using PCFieldSplit preconditioner for DAE system\n");
+
+    // Use PETSc fieldsplit
+    PetscCall(PCSetType(pc, PCFIELDSPLIT));
+
+    // Give PETSc the index sets
+    PetscCall(PCFieldSplitSetIS(pc, "diff", is_diff));
+    PetscCall(PCFieldSplitSetIS(pc, "alg", is_alg));
   }
 
   // Get runtime options
@@ -1128,13 +1314,13 @@ PetscErrorCode SNESSolver::updateResiduals(Vec x) {
   const BoutReal* current_residual = nullptr;
   if (diagnose) {
     // Call RHS function to get time derivatives
-    PetscCall(rhs_function(x, deriv, false));
+    PetscCall(scaled_rhs_function(x, deriv, false));
 
     // Reading the residual vectors
     PetscCall(VecGetArrayRead(deriv, &current_residual));
   } else {
     // Call RHS function to get time derivatives
-    PetscCall(rhs_function(x, snes_f, false));
+    PetscCall(scaled_rhs_function(x, snes_f, false));
 
     // Reading the residual vectors
     PetscCall(VecGetArrayRead(snes_f, &current_residual));
@@ -1142,7 +1328,7 @@ PetscErrorCode SNESSolver::updateResiduals(Vec x) {
 
   // Note: The ordering of quantities in the PETSc vectors
   // depends on the Solver::loop_vars function
-  Mesh* mesh = bout::globals::mesh;
+  const Mesh* mesh = bout::globals::mesh;
   int idx = 0; // Index into PETSc Vecs
 
   // Boundary cells
@@ -1415,34 +1601,34 @@ BoutReal SNESSolver::updatePseudoTimestep(BoutReal previous_timestep,
   throw BoutException("SNESSolver::updatePseudoTimestep invalid BoutPTCStrategy");
 }
 
-PetscErrorCode SNESSolver::rhs_function(Vec x, Vec f, bool linear) {
-  // Get data from PETSc into BOUT++ fields
+PetscErrorCode SNESSolver::toPhysicalState(Vec x, Vec physical_x) {
   if (scale_vars) {
-    // scaled_x <- x * var_scaling_factors
-    PetscCall(VecPointwiseMult(scaled_x, x, var_scaling_factors));
-  } else if (asinh_vars) {
-    PetscCall(VecCopy(x, scaled_x));
+    PetscCall(VecPointwiseMult(physical_x, x, var_scaling_factors));
   } else {
-    scaled_x = x;
+    PetscCall(VecCopy(x, physical_x));
   }
 
   if (asinh_vars) {
     PetscInt size;
-    PetscCall(VecGetLocalSize(scaled_x, &size));
+    PetscCall(VecGetLocalSize(physical_x, &size));
 
-    BoutReal* scaled_data = nullptr;
-    PetscCall(VecGetArray(scaled_x, &scaled_data));
+    BoutReal* physical_data = nullptr;
+    PetscCall(VecGetArray(physical_x, &physical_data));
     for (PetscInt i = 0; i != size; ++i) {
-      scaled_data[i] = asinh_scale * std::sinh(scaled_data[i]);
+      physical_data[i] = asinh_scale * std::sinh(physical_data[i]);
     }
-    PetscCall(VecRestoreArray(scaled_x, &scaled_data));
+    PetscCall(VecRestoreArray(physical_x, &physical_data));
   }
 
+  return PETSC_SUCCESS;
+}
+
+PetscErrorCode SNESSolver::raw_rhs_function(Vec x, Vec f, bool linear) {
   const BoutReal* xdata = nullptr;
-  PetscCall(VecGetArrayRead(scaled_x, &xdata));
+  PetscCall(VecGetArrayRead(x, &xdata));
   // const_cast needed due to load_vars API. Not writing to xdata.
   load_vars(const_cast<BoutReal*>(xdata));
-  PetscCall(VecRestoreArrayRead(scaled_x, &xdata));
+  PetscCall(VecRestoreArrayRead(x, &xdata));
 
   try {
     // Call RHS function
@@ -1460,6 +1646,18 @@ PetscErrorCode SNESSolver::rhs_function(Vec x, Vec f, bool linear) {
   BoutReal* fdata = nullptr;
   PetscCall(VecGetArray(f, &fdata));
   save_derivs(fdata);
+  PetscCall(VecRestoreArray(f, &fdata));
+
+  return PETSC_SUCCESS;
+}
+
+PetscErrorCode SNESSolver::scaled_rhs_function(Vec x, Vec f, bool linear) {
+  if (!scale_vars && !asinh_vars) {
+    return raw_rhs_function(x, f, linear);
+  }
+
+  PetscCall(toPhysicalState(x, scaled_x));
+  PetscCall(raw_rhs_function(scaled_x, f, linear));
 
   if (asinh_vars) {
     // Modify time-derivatives for asinh(var) using chain rule
@@ -1472,13 +1670,14 @@ PetscErrorCode SNESSolver::rhs_function(Vec x, Vec f, bool linear) {
     PetscCall(VecGetLocalSize(f, &size));
     const BoutReal* scaled_data = nullptr;
     PetscCall(VecGetArrayRead(scaled_x, &scaled_data));
+    BoutReal* fdata = nullptr;
+    PetscCall(VecGetArray(f, &fdata));
     for (PetscInt i = 0; i != size; ++i) {
       fdata[i] /= std::sqrt(SQ(scaled_data[i]) + SQ(asinh_scale));
     }
+    PetscCall(VecRestoreArray(f, &fdata));
     PetscCall(VecRestoreArrayRead(scaled_x, &scaled_data));
   }
-
-  PetscCall(VecRestoreArray(f, &fdata));
 
   if (scale_vars) {
     PetscCall(VecPointwiseDivide(f, f, var_scaling_factors));
@@ -1490,36 +1689,71 @@ PetscErrorCode SNESSolver::rhs_function(Vec x, Vec f, bool linear) {
 PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
 
   // Call the RHS function
-  if (rhs_function(x, f, linear) != PETSC_SUCCESS) {
+  if (scaled_rhs_function(x, f, linear) != PETSC_SUCCESS) {
     // Tell SNES that the input was out of domain
-    SNESSetFunctionDomainError(snes);
+    if (linear) {
+      // During Jacobian evaluation
+      SNESSetJacobianDomainError(snes);
+    } else {
+      // During function evaluation
+      SNESSetFunctionDomainError(snes);
+    }
     // Note: Returning non-zero error here leaves vectors in locked state
     return 0;
   }
 
+  ASSERT2(!has_constraint_variables || is_diff != nullptr);
+
   switch (equation_form) {
   case BoutSnesEquationForm::rearranged_backward_euler: {
     // Rearranged Backward Euler
-    // f = (x0 - x)/Δt + f
-    // First calculate x - x0 to minimise floating point issues
-    VecWAXPY(delta_x, -1.0, x0, x); // delta_x = x - x0
-    VecAXPY(f, -1. / dt, delta_x);  // f <- f - delta_x / dt
+    // F = (x0 - x)/Δt + f
+    // Algebraic:     F = G(x)  (already stored in f by rhs_function)
+
+    // Apply the transient term to all variables, or only the differential part
+    // when constraints are present.
+    PetscCall(withOptionalSubvectors(
+        [this](Vec x_part, Vec x0_part, Vec delta_x_part, Vec f_part) -> PetscErrorCode {
+          PetscCall(VecWAXPY(delta_x_part, -1.0, x0_part, x_part));
+          PetscCall(VecAXPY(f_part, -1.0 / dt, delta_x_part));
+          return PETSC_SUCCESS;
+        },
+        has_constraint_variables ? is_diff : nullptr, x, x0, delta_x, f));
     break;
   }
   case BoutSnesEquationForm::pseudo_transient: {
     // Pseudo-transient timestepping. Same as Rearranged Backward Euler
     // except that Δt is a vector
-    // f = (x0 - x)/Δt + f
-    VecWAXPY(delta_x, -1.0, x0, x);
-    VecPointwiseDivide(delta_x, delta_x, dt_vec); // delta_x /= dt
-    VecAXPY(f, -1., delta_x);                     // f <- f - delta_x
+    // F = (x0 - x)/Δt + f
+    // Algebraic:     F = G(x)  (already stored in f by rhs_function)
+
+    // As above, only the differential variables get the pseudo-time update in
+    // constrained runs.
+    PetscCall(withOptionalSubvectors(
+        [](Vec x_part, Vec x0_part, Vec delta_x_part, Vec f_part,
+           Vec dt_vec_part) -> PetscErrorCode {
+          PetscCall(VecWAXPY(delta_x_part, -1.0, x0_part, x_part));
+          PetscCall(VecPointwiseDivide(delta_x_part, delta_x_part, dt_vec_part));
+          PetscCall(VecAXPY(f_part, -1.0, delta_x_part));
+          return PETSC_SUCCESS;
+        },
+        has_constraint_variables ? is_diff : nullptr, x, x0, delta_x, f, dt_vec));
     break;
   }
   case BoutSnesEquationForm::backward_euler: {
-    // Backward Euler
-    // Set f = x - x0 - Δt*f
-    VecAYPX(f, -dt, x);   // f <- x - Δt*f
-    VecAXPY(f, -1.0, x0); // f <- f - x0
+    // Backward Euler:
+    // Differential:  F = x - x0 - dt*f
+    // Algebraic:     F = G(x)  (already stored in f by rhs_function)
+
+    // Only differential variables receive the backward-Euler update when DAE
+    // constraints are active.
+    PetscCall(withOptionalSubvectors(
+        [this](Vec x_part, Vec x0_part, Vec f_part) -> PetscErrorCode {
+          PetscCall(VecAYPX(f_part, -dt, x_part));
+          PetscCall(VecAXPY(f_part, -1.0, x0_part));
+          return PETSC_SUCCESS;
+        },
+        has_constraint_variables ? is_diff : nullptr, x, x0, f));
     break;
   }
   case BoutSnesEquationForm::direct_newton: {
@@ -1664,7 +1898,22 @@ PetscErrorCode ComputeJacobianScaledColor(SNES snes, Vec x1, Mat Jac, Mat Jac_ne
   CHKERRQ(err);
 
   // Call the SNESSolver function
-  return fctx->scaleJacobian(Jac_new);
+  PetscCall(fctx->scaleJacobian(Jac_new));
+  fctx->maybeExportJacobian(Jac_new, x1);
+  PetscFunctionReturn(PETSC_SUCCESS);
+}
+
+PetscErrorCode ComputeJacobianDefaultMaybeExport(SNES snes, Vec x1, Mat Jac, Mat Jac_new,
+                                                 void* ctx) {
+  const PetscErrorCode err = SNESComputeJacobianDefault(snes, x1, Jac, Jac_new, ctx);
+  CHKERRQ(err);
+
+  if ((err != 0) or (ctx == nullptr)) {
+    return err;
+  }
+
+  static_cast<SNESSolver*>(ctx)->maybeExportJacobian(Jac_new, x1);
+  PetscFunctionReturn(PETSC_SUCCESS);
 }
 } // namespace
 

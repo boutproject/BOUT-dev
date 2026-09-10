@@ -18,9 +18,9 @@ GValues::GValues(const Coordinates& coordinates) {
 
   auto* mesh = J.getMesh();
 
-  G1_m = (DDX(J * g11) + DDY(J.asField3DParallel() * g12) + DDZ(J * g13)) / J;
-  G2_m = (DDX(J * g12) + DDY(J.asField3DParallel() * g22) + DDZ(J * g23)) / J;
-  G3_m = (DDX(J * g13) + DDY(J.asField3DParallel() * g23) + DDZ(J * g33)) / J;
+  G1_m = (DDX(J * g11) + DDY(J * g12) + DDZ(J * g13)) / J;
+  G2_m = (DDX(J * g12) + DDY(J * g22) + DDZ(J * g23)) / J;
+  G3_m = (DDX(J * g13) + DDY(J * g23) + DDZ(J * g33)) / J;
 
   mesh->communicate_no_slices(G1_m, G2_m, G3_m);
 }

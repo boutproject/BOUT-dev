@@ -1,16 +1,11 @@
 #pragma once
 
 #include "bout/assert.hxx"
-#include "bout/bout_types.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/mesh.hxx"
-#include "bout/parallel_boundary_region.hxx"
 #include "bout/region.hxx"
-#include "bout/sys/parallel_stencils.hxx"
 #include "bout/sys/range.hxx"
-#include <algorithm>
-#include <functional>
 
 class BoundaryRegionIter {
 public:

@@ -84,7 +84,7 @@ IMEXBDF2::IMEXBDF2(Options* opt)
       verbose((*options)["verbose"]
                   .doc(" More outputs at each timestep")
                   .withDefault(false)) {
-  has_constraints = true; ///< This solver can handle constraints
+  supports_constraints = true; ///< This solver can handle constraints
 }
 
 IMEXBDF2::~IMEXBDF2() {
@@ -154,22 +154,22 @@ int IMEXBDF2::init() {
                n2Dvars(), neq, nlocal);
 
   // Check if there are any constraints
-  have_constraints = false;
+  has_constraint_variables = false;
 
   for (int i = 0; i < n2Dvars(); i++) {
     if (f2d[i].constraint) {
-      have_constraints = true;
+      has_constraint_variables = true;
       break;
     }
   }
   for (int i = 0; i < n3Dvars(); i++) {
     if (f3d[i].constraint) {
-      have_constraints = true;
+      has_constraint_variables = true;
       break;
     }
   }
 
-  if (have_constraints) {
+  if (has_constraint_variables) {
     is_dae.reallocate(nlocal);
     // Call the Solver function, which sets the array
     // to zero when not a constraint, one for constraint
@@ -1273,7 +1273,7 @@ PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f, bool linear) {
 
   // G(x) now in fdata
 
-  if (!have_constraints) {
+  if (!has_constraint_variables) {
     // No constraints, so simple loop over all variables
 
     for (int i = 0; i < nlocal; i++) {

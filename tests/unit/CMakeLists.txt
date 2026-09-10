@@ -69,6 +69,7 @@ set(serial_tests_source
     ./include/bout/test_array.cxx
     ./include/bout/test_assert.cxx
     ./include/bout/test_bout_enum_class.cxx
+    ./include/bout/test_boundary_iter.cxx
     ./include/bout/test_deriv_store.cxx
     ./include/bout/test_fv_ops.cxx
     ./include/bout/test_generic_factory.cxx
@@ -96,6 +97,7 @@ set(serial_tests_source
     ./mesh/test_boutmesh.cxx
     ./mesh/test_coordinates.cxx
     ./mesh/test_coordinates_accessor.cxx
+    ./mesh/test_fv_ops.cxx
     ./mesh/test_tokamak_coordinates.cxx
     ./mesh/test_interpolation.cxx
     ./mesh/test_invert3x3.cxx

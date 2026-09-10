@@ -1,0 +1,20 @@
+MXG = 0
+
+[mesh]
+nx = 1
+ny = 8
+nz = 1
+
+[solver]
+type = snes
+snes_type = newtonls
+equation_form = backward_euler
+timestep = 0.2
+output_step = 0.2
+nout = 1
+timestep_control = fixed
+atol = 1e-14
+rtol = 1e-14
+stol = 1e-14
+max_nonlinear_iterations = 20
+ksp_type = gmres

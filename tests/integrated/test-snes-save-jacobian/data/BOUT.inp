@@ -1,0 +1,12 @@
+MXG = 0
+
+[mesh]
+nx = 1
+ny = 16
+nz = 1
+
+[solver]
+type = snes
+snes_type = newtonls
+save_jacobian_index_base = true
+save_jacobian = true
