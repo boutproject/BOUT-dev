@@ -889,7 +889,7 @@ TEST_F(CoordinatesTestFCI, NormaliseG22ScalesStaggeredG22Caches) {
 #if BOUT_USE_METRIC_3D
 // When J and Bxy carry parallel slices, `normaliseMetric()` must scale the
 // centre field and the yup/ydown slices together.
-TEST_F(CoordinatesTest, NormaliseMetricScalesParallelSlicesForJAndBxy) {
+TEST_F(CoordinatesTestFCI, NormaliseMetricScalesParallelSlicesForJAndBxy) {
   auto J = FieldMetric{8.0};
   J.splitParallelSlices();
   J.yup() = 10.0;
