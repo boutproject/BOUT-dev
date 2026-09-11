@@ -5,10 +5,13 @@
 #include "mpi.h"
 
 #include "bout/bout_types.hxx"
+#include "bout/field_data.hxx"
 #include "bout/unused.hxx"
 #include <bout/mesh.hxx>
 
+#include <array>
 #include <list>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -21,11 +24,10 @@ class Field;
 /// conventions.
 
 BOUT_ENUM_CLASS(MeshTopology,
-                closed_field_line,  // Closed field line
-                single_null,   // Single null
-                unconnected_double_null,  // Unconnected double null
-                connected_double_null); // Connected double null
-
+                closed_field_line,       // Closed field line
+                single_null,             // Single null
+                unconnected_double_null, // Unconnected double null
+                connected_double_null);  // Connected double null
 
 class BoutMesh : public Mesh {
 public:
@@ -36,8 +38,7 @@ public:
   int load() override;
 
   MeshTopology getMeshTopology(int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
-                                        int jyseps2_2_, int ny_inner_, int ixseps1_,
-                                        int ixseps2_);
+                               int jyseps2_2_, int ny_inner_, int ixseps1_, int ixseps2_);
 
   /////////////////////////////////////////////
   // Communicate variables
@@ -178,10 +179,10 @@ public:
   bool hasBndryUpperY() const override { return has_boundary_upper_y; }
 
   // Boundary regions
-  std::vector<BoundaryRegion*> getBoundaries() override;
-  std::vector<std::shared_ptr<BoundaryRegionPar>>
-  getBoundariesPar(BoundaryParType type) override;
-  void addBoundaryPar(std::shared_ptr<BoundaryRegionPar> bndry,
+  std::vector<std::shared_ptr<BoundaryRegionBase>> getBoundaries() const override;
+  std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>
+  getBoundariesPar(BoundaryParType type) const override;
+  void addBoundaryPar(std::shared_ptr<bout::boundary::BoundaryRegionFCI> bndry,
                       BoundaryParType type) override;
   std::set<std::string> getPossibleBoundaries() const override;
 
@@ -264,6 +265,8 @@ protected:
     int jyseps1_2;
     int jyseps2_2;
     int ny_inner;
+
+    auto operator<=>(const YDecompositionIndices&) const = default;
   };
 
   /// Version of `setYDecompositionindices` that returns the values
@@ -296,7 +299,6 @@ protected:
 
   /// Create the various sub-communicators
   void createCommunicators();
-  
 
   /// Create the boundary regions in X
   void createXBoundaries();
@@ -365,6 +367,8 @@ protected:
     int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
     int DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT;
     int IDATA_DEST, ODATA_DEST; // X inner and outer destinations
+
+    auto operator<=>(const ConnectionInfo&) const = default;
   };
 
   /// Return the communication parameters as calculated by `topology`
@@ -427,11 +431,9 @@ protected:
   /// Adds 2D and 3D regions for boundaries
   void addBoundaryRegions();
 
-  //void findValidProcessorNum(int ny, int nx);
-
 private:
-  std::vector<BoundaryRegion*> boundary; // Vector of boundary regions
-  std::array<std::vector<std::shared_ptr<BoundaryRegionPar>>,
+  std::vector<std::shared_ptr<BoundaryRegionBase>> boundary; // Vector of boundary regions
+  std::array<std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>,
              static_cast<int>(BoundaryParType::SIZE)>
       par_boundary; // Vector of parallel boundary regions
 
@@ -504,7 +506,6 @@ private:
   /// Copy data from a buffer back into the fields
   int unpack_data(const std::vector<Field*>& var_list, int xge, int xlt, int yge, int ylt,
                   const BoutReal* buffer) const;
-
 };
 
 namespace {
@@ -522,28 +523,24 @@ struct CheckMeshResult {
 
 /// Check that \p total_processors can be decomposed into \p
 /// num_y_processors in Y for the given `BoutMesh` topology parameters
-CheckMeshResult checkBoutMeshYDecomposition(
-    int num_y_processors, int ny,
-    int num_y_guards,
-    int jyseps1_1, int jyseps2_1,
-    int jyseps1_2, int jyseps2_2,
-    int ny_inner);
+CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
+                                            int num_y_guards, int jyseps1_1,
+                                            int jyseps2_1, int jyseps1_2, int jyseps2_2,
+                                            int ny_inner);
 
 // New topology-aware
-CheckMeshResult checkBoutMeshYDecomposition(
-    int num_y_processors, int ny,
-    int num_y_guards,
-    int jyseps1_1, int jyseps2_1,
-    int jyseps1_2, int jyseps2_2,
-    int ny_inner,
-    MeshTopology mesh_topology);
+CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
+                                            int num_y_guards, int jyseps1_1,
+                                            int jyseps2_1, int jyseps1_2, int jyseps2_2,
+                                            int ny_inner, MeshTopology mesh_topology);
 
-  CheckMeshResult findValidProcessorNum(int ny, int nx, int NPES, int NYPE = 1, int NXPE = 1);
+CheckMeshResult findValidProcessorNum(int ny, int nx, int NPES, int NYPE = 1,
+                                      int NXPE = 1);
 
-  CheckMeshResult findValidYDecomposition(int ny, int NPES, int NYPE,
-                                        int jyseps1_1, int jyseps2_1,
-                                        int jyseps1_2, int jyseps2_2,
-                                        int ny_inner, MeshTopology mesh_topology);
+CheckMeshResult findValidYDecomposition(int ny, int num_y_processors, int num_y_guards,
+                                        int jyseps1_1, int jyseps2_1, int jyseps1_2,
+                                        int jyseps2_2, int ny_inner,
+                                        MeshTopology mesh_topology);
 } // namespace bout
 
 #endif // BOUT_BOUTMESH_H

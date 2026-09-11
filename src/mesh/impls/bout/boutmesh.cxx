@@ -28,6 +28,7 @@
 
 #include <bout/assert.hxx>
 #include <bout/boundary_region.hxx>
+#include <bout/boundary_region_iter.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
@@ -44,7 +45,6 @@
 #include <bout/msg_stack.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>
-#include <bout/parallel_boundary_region.hxx>
 #include <bout/region.hxx>
 #include <bout/sys/gettext.hxx>
 #include <bout/sys/range.hxx>
@@ -92,11 +92,6 @@ If you want the old setting, you have to specify mesh:symmetricGlobalY=false in 
 BoutMesh::~BoutMesh() {
   // Delete the communication handles
   clear_handles();
-
-  // Delete the boundary regions
-  for (const auto& bndry : boundary) {
-    delete bndry;
-  }
 
   if (comm_x != MPI_COMM_NULL) {
     MPI_Comm_free(&comm_x);
@@ -178,20 +173,18 @@ void BoutMesh::setXDecompositionIndices(const XDecompositionIndices& indices) {
   ixseps2 = indices.ixseps2;
 }
 
+MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
+                                       int jyseps2_2_, int ny_inner_, int ixseps1_,
+                                       int ixseps2_) { //Returns MeshTopology that is type enum
 
-MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Returns MeshTopology that is type enum
-                                      int jyseps1_2_, int jyseps2_2_,
-                                      int ny_inner_, int ixseps1_,
-                                      int ixseps2_) {
-                                  
   // Set member variables
   jyseps1_1 = jyseps1_1_;
   jyseps2_1 = jyseps2_1_;
   jyseps1_2 = jyseps1_2_;
   jyseps2_2 = jyseps2_2_;
-  ny_inner  = ny_inner_;
-  ixseps1   = ixseps1_;
-  ixseps2   = ixseps2_;
+  ny_inner = ny_inner_;
+  ixseps1 = ixseps1_;
+  ixseps2 = ixseps2_;
 
   if (jyseps1_1 < 0 and jyseps2_2 >= ny - 1) {
     return MeshTopology::closed_field_line; //write whole thing
@@ -199,86 +192,79 @@ MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Retu
     return MeshTopology::single_null;
   } else if (ixseps1 == ixseps2) {
     return MeshTopology::connected_double_null;
-  } 
-  else{
+  } else {
     return MeshTopology::unconnected_double_null;
-   }
+  }
 }
 
-
 namespace bout {
-  CheckMeshResult checkBoutMeshYDecomposition(
-      int num_y_processors, int ny,
-      int num_y_guards,
-      int jyseps1_1, int jyseps2_1,
-      int jyseps1_2, int jyseps2_2,
-      int ny_inner) {
+CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
+                                            int num_y_guards, int jyseps1_1,
+                                            int jyseps2_1, int jyseps1_2, int jyseps2_2,
+                                            int ny_inner) {
 
-    // Preserve legacy behaviour (Single / Double Null)
-    return checkBoutMeshYDecomposition(
-        num_y_processors, ny, num_y_guards,
-        jyseps1_1, jyseps2_1,
-        jyseps1_2, jyseps2_2,
-        ny_inner,
-        MeshTopology::unconnected_double_null);
+  // Preserve legacy behaviour (Single / Double Null)
+  return checkBoutMeshYDecomposition(num_y_processors, ny, num_y_guards, jyseps1_1,
+                                     jyseps2_1, jyseps1_2, jyseps2_2, ny_inner,
+                                     MeshTopology::unconnected_double_null);
+}
+
+CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
+                                            int num_y_guards, int jyseps1_1,
+                                            int jyseps2_1, int jyseps1_2, int jyseps2_2,
+                                            int ny_inner, MeshTopology mesh_topology) {
+
+  const int num_local_y_points = ny / num_y_processors;
+
+  // Check size of Y mesh if we've got multiple processors in Y
+  if (num_local_y_points < num_y_guards and num_y_processors != 1) {
+    return {false,
+            fmt::format(_f("\t -> ny/NYPE ({:d}/{:d} = {:d}) must be >= MYG ({:d})\n"),
+                        ny, num_y_processors, num_local_y_points, num_y_guards)};
+  }
+  // Check branch cuts
+  if ((jyseps1_1 + 1) % num_local_y_points != 0) {
+    return {false, fmt::format(_f("\t -> Leg region jyseps1_1+1 ({:d}) must be a "
+                                  "multiple of MYSUB ({:d})\n"),
+                               jyseps1_1 + 1, num_local_y_points)};
   }
 
-  } // namespace bout
+  if (mesh_topology == MeshTopology::unconnected_double_null
+      || mesh_topology == MeshTopology::connected_double_null) {
 
-  namespace bout {
-  CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
-                                              int num_y_guards, int jyseps1_1,
-                                              int jyseps2_1, int jyseps1_2, int jyseps2_2,
-                                              int ny_inner, MeshTopology mesh_topology) {
+    if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
+      return {
+          false,
+          fmt::format(_f("\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
+                         "be a multiple of MYSUB ({:d})\n"),
+                      jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, num_local_y_points)};
+    }
 
-    const int num_local_y_points = ny / num_y_processors;
+    if ((jyseps2_2 - jyseps1_2) % num_local_y_points != 0) {
+      return {
+          false,
+          fmt::format(_f("\t -> Core region jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) must "
+                         "be a multiple of MYSUB ({:d})\n"),
+                      jyseps2_2, jyseps1_2, jyseps2_2 - jyseps1_2, num_local_y_points)};
+    }
 
-    // Check size of Y mesh if we've got multiple processors in Y
-    if (num_local_y_points < num_y_guards and num_y_processors != 1) {
+    // Check upper legs
+    if ((ny_inner - jyseps2_1 - 1) % num_local_y_points != 0) {
       return {false,
-              fmt::format(_f("\t -> ny/NYPE ({:d}/{:d} = {:d}) must be >= MYG ({:d})\n"), ny,
-                          num_y_processors, num_local_y_points, num_y_guards)};
+              fmt::format(
+                  _f("\t -> leg region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must "
+                     "be a multiple of MYSUB ({:d})\n"),
+                  ny_inner, jyseps2_1, ny_inner - jyseps2_1 - 1, num_local_y_points)};
     }
-    // Check branch cuts
-    if ((jyseps1_1 + 1) % num_local_y_points != 0) {
-      return {false, fmt::format(_f("\t -> Leg region jyseps1_1+1 ({:d}) must be a "
-                                  "multiple of MYSUB ({:d})\n"),
-                                jyseps1_1 + 1, num_local_y_points)};
+    if ((jyseps1_2 - ny_inner + 1) % num_local_y_points != 0) {
+      return {false,
+              fmt::format(
+                  _f("\t -> leg region jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) must "
+                     "be a multiple of MYSUB ({:d})\n"),
+                  jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, num_local_y_points)};
     }
-
-    if (mesh_topology == MeshTopology::unconnected_double_null || mesh_topology == MeshTopology::connected_double_null){ 
-      if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
-        return {
-            false,
-            fmt::format(_f("\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
-                          "be a multiple of MYSUB ({:d})\n"),
-                        jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, num_local_y_points)};
-      }
-
-      if ((jyseps2_2 - jyseps1_2) % num_local_y_points != 0) {
-        return {
-            false,
-            fmt::format(_f("\t -> Core region jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) must "
-                          "be a multiple of MYSUB ({:d})\n"),
-                        jyseps2_2, jyseps1_2, jyseps2_2 - jyseps1_2, num_local_y_points)};
-      }
-
-      // Check upper legs
-      if ((ny_inner - jyseps2_1 - 1) % num_local_y_points != 0) {
-        return {
-            false,
-            fmt::format(_f("\t -> leg region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must "
-                          "be a multiple of MYSUB ({:d})\n"),
-                        ny_inner, jyseps2_1, ny_inner - jyseps2_1 - 1, num_local_y_points)};
-      }
-      if ((jyseps1_2 - ny_inner + 1) % num_local_y_points != 0) {
-        return {
-            false,
-            fmt::format(_f("\t -> leg region jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) must "
-                          "be a multiple of MYSUB ({:d})\n"),
-                        jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, num_local_y_points)};
-      }
-    }  else if ((mesh_topology == MeshTopology::single_null) || (mesh_topology == MeshTopology::closed_field_line)){
+  } else if ((mesh_topology == MeshTopology::single_null)
+             || (mesh_topology == MeshTopology::closed_field_line)) {
     // Single Null or connected Double Null
     if ((jyseps2_2 - jyseps1_1) % num_local_y_points != 0) {
       return {
@@ -289,121 +275,110 @@ namespace bout {
     }
   }
 
-  if ((ny - 1 - jyseps2_2) % num_local_y_points != 0) {
-    return {false, fmt::format(
-                        _f("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
-                          "multiple of MYSUB ({:d})\n"),
-                        ny, jyseps2_2, ny - 1 - jyseps2_2, num_local_y_points)};
+  if ((ny - jyseps2_2 - 1) % num_local_y_points != 0) {
+    return {
+        false,
+        fmt::format(_f("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
+                       "multiple of MYSUB ({:d})\n"),
+                    ny, jyseps2_2, ny - jyseps2_2 - 1, num_local_y_points)};
   }
 
   return {true, ""};
-  }
+}
 
+CheckMeshResult findValidProcessorNum(int ny, int nx, int NPES, int NYPE, int NXPE) {
+  int best_nxpe = 0;
+  int best_nype = 0;
+  int best_npes = 0;
 
-  CheckMeshResult findValidProcessorNum(int ny, int nx,
-                                      int NPES,
-                                      int NYPE,
-                                      int NXPE) {
-    int best_nxpe = 0;
-    int best_nype = 0;
-    int best_npes = 0;
+  for (int possible_nxpe = NXPE; possible_nxpe <= NPES; ++possible_nxpe) {
+    if (nx % possible_nxpe != 0) {
+      continue;
+    }
 
-    for (int possible_nxpe = NXPE; possible_nxpe <= NPES; ++possible_nxpe) {
-      if (nx % possible_nxpe != 0) continue;
+    for (int possible_nype = NYPE; possible_nype <= NPES / possible_nxpe;
+         ++possible_nype) {
 
-      for (int possible_nype = NYPE;
-          possible_nype <= NPES / possible_nxpe;
-          ++possible_nype) {
-        
-        if (possible_nype == 1 && possible_nxpe == 1 && NPES > 1) continue; // Skip single processor unless NPES=1
-        if (ny % possible_nype != 0) continue;
-        if (NPES % (possible_nxpe * possible_nype) != 0) continue;
-        int possible_npes = possible_nxpe * possible_nype;
+      if (possible_nype == 1 && possible_nxpe == 1 && NPES > 1) {
+        continue; // Skip single processor unless NPES=1
+      }
+      if (ny % possible_nype != 0) {
+        continue;
+      }
+      if (NPES % (possible_nxpe * possible_nype) != 0) {
+        continue;
+      }
+      int possible_npes = possible_nxpe * possible_nype;
 
-        if (possible_npes > best_npes) {
-          best_npes = possible_npes;
-          best_nxpe = possible_nxpe;
-          best_nype = possible_nype;
-        }
+      if (possible_npes > best_npes) {
+        best_npes = possible_npes;
+        best_nxpe = possible_nxpe;
+        best_nype = possible_nype;
       }
     }
-
-    if (best_npes > 0) {
-      return {
-        true,
-        fmt::format(
-          "\t -> Best processor decomposition found: "
-          "NPES={:d}, NXPE={:d}, and NYPE={:d}.",
-          best_npes, best_nxpe, best_nype)
-      };
-    }
-
-    return {
-      false,
-      fmt::format(
-        "\t -> No valid processor decomposition found for nx={:d}, ny={:d} with the number of given processors NPES = {:d}. "
-        "Try changing the number of points.",
-        nx, ny, NPES)
-    };
   }
 
+  if (best_npes > 0) {
+    return {true, fmt::format(_f("\t -> Best processor decomposition found: "
+                                 "NPES={:d}, NXPE={:d}, and NYPE={:d}.\n"),
+                              best_npes, best_nxpe, best_nype)};
+  }
 
-    CheckMeshResult findValidYDecomposition(int ny,
-      int num_y_processors,
-      int num_y_guards,
-      int jyseps1_1_start,
-      int jyseps2_1_start,
-      int jyseps1_2_start,
-      int jyseps2_2_start,
-      int ny_inner_start, 
-      MeshTopology mesh_topology) {
+  return {false, fmt::format(_f("\t -> No valid processor decomposition found for "
+                                "nx={:d}, ny={:d} with the number of given processors "
+                                "NPES = {:d}. Try changing the number of points.\n"),
+                             nx, ny, NPES)};
+}
 
-    if (ny % num_y_processors != 0) {
-      return {false, fmt::format(
-                          "\t ->ny ({:d}) must be divisible by NYPE ({:d}). Try changing the number of points or processors in Y.",ny, num_y_processors)};
-    }
+CheckMeshResult findValidYDecomposition(int ny, int num_y_processors, int num_y_guards,
+                                        int jyseps1_1_start, int jyseps2_1_start,
+                                        int jyseps1_2_start, int jyseps2_2_start,
+                                        int ny_inner_start, MeshTopology mesh_topology) {
 
-    for (int jyseps1_1 = jyseps1_1_start; jyseps1_1 < ny; ++jyseps1_1) {
+  if (ny % num_y_processors != 0) {
+    return {false, fmt::format(_f("\t -> ny ({:d}) must be divisible by NYPE ({:d}). Try "
+                                  "changing the number of points or processors in Y.\n"),
+                               ny, num_y_processors)};
+  }
 
-      for (int jyseps2_1 = jyseps2_1_start;
-          jyseps2_1 < ny; ++jyseps2_1) {
+  for (int jyseps1_1 = jyseps1_1_start; jyseps1_1 < ny; ++jyseps1_1) {
+    for (int jyseps2_1 = jyseps2_1_start; jyseps2_1 < ny; ++jyseps2_1) {
+      for (int jyseps1_2 = jyseps1_2_start; jyseps1_2 < ny; ++jyseps1_2) {
+        for (int ny_inner = ny_inner_start; ny_inner < ny; ++ny_inner) {
+          for (int jyseps2_2 = jyseps2_2_start; jyseps2_2 < ny; ++jyseps2_2) {
 
-        for (int jyseps1_2 = jyseps1_2_start;
-            jyseps1_2 < ny; ++jyseps1_2) {
-
-          for (int ny_inner = ny_inner_start;
-              ny_inner < ny; ++ny_inner) {
-
-            for (int jyseps2_2 = jyseps2_2_start;
-                jyseps2_2 < ny; ++jyseps2_2) {
-
-              if (mesh_topology == MeshTopology::unconnected_double_null || mesh_topology == MeshTopology::connected_double_null){
-                if (not (jyseps1_1 < jyseps2_1 &&
-                  jyseps2_1 < ny_inner &&
-                  ny_inner < jyseps1_2 &&
-                  jyseps1_2 < jyseps2_2)){
-                  continue;
-                  }}
-
-              auto result = bout::checkBoutMeshYDecomposition(num_y_processors, ny, num_y_guards, jyseps1_1, jyseps2_1,
-                                                    jyseps1_2, jyseps2_2, ny_inner, mesh_topology);
-
-              if (result.success) {
-                return {true, fmt::format(
-                        "\t -> A valid decomposition in Y close to the one given in the grid would be: "
-                        "jyseps1_1={:d}, jyseps2_1={:d}, jyseps1_2={:d}, jyseps2_2={:d}, ny_inner={:d}\n",
-                        jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner)};
+            if (mesh_topology == MeshTopology::unconnected_double_null
+                || mesh_topology == MeshTopology::connected_double_null) {
+              if (not(jyseps1_1 < jyseps2_1 && jyseps2_1 < ny_inner
+                      && ny_inner < jyseps1_2 && jyseps1_2 < jyseps2_2)) {
+                continue;
               }
+            }
+
+            auto result = bout::checkBoutMeshYDecomposition(
+                num_y_processors, ny, num_y_guards, jyseps1_1, jyseps2_1, jyseps1_2,
+                jyseps2_2, ny_inner, mesh_topology);
+
+            if (result.success) {
+              return {true,
+                      fmt::format(_f("\t -> A valid decomposition in Y close to the one "
+                                     "given in the grid would be: jyseps1_1={:d}, "
+                                     "jyseps2_1={:d}, jyseps1_2={:d}, jyseps2_2={:d}, "
+                                     "ny_inner={:d}\n"),
+                                  jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner)};
             }
           }
         }
       }
     }
-
-    return {false, fmt::format(
-                        "\t -> No valid Y decomposition found for ny = {:d} and NYPE = {:d}. Try changing the number of points or processors in Y.",ny, num_y_processors)};
   }
+
+  return {false, fmt::format(_f("\t -> No valid Y decomposition found for ny = {:d} and "
+                                "NYPE = {:d}. Try changing the number of points or "
+                                "processors in Y.\n"),
+                             ny, num_y_processors)};
 }
+} // namespace bout
 
 void BoutMesh::chooseProcessorSplit(Options& options) {
   // Possible issues:
@@ -421,13 +396,11 @@ void BoutMesh::chooseProcessorSplit(Options& options) {
           _f("Number of processors ({:d}) not divisible by NPs in x direction ({:d})\n"),
           NPES, NXPE);
     }
-
-    if (nx % NXPE != 0) {
+    if ((nx - 2 * MXG) % NXPE != 0) {
       throw BoutException(
-          _f("Number of x points ({:d}) not divisible by NPs in x direction ({:d})\n"), nx,
-          NXPE);
+          _f("Number of x points ({:d}) not divisible by NPs in x direction ({:d})\n"),
+          nx - 2 * MXG, NXPE);
     }
-
     NYPE = NPES / NXPE;
   } else {
     // NXPE not set, but NYPE is
@@ -440,22 +413,22 @@ void BoutMesh::chooseProcessorSplit(Options& options) {
           _f("Number of processors ({:d}) not divisible by NPs in y direction ({:d})\n"),
           NPES, NYPE);
     }
-
     if (ny % NYPE != 0) {
       throw BoutException(
-          _f("Number of y points ({:d}) not divisible by NPs in y direction ({:d})\n"), nx,
-          NXPE);
+          _f("Number of y points ({:d}) not divisible by NPs in y direction ({:d})\n"),
+          nx, NXPE);
     }
-
     NXPE = NPES / NYPE;
   }
 
-  auto result = bout::checkBoutMeshYDecomposition(NYPE, ny, MYG, jyseps1_1, jyseps2_1,
-                                                  jyseps1_2, jyseps2_2, ny_inner, mesh_topology);
+  auto result =
+      bout::checkBoutMeshYDecomposition(NYPE, ny, MYG, jyseps1_1, jyseps2_1, jyseps1_2,
+                                        jyseps2_2, ny_inner, mesh_topology);
 
   if (not result.success) {
-    auto valid_y_decompostion= bout::findValidYDecomposition(ny, NYPE, MYG, jyseps1_1, jyseps2_1,
-                                                             jyseps1_2, jyseps2_2, ny_inner, mesh_topology);
+    auto valid_y_decompostion =
+        bout::findValidYDecomposition(ny, NYPE, MYG, jyseps1_1, jyseps2_1, jyseps1_2,
+                                      jyseps2_2, ny_inner, mesh_topology);
     output_info.write(valid_y_decompostion.reason);
     throw BoutException(result.reason);
   }
@@ -480,8 +453,9 @@ void BoutMesh::findProcessorSplit() {
 
       const int nyp = NPES / i;
 
-      auto result = bout::checkBoutMeshYDecomposition(nyp, ny, MYG, jyseps1_1, jyseps2_1,
-                                                      jyseps1_2, jyseps2_2, ny_inner, mesh_topology);
+      auto result =
+          bout::checkBoutMeshYDecomposition(nyp, ny, MYG, jyseps1_1, jyseps2_1, jyseps1_2,
+                                            jyseps2_2, ny_inner, mesh_topology);
 
       if (not result.success) {
         output_info.write(result.reason);
@@ -497,7 +471,7 @@ void BoutMesh::findProcessorSplit() {
   }
 
   if (NXPE < 1) {
-    throw BoutException(_f("Could not find a valid value for NXPE. Try a different "
+    throw BoutException(_("Could not find a valid value for NXPE. Try a different "
                           "number of processors."));
   }
 
@@ -538,8 +512,8 @@ void BoutMesh::setDerivedGridSizes() {
   if ((MX % NXPE) != 0) {
     auto valid_process_num = bout::findValidProcessorNum(ny, nx, NPES, NXPE);
     output_info.write(valid_process_num.reason);
-    throw BoutException(_f("Cannot split {:d} X points equally between {:d} processors\n"),
-                        MX, NXPE);
+    throw BoutException(
+        _f("Cannot split {:d} X points equally between {:d} processors\n"), MX, NXPE);
   }
 
   // NOTE: No grid data reserved for Y boundary cells - copy from neighbours
@@ -713,11 +687,9 @@ int BoutMesh::load() {
   Mesh::get(jyseps2_2, "jyseps2_2", ny - 1);
   Mesh::get(ny_inner, "ny_inner", jyseps2_1);
 
-  mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1,
-                                jyseps1_2, jyseps2_2,
-                                ny_inner, ixseps1, ixseps2);
-  output_info << _("Detected mesh topology = ")
-         << toString(mesh_topology) << std::endl;
+  mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner,
+                                  ixseps1, ixseps2);
+  output_info << _("Detected mesh topology = ") << toString(mesh_topology) << std::endl;
 
   // Check inputs
   setYDecompositionIndices(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
@@ -759,7 +731,6 @@ int BoutMesh::load() {
 
   ///////////////////// TOPOLOGY //////////////////////////
   /// Call topology to set layout of grid
-  /// Renamed variable topology because of this function
   topology();
 
   TwistShift = options["twistshift"]
@@ -822,27 +793,32 @@ int BoutMesh::load() {
   // Add boundary regions
   addBoundaryRegions();
 
-  // Set cached values
-  {
-    int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
-    int allbndry = 0;
-    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
-    has_boundary_lower_y = static_cast<bool>(allbndry);
-  }
-  {
-    int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
-    int allbndry = 0;
-    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
-    has_boundary_upper_y = static_cast<bool>(allbndry);
-  }
-
   // Initialize default coordinates
   getCoordinates();
+
+  // Set cached values
+  if (isFci()) {
+    has_boundary_lower_y = false;
+    has_boundary_upper_y = false;
+  } else {
+    {
+      int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
+      int allbndry = 0;
+      mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
+      has_boundary_lower_y = static_cast<bool>(allbndry);
+    }
+    {
+      int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
+      int allbndry = 0;
+      mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
+      has_boundary_upper_y = static_cast<bool>(allbndry);
+    }
+  }
 
   output_info.write(_("\tdone\n"));
 
   return 0;
-} // unchanged, is not topology dependent
+}
 
 namespace {
 auto make_XZ_communicator(const BoutMesh& mesh, MPI_Group group_world) -> MPI_Comm {
@@ -929,8 +905,10 @@ void BoutMesh::createCommunicators() {
   MPI_Group group_tmp2{};
 
   proc[2] = NXPE; // Stride in processor rank
+
   // Outer SOL regions
-  if (mesh_topology == MeshTopology::single_null || mesh_topology == MeshTopology::closed_field_line) {
+  if (mesh_topology == MeshTopology::single_null
+      || mesh_topology == MeshTopology::closed_field_line) {
     // Single-null and CFL
     //All processors with same PE_XIND
     TRACE("Creating Outer SOL communicators for Single Null operation");
@@ -956,8 +934,8 @@ void BoutMesh::createCommunicators() {
       }
       MPI_Group_free(&group);
     }
-
-  } else if (mesh_topology == MeshTopology::connected_double_null || mesh_topology == MeshTopology::unconnected_double_null) {
+  } else if (mesh_topology == MeshTopology::connected_double_null
+             || mesh_topology == MeshTopology::unconnected_double_null) {
     // Double null
     // Difference with UCD and CDN comes from a secondary inner SOL region (ixseps1 != ixseps2)
     TRACE("Creating Outer SOL communicators for Double Null operation");
@@ -991,13 +969,124 @@ void BoutMesh::createCommunicators() {
       }
       MPI_Group_free(&group);
     }
-  }
-  else{
+  } else {
     std::string mesh_top = toString(mesh_topology);
-    throw BoutException(_f("Unsupported mesh topology {:s} for communicator creation\n"), mesh_top);
-    }
+    throw BoutException(_f("Unsupported mesh topology {:s} for communicator creation\n"),
+                        mesh_top);
+  }
 
   for (int i = 0; i < NXPE; i++) {
+    // Lower PF region
+
+    if ((jyseps1_1 >= 0) || (jyseps2_2 + 1 < ny)) {
+      // A lower PF region exists
+      TRACE("Creating lower PF communicators for xp={:d}", i);
+
+      output_debug << "Creating lower PF communicators for xp = " << i << endl;
+
+      if (jyseps1_1 >= 0) {
+        proc[0] = PROC_NUM(i, 0);
+        proc[1] = PROC_NUM(i, YPROC(jyseps1_1));
+
+        output_debug << "PF1 " << proc[0] << ", " << proc[1] << endl;
+
+        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+      } else {
+        group_tmp1 = MPI_GROUP_EMPTY;
+      }
+
+      if (jyseps2_2 + 1 < ny) {
+        proc[0] = PROC_NUM(i, YPROC(jyseps2_2 + 1));
+        proc[1] = PROC_NUM(i, NYPE - 1);
+
+        output_debug << "PF2 " << proc[0] << ", " << proc[1] << endl;
+
+        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+      } else {
+        group_tmp2 = MPI_GROUP_EMPTY;
+      }
+
+      MPI_Group_union(group_tmp1, group_tmp2, &group);
+      MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+      if (comm_tmp != MPI_COMM_NULL) {
+        comm_inner = comm_tmp;
+        if (ixseps_lower == ixseps_outer) {
+          // Between the separatrices is still in the PF region
+
+          output_debug << "-> Inner and middle\n";
+
+          comm_middle = comm_inner;
+        } else {
+
+          output_debug << "-> Outer and middle\n";
+
+          comm_middle = comm_outer;
+        }
+      }
+
+      output_debug << "Freeing\n";
+
+      MPI_Group_free(&group);
+      if (group_tmp1 != MPI_GROUP_EMPTY) {
+        MPI_Group_free(&group_tmp1);
+      }
+      if (group_tmp2 != MPI_GROUP_EMPTY) {
+        MPI_Group_free(&group_tmp2);
+      }
+
+      output_debug << "done lower PF\n";
+    }
+
+    if (jyseps2_1 != jyseps1_2) {
+      // Upper PF region
+      // Note need to order processors so that a continuous surface is formed
+      TRACE("Creating upper PF communicators for xp={:d}", i);
+
+      output_debug << "Creating upper PF communicators for xp = " << i << endl;
+
+      proc[0] = PROC_NUM(i, YPROC(ny_inner));
+      proc[1] = PROC_NUM(i, YPROC(jyseps1_2));
+
+      output_debug << "PF3 " << proc[0] << ", " << proc[1] << endl;
+
+      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+      proc[0] = PROC_NUM(i, YPROC(jyseps2_1 + 1));
+      proc[1] = PROC_NUM(i, YPROC(ny_inner - 1));
+
+      output_debug << "PF4 " << proc[0] << ", " << proc[1] << endl;
+
+      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+      MPI_Group_union(group_tmp1, group_tmp2, &group);
+      MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+      if (comm_tmp != MPI_COMM_NULL) {
+        comm_inner = comm_tmp;
+        if (ixseps_upper == ixseps_outer) {
+
+          output_debug << "-> Inner and middle\n";
+
+          comm_middle = comm_inner;
+        } else {
+
+          output_debug << "-> Outer and middle\n";
+
+          comm_middle = comm_outer;
+          // MPI_Comm_dup(comm_outer, &comm_middle);
+        }
+      }
+
+      output_debug << "Freeing\n";
+
+      MPI_Group_free(&group);
+      if (group_tmp1 != MPI_GROUP_EMPTY) {
+        MPI_Group_free(&group_tmp1);
+      }
+      if (group_tmp2 != MPI_GROUP_EMPTY) {
+        MPI_Group_free(&group_tmp2);
+      }
+
+      output_debug << "done upper PF\n";
+    }
+
     // Core region
     TRACE("Creating core communicators");
     //For CDN and UDN its the inner core region.
@@ -1020,7 +1109,8 @@ void BoutMesh::createCommunicators() {
     }
 
     //Only for CDN and UDN outer core region. Add check to ensure only created for these topologies. Maybe topology should go inside second if.
-    if (mesh_topology == MeshTopology::connected_double_null || mesh_topology == MeshTopology::unconnected_double_null){
+    if (mesh_topology == MeshTopology::connected_double_null
+        || mesh_topology == MeshTopology::unconnected_double_null) {
       if (jyseps2_2 > jyseps1_2) {
         proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
         proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
@@ -1042,6 +1132,10 @@ void BoutMesh::createCommunicators() {
     MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
     if (comm_tmp != MPI_COMM_NULL) {
       comm_inner = comm_tmp;
+
+      if (ixseps_inner == ixseps_outer) {
+        MPI_Comm_dup(comm_inner, &comm_middle);
+      }
     }
 
     if (group_tmp1 != MPI_GROUP_EMPTY) {
@@ -1054,10 +1148,8 @@ void BoutMesh::createCommunicators() {
   }
 
   if (ixseps_inner == ixseps_outer) {
-    // Balanced null: comm_middle = comm_inner (only for procs that are in the core group)
-    if (comm_inner != MPI_COMM_NULL) {
-      MPI_Comm_dup(comm_inner, &comm_middle);
-    }
+    // Balanced null, so no middle
+    MPI_Comm_dup(comm_inner, &comm_middle);
   } else {
     // Need to handle unbalanced double-null case
 
@@ -1136,37 +1228,45 @@ void BoutMesh::createXBoundaries() {
     //
     // For CDN/UDN the y-range (jyseps1_2, jyseps2_2] is the outer core leg,
     // so it gets a "core" boundary.
-    if ((mesh_topology == MeshTopology::connected_double_null) or (mesh_topology == MeshTopology::unconnected_double_null)
-        or (mesh_topology == MeshTopology::closed_field_line)){
+    if ((mesh_topology == MeshTopology::connected_double_null)
+        or (mesh_topology == MeshTopology::unconnected_double_null)
+        or (mesh_topology == MeshTopology::closed_field_line)) {
       // CDN/UDN have two core legs; CFL is all core (no X-points).
       // All three need both y-ranges checked.
       const bool in_core = ((yg > jyseps1_1) and (yg <= jyseps2_1))
-          or ((yg > jyseps1_2) and (yg <= jyseps2_2));
+                           or ((yg > jyseps1_2) and (yg <= jyseps2_2));
 
       if (in_core) {
-        boundary.push_back(new BoundaryRegionXIn("core", ystart, yend, this));
+        boundary.push_back(
+            bout::boundary::NewBoundaryRegionXIn("core", ystart, yend, this));
       } else {
-        boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend, this));
+        boundary.push_back(
+            bout::boundary::NewBoundaryRegionXIn("pf", ystart, yend, this));
       }
-    }
-    else if (mesh_topology == MeshTopology::single_null){
-      //SN has only one core region, but it goes from (jyseps1_1, jyseps2_2], ny_inner = jyseps1_2 = jyseps2_1 are not relevant for that case. 
+    } else if (mesh_topology == MeshTopology::single_null) {
+      //SN has only one core region, but it goes from (jyseps1_1, jyseps2_2], ny_inner = jyseps1_2 = jyseps2_1 are not relevant for that case.
       const bool in_core = ((yg > jyseps1_1) and (yg <= jyseps2_2));
 
       if (in_core) {
-        boundary.push_back(new BoundaryRegionXIn("core", ystart, yend, this));
+        boundary.push_back(
+            bout::boundary::NewBoundaryRegionXIn("core", ystart, yend, this));
       } else {
-        boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend, this));
+        boundary.push_back(
+            bout::boundary::NewBoundaryRegionXIn("pf", ystart, yend, this));
       }
     }
   }
 
   if (PE_XIND == (NXPE - 1)) {
-      boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend, this));
+    // Outer SOL
+    boundary.push_back(bout::boundary::NewBoundaryRegionXOut("sol", ystart, yend, this));
   }
 }
 
-//Unchanged. Not topology dependent. 
+int BoutMesh::getProcIndex(int X, int Y, [[maybe_unused]] int Z) const {
+  return (((Z * NYPE) + Y) * NXPE) + X;
+}
+
 void BoutMesh::createYBoundaries() {
   if (MYG <= 0) {
     return;
@@ -1186,25 +1286,24 @@ void BoutMesh::createYBoundaries() {
       (include_corner_cells and ODATA_DEST == -1) ? LocalNx - 1 : xend;
 
   if ((UDATA_INDEST < 0) && (UDATA_XSPLIT > yboundary_xstart)) {
-    boundary.push_back(
-        new BoundaryRegionYUp("upper_target", yboundary_xstart, UDATA_XSPLIT - 1, this));
+    boundary.push_back(bout::boundary::NewBoundaryRegionYUp(
+        "upper_target", yboundary_xstart, UDATA_XSPLIT - 1, this));
   }
   if ((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= yboundary_xend)) {
-    boundary.push_back(
-        new BoundaryRegionYUp("upper_target", UDATA_XSPLIT, yboundary_xend, this));
+    boundary.push_back(bout::boundary::NewBoundaryRegionYUp("upper_target", UDATA_XSPLIT,
+                                                            yboundary_xend, this));
   }
 
   if ((DDATA_INDEST < 0) && (DDATA_XSPLIT > yboundary_xstart)) {
-    boundary.push_back(new BoundaryRegionYDown("lower_target", yboundary_xstart,
-                                               DDATA_XSPLIT - 1, this));
+    boundary.push_back(bout::boundary::NewBoundaryRegionYDown(
+        "lower_target", yboundary_xstart, DDATA_XSPLIT - 1, this));
   }
   if ((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= yboundary_xend)) {
-    boundary.push_back(
-        new BoundaryRegionYDown("lower_target", DDATA_XSPLIT, yboundary_xend, this));
+    boundary.push_back(bout::boundary::NewBoundaryRegionYDown(
+        "lower_target", DDATA_XSPLIT, yboundary_xend, this));
   }
 }
 
-// Unchanged. Not topology dependent.
 std::set<std::string> BoutMesh::getPossibleBoundaries() const {
   // Result set: set so it automatically takes care of duplicates
   std::set<std::string> all_boundaries{};
@@ -1251,7 +1350,9 @@ std::set<std::string> BoutMesh::getPossibleBoundaries() const {
         auto boundaries = mesh_copy.getBoundaries();
         std::transform(boundaries.begin(), boundaries.end(),
                        std::inserter(all_boundaries, all_boundaries.begin()),
-                       [](BoundaryRegionBase* boundary) { return boundary->label; });
+                       [](const std::shared_ptr<BoundaryRegionBase>& boundary) {
+                         return boundary->label;
+                       });
       };
 
   // This is sufficient to get the SOL boundary, if it exists
@@ -1698,13 +1799,6 @@ int BoutMesh::getYProcIndex() const { return PE_YIND; }
 
 int BoutMesh::getZProcIndex() const { return PE_ZIND; }
 
-int BoutMesh::getProcIndex(int X, int Y, int Z) const {
-  if (X < 0 || X >= NXPE || Y < 0 || Y >= NYPE || Z < 0 || Z >= NZPE) {
-    return -1;
-  }
-  return Y * NXPE * NZPE + X * NZPE + Z;
-}
-
 /****************************************************************
  *                 X COMMUNICATIONS
  *
@@ -1819,53 +1913,33 @@ bool BoutMesh::lastY() const { return PE_YIND == NYPE - 1; }
 
 bool BoutMesh::firstY(int xpos) const {
   int xglobal = getGlobalXIndex(xpos);
-
-  MPI_Comm comm;
-  if (xglobal < ixseps_inner) {
-    comm = comm_inner;
-  } else if (xglobal < ixseps_outer) {
-    comm = comm_middle;
-  } else {
-    comm = comm_outer;
-  }
-  if (comm == MPI_COMM_NULL) {
-//    const bool lower_target =
-//        (xpos < DDATA_XSPLIT) ? (DDATA_INDEST < 0) : (DDATA_OUTDEST < 0);
-//    if (lower_target) {
-//      return true;
-//    }
-    return PE_YIND == 0;
-  }
-
   int rank;
-  MPI_Comm_rank(comm, &rank);
+
+  if (xglobal < ixseps_inner) {
+    MPI_Comm_rank(comm_inner, &rank);
+  } else if (xglobal < ixseps_outer) {
+    MPI_Comm_rank(comm_middle, &rank);
+  } else {
+    MPI_Comm_rank(comm_outer, &rank);
+  }
   return rank == 0;
 }
 
 bool BoutMesh::lastY(int xpos) const {
   int xglobal = getGlobalXIndex(xpos);
+  int rank;
+  int size;
 
-  MPI_Comm comm;
   if (xglobal < ixseps_inner) {
-    comm = comm_inner;
+    MPI_Comm_size(comm_inner, &size);
+    MPI_Comm_rank(comm_inner, &rank);
   } else if (xglobal < ixseps_outer) {
-    comm = comm_middle;
+    MPI_Comm_size(comm_middle, &size);
+    MPI_Comm_rank(comm_middle, &rank);
   } else {
-    comm = comm_outer;
+    MPI_Comm_size(comm_outer, &size);
+    MPI_Comm_rank(comm_outer, &rank);
   }
-
-  if (comm == MPI_COMM_NULL) {
-//   const bool upper_target =
-//        (xpos < UDATA_XSPLIT) ? (UDATA_INDEST < 0) : (UDATA_OUTDEST < 0);
-//    if (upper_target) {
-//      return true;
-//    }
-    return PE_YIND == NYPE - 1;
-  }
-
-  int rank, size;
-  MPI_Comm_size(comm, &size);
-  MPI_Comm_rank(comm, &rank);
   return rank == size - 1;
 }
 
@@ -2027,9 +2101,8 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
 
   periodicX = periodic_X_;
   setYDecompositionIndices(jyseps1_1_, jyseps2_1_, jyseps1_2_, jyseps2_2_, ny_inner_);
-  mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1,
-                                jyseps1_2, jyseps2_2,
-                                ny_inner, ixseps1, ixseps2);
+  mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner,
+                                  ixseps1, ixseps2);
   setDerivedGridSizes();
   topology();
   if (create_regions) {
@@ -2305,7 +2378,8 @@ void BoutMesh::topology() {
                    true);                                 // Twist-shift this connection
     set_connection(jyseps1_1, jyseps2_2 + 1, 0, ixseps1); // No twist-shift in PF region
 
-  } else if (mesh_topology == MeshTopology::connected_double_null || mesh_topology == MeshTopology::unconnected_double_null) {
+  } else if (mesh_topology == MeshTopology::connected_double_null
+             || mesh_topology == MeshTopology::unconnected_double_null) {
     /*************** DOUBLE NULL OPERATION *******************/
     /* UPPER LEGS: Do not have to be the same length as each
        other or lower legs, but do have to have an integer number
@@ -2352,7 +2426,7 @@ void BoutMesh::topology() {
 
     // Add target plates at the top
     add_target(ny_inner - 1, 0, nx);
-  } 
+  }
 
   // Additional limiters
   // Each limiter needs 3 indices: A Y index, start and end X indices
@@ -2385,14 +2459,15 @@ void BoutMesh::topology() {
     }
   }
 
-  if (mesh_topology == MeshTopology::unconnected_double_null || mesh_topology == MeshTopology::connected_double_null) {
-      //This is for DN topologies
-      if ((ixseps_inner > 0)
-      && (((PE_YIND * MYSUB > jyseps1_1) && (PE_YIND * MYSUB <= jyseps2_1))
-          || ((PE_YIND * MYSUB > jyseps1_2) && (PE_YIND * MYSUB <= jyseps2_2)))) {
-              MYPE_IN_CORE = true; /* processor is in the core */
-      }
+  if (mesh_topology == MeshTopology::unconnected_double_null
+      || mesh_topology == MeshTopology::connected_double_null) {
+    //This is for DN topologies
+    if ((ixseps_inner > 0)
+        && (((PE_YIND * MYSUB > jyseps1_1) && (PE_YIND * MYSUB <= jyseps2_1))
+            || ((PE_YIND * MYSUB > jyseps1_2) && (PE_YIND * MYSUB <= jyseps2_2)))) {
+      MYPE_IN_CORE = true; /* processor is in the core */
     }
+  }
 
   if (DDATA_XSPLIT > LocalNx) {
     DDATA_XSPLIT = LocalNx;
@@ -2561,14 +2636,14 @@ void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin
 int BoutMesh::pack_data(const std::vector<Field*>& var_list, int xge, int xlt, int yge,
                         int ylt, BoutReal* buffer) const {
 
-  using FieldType = Field::FieldType;
+  using enum Field::FieldType;
   int len = 0;
   const int zge = 0;
   const int zlt = LocalNz;
 
   for (const auto& var : var_list) {
     switch (var->field_type()) {
-    case FieldType::field3d: {
+    case field3d: {
       const auto* var3d_ref_ptr = dynamic_cast<Field3D*>(var);
       ASSERT0(var3d_ref_ptr != nullptr);
       const auto& var3d_ref = *var3d_ref_ptr;
@@ -2582,7 +2657,7 @@ int BoutMesh::pack_data(const std::vector<Field*>& var_list, int xge, int xlt, i
       }
       break;
     }
-    case FieldType::field2d: {
+    case field2d: {
       const auto* var2d_ref_ptr = dynamic_cast<Field2D*>(var);
       ASSERT0(var2d_ref_ptr != nullptr);
       const auto& var2d_ref = *var2d_ref_ptr;
@@ -2594,7 +2669,7 @@ int BoutMesh::pack_data(const std::vector<Field*>& var_list, int xge, int xlt, i
       }
       break;
     }
-    case FieldType::fieldperp: {
+    case fieldperp: {
       const auto* varperp_ref_ptr = dynamic_cast<FieldPerp*>(var);
       ASSERT0(varperp_ref_ptr != nullptr);
       const auto& varperp_ref = *varperp_ref_ptr;
@@ -2615,14 +2690,14 @@ int BoutMesh::pack_data(const std::vector<Field*>& var_list, int xge, int xlt, i
 int BoutMesh::unpack_data(const std::vector<Field*>& var_list, int xge, int xlt, int yge,
                           int ylt, const BoutReal* buffer) const {
 
-  using FieldType = Field::FieldType;
+  using enum Field::FieldType;
   int len = 0;
   const int zge = 0;
   const int zlt = LocalNz;
 
   for (const auto& var : var_list) {
     switch (var->field_type()) {
-    case FieldType::field3d: {
+    case field3d: {
       auto* var3d_ref_ptr = dynamic_cast<Field3D*>(var);
       ASSERT0(var3d_ref_ptr != nullptr);
       auto& var3d_ref = *var3d_ref_ptr;
@@ -2636,7 +2711,7 @@ int BoutMesh::unpack_data(const std::vector<Field*>& var_list, int xge, int xlt,
       }
       break;
     }
-    case FieldType::field2d: {
+    case field2d: {
       auto* var2d_ref_ptr = dynamic_cast<Field2D*>(var);
       ASSERT0(var2d_ref_ptr != nullptr);
       auto& var2d_ref = *var2d_ref_ptr;
@@ -2648,7 +2723,7 @@ int BoutMesh::unpack_data(const std::vector<Field*>& var_list, int xge, int xlt,
       }
       break;
     }
-    case FieldType::fieldperp: {
+    case fieldperp: {
       auto* varperp_ref_ptr = dynamic_cast<FieldPerp*>(var);
       ASSERT0(varperp_ref_ptr != nullptr);
       auto& varperp_ref = *varperp_ref_ptr;
@@ -2688,9 +2763,8 @@ bool BoutMesh::periodicY(int jx, BoutReal& ts) const {
 int BoutMesh::numberOfYBoundaries() const {
   if (jyseps2_1 != jyseps1_2) {
     return 2;
-  } else {
-    return 1;
   }
+  return 1;
 }
 
 std::pair<bool, BoutReal> BoutMesh::hasBranchCutLower(int jx) const {
@@ -2725,42 +2799,41 @@ int BoutMesh::ySize(int xpos) const {
   int xglobal = getGlobalXIndex(xpos);
   int yglobal = getGlobalYIndexNoBoundaries(MYG);
 
-  //Old divisions working for all other topologies. 
-    if ((xglobal < ixseps_lower) && ((yglobal <= jyseps1_1) || (yglobal > jyseps2_2))) {
-      // Lower PF region
-      return (jyseps1_1 + 1) + (ny - jyseps2_2);
+  if ((xglobal < ixseps_lower) && ((yglobal <= jyseps1_1) || (yglobal > jyseps2_2))) {
+    // Lower PF region
+    return (jyseps1_1 + 1) + (ny - jyseps2_2);
 
-    } else if ((xglobal < ixseps_upper) && (yglobal > jyseps2_1)
-              && (yglobal >= jyseps1_2)) {
-      // Upper PF region
-      return jyseps1_2 - jyseps2_1;
+  } else if ((xglobal < ixseps_upper) && (yglobal > jyseps2_1)
+             && (yglobal >= jyseps1_2)) {
+    // Upper PF region
+    return jyseps1_2 - jyseps2_1;
 
-    } else if (xglobal < ixseps_inner) {
-      return (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
+  } else if (xglobal < ixseps_inner) {
+    // Core
+    return (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 
-    } else if (jyseps2_1 == jyseps1_2) {
-      // Single null, so in the SOL
-      return ny;
+  } else if (jyseps2_1 == jyseps1_2) {
+    // Single null, so in the SOL
+    return ny;
 
-    } else if ((xglobal >= ixseps_inner) && (xglobal < ixseps_outer)) {
-      // Intermediate SOL in DN
+  } else if ((xglobal >= ixseps_inner) && (xglobal < ixseps_outer)) {
+    // Intermediate SOL in DND
 
-      if (ixseps_lower < ixseps_upper) {
-        // Connects to lower divertor
-        return (jyseps2_1 + 1) + (ny - jyseps1_2);
-      } else {
-        // Connects to upper divertor
-        return jyseps2_2 - jyseps1_1;
-      }
-    } else if (yglobal < ny_inner) {
-      // Inner SOL
-      return ny_inner;
+    if (ixseps_lower < ixseps_upper) {
+      // Connects to lower divertor
+      return (jyseps2_1 + 1) + (ny - jyseps1_2);
+    } else {
+      // Connects to upper divertor
+      return jyseps2_2 - jyseps1_1;
     }
-    // Outer SOL
-    return ny - ny_inner;
+  } else if (yglobal < ny_inner) {
+    // Inner SOL
+    return ny_inner;
+  }
+  // Outer SOL
+  return ny - ny_inner;
 }
 
-//Unchanged, not dependent on topology
 MPI_Comm BoutMesh::getYcomm(int xpos) const {
   int xglobal = getGlobalXIndex(xpos);
 
@@ -2775,7 +2848,7 @@ MPI_Comm BoutMesh::getYcomm(int xpos) const {
 /****************************************************************
  *                 Range iteration
  ****************************************************************/
-//Not topology dependent
+
 void BoutMesh::addBoundaryRegions() {
   std::list<std::string> all_boundaries; ///< Keep track of all boundary regions
 
@@ -3130,6 +3203,11 @@ void BoutMesh::addBoundaryRegions() {
 }
 
 RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
+#if CHECK > 0
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+#endif
 
   int xs = 0;
   int xe = LocalNx - 1;
@@ -3165,6 +3243,11 @@ RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
+#if CHECK > 0
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+#endif
 
   int xs = 0;
   int xe = LocalNx - 1;
@@ -3199,6 +3282,12 @@ RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryLowerY() const {
+#if CHECK > 0
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+#endif
+
   int xs = 0;
   int xe = LocalNx - 1;
   if ((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart)) {
@@ -3228,6 +3317,12 @@ RangeIterator BoutMesh::iterateBndryLowerY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
+#if CHECK > 0
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+#endif
+
   int xs = 0;
   int xe = LocalNx - 1;
 
@@ -3262,6 +3357,12 @@ RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
+#if CHECK > 0
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+#endif
+
   int xs = 0;
   int xe = LocalNx - 1;
 
@@ -3296,6 +3397,12 @@ RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryUpperY() const {
+#if CHECK > 0
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+#endif
+
   int xs = 0;
   int xe = LocalNx - 1;
   if ((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart)) {
@@ -3324,14 +3431,16 @@ RangeIterator BoutMesh::iterateBndryUpperY() const {
   return RangeIterator(xs, xe);
 }
 
-std::vector<BoundaryRegion*> BoutMesh::getBoundaries() { return boundary; }
-
-std::vector<std::shared_ptr<BoundaryRegionPar>>
-BoutMesh::getBoundariesPar(BoundaryParType type) {
-  return par_boundary[static_cast<int>(type)];
+std::vector<std::shared_ptr<BoundaryRegionBase>> BoutMesh::getBoundaries() const {
+  return boundary;
 }
 
-void BoutMesh::addBoundaryPar(std::shared_ptr<BoundaryRegionPar> bndry,
+using bout::boundary::BoundaryRegionFCI;
+std::vector<std::shared_ptr<BoundaryRegionFCI>>
+BoutMesh::getBoundariesPar(BoundaryParType type) const {
+  return par_boundary[static_cast<int>(type)];
+}
+void BoutMesh::addBoundaryPar(std::shared_ptr<BoundaryRegionFCI> bndry,
                               BoundaryParType type) {
   output_info << "Adding new parallel boundary: " << bndry->label << endl;
   switch (type) {
@@ -3391,7 +3500,7 @@ BoutReal BoutMesh::GlobalY(int jy) const {
       yi -= jyseps1_1 + 0.5 + (jyseps1_2 - jyseps2_1);
     }
     return yi / nycore;
-    }
+  }
 
   int ly = getGlobalYIndexNoBoundaries(jy); // global poloidal index across subdomains
   int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
@@ -3421,53 +3530,48 @@ BoutReal BoutMesh::GlobalY(int jy) const {
 }
 
 BoutReal BoutMesh::GlobalY(BoutReal jy) const {
-  
-    // Get global Y index as a BoutReal
-    //BoutReal yglo;
-    //YGLOBAL(jy, yglo); PREVIOUS BEHAVIOUR
 
+  // Get global Y index as a BoutReal
+  BoutReal yglo = getGlobalYIndex(jy);
 
-    // Get global Y index as a BoutReal
-    BoutReal yglo = getGlobalYIndex(jy);
-
-    if (symmetricGlobalY) {
-      BoutReal yi = yglo;
-      int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
-
-      if (yi < ny_inner) {
-        // before upper target
-        yi -= jyseps1_1 + 0.5;
-      } else {
-        // after upper target
-        yi -= jyseps1_1 + 0.5 + (jyseps1_2 - jyseps2_1);
-      }
-      return yi / nycore;
-    }
-
+  if (symmetricGlobalY) {
+    BoutReal yi = yglo;
     int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 
-    if (MYPE_IN_CORE) {
-      // Turn yglo into an index over the core cells onyglo
-      if (yglo <= jyseps2_1) {
-        yglo -= jyseps1_1 + 1;
-      } else {
-        yglo -= jyseps1_1 + 1 + (jyseps1_2 - jyseps2_1);
-      }
+    if (yi < ny_inner) {
+      // before upper target
+      yi -= jyseps1_1 + 0.5;
     } else {
-      // Not in core. Need to get the last "core" value
-      if (yglo <= jyseps1_1) {
-        // Inner lower leg
-        yglo = 0;
-      } else if ((yglo > jyseps2_1) && (yglo <= jyseps1_2)) {
-        // Upper legs
-        yglo = jyseps2_1 - jyseps1_1;
-      } else if (yglo > jyseps2_2) {
-        // Outer lower leg
-        yglo = nycore;
-      }
+      // after upper target
+      yi -= jyseps1_1 + 0.5 + (jyseps1_2 - jyseps2_1);
     }
+    return yi / nycore;
+  }
 
-    return yglo / static_cast<BoutReal>(nycore);
+  int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
+
+  if (MYPE_IN_CORE) {
+    // Turn yglo into an index over the core cells onyglo
+    if (yglo <= jyseps2_1) {
+      yglo -= jyseps1_1 + 1;
+    } else {
+      yglo -= jyseps1_1 + 1 + (jyseps1_2 - jyseps2_1);
+    }
+  } else {
+    // Not in core. Need to get the last "core" value
+    if (yglo <= jyseps1_1) {
+      // Inner lower leg
+      yglo = 0;
+    } else if ((yglo > jyseps2_1) && (yglo <= jyseps1_2)) {
+      // Upper legs
+      yglo = jyseps2_1 - jyseps1_1;
+    } else if (yglo > jyseps2_2) {
+      // Outer lower leg
+      yglo = nycore;
+    }
+  }
+
+  return yglo / static_cast<BoutReal>(nycore);
 }
 
 BoutReal BoutMesh::GlobalZ(int jz) const {
