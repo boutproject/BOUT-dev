@@ -40,6 +40,7 @@
 #include <bout/solver.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
+#include <algorithm>
 #include <cmath>
 
 #include "bout/boutcomm.hxx"
@@ -99,7 +100,7 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in, Solver* UNUSED
  * Reset the solver to its initial state
  */
 void LaplaceIPT::resetSolver() {
-  std::fill(std::begin(first_call), std::end(first_call), true);
+  std::ranges::fill(first_call, true);
   x0saved = 0.0;
   resetMeanIterations();
 }
@@ -428,14 +429,14 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   constexpr BoutReal initial_error = 1e6;
   errornorm = initial_error;
   errornorm_old = initial_error;
-  std::fill(std::begin(converged), std::end(converged), false);
+  std::ranges::fill(converged, false);
 
   /// SCOREP_USER_REGION_END(initwhileloop);
   /// SCOREP_USER_REGION_DEFINE(whileloop);
   /// SCOREP_USER_REGION_BEGIN(whileloop, "while loop",///SCOREP_USER_REGION_TYPE_COMMON);
 
   const auto all = [](const Array<bool>& a) {
-    return std::all_of(a.begin(), a.end(), [](bool v) { return v; });
+    return std::ranges::all_of(a, [](bool v) { return v; });
   };
 
   // Check for convergence before loop to skip work with cvode

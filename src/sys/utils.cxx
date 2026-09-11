@@ -57,7 +57,7 @@ char* copy_string(const char* s) {
 const std::string lowercase(const std::string& str) {
   std::string strlow(str);
 
-  std::transform(strlow.begin(), strlow.end(), strlow.begin(), ::tolower);
+  std::ranges::transform(strlow, strlow.begin(), ::tolower);
   return strlow;
 }
 
@@ -65,7 +65,7 @@ const std::string lowercase(const std::string& str) {
 const std::string uppercase(const std::string& str) {
   std::string strup(str);
 
-  std::transform(strup.begin(), strup.end(), strup.begin(), ::toupper);
+  std::ranges::transform(strup, strup.begin(), ::toupper);
   return strup;
 }
 

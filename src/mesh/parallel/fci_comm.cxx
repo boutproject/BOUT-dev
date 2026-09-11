@@ -114,7 +114,7 @@ void GlobalField3DAccess::setup() {
     const auto proc = mesh->getProcIndex(pix.proc, piy.proc, piz.proc);
     const auto& vec = toGet[proc];
     const auto tofind = xyzlocal.convert(pix.index, piy.index, piz.index).ind;
-    auto it = std::lower_bound(vec.begin(), vec.end(), tofind);
+    auto it = std::ranges::lower_bound(vec, tofind);
     ASSERT3(it != vec.end());
     ASSERT3(*it == tofind);
     mapping[id] = std::distance(vec.begin(), it) + getOffsets[proc];
