@@ -1502,7 +1502,7 @@ PetscErrorCode SNESSolver::updatePseudoTimestepping() {
         if (i3d.y() != 0) {
           min_neighboring_dt = std::min(min_neighboring_dt, pseudo_timestep[i3d.ym()]);
         }
-        if (i3d.x() != mesh->LocalNy - 1) {
+        if (i3d.y() != mesh->LocalNy - 1) {
           min_neighboring_dt = std::min(min_neighboring_dt, pseudo_timestep[i3d.yp()]);
         }
 
