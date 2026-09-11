@@ -1025,15 +1025,55 @@ int SNESSolver::run() {
           if (snes_failures == max_snes_failures - 1) {
             // Last chance. Set to uniform smallest timestep
             PetscCall(VecSet(dt_vec, dt_min_reset));
+            pseudo_timestep = dt_min_reset;
 
-          } else if (snes_failures == 5) {
-            // Set uniform timestep
-            PetscCall(VecSet(dt_vec, timestep));
+            // Scale down pseudo_alpha so that PID controller isn't saturated
+            pseudo_alpha = pseudo_alpha_minimum;
+
+          } else if (snes_failures >= 5) {
+            // Squash variation in timestep
+            // dt_vec <- lambda * dt_vec + (1 - lambda) * timestep
+            const BoutReal lambda = 0.5;
+            const bool affine_squash = false;
+
+            if (affine_squash) {
+              // Modify dt_vec using Affine squash
+              PetscCall(VecScale(dt_vec, lambda));
+              PetscCall(VecShift(dt_vec, (1.0 - lambda) * timestep));
+
+              // Modify pseudo_timestep
+              pseudo_timestep = lambda * pseudo_timestep + (1 - lambda) * timestep;
+            } else {
+              // Log squash
+              // dt_vec <- timestep * (dt_vec / timestep)^lambda
+              PetscInt size;
+              PetscCall(VecGetLocalSize(dt_vec, &size));
+              BoutReal* dt_data = nullptr;
+              PetscCall(VecGetArray(dt_vec, &dt_data));
+              for (PetscInt i = 0; i != size; ++i) {
+                dt_data[i] = timestep * std::pow(dt_data[i] / timestep, lambda);
+              }
+              PetscCall(VecRestoreArray(dt_vec, &dt_data));
+
+              pseudo_timestep = timestep * pow(pseudo_timestep / timestep, lambda);
+            }
+
+            // Anti-windup: Calculate the effective alpha parameter
+            Field3D pseudo_alpha_effective = local_residual * pseudo_timestep;
+            pseudo_alpha = mean(pseudo_alpha_effective, true);
+
           } else {
             // Global scaling of timesteps
             // Note: A better strategy might be to reduce timesteps
             //       in problematic cells.
             PetscCall(VecScale(dt_vec, timestep_factor_on_failure));
+
+            pseudo_timestep *= timestep_factor_on_failure;
+
+            // Scale alpha down by the same amount
+            // If this is not done then PID controller can 'wind up'
+            // because the controller keeps increasing alpha between failures.
+            pseudo_alpha *= timestep_factor_on_failure;
           }
         } else {
           // Try a smaller timestep
@@ -1502,7 +1542,7 @@ PetscErrorCode SNESSolver::updatePseudoTimestepping() {
         if (i3d.y() != 0) {
           min_neighboring_dt = std::min(min_neighboring_dt, pseudo_timestep[i3d.ym()]);
         }
-        if (i3d.x() != mesh->LocalNy - 1) {
+        if (i3d.y() != mesh->LocalNy - 1) {
           min_neighboring_dt = std::min(min_neighboring_dt, pseudo_timestep[i3d.yp()]);
         }
 
