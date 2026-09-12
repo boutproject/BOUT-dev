@@ -97,6 +97,14 @@ The layout of the ``src/`` directory is as follows:
     variations, where some directions may be constant. See
     :ref:`sec-laplacian` for more details.
 
+    Known issue: ``src/invert/laplace/impls/hypre3d`` currently relies on
+    boundary elimination implemented in ``src/sys/hypre_interface.cxx``. That
+    elimination assumes each eliminated boundary row keeps only a single retained
+    neighbour. Corner rows where x- and y-boundary conditions both apply do not
+    satisfy that assumption, so ``LaplaceHypre3d`` does not preserve both corner
+    constraints exactly. Until the elimination is generalized, corner values from
+    ``LaplaceHypre3d`` should be treated as unreliable.
+
 - ``src/invert/parderiv``
 
   - Inversion of parallel derivatives, intended for use in
