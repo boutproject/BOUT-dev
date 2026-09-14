@@ -4,6 +4,7 @@
  * given the contravariant metric tensor terms
  **************************************************************************/
 
+#include "bout/boundary_region.hxx"
 #include "bout/christoffel_symbols.hxx"
 #include "bout/coordinates_accessor.hxx"
 #include "bout/field3d.hxx"
@@ -823,6 +824,7 @@ Coordinates::FieldMetric Coordinates::recalculateJacobian() const {
 }
 
 Coordinates::FieldMetric Coordinates::recalculateBxy() const {
+  ASSERT2(not J().isFci());
   return sqrt(g_22()) / J();
 }
 
@@ -1046,8 +1048,8 @@ void Coordinates::invalidateMetricCaches() {
   christoffel_symbols_cache.reset();
   g_values_cache.reset();
   Grad2_par2_DDY_invSgCache.clear();
-  invSgCache.reset();
   jacobian_cache.reset();
+  invSgCache.reset();
   invalidateCellGeometryCaches();
   invalidateAccessorCache();
 }
@@ -1221,8 +1223,13 @@ void Coordinates::_compute_cell_volume() const {
   }
 }
 
-std::shared_ptr<YBoundary> Coordinates::makeYBoundary(YBndryType type) const {
-  return std::make_shared<YBoundary>(type, localoptions, *localmesh);
+const bout::boundary::YBoundary& Coordinates::getYBoundary(YBndryType type) const {
+  using bout::boundary::YBoundary;
+  const auto itype = static_cast<int>(type);
+  if (ybndrys.at(itype) == nullptr) {
+    ybndrys.at(itype) = std::make_shared<YBoundary>(type, localoptions, *localmesh);
+  }
+  return *ybndrys.at(itype);
 }
 
 void Coordinates::setBxy(FieldMetric Bxy, const bool communicate) {
@@ -1268,6 +1275,16 @@ void Coordinates::setMetricTensor(
   setJ(recalculateJacobian());
   setBxy(recalculateBxy());
 }
+void Coordinates::setMetricTensorJB(
+    const ContravariantMetricTensor& contravariant_metric_tensor,
+    const CovariantMetricTensor& covariant_metric_tensor, const FieldMetric& J,
+    const FieldMetric& Bxy) {
+  contravariantMetricTensor = contravariant_metric_tensor;
+  covariantMetricTensor = covariant_metric_tensor;
+  invalidateMetricCaches();
+  setJ(J);
+  setBxy(Bxy);
+}
 
 void Coordinates::communicateMetricTensor() {
   contravariantMetricTensor.communicate();
@@ -1277,6 +1294,58 @@ void Coordinates::communicateMetricTensor() {
 void Coordinates::communicateDz() { localmesh->communicate(dz_); }
 
 void Coordinates::splitBxyParallelSlices() {
-  Bxy_.splitParallelSlices();
-  Bxy_.yup() = Bxy_.ydown() = Bxy_;
+  if (not Bxy_.hasParallelSlices()) {
+    auto copy = Bxy_;
+    Bxy_.splitParallelSlices();
+    Bxy_.yup() = Bxy_.ydown() = copy;
+  }
+}
+
+void Coordinates::normaliseMetric(const MetricNormaliser& norm) {
+  covariantMetricTensor.normaliseMetric(norm);
+  contravariantMetricTensor.normaliseMetric(norm);
+
+#if BOUT_USE_METRIC_3D
+  using FieldMetricParallel = Field3DParallel;
+#else
+  using FieldMetricParallel = Field2D;
+#endif
+  const auto Jval = J();
+  invalidateMetricCaches();
+  if (norm.J.has_value()) {
+    if (Jval.hasParallelSlices()) {
+      setJ(FieldMetricParallel{Jval / *norm.J});
+    } else {
+      setJ(Jval / *norm.J);
+    }
+  }
+  if (norm.Bxy.has_value()) {
+    if (Bxy().hasParallelSlices()) {
+      setBxy(FieldMetricParallel{Bxy() / *norm.Bxy});
+    } else {
+      setBxy(Bxy() / *norm.Bxy);
+    }
+  }
+  if (norm.dx.has_value()) {
+    setDx(dx() / *norm.dx);
+  }
+  if (norm.dy.has_value()) {
+    setDy(dy() / *norm.dy);
+  }
+  if (norm.dz.has_value()) {
+    setDz(dz() / *norm.dz);
+  }
+  if (norm.g.has_value() or norm.g22.has_value()) {
+    if (Bxy().isFci()) {
+      // No we compute g_22_* - they must not be cleared. If they get
+      // cleared, they will be recomputed, but not normalised!
+      auto g22 = norm.g.has_value() ? norm.g.value() : norm.g22.value();
+      g_22_ylow();
+      g_22_yhigh();
+      ASSERT2(_g_22_ylow.has_value());
+      (*_g_22_ylow) /= g22;
+      ASSERT2(_g_22_yhigh.has_value());
+      (*_g_22_yhigh) /= g22;
+    }
+  }
 }

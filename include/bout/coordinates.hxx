@@ -26,8 +26,9 @@
 #ifndef BOUT_COORDINATES_H
 #define BOUT_COORDINATES_H
 
-#include "bout/assert.hxx"
 #include "bout/field_data.hxx"
+#include <bout/assert.hxx>
+#include <bout/boundary_region.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/build_defines.hxx>
 #include <bout/christoffel_symbols.hxx>
@@ -45,7 +46,11 @@
 #include <utility>
 
 class Mesh;
+struct MetricNormaliser;
+
+namespace bout::boundary {
 class YBoundary;
+}
 
 /*!
  * Represents a coordinate system, and associated operators
@@ -111,6 +116,11 @@ public:
   const BoutReal& J(int x, int y) const { return J()(x, y); }
 #endif
 
+  const BoutReal& Bxy(int x, int y, int z) const { return Bxy()(x, y, z); }
+#if not(BOUT_USE_METRIC_3D)
+  const BoutReal& Bxy(int x, int y) const { return Bxy()(x, y); }
+#endif
+
   void setDx(FieldMetric dx, bool communicate = true);
   void setDy(FieldMetric dy, bool communicate = true);
   void setDz(FieldMetric dz, bool communicate = true);
@@ -154,8 +164,6 @@ public:
   /// get g_22 at the cell faces;
   const FieldMetric& g_22_ylow() const;
   const FieldMetric& g_22_yhigh() const;
-  FieldMetric& g_22_ylow();
-  FieldMetric& g_22_yhigh();
   // Cell Areas
   const FieldMetric& cell_area_xlow() const {
     if (_cell_area_xlow.has_value()) {
@@ -370,9 +378,15 @@ public:
   void setMetricTensor(const ContravariantMetricTensor& contravariant_metric_tensor,
                        const CovariantMetricTensor& covariant_metric_tensor);
 
+  void setMetricTensorJB(const ContravariantMetricTensor& contravariant_metric_tensor,
+                         const CovariantMetricTensor& covariant_metric_tensor,
+                         const FieldMetric& J, const FieldMetric& Bxy);
+
   void communicateMetricTensor();
 
   void communicateDz();
+
+  void normaliseMetric(const MetricNormaliser& norm);
 
   ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
   const FieldMetric& J() const;
@@ -459,10 +473,10 @@ public:
 
   FieldMetric recalculateJacobian() const;
 
-  friend std::shared_ptr<YBoundary> getYBoundary(Coordinates* coords, YBndryType type);
+  const bout::boundary::YBoundary&
+  getYBoundary(YBndryType type = YBndryType::sheath) const;
 
 private:
-  std::shared_ptr<YBoundary> makeYBoundary(YBndryType type) const;
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;
   Options* localoptions{nullptr};
@@ -519,7 +533,7 @@ private:
   void invalidateCellGeometryCaches();
   void invalidateAccessorCache() const;
 
-  mutable std::array<std::shared_ptr<YBoundary>, 3> ybndrys;
+  mutable std::array<std::shared_ptr<bout::boundary::YBoundary>, 3> ybndrys;
 
   FieldMetric recalculateBxy() const;
 
@@ -542,5 +556,25 @@ protected:
 namespace bout {
 std::string parallelSliceFieldName(std::string_view field, int offset);
 }
+
+/// Represents a way to normalise the coordinate system
+/// If a component returns nothing, no normalisation is performed.
+/// Coordinate values are divided by the respective component from
+/// MetricNormaliser, with the exception of the contravariant metric
+/// tensor, which is multiplied by the normalisation factor.
+struct MetricNormaliser {
+  std::optional<BoutReal> g = std::nullopt;
+  std::optional<BoutReal> g11 = std::nullopt;
+  std::optional<BoutReal> g22 = std::nullopt;
+  std::optional<BoutReal> g33 = std::nullopt;
+  std::optional<BoutReal> g12 = std::nullopt;
+  std::optional<BoutReal> g13 = std::nullopt;
+  std::optional<BoutReal> g23 = std::nullopt;
+  std::optional<BoutReal> dx = std::nullopt;
+  std::optional<BoutReal> dy = std::nullopt;
+  std::optional<BoutReal> dz = std::nullopt;
+  std::optional<BoutReal> J = std::nullopt;
+  std::optional<BoutReal> Bxy = std::nullopt;
+};
 
 #endif // BOUT_COORDINATES_H

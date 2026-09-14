@@ -10,7 +10,17 @@
 #ifndef BOUT_PETSC_PRECONDITIONER_H
 #define BOUT_PETSC_PRECONDITIONER_H
 
+#include "bout/bout_enum_class.hxx"
 #include "bout/build_defines.hxx"
+
+BOUT_ENUM_CLASS_NS(bout, PetscMatrixExportFormat, binary, ascii);
+
+BOUT_ENUM_CLASS_NS(
+    bout, JacobianExportKind,
+    system, ///< Jacobian of the full nonlinear system solved by the solver
+    scaled, ///< Jacobian after solver-coordinate transforms such as variable scaling
+    rhs     ///< Jacobian of the raw model RHS in physical variables
+);
 
 #if BOUT_HAS_PETSC
 
@@ -21,6 +31,8 @@
 
 #include <petscmat.h>
 #include <petscvec.h>
+
+#include <string>
 
 class Options;
 class Field3D;
@@ -73,6 +85,20 @@ public:
   Mat jacobian() const { return Jfd; }
   MatFDColoring coloring() const { return fdcoloring; }
 
+  /// Save an arbitrary PETSc matrix to disk using ``MatView``.
+  ///
+  /// This is a low-level utility used by solver-specific diagnostic code. It only
+  /// writes the matrix itself in PETSc binary or ASCII format; companion metadata
+  /// such as variable names and index mapping must be written separately by the
+  /// calling solver.
+  static PetscErrorCode saveMatrix(
+      Mat matrix, const std::string& filename,
+      bout::PetscMatrixExportFormat format = bout::PetscMatrixExportFormat::binary);
+  /// Save the internally owned coloring Jacobian matrix ``Jfd``.
+  PetscErrorCode saveMatrix(
+      const std::string& filename,
+      bout::PetscMatrixExportFormat format = bout::PetscMatrixExportFormat::binary) const;
+
   void reset();
 
 private:
@@ -86,6 +112,9 @@ private:
 // unconditionally in PETSc-enabled compilation units.
 class PetscPreconditioner {
 public:
+  void saveMatrix(const std::string& UNUSED(filename),
+                  bout::PetscMatrixExportFormat UNUSED(format) =
+                      bout::PetscMatrixExportFormat::binary) const {}
   void reset() {}
 };
 

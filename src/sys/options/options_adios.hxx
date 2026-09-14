@@ -26,7 +26,7 @@ namespace bout {
 
 /// Forward declare ADIOS file type so we don't need to depend
 /// directly on ADIOS
-struct ADIOSStream;
+class ADIOSStream;
 
 class OptionsADIOS : public OptionsIO {
 public:

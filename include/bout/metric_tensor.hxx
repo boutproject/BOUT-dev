@@ -11,12 +11,15 @@
 namespace bout {
 #if BOUT_USE_METRIC_3D
 using FieldMetric = Field3D;
+using FieldMetricParallel = Field3DParallel;
 #else
 using FieldMetric = Field2D;
+using FieldMetricParallel = Field2D;
 #endif
 } // namespace bout
 
 class Coordinates;
+struct MetricNormaliser;
 
 class MetricTensor {
 public:
@@ -77,6 +80,9 @@ public:
 
   void communicate();
 
+  template <class F>
+  void normaliseMetric(const MetricNormaliser& norm, const F& op);
+
 private:
   FieldMetric g11_m, g22_m, g33_m, g12_m, g13_m, g23_m;
 };
@@ -90,6 +96,8 @@ public:
 
   auto inverse(const std::string& region = "RGN_ALL", bool communicate = true)
       -> ContravariantMetricTensor;
+
+  void normaliseMetric(const MetricNormaliser& norm);
 };
 
 class ContravariantMetricTensor : public MetricTensor {
@@ -98,6 +106,8 @@ public:
 
   auto inverse(const std::string& region = "RGN_ALL", bool communicate = true)
       -> CovariantMetricTensor;
+
+  void normaliseMetric(const MetricNormaliser& norm);
 };
 
 #endif //BOUT_METRIC_TENSOR_HXX

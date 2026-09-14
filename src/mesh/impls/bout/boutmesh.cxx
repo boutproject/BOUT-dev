@@ -45,7 +45,6 @@
 #include <bout/msg_stack.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>
-#include <bout/parallel_boundary_region.hxx>
 #include <bout/region.hxx>
 #include <bout/sys/gettext.hxx>
 #include <bout/sys/range.hxx>
