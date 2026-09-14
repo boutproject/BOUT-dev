@@ -7,24 +7,25 @@
 #include <memory>
 
 namespace bout::boundary {
-YBoundary::YBoundary(const Mesh& mesh, bool lower_y, bool upper_y)
-    : _contains_low(&mesh, false), _contains_high(&mesh, false) {
+YBoundary::YBoundary(const Mesh& mesh, bool lower, bool upper)
+    : lower(lower), upper(upper), _contains_lower(&mesh, false),
+      _contains_upper(&mesh, false) {
 
   if (mesh.isFci()) {
-    if (lower_y) {
+    if (lower) {
       for (auto& bndry : mesh.getBoundariesPar(BoundaryParType::xout)) {
         boundary_regions_par.push_back(bndry);
       }
     }
-    if (upper_y) {
+    if (upper) {
       for (auto& bndry : mesh.getBoundariesPar(BoundaryParType::xin)) {
         boundary_regions_par.push_back(bndry);
       }
     }
   } else {
     for (auto& bndry : mesh.getBoundaries()) {
-      if ((lower_y && bndry->location == BndryLoc::ydown)
-          or (upper_y && bndry->location == BndryLoc::yup)) {
+      if ((lower && bndry->location == BndryLoc::ydown)
+          or (upper && bndry->location == BndryLoc::yup)) {
         boundary_regions.push_back(
             std::dynamic_pointer_cast<bout::boundary::BoundaryRegionY>(bndry));
       }
@@ -34,9 +35,9 @@ YBoundary::YBoundary(const Mesh& mesh, bool lower_y, bool upper_y)
   // Cache boundary regions
   iter([&](const BoundaryIterator auto& point) {
     if (point.dir() == 1) {
-      _contains_high[point.ind()] = true;
+      _contains_upper[point.ind()] = true;
     } else if (point.dir() == -1) {
-      _contains_low[point.ind()] = true;
+      _contains_lower[point.ind()] = true;
     }
   });
 }

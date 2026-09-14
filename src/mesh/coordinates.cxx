@@ -1239,14 +1239,14 @@ const bout::boundary::YBoundary& Coordinates::getYBoundary(Options* options) con
 }
 
 namespace {
-std::size_t boundary_bools_to_index(bool lower_y, bool upper_y) {
-  if (lower_y and upper_y) {
+std::size_t boundary_bools_to_index(bool lower, bool upper) {
+  if (lower and upper) {
     return 2;
   }
-  if (upper_y) {
+  if (upper) {
     return 1;
   }
-  if (lower_y) {
+  if (lower) {
     return 0;
   }
   return 3;

@@ -483,8 +483,8 @@ public:
   const bout::boundary::YBoundary& getYBoundary(Options* options = nullptr) const;
 
   /// Return the `bout::boundary::YBoundary` with \p name with boundaries at the
-  /// lower/upper end of Y corresponding to \p lower_y, \p upper_y respectively.
-  const bout::boundary::YBoundary& getYBoundary(bool lower_y, bool upper_y) const;
+  /// lower/upper end of Y corresponding to \p lower, \p upper respectively.
+  const bout::boundary::YBoundary& getYBoundary(bool lower, bool upper) const;
 
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
