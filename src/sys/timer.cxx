@@ -125,7 +125,7 @@ void Timer::printTimeReport() {
   std::vector<std::pair<std::string, timer_info>> sorted_info;
   sorted_info.reserve(info.size());
   std::transform(begin(info), end(info), std::back_inserter(sorted_info),
-                         [](const auto& it) { return it; });
+                 [](const auto& it) { return it; });
   // Sort so that the largest total time is first
   std::ranges::sort(sorted_info, [](const auto& a, const auto& b) {
     return a.second.total_time > b.second.total_time;
