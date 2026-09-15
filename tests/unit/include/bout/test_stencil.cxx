@@ -248,7 +248,7 @@ TYPED_TEST(StencilUnitTests, GetNumStencils) {
 TYPED_TEST(StencilUnitTests, GetIndicesWithStencilIncluding) {
   for (int i = 0; i < static_cast<int>(this->sizes.size()); i++) {
     auto indicesList = this->stencil.getIndicesWithStencilIncluding(this->zero.xp(i));
-    std::sort(indicesList.begin(), indicesList.end());
+    std::ranges::sort(indicesList);
     EXPECT_EQ(indicesList.size(), i + 1);
     for (int j = 0; j < static_cast<int>(indicesList.size()); j++) {
       EXPECT_EQ(indicesList[j].x(), j);

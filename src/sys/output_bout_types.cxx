@@ -18,7 +18,7 @@ template <class T>
 auto region_transpose(const Region<T>& region) -> Region<T> {
   auto indices = region.getIndices();
 
-  std::sort(indices.begin(), indices.end(), [](const T& lhs, const T& rhs) {
+  std::ranges::sort(indices, [](const T& lhs, const T& rhs) {
     const auto lx = lhs.x();
     const auto ly = lhs.y();
     const auto lz = lhs.z();

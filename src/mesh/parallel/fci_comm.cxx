@@ -94,7 +94,7 @@ void GlobalField3DAccess::setup() {
         xyzlocal.convert(pix.index, piy.index, piz.index).ind);
   }
   for (auto& v : toGet) {
-    std::sort(v.begin(), v.end());
+    std::ranges::sort(v);
   }
   commCommLists();
   {

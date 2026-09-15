@@ -132,7 +132,7 @@ PetscCellMapping::PetscCellMapping(const Field3D& cell_number,
 }
 
 PetscLegMapping::PetscLegMapping(int total_legs, std::vector<int> local_leg_indices) {
-  std::sort(local_leg_indices.begin(), local_leg_indices.end());
+  std::ranges::sort(local_leg_indices);
   local_leg_indices.erase(std::unique(local_leg_indices.begin(), local_leg_indices.end()),
                           local_leg_indices.end());
   buildPermutation(static_cast<PetscInt>(local_leg_indices.size()), total_legs,
