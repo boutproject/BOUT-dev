@@ -33,7 +33,7 @@ BOUT_ENUM_CLASS(MeshTopology,
 BOUT_ENUM_CLASS(SnowflakeType,
                 SF15, //snowflake- LFS
                 SF45, //snowflake+ LFS
-                SF75, //snowflake- HFS
+                SF75, //snowflake+ LFS
                 SF105, //snowflake+ HFS
                 SF135, //snowflake+ HFS
                 SF165, //snowflake- HFS
@@ -560,14 +560,16 @@ CheckMeshResult checkBoutMeshYDecomposition(
     int jyseps1_1, int jyseps2_1,
     int jyseps1_2, int jyseps2_2,
     int ny_inner,
-    MeshTopology mesh_topology);
+    MeshTopology mesh_topology,
+    SnowflakeType snowflake_type = SnowflakeType::SF);
 
   CheckMeshResult findValidProcessorNum(int ny, int nx, int NPES, int NYPE = 1, int NXPE = 1);
 
   CheckMeshResult findValidYDecomposition(int ny, int NPES, int NYPE,
                                         int jyseps1_1, int jyseps2_1,
                                         int jyseps1_2, int jyseps2_2,
-                                        int ny_inner, MeshTopology mesh_topology);
+                                        int ny_inner, MeshTopology mesh_topology,
+                                        SnowflakeType snowflake_type = SnowflakeType::SF);
 } // namespace bout
 
 #endif // BOUT_BOUTMESH_H

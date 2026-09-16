@@ -236,17 +236,17 @@ MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Retu
 
   // Use the INGRID topology setting
   if (!IngridTopology.empty()) {
-    if (IngridTopology == "closed_field_line") {
+    if ((IngridTopology == "closed_field_line") || (IngridTopology == "CFL")) {
       return MeshTopology::closed_field_line;
-    } else if (contains(IngridTopology, "single_null")) {
+    } else if ((contains(IngridTopology, "single_null")) || (IngridTopology == "SN")) {
       return MeshTopology::single_null;
-    } else if (IngridTopology == "unconnected_double_null") {
+    } else if ((IngridTopology == "unconnected_double_null") || (IngridTopology == "UN")) {
       return MeshTopology::unconnected_double_null;
-    } else if (IngridTopology == "connected_double_null") {
+    } else if ((IngridTopology == "connected_double_null") || (IngridTopology == "CN")) {
       return MeshTopology::connected_double_null;
-    } else if (contains(IngridTopology, "SF")) {
+    } else if ((contains(IngridTopology, "SF")) || (contains(IngridTopology, "snowflake"))) {
       return MeshTopology::snowflake;
-    } else if (contains(IngridTopology, "XPoint_target")) {
+    } else if ((contains(IngridTopology, "XPoint_target")) || (contains(IngridTopology, "XPT"))) {
       return MeshTopology::XPoint_target;
     }
     output_warn.write(_f("\tWARNING: Unrecognised 'topology' value '{:s}' in grid "
@@ -286,7 +286,7 @@ SnowflakeType BoutMesh::getSnowflakeType(MeshTopology mesh_topology_,
   } else if (contains(IngridTopology, "target")) {
     return SnowflakeType::XPT; //X-Point Target is topologically the same as a snowflake minus, but has a different separatrix structure and a bigger X-Point separation
   } else {
-    return SnowflakeType::SF; //Return a generic snowflake type if no specific type is found
+    return SnowflakeType::SF; //Return a generic snowflake type if no specific type is found. This will be treated as a snowflake+ LFS. 
   }
 } //No option for ideal snowflake yet since we haven't found a gridding tool that can handle that.
 
@@ -314,7 +314,7 @@ namespace bout {
   CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
                                               int num_y_guards, int jyseps1_1,
                                               int jyseps2_1, int jyseps1_2, int jyseps2_2,
-                                              int ny_inner, MeshTopology mesh_topology) {
+                                              int ny_inner, MeshTopology mesh_topology, SnowflakeType snowflake_type) {
 
     const int num_local_y_points = ny / num_y_processors;
 
@@ -364,79 +364,285 @@ namespace bout {
                         jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, num_local_y_points)};
       }
     } else if (mesh_topology == MeshTopology::snowflake){
+        if ((snowflake_type == SnowflakeType::SF45) or (snowflake_type == SnowflakeType::SF75) or (snowflake_type == SnowflakeType::SF)){ //SF+ LFS
+          //Check Core region
+          if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, num_local_y_points)};
+          }
+          
+          //Check E leg region
+          if ((jyseps2_2 - ny_inner + 1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region jyseps2_2-ny_inner ({:d}-{:d} + 1 = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          jyseps2_2, ny_inner, jyseps2_2 - ny_inner + 1, num_local_y_points)};
+          }
 
-      //Check Core region
-      if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
-      return {
-          false,
-          fmt::format(_f("\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
-                          "be a multiple of MYSUB ({:d})\n"),
-                      jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, num_local_y_points)};
-      }
-      
-      //Check E leg region
-      if ((jyseps2_2 - ny_inner + 1) % num_local_y_points != 0) {
-      return {
-          false,
-          fmt::format(_f("\t -> leg region jyseps2_2-ny_inner ({:d}-{:d} + 1 = {:d}) must "
-                          "be a multiple of MYSUB ({:d})\n"),
-                      jyseps2_2, ny_inner, jyseps2_2 - ny_inner + 1, num_local_y_points)};
-      }
+          if ((ny_inner - 1 - jyseps1_2) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region ny_inner - 1 - jyseps1_2({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          ny_inner, jyseps1_2, ny_inner - 1 - jyseps1_2, num_local_y_points)};
+          }
+          //Check W leg region
+          if ((jyseps1_2 - jyseps2_1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region jyseps1_2-jyseps2_1 ({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          jyseps1_2, jyseps2_1, jyseps1_2 - jyseps2_1, num_local_y_points)};
+          }
 
-      if ((ny_inner - 1 - jyseps1_2) % num_local_y_points != 0) {
-      return {
-          false,
-          fmt::format(_f("\t -> leg region ny_inner - 1 - jyseps1_2({:d}-{:d} = {:d}) must "
-                          "be a multiple of MYSUB ({:d})\n"),
-                      ny_inner, jyseps1_2, ny_inner - 1 - jyseps1_2, num_local_y_points)};
-      }
-      //Check W leg region
-      if ((jyseps1_2 - jyseps2_1) % num_local_y_points != 0) {
-      return {
-          false,
-          fmt::format(_f("\t -> leg region jyseps1_2-jyseps2_1 ({:d}-{:d} = {:d}) must "
-                          "be a multiple of MYSUB ({:d})\n"),
-                      jyseps1_2, jyseps2_1, jyseps1_2 - jyseps2_1, num_local_y_points)};
-      }
+          //Just for safety, but should always pass if the others do:
 
-      //Just for safety, but should always pass if the others do:
+          //Check W leg region
+          if ((ny - 1 - jyseps2_2) % num_local_y_points != 0) {
+          return {
+            false, 
+            fmt::format(_f("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
+                              "multiple of MYSUB ({:d})\n"),
+                            ny, jyseps2_2, ny - 1 - jyseps2_2, num_local_y_points)};
+          }
 
-      //Check W leg region
-      if ((ny - 1 - jyseps2_2) % num_local_y_points != 0) {
-      return {
-        false, 
-        fmt::format(_f("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
-                          "multiple of MYSUB ({:d})\n"),
-                        ny, jyseps2_2, ny - 1 - jyseps2_2, num_local_y_points)};
-      }
+          //Check central region
+          if ((ny_inner - 1 - jyseps2_1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> central region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          ny_inner - 1, jyseps2_1, ny_inner - 1 - jyseps2_1, num_local_y_points)};
+          }
 
-      //Check central region
-      if ((ny_inner - 1 - jyseps2_1) % num_local_y_points != 0) {
-      return {
-          false,
-          fmt::format(_f("\t -> central region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must "
+          //Check South leg region
+          if ((ny - ny_inner) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region ny - 1 - ny_inner + 1 ({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          ny, ny_inner, ny - ny_inner, num_local_y_points)};
+          }
+        } else if ((snowflake_type == SnowflakeType::SF105) or (snowflake_type == SnowflakeType::SF135)){ //SF+ HFS
+          //Check Core region
+          if ((jyseps1_2 - jyseps2_1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> Core region jyseps2_1-jyseps2_1 ({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, num_local_y_points)};
+          }
+          
+          //Check E leg region
+          if ((jyseps2_2 - ny_inner + 1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region jyseps2_2-ny_inner ({:d}-{:d} + 1 = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          jyseps2_2, ny_inner, jyseps2_2 - ny_inner + 1, num_local_y_points)};
+          }
+
+          if ((ny_inner - 1 - jyseps1_2) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region ny_inner - 1 - jyseps1_2({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          ny_inner, jyseps1_2, ny_inner - 1 - jyseps1_2, num_local_y_points)};
+          }
+          //Check W leg region
+          if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          jyseps1_2, jyseps2_1, jyseps1_2 - jyseps2_1, num_local_y_points)};
+          }
+
+          //Just for safety, but should always pass if the others do:
+
+          //Check W leg region
+          if ((ny - 1 - jyseps2_2) % num_local_y_points != 0) {
+          return {
+            false, 
+            fmt::format(_f("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
+                              "multiple of MYSUB ({:d})\n"),
+                            ny, jyseps2_2, ny - 1 - jyseps2_2, num_local_y_points)};
+          }
+
+          //Check central region
+          if ((jyseps2_1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> central region jyseps2_1 ({:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          jyseps2_1, num_local_y_points)};
+          }
+
+          //Check South leg region
+          if ((ny - ny_inner) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region ny - 1 - ny_inner + 1 ({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          ny, ny_inner, ny - ny_inner, num_local_y_points)};
+          }
+
+        } else if ((snowflake_type == SnowflakeType::SF15)) { //SF- LFS
+          //Check Core region
+          if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, num_local_y_points)};
+          }
+          
+          if ((jyseps2_2 - jyseps1_2) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> Core region jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, num_local_y_points)};
+          }
+          
+          //Check E leg region
+          if ((jyseps1_2 - ny_inner + 1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region jyseps1_2-ny_inner ({:d}-{:d} + 1 = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          jyseps2_2, ny_inner, jyseps2_2 - ny_inner + 1, num_local_y_points)};
+          }
+
+          if ((ny_inner - 1 - jyseps2_1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region ny_inner - 1 - jyseps2_1({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          ny_inner, jyseps1_2, ny_inner - 1 - jyseps1_2, num_local_y_points)};
+          }
+
+          //Just for safety, but should always pass if the others do:
+
+          //Check W leg region
+          if ((ny - 1 - jyseps2_2) % num_local_y_points != 0) {
+          return {
+            false, 
+            fmt::format(_f("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
+                              "multiple of MYSUB ({:d})\n"),
+                            ny, jyseps2_2, ny - 1 - jyseps2_2, num_local_y_points)};
+          }
+
+          //Check central region
+          if ((jyseps2_1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> central region jyseps2_1-1 ({:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          jyseps2_1, num_local_y_points)};
+          }
+          
+          if ((ny - 1 - jyseps1_2) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region ny - 1 - jyseps1_2 ({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          ny - 1, jyseps1_2, ny - jyseps1_2, num_local_y_points)};
+          }
+          //Check South leg region
+          if ((ny - ny_inner) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region ny - 1 - ny_inner + 1 ({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          ny, ny_inner, ny - ny_inner, num_local_y_points)};
+          }
+        } else if ((snowflake_type == SnowflakeType::SF165)) { //SF- HFS TODO
+          //Check Core region
+          if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, num_local_y_points)};
+          }
+          
+          if ((jyseps2_2 - jyseps1_2) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> Core region jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, num_local_y_points)};
+          }
+          
+          //Check E leg region
+          if ((jyseps1_2 - ny_inner + 1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region jyseps1_2-ny_inner ({:d}-{:d} + 1 = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          jyseps2_2, ny_inner, jyseps2_2 - ny_inner + 1, num_local_y_points)};
+          }
+
+          if ((ny_inner - 1 - jyseps2_1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region ny_inner - 1 - jyseps2_1({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          ny_inner, jyseps1_2, ny_inner - 1 - jyseps1_2, num_local_y_points)};
+          }
+
+          //Just for safety, but should always pass if the others do:
+
+          //Check W leg region
+          if ((ny - 1 - jyseps2_2) % num_local_y_points != 0) {
+          return {
+            false, 
+            fmt::format(_f("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
+                              "multiple of MYSUB ({:d})\n"),
+                            ny, jyseps2_2, ny - 1 - jyseps2_2, num_local_y_points)};
+          }
+
+          //Check central region
+          if ((jyseps2_1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> central region jyseps2_1-1 ({:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          jyseps2_1, num_local_y_points)};
+          }
+          
+          if ((ny - 1 - jyseps1_2) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region ny - 1 - jyseps1_2 ({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          ny - 1, jyseps1_2, ny - jyseps1_2, num_local_y_points)};
+          }
+          //Check South leg region
+          if ((ny - ny_inner) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region ny - 1 - ny_inner + 1 ({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          ny, ny_inner, ny - ny_inner, num_local_y_points)};
+          }
+        } 
+
+    } else if ((mesh_topology == MeshTopology::single_null) || (mesh_topology == MeshTopology::closed_field_line)){
+      // Single Null or connected Double Null
+      if ((jyseps2_2 - jyseps1_1) % num_local_y_points != 0) {
+        return {
+            false,
+            fmt::format(_f("\t -> Core region jyseps2_2-jyseps1_1 ({:d}-{:d} = {:d}) must "
                           "be a multiple of MYSUB ({:d})\n"),
-                      ny_inner - 1, jyseps2_1, ny_inner - 1 - jyseps2_1, num_local_y_points)};
+                        jyseps2_2, jyseps1_1, jyseps2_2 - jyseps1_1, num_local_y_points)};
       }
-
-      //Check South leg region
-      if ((ny - ny_inner) % num_local_y_points != 0) {
-      return {
-          false,
-          fmt::format(_f("\t -> leg region ny - 1 - ny_inner + 1 ({:d}-{:d} = {:d}) must "
-                          "be a multiple of MYSUB ({:d})\n"),
-                      ny, ny_inner, ny - ny_inner, num_local_y_points)};
-      }
-    }  else if ((mesh_topology == MeshTopology::single_null) || (mesh_topology == MeshTopology::closed_field_line)){
-    // Single Null or connected Double Null
-    if ((jyseps2_2 - jyseps1_1) % num_local_y_points != 0) {
-      return {
-          false,
-          fmt::format(_f("\t -> Core region jyseps2_2-jyseps1_1 ({:d}-{:d} = {:d}) must "
-                         "be a multiple of MYSUB ({:d})\n"),
-                      jyseps2_2, jyseps1_1, jyseps2_2 - jyseps1_1, num_local_y_points)};
     }
-  }
 
   if ((ny - 1 - jyseps2_2) % num_local_y_points != 0) {
     return {false, fmt::format(
@@ -504,8 +710,9 @@ namespace bout {
       int jyseps2_1_start,
       int jyseps1_2_start,
       int jyseps2_2_start,
-      int ny_inner_start, 
-      MeshTopology mesh_topology) {
+      int ny_inner_start,
+      MeshTopology mesh_topology,
+      SnowflakeType snowflake_type) {
 
     if (ny % num_y_processors != 0) {
       return {false, fmt::format(
@@ -529,21 +736,44 @@ namespace bout {
               if (mesh_topology == MeshTopology::unconnected_double_null || mesh_topology == MeshTopology::connected_double_null){
                 if (not (jyseps1_1 < jyseps2_1 &&
                   jyseps2_1 < ny_inner &&
-                  ny_inner < jyseps1_2 &&
-                  jyseps1_2 < jyseps2_2)){
+                  jyseps1_2 < ny_inner &&
+                  ny_inner < jyseps2_2)){
                   continue;
                   }}
               else if (mesh_topology == MeshTopology::snowflake){
-                if (not (jyseps1_1 < jyseps2_1 &&
-                  jyseps2_1 < ny_inner &&
+                if (snowflake_type == SnowflakeType::SF45 || snowflake_type == SnowflakeType::SF75 || snowflake_type == SnowflakeType::SF){ //SF+ LFS
+                  if (not (jyseps1_1 < jyseps2_1 &&
+                  jyseps2_1 < jyseps1_2 &&
                   jyseps1_2 < ny_inner &&
                   ny_inner < jyseps2_2)){
                   continue;
                   }
-              }
+                } else if (snowflake_type == SnowflakeType::SF105 || snowflake_type == SnowflakeType::SF135){ //SF+ HFS
+                  if (not (jyseps1_1 < jyseps2_1 &&
+                  jyseps2_1 < jyseps1_2 &&
+                  jyseps1_2 < ny_inner &&
+                  ny_inner < jyseps2_2)){
+                  continue;
+                  }
+                } else if (snowflake_type == SnowflakeType::SF15){ //SF- LFS
+                  if (not (jyseps1_1 < jyseps2_1 &&
+                  jyseps2_1 < ny_inner &&
+                  ny_inner < jyseps1_2 &&
+                  jyseps1_2 < jyseps2_2)){
+                  continue;
+                  }
+                } else if (snowflake_type == SnowflakeType::SF165){ //SF- HFS
+                  if (not (jyseps1_1 < jyseps2_1 &&
+                  jyseps2_1 < ny_inner &&
+                  ny_inner < jyseps1_2 &&
+                  jyseps1_2 < jyseps2_2)){
+                  continue;
+                  }
+                }
+                }
 
               auto result = bout::checkBoutMeshYDecomposition(num_y_processors, ny, num_y_guards, jyseps1_1, jyseps2_1,
-                                                    jyseps1_2, jyseps2_2, ny_inner, mesh_topology);
+                                                    jyseps1_2, jyseps2_2, ny_inner, mesh_topology, snowflake_type);
 
               if (result.success) {
                 return {true, fmt::format(
@@ -609,11 +839,11 @@ void BoutMesh::chooseProcessorSplit(Options& options) {
   }
 
   auto result = bout::checkBoutMeshYDecomposition(NYPE, ny, MYG, jyseps1_1, jyseps2_1,
-                                                  jyseps1_2, jyseps2_2, ny_inner, mesh_topology);
+                                                  jyseps1_2, jyseps2_2, ny_inner, mesh_topology, snowflake_type);
 
   if (not result.success) {
     auto valid_y_decompostion= bout::findValidYDecomposition(ny, NYPE, MYG, jyseps1_1, jyseps2_1,
-                                                             jyseps1_2, jyseps2_2, ny_inner, mesh_topology);
+                                                             jyseps1_2, jyseps2_2, ny_inner, mesh_topology, snowflake_type);
     output_info.write(valid_y_decompostion.reason);
     throw BoutException(result.reason);
   }
@@ -639,7 +869,7 @@ void BoutMesh::findProcessorSplit() {
       const int nyp = NPES / i;
 
       auto result = bout::checkBoutMeshYDecomposition(nyp, ny, MYG, jyseps1_1, jyseps2_1,
-                                                      jyseps1_2, jyseps2_2, ny_inner, mesh_topology);
+                                                      jyseps1_2, jyseps2_2, ny_inner, mesh_topology, snowflake_type);
 
       if (not result.success) {
         output_info.write(result.reason);
