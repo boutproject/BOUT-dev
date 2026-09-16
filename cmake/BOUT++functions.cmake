@@ -36,6 +36,18 @@ macro(bout_handle_requires_conflicts TYPENAME TYPEVAR)
   endforeach()
 endmacro()
 
+function(bout_target_enable_hip TARGET_NAME)
+  if(BOUT_HAS_HIP)
+    get_target_property(model_sources ${TARGET_NAME} SOURCES)
+    list(FILTER model_sources INCLUDE REGEX ".*\\.(cxx|cpp|cc)$")
+    if(model_sources)
+      set_source_files_properties(${model_sources} PROPERTIES LANGUAGE HIP)
+    endif()
+    set_target_properties(${TARGET_NAME} PROPERTIES HIP_STANDARD 20
+      HIP_STANDARD_REQUIRED ON HIP_EXTENSIONS OFF LINKER_LANGUAGE HIP)
+  endif()
+endfunction()
+
 # Build a BOUT++ physics model
 #
 # This is basically just a simple wrapper around 'add_executable' and
@@ -69,6 +81,7 @@ function(bout_add_model MODEL)
   endif()
 
   add_executable(${MODEL} ${BOUT_MODEL_OPTIONS_SOURCES})
+  bout_target_enable_hip(${MODEL})
   target_link_libraries(${MODEL} bout++::bout++)
   target_include_directories(
     ${MODEL} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -193,6 +206,7 @@ function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
     # We've got some sources, so compile them into an executable and
     # link against BOUT++
     add_executable(${TESTNAME} ${BOUT_TEST_OPTIONS_SOURCES})
+    bout_target_enable_hip(${TESTNAME})
     target_link_libraries(${TESTNAME} bout++)
     target_include_directories(
       ${TESTNAME} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>

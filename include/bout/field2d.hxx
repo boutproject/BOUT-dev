@@ -237,7 +237,7 @@ public:
    * significantly reduce performance.
    */
   inline BoutReal& operator()(int jx, int jy) {
-#if CHECK > 2 && !BOUT_HAS_CUDA
+#if CHECK > 2 && !BOUT_HAS_CUDA && !BOUT_HAS_HIP
     if (!isAllocated()) {
       throw BoutException("Field2D: () operator on empty data");
     }
@@ -251,7 +251,7 @@ public:
     return data[(jx * ny) + jy];
   }
   inline const BoutReal& operator()(int jx, int jy) const {
-#if CHECK > 2 && !BOUT_HAS_CUDA
+#if CHECK > 2 && !BOUT_HAS_CUDA && !BOUT_HAS_HIP
     if (!isAllocated()) {
       throw BoutException("Field2D: () operator on empty data");
     }
