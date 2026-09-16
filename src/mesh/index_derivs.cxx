@@ -23,9 +23,57 @@
 #include "bout/build_defines.hxx"
 
 #include "bout/traits.hxx"
+#include "bout/utils.hxx"
 #include <bout/index_derivs.hxx>
 #include <bout/mesh.hxx>
 #include <bout/unused.hxx>
+
+#include <array>
+#include <string>
+
+namespace {
+
+DIFF_METHOD parseConcreteDiffMethod(const std::string& method_name) {
+  const auto method = uppercase(method_name);
+
+  if (method == "U1") {
+    return DIFF_U1;
+  }
+  if (method == "U2") {
+    return DIFF_U2;
+  }
+  if (method == "C2") {
+    return DIFF_C2;
+  }
+  if (method == "W2") {
+    return DIFF_W2;
+  }
+  if (method == "W3") {
+    return DIFF_W3;
+  }
+  if (method == "C4") {
+    return DIFF_C4;
+  }
+  if (method == "U3") {
+    return DIFF_U3;
+  }
+  if (method == "FFT") {
+    return DIFF_FFT;
+  }
+  if (method == "SPLIT") {
+    return DIFF_SPLIT;
+  }
+  if (method == "S2") {
+    return DIFF_S2;
+  }
+  if (method == "DEFAULT") {
+    throw BoutException("Default derivative options must resolve to a concrete method");
+  }
+
+  throw BoutException("Unknown differential method '{:s}'", method_name);
+}
+
+} // namespace
 
 /*******************************************************************************
  * Helper routines
@@ -37,6 +85,52 @@ void Mesh::derivs_init(Options* options) {
   // of derivative.
   DerivativeStore<Field3D>::getInstance().initialise(options);
   DerivativeStore<Field2D>::getInstance().initialise(options);
+
+  auto backup_section = options->getSection("diff");
+  const std::array<std::pair<DIRECTION, std::string>, 3> directions{{
+      {DIRECTION::X, "ddx"},
+      {DIRECTION::Y, "ddy"},
+      {DIRECTION::Z, "ddz"},
+  }};
+  const std::array<std::pair<DERIV, std::string>, 5> deriv_types{{
+      {DERIV::Standard, "first"},
+      {DERIV::StandardSecond, "second"},
+      {DERIV::StandardFourth, "fourth"},
+      {DERIV::Upwind, "upwind"},
+      {DERIV::Flux, "flux"},
+  }};
+
+  derivative_defaults = DerivativeDefaults{};
+
+  for (const auto& [direction, section_name] : directions) {
+    auto specific_section = options->getSection(section_name);
+    auto staggered_section = options->getSection(section_name + "stag");
+
+    for (const auto& [deriv, option_name] : deriv_types) {
+      auto default_method = DerivativeDefaults::builtinDefaultMethod(deriv);
+      auto default_name = toString(default_method);
+
+      if (specific_section->isSet(option_name)) {
+        specific_section->get(option_name, default_name, default_name);
+      } else if (backup_section->isSet(option_name)) {
+        backup_section->get(option_name, default_name, default_name);
+      }
+
+      default_method = parseConcreteDiffMethod(default_name);
+      derivative_defaults.set(direction, deriv, default_method, STAGGER::None);
+
+      auto staggered_name = toString(default_method);
+      auto staggered_method = default_method;
+      if (staggered_section->isSet(option_name)) {
+        staggered_section->get(option_name, staggered_name, staggered_name);
+        staggered_method = parseConcreteDiffMethod(staggered_name);
+      }
+
+      derivative_defaults.set(direction, deriv, staggered_method, STAGGER::C2L);
+      derivative_defaults.set(direction, deriv, staggered_method, STAGGER::L2C);
+    }
+  }
+
   // Get the fraction of modes filtered out in FFT derivatives
   options->getSection("ddz")->get("fft_filter", fft_derivs_filter, 0.0);
 }

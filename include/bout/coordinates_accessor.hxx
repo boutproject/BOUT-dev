@@ -54,7 +54,8 @@ struct CoordinatesAccessor {
     d1_dx,
     d1_dy,
     d1_dz, // Grid spacing non-uniformity
-    J,     // Jacobian
+    IntShiftTorsion,
+    J, // Jacobian
     B,
     Byup,
     Bydown, // Magnetic field magnitude
@@ -119,6 +120,7 @@ struct CoordinatesAccessor {
 
   COORD_FN(dx, dy, dz);
   COORD_FN(d1_dx, d1_dy, d1_dz);
+  COORD_FN(IntShiftTorsion);
   COORD_FN(J);
   COORD_FN(B, Byup, Bydown);
   COORD_FN(G1, G3);
