@@ -5,7 +5,7 @@
 
 #include <fmt/core.h>
 
-#include <algorithm>
+#include <iterator>
 
 Timer::Timer() : timing(getInfo("")) {
   if (timing.counter == 0) {
