@@ -580,7 +580,6 @@ else()
 endif()
 set(BOUT_USE_PYTHON ${BOUT_ENABLE_PYTHON})
 
-
 # Various sanitizers, including coverage and address sanitizer
 include(cmake/Sanitizers.cmake)
 enable_sanitizers(bout++)

@@ -286,7 +286,8 @@ struct StreamsRAII {
   static void synchronize(Stream stream) {
     auto error = hipStreamSynchronize(stream);
     if (error != hipSuccess) {
-      throw BoutException("HIP stream synchronization failed: {}", hipGetErrorString(error));
+      throw BoutException("HIP stream synchronization failed: {}",
+                          hipGetErrorString(error));
     }
   }
   static constexpr auto success = hipSuccess;

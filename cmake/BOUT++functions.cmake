@@ -43,8 +43,13 @@ function(bout_target_enable_hip TARGET_NAME)
     if(model_sources)
       set_source_files_properties(${model_sources} PROPERTIES LANGUAGE HIP)
     endif()
-    set_target_properties(${TARGET_NAME} PROPERTIES HIP_STANDARD 20
-      HIP_STANDARD_REQUIRED ON HIP_EXTENSIONS OFF LINKER_LANGUAGE HIP)
+    set_target_properties(
+      ${TARGET_NAME}
+      PROPERTIES HIP_STANDARD 20
+                 HIP_STANDARD_REQUIRED ON
+                 HIP_EXTENSIONS OFF
+                 LINKER_LANGUAGE HIP
+    )
   endif()
 endfunction()
 
