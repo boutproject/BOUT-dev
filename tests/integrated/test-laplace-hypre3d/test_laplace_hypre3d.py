@@ -17,7 +17,7 @@ def test_laplace_hypre3d():
 
     success = True
     for directory, nproc in test_directories:
-        command = "test-laplace3d -d " + directory
+        command = "./test-laplace3d -d " + directory
         print("running on", nproc, "processors:", command)
         launch_safe(command, nproc=nproc)
 
