@@ -1054,7 +1054,7 @@ void Coordinates::invalidateMetricCaches() {
   invalidateAccessorCache();
 }
 
-const Coordinates::FieldMetric& Coordinates::J() const {
+const Coordinates::FieldMetric& Coordinates::calcJ() const {
   BOUT_OMP_SAFE(critical(jacobian_cache))
   {
     if (jacobian_cache == nullptr) {
