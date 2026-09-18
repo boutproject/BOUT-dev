@@ -29,9 +29,15 @@
 const int CUDA_BLOCK_SIZE = 256;
 using EXEC_POL = RAJA::cuda_exec<CUDA_BLOCK_SIZE>;
 //using EXEC_POL = RAJA::loop_exec;
-#else  // not BOUT_USE_CUDA
+#elif BOUT_HAS_HIP
+#ifndef RAJA_ENABLE_HIP
+#error "BOUT_ENABLE_HIP requires RAJA built with HIP support"
+#endif
+const int HIP_BLOCK_SIZE = 256;
+using EXEC_POL = RAJA::hip_exec<HIP_BLOCK_SIZE>;
+#else  // CPU execution
 using EXEC_POL = RAJA::loop_exec;
-#endif // end BOUT_USE_CUDA
+#endif // GPU execution policy
 
 /// Wrapper around RAJA::forall
 /// Enables computations to be done on CPU or GPU (CUDA).

@@ -512,12 +512,6 @@ set_property(CACHE BOUT_ENABLE_PYTHON PROPERTY STRINGS ${ON_OFF_AUTO})
 if(NOT BOUT_ENABLE_PYTHON IN_LIST ON_OFF_AUTO)
   message(FATAL_ERROR "BOUT_ENABLE_PYTHON must be one of ${ON_OFF_AUTO}")
 endif()
-if(BOUT_ENABLE_PYTHON OR BOUT_ENABLE_PYTHON STREQUAL "AUTO")
-  add_subdirectory(tools/pylib/_boutpp_build)
-else()
-  set(BOUT_ENABLE_PYTHON OFF)
-endif()
-set(BOUT_USE_PYTHON ${BOUT_ENABLE_PYTHON})
 
 set_source_files_properties(
   ${CMAKE_CURRENT_BINARY_DIR}/git_metadata.cxx PROPERTIES GENERATED TRUE
@@ -577,6 +571,14 @@ include(cmake/SetupCompilers.cmake)
 
 # Optional dependencies
 include(cmake/SetupBOUTThirdParty.cmake)
+
+# Create the Python extension after optional GPU languages are initialized.
+if(BOUT_ENABLE_PYTHON OR BOUT_ENABLE_PYTHON STREQUAL "AUTO")
+  add_subdirectory(tools/pylib/_boutpp_build)
+else()
+  set(BOUT_ENABLE_PYTHON OFF)
+endif()
+set(BOUT_USE_PYTHON ${BOUT_ENABLE_PYTHON})
 
 # Various sanitizers, including coverage and address sanitizer
 include(cmake/Sanitizers.cmake)
@@ -1142,6 +1144,8 @@ message(
    Umpire enabled           : ${BOUT_HAS_UMPIRE}
    Caliper enabled          : ${BOUT_HAS_CALIPER}
    CUDA enabled             : ${BOUT_HAS_CUDA}
+   HIP enabled              : ${BOUT_HAS_HIP}
+   HIP architectures        : ${CMAKE_HIP_ARCHITECTURES}
    Metric type              : ${BOUT_METRIC_TYPE}
    Python API support       : ${BOUT_USE_PYTHON}
    Sanitizers enabled       : ${BOUT_USE_SANITIZERS}

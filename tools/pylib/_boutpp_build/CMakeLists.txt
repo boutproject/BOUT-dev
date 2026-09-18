@@ -118,6 +118,8 @@ add_library(
                                     ${tar}/boutexception_helper.cxx
 )
 
+bout_target_enable_hip(boutpp${PYTHON_EXT_SUFFIX})
+
 add_custom_target(
   boutpp ALL
   COMMAND

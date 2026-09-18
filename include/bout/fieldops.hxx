@@ -17,6 +17,8 @@
 
 #if BOUT_HAS_CUDA
 #include <cuda_runtime.h>
+#elif BOUT_HAS_HIP
+#include <hip/hip_runtime.h>
 #endif
 
 class Mesh;
@@ -221,7 +223,7 @@ ReductionView<ExprView> makeReductionView(const ExprView& expr,
                                  indices.size()};
 }
 
-#if BOUT_HAS_CUDA && defined(__CUDACC__)
+#if (BOUT_HAS_CUDA && defined(__CUDACC__)) || (BOUT_HAS_HIP && defined(__HIPCC__))
 template <typename Expr>
 __global__ void __launch_bounds__(THREADS) evaluatorExpr(BoutReal* out, const Expr expr) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
@@ -275,16 +277,35 @@ __global__ void __launch_bounds__(THREADS)
 }
 #endif
 
-#if BOUT_HAS_CUDA && defined(__CUDACC__)
+#if (BOUT_HAS_CUDA && defined(__CUDACC__)) || (BOUT_HAS_HIP && defined(__HIPCC__))
 struct StreamsRAII {
-  std::vector<cudaStream_t> streams;
+#if BOUT_HAS_HIP
+  using Stream = hipStream_t;
+  static auto create(Stream* stream) { return hipStreamCreate(stream); }
+  static auto destroy(Stream stream) { return hipStreamDestroy(stream); }
+  static void synchronize(Stream stream) {
+    auto error = hipStreamSynchronize(stream);
+    if (error != hipSuccess) {
+      throw BoutException("HIP stream synchronization failed: {}",
+                          hipGetErrorString(error));
+    }
+  }
+  static constexpr auto success = hipSuccess;
+#else
+  using Stream = cudaStream_t;
+  static auto create(Stream* stream) { return cudaStreamCreate(stream); }
+  static auto destroy(Stream stream) { return cudaStreamDestroy(stream); }
+  static auto synchronize(Stream stream) { return cudaStreamSynchronize(stream); }
+  static constexpr auto success = cudaSuccess;
+#endif
+  std::vector<Stream> streams;
 
-  cudaStream_t get() {
-    cudaStream_t stream = 0;
+  Stream get() {
+    Stream stream = 0;
 
     if (streams.empty()) {
-      if (cudaStreamCreate(&stream) != cudaSuccess) {
-        throw BoutException("Failed to create CUDA stream");
+      if (create(&stream) != success) {
+        throw BoutException("Failed to create GPU stream");
       }
     } else {
       stream = streams.back();
@@ -294,11 +315,11 @@ struct StreamsRAII {
     return stream;
   }
 
-  void put(cudaStream_t stream) { streams.push_back(stream); }
+  void put(Stream stream) { streams.push_back(stream); }
 
   ~StreamsRAII() {
     for (auto& stream : streams) {
-      cudaStreamDestroy(stream);
+      static_cast<void>(destroy(stream));
     }
   }
 
@@ -317,14 +338,14 @@ auto reduceExpr(const ExprView& expr_view) -> typename Reducer::State {
 
   ASSERT1(expr_view.size() > 0);
 
-#if BOUT_HAS_CUDA && defined(__CUDACC__)
-  cudaStream_t stream = streams.get();
+#if (BOUT_HAS_CUDA && defined(__CUDACC__)) || (BOUT_HAS_HIP && defined(__HIPCC__))
+  auto stream = streams.get();
   int blocks = (expr_view.size() + THREADS - 1) / THREADS;
   blocks = blocks < 1024 ? blocks : 1024;
   Array<State> partials(blocks);
 
   reducerExpr<Reducer><<<blocks, THREADS, 0, stream>>>(&partials[0], expr_view);
-  cudaStreamSynchronize(stream);
+  streams.synchronize(stream);
   streams.put(stream);
 
   State result = Reducer::identity();
@@ -508,11 +529,11 @@ struct BinaryExpr {
   }
 
   void evaluate(BoutReal* data) const {
-#if BOUT_HAS_CUDA && defined(__CUDACC__)
-    cudaStream_t stream = streams.get();
+#if (BOUT_HAS_CUDA && defined(__CUDACC__)) || (BOUT_HAS_HIP && defined(__HIPCC__))
+    auto stream = streams.get();
     int blocks = (size() + THREADS - 1) / THREADS;
     evaluatorExpr<<<blocks, THREADS, 0, stream>>>(&data[0], static_cast<View>(*this));
-    cudaStreamSynchronize(stream);
+    streams.synchronize(stream);
     streams.put(stream);
 #else
     if constexpr (std::is_same_v<ResT, Field3D>) {
