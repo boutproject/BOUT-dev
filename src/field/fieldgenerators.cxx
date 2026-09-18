@@ -1,6 +1,7 @@
 
 #include "fieldgenerators.hxx"
 
+#include <bout/boutcomm.hxx>
 #include <memory>
 
 #include <bout/constants.hxx>
@@ -45,6 +46,69 @@ FieldGeneratorPtr FieldHeaviside::clone(const std::list<FieldGeneratorPtr> args)
 
 BoutReal FieldHeaviside::generate(const Context& ctx) {
   return (gen->generate(ctx) > 0.0) ? 1.0 : 0.0;
+}
+
+FieldGeneratorPtr FieldUnitIntegral::clone(const std::list<FieldGeneratorPtr> args) {
+  if (args.size() != 1) {
+    throw ParseException(
+        "Incorrect number of arguments to unit_integral function. Expecting 1, got {:d}",
+        args.size());
+  }
+
+  return std::make_shared<FieldUnitIntegral>(args.front());
+}
+
+bool FieldUnitIntegral::cacheMatches(const Context& ctx) const {
+  return cache_valid && (cached_mesh == ctx.getMesh()) && (cached_time == ctx.t())
+         && (cached_location == ctx.location());
+}
+
+void FieldUnitIntegral::populateCache(const Context& ctx) {
+  Mesh* localmesh = ctx.getMesh();
+  ASSERT0(localmesh != nullptr);
+  Coordinates* coords = localmesh->getCoordinates(ctx.location());
+  if (coords == nullptr) {
+    throw BoutException("unit_integral function needs coordinates at {}",
+                        toString(ctx.location()));
+  }
+
+  cached_values = Field3D(localmesh).setLocation(ctx.location()).allocate();
+
+  BOUT_FOR(i, cached_values.getRegion("RGN_ALL")) {
+    cached_values[i] = gen->generate(Context(i, ctx.location(), localmesh, ctx.t()));
+  }
+
+  BoutReal local_integral = 0.0;
+  BOUT_FOR(i, cached_values.getRegion("RGN_NOBNDRY")) {
+    local_integral += cached_values[i] * coords->J()[i] * coords->dx()[i]
+                      * coords->dy()[i] * coords->dz()[i];
+  }
+
+  BoutReal integral = 0.0;
+  MPI_Allreduce(&local_integral, &integral, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get());
+
+  if (integral == 0.0) {
+    throw BoutException("unit_integral function integral is zero");
+  }
+
+  BOUT_FOR(i, cached_values.getRegion("RGN_ALL")) { cached_values[i] /= integral; }
+
+  cached_mesh = localmesh;
+  cached_time = ctx.t();
+  cached_location = ctx.location();
+  cache_valid = true;
+}
+
+BoutReal FieldUnitIntegral::generate(const Context& ctx) {
+  if (!cacheMatches(ctx)) {
+    std::lock_guard<std::mutex> guard(cache_mutex);
+    if (!cacheMatches(ctx)) {
+      populateCache(ctx);
+    }
+  }
+
+  ASSERT1(ctx.location() == cached_location);
+  return cached_values(ctx.ix(), ctx.jy(), ctx.kz());
 }
 
 //////////////////////////////////////////////////////////
