@@ -706,9 +706,9 @@ Pseudo-Transient Continuation and Switched Evolution Relaxation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When ``equation_form = pseudo_transient`` the solver uses
-Pseudo-Transient Continuation (PTC). This is a robust numerical
-technique for solving steady-state problems that are too nonlinear for
-direct Newton iteration. Instead of solving the steady-state system
+Pseudo-Transient Continuation (PTC). This method helps with steady
+state problems that are too nonlinear for direct Newton iteration.
+Instead of solving the steady-state system
 **F(u) = 0** directly, PTC solves a modified time-dependent problem:
 
 .. math::
@@ -719,27 +719,32 @@ where :math:`\tau` is a pseudo-time variable (not physical time) and :math:`M(u)
 is a preconditioning matrix. As :math:`\tau \to \infty`, the solution converges
 to the steady state **F(u) = 0**.
 
-The key advantage of PTC is that it transforms a difficult root-finding problem
-into a sequence of easier initial value problems. Poor initial guesses that would
-cause Newton's method to diverge can still reach the solution via a stable
-pseudo-transient path.
+PTC turns one hard root-finding problem into a set of easier time
+steps. A poor first guess can still reach the steady state.
 
 The Switched Evolution Relaxation (SER) method is a spatially adaptive
-variant of PTC that allows each cell to use a different
-pseudo-timestep :math:`\Delta\tau_i`. The timestep in each cell adapts
-based on the local residual, allowing the algorithm to take large
-timesteps in well-behaved regions (fast convergence), while taking
-small timesteps in difficult regions (stable advancement).  The the
-same :math:`\Delta\tau_i` is used for all equations (density,
-momentum, energy etc.) within each cell. This maintains coupling
-between temperature, pressure, and composition through the equation of
-state.
+form of PTC. Each cell can use its own pseudo-timestep
+:math:`\Delta\tau_i`. The timestep in each cell changes with the local
+residual. Cells that behave well can take large steps, while cells that are
+hard to solve take small steps. The same :math:`\Delta\tau_i` is used
+for all equations in one cell, maintaining the equation of state within
+each cell.
 
 **Key parameters:**
 
 ``pseudo_max_ratio`` (default: 2.0)
-   Maximum allowed ratio of timesteps between neighboring cells. This prevents
-   sharp spatial gradients in convergence rate.
+   Largest allowed ratio of timesteps between nearby cells.
+
+``pseudo_squash_failure_threshold`` (default: 5)
+   Start to squash the spread in local pseudo-timesteps after this many
+   SNES failures in a row.
+
+``pseudo_squash_method`` (default: ``log``)
+   How to squash the local pseudo-timesteps. Use ``affine`` or ``log``.
+
+``pseudo_squash_lambda`` (default: 0.5)
+   How much of the old spread to keep. ``0`` gives one common timestep.
+   ``1`` keeps the old spread.
 
 **Example PTC configuration:**
 
@@ -754,6 +759,9 @@ state.
    # SER parameters
    timestep_control = pid_nonlinear_its  # Scale timesteps based on iterations
    pseudo_max_ratio = 2.0         # Limit neighbor timestep ratio
+   pseudo_squash_failure_threshold = 5
+   pseudo_squash_method = log
+   pseudo_squash_lambda = 0.5
 
    # Tolerances
    atol = 1e-7
@@ -778,17 +786,17 @@ is computed as:
 
    \Delta\tau_i = \frac{\alpha}{||R_i||}
 
-Larger values allow more aggressive timestepping. The default is to use
-a fixed ``pseudo_alpha`` but a better strategy is to enable the PID controller
-that adjusts this parameter based on the nonlinear solver convergence.
+Large values give larger timesteps. By default ``pseudo_alpha`` is
+fixed, but you can also let the PID controller change it based on the
+nonlinear solve history.
 
 The timestep is limited to be between ``dt_min_reset`` and
 ``max_timestep``.  In addition the timestep is limited between 0.67 ×
 previous timestep and 1.5 × previous timestep, to limit sudden changes
 in timestep.
 
-In practice this strategy seems to work well, though problems could
-arise when residuals become very small.
+This often works well, but very small residuals can still cause
+problems.
 
 **history_based**
 
@@ -816,8 +824,8 @@ become small the method switches to ``history_based``.
 PID Controller
 ^^^^^^^^^^^^^^
 
-When using the PTC method the PID controller can be used to dynamically
-adjust ``pseudo_alpha`` depending on the nonlinearity of the system:
+When you use PTC, the PID controller can change ``pseudo_alpha`` to
+adjust to the nonlinearity of the system:
 
 .. code-block:: ini
 
@@ -828,14 +836,42 @@ adjust ``pseudo_alpha`` depending on the nonlinearity of the system:
    kI = 0.3              # Integral gain
    kD = 0.2              # Derivative gain
 
-The PID controller adjusts ``pseudo_alpha``, scaling all cell
-timesteps together, to maintain approximately ``target_its`` nonlinear
+The PID controller adjusts ``pseudo_alpha``. This scales all cell
+timesteps together and aims for about ``target_its`` nonlinear
 iterations per solve.
 
-With this enabled the solver uses the number of nonlinear iterations
-to scale timesteps globally, and residuals to scale timesteps locally.
+With this on, the solver uses the number of nonlinear iterations to
+scale timesteps for the whole domain, and uses residuals to scale
+timesteps in each cell.
+
+On repeated SNES failures, the solver now also scales down or resets
+``pseudo_alpha`` so the PID controller does not keep pushing the
+timestep back up.
+
+Current limit: this anti-windup step uses only the ``Field3D`` local
+residual and pseudo-timestep data. It does not include ``Field2D``
+parts. In mixed ``Field2D``/``Field3D`` cases, the reset reflects only
+the ``Field3D`` part. In ``Field2D``-only cases, it does not give a
+useful value.
+
 Note that the PID controller has no effect on the ``history_based``
 strategy because that strategy does not use ``pseudo_alpha``.
+
+PTC failure handling
+^^^^^^^^^^^^^^^^^^^^
+
+If SNES fails in ``pseudo_transient`` mode, the solver first scales all
+local pseudo-timesteps down by ``timestep_factor_on_failure``.
+
+After ``pseudo_squash_failure_threshold`` failures in a row, the solver
+also squashes the spread in local pseudo-timesteps. This pulls them
+toward the current global timestep. Use ``pseudo_squash_method`` to
+pick the squash rule and ``pseudo_squash_lambda`` to set how strong the
+squash is.
+
+On the last retry before the solver stops, it sets all local
+pseudo-timesteps to ``dt_min_reset`` and sets ``pseudo_alpha`` to
+``pseudo_alpha_minimum``.
 
 Jacobian Finite Difference with Coloring
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1012,14 +1048,18 @@ Diagnostics and Monitoring
    diagnose = true                # Print iteration info to screen
    diagnose_failures = true       # Detailed diagnostics on failures
 
-When ``equation_form = pseudo_transient``, the solver saves additional diagnostic fields:
+When ``equation_form = pseudo_transient``, the solver saves extra diagnostic fields:
 
-- ``snes_pseudo_residual``: Local residual in each cell
+- ``snes_local_residual``: Local residual in each cell
+- ``snes_global_residual``: Global RMS residual
 - ``snes_pseudo_timestep``: Local pseudo-timestep in each cell
 - ``snes_pseudo_alpha``: Global timestep scaling
 
-These can be visualized to understand convergence behavior and identify
-problematic regions.
+These can help you see why the solve is slow or where it fails.
+
+The anti-windup update for ``snes_pseudo_alpha`` has one limit at
+present: it uses only ``Field3D`` local residual and pseudo-timestep
+data. It does not include ``Field2D`` parts.
 
 The residuals from the last nonlinear solve are also saved with names
 ``resid_<var name>``. Plotting these can help to understand which
@@ -1031,10 +1071,29 @@ Summary of solver options
 +---------------------------+---------------+----------------------------------------------------+
 | Option                    | Default       |Description                                         |
 +===========================+===============+====================================================+
-| pseudo_time               | false         | Pseudo-Transient Continuation (PTC) method, using  |
-|                           |               | a different timestep for each cell.                |
+| equation_form           | rearranged_   | Choose the SNES solve form. Use                    |
+|                         | backward_     | ``pseudo_transient`` for PTC.                      |
+|                         | euler         |                                                    |
++---------------------------+---------------+----------------------------------------------------+
+| pseudo_alpha            | 100*atol*dt   | Sets local timestep in ``inverse_residual`` mode   |
+|                         |               | with ``dt = pseudo_alpha / residual``              |
++---------------------------+---------------+----------------------------------------------------+
+| pseudo_alpha_minimum    | 0.1*pseudo_   | Smallest allowed value for ``pseudo_alpha``        |
+|                         | alpha         |                                                    |
 +---------------------------+---------------+----------------------------------------------------+
 | pseudo_max_ratio          | 2.            | Maximum timestep ratio between neighboring cells   |
++---------------------------+---------------+----------------------------------------------------+
+| pseudo_growth_factor      | 1.1           | Growth factor in ``history_based`` mode            |
++---------------------------+---------------+----------------------------------------------------+
+| pseudo_reduction_factor   | 0.5           | Reduction factor in ``history_based`` mode         |
++---------------------------+---------------+----------------------------------------------------+
+| pseudo_squash_failure_    | 5             | Start to squash local pseudo-timesteps after this  |
+| threshold                 |               | many SNES failures in a row                        |
++---------------------------+---------------+----------------------------------------------------+
+| pseudo_squash_method      | log           | How to squash local pseudo-timesteps: ``affine``   |
+|                           |               | or ``log``                                         |
++---------------------------+---------------+----------------------------------------------------+
+| pseudo_squash_lambda      | 0.5           | How much of the old timestep spread to keep        |
 +---------------------------+---------------+----------------------------------------------------+
 | snes_type                 | newtonls      | PETSc SNES nonlinear solver (try anderson, qn)     |
 +---------------------------+---------------+----------------------------------------------------+
