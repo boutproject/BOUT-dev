@@ -31,12 +31,10 @@ BOUT_ENUM_CLASS(MeshTopology,
 
 //New snowflake class for classifying snowflake family members.              
 BOUT_ENUM_CLASS(SnowflakeType,
-                SF15, //snowflake- LFS
-                SF45, //snowflake+ LFS
-                SF75, //snowflake+ LFS
-                SF105, //snowflake+ HFS
-                SF135, //snowflake+ HFS
-                SF165, //snowflake- HFS
+                SF_minus_low_field_side,  //snowflake- LFS
+                SF_minus_high_field_side, //snowflake- HFS
+                SF_plus_low_field_side,   //snowflake+ LFS
+                SF_plus_high_field_side,  //snowflake+ HFS
                 SF,    //Generic snowflake type
                 XPT);  //X-Point Target is topologically the same as a snowflake minus, but has a different separatrix structure and a bigger X-Point separation
 
