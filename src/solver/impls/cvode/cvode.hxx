@@ -28,6 +28,7 @@
 
 #include "bout/bout_enum_class.hxx"
 #include "bout/build_defines.hxx"
+#include "bout/petsc_operators.hxx"
 #include "bout/solver.hxx"
 #include <memory>
 

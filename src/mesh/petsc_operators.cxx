@@ -141,7 +141,7 @@ IS PetscCellMapping::makeEvolvingIS() const {
   mapOwnedInteriorCells(
       [&](PetscInt row, const Ind3D& /*i*/, int /*stored*/) { indices.push_back(row); });
 
-  IS is;
+  IS is = nullptr;
   BOUT_DO_PETSC(ISCreateGeneral(BoutComm::get(), static_cast<PetscInt>(indices.size()),
                                 indices.data(), PETSC_COPY_VALUES, &is));
   return is;
@@ -151,7 +151,7 @@ Mat PetscCellMapping::extractEvolvingSubmatrix(
     const PetscOperator<CellSpaceTag, CellSpaceTag>& op) const {
   IS is = makeEvolvingIS();
 
-  Mat sub;
+  Mat sub = nullptr;
   BOUT_DO_PETSC(MatCreateSubMatrix(op.raw(), is, is, MAT_INITIAL_MATRIX, &sub));
 
   BOUT_DO_PETSC(ISDestroy(&is));

@@ -29,7 +29,6 @@ int main() { return EXIT_SUCCESS; }
 #include <bout/output.hxx>
 #include <bout/petsc_operators.hxx>
 #include <bout/region.hxx>
-#include <bout/utils.hxx>
 
 #include <mpi.h>
 
@@ -65,7 +64,7 @@ int main(int argc, char** argv) {
           const int global_y = mesh->getGlobalYIndexNoBoundaries(y);
           for (int z = 0; z < mesh->LocalNz; ++z) {
             const int global_z = mesh->getGlobalZIndexNoBoundaries(z);
-            cell_number(x, y, z) = ((global_x * ngy) + global_y) * ngz + global_z;
+            cell_number(x, y, z) = (((global_x * ngy) + global_y) * ngz) + global_z;
           }
         }
       }
@@ -112,7 +111,8 @@ int main(int argc, char** argv) {
                 PETSC_DETERMINE);
     MatSetType(dummy, MATMPIAIJ);
     MatSetUp(dummy);
-    PetscInt Istart, Iend;
+    PetscInt Istart;
+    PetscInt Iend;
     MatGetOwnershipRange(dummy, &Istart, &Iend);
     MatDestroy(&dummy);
 

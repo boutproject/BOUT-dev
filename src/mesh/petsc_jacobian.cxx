@@ -10,7 +10,8 @@
 
 void addOperatorSparsity(Mat Jfd, Mat sub, int out_var, int in_var) {
   // Infer nvars from global sizes
-  PetscInt jfd_global{0}, sub_global{0};
+  PetscInt jfd_global{0};
+  PetscInt sub_global{0};
   BOUT_DO_PETSC(MatGetSize(Jfd, &jfd_global, nullptr));
   BOUT_DO_PETSC(MatGetSize(sub, &sub_global, nullptr));
 
@@ -23,7 +24,8 @@ void addOperatorSparsity(Mat Jfd, Mat sub, int out_var, int in_var) {
   ASSERT1(in_var >= 0 && in_var < static_cast<int>(nvars));
 
   // Iterate over locally owned rows of sub and insert into Jfd
-  PetscInt rstart{0}, rend{0};
+  PetscInt rstart{0};
+  PetscInt rend{0};
   BOUT_DO_PETSC(MatGetOwnershipRange(sub, &rstart, &rend));
 
   const PetscScalar one = 1.0;
@@ -46,7 +48,8 @@ void addOperatorSparsity(Mat Jfd, Mat sub, int out_var, int in_var) {
 }
 
 void addOperatorSparsity(Mat Jfd, Mat sub) {
-  PetscInt jfd_global{0}, sub_global{0};
+  PetscInt jfd_global{0};
+  PetscInt sub_global{0};
   MatGetSize(Jfd, &jfd_global, nullptr);
   MatGetSize(sub, &sub_global, nullptr);
 

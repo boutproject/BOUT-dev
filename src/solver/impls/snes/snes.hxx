@@ -28,6 +28,7 @@
 #ifndef BOUT_SNES_SOLVER_H
 #define BOUT_SNES_SOLVER_H
 
+#include "bout/petsc_operators.hxx"
 #include <bout/build_defines.hxx>
 #include <bout/solver.hxx>
 
