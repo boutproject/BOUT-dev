@@ -28,6 +28,7 @@
 
 #include "bout/bout_enum_class.hxx"
 #include "bout/build_defines.hxx"
+#include "bout/petsc_operators.hxx"
 #include "bout/solver.hxx"
 #include <memory>
 
@@ -81,12 +82,19 @@ class CvodeSolver : public Solver {
 public:
   explicit CvodeSolver(Options* opts = nullptr);
   ~CvodeSolver() override;
+  using Solver::addJacobianPattern;
 
   BoutReal getCurrentTimestep() override { return hcur; }
 
   int init() override;
   int run() override;
   BoutReal run(BoutReal tout);
+#if BOUT_HAS_PETSC
+  bool addJacobianPattern(const PetscCellOperator& op, VarRef out_var,
+                          VarRef in_var) override {
+    return queueJacobianPattern(op, out_var, in_var);
+  }
+#endif
 
   void resetInternalFields() override;
 

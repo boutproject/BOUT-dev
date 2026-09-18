@@ -67,6 +67,7 @@ The documentation is divided into the following sections:
    :name: bout-interfaces
 
    user_docs/time_integration
+   user_docs/preconditioning
    user_docs/parallel-transforms
    user_docs/differential_operators
    user_docs/parallel_operators
@@ -92,7 +93,6 @@ The documentation is divided into the following sections:
    :name: coordinates
 
    user_docs/coordinates
-   user_docs/preconditioning
    user_docs/BOUT_Gradperp_op
 
 .. toctree::
