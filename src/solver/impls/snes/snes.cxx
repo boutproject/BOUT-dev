@@ -104,7 +104,7 @@ PetscErrorCode withOptionalSubvectors(Func operation, IS indices, Args... args) 
   }
 
   for (std::size_t i = acquired; i > 0; --i) {
-    PetscErrorCode restore_ierr =
+    const PetscErrorCode restore_ierr =
         VecRestoreSubVector(vectors[i - 1], indices, &subvectors[i - 1]);
     if (ierr == PETSC_SUCCESS) {
       ierr = restore_ierr;
@@ -332,6 +332,18 @@ SNESSolver::SNESSolver(Options* opts)
       pseudo_max_ratio((*options)["pseudo_max_ratio"]
                            .doc("PTC maximum timestep ratio between neighbors")
                            .withDefault(2.)),
+      pseudo_squash_failure_threshold(
+          (*options)["pseudo_squash_failure_threshold"]
+              .doc("Squash timestep variation when snes failures reaches this threshold")
+              .withDefault(5)),
+      pseudo_squash_method(
+          (*options)["pseudo_squash_method"]
+              .doc("Method to apply when squashing pseudo timesteps: affine or log.")
+              .withDefault(BoutPseudoSquashMethod::log)),
+      pseudo_squash_lambda((*options)["pseudo_squash_lambda"]
+                               .doc("How much variation to keep? 0 = No variation; 1 = "
+                                    "Full variation (no squashing)")
+                               .withDefault(0.5)),
       timestep_control((*options)["timestep_control"]
                            .doc("Timestep control method")
                            .withDefault(BoutSnesTimestep::pid_nonlinear_its)),
@@ -427,6 +439,8 @@ SNESSolver::SNESSolver(Options* opts)
                                .doc("Which Jacobian to save: system, scaled, or rhs")
                                .withDefault(bout::JacobianExportKind::system)) {
   supports_constraints = true; // This solver can handle constraints
+
+  ASSERT0((pseudo_squash_lambda >= 0.0) and (pseudo_squash_lambda <= 1.0));
 }
 
 SNESSolver::~SNESSolver() {
@@ -1030,20 +1044,23 @@ int SNESSolver::run() {
             // Scale down pseudo_alpha so that PID controller isn't saturated
             pseudo_alpha = pseudo_alpha_minimum;
 
-          } else if (snes_failures >= 5) {
-            // Squash variation in timestep
-            // dt_vec <- lambda * dt_vec + (1 - lambda) * timestep
-            const BoutReal lambda = 0.5;
-            const bool affine_squash = false;
+          } else if (snes_failures >= pseudo_squash_failure_threshold) {
+            // Squash variation in timestep between cells.
+            // pseudo_squash_lambda determines how much variation to keep.
 
-            if (affine_squash) {
+            switch (pseudo_squash_method) {
+            case BoutPseudoSquashMethod::affine:
               // Modify dt_vec using Affine squash
-              PetscCall(VecScale(dt_vec, lambda));
-              PetscCall(VecShift(dt_vec, (1.0 - lambda) * timestep));
+              // dt_vec <- lambda * dt_vec + (1 - lambda) * timestep
+
+              PetscCall(VecScale(dt_vec, pseudo_squash_lambda));
+              PetscCall(VecShift(dt_vec, (1.0 - pseudo_squash_lambda) * timestep));
 
               // Modify pseudo_timestep
-              pseudo_timestep = lambda * pseudo_timestep + (1 - lambda) * timestep;
-            } else {
+              pseudo_timestep = pseudo_squash_lambda * pseudo_timestep
+                                + (1 - pseudo_squash_lambda) * timestep;
+              break;
+            case BoutPseudoSquashMethod::log:
               // Log squash
               // dt_vec <- timestep * (dt_vec / timestep)^lambda
               PetscInt size;
@@ -1051,16 +1068,18 @@ int SNESSolver::run() {
               BoutReal* dt_data = nullptr;
               PetscCall(VecGetArray(dt_vec, &dt_data));
               for (PetscInt i = 0; i != size; ++i) {
-                dt_data[i] = timestep * std::pow(dt_data[i] / timestep, lambda);
+                dt_data[i] =
+                    timestep * std::pow(dt_data[i] / timestep, pseudo_squash_lambda);
               }
               PetscCall(VecRestoreArray(dt_vec, &dt_data));
 
-              pseudo_timestep = timestep * pow(pseudo_timestep / timestep, lambda);
-            }
+              pseudo_timestep =
+                  timestep * pow(pseudo_timestep / timestep, pseudo_squash_lambda);
+              break;
+            };
 
             // Anti-windup: Calculate the effective alpha parameter
-            Field3D pseudo_alpha_effective = local_residual * pseudo_timestep;
-            pseudo_alpha = mean(pseudo_alpha_effective, true);
+            pseudo_alpha = mean(local_residual * pseudo_timestep, true);
 
           } else {
             // Global scaling of timesteps
