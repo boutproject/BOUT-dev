@@ -33,7 +33,8 @@ Div_a_Laplace_perp(const Field3D& a, const Field3D& f) {
 /// \f[
 ///   \nabla_\parallel(k \cdot \nabla_\parallel(f) )
 /// \f]
-Field3D Div_par_K_Grad_par(const Field3D& k, const Field3D& f, bool bndry_flux = true);
+Field3D Div_par_K_Grad_par(const Field3DParallel& k, const Field3DParallel& f,
+                           bool bndry_flux = true);
 
 /// 4th-order derivative in Y, using derivatives
 /// on cell boundaries.
