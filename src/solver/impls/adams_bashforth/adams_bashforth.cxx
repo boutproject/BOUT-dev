@@ -1,5 +1,6 @@
 #include "adams_bashforth.hxx"
 
+#include <algorithm>
 #include <array>
 
 #include <bout/boutcomm.hxx>
@@ -209,7 +210,7 @@ Array<BoutReal> AB_integrate(int nlocal, BoutReal timestep,
 
   // Zero-initialise to ensure we can operate on the contiguous
   // history arrays in order
-  std::fill(std::begin(update), std::end(update), 0.0);
+  std::ranges::fill(update, 0.0);
 
   AB_integrate_update(update, timestep, times, history, order);
   return update;
@@ -326,7 +327,7 @@ int AdamsBashforthSolver::init() {
   // Put starting values into states
   state.reallocate(nlocal);
   nextState.reallocate(nlocal);
-  std::fill(std::begin(nextState), std::end(nextState), 0.0);
+  std::ranges::fill(nextState, 0.0);
   save_vars(std::begin(state));
 
   // Set the starting order
@@ -345,7 +346,7 @@ void AdamsBashforthSolver::resetInternalFields() {
   current_order = 1;
 
   // States
-  std::fill(std::begin(nextState), std::end(nextState), 0.0);
+  std::ranges::fill(nextState, 0.0);
   save_vars(std::begin(state));
 }
 

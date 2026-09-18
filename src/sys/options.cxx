@@ -1174,9 +1174,8 @@ bout::details::OptionsFormatterBase::format(const Options& options,
   // Only print section headers if the section has a name and it has
   // non-section children
   const auto& children = options.getChildren();
-  const bool has_child_values =
-      std::any_of(children.begin(), children.end(),
-                  [](const auto& child) { return child.second.isValue(); });
+  const bool has_child_values = std::ranges::any_of(
+      children, [](const auto& child) { return child.second.isValue(); });
   const std::string section_name = options.str();
   if (not inline_section_names and not section_name.empty() and has_child_values) {
     fmt::format_to(ctx.out(), "\n[{}]\n", section_name);
