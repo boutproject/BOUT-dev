@@ -266,6 +266,15 @@ inline T filledFrom(const T& f, Function func, std::string region_string = "RGN_
 template <typename T>
 concept IsField = std::is_base_of_v<Field, T>;
 
+template <typename T>
+concept ExprField2D = is_expr_field2d_v<T>;
+
+template <typename T>
+concept ExprField3D = is_expr_field3d_v<T>;
+
+template <typename T>
+concept ExprConstant = is_expr_constant_v<T>;
+
 /// Unary + operator. This doesn't do anything
 template <IsField T>
 T operator+(const T& f) {
@@ -593,10 +602,8 @@ auto makePowExpr(const LView& lhs_view, const RView& rhs_view, Mesh* mesh,
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument)
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-template <typename L, typename R>
-std::enable_if_t<is_expr_field2d_v<L> && is_expr_field2d_v<R>,
-                 BinaryExpr<Field2D, L, R, bout::op::Pow>>
-pow(const L& lhs, const R& rhs) {
+template <ExprField2D L, ExprField2D R>
+BinaryExpr<Field2D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs) {
   ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
   return bout::detail::makePowExpr<Field2D, L, R>(
       static_cast<typename L::View>(lhs), static_cast<typename R::View>(rhs),
@@ -604,10 +611,8 @@ pow(const L& lhs, const R& rhs) {
       lhs.getMesh()->getRegion2D("RGN_ALL"));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field2d_v<L> && is_expr_field2d_v<R>,
-                 BinaryExpr<Field2D, L, R, bout::op::Pow>>
-pow(const L& lhs, const R& rhs, const std::string& rgn) {
+template <ExprField2D L, ExprField2D R>
+BinaryExpr<Field2D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs, const std::string& rgn) {
   ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
   return bout::detail::makePowExpr<Field2D, L, R>(
       static_cast<typename L::View>(lhs), static_cast<typename R::View>(rhs),
@@ -615,10 +620,8 @@ pow(const L& lhs, const R& rhs, const std::string& rgn) {
       lhs.getMesh()->getRegion2D(rgn));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>,
-                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
-pow(const L& lhs, const R& rhs) {
+template <ExprField3D L, ExprField3D R>
+BinaryExpr<Field3D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs) {
   ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
   auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
   return bout::detail::makePowExpr<Field3D, L, R>(
@@ -629,10 +632,8 @@ pow(const L& lhs, const R& rhs) {
       bout::detail::getPerpYIndex(lhs));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>,
-                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
-pow(const L& lhs, const R& rhs, const std::string& rgn) {
+template <ExprField3D L, ExprField3D R>
+BinaryExpr<Field3D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs, const std::string& rgn) {
   ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
   return bout::detail::makePowExpr<Field3D, L, R>(
       static_cast<typename L::View>(lhs), static_cast<typename R::View>(rhs),
@@ -641,10 +642,8 @@ pow(const L& lhs, const R& rhs, const std::string& rgn) {
       lhs.getMesh()->getRegion(rgn), bout::detail::getPerpYIndex(lhs));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>,
-                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
-pow(const L& lhs, const R& rhs) {
+template <ExprField3D L, ExprField2D R>
+BinaryExpr<Field3D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs) {
   ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
   int mesh_nz = lhs.getMesh()->LocalNz;
   return bout::detail::makePowExpr<Field3D, L, R>(
@@ -654,10 +653,8 @@ pow(const L& lhs, const R& rhs) {
       lhs.getMesh()->getRegion("RGN_ALL"), bout::detail::getPerpYIndex(lhs));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>,
-                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
-pow(const L& lhs, const R& rhs, const std::string& rgn) {
+template <ExprField3D L, ExprField2D R>
+BinaryExpr<Field3D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs, const std::string& rgn) {
   ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
   int mesh_nz = lhs.getMesh()->LocalNz;
   return bout::detail::makePowExpr<Field3D, L, R>(
@@ -668,10 +665,8 @@ pow(const L& lhs, const R& rhs, const std::string& rgn) {
       lhs.getMesh()->getRegion(rgn), bout::detail::getPerpYIndex(lhs));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field2d_v<L> && is_expr_field3d_v<R>,
-                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
-pow(const L& lhs, const R& rhs) {
+template <ExprField2D L, ExprField3D R>
+BinaryExpr<Field3D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs) {
   ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
   int mesh_nz = rhs.getMesh()->LocalNz;
   return bout::detail::makePowExpr<Field3D, L, R>(
@@ -681,10 +676,8 @@ pow(const L& lhs, const R& rhs) {
       bout::detail::getPerpYIndex(rhs));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field2d_v<L> && is_expr_field3d_v<R>,
-                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
-pow(const L& lhs, const R& rhs, const std::string& rgn) {
+template <ExprField2D L, ExprField3D R>
+BinaryExpr<Field3D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs, const std::string& rgn) {
   ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
   int mesh_nz = rhs.getMesh()->LocalNz;
   return bout::detail::makePowExpr<Field3D, L, R>(
@@ -694,60 +687,48 @@ pow(const L& lhs, const R& rhs, const std::string& rgn) {
       rhs.getMesh()->getRegion(rgn), bout::detail::getPerpYIndex(rhs));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field2d_v<L> && is_expr_constant_v<R>,
-                 BinaryExpr<Field2D, L, Constant<R>, bout::op::Pow>>
-pow(const L& lhs, R rhs) {
+template <ExprField2D L, ExprConstant R>
+BinaryExpr<Field2D, L, Constant<R>, bout::op::Pow> pow(const L& lhs, R rhs) {
   return bout::detail::makePowExpr<Field2D, L, Constant<R>>(
       static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
       lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), std::nullopt,
       lhs.getMesh()->getRegion2D("RGN_ALL"));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field2d_v<L> && is_expr_constant_v<R>,
-                 BinaryExpr<Field2D, L, Constant<R>, bout::op::Pow>>
-pow(const L& lhs, R rhs, const std::string& rgn) {
+template <ExprField2D L, ExprConstant R>
+BinaryExpr<Field2D, L, Constant<R>, bout::op::Pow> pow(const L& lhs, R rhs, const std::string& rgn) {
   return bout::detail::makePowExpr<Field2D, L, Constant<R>>(
       static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
       lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), std::nullopt,
       lhs.getMesh()->getRegion2D(rgn));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_constant_v<L> && is_expr_field2d_v<R>,
-                 BinaryExpr<Field2D, Constant<L>, R, bout::op::Pow>>
-pow(L lhs, const R& rhs) {
+template <ExprConstant L, ExprField2D R>
+BinaryExpr<Field2D, Constant<L>, R, bout::op::Pow> pow(L lhs, const R& rhs) {
   return bout::detail::makePowExpr<Field2D, Constant<L>, R>(
       static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
       rhs.getMesh(), rhs.getLocation(), rhs.getDirections(), std::nullopt,
       rhs.getMesh()->getRegion2D("RGN_ALL"));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_constant_v<L> && is_expr_field2d_v<R>,
-                 BinaryExpr<Field2D, Constant<L>, R, bout::op::Pow>>
-pow(L lhs, const R& rhs, const std::string& rgn) {
+template <ExprConstant L, ExprField2D R>
+BinaryExpr<Field2D, Constant<L>, R, bout::op::Pow> pow(L lhs, const R& rhs, const std::string& rgn) {
   return bout::detail::makePowExpr<Field2D, Constant<L>, R>(
       static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
       rhs.getMesh(), rhs.getLocation(), rhs.getDirections(), std::nullopt,
       rhs.getMesh()->getRegion2D(rgn));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field3d_v<L> && is_expr_constant_v<R>,
-                 BinaryExpr<Field3D, L, Constant<R>, bout::op::Pow>>
-pow(const L& lhs, R rhs) {
+template <ExprField3D L, ExprConstant R>
+BinaryExpr<Field3D, L, Constant<R>, bout::op::Pow> pow(const L& lhs, R rhs) {
   return bout::detail::makePowExpr<Field3D, L, Constant<R>>(
       static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
       lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), lhs.getRegionID(),
       lhs.getMesh()->getRegion("RGN_ALL"), bout::detail::getPerpYIndex(lhs));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field3d_v<L> && is_expr_constant_v<R>,
-                 BinaryExpr<Field3D, L, Constant<R>, bout::op::Pow>>
-pow(const L& lhs, R rhs, const std::string& rgn) {
+template <ExprField3D L, ExprConstant R>
+BinaryExpr<Field3D, L, Constant<R>, bout::op::Pow> pow(const L& lhs, R rhs, const std::string& rgn) {
   return bout::detail::makePowExpr<Field3D, L, Constant<R>>(
       static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
       lhs.getMesh(), lhs.getLocation(), lhs.getDirections(),
@@ -755,20 +736,16 @@ pow(const L& lhs, R rhs, const std::string& rgn) {
       lhs.getMesh()->getRegion(rgn), bout::detail::getPerpYIndex(lhs));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_constant_v<L> && is_expr_field3d_v<R>,
-                 BinaryExpr<Field3D, Constant<L>, R, bout::op::Pow>>
-pow(L lhs, const R& rhs) {
+template <ExprConstant L, ExprField3D R>
+BinaryExpr<Field3D, Constant<L>, R, bout::op::Pow> pow(L lhs, const R& rhs) {
   return bout::detail::makePowExpr<Field3D, Constant<L>, R>(
       static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
       rhs.getMesh(), rhs.getLocation(), rhs.getDirections(), rhs.getRegionID(),
       rhs.getMesh()->getRegion("RGN_ALL"), bout::detail::getPerpYIndex(rhs));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_constant_v<L> && is_expr_field3d_v<R>,
-                 BinaryExpr<Field3D, Constant<L>, R, bout::op::Pow>>
-pow(L lhs, const R& rhs, const std::string& rgn) {
+template <ExprConstant L, ExprField3D R>
+BinaryExpr<Field3D, Constant<L>, R, bout::op::Pow> pow(L lhs, const R& rhs, const std::string& rgn) {
   return bout::detail::makePowExpr<Field3D, Constant<L>, R>(
       static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
       rhs.getMesh(), rhs.getLocation(), rhs.getDirections(),
