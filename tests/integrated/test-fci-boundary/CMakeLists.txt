@@ -1,4 +1,4 @@
-bout_add_mms_test(
+bout_add_integrated_test(
   test-fci-boundary
   SOURCES get_par_bndry.cxx
   USE_RUNTEST USE_DATA_BOUT_INP

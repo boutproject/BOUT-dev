@@ -23,15 +23,8 @@ class Vector2DTest : public ::testing::Test {
 protected:
   Vector2DTest() {
     // Delete any existing mesh
-    if (mesh != nullptr) {
-      // Delete boundary regions
-      for (auto& r : mesh->getBoundaries()) {
-        delete r;
-      }
-
-      delete mesh;
-      mesh = nullptr;
-    }
+    delete mesh;
+    mesh = nullptr;
     bout::globals::mpi = new MpiWrapper();
     mesh = new FakeMesh(nx, ny, nz);
     static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr);
@@ -49,7 +42,6 @@ protected:
         Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0}, Field2D{5.0},
         Field2D{6.0}, Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0},
         Field2D{5.0}, Field2D{6.0}, Field2D{0.0}, Field2D{0.0}));
-    // No call to Coordinates::geometry() needed here
 
     delete mesh_staggered;
     mesh_staggered = new FakeMesh(nx, ny, nz);
@@ -60,14 +52,8 @@ protected:
   }
 
   virtual ~Vector2DTest() {
-    if (mesh != nullptr) {
-      // Delete boundary regions
-      for (auto& r : mesh->getBoundaries()) {
-        delete r;
-      }
-      delete mesh;
-      mesh = nullptr;
-    }
+    delete mesh;
+    mesh = nullptr;
     delete mesh_staggered;
     mesh_staggered = nullptr;
     delete bout::globals::mpi;

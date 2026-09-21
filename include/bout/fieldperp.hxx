@@ -352,6 +352,10 @@ public:
       this->div = div;
       return *this;
     }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE bool hasParallelSlices() const { return false; }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE int numberParallelSlices() const { return 0; }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE View yup(int = 0) const { return *this; }
+    BOUT_HOST_DEVICE BOUT_FORCEINLINE View ydown(int = 0) const { return *this; }
   };
   operator View() { return View{&data[0]}; }
   operator View() const { return View{const_cast<BoutReal*>(&data[0])}; }
@@ -405,6 +409,11 @@ FieldPerp operator/(const FieldPerp& lhs, const Field2D& rhs);
 FieldPerp operator/(const FieldPerp& lhs, BoutReal rhs);
 FieldPerp operator/(BoutReal lhs, const FieldPerp& rhs);
 
+FieldPerp pow(const FieldPerp& lhs, const FieldPerp& rhs,
+              const std::string& rgn = "RGN_ALL");
+FieldPerp pow(const FieldPerp& lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL");
+FieldPerp pow(BoutReal lhs, const FieldPerp& rhs, const std::string& rgn = "RGN_ALL");
+
 /*!
  * Unary minus. Returns the negative of given field,
  * iterates over whole domain including guard/boundary cells.
@@ -438,8 +447,8 @@ inline FieldPerp emptyFrom<FieldPerp>(const FieldPerp& f) {
 #if CHECK > 0
 void checkData(const FieldPerp& f, const std::string& region = "RGN_NOX");
 #else
-inline void checkData(const FieldPerp& UNUSED(f),
-                      const std::string& UNUSED(region) = "RGN_NOX") {}
+inline void checkData([[maybe_unused]] const FieldPerp& f,
+                      [[maybe_unused]] const std::string& region = "RGN_NOX") {}
 #endif
 
 /// Force guard cells of passed field \p var to NaN
@@ -452,7 +461,7 @@ inline void invalidateGuards(FieldPerp& UNUSED(var)) {}
 /// toString template specialisation
 /// Defined in utils.hxx
 template <>
-inline std::string toString<>(const FieldPerp& UNUSED(val)) {
+inline std::string toString<>([[maybe_unused]] const FieldPerp& val) {
   return "<FieldPerp>";
 }
 

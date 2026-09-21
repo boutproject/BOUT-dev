@@ -196,6 +196,8 @@ public:
    */
   bool hasVar(const std::string& name) const override;
 
+  using GridDataSource::get;
+
   /*!
    * Reads strings from options. Uses Options::get to handle
    * expressions

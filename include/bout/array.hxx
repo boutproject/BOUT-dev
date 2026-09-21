@@ -37,6 +37,7 @@
 #include <omp.h>
 #endif
 
+#include "bout/build_config.hxx"
 #include "bout/build_defines.hxx"
 
 #if BOUT_HAS_UMPIRE
@@ -98,7 +99,7 @@ struct ArrayData {
   }
   iterator<T> begin() const { return data; }
   iterator<T> end() const { return data + len; }
-  int size() const { return len; }
+  BOUT_FORCEINLINE int size() const { return len; }
 
   /// Copy assignment
   /// Copy the underlying data from one array to the other

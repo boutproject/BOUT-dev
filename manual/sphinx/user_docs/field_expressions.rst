@@ -5,9 +5,9 @@ Field Expressions
 
 BOUT++ field algebra now supports *lazy expressions* for many common
 operations. Instead of creating a temporary field for every ``+``,
-``-``, ``*``, ``/``, ``sqrt`` or ``abs``, BOUT++ can keep the expression
-symbolic and evaluate it only when a concrete field or scalar result is
-needed.
+``-``, ``*``, ``/``, ``pow``, ``sqrt`` or ``abs``, BOUT++ can keep the
+expression symbolic and evaluate it only when a concrete field or scalar
+result is needed.
 
 This keeps ordinary model code readable while reducing temporary
 allocations and extra loops over the mesh. It is especially helpful for
@@ -21,9 +21,9 @@ The following operations can form lazy expressions over `Field2D`,
 sense:
 
 - Arithmetic operators: ``+``, ``-``, ``*``, ``/``
+- Binary algebraic helpers such as ``pow`` and ``floor``
 - Unary algebraic operators such as ``sqrt``, ``abs``, ``exp``, ``log``,
-  ``sin``, ``cos``, ``tan``, ``sinh``, ``cosh``, ``tanh``, ``floor``,
-  and ``SQ``
+  ``sin``, ``cos``, ``tan``, ``sinh``, ``cosh``, ``tanh``, and ``SQ``
 - Simple conditionals with ``if_else`` and ``if_else_zero``
 - Reductions such as ``min``, ``max``, and ``mean``
 
@@ -32,7 +32,7 @@ For example::
   Field3D n, T;
   Field3D result;
 
-  result = sqrt(SQ(n) + SQ(T));
+  result = sqrt(SQ(n) + pow(T + 1.0, 2.0));
 
 The right-hand side can stay lazy until the assignment to ``result``.
 
@@ -93,8 +93,10 @@ Several mixed-type combinations are supported directly:
 - `Field2D` with `Field3D`: the 2D quantity is broadcast in ``z``
 - `FieldPerp` with matching perpendicular data: the operation uses the
   `FieldPerp` y-index
+- `pow` follows the same mixed-rank pattern, so either operand can be
+  `Field2D` or `Field3D` and the result is a `Field3D`
 - expressions involving metric components may return
-  `Coordinates::FieldMetric`, which is `Field2D` or `Field3D` depending
+  `bout::FieldMetric`, which is `Field2D` or `Field3D` depending
   on how BOUT++ was built
 
 In practice, this means code such as::
@@ -120,6 +122,30 @@ expression or zero::
 
 This is particularly convenient when optional source terms are enabled
 or disabled by compile-time or run-time logic.
+
+`Field3DParallel` and FCI
+-------------------------
+
+Lazy expressions can also carry parallel-slice information. This matters
+when working with `Field3DParallel` on FCI meshes:
+
+- materializing into `Field3DParallel` preserves ``yup`` and ``ydown``
+  slices
+- materializing the same expression into plain `Field3D` keeps only the
+  main field values
+- on FCI meshes, operands contributing to a `Field3DParallel`
+  expression must have compatible parallel slices available
+- For metric components that should preserve parallel slices for FCI
+  `bout::FieldMetricParallel` acts like `Field3DParallel` for 3D metrics
+  and like `Field2D` otherwise.
+
+For example::
+
+  Field3DParallel f_par, g_par;
+  Field3DParallel result = sqrt(f_par + g_par);
+
+On a non-FCI mesh, assigning a lazy expression to `Field3DParallel`
+still evaluates the main field, but no parallel slices are retained.
 
 Reductions on expressions
 -------------------------

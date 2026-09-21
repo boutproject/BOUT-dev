@@ -37,7 +37,6 @@
 #include "bout/options.hxx"
 #include "bout/options_io.hxx"
 #include "bout/output.hxx"
-#include "bout/petsclib.hxx"
 #include "bout/traits.hxx"
 #include "bout/vecops.hxx"
 
@@ -174,9 +173,6 @@ int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
 
-  // Need this here to ensure PETSc isn't finalised until after the global mesh,
-  // otherwise we get problems from `MPI_Comm_free` on the X communicator
-  PetscLib lib{};
   {
     // Not be used for 3D metrics
     Options::root()["laplace"].setConditionallyUsed();

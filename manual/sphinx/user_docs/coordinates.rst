@@ -77,7 +77,7 @@ The cross products are:
 .. math::
    :label: eq:psithetazetacrossproducts
 
-   \boldsymbol{e}_\psi\times\boldsymbol{e}_\theta = J_{\psi\theta\zeta} \nabla\zeta \qquad 
+   \boldsymbol{e}_\psi\times\boldsymbol{e}_\theta = J_{\psi\theta\zeta} \nabla\zeta \qquad
    \boldsymbol{e}_\psi\times\boldsymbol{e}_\zeta = -J_{\psi\theta\zeta} \nabla\theta \qquad
    \boldsymbol{e}_\theta\times\boldsymbol{e}_\zeta = J_{\psi\theta\zeta} \nabla\psi
 
@@ -122,7 +122,7 @@ To align to the magnetic field we define a local field line pitch `\nu`:
    \frac{{B_{\text{tor}}}{h_\theta}}{{B_{\text{pol}}}R}
    \end{aligned}
 
-The sign of the poloidal field `{B_{\text{pol}}}` and toroidal field 
+The sign of the poloidal field `{B_{\text{pol}}}` and toroidal field
 `{B_{\text{tor}}}` can be either + or -.
 
 The field-aligned coordinates `\left(x,y,z\right)` are defined by:
@@ -158,7 +158,7 @@ The reciprocal basis vectors are
    \nabla z = \nabla\zeta - \sigma_{B\text{pol}}\left[\int_{\theta_0}^\theta{\frac{\partial \nu\left(\psi,\theta\right)}{\partial \psi}} d\theta\right] \nabla\psi
    - \sigma_{B\text{pol}}\nu\left(\psi, \theta\right)\nabla\theta
    \end{aligned}
-  
+
 The term in square brackets is the integrated local shear:
 
 .. math::
@@ -167,18 +167,18 @@ The term in square brackets is the integrated local shear:
    \begin{aligned}
    I = \int_{y_0}^y\frac{\partial\nu\left(x, y\right)}{\partial\psi}dy\end{aligned}
 
-  
+
 The basis vectors are:
 
 .. math::
    :label: eq:basisvectors
-   
+
    \begin{aligned}
    \boldsymbol{e}_x =& J_{xyz}\left(\nabla y \times \nabla z\right) = {\sigma_{B\text{pol}}} {\boldsymbol{e}}_\psi + I{\boldsymbol{e}}_\zeta \\
    \boldsymbol{e}_y =& J_{xyz}\left(\nabla z \times \nabla x\right) = {\boldsymbol{e}}_\theta + \nu{\boldsymbol{e}}_\phi \\
    \boldsymbol{e}_z =& J_{xyz}\left(\nabla x \times \nabla y\right) = {\boldsymbol{e}}_\zeta
    \end{aligned}
- 
+
 where `{\boldsymbol{e}}_\phi =
 {\sigma_{B\text{pol}}}{\boldsymbol{e}}_\zeta` is always anticlockwise when
 seen from above the tokamak looking down. The direction of
@@ -458,7 +458,7 @@ The reciprocal basis vectors are
 
 .. math::
    :label: eq:reciprocalbasisvectorsrighthanded
-   
+
    \begin{aligned}
    \nabla x =& {\sigma_{B\text{pol}}} \nabla \psi \\
    \nabla \eta =& {\sigma_{B\text{pol}}} \nabla \theta \\
@@ -469,7 +469,7 @@ and basis vectors
 
 .. math::
    :label: eq:basisvectorsrighthanded
-   
+
    \begin{aligned}
    \boldsymbol{e}_x =& J_{x\eta z}\left(\nabla y \times \nabla z\right) = {\sigma_{B\text{pol}}} {\boldsymbol{e}}_\psi + I{\boldsymbol{e}}_\zeta \\
    \boldsymbol{e}_\eta =& J_{x\eta z}\left(\nabla z \times \nabla x\right) = {\sigma_{B\text{pol}}} {\boldsymbol{e}}_\theta + \nu{\boldsymbol{e}}_\zeta \\
@@ -853,7 +853,7 @@ Components of `\nabla\times{\boldsymbol{b}}` are [#curvature]_:
 
    \begin{aligned}
    \left(\nabla\times{\boldsymbol{b}}\right)^x =& {\sigma_y}\frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}
-   R}{B}\right) \\ 
+   R}{B}\right) \\
    \left(\nabla\times{\boldsymbol{b}}\right)^y =& -{\sigma_y}\frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial x}}\left(\frac{{B_{\text{tor}}}R}{B}\right) \\
    \left(\nabla\times{\boldsymbol{b}}\right)^z =& \frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) - \frac{{B_{\text{pol}}}{B_{\text{tor}}} R}{{h_\theta}B}{\frac{\partial \nu}{\partial x}} - {\sigma_y}I\frac{{|B_{\text{pol}}|}}{{h_\theta}}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}} R}{B}\right) \\
    \end{aligned}
@@ -919,7 +919,7 @@ we can re-write the above components as:
                 flip, the `x`-coordinate stays the same and the
                 `z`-coordinate flips sign. The `y`-coordinate stays
                 the same, or the `\eta`-coordinate flips sign.
-                Therefore the x-component of `\nabla\times\boldsymbol{b}` 
+                Therefore the x-component of `\nabla\times\boldsymbol{b}`
                 should flip sign, the `z`-component should not flip
                 sign (product of two sign flips), and the
                 `y`-component should flip sign if '`y`' is `y` and not
@@ -1383,7 +1383,7 @@ and
            \frac{{B_{\text{pol}}}}{B{h_\theta}}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}R}{B}\right)\end{aligned}
 
 The second and third terms partly cancel, and using
-`\sigma_y\sigma_{B\text{pol}}{\frac{\partial I}{\partial y}} = 
+`\sigma_y\sigma_{B\text{pol}}{\frac{\partial I}{\partial y}} =
 {\frac{\partial \nu}{\partial x}}`
 
 .. math::
@@ -1750,10 +1750,10 @@ Differential geometry
 =====================
 
 .. warning:: The following are notes from [haeseleer]_. If you are new to this
-	     topic it is strongly suggested to read [haeseleer]_ chapter 2
-	     instead, as here not all terms are defined, and the discussion of
-	     co- and contra variant components is incomplete. Similiarly, the
-	     notation is based on [haeseleer]_ and not explained in detail.
+             topic it is strongly suggested to read [haeseleer]_ chapter 2
+             instead, as here not all terms are defined, and the discussion of
+             co- and contra variant components is incomplete. Similiarly, the
+             notation is based on [haeseleer]_ and not explained in detail.
 
 Sets of vectors `\left\{\mathbf{A, B, C}\right\}` and
 `\left\{\mathbf{a, b, c}\right\}` are reciprocal if
@@ -2229,8 +2229,9 @@ The perpendicular Laplacian can therefore be written in divergence form as:
    +& \frac{1}{J}\frac{\partial}{\partial z}\left[Jg^{xz}\left(\frac{\partial}{\partial x} - \frac{g_{xy}}{g_{yy}}\frac{\partial}{\partial y}\right) + Jg^{zz}\left(\frac{\partial}{\partial z} - \frac{g_{yz}}{g_{yy}}\frac{\partial}{\partial y}\right)\right]
    \end{aligned}
 
-This form is currently implemented in ``FV::Div_a_Grad_perp``
-(``bout/fv_ops.hxx``) but that operator currently assumes that the
+This form is currently implemented in ``FV::Div_a_Grad_perp`` and the
+limited variant ``FV::Div_a_Grad_perp_limit`` (both in
+``bout/fv_ops.hxx``), but these operators currently assume that the
 off-diagonal terms `g^{xz}` and `g^{xy}` are zero, which is the case
 for orthogonal grids with shifted metrics but not in general.
 

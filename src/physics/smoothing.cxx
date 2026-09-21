@@ -4,15 +4,15 @@
  *
  * 2014-10-29 Ben Dudson <bd512@york.ac.uk>
  *    * Moving averaging routines here from Mesh
- * 
+ *
  * 2010-05-17 Ben Dudson <bd512@york.ac.uk>
  *    * Added nonlinear filter
- * 
+ *
  **************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -107,7 +107,7 @@ const Field3D smooth_y(const Field3D& f) {
 
   Issues
   ======
-  
+
   Assumes every processor has the same domain shape
 
   Will only work if X communicator is constant in Y
@@ -162,14 +162,14 @@ const Field2D averageX(const Field2D& f) {
   ======
 
   Creates static arrays
-  
+
   Not thread safe
-  
+
   Assumes every processor has the same domain shape
-  
+
   Will only work if X communicator is constant in Y
   so no processor/branch cuts in X
-  
+
  */
 const Field3D averageX(const Field3D& f) {
   Mesh* mesh = f.getMesh();
@@ -349,7 +349,7 @@ BoutReal Vol_Integral([[maybe_unused]] const Field2D& var) {
   BoutReal Int_Glb;
   Coordinates* metric = var.getCoordinates();
 
-  auto result = metric->J * var * metric->dx * metric->dy;
+  auto result = metric->J() * var * metric->dx() * metric->dy();
 
   Int_Glb = Average_XY(result);
   Int_Glb *= static_cast<BoutReal>(

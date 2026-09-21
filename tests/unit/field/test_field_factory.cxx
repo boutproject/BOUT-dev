@@ -565,8 +565,6 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
       Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
       Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
       Field2D{0.0}, Field2D{0.0}));
-  // No call to Coordinates::geometry() needed here
-
   localmesh.getCoordinates()->setParallelTransform(
       bout::utils::make_unique<ParallelTransformIdentity>(localmesh));
 
@@ -831,57 +829,6 @@ TEST_F(FieldFactoryTest, FuzzyFind) {
   auto CAPS_matches = factory.fuzzyFind("MOXMIDE");
   EXPECT_EQ(CAPS_matches.size(), 1);
 }
-
-// A mock ParallelTransform to test transform_from_field_aligned
-// property of FieldFactory. For now, the transform just returns the
-// negative of the input. Ideally, this will get moved to GoogleMock
-// when we start using it.
-//
-// Can turn off the ability to do the transform. Should still be valid
-class MockParallelTransform : public ParallelTransform {
-public:
-  MockParallelTransform(Mesh& mesh, bool allow_transform_)
-      : ParallelTransform(mesh), allow_transform(allow_transform_) {}
-  ~MockParallelTransform() = default;
-
-  void calcParallelSlices(Field3D&) override {}
-
-  bool canToFromFieldAligned() const override { return allow_transform; }
-
-  bool requiresTwistShift(bool, YDirectionType) override { return false; }
-
-  void checkInputGrid() override {}
-
-  Field3D fromFieldAligned(const Field3D& f, const std::string&) override {
-    if (f.getDirectionY() != YDirectionType::Aligned) {
-      throw BoutException("Unaligned field passed to fromFieldAligned");
-    }
-    return -f;
-  }
-
-  FieldPerp fromFieldAligned(const FieldPerp& f, const std::string&) override {
-    if (f.getDirectionY() != YDirectionType::Aligned) {
-      throw BoutException("Unaligned field passed to fromFieldAligned");
-    }
-    return -f;
-  }
-
-  Field3D toFieldAligned(const Field3D& f, const std::string&) override {
-    if (f.getDirectionY() != YDirectionType::Standard) {
-      throw BoutException("Aligned field passed to toFieldAligned");
-    }
-    return -f;
-  }
-  FieldPerp toFieldAligned(const FieldPerp& f, const std::string&) override {
-    if (f.getDirectionY() != YDirectionType::Standard) {
-      throw BoutException("Aligned field passed to toFieldAligned");
-    }
-    return -f;
-  }
-
-private:
-  const bool allow_transform;
-};
 
 class FieldFactoryCreateAndTransformTest : public FakeMeshFixture {
 public:

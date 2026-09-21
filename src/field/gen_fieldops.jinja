@@ -1,6 +1,7 @@
 {% set use_parallel_arg = lhs.field_type == "Field3DParallel" or rhs.field_type == "Field3DParallel" %}
 {% set use_raja_path = region_loop == "BOUT_FOR_RAJA" and not use_parallel_arg %}
 
+{% if emit_free_binary %}
 // Provide the C++ wrapper for {{operator_name}} of {{lhs}} and {{rhs}}
 {{out}} operator{{operator}}(const {{lhs.passByReference}}, const {{rhs.passByReference}}) {
   {% if lhs != "BoutReal" and rhs != "BoutReal" %}
@@ -140,8 +141,9 @@
   checkData({{out.name}});
   return {{out.name}};
 }
+{% endif %}
 
-{% if out.field_type == lhs.field_type and lhs == "Field3D" %}
+{% if emit_update_inplace %}
 // Provide the C++ operator to update {{lhs}} by {{operator_name}} with {{rhs}}
 {{lhs}} &{{lhs}}::update_{{operator_name}}_inplace(const {{rhs.passByReference}}) {
   // only if data is unique we update the field
@@ -234,7 +236,7 @@
 {% endif %}
 
 
-{% if out.field_type == lhs.field_type %}
+{% if emit_member_op_equals %}
 // Provide the C++ operator to update {{lhs}} by {{operator_name}} with {{rhs}}
 {{lhs}} &{{lhs}}::operator{{operator}}=(const {{rhs.passByReference}}) {
   // only if data is unique we update the field

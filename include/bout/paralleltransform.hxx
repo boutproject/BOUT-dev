@@ -91,10 +91,6 @@ public:
   /// require a twist-shift at branch cuts on closed field lines?
   virtual bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) = 0;
 
-  /// Can be implemented to load parallel metrics
-  /// Needed by FCI
-  virtual void loadParallelMetrics([[maybe_unused]] Coordinates* coords) {}
-
 protected:
   /// This method should be called in the constructor to check that if the grid
   /// has a 'parallel_transform' variable, it has the correct value
@@ -124,6 +120,8 @@ public:
    */
   void calcParallelSlices(Field3D& f) override;
 
+  using ParallelTransform::toFieldAligned;
+
   /*!
    * The field is already aligned in Y, so this
    * does nothing
@@ -140,6 +138,8 @@ public:
     FieldPerp result = f;
     return result.setDirectionY(YDirectionType::Aligned);
   }
+
+  using ParallelTransform::fromFieldAligned;
 
   /*!
    * The field is already aligned in Y, so this
@@ -196,6 +196,8 @@ public:
    */
   void calcParallelSlices(Field3D& f) override;
 
+  using ParallelTransform::toFieldAligned;
+
   /*!
    * Uses FFTs and a phase shift to align the grid points
    * with the y coordinate (along magnetic field usually).
@@ -208,6 +210,8 @@ public:
                          const std::string& region = "RGN_ALL") override;
   FieldPerp toFieldAligned(const FieldPerp& f,
                            const std::string& region = "RGN_ALL") override;
+
+  using ParallelTransform::fromFieldAligned;
 
   /*!
    * Converts a field back to X-Z orthogonal coordinates

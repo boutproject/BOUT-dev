@@ -13,17 +13,18 @@ class BoundaryRegion;
 class BoundaryModifier;
 
 #include <map>
+#include <memory>
 #include <string>
 
 /// Create BoundaryOp objects on demand
 /*!
  * This implements a simple string parser, used to match boundary condition
  * names like "dirichlet" with a BoundaryOp object.
- * 
+ *
  * Modifiers: Simple modifications of boundary conditions can be performed,
  * for example transforming the coordinate system
- * 
- * This is a singleton, so only one instance can exist. This is 
+ *
+ * This is a singleton, so only one instance can exist. This is
  * enforced by making the constructor private, and having a getInstance() method
  * to return a pointer to the only instance.
  *
@@ -33,7 +34,7 @@ class BoundaryModifier;
  * Boundaries are defined as classes which inherit from BoundaryOp
  * These define a clone() function which creates a new BoundaryOp,
  * given a list of arguments. See boundary_standard.hxx for examples.
- * 
+ *
  *     class MyBoundary : public BoundaryOp {
  *      public:
  *       BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) {
@@ -43,23 +44,23 @@ class BoundaryModifier;
  *       void apply(Field2D &f);
  *       void apply(Field3D &f);
  *     };
- * 
+ *
  * The singleton instance of BoundaryFactory from getInstance():
- * 
+ *
  *     BoundaryFactory* bf = BoundaryFactory::getInstance();
  *
  * New boundary types can be added to the BoundaryFactory
  *
  *     bf->add(new MyBoundary, "myboundary");
- * 
+ *
  *
  * Subsequent calls to create() or createFromOptions() can make use
  * of the boundary type "myboundary".
  *
  * BoundaryOpBase *bndry = bf->create("myboundary()", new BoundaryRegionXOut("xout", 0, 10, localmesh));
- * 
+ *
  * where the region is defined in boundary_region.hxx
- * 
+ *
  */
 class BoundaryFactory {
 public:
@@ -70,13 +71,16 @@ public:
   static void cleanup(); ///< Frees all memory
 
   /// Create a boundary operation object
-  BoundaryOpBase* create(const std::string& name, BoundaryRegionBase* region);
-  BoundaryOpBase* create(const char* name, BoundaryRegionBase* region);
+  BoundaryOpBase* create(const std::string& name,
+                         const std::shared_ptr<BoundaryRegionBase>& region);
+  BoundaryOpBase* create(const char* name,
+                         const std::shared_ptr<BoundaryRegionBase>& region);
 
   /// Create a boundary object using the options file
   BoundaryOpBase* createFromOptions(const std::string& varname,
-                                    BoundaryRegionBase* region);
-  BoundaryOpBase* createFromOptions(const char* varname, BoundaryRegionBase* region);
+                                    const std::shared_ptr<BoundaryRegionBase>& region);
+  BoundaryOpBase* createFromOptions(const char* varname,
+                                    const std::shared_ptr<BoundaryRegionBase>& region);
 
   /*!
    * Add available boundary conditions and modifiers

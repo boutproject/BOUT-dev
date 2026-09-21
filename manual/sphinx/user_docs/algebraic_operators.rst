@@ -30,7 +30,7 @@ Common operators
    +------------------------------------------+------------------------------------------------------+
    | ``mean(f, allpe=true, region)``          | Mean (optionally over all processes)                 |
    +------------------------------------------+------------------------------------------------------+
-   | ``pow(lhs, rhs, region)``                | :math:`\mathtt{lhs}^\mathtt{rhs}`                    |
+   | ``pow(lhs, rhs[, region])``              | :math:`\mathtt{lhs}^\mathtt{rhs}`                    |
    +------------------------------------------+------------------------------------------------------+
    | ``SQ(f, region)``                        | Square of ``f``                                      |
    +------------------------------------------+------------------------------------------------------+
@@ -54,7 +54,8 @@ Common operators
    +------------------------------------------+------------------------------------------------------+
    | ``tanh(f, region)``                      | :math:`\tanh(f)`                                     |
    +------------------------------------------+------------------------------------------------------+
-   | ``floor(f, region)``                     | Returns a field with the floor of `f` at each point  |
+   | ``floor(f, floor_value[, region])``      | Returns a field where values below ``floor_value``   |
+   |                                          | are replaced by ``floor_value``                      |
    +------------------------------------------+------------------------------------------------------+
    | ``filter(f, n, region)``                 | Calculate the amplitude of the Fourier mode in the   |
    |                                          | z-direction with mode number `n`                     |
@@ -84,11 +85,17 @@ Common operators
 These operators can usually be combined directly in expressions::
 
   Field3D rhs = sqrt(SQ(n) + SQ(T));
+  Field3D profile = pow(n + n0, 1.5);
   Field3D masked = if_else(use_drive, source * profile, sink * profile);
   BoutReal max_error = max(abs(lhs - rhs), true);
 
 Reductions such as ``min``, ``max``, and ``mean`` can operate directly
 on an expression, so an intermediate field is often unnecessary.
+
+``pow`` also participates in lazy field expressions, including mixed
+`Field2D`/`Field3D` cases where the `Field2D` operand is broadcast in
+``z``. `FieldPerp` also has ``pow`` overloads for `FieldPerp` with
+`FieldPerp` or a scalar.
 
 Region arguments
 ----------------
@@ -107,6 +114,12 @@ performance when guard-cell values will not be used.
 When a region-limited expression is materialized into a field, only the
 selected region is guaranteed to contain valid values. This is the same
 performance-oriented convention used by other field operators.
+
+`Field3DParallel` follows the same rule for the main field data. On FCI
+meshes, materializing a lazy expression into `Field3DParallel` also
+preserves the forward and backward parallel slices when those slices are
+available on the expression operands. Materializing the same expression
+into plain `Field3D` does not preserve those slices.
 
 Further reading
 ---------------

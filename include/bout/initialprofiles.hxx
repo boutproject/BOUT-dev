@@ -58,22 +58,22 @@ class Vector3D;
  * -------
  * Given the input file:
  *
- * [All]
- * function = sin(y)
+ *     [all]
+ *     function = sin(y)
  *
- * [pressure]
+ *     [pressure]
  *
- * [density]
- * scale = 0.2
+ *     [density]
+ *     scale = 0.2
  *
- * [vorticity]
- * function = cos(y)
+ *     [vorticity]
+ *     function = cos(y)
  *
- * initial_profile would generate:
+ * `initial_profile` would generate:
  *
- * o pressure -> sin(y)
- * o density  -> 0.2*sin(y)
- * o vorticity -> cos(y)
+ * - ``pressure -> sin(y)``
+ * - ``density  -> 0.2*sin(y)``
+ * - ``vorticity -> cos(y)``
  *
  */
 void initial_profile(const std::string& name, Field3D& var);

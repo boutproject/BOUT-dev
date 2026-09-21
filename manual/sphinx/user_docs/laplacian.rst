@@ -152,6 +152,15 @@ within the physics module using ``setGlobalFlags``,
     lap->setOuterBoundaryFlags(Outer_Flags_Value);
     lap->setFlags(Flags_Value);
 
+.. note::
+
+   Known issue: ``LaplaceHypre3d`` currently uses boundary-equation elimination in
+   its Hypre backend. At domain corners where an x-boundary and y-boundary
+   condition meet, the reduced system does not preserve both corner constraints
+   exactly. The returned corner values from ``LaplaceHypre3d`` should therefore be
+   treated as unreliable. This is usually acceptable because those corner values
+   are not normally used elsewhere in BOUT++ calculations.
+
 
 .. _tab-laplacesettings:
 .. table:: Laplacian inversion options
@@ -183,7 +192,7 @@ within the physics module using ``setGlobalFlags``,
    +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
    | ``flags``                | DEPRECATED. Sets global solver options and boundary                     | ``0``                                        |
    |                          | conditions. See :ref:`Laplace flags<tab-laplaceflags>` or               |                                              |
-   |                          | :doc:`invert_laplace.cxx<../_breathe_autogen/file/invert__laplace_8cxx>`|                                              |
+   |                          | :doc:`invert_laplace.hxx<../_breathe_autogen/file/invert__laplace_8hxx>`|                                              |
    +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
    | ``include_yguards``      | Perform inversion in :math:`y`\ -boundary guard cells                   | ``false``                                    |
    +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
@@ -847,7 +856,7 @@ subdomain using the Thomas algorithm.
 
 **Constraints.** This method requires that:
 
-* ``NXPE`` is a power of 2. 
+* ``NXPE`` is a power of 2.
 * ``NXPE > 2^(max_levels+1)``
 
 .. _sec-LaplaceXY:

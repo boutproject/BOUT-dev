@@ -7,12 +7,38 @@
 
 #include <adios2.h>
 
+#include <memory>
+#include <string>
 #include <unordered_map>
 
 namespace bout {
 
 static ADIOSPtr adios = nullptr;
-static std::unordered_map<std::string, ADIOSStream> adiosStreams;
+static std::unordered_map<std::string, std::unique_ptr<ADIOSStream>> adiosStreams;
+
+namespace {
+std::string GetIOName(const std::string& fname, adios2::Mode mode) {
+  switch (mode) {
+  case adios2::Mode::Read:
+    return "read_" + fname;
+  case adios2::Mode::ReadRandomAccess:
+    return "read_random_access_" + fname;
+  case adios2::Mode::Append:
+    return "append_" + fname;
+  case adios2::Mode::Write:
+    return "write_" + fname;
+  default:
+    return fname;
+  }
+}
+
+adios2::IO GetIO(const std::string& fname, adios2::Mode mode,
+                 const std::string& engineType) {
+  auto io = GetADIOSPtr()->DeclareIO(GetIOName(fname, mode));
+  io.SetEngine(engineType);
+  return io;
+}
+} // namespace
 
 void ADIOSInit(MPI_Comm comm) { adios = std::make_shared<adios2::ADIOS>(comm); }
 
@@ -37,61 +63,24 @@ ADIOSPtr GetADIOSPtr() {
   return adios;
 }
 
-IOPtr GetIOPtr(const std::string IOName) {
-  auto adios = GetADIOSPtr();
-  IOPtr io = nullptr;
-  try {
-    io = std::make_shared<adios2::IO>(adios->AtIO(IOName));
-  } catch (std::invalid_argument& e) {
+ADIOSStream::~ADIOSStream() { finish(); }
+
+ADIOSStream::ADIOSStream(const std::string& fname, adios2::Mode mode,
+                         const std::string& engineType)
+    : io(GetIO(fname, mode, engineType)), fname(fname), io_name(GetIOName(fname, mode)),
+      file_mode(mode) {}
+
+ADIOSStream& ADIOSStream::ADIOSGetStream(const std::string& fname, adios2::Mode mode,
+                                         const std::string& engineType) {
+  const auto key = GetIOName(fname, mode);
+  auto it = adiosStreams.find(key);
+  if (it == adiosStreams.end() || it->second->isRetired()) {
+    it = adiosStreams
+             .insert_or_assign(key, std::unique_ptr<ADIOSStream>(
+                                        new ADIOSStream(fname, mode, engineType)))
+             .first;
   }
-  return io;
-}
-
-ADIOSStream::~ADIOSStream() {
-  if (engine_) {
-    if (isInStep) {
-      engine_.EndStep();
-      isInStep = false;
-    }
-    engine_.Close();
-  }
-}
-
-ADIOSStream& ADIOSStream::ADIOSGetStream(const std::string& fname, adios2::Mode mode) {
-  auto it = adiosStreams.find(fname);
-  if (it == adiosStreams.end()) {
-    it = adiosStreams.emplace(fname, ADIOSStream(fname, mode)).first;
-  }
-  return it->second;
-}
-
-void ADIOSSetParameters(const std::string& input, char delimKeyValue, char delimItem,
-                        adios2::IO& io) {
-  auto lf_Trim = [](std::string& input) {
-    input.erase(0, input.find_first_not_of(" \n\r\t")); // prefixing spaces
-    input.erase(input.find_last_not_of(" \n\r\t") + 1); // suffixing spaces
-  };
-
-  std::istringstream inputSS(input);
-  std::string parameter;
-  while (std::getline(inputSS, parameter, delimItem)) {
-    const size_t position = parameter.find(delimKeyValue);
-    if (position == std::string::npos) {
-      throw BoutException("ADIOSSetParameters(): wrong format for IO parameter "
-                          + parameter + ", format must be key" + delimKeyValue
-                          + "value for each entry");
-    }
-
-    std::string key = parameter.substr(0, position);
-    lf_Trim(key);
-    std::string value = parameter.substr(position + 1);
-    lf_Trim(value);
-    if (value.length() == 0) {
-      throw BoutException("ADIOS2SetParameters: empty value in IO parameter " + parameter
-                          + ", format must be key" + delimKeyValue + "value");
-    }
-    io.SetParameter(key, value);
-  }
+  return *it->second;
 }
 
 } // namespace bout

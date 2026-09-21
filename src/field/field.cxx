@@ -2,10 +2,10 @@
  * Base class for fields
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ * Contact: Ben Dudson, dudson2@llnl.gov
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -23,9 +23,11 @@
  *
  **************************************************************************/
 
+#include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/field.hxx>
+#include <bout/field_data.hxx>
 #include <bout/mesh.hxx>
 #include <bout/output.hxx>
 #include <bout/utils.hxx>

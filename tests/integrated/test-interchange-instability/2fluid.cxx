@@ -142,10 +142,10 @@ protected:
     Field3D pei = (Te0 + Ti0) * Ni;
 
     // DENSITY EQUATION
-    ddt(Ni) = -b0xGrad_dot_Grad(phi, Ni0) / coord->Bxy;
+    ddt(Ni) = -b0xGrad_dot_Grad(phi, Ni0) / coord->Bxy();
 
     // VORTICITY
-    ddt(rho) = 2.0 * coord->Bxy * b0xcv * Grad(pei);
+    ddt(rho) = 2.0 * coord->Bxy() * b0xcv * Grad(pei);
 
     return (0);
   }

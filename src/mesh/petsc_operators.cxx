@@ -132,7 +132,7 @@ PetscCellMapping::PetscCellMapping(const Field3D& cell_number,
 }
 
 PetscLegMapping::PetscLegMapping(int total_legs, std::vector<int> local_leg_indices) {
-  std::sort(local_leg_indices.begin(), local_leg_indices.end());
+  std::ranges::sort(local_leg_indices);
   local_leg_indices.erase(std::unique(local_leg_indices.begin(), local_leg_indices.end()),
                           local_leg_indices.end());
   buildPermutation(static_cast<PetscInt>(local_leg_indices.size()), total_legs,
@@ -333,14 +333,15 @@ PetscOperators::Parallel PetscOperators::getParallel() const {
   auto* coords = mesh->getCoordinates();
 
   // Parallel spacing in cell space
-  Field3D dl = Coordinates::FieldMetric{coords->dy * sqrt(coords->g_22)};
+  Field3D dl = Coordinates::FieldMetric{coords->dy() * sqrt(coords->g_22())};
   dl.splitParallelSlices();
   dl.yup() = 0.0;
   dl.ydown() = 0.0;
   dl.applyParallelBoundary("parallel_neumann_o1");
 
   // Cell volume
-  Field3D dV = Coordinates::FieldMetric{coords->J * coords->dx * coords->dy * coords->dz};
+  Field3D dV =
+      Coordinates::FieldMetric{coords->J() * coords->dx() * coords->dy() * coords->dz()};
   dV.splitParallelSlices();
   dV.yup() = 0.0;
   dV.ydown() = 0.0;

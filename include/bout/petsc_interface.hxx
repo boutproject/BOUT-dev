@@ -292,8 +292,8 @@ public:
 
   /// Copy constructor
   PetscMatrix(const PetscMatrix<T>& mat)
-      : matrix(new Mat()), indexConverter(mat.indexConverter), pt(mat.pt),
-        yoffset(mat.yoffset), initialised(mat.initialised) {
+      : matrix(new Mat(), bout::petsc::MatDeleter{}), indexConverter(mat.indexConverter),
+        pt(mat.pt), yoffset(mat.yoffset), initialised(mat.initialised) {
     MatDuplicate(*mat.matrix, MAT_COPY_VALUES, matrix.get());
   }
 
@@ -307,7 +307,7 @@ public:
   // Construct a matrix capable of operating on the specified field,
   // preallocating memory if requested and possible.
   PetscMatrix(IndexerPtr<T> indConverter, bool preallocate = true)
-      : matrix(new Mat()), indexConverter(indConverter),
+      : matrix(new Mat(), bout::petsc::MatDeleter{}), indexConverter(indConverter),
         pt(&indConverter->getMesh()->getCoordinates()->getParallelTransform()) {
     MPI_Comm comm = std::is_same_v<T, FieldPerp> ? indConverter->getMesh()->getXZcomm()
                                                  : BoutComm::get();
@@ -406,7 +406,7 @@ public:
     Element& operator+=(BoutReal val) {
 
       ASSERT3(std::isfinite(val));
-      auto columnPosition = std::find(positions.begin(), positions.end(), petscCol);
+      auto columnPosition = std::ranges::find(positions, petscCol);
       if (columnPosition != positions.end()) {
         const int index = std::distance(positions.begin(), columnPosition);
         value += weights[index] * val;

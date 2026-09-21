@@ -26,8 +26,8 @@ int main(int argc, char** argv) {
   meshoptions->get("Lx", Lx, 1.0);
 
   /*this assumes equidistant grid*/
-  mesh->getCoordinates()->dx = Lx / (mesh->GlobalNx - 2 * mesh->xstart);
-  mesh->getCoordinates()->dz = TWOPI * Lx / (mesh->GlobalNz - 2 * mesh->zstart);
+  mesh->getCoordinates()->setDx(Lx / (mesh->GlobalNx - 2 * mesh->xstart));
+  mesh->getCoordinates()->setDz(TWOPI * Lx / (mesh->GlobalNz - 2 * mesh->zstart));
   /////
 
   // Create a Laplacian inversion solver
