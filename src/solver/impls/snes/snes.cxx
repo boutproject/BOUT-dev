@@ -104,7 +104,7 @@ PetscErrorCode withOptionalSubvectors(Func operation, IS indices, Args... args) 
   }
 
   for (std::size_t i = acquired; i > 0; --i) {
-    PetscErrorCode restore_ierr =
+    const PetscErrorCode restore_ierr =
         VecRestoreSubVector(vectors[i - 1], indices, &subvectors[i - 1]);
     if (ierr == PETSC_SUCCESS) {
       ierr = restore_ierr;
@@ -332,6 +332,18 @@ SNESSolver::SNESSolver(Options* opts)
       pseudo_max_ratio((*options)["pseudo_max_ratio"]
                            .doc("PTC maximum timestep ratio between neighbors")
                            .withDefault(2.)),
+      pseudo_squash_failure_threshold(
+          (*options)["pseudo_squash_failure_threshold"]
+              .doc("Squash timestep variation when snes failures reaches this threshold")
+              .withDefault(5)),
+      pseudo_squash_method(
+          (*options)["pseudo_squash_method"]
+              .doc("Method to apply when squashing pseudo timesteps: affine or log.")
+              .withDefault(BoutPseudoSquashMethod::log)),
+      pseudo_squash_lambda((*options)["pseudo_squash_lambda"]
+                               .doc("How much variation to keep? 0 = No variation; 1 = "
+                                    "Full variation (no squashing)")
+                               .withDefault(0.5)),
       timestep_control((*options)["timestep_control"]
                            .doc("Timestep control method")
                            .withDefault(BoutSnesTimestep::pid_nonlinear_its)),
@@ -427,6 +439,8 @@ SNESSolver::SNESSolver(Options* opts)
                                .doc("Which Jacobian to save: system, scaled, or rhs")
                                .withDefault(bout::JacobianExportKind::system)) {
   supports_constraints = true; // This solver can handle constraints
+
+  ASSERT0((pseudo_squash_lambda >= 0.0) and (pseudo_squash_lambda <= 1.0));
 }
 
 SNESSolver::~SNESSolver() {
@@ -1025,15 +1039,60 @@ int SNESSolver::run() {
           if (snes_failures == max_snes_failures - 1) {
             // Last chance. Set to uniform smallest timestep
             PetscCall(VecSet(dt_vec, dt_min_reset));
+            pseudo_timestep = dt_min_reset;
 
-          } else if (snes_failures == 5) {
-            // Set uniform timestep
-            PetscCall(VecSet(dt_vec, timestep));
+            // Scale down pseudo_alpha so that PID controller isn't saturated
+            pseudo_alpha = pseudo_alpha_minimum;
+
+          } else if (snes_failures >= pseudo_squash_failure_threshold) {
+            // Squash variation in timestep between cells.
+            // pseudo_squash_lambda determines how much variation to keep.
+
+            switch (pseudo_squash_method) {
+            case BoutPseudoSquashMethod::affine:
+              // Modify dt_vec using Affine squash
+              // dt_vec <- lambda * dt_vec + (1 - lambda) * timestep
+
+              PetscCall(VecScale(dt_vec, pseudo_squash_lambda));
+              PetscCall(VecShift(dt_vec, (1.0 - pseudo_squash_lambda) * timestep));
+
+              // Modify pseudo_timestep
+              pseudo_timestep = pseudo_squash_lambda * pseudo_timestep
+                                + (1 - pseudo_squash_lambda) * timestep;
+              break;
+            case BoutPseudoSquashMethod::log:
+              // Log squash
+              // dt_vec <- timestep * (dt_vec / timestep)^lambda
+              PetscInt size;
+              PetscCall(VecGetLocalSize(dt_vec, &size));
+              BoutReal* dt_data = nullptr;
+              PetscCall(VecGetArray(dt_vec, &dt_data));
+              for (PetscInt i = 0; i != size; ++i) {
+                dt_data[i] =
+                    timestep * std::pow(dt_data[i] / timestep, pseudo_squash_lambda);
+              }
+              PetscCall(VecRestoreArray(dt_vec, &dt_data));
+
+              pseudo_timestep =
+                  timestep * pow(pseudo_timestep / timestep, pseudo_squash_lambda);
+              break;
+            };
+
+            // Anti-windup: Calculate the effective alpha parameter
+            pseudo_alpha = mean(local_residual * pseudo_timestep, true);
+
           } else {
             // Global scaling of timesteps
             // Note: A better strategy might be to reduce timesteps
             //       in problematic cells.
             PetscCall(VecScale(dt_vec, timestep_factor_on_failure));
+
+            pseudo_timestep *= timestep_factor_on_failure;
+
+            // Scale alpha down by the same amount
+            // If this is not done then PID controller can 'wind up'
+            // because the controller keeps increasing alpha between failures.
+            pseudo_alpha *= timestep_factor_on_failure;
           }
         } else {
           // Try a smaller timestep
@@ -1502,7 +1561,7 @@ PetscErrorCode SNESSolver::updatePseudoTimestepping() {
         if (i3d.y() != 0) {
           min_neighboring_dt = std::min(min_neighboring_dt, pseudo_timestep[i3d.ym()]);
         }
-        if (i3d.x() != mesh->LocalNy - 1) {
+        if (i3d.y() != mesh->LocalNy - 1) {
           min_neighboring_dt = std::min(min_neighboring_dt, pseudo_timestep[i3d.yp()]);
         }
 
