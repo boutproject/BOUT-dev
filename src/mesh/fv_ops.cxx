@@ -190,7 +190,8 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
   return result;
 }
 
-Field3D Div_par_K_Grad_par(const Field3D& Kin, const Field3D& fin, bool bndry_flux) {
+Field3D Div_par_K_Grad_par(const Field3DParallel& Kin, const Field3DParallel& fin,
+                           bool bndry_flux) {
 
   ASSERT2(Kin.getLocation() == fin.getLocation());
 

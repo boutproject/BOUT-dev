@@ -25,6 +25,7 @@
 #include "bout/interpolation_z.hxx"
 #include "bout/mesh.hxx"
 
+#include <algorithm>
 #include <vector>
 
 ZHermiteSpline::ZHermiteSpline(int y_offset, Mesh* mesh, Region<Ind3D> region_in)
@@ -46,8 +47,7 @@ ZHermiteSpline::ZHermiteSpline(int y_offset, Mesh* mesh, Region<Ind3D> region_in
 
   // Initialise in order to avoid 'uninitialized value' errors from Valgrind when using
   // guard-cell values
-  std::fill(std::begin(k_corner), std::end(k_corner),
-            Ind3D(-1, localmesh->LocalNy, localmesh->LocalNz));
+  std::ranges::fill(k_corner, Ind3D(-1, localmesh->LocalNy, localmesh->LocalNz));
 
   // Allocate Field3D members
   h00.allocate();
