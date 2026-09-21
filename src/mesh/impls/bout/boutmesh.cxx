@@ -75,6 +75,13 @@ bool contains(const std::string& haystack, const std::string& needle) {
                      })
          != haystack.end();
 }
+
+bool equals_ignoring_case(const std::string& lhs, const std::string& rhs) {
+  return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(),
+                    [](unsigned char a, unsigned char b) {
+                      return std::toupper(a) == std::toupper(b);
+                    });
+}
 } // namespace
 
 /// MPI type of BoutReal for communications
@@ -236,13 +243,13 @@ MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Retu
 
   // Use the INGRID topology setting
   if (!IngridTopology.empty()) {
-    if ((IngridTopology == "closed_field_line") || (IngridTopology == "CFL")) {
+    if (equals_ignoring_case(IngridTopology, "closed_field_line") || equals_ignoring_case(IngridTopology, "CFL")) {
       return MeshTopology::closed_field_line;
-    } else if ((contains(IngridTopology, "single_null")) || (IngridTopology == "SN")) {
+    } else if ((contains(IngridTopology, "single_null")) || equals_ignoring_case(IngridTopology, "SN")) {
       return MeshTopology::single_null;
-    } else if ((IngridTopology == "unconnected_double_null") || (IngridTopology == "UN")) {
+    } else if (equals_ignoring_case(IngridTopology, "unconnected_double_null") || equals_ignoring_case(IngridTopology, "UDN")) {
       return MeshTopology::unconnected_double_null;
-    } else if ((IngridTopology == "connected_double_null") || (IngridTopology == "CN")) {
+    } else if (equals_ignoring_case(IngridTopology, "connected_double_null") || equals_ignoring_case(IngridTopology, "CDN")) {
       return MeshTopology::connected_double_null;
     } else if ((contains(IngridTopology, "SF")) || (contains(IngridTopology, "snowflake"))) {
       return MeshTopology::snowflake;
@@ -472,12 +479,12 @@ namespace bout {
           }
 
           //Check central region
-          if ((jyseps2_1) % num_local_y_points != 0) {
+          if ((jyseps2_1 + 1) % num_local_y_points != 0) {
           return {
               false,
-              fmt::format(_f("\t -> central region jyseps2_1 ({:d}) must "
+              fmt::format(_f("\t -> central region jyseps2_1+1 ({:d}) must "
                               "be a multiple of MYSUB ({:d})\n"),
-                          jyseps2_1, num_local_y_points)};
+                          jyseps2_1 + 1, num_local_y_points)};
           }
 
           //Check South leg region
@@ -536,12 +543,12 @@ namespace bout {
           }
 
           //Check central region
-          if ((jyseps2_1) % num_local_y_points != 0) {
+          if ((jyseps2_1 + 1) % num_local_y_points != 0) {
           return {
               false,
-              fmt::format(_f("\t -> central region jyseps2_1-1 ({:d}) must "
+              fmt::format(_f("\t -> central region jyseps2_1+1 ({:d}) must "
                               "be a multiple of MYSUB ({:d})\n"),
-                          jyseps2_1, num_local_y_points)};
+                          jyseps2_1 + 1, num_local_y_points)};
           }
           
           if ((ny - 1 - jyseps1_2) % num_local_y_points != 0) {
@@ -606,12 +613,12 @@ namespace bout {
           }
 
           //Check central region
-          if ((jyseps2_1) % num_local_y_points != 0) {
+          if ((jyseps2_1 + 1) % num_local_y_points != 0) {
           return {
               false,
-              fmt::format(_f("\t -> central region jyseps2_1-1 ({:d}) must "
+              fmt::format(_f("\t -> central region jyseps2_1+1 ({:d}) must "
                               "be a multiple of MYSUB ({:d})\n"),
-                          jyseps2_1, num_local_y_points)};
+                          jyseps2_1 + 1, num_local_y_points)};
           }
           
           if ((ny - 1 - jyseps1_2) % num_local_y_points != 0) {
@@ -734,8 +741,8 @@ namespace bout {
               if (mesh_topology == MeshTopology::unconnected_double_null || mesh_topology == MeshTopology::connected_double_null){
                 if (not (jyseps1_1 < jyseps2_1 &&
                   jyseps2_1 < ny_inner &&
-                  jyseps1_2 < ny_inner &&
-                  ny_inner < jyseps2_2)){
+                  ny_inner <= jyseps1_2 &&
+                  jyseps1_2 < jyseps2_2)){
                   continue;
                   }}
               else if (mesh_topology == MeshTopology::snowflake){
@@ -2319,7 +2326,8 @@ void BoutMesh::createCommunicators() {
     // Core region
     TRACE("Creating core communicators");
     //Works for SN and every snowflake but SF+ HFS. For connected_double_null and unconnected_double_null its the inner core region.
-    if (mesh_topology == MeshTopology::single_null || mesh_topology == MeshTopology::connected_double_null || mesh_topology == MeshTopology::unconnected_double_null || 
+    if (mesh_topology == MeshTopology::single_null || mesh_topology == MeshTopology::closed_field_line || 
+        mesh_topology == MeshTopology::connected_double_null || mesh_topology == MeshTopology::unconnected_double_null || 
         (mesh_topology == MeshTopology::snowflake && snowflake_type != SnowflakeType::SF_plus_high_field_side)) {
         
       group_tmp1 = MPI_GROUP_EMPTY;
@@ -2361,8 +2369,9 @@ void BoutMesh::createCommunicators() {
       }
     }
 
-    //Only for connected_double_null and unconnected_double_null outer core region, or for the extra core region in SF- configurations.
-    if (mesh_topology == MeshTopology::connected_double_null || mesh_topology == MeshTopology::unconnected_double_null ||
+    //For connected_double_null and unconnected_double_null outer core region, for the extra core region in SF- configurations, or for the union of the SN and CFS domain: (jyseps1_1, jyseps2_1] ∪ (jyseps1_2, jyseps2_2].
+    if (mesh_topology == MeshTopology::single_null || mesh_topology == MeshTopology::closed_field_line || 
+        mesh_topology == MeshTopology::connected_double_null || mesh_topology == MeshTopology::unconnected_double_null ||
        (mesh_topology == MeshTopology::snowflake && (snowflake_type == SnowflakeType::SF_minus_low_field_side || snowflake_type == SnowflakeType::SF_minus_high_field_side))){
 
       if (jyseps2_2 > jyseps1_2) {
@@ -2700,7 +2709,7 @@ void BoutMesh::createXBoundaries() {
       }
     }
     else{
-      if (snowflake_type == SnowflakeType::SF_minus_low_field_side || snowflake_type == SnowflakeType::SF){ 
+      if (snowflake_type == SnowflakeType::SF_plus_low_field_side || snowflake_type == SnowflakeType::SF){ 
         //Snowflake + LFS has one core region at (jyseps1_1, jyseps2_1].
         const bool in_core = ((yg > jyseps1_1) and (yg <= jyseps2_1));
 
@@ -3604,6 +3613,10 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
   ZMAX = 1.0;
   zperiod = 1.0;
 
+  mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner,
+                                  ixseps1, ixseps2, IngridTopology);
+  snowflake_type = getSnowflakeType(mesh_topology, IngridTopology);
+
   if (not create_topology) {
     return;
   }
@@ -3900,7 +3913,7 @@ void BoutMesh::topology() {
     throw BoutException("\tERROR: Grid Y size must be >= guard cell size\n");
   }
 
-  if (mesh_topology == MeshTopology::single_null) {
+  if (mesh_topology == MeshTopology::single_null || mesh_topology == MeshTopology::closed_field_line) {
     
     output_info.write("\tEQUILIBRIUM IS SINGLE NULL (SND) \n");
 
@@ -3916,7 +3929,7 @@ void BoutMesh::topology() {
   
     /* UPPER LEGS: Do not have to be the same length as each
        other or lower legs, but do have to have an integer number
-       of processors */
+       of processors */ 
     if ((ny_inner - jyseps2_1 - 1) % MYSUB != 0) {
       throw BoutException("\tTopology error: Upper inner leg does not have integer "
                           "number of processors\n");
@@ -4014,7 +4027,7 @@ void BoutMesh::topology() {
       /* Each PFR does not have to be the same length as each
         other, but do have to have an integer number
         of processors */
-      if ((ny_inner - jyseps1_2 - 1) % MYSUB != 0 || (jyseps2_1) % MYSUB != 0) {
+      if ((ny_inner - jyseps1_2 - 1) % MYSUB != 0 || (jyseps2_1 + 1) % MYSUB != 0) {
         throw BoutException("\tTopology error: Central PFR does not have integer "
                             "number of processors\n");
       }
@@ -4061,7 +4074,7 @@ void BoutMesh::topology() {
       /* Each PFR does not have to be the same length as each
         other, but do have to have an integer number
         of processors */
-      if (jyseps2_1 % MYSUB != 0 || (ny - 1 - jyseps1_2) % MYSUB != 0) {
+      if ((jyseps2_1 + 1) % MYSUB != 0 || (ny - 1 - jyseps1_2) % MYSUB != 0) {
         throw BoutException("\tTopology error: Central PFR does not have integer "
                             "number of processors\n");
       }
@@ -4146,6 +4159,8 @@ void BoutMesh::topology() {
       // Add East target
       add_target(ny_inner - 1, 0, nx);
     }
+  } else {
+    throw BoutException("\tTopology error: Unknown topology\n");
   }
 
   // Additional limiters
@@ -5358,7 +5373,7 @@ BoutReal BoutMesh::GlobalY(int jy) const {
 
       if (yi < ny_inner) {
         // before East target
-        yi -= jyseps1_1 + 0.5;
+        yi -= jyseps2_1 + 0.5;
       }
       return yi / nycore;
       }

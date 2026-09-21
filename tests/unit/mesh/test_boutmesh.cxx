@@ -9,6 +9,7 @@
 #include "fake_mesh.hxx"
 
 #include <array>
+#include <cstdio>
 #include <iostream>
 #include <ostream>
 #include <sstream>
@@ -57,6 +58,8 @@ public:
   using BoutMesh::YPROC;
   using BoutMesh::getMeshTopology;
   using BoutMesh::IngridTopology;
+  using BoutMesh::mesh_topology;
+  using BoutMesh::snowflake_type;
 };
 
 /// Minimal parameters need to construct a grid useful for testing
@@ -570,6 +573,214 @@ TEST_P(BadBoutMeshDecompositionTest, BadSingleCoreYDecomposition) {
   EXPECT_THAT(result.reason, HasSubstr(params.expected_message));
 }
 
+////////////////////////////////////////////////////////////
+// Y decomposition for each member of the snowflake family
+
+/// Y indices laid out so that every region of an SF+ topology is exactly
+/// `mysub` points long, with `nype` = 6 and `ny` = 6 * `mysub`.
+///
+///   [0, jyseps1_1]            W target
+///   (jyseps1_1, jyseps2_1]    core / W PFR middle
+///   (jyseps2_1, jyseps1_2]    core / W PFR middle
+///   (jyseps1_2, ny_inner-1]   E PFR above the E target
+///   [ny_inner, jyseps2_2]     E PFR below the E target
+///   (jyseps2_2, ny-1]         S target
+BoutMeshExposer::YDecompositionIndices snowflakePlusIndices(int mysub) {
+  return {mysub - 1, (2 * mysub) - 1, (3 * mysub) - 1, (5 * mysub) - 1, 4 * mysub};
+}
+
+/// As `snowflakePlusIndices`, but for SF-: the second X-point is in the SOL, so
+/// `ny_inner` sits between `jyseps2_1` and `jyseps1_2` instead.
+BoutMeshExposer::YDecompositionIndices snowflakeMinusIndices(int mysub) {
+  return {mysub - 1, (2 * mysub) - 1, (4 * mysub) - 1, (5 * mysub) - 1, 3 * mysub};
+}
+
+struct SnowflakeDecompositionParameters {
+  SnowflakeType snowflake_type;
+  BoutMeshExposer::YDecompositionIndices indices;
+  std::string test_name;
+};
+
+std::ostream& operator<<(std::ostream& out,
+                         const SnowflakeDecompositionParameters& value) {
+  return out << "SnowflakeDecompositionParameters{snowflake_type="
+             << toString(value.snowflake_type) << ", indices=" << value.indices << "}";
+}
+
+std::string SnowflakeDecompositionParametersToString(
+    const ::testing::TestParamInfo<SnowflakeDecompositionParameters>& param) {
+  return param.param.test_name;
+}
+
+struct SnowflakeFamilyDecompositionTest
+    : public ::testing::TestWithParam<SnowflakeDecompositionParameters> {};
+
+/// `mysub` and `nype` used by every case below
+constexpr int snowflake_mysub = 4;
+constexpr int snowflake_nype = 6;
+constexpr int snowflake_ny = snowflake_mysub * snowflake_nype;
+
+INSTANTIATE_TEST_SUITE_P(
+    EveryRegionExactlyOneProcessor, SnowflakeFamilyDecompositionTest,
+    ::testing::Values(
+        SnowflakeDecompositionParameters{SnowflakeType::SF_plus_low_field_side,
+                                         snowflakePlusIndices(snowflake_mysub),
+                                         "SFplusLFS"},
+        SnowflakeDecompositionParameters{SnowflakeType::SF_plus_high_field_side,
+                                         snowflakePlusIndices(snowflake_mysub),
+                                         "SFplusHFS"},
+        SnowflakeDecompositionParameters{SnowflakeType::SF_minus_low_field_side,
+                                         snowflakeMinusIndices(snowflake_mysub),
+                                         "SFminusLFS"},
+        SnowflakeDecompositionParameters{SnowflakeType::SF_minus_high_field_side,
+                                         snowflakeMinusIndices(snowflake_mysub),
+                                         "SFminusHFS"},
+        SnowflakeDecompositionParameters{SnowflakeType::SF,
+                                         snowflakePlusIndices(snowflake_mysub),
+                                         "GenericSF"}),
+    SnowflakeDecompositionParametersToString);
+
+/// Every branch cut in these layouts falls exactly on a processor boundary, so
+/// the decomposition has to be accepted whichever family member it is.
+TEST_P(SnowflakeFamilyDecompositionTest, EveryRegionIsAWholeNumberOfProcessors) {
+  const auto params = GetParam();
+
+  const auto result = bout::checkBoutMeshYDecomposition(
+      snowflake_nype, snowflake_ny, 1, params.indices.jyseps1_1,
+      params.indices.jyseps2_1, params.indices.jyseps1_2, params.indices.jyseps2_2,
+      params.indices.ny_inner, MeshTopology::snowflake, params.snowflake_type);
+
+  EXPECT_TRUE(result.success) << result.reason;
+  EXPECT_TRUE(result.reason.empty()) << result.reason;
+}
+
+/// Shifting a single branch cut off a processor boundary has to be rejected.
+/// `jyseps2_2` bounds a leg region in every member of the family.
+TEST_P(SnowflakeFamilyDecompositionTest, RejectsBranchCutOffProcessorBoundary) {
+  const auto params = GetParam();
+
+  const auto result = bout::checkBoutMeshYDecomposition(
+      snowflake_nype, snowflake_ny, 1, params.indices.jyseps1_1,
+      params.indices.jyseps2_1, params.indices.jyseps1_2, params.indices.jyseps2_2 - 1,
+      params.indices.ny_inner, MeshTopology::snowflake, params.snowflake_type);
+
+  EXPECT_FALSE(result.success);
+  EXPECT_FALSE(result.reason.empty());
+}
+
+/// The core is bounded by `jyseps2_1` in SF+ LFS and SF-, and by `jyseps1_2` in
+/// SF+ HFS, so moving `jyseps2_1` has to be rejected by all of them: it also
+/// breaks the W PFR middle segment for SF+ HFS.
+TEST_P(SnowflakeFamilyDecompositionTest, RejectsCoreOffProcessorBoundary) {
+  const auto params = GetParam();
+
+  const auto result = bout::checkBoutMeshYDecomposition(
+      snowflake_nype, snowflake_ny, 1, params.indices.jyseps1_1,
+      params.indices.jyseps2_1 + 1, params.indices.jyseps1_2, params.indices.jyseps2_2,
+      params.indices.ny_inner, MeshTopology::snowflake, params.snowflake_type);
+
+  EXPECT_FALSE(result.success);
+  EXPECT_FALSE(result.reason.empty());
+}
+
+/// findValidYDecomposition must only ever suggest an index set that
+/// checkBoutMeshYDecomposition then accepts, for the same family member.
+TEST_P(SnowflakeFamilyDecompositionTest, SuggestedDecompositionIsSelfConsistent) {
+  const auto params = GetParam();
+
+  const auto suggestion = bout::findValidYDecomposition(
+      snowflake_ny, snowflake_nype, 1, 0, 1, 2, 3, 1, MeshTopology::snowflake,
+      params.snowflake_type);
+
+  ASSERT_TRUE(suggestion.success) << suggestion.reason;
+
+  int jyseps1_1 = -1;
+  int jyseps2_1 = -1;
+  int jyseps1_2 = -1;
+  int jyseps2_2 = -1;
+  int ny_inner = -1;
+  const auto found = std::sscanf(
+      suggestion.reason.c_str(),
+      "\t -> A valid decomposition in Y close to the one given in the grid would be: "
+      "jyseps1_1=%d, jyseps2_1=%d, jyseps1_2=%d, jyseps2_2=%d, ny_inner=%d",
+      &jyseps1_1, &jyseps2_1, &jyseps1_2, &jyseps2_2, &ny_inner);
+  ASSERT_EQ(found, 5) << suggestion.reason;
+
+  const auto recheck = bout::checkBoutMeshYDecomposition(
+      snowflake_nype, snowflake_ny, 1, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2,
+      ny_inner, MeshTopology::snowflake, params.snowflake_type);
+
+  EXPECT_TRUE(recheck.success) << recheck.reason;
+}
+
+/// The branch-cut ordering findValidYDecomposition searches over has to match
+/// the one the topology actually uses: SF+ puts both core branch cuts below
+/// `ny_inner`, SF- puts `ny_inner` between them.
+TEST_P(SnowflakeFamilyDecompositionTest, SuggestedDecompositionHasTheRightOrdering) {
+  const auto params = GetParam();
+
+  const auto suggestion = bout::findValidYDecomposition(
+      snowflake_ny, snowflake_nype, 1, 0, 1, 2, 3, 1, MeshTopology::snowflake,
+      params.snowflake_type);
+
+  ASSERT_TRUE(suggestion.success) << suggestion.reason;
+
+  int jyseps1_1 = -1;
+  int jyseps2_1 = -1;
+  int jyseps1_2 = -1;
+  int jyseps2_2 = -1;
+  int ny_inner = -1;
+  const auto found = std::sscanf(
+      suggestion.reason.c_str(),
+      "\t -> A valid decomposition in Y close to the one given in the grid would be: "
+      "jyseps1_1=%d, jyseps2_1=%d, jyseps1_2=%d, jyseps2_2=%d, ny_inner=%d",
+      &jyseps1_1, &jyseps2_1, &jyseps1_2, &jyseps2_2, &ny_inner);
+  ASSERT_EQ(found, 5) << suggestion.reason;
+
+  EXPECT_LT(jyseps1_1, jyseps2_1) << suggestion.reason;
+
+  const bool is_snowflake_minus =
+      params.snowflake_type == SnowflakeType::SF_minus_low_field_side
+      or params.snowflake_type == SnowflakeType::SF_minus_high_field_side;
+
+  if (is_snowflake_minus) {
+    EXPECT_LT(jyseps2_1, ny_inner) << suggestion.reason;
+    EXPECT_LE(ny_inner, jyseps1_2) << suggestion.reason;
+    EXPECT_LT(jyseps1_2, jyseps2_2) << suggestion.reason;
+  } else {
+    EXPECT_LT(jyseps2_1, jyseps1_2) << suggestion.reason;
+    EXPECT_LT(jyseps1_2, ny_inner) << suggestion.reason;
+    EXPECT_LT(ny_inner, jyseps2_2) << suggestion.reason;
+  }
+}
+
+/// Regression: the double-null search must keep `ny_inner` between the two core
+/// branch cuts. If it searches the snowflake ordering (`jyseps1_2 < ny_inner`)
+/// it will suggest an index set that is not a double null at all.
+TEST(BoutMeshDecompositionTest, ValidDoubleNullDecompositionKeepsDoubleNullOrdering) {
+  const auto suggestion = bout::findValidYDecomposition(
+      24, 6, 1, 0, 1, 2, 3, 1, MeshTopology::unconnected_double_null);
+
+  ASSERT_TRUE(suggestion.success) << suggestion.reason;
+
+  int jyseps1_1 = -1;
+  int jyseps2_1 = -1;
+  int jyseps1_2 = -1;
+  int jyseps2_2 = -1;
+  int ny_inner = -1;
+  const auto found = std::sscanf(
+      suggestion.reason.c_str(),
+      "\t -> A valid decomposition in Y close to the one given in the grid would be: "
+      "jyseps1_1=%d, jyseps2_1=%d, jyseps1_2=%d, jyseps2_2=%d, ny_inner=%d",
+      &jyseps1_1, &jyseps2_1, &jyseps1_2, &jyseps2_2, &ny_inner);
+  ASSERT_EQ(found, 5) << suggestion.reason;
+
+  EXPECT_LT(jyseps1_1, jyseps2_1) << suggestion.reason;
+  EXPECT_LT(jyseps2_1, ny_inner) << suggestion.reason;
+  EXPECT_LE(ny_inner, jyseps1_2) << suggestion.reason;
+  EXPECT_LT(jyseps1_2, jyseps2_2) << suggestion.reason;
+}
+
 
   TEST(BoutMeshDecompositionTest, ValidYDecomposition) {
   int ny = 16;
@@ -827,13 +1038,24 @@ struct GetSnowflakeTypeTest : public ::testing::TestWithParam<SnowflakeTypeParam
 INSTANTIATE_TEST_SUITE_P(
     SnowflakeFamily, GetSnowflakeTypeTest,
     ::testing::Values(
-        SnowflakeTypeParameters{MeshTopology::snowflake, "SF15", SnowflakeType::SF15, "SF15"},
-        SnowflakeTypeParameters{MeshTopology::snowflake, "SF45", SnowflakeType::SF45, "SF45"},
-        SnowflakeTypeParameters{MeshTopology::snowflake, "SF75", SnowflakeType::SF75, "SF75"},
-        SnowflakeTypeParameters{MeshTopology::snowflake, "SF105", SnowflakeType::SF105, "SF105"},
-        SnowflakeTypeParameters{MeshTopology::snowflake, "SF135", SnowflakeType::SF135, "SF135"},
-        SnowflakeTypeParameters{MeshTopology::snowflake, "SF165", SnowflakeType::SF165,
-                                "SF165"}),
+        SnowflakeTypeParameters{MeshTopology::snowflake, "SF15",
+                                SnowflakeType::SF_minus_low_field_side, "SF15"},
+        SnowflakeTypeParameters{MeshTopology::snowflake, "SF45",
+                                SnowflakeType::SF_plus_low_field_side, "SF45"},
+        SnowflakeTypeParameters{MeshTopology::snowflake, "SF75",
+                                SnowflakeType::SF_plus_low_field_side, "SF75"},
+        SnowflakeTypeParameters{MeshTopology::snowflake, "SF105",
+                                SnowflakeType::SF_plus_high_field_side, "SF105"},
+        SnowflakeTypeParameters{MeshTopology::snowflake, "SF135",
+                                SnowflakeType::SF_plus_high_field_side, "SF135"},
+        SnowflakeTypeParameters{MeshTopology::snowflake, "SF165",
+                                SnowflakeType::SF_minus_high_field_side, "SF165"},
+        // The INGRID label is upper-cased by readIngridTopology, but
+        // getSnowflakeType is also called directly with raw strings
+        SnowflakeTypeParameters{MeshTopology::snowflake, "sf165",
+                                SnowflakeType::SF_minus_high_field_side, "SF165LowerCase"},
+        SnowflakeTypeParameters{MeshTopology::snowflake, " SF45 ",
+                                SnowflakeType::SF_plus_low_field_side, "SF45Padded"}),
     SnowflakeTypeParametersToString);
 
 INSTANTIATE_TEST_SUITE_P(
@@ -877,6 +1099,99 @@ TEST_P(GetSnowflakeTypeTest, ClassifiesSnowflakeFamilyMember) {
 
   EXPECT_EQ(mesh.getSnowflakeType(params.mesh_topology, params.ingrid_topology),
             params.expected);
+}
+
+// getMeshTopology driven by the INGRID `topology` label rather than the
+// separatrix indices.
+
+struct MeshTopologyFromLabelParameters {
+  std::string ingrid_topology;
+  MeshTopology expected;
+  std::string test_name;
+};
+
+std::ostream& operator<<(std::ostream& out, const MeshTopologyFromLabelParameters& value) {
+  return out << "MeshTopologyFromLabelParameters{ingrid_topology='"
+             << value.ingrid_topology << "', expected=" << toString(value.expected) << "}";
+}
+
+std::string MeshTopologyFromLabelParametersToString(
+    const ::testing::TestParamInfo<MeshTopologyFromLabelParameters>& param) {
+  return param.param.test_name;
+}
+
+struct GetMeshTopologyFromLabelTest
+    : public ::testing::TestWithParam<MeshTopologyFromLabelParameters> {};
+
+INSTANTIATE_TEST_SUITE_P(
+    AcronymLabels, GetMeshTopologyFromLabelTest,
+    ::testing::Values(
+        MeshTopologyFromLabelParameters{"CFL", MeshTopology::closed_field_line, "CFL"},
+        MeshTopologyFromLabelParameters{"SN", MeshTopology::single_null, "SN"},
+        MeshTopologyFromLabelParameters{"UDN", MeshTopology::unconnected_double_null,
+                                        "UDN"},
+        MeshTopologyFromLabelParameters{"CDN", MeshTopology::connected_double_null, "CDN"},
+        MeshTopologyFromLabelParameters{"SF45", MeshTopology::snowflake, "SF45"},
+        MeshTopologyFromLabelParameters{"SF165", MeshTopology::snowflake, "SF165"},
+        MeshTopologyFromLabelParameters{"XPT", MeshTopology::XPoint_target, "XPT"}),
+    MeshTopologyFromLabelParametersToString);
+
+INSTANTIATE_TEST_SUITE_P(
+    LongLabels, GetMeshTopologyFromLabelTest,
+    ::testing::Values(
+        MeshTopologyFromLabelParameters{"CLOSED_FIELD_LINE",
+                                        MeshTopology::closed_field_line,
+                                        "ClosedFieldLine"},
+        MeshTopologyFromLabelParameters{"SINGLE_NULL", MeshTopology::single_null,
+                                        "SingleNull"},
+        MeshTopologyFromLabelParameters{"UNCONNECTED_DOUBLE_NULL",
+                                        MeshTopology::unconnected_double_null,
+                                        "UnconnectedDoubleNull"},
+        MeshTopologyFromLabelParameters{"CONNECTED_DOUBLE_NULL",
+                                        MeshTopology::connected_double_null,
+                                        "ConnectedDoubleNull"},
+        MeshTopologyFromLabelParameters{"SNOWFLAKE", MeshTopology::snowflake, "Snowflake"},
+        MeshTopologyFromLabelParameters{"XPOINT_TARGET", MeshTopology::XPoint_target,
+                                        "XPointTarget"}),
+    MeshTopologyFromLabelParametersToString);
+
+/// The label wins over the separatrix indices. The indices used here would be
+/// classified as a snowflake by the index-based fallback (ny_inner lies between
+/// jyseps1_2 and jyseps2_2), so any answer other than the label's is the
+/// fallback leaking through.
+TEST_P(GetMeshTopologyFromLabelTest, LabelTakesPrecedenceOverIndices) {
+  WithQuietOutput warn{output_warn};
+  const auto params = GetParam();
+
+  BoutMeshExposer mesh(8, 8, 1, 1, 1);
+
+  EXPECT_EQ(mesh.getMeshTopology(7, 39, 45, 63, 56, 8, 5, params.ingrid_topology),
+            params.expected);
+}
+
+TEST_F(BoutMeshTest, GetMeshTopologyUnrecognisedLabelFallsBackToIndices) {
+  BoutMeshExposer mesh(8, 8, 1, 1, 1);
+
+  // Not a label the reader knows about, so the separatrix indices decide. These
+  // indices are a snowflake.
+  EXPECT_EQ(mesh.getMeshTopology(7, 39, 45, 63, 56, 8, 5, "BN"),
+            MeshTopology::snowflake);
+}
+
+TEST(GetMeshTopologyTest, UnrecognisedLabelWarns) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput debug{output_debug};
+  WithQuietOutput progress{output_progress};
+
+  std::stringstream buffer;
+  auto* old_buffer = std::cout.rdbuf(buffer.rdbuf());
+  {
+    BoutMeshExposer mesh(8, 8, 1, 1, 1);
+    mesh.getMeshTopology(7, 39, 45, 63, 56, 8, 5, "BN");
+  }
+  std::cout.rdbuf(old_buffer);
+
+  EXPECT_THAT(buffer.str(), ::testing::HasSubstr("BN"));
 }
 
 // readIngridTopology
@@ -2463,6 +2778,197 @@ TEST_F(BoutMeshTest, CreateXBoundariesSnowflakeSingleCoreInX) {
   // Outer must be SOL or south PF outer
   EXPECT_TRUE(boundaries[1]->label == "sol"
           || boundaries[1]->label == "south_pf_outer");
+}
+
+////////////////////////////////////////////////////////////
+// Mesh-level tests for each member of the snowflake family
+//
+// These build the mesh with `create_topology = false` so that
+// `snowflake_type` can be set before `topology()` runs: the family member is
+// not recoverable from the separatrix indices alone, it comes from the INGRID
+// label.
+
+bool isSnowflakeMinus(SnowflakeType snowflake_type) {
+  return snowflake_type == SnowflakeType::SF_minus_low_field_side
+         or snowflake_type == SnowflakeType::SF_minus_high_field_side;
+}
+
+/// Set up `mesh` (built with `nype` = 6 and MYSUB = `snowflake_mysub`) as the
+/// given member of the snowflake family and build its topology.
+///
+/// SF+ has its second X-point in the private flux region, so its separatrix is
+/// at smaller x than the primary (`ixseps2 < ixseps1`); SF- has it in the SOL,
+/// so the other way round.
+void buildSnowflakeTopology(BoutMeshExposer& mesh, SnowflakeType snowflake_type) {
+  const bool is_minus = isSnowflakeMinus(snowflake_type);
+
+  mesh.setXDecompositionIndices(is_minus ? BoutMeshExposer::XDecompositionIndices{2, 4}
+                                         : BoutMeshExposer::XDecompositionIndices{4, 2});
+  mesh.setYDecompositionIndices(is_minus ? snowflakeMinusIndices(snowflake_mysub)
+                                         : snowflakePlusIndices(snowflake_mysub));
+  mesh.mesh_topology = MeshTopology::snowflake;
+  mesh.snowflake_type = snowflake_type;
+  mesh.topology();
+}
+
+/// Global y index of the first cell of the core, for this family member.
+int firstCoreCell(SnowflakeType snowflake_type) {
+  const auto indices = isSnowflakeMinus(snowflake_type)
+                           ? snowflakeMinusIndices(snowflake_mysub)
+                           : snowflakePlusIndices(snowflake_mysub);
+  // SF+ HFS is the one member whose core starts at jyseps2_1 instead of
+  // jyseps1_1
+  return (snowflake_type == SnowflakeType::SF_plus_high_field_side ? indices.jyseps2_1
+                                                                   : indices.jyseps1_1)
+         + 1;
+}
+
+struct SnowflakeFamilyMeshTest : public ::testing::TestWithParam<SnowflakeType> {
+  WithQuietOutput debug{output_debug};
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  WithQuietOutput progress{output_progress};
+};
+
+std::string SnowflakeTypeToTestName(const ::testing::TestParamInfo<SnowflakeType>& param) {
+  return toString(param.param);
+}
+
+INSTANTIATE_TEST_SUITE_P(SnowflakeFamily, SnowflakeFamilyMeshTest,
+                         ::testing::Values(SnowflakeType::SF_plus_low_field_side,
+                                           SnowflakeType::SF_plus_high_field_side,
+                                           SnowflakeType::SF_minus_low_field_side,
+                                           SnowflakeType::SF_minus_high_field_side,
+                                           SnowflakeType::SF),
+                         SnowflakeTypeToTestName);
+
+/// A layout where every region is exactly one processor long has to be
+/// accepted by `topology()` for every member of the family.
+TEST_P(SnowflakeFamilyMeshTest, TopologyAcceptsAlignedBranchCuts) {
+  BoutMeshExposer mesh(6, snowflake_mysub, 1, 1, snowflake_nype, 0, 0, false);
+
+  EXPECT_NO_THROW(buildSnowflakeTopology(mesh, GetParam()));
+}
+
+/// The inner X face is always either core or private flux, never nothing.
+TEST_P(SnowflakeFamilyMeshTest, CreateXBoundariesAlwaysLabelsTheInnerFace) {
+  // nxpe = 2 and pe_xind = 0, so only the inner X face is a boundary
+  BoutMeshExposer mesh(6, snowflake_mysub, 1, 2, snowflake_nype, 0, 2, false);
+  buildSnowflakeTopology(mesh, GetParam());
+
+  mesh.createXBoundaries();
+
+  const auto boundaries = mesh.getBoundaries();
+  ASSERT_EQ(boundaries.size(), 1);
+  EXPECT_TRUE(boundaries[0]->label == "core" or boundaries[0]->label == "pf")
+      << boundaries[0]->label;
+}
+
+/// The processor holding the first core cell must get a "core" inner boundary.
+TEST_P(SnowflakeFamilyMeshTest, CreateXBoundariesLabelsTheCoreAsCore) {
+  const int core_yproc = firstCoreCell(GetParam()) / snowflake_mysub;
+
+  BoutMeshExposer mesh(6, snowflake_mysub, 1, 2, snowflake_nype, 0, core_yproc, false);
+  buildSnowflakeTopology(mesh, GetParam());
+
+  mesh.createXBoundaries();
+
+  const auto boundaries = mesh.getBoundaries();
+  ASSERT_EQ(boundaries.size(), 1);
+  EXPECT_EQ(boundaries[0]->label, "core");
+}
+
+/// The processor holding the west target is private flux, not core.
+TEST_P(SnowflakeFamilyMeshTest, CreateXBoundariesLabelsTheWestTargetAsPF) {
+  BoutMeshExposer mesh(6, snowflake_mysub, 1, 2, snowflake_nype, 0, 0, false);
+  buildSnowflakeTopology(mesh, GetParam());
+
+  mesh.createXBoundaries();
+
+  const auto boundaries = mesh.getBoundaries();
+  ASSERT_EQ(boundaries.size(), 1);
+  EXPECT_EQ(boundaries[0]->label, "pf");
+}
+
+/// `ySize` returns the number of y points along the field line through a given
+/// x position, so it has to be positive and can never exceed `ny`. This is the
+/// invariant that catches an x/y pair falling through every branch.
+TEST_P(SnowflakeFamilyMeshTest, YSizeIsAlwaysAValidFieldLineLength) {
+  for (int pe_yind = 0; pe_yind < snowflake_nype; ++pe_yind) {
+    SCOPED_TRACE(fmt::format("pe_yind = {}", pe_yind));
+
+    BoutMeshExposer mesh(6, snowflake_mysub, 1, 1, snowflake_nype, 0, pe_yind, false);
+    buildSnowflakeTopology(mesh, GetParam());
+
+    for (int xpos = 0; xpos < mesh.LocalNx; ++xpos) {
+      SCOPED_TRACE(fmt::format("xpos = {}", xpos));
+      const int y_size = mesh.ySize(xpos);
+      EXPECT_GT(y_size, 0);
+      EXPECT_LE(y_size, snowflake_ny);
+    }
+  }
+}
+
+/// Every member of the family has a single outer SOL, running from y = 0 up to
+/// the east target at y = ny_inner - 1.
+TEST_P(SnowflakeFamilyMeshTest, YSizeOfTheOuterSOL) {
+  const auto indices = isSnowflakeMinus(GetParam())
+                           ? snowflakeMinusIndices(snowflake_mysub)
+                           : snowflakePlusIndices(snowflake_mysub);
+
+  // pe_yind = 0 is below ny_inner for both layouts
+  BoutMeshExposer mesh(6, snowflake_mysub, 1, 1, snowflake_nype, 0, 0, false);
+  buildSnowflakeTopology(mesh, GetParam());
+
+  // Outermost x point, well outside both separatrices
+  EXPECT_EQ(mesh.ySize(mesh.LocalNx - 1), indices.ny_inner);
+}
+
+/// `GlobalY` normalises y over the core, so the first core cell sits half a
+/// cell in: 0.5 / (number of core cells).
+TEST_P(SnowflakeFamilyMeshTest, GlobalYIsNormalisedOverThisMembersCore) {
+  const auto snowflake_type = GetParam();
+  const auto indices = isSnowflakeMinus(snowflake_type)
+                           ? snowflakeMinusIndices(snowflake_mysub)
+                           : snowflakePlusIndices(snowflake_mysub);
+
+  const int first_core = firstCoreCell(snowflake_type);
+  const int core_length = snowflake_type == SnowflakeType::SF_plus_high_field_side
+                              ? indices.jyseps1_2 - indices.jyseps2_1
+                              : indices.jyseps2_1 - indices.jyseps1_1;
+
+  BoutMeshExposer mesh(6, snowflake_mysub, 1, 1, snowflake_nype, 0,
+                       first_core / snowflake_mysub, false);
+  buildSnowflakeTopology(mesh, snowflake_type);
+
+  // Local y = MYG is the first non-guard cell, which is the first core cell on
+  // this processor
+  ASSERT_EQ(mesh.getGlobalYIndexNoBoundaries(mesh.ystart), first_core);
+
+  EXPECT_DOUBLE_EQ(mesh.GlobalY(mesh.ystart), 0.5 / core_length);
+}
+
+/// Regression: a closed field line has no X-points, so `topology()` used to
+/// fall into the single-null branch via `jyseps2_1 == jyseps1_2`. It still has
+/// to set up the same connections now that the branch is chosen by
+/// `mesh_topology`.
+TEST_F(BoutMeshTest, TopologyClosedFieldLineMatchesSingleNull) {
+  const BoutMeshExposer::YDecompositionIndices core_indices{-1, 1, 1, 2, 1};
+  const BoutMeshExposer::XDecompositionIndices no_separatrix{5, 5};
+
+  BoutMeshExposer closed_field_line(5, 3, 1, 1, 1, 0, 0, false);
+  closed_field_line.setXDecompositionIndices(no_separatrix);
+  closed_field_line.setYDecompositionIndices(core_indices);
+  closed_field_line.mesh_topology = MeshTopology::closed_field_line;
+  closed_field_line.topology();
+
+  BoutMeshExposer single_null(5, 3, 1, 1, 1, 0, 0, false);
+  single_null.setXDecompositionIndices(no_separatrix);
+  single_null.setYDecompositionIndices(core_indices);
+  single_null.mesh_topology = MeshTopology::single_null;
+  single_null.topology();
+
+  EXPECT_EQ(closed_field_line.getConnectionInfo(), single_null.getConnectionInfo());
 }
 
 

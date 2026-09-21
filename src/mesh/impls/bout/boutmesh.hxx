@@ -360,13 +360,13 @@ private:
 
   std::vector<BoutReal> ShiftAngle; ///< Angle for twist-shift location
 
-  MeshTopology mesh_topology;
-
-  SnowflakeType snowflake_type;
-
 protected:
   // These are protected so we can make them public in the test suite
   // for testing
+
+  MeshTopology mesh_topology;
+
+  SnowflakeType snowflake_type;
 
   std::string IngridTopology;
 
