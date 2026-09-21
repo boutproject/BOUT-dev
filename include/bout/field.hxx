@@ -612,7 +612,8 @@ BinaryExpr<Field2D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs) {
 }
 
 template <ExprField2D L, ExprField2D R>
-BinaryExpr<Field2D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs, const std::string& rgn) {
+BinaryExpr<Field2D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs,
+                                             const std::string& rgn) {
   ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
   return bout::detail::makePowExpr<Field2D, L, R>(
       static_cast<typename L::View>(lhs), static_cast<typename R::View>(rhs),
@@ -633,7 +634,8 @@ BinaryExpr<Field3D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs) {
 }
 
 template <ExprField3D L, ExprField3D R>
-BinaryExpr<Field3D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs, const std::string& rgn) {
+BinaryExpr<Field3D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs,
+                                             const std::string& rgn) {
   ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
   return bout::detail::makePowExpr<Field3D, L, R>(
       static_cast<typename L::View>(lhs), static_cast<typename R::View>(rhs),
@@ -654,7 +656,8 @@ BinaryExpr<Field3D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs) {
 }
 
 template <ExprField3D L, ExprField2D R>
-BinaryExpr<Field3D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs, const std::string& rgn) {
+BinaryExpr<Field3D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs,
+                                             const std::string& rgn) {
   ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
   int mesh_nz = lhs.getMesh()->LocalNz;
   return bout::detail::makePowExpr<Field3D, L, R>(
@@ -677,7 +680,8 @@ BinaryExpr<Field3D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs) {
 }
 
 template <ExprField2D L, ExprField3D R>
-BinaryExpr<Field3D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs, const std::string& rgn) {
+BinaryExpr<Field3D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs,
+                                             const std::string& rgn) {
   ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
   int mesh_nz = rhs.getMesh()->LocalNz;
   return bout::detail::makePowExpr<Field3D, L, R>(
@@ -696,7 +700,8 @@ BinaryExpr<Field2D, L, Constant<R>, bout::op::Pow> pow(const L& lhs, R rhs) {
 }
 
 template <ExprField2D L, ExprConstant R>
-BinaryExpr<Field2D, L, Constant<R>, bout::op::Pow> pow(const L& lhs, R rhs, const std::string& rgn) {
+BinaryExpr<Field2D, L, Constant<R>, bout::op::Pow> pow(const L& lhs, R rhs,
+                                                       const std::string& rgn) {
   return bout::detail::makePowExpr<Field2D, L, Constant<R>>(
       static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
       lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), std::nullopt,
@@ -712,7 +717,8 @@ BinaryExpr<Field2D, Constant<L>, R, bout::op::Pow> pow(L lhs, const R& rhs) {
 }
 
 template <ExprConstant L, ExprField2D R>
-BinaryExpr<Field2D, Constant<L>, R, bout::op::Pow> pow(L lhs, const R& rhs, const std::string& rgn) {
+BinaryExpr<Field2D, Constant<L>, R, bout::op::Pow> pow(L lhs, const R& rhs,
+                                                       const std::string& rgn) {
   return bout::detail::makePowExpr<Field2D, Constant<L>, R>(
       static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
       rhs.getMesh(), rhs.getLocation(), rhs.getDirections(), std::nullopt,
@@ -728,7 +734,8 @@ BinaryExpr<Field3D, L, Constant<R>, bout::op::Pow> pow(const L& lhs, R rhs) {
 }
 
 template <ExprField3D L, ExprConstant R>
-BinaryExpr<Field3D, L, Constant<R>, bout::op::Pow> pow(const L& lhs, R rhs, const std::string& rgn) {
+BinaryExpr<Field3D, L, Constant<R>, bout::op::Pow> pow(const L& lhs, R rhs,
+                                                       const std::string& rgn) {
   return bout::detail::makePowExpr<Field3D, L, Constant<R>>(
       static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
       lhs.getMesh(), lhs.getLocation(), lhs.getDirections(),
@@ -745,7 +752,8 @@ BinaryExpr<Field3D, Constant<L>, R, bout::op::Pow> pow(L lhs, const R& rhs) {
 }
 
 template <ExprConstant L, ExprField3D R>
-BinaryExpr<Field3D, Constant<L>, R, bout::op::Pow> pow(L lhs, const R& rhs, const std::string& rgn) {
+BinaryExpr<Field3D, Constant<L>, R, bout::op::Pow> pow(L lhs, const R& rhs,
+                                                       const std::string& rgn) {
   return bout::detail::makePowExpr<Field3D, Constant<L>, R>(
       static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
       rhs.getMesh(), rhs.getLocation(), rhs.getDirections(),
