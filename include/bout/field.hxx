@@ -358,7 +358,7 @@ inline T fromFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
 /// @param[in] f      Input field
 /// @param[in] allpe  Minimum over all processors?
 /// @param[in] rgn    The region to calculate the result over
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 inline BoutReal min(const T& f, bool allpe = false,
                     const std::string& rgn = "RGN_NOBNDRY") {
 
