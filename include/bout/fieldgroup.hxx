@@ -120,7 +120,8 @@ public:
 
   /// Add multiple fields to this group
   template <typename... Ts>
-  requires(sizeof...(Ts) > 1) void add(Ts&... ts) {
+    requires(sizeof...(Ts) > 1)
+  void add(Ts&... ts) {
     (add(ts), ...);
   }
 
