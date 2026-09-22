@@ -265,6 +265,30 @@ private:
   FieldGeneratorPtr gen;
 };
 
+/// Scale an expression so its volume integral over RGN_NOBNDRY is 1
+class FieldUnitIntegral : public FieldGenerator {
+public:
+  explicit FieldUnitIntegral(FieldGeneratorPtr g = nullptr) : gen(std::move(g)) {}
+
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
+  BoutReal generate(const bout::generator::Context& pos) override;
+  std::string str() const override {
+    return std::string("unit_integral(") + gen->str() + std::string(")");
+  }
+
+private:
+  void populateCache(const bout::generator::Context& ctx);
+  bool cacheMatches(const bout::generator::Context& ctx) const;
+
+  FieldGeneratorPtr gen;
+  Field3D cached_values{};
+  Mesh* cached_mesh{nullptr};
+  BoutReal cached_time{0.0};
+  CELL_LOC cached_location{CELL_CENTRE};
+  bool cache_valid{false};
+  std::mutex cache_mutex;
+};
+
 //////////////////////////////////////////////////////////
 // Ballooning transform
 // Use a truncated Ballooning transform to enforce periodicity
