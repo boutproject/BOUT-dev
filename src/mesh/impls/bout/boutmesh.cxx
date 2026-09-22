@@ -2564,7 +2564,7 @@ void BoutMesh::createCommunicators() {
       TRACE("Creating snowflake C_PFR comm_middle communicators");
       for (int i = 0; i < NXPE; i++) {
         // Lower C_PFR
-        proc[0] = PROC_NUM(i, YPROC(jyseps1_1));
+        proc[0] = PROC_NUM(i, YPROC(jyseps1_1 + 1));
         proc[1] = PROC_NUM(i, YPROC(ny_inner - 1));
         MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
 
@@ -2573,7 +2573,8 @@ void BoutMesh::createCommunicators() {
         proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
         MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
 
-        MPI_Group_union(group_tmp1, group_tmp2, &group);
+        // The group has to follow the field line in y positive direction, starting at the processor whose lower face is a target and ending at the one whose upper face is a target.
+        MPI_Group_union(group_tmp2, group_tmp1, &group);
         MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
         if (comm_tmp != MPI_COMM_NULL) {
           comm_middle = comm_tmp;
@@ -2595,7 +2596,7 @@ void BoutMesh::createCommunicators() {
   if (mesh_topology == MeshTopology::snowflake) {
     if (snowflake_type == SnowflakeType::SF_plus_low_field_side || snowflake_type == SnowflakeType::SF_plus_high_field_side || snowflake_type == SnowflakeType::SF){
       TRACE("Creating snowflake S_PFR comm_middle communicators");
-      for (int i = ixseps2; i < NXPE; i++) {
+      for (int i = 0; i < NXPE; i++) {
         // H1: y = ny_inner .. jyseps2_2  (SE target at lower face)
         proc[0] = PROC_NUM(i, YPROC(ny_inner + 1));
         proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
@@ -2622,24 +2623,46 @@ void BoutMesh::createCommunicators() {
         }
         MPI_Group_free(&group);
       }
-    } else if (snowflake_type == SnowflakeType::SF_minus_low_field_side || snowflake_type == SnowflakeType::SF_minus_high_field_side){
-      TRACE("Creating snowflake S_PFR comm_middle communicators");
-      for (int i = ixseps1; i < NXPE; i++) {
-        // G1: y = ny_inner .. jyseps1_2  (SE target at lower face)
-        proc[0] = PROC_NUM(i, YPROC(ny_inner + 1));
-        proc[1] = PROC_NUM(i, YPROC(jyseps1_2));
+    } else if (snowflake_type == SnowflakeType::SF_minus_low_field_side){
+      TRACE("Creating snowflake E_PFR comm_middle communicators");
+      for (int i = 0; i < NXPE; i++) {
+
+        proc[0] = PROC_NUM(i, YPROC(jyseps2_1 + 1));
+        proc[1] = PROC_NUM(i, YPROC(ny_inner - 1));
         proc[2] = NXPE;
         MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
 
-        // H1: y = jyseps1_2+1 .. jyseps2_2  (SW target at middle face)
-        proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
-        proc[1] = PROC_NUM(i, jyseps2_2);
+        proc[0] = PROC_NUM(i, YPROC(ny_inner + 1));
+        proc[1] = PROC_NUM(i, YPROC(jyseps1_2));
         proc[2] = NXPE;
         MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
 
-        // I1 = y = jyseps2_2+1 .. ny-1  (SW target at upper face)
+        // The group has to follow the field line in y positive direction, starting at the processor whose lower face is a target and ending at the one whose upper face is a target.
+        MPI_Group_union(group_tmp2, group_tmp1, &group);
+        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+        if (comm_tmp != MPI_COMM_NULL) {
+          comm_middle = comm_tmp;
+        }
+
+        if (group_tmp1 != MPI_GROUP_EMPTY) {
+          MPI_Group_free(&group_tmp1);
+        }
+        if (group_tmp2 != MPI_GROUP_EMPTY) {
+          MPI_Group_free(&group_tmp2);
+        }
+        MPI_Group_free(&group);
+      }
+    } else if (snowflake_type == SnowflakeType::SF_minus_high_field_side){
+      TRACE("Creating snowflake W_PFR comm_middle communicators");
+      for (int i = 0; i < NXPE; i++) {
+
+        proc[0] = PROC_NUM(i, 0);
+        proc[1] = PROC_NUM(i, YPROC(jyseps1_1));
+        proc[2] = NXPE;
+        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+
         proc[0] = PROC_NUM(i, YPROC(jyseps2_2 + 1));
-        proc[1] = PROC_NUM(i, NYPE - 1);
+        proc[1] = PROC_NUM(i, NYPE-  1);
         proc[2] = NXPE;
         MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
 
