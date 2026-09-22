@@ -156,7 +156,7 @@ CMake configuration
 -------------------
 
 To compile BOUT++ components into GPU kernels, a few different pieces
-need to work together: RAJA, Umpire, and a CUDA-capable compiler.
+need to work together: RAJA, Umpire, and a CUDA- or HIP-capable compiler.
 
 The generated eager field-operator code also selects a loop backend at
 configure time. If RAJA is enabled it uses RAJA loops, otherwise it
@@ -179,6 +179,51 @@ falls back to OpenMP or serial loops depending on the build.
    +----------------------+-----------------------------------------+------------------------+
    | BOUT_ENABLE_WARNINGS | nvcc has incompatible warning flags     | On (turn Off for CUDA) |
    +----------------------+-----------------------------------------+------------------------+
+
+AMD GPUs with HIP
+~~~~~~~~~~~~~~~~~
+
+``BOUT_ENABLE_HIP=ON`` generates ``BOUT_HAS_HIP=1`` and selects
+``RAJA::hip_exec``. It requires ``BOUT_ENABLE_RAJA=ON`` and
+``BOUT_ENABLE_UMPIRE=ON``, with both dependencies built for HIP (Spack's
+``+rocm`` variant). CUDA and HIP cannot be enabled together.
+
+Use CMake 3.21 or newer and the ROCm ``clang++`` compiler for CMake's native
+HIP language, rather than the ``hipcc`` wrapper. Select the device target
+with ``CMAKE_HIP_ARCHITECTURES``; MI300A uses ``gfx942``. With the Spack
+environment from the dependency installation activated::
+
+  cmake -S . -B build_release_RAJA_HIP \
+    -DCMAKE_C_COMPILER="$(command -v gcc)" \
+    -DCMAKE_CXX_COMPILER="$(command -v g++)" \
+    -DCMAKE_HIP_COMPILER="$(spack location -i llvm-amdgpu)/bin/clang++" \
+    -DCMAKE_HIP_COMPILER_ROCM_ROOT="$(spack location -i hip)" \
+    -DCMAKE_HIP_ARCHITECTURES=gfx942 \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBOUT_USE_NLS=OFF \
+    -DBOUT_BUILD_EXAMPLES=ON \
+    -DBOUT_ENABLE_RAJA=ON \
+    -DBOUT_ENABLE_UMPIRE=ON \
+    -DBOUT_ENABLE_CUDA=OFF \
+    -DBOUT_ENABLE_HIP=ON
+  cmake --build build_release_RAJA_HIP --parallel 8
+
+The RAJA and Umpire installations must support the same GPU target.
+``CUDA_ARCH``, ``CMAKE_CUDA_ARCHITECTURES`` and NVIDIA NVTX options are not
+used for HIP. Arrays use Umpire's unified-memory allocator so that host
+operations and HIP kernels can share data. Running requires a working
+ROCm driver and a compatible AMD GPU; cross-compilation alone does not
+validate GPU execution. When configured with ``BOUT_TESTS=ON``, the
+host/device memory round-trip test can be built and run on an AMD GPU node::
+
+  cmake --build build_release_RAJA_HIP --target serial_tests --parallel 8
+  build_release_RAJA_HIP/tests/unit/serial_tests --gtest_filter=RajaExecution.*
+
+``bout_add_model`` compiles model C++ sources as HIP when linked against a
+HIP-enabled BOUT++ installation. Models creating their own CMake targets
+must likewise compile sources containing device code with ``LANGUAGE HIP``
+and use HIP C++20. CUDA-specific HYPRE and shifted-metric optimizations
+are not enabled by this option; their existing host paths remain in use.
 
 Shifted metric on GPUs
 ----------------------
