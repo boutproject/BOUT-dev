@@ -428,7 +428,7 @@ private:
 #define BOUTMAIN(ModelClass)                                       \
   int main(int argc, char** argv) {                                \
     try {                                                          \
-      int init_err = BoutInitialise(argc, argv);                   \
+      const int init_err = BoutInitialise(argc, argv);             \
       if (init_err < 0) {                                          \
         return 0;                                                  \
       }                                                            \

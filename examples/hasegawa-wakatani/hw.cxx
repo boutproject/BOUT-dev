@@ -1,8 +1,14 @@
 
+#include <bout/bout_types.hxx>
 #include <bout/derivs.hxx>
+#include <bout/field3d.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/physicsmodel.hxx>
 #include <bout/smoothing.hxx>
+#include <bout/stencil_expr.hxx>
+#include <bout/unused.hxx>
+
+#include <memory>
 
 class HW : public PhysicsModel {
 private:
@@ -109,10 +115,10 @@ protected:
       nonzonal_phi -= averageY(DC(phi));
     }
 
-    ddt(n) =
-        -bracket(phi, n, bm) + alpha * (nonzonal_phi - nonzonal_n) - kappa * DDZ(phi);
+    ddt(n) = -bracket_arakawa(phi, n) + alpha * (nonzonal_phi - nonzonal_n)
+             - kappa * DDZ_stencil(phi);
 
-    ddt(vort) = -bracket(phi, vort, bm) + alpha * (nonzonal_phi - nonzonal_n);
+    ddt(vort) = -bracket_arakawa(phi, vort) + alpha * (nonzonal_phi - nonzonal_n);
 
     return 0;
   }

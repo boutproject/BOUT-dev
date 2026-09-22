@@ -14,9 +14,6 @@
  * and so that all Neumann boundary conditions can be used at least when
  * DC(A/D)!=0.
  *
- * CHANGELOG
- * =========
- *
  **************************************************************************
  * Copyright 2018 - 2026 BOUT++ contributors
  *
@@ -43,16 +40,27 @@
 
 #if not BOUT_USE_METRIC_3D
 
+#include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/derivs.hxx>
 #include <bout/difops.hxx>
+#include <bout/field.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
 #include <bout/globals.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/mesh.hxx>
+#include <bout/stencil_expr.hxx>
 #include <bout/sys/timer.hxx>
 
 #include "naulin_laplace.hxx"
+
+#include <fmt/format.h>
+
+#include <string>
+#include <utility>
 
 LaplaceNaulin::LaplaceNaulin(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
                              Solver* UNUSED(solver))
@@ -139,24 +147,24 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
 
   Field3D rhsOverD = rhs / Dcoef;
 
-  Field3D C1TimesD = C1coef * Dcoef; // This is needed several times
+  const Field3D C1TimesD = C1coef * Dcoef; // This is needed several times
 
   // x-component of 1./(C1*D) * Grad_perp(C2)
-  Field3D coef_x = DDX(C2coef, location, "C2") / C1TimesD;
+  const Field3D coef_x = DDX(C2coef, location, DIFF_C2) / C1TimesD;
 
   // y-component of 1./(C1*D) * Grad_perp(C2)
-  Field3D coef_y = DDY(C2coef, location, "C2") / C1TimesD;
+  const Field3D coef_y = DDY(C2coef, location, "C2") / C1TimesD;
 
   // z-component of 1./(C1*D) * Grad_perp(C2)
-  Field3D coef_z = DDZ(C2coef, location, "FFT") / C1TimesD;
+  Field3D coef_z = DDZ(C2coef, location, DIFF_FFT) / C1TimesD;
 
-  Field3D AOverD = Acoef / Dcoef;
+  const Field3D AOverD = Acoef / Dcoef;
 
   // Split coefficients into DC and AC parts so that delp2solver can use DC part.
   // This allows all-Neumann boundary conditions as long as AOverD_DC is non-zero
 
-  Field2D C1coefTimesD_DC = DC(C1TimesD);
-  Field2D C2coef_DC = DC(C2coef);
+  const Field2D C1coefTimesD_DC = DC(C1TimesD);
+  const Field2D C2coef_DC = DC(C2coef);
 
   // Our naming is slightly misleading here, as coef_x_AC may actually have a
   // DC component, as the AC components of C2coef and C1coefTimesD are not
@@ -186,8 +194,8 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
 
   auto calc_b_guess = [&](const Field3D& x_in) {
     // Derivatives of x
-    Field3D ddx_x = DDX(x_in, location, "C2");
-    Field3D ddz_x = DDZ(x_in, location, "FFT");
+    const Field3D ddx_x = DDX(x_in, location, DIFF_C2);
+    const Field3D ddz_x = DDZ(x_in, location, DIFF_FFT);
     return rhsOverD
            - (coords->g11() * coef_x_AC * ddx_x + coords->g33() * coef_z * ddz_x
               + coords->g13() * (coef_x_AC * ddz_x + coef_z * ddx_x))
@@ -211,7 +219,7 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
     return std::make_pair(b, x);
   };
 
-  Field3D b = calc_b_guess(x0);
+  const Field3D b = calc_b_guess(x0);
   // Need to make a copy of x0 here to make sure we don't change x0
   auto b_x_pair = calc_b_x_pair(b, x0);
   auto b_x_pair_old = b_x_pair;

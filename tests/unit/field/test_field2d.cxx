@@ -1174,11 +1174,24 @@ TEST_F(Field2DTest, PowExpressionUsesPowOp) {
   field = 2.0;
   const auto expr = field + 1.0;
 
+  EXPECT_TRUE(
+      (std::is_same_v<std::decay_t<decltype(pow(field, 2.0))>,
+                      BinaryExpr<Field2D, Field2D, Constant<BoutReal>, bout::op::Pow>>));
   EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(pow(expr, 2.0))>,
                               BinaryExpr<Field2D, std::decay_t<decltype(expr)>,
-                                         Constant<double>, bout::op::Pow>>));
+                                         Constant<BoutReal>, bout::op::Pow>>));
   EXPECT_TRUE(IsFieldEqual(pow(expr, 2.0), 9.0));
   EXPECT_TRUE(IsFieldEqual(pow(expr, 2.0, "RGN_ALL"), 9.0));
+}
+
+TEST_F(Field2DTest, PowRegionLimitedExpressionConstructsField2D) {
+  Field2D field;
+
+  field = 2.0;
+
+  Field2D result = pow(field, 2.0, "RGN_NOBNDRY");
+
+  EXPECT_TRUE(IsFieldEqual(result, 4.0, "RGN_NOBNDRY"));
 }
 
 TEST_F(Field2DTest, Sqrt) {

@@ -213,6 +213,7 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   if (updateRequired) {
     updateMatrix3D();
   }
+
   PetscVector<Field3D> rhs(b_in, indexer);
   PetscVector<Field3D> guess(x0, indexer);
 
@@ -245,8 +246,14 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
         KSPConvergedReasons[reason], static_cast<int>(reason));
   }
 
-  // Create field from result
+  // Reconstruct the PETSc result, then patch any deeper guards the vector does not
+  // populate so shifted-metric slice generation never sees NaNs.
   Field3D solution = guess.toField();
+  BOUT_FOR_SERIAL(i, solution.getRegion("RGN_GUARDS")) {
+    if (!std::isfinite(solution[i])) {
+      solution[i] = 0.0;
+    }
+  }
   localmesh->communicate(solution);
   if (solution.hasParallelSlices()) {
     BOUT_FOR(i, indexer->getRegionLowerY()) { solution.ydown()[i] = solution[i]; }
