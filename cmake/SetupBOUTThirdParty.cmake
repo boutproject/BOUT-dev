@@ -25,6 +25,13 @@ if(BOUT_HAS_CUDA)
   # NOTE: CUDA inherits the CXX standard setting from the top-level
   # compile features, set for the bout++ target.
   set_source_files_properties(${BOUT_SOURCES_CXX} PROPERTIES LANGUAGE CUDA)
+
+  # timer.cxx contains no device code, and compiling its C++20 formatting and
+  # ranges machinery with cudafe++ is pathologically slow with CUDA 12.9.
+  set_source_files_properties(
+    ${PROJECT_SOURCE_DIR}/src/sys/timer.cxx PROPERTIES LANGUAGE CXX
+  )
+
   find_package(CUDAToolkit)
   target_link_libraries(bout++ PUBLIC CUDA::cufft CUDA::cusparse)
   set_target_properties(bout++ PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
