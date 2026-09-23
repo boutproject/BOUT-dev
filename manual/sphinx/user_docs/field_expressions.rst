@@ -96,7 +96,7 @@ Several mixed-type combinations are supported directly:
 - `pow` follows the same mixed-rank pattern, so either operand can be
   `Field2D` or `Field3D` and the result is a `Field3D`
 - expressions involving metric components may return
-  `Coordinates::FieldMetric`, which is `Field2D` or `Field3D` depending
+  `bout::FieldMetric`, which is `Field2D` or `Field3D` depending
   on how BOUT++ was built
 
 In practice, this means code such as::
@@ -135,6 +135,9 @@ when working with `Field3DParallel` on FCI meshes:
   main field values
 - on FCI meshes, operands contributing to a `Field3DParallel`
   expression must have compatible parallel slices available
+- For metric components that should preserve parallel slices for FCI
+  `bout::FieldMetricParallel` acts like `Field3DParallel` for 3D metrics
+  and like `Field2D` otherwise.
 
 For example::
 

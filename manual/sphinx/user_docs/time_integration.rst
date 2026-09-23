@@ -107,6 +107,19 @@ given in table :numref:`tab-solveropts`.
    +--------------------------+--------------------------------------------+-------------------------------------+
    | diagnose                 | Collect and print additional diagnostics   | cvode, imexbdf2, beuler             |
    +--------------------------+--------------------------------------------+-------------------------------------+
+   | save\_jacobian           | Save PETSc Jacobian diagnostics            | cvode, beuler / snes                |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | jacobian\_export\_kind   | Which Jacobian to save                     | cvode, beuler / snes                |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | jacobian\_export\_trigger | When to save Jacobians                    | cvode                               |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | jacobian\_export\_prefix | Prefix for Jacobian matrix files           | cvode, beuler / snes                |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | jacobian\_export\_format | PETSc output format for Jacobians          | cvode, beuler / snes                |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | save\_jacobian\_index\_base | Write the per-cell Jacobian base index  | cvode, beuler / snes                |
+   |                          | field used to reconstruct saved Jacobians  |                                     |
+   +--------------------------+--------------------------------------------+-------------------------------------+
    | nvector                  | ``N_Vector`` backend for SUNDIALS solvers: | cvode, ida, arkode                  |
    |                          | ``sundials`` or ``manyvector``             |                                     |
    +--------------------------+--------------------------------------------+-------------------------------------+
@@ -222,6 +235,68 @@ nonlinear solvers:
 
 The linear solver type can be set using the ``linear_solver`` option.
 Valid choices include ``gmres`` (the default), ``fgmres``, ``tfqmr``, ``bcgs``.
+
+CVODE Jacobian diagnostics
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+CVODE can also save PETSc finite-difference Jacobians for post-processing,
+using the same metadata format as the SNES Jacobian diagnostics.
+
+The shared options are:
+
+- ``save_jacobian = true`` to enable exports
+- ``jacobian_export_kind = system`` or ``rhs``
+- ``jacobian_export_prefix`` to choose the output filename prefix
+- ``jacobian_export_format = binary`` or ``ascii``
+- ``save_jacobian_index_base = true`` to save the per-cell index-base field
+
+CVODE adds one extra option:
+
+- ``jacobian_export_trigger = linear_setup`` exports whenever CVODE rebuilds
+  linear solver data.
+- ``jacobian_export_trigger = output`` exports once per solver output timestep.
+
+The supported combinations are:
+
+- ``jacobian_export_kind = system`` requires
+  ``jacobian_export_trigger = linear_setup`` and
+  ``cvode_precon_method = petsc``.
+- ``jacobian_export_kind = rhs`` with
+  ``jacobian_export_trigger = output`` works without PETSc preconditioning and is
+  the easiest way to inspect the model Jacobian.
+- ``jacobian_export_kind = rhs`` with
+  ``jacobian_export_trigger = linear_setup`` is also supported on the PETSc
+  preconditioner path.
+- ``jacobian_export_kind = scaled`` is not currently supported in CVODE because
+  the solver does not yet apply a separate scaling transform.
+
+For example, to save the raw RHS Jacobian once per output timestep:
+
+.. code-block:: ini
+
+   [solver]
+   type = cvode
+   save_jacobian = true
+   save_jacobian_index_base = true
+   jacobian_export_kind = rhs
+   jacobian_export_trigger = output
+
+To save the linearised CVODE system Jacobian whenever the PETSc
+preconditioner is rebuilt:
+
+.. code-block:: ini
+
+   [solver]
+   type = cvode
+   cvode_precon_method = petsc
+   save_jacobian = true
+   save_jacobian_index_base = true
+   jacobian_export_kind = system
+   jacobian_export_trigger = linear_setup
+
+As with the SNES Jacobian export, the output files are written into
+``datadir`` and can be inspected using
+``tests/integrated/jacobian_tools/read_jacobian.py``.
 
 IMEX-BDF2
 ---------
@@ -449,8 +524,9 @@ Timestepping Modes
 
 The solver supports several timestepping strategies controlled by ``equation_form``:
 
-**Backward Euler (default)**
-   Standard implicit backward Euler method. Good for general timestepping.
+**Rearranged Backward Euler (default)**
+   Standard implicit backward Euler method written in a rearranged form that is
+   robust when driving a system to steady state.
 
    .. code-block:: ini
 
@@ -479,6 +555,65 @@ The solver supports several timestepping strategies controlled by ``equation_for
 
    This uses the same form as rearranged_backward_euler, but the time step
    can be different for each cell.
+
+Constraints (DAEs)
+~~~~~~~~~~~~~~~~~~
+
+BOUT++ can define algebraic constraints in a physics model using the
+``Solver::constraint(...)`` API. With the SNES solver these are treated as a
+differential-algebraic equation (DAE) system:
+
+- Differential variables include the usual timestepping terms for the selected
+  ``equation_form``.
+- Algebraic variables keep only the constraint residual ``G(x) = 0``.
+
+This is supported for all SNES equation forms. For ``direct_newton`` the full
+system is solved directly as a steady-state nonlinear problem, while for the
+timestepping forms only the differential variables receive the timestep terms.
+
+When constraints are enabled, the SNES solver can optionally split the
+preconditioner into differential and algebraic blocks using PETSc
+``fieldsplit``. The split names are:
+
+- ``diff``: differential variables
+- ``alg``: algebraic (constraint) variables
+
+Constraint splitting requires ``matrix_free = false``. ``matrix_free_operator``
+may still be used because the preconditioner matrix is still assembled.
+
+Example:
+
+.. code-block:: ini
+
+   [solver]
+   type = snes
+   equation_form = backward_euler
+   pc_type = fieldsplit
+
+   [petsc]
+   pc_fieldsplit_type = additive
+   fieldsplit_diff_ksp_type = preonly
+   fieldsplit_diff_pc_type = jacobi
+   fieldsplit_alg_ksp_type = preonly
+   fieldsplit_alg_pc_type = jacobi
+
+A more tailored setup can use different preconditioners for the two blocks, for
+example ILU on the differential variables and Hypre BoomerAMG on the algebraic
+variables:
+
+.. code-block:: ini
+
+   [solver]
+   type = snes
+   equation_form = backward_euler
+   matrix_free = false
+   pc_type = fieldsplit
+
+   [petsc]
+   pc_fieldsplit_type = additive
+   fieldsplit_diff_pc_type = ilu
+   fieldsplit_alg_pc_type = hypre
+   fieldsplit_alg_pc_hypre_type = boomeramg
 
 Adaptive Timestepping
 ~~~~~~~~~~~~~~~~~~~~~
@@ -571,9 +706,9 @@ Pseudo-Transient Continuation and Switched Evolution Relaxation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When ``equation_form = pseudo_transient`` the solver uses
-Pseudo-Transient Continuation (PTC). This is a robust numerical
-technique for solving steady-state problems that are too nonlinear for
-direct Newton iteration. Instead of solving the steady-state system
+Pseudo-Transient Continuation (PTC). This method helps with steady
+state problems that are too nonlinear for direct Newton iteration.
+Instead of solving the steady-state system
 **F(u) = 0** directly, PTC solves a modified time-dependent problem:
 
 .. math::
@@ -584,27 +719,32 @@ where :math:`\tau` is a pseudo-time variable (not physical time) and :math:`M(u)
 is a preconditioning matrix. As :math:`\tau \to \infty`, the solution converges
 to the steady state **F(u) = 0**.
 
-The key advantage of PTC is that it transforms a difficult root-finding problem
-into a sequence of easier initial value problems. Poor initial guesses that would
-cause Newton's method to diverge can still reach the solution via a stable
-pseudo-transient path.
+PTC turns one hard root-finding problem into a set of easier time
+steps. A poor first guess can still reach the steady state.
 
 The Switched Evolution Relaxation (SER) method is a spatially adaptive
-variant of PTC that allows each cell to use a different
-pseudo-timestep :math:`\Delta\tau_i`. The timestep in each cell adapts
-based on the local residual, allowing the algorithm to take large
-timesteps in well-behaved regions (fast convergence), while taking
-small timesteps in difficult regions (stable advancement).  The the
-same :math:`\Delta\tau_i` is used for all equations (density,
-momentum, energy etc.) within each cell. This maintains coupling
-between temperature, pressure, and composition through the equation of
-state.
+form of PTC. Each cell can use its own pseudo-timestep
+:math:`\Delta\tau_i`. The timestep in each cell changes with the local
+residual. Cells that behave well can take large steps, while cells that are
+hard to solve take small steps. The same :math:`\Delta\tau_i` is used
+for all equations in one cell, maintaining the equation of state within
+each cell.
 
 **Key parameters:**
 
 ``pseudo_max_ratio`` (default: 2.0)
-   Maximum allowed ratio of timesteps between neighboring cells. This prevents
-   sharp spatial gradients in convergence rate.
+   Largest allowed ratio of timesteps between nearby cells.
+
+``pseudo_squash_failure_threshold`` (default: 5)
+   Start to squash the spread in local pseudo-timesteps after this many
+   SNES failures in a row.
+
+``pseudo_squash_method`` (default: ``log``)
+   How to squash the local pseudo-timesteps. Use ``affine`` or ``log``.
+
+``pseudo_squash_lambda`` (default: 0.5)
+   How much of the old spread to keep. ``0`` gives one common timestep.
+   ``1`` keeps the old spread.
 
 **Example PTC configuration:**
 
@@ -619,6 +759,9 @@ state.
    # SER parameters
    timestep_control = pid_nonlinear_its  # Scale timesteps based on iterations
    pseudo_max_ratio = 2.0         # Limit neighbor timestep ratio
+   pseudo_squash_failure_threshold = 5
+   pseudo_squash_method = log
+   pseudo_squash_lambda = 0.5
 
    # Tolerances
    atol = 1e-7
@@ -643,17 +786,17 @@ is computed as:
 
    \Delta\tau_i = \frac{\alpha}{||R_i||}
 
-Larger values allow more aggressive timestepping. The default is to use
-a fixed ``pseudo_alpha`` but a better strategy is to enable the PID controller
-that adjusts this parameter based on the nonlinear solver convergence.
+Large values give larger timesteps. By default ``pseudo_alpha`` is
+fixed, but you can also let the PID controller change it based on the
+nonlinear solve history.
 
 The timestep is limited to be between ``dt_min_reset`` and
 ``max_timestep``.  In addition the timestep is limited between 0.67 ×
 previous timestep and 1.5 × previous timestep, to limit sudden changes
 in timestep.
 
-In practice this strategy seems to work well, though problems could
-arise when residuals become very small.
+This often works well, but very small residuals can still cause
+problems.
 
 **history_based**
 
@@ -681,8 +824,8 @@ become small the method switches to ``history_based``.
 PID Controller
 ^^^^^^^^^^^^^^
 
-When using the PTC method the PID controller can be used to dynamically
-adjust ``pseudo_alpha`` depending on the nonlinearity of the system:
+When you use PTC, the PID controller can change ``pseudo_alpha`` to
+adjust to the nonlinearity of the system:
 
 .. code-block:: ini
 
@@ -693,14 +836,42 @@ adjust ``pseudo_alpha`` depending on the nonlinearity of the system:
    kI = 0.3              # Integral gain
    kD = 0.2              # Derivative gain
 
-The PID controller adjusts ``pseudo_alpha``, scaling all cell
-timesteps together, to maintain approximately ``target_its`` nonlinear
+The PID controller adjusts ``pseudo_alpha``. This scales all cell
+timesteps together and aims for about ``target_its`` nonlinear
 iterations per solve.
 
-With this enabled the solver uses the number of nonlinear iterations
-to scale timesteps globally, and residuals to scale timesteps locally.
+With this on, the solver uses the number of nonlinear iterations to
+scale timesteps for the whole domain, and uses residuals to scale
+timesteps in each cell.
+
+On repeated SNES failures, the solver now also scales down or resets
+``pseudo_alpha`` so the PID controller does not keep pushing the
+timestep back up.
+
+Current limit: this anti-windup step uses only the ``Field3D`` local
+residual and pseudo-timestep data. It does not include ``Field2D``
+parts. In mixed ``Field2D``/``Field3D`` cases, the reset reflects only
+the ``Field3D`` part. In ``Field2D``-only cases, it does not give a
+useful value.
+
 Note that the PID controller has no effect on the ``history_based``
 strategy because that strategy does not use ``pseudo_alpha``.
+
+PTC failure handling
+^^^^^^^^^^^^^^^^^^^^
+
+If SNES fails in ``pseudo_transient`` mode, the solver first scales all
+local pseudo-timesteps down by ``timestep_factor_on_failure``.
+
+After ``pseudo_squash_failure_threshold`` failures in a row, the solver
+also squashes the spread in local pseudo-timesteps. This pulls them
+toward the current global timestep. Use ``pseudo_squash_method`` to
+pick the squash rule and ``pseudo_squash_lambda`` to set how strong the
+squash is.
+
+On the last retry before the solver stops, it sets all local
+pseudo-timesteps to ``dt_min_reset`` and sets ``pseudo_alpha`` to
+``pseudo_alpha_minimum``.
 
 Jacobian Finite Difference with Coloring
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -775,6 +946,71 @@ Setting ``solver:force_symmetric_coloring = true``, will make sure
 that the jacobian colouring matrix is symmetric.  This will often
 include a few extra non-zeros that the stencil will miss otherwise
 
+Saving Jacobians for diagnostics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The SNES solver can save PETSc Jacobian matrices for post-processing.
+This is useful for checking sparsity structure, understanding variable
+coupling, and diagnosing whether solver scaling is helping.
+
+Enable this with:
+
+.. code-block:: ini
+
+   [solver]
+   type = snes
+   save_jacobian = true
+   save_jacobian_index_base = true
+
+By default this writes the Jacobian of the nonlinear system actually
+solved by SNES. Three Jacobian definitions are available:
+
+- ``system``: the Jacobian of the full nonlinear system solved by SNES,
+  including timestep terms and any solver-specific rearrangement.
+- ``scaled``: the Jacobian after solver-coordinate transforms such as
+  variable scaling or ``asinh`` variables.
+- ``rhs``: the Jacobian of the bare model ``rhs()`` in physical variables.
+
+For example, to save the raw RHS Jacobian instead of the system Jacobian:
+
+.. code-block:: bash
+
+   ./your_model solver:save_jacobian=true \
+                solver:save_jacobian_index_base=true \
+                solver:jacobian_export_kind=rhs
+
+To save an ASCII matrix with a custom filename prefix:
+
+.. code-block:: ini
+
+   [solver]
+   save_jacobian = true
+   save_jacobian_index_base = true
+   jacobian_export_kind = scaled
+   jacobian_export_format = ascii
+   jacobian_export_prefix = jacobian_scaled_debug
+
+The Jacobian files are written into ``datadir``:
+
+- ``<prefix>_<kind>_<counter>.dat`` or ``.txt``: PETSc matrix written by
+  ``MatView``.
+- ``jacobian_metadata.json``: compact JSON metadata describing the ordering
+  of 2D and 3D evolved variables.
+- ``jacobian_index_base`` in the normal BOUT++ dump files: the per-cell base
+  global index needed to expand the compact JSON metadata into one row/column
+  label per degree of freedom.
+
+The JSON metadata stores per-variable information once, including name,
+location, ``evolve_bndry``, and ``constraint`` flags. Row and column labels
+for individual matrix entries are reconstructed by combining this JSON with
+``jacobian_index_base`` and the mesh shape.
+
+For now, an example Python reader is provided in
+``tests/integrated/jacobian_tools/read_jacobian.py``. It can load
+the PETSc matrix into dense NumPy form, keep it sparse, optionally create
+Pandas views, and extract variable-to-variable blocks such as ``df/dg``.
+This helper is intended to move into a Python package later, likely xBOUT.
+
 
 Variable Scaling
 ~~~~~~~~~~~~~~~~
@@ -812,14 +1048,18 @@ Diagnostics and Monitoring
    diagnose = true                # Print iteration info to screen
    diagnose_failures = true       # Detailed diagnostics on failures
 
-When ``equation_form = pseudo_transient``, the solver saves additional diagnostic fields:
+When ``equation_form = pseudo_transient``, the solver saves extra diagnostic fields:
 
-- ``snes_pseudo_residual``: Local residual in each cell
+- ``snes_local_residual``: Local residual in each cell
+- ``snes_global_residual``: Global RMS residual
 - ``snes_pseudo_timestep``: Local pseudo-timestep in each cell
 - ``snes_pseudo_alpha``: Global timestep scaling
 
-These can be visualized to understand convergence behavior and identify
-problematic regions.
+These can help you see why the solve is slow or where it fails.
+
+The anti-windup update for ``snes_pseudo_alpha`` has one limit at
+present: it uses only ``Field3D`` local residual and pseudo-timestep
+data. It does not include ``Field2D`` parts.
 
 The residuals from the last nonlinear solve are also saved with names
 ``resid_<var name>``. Plotting these can help to understand which
@@ -831,10 +1071,29 @@ Summary of solver options
 +---------------------------+---------------+----------------------------------------------------+
 | Option                    | Default       |Description                                         |
 +===========================+===============+====================================================+
-| pseudo_time               | false         | Pseudo-Transient Continuation (PTC) method, using  |
-|                           |               | a different timestep for each cell.                |
+| equation_form           | rearranged_   | Choose the SNES solve form. Use                    |
+|                         | backward_     | ``pseudo_transient`` for PTC.                      |
+|                         | euler         |                                                    |
++---------------------------+---------------+----------------------------------------------------+
+| pseudo_alpha            | 100*atol*dt   | Sets local timestep in ``inverse_residual`` mode   |
+|                         |               | with ``dt = pseudo_alpha / residual``              |
++---------------------------+---------------+----------------------------------------------------+
+| pseudo_alpha_minimum    | 0.1*pseudo_   | Smallest allowed value for ``pseudo_alpha``        |
+|                         | alpha         |                                                    |
 +---------------------------+---------------+----------------------------------------------------+
 | pseudo_max_ratio          | 2.            | Maximum timestep ratio between neighboring cells   |
++---------------------------+---------------+----------------------------------------------------+
+| pseudo_growth_factor      | 1.1           | Growth factor in ``history_based`` mode            |
++---------------------------+---------------+----------------------------------------------------+
+| pseudo_reduction_factor   | 0.5           | Reduction factor in ``history_based`` mode         |
++---------------------------+---------------+----------------------------------------------------+
+| pseudo_squash_failure_    | 5             | Start to squash local pseudo-timesteps after this  |
+| threshold                 |               | many SNES failures in a row                        |
++---------------------------+---------------+----------------------------------------------------+
+| pseudo_squash_method      | log           | How to squash local pseudo-timesteps: ``affine``   |
+|                           |               | or ``log``                                         |
++---------------------------+---------------+----------------------------------------------------+
+| pseudo_squash_lambda      | 0.5           | How much of the old timestep spread to keep        |
 +---------------------------+---------------+----------------------------------------------------+
 | snes_type                 | newtonls      | PETSc SNES nonlinear solver (try anderson, qn)     |
 +---------------------------+---------------+----------------------------------------------------+
@@ -878,11 +1137,23 @@ Summary of solver options
 +---------------------------+---------------+----------------------------------------------------+
 | diagnose                  | false         | Print diagnostic information every iteration       |
 +---------------------------+---------------+----------------------------------------------------+
+| save_jacobian             | false         | Save Jacobian matrices for diagnostics             |
++---------------------------+---------------+----------------------------------------------------+
+| jacobian_export_kind      | system        | Which Jacobian to save: ``system``, ``scaled``,    |
+|                           |               | or ``rhs``                                         |
++---------------------------+---------------+----------------------------------------------------+
+| jacobian_export_prefix    | jacobian      | Prefix for Jacobian matrix files                   |
++---------------------------+---------------+----------------------------------------------------+
+| jacobian_export_format    | binary        | Matrix file format written by PETSc ``MatView``    |
++---------------------------+---------------+----------------------------------------------------+
 | stencil:cross             | 0             | If ``matrix_free=false`` and ``use_coloring=true`` |
 | stencil:square            | 0             | Set the size and shape of the Jacobian coloring    |
 | stencil:taxi              | 2             | stencil.                                           |
 +---------------------------+---------------+----------------------------------------------------+
 | force_symmetric_coloring  | false         | Ensure that the Jacobian coloring is symmetric     |
++---------------------------+---------------+----------------------------------------------------+
+| save_jacobian_index_base  | false         | Write ``jacobian_index_base`` to the dump files    |
+|                           |               | so saved Jacobians can be reconstructed            |
 +---------------------------+---------------+----------------------------------------------------+
 
 The predictor is linear extrapolation from the last two timesteps. It seems to be
@@ -1270,19 +1541,20 @@ similar way to time integrated variables. For example
 
     Field3D phi;
     ...
-    solver->constraint(phi, ddt(phi), "phi");
+    solver->constraint(phi, residual(phi), "phi");
 
 The first argument is the variable to be solved for (constrained). The
 second argument is the field to contain the residual (error). In this
-example the time derivative field ``ddt(phi)`` is used, but it could
-be another `Field3D` variable. The solver will attempt to
+example ``residual(phi)`` is used, which is an alias for the same
+storage as ``ddt(phi)`` but makes the algebraic role clearer. It could
+also be another ``Field3D`` variable. The solver will attempt to
 find a solution to the first argument (``phi`` here) such that the
-second argument (``ddt(phi)``) is zero to within tolerances.
+second argument (``residual(phi)`` here) is zero to within tolerances.
 
 In the RHS function the residual should be calculated. In this example
 (``examples/constraints/drift-wave-constraint``) we have::
 
-    ddt(phi) = Delp2(phi) - Vort;
+    residual(phi) = Delp2(phi) - Vort;
 
 so the time integration solver includes the algebraic constraint
 ``Delp2(phi) = Vort`` i.e. (:math:`\nabla_\perp^2\phi = \omega`).

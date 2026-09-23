@@ -16,9 +16,9 @@ BoundaryRegion* BoundaryRegionBase::getLegacyPointer() {
   ASSERT3(legacy->location == location);
   ASSERT3(legacy->label == label);
   ASSERT3(legacy->localmesh == localmesh);
-  return legacy;
+  return legacy.get();
 }
-BoundaryRegionBase::~BoundaryRegionBase() { delete legacy; };
+
 BoundaryRegionXIn::BoundaryRegionXIn(std::string name, int ymin, int ymax, Mesh* passmesh)
     : BoundaryRegion(std::move(name), -1, 0, passmesh), ys(ymin), ye(ymax) {
   location = BNDRY_XIN;

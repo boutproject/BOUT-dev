@@ -1365,8 +1365,8 @@ TEST_F(OptionsTest, GetFlattenedKeys) {
                                          "section2:subsection1:value4",
                                          "section2:value_5"};
 
-  std::sort(flat_keys.begin(), flat_keys.end());
-  std::sort(expected_keys.begin(), expected_keys.end());
+  std::ranges::sort(flat_keys);
+  std::ranges::sort(expected_keys);
 
   EXPECT_EQ(flat_keys, expected_keys);
 }

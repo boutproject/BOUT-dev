@@ -45,12 +45,12 @@
 #include <bout/msg_stack.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>
-#include <bout/parallel_boundary_region.hxx>
 #include <bout/region.hxx>
 #include <bout/sys/gettext.hxx>
 #include <bout/sys/range.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
+#include <algorithm>
 
 #include <fmt/format.h>
 #include <fmt/ranges.h>
@@ -1170,11 +1170,11 @@ std::set<std::string> BoutMesh::getPossibleBoundaries() const {
 
         // Get the boundaries and shove their names into the set
         auto boundaries = mesh_copy.getBoundaries();
-        std::transform(boundaries.begin(), boundaries.end(),
-                       std::inserter(all_boundaries, all_boundaries.begin()),
-                       [](const std::shared_ptr<BoundaryRegionBase>& boundary) {
-                         return boundary->label;
-                       });
+        std::ranges::transform(boundaries,
+                               std::inserter(all_boundaries, all_boundaries.begin()),
+                               [](const std::shared_ptr<BoundaryRegionBase>& boundary) {
+                                 return boundary->label;
+                               });
       };
 
   // This is sufficient to get the SOL boundary, if it exists

@@ -51,7 +51,6 @@
 #include "bout/msg_stack.hxx"
 #include "bout/options.hxx"
 #include "bout/parallel_boundary_op.hxx"
-#include "bout/parallel_boundary_region.hxx"
 #include "bout/paralleltransform.hxx"
 #include "bout/region.hxx"
 
@@ -59,7 +58,6 @@
 
 #include <array>
 #include <cmath>
-#include <cstddef>
 #include <cstdlib>
 #include <memory>
 #include <string>

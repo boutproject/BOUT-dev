@@ -75,4 +75,21 @@ TokamakCoordinates set_tokamak_coordinates(Mesh& mesh, BoutReal Lbar, BoutReal B
 
   return {Rxy, Zxy, Bpxy, Btxy, Bxy, hthe, I, I_unnormalised};
 }
+
+MetricNormaliser TokamakOrFCIMetricNormaliser(const Mesh* mesh, BoutReal Bnorm,
+                                              BoutReal rho_s0) {
+  if (mesh->isFci()) {
+    return {.g{SQ(rho_s0)}, .J{rho_s0 * rho_s0 * rho_s0}, .Bxy{Bnorm}};
+  }
+  return {.g11{1 / SQ(Bnorm * rho_s0)},
+          .g22{SQ(rho_s0)},
+          .g33{SQ(rho_s0)},
+          .g12{1 / Bnorm},
+          .g13{1 / Bnorm},
+          .g23{SQ(rho_s0)},
+          .dx{rho_s0 * rho_s0 * Bnorm},
+          .J{rho_s0 / Bnorm},
+          .Bxy{Bnorm}};
+}
+
 } // namespace bout

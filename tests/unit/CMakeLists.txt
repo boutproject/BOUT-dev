@@ -67,8 +67,10 @@ set(serial_tests_source
     ./field/test_vector3d.cxx
     ./field/test_where.cxx
     ./include/bout/test_array.cxx
+    ./include/bout/test_rajalib.cxx
     ./include/bout/test_assert.cxx
     ./include/bout/test_bout_enum_class.cxx
+    ./include/bout/test_boundary_iter.cxx
     ./include/bout/test_deriv_store.cxx
     ./include/bout/test_fv_ops.cxx
     ./include/bout/test_generic_factory.cxx
@@ -96,6 +98,8 @@ set(serial_tests_source
     ./mesh/test_boutmesh.cxx
     ./mesh/test_coordinates.cxx
     ./mesh/test_coordinates_accessor.cxx
+    ./mesh/test_fv_ops.cxx
+    ./mesh/test_tokamak_coordinates.cxx
     ./mesh/test_interpolation.cxx
     ./mesh/test_invert3x3.cxx
     ./mesh/test_mesh.cxx
@@ -147,6 +151,8 @@ target_link_libraries(serial_tests gtest gmock bout++::bout++)
 add_test(NAME serial_tests COMMAND serial_tests --gtest_brief=1)
 set_target_properties(serial_tests PROPERTIES FOLDER tests/unit)
 add_dependencies(build-check-unit-tests serial_tests)
+
+bout_target_enable_hip(serial_tests)
 
 if(BOUT_HAS_CUDA)
   set_source_files_properties(${serial_tests_source} PROPERTIES LANGUAGE CUDA)

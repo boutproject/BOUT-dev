@@ -237,7 +237,7 @@ public:
    * significantly reduce performance.
    */
   inline BoutReal& operator()(int jx, int jy) {
-#if CHECK > 2 && !BOUT_HAS_CUDA
+#if CHECK > 2 && !BOUT_HAS_CUDA && !BOUT_HAS_HIP
     if (!isAllocated()) {
       throw BoutException("Field2D: () operator on empty data");
     }
@@ -251,7 +251,7 @@ public:
     return data[(jx * ny) + jy];
   }
   inline const BoutReal& operator()(int jx, int jy) const {
-#if CHECK > 2 && !BOUT_HAS_CUDA
+#if CHECK > 2 && !BOUT_HAS_CUDA && !BOUT_HAS_HIP
     if (!isAllocated()) {
       throw BoutException("Field2D: () operator on empty data");
     }
@@ -600,6 +600,9 @@ inline Field2D DC(const Field2D& f) { return f; }
 ///
 /// Wrapper around member function f.timeDeriv()
 inline Field2D& ddt(Field2D& f) { return *(f.timeDeriv()); }
+
+/// Alias for ddt that is more readable for constraints
+inline Field2D& residual(Field2D& f) { return *(f.timeDeriv()); }
 
 /// toString template specialisation
 /// Defined in utils.hxx

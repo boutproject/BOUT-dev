@@ -180,7 +180,6 @@ set(BOUT_SOURCES
     ./include/bout/output.hxx
     ./include/bout/output_bout_types.hxx
     ./include/bout/parallel_boundary_op.hxx
-    ./include/bout/parallel_boundary_region.hxx
     ./include/bout/paralleltransform.hxx
     ./include/bout/petsc_interface.hxx
     ./include/bout/petsc_operators.hxx
@@ -220,6 +219,7 @@ set(BOUT_SOURCES
     ./include/bout/vector2d.hxx
     ./include/bout/vector3d.hxx
     ./include/bout/where.hxx
+    ./include/bout/yboundary_regions.hxx
     ./src/bout++-time.hxx
     ./src/bout++.cxx
     ./src/field/field.cxx
@@ -323,6 +323,7 @@ set(BOUT_SOURCES
     ./src/mesh/petsc_operators.cxx
     ./src/mesh/surfaceiter.cxx
     ./src/mesh/tokamak_coordinates.cxx
+    ./src/mesh/yboundary_regions.cxx
     ./src/physics/gyro_average.cxx
     ./src/physics/physicsmodel.cxx
     ./src/physics/smoothing.cxx
@@ -377,6 +378,7 @@ set(BOUT_SOURCES
     ./src/sys/expressionparser.cxx
     ./src/sys/generator_context.cxx
     ./src/sys/hyprelib.cxx
+    ./src/sys/hypre_interface.cxx
     ./src/sys/msg_stack.cxx
     ./src/sys/options.cxx
     ./src/sys/options/optionparser.hxx
@@ -511,12 +513,6 @@ set_property(CACHE BOUT_ENABLE_PYTHON PROPERTY STRINGS ${ON_OFF_AUTO})
 if(NOT BOUT_ENABLE_PYTHON IN_LIST ON_OFF_AUTO)
   message(FATAL_ERROR "BOUT_ENABLE_PYTHON must be one of ${ON_OFF_AUTO}")
 endif()
-if(BOUT_ENABLE_PYTHON OR BOUT_ENABLE_PYTHON STREQUAL "AUTO")
-  add_subdirectory(tools/pylib/_boutpp_build)
-else()
-  set(BOUT_ENABLE_PYTHON OFF)
-endif()
-set(BOUT_USE_PYTHON ${BOUT_ENABLE_PYTHON})
 
 set_source_files_properties(
   ${CMAKE_CURRENT_BINARY_DIR}/git_metadata.cxx PROPERTIES GENERATED TRUE
@@ -576,6 +572,14 @@ include(cmake/SetupCompilers.cmake)
 
 # Optional dependencies
 include(cmake/SetupBOUTThirdParty.cmake)
+
+# Create the Python extension after optional GPU languages are initialized.
+if(BOUT_ENABLE_PYTHON OR BOUT_ENABLE_PYTHON STREQUAL "AUTO")
+  add_subdirectory(tools/pylib/_boutpp_build)
+else()
+  set(BOUT_ENABLE_PYTHON OFF)
+endif()
+set(BOUT_USE_PYTHON ${BOUT_ENABLE_PYTHON})
 
 # Various sanitizers, including coverage and address sanitizer
 include(cmake/Sanitizers.cmake)
@@ -1141,6 +1145,8 @@ message(
    Umpire enabled           : ${BOUT_HAS_UMPIRE}
    Caliper enabled          : ${BOUT_HAS_CALIPER}
    CUDA enabled             : ${BOUT_HAS_CUDA}
+   HIP enabled              : ${BOUT_HAS_HIP}
+   HIP architectures        : ${CMAKE_HIP_ARCHITECTURES}
    Metric type              : ${BOUT_METRIC_TYPE}
    Python API support       : ${BOUT_USE_PYTHON}
    Sanitizers enabled       : ${BOUT_USE_SANITIZERS}
