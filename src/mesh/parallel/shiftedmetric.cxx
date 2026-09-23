@@ -440,10 +440,6 @@ static void shiftZ_block_fft(const int Nz, const BoutReal** in, BoutReal** out,
 
     fft_block_cooperative<32, FFTS_PER_BLOCK>
         <<<grid, block, 0, stream>>>(in, out, phs, nbatches, nblocks);
-<<<<<<< HEAD
-=======
-
->>>>>>> next
   } else if (Nz == 64) {
     constexpr int FFTS_PER_BLOCK = 4;
     constexpr int THREADS_PER_FFT = 64;
