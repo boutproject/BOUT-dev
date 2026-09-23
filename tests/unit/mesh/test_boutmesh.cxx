@@ -8,6 +8,7 @@
 
 #include "fake_mesh.hxx"
 
+#include <algorithm>
 #include <array>
 #include <cstdio>
 #include <iostream>
@@ -2793,22 +2794,28 @@ bool isSnowflakeMinus(SnowflakeType snowflake_type) {
          or snowflake_type == SnowflakeType::SF_minus_high_field_side;
 }
 
-/// Set up `mesh` (built with `nype` = 6 and MYSUB = `snowflake_mysub`) as the
-/// given member of the snowflake family and build its topology.
-///
-/// SF+ has its second X-point in the private flux region, so its separatrix is
-/// at smaller x than the primary (`ixseps2 < ixseps1`); SF- has it in the SOL,
-/// so the other way round.
-void buildSnowflakeTopology(BoutMeshExposer& mesh, SnowflakeType snowflake_type) {
-  const bool is_minus = isSnowflakeMinus(snowflake_type);
+constexpr int snowflake_ixseps_lower = 2;
+constexpr int snowflake_ixseps_upper = 4;
 
-  mesh.setXDecompositionIndices(is_minus ? BoutMeshExposer::XDecompositionIndices{2, 4}
-                                         : BoutMeshExposer::XDecompositionIndices{4, 2});
-  mesh.setYDecompositionIndices(is_minus ? snowflakeMinusIndices(snowflake_mysub)
-                                         : snowflakePlusIndices(snowflake_mysub));
+/// Set up `mesh` (built with `nype` = 6 and MYSUB = `snowflake_mysub`) as the
+/// given member of the snowflake family and build its topology, with the two
+/// separatrix indices given in the order a grid file would supply them.
+void buildSnowflakeTopologyWithSeparatrices(
+    BoutMeshExposer& mesh, SnowflakeType snowflake_type,
+    BoutMeshExposer::XDecompositionIndices xindices) {
+  mesh.setXDecompositionIndices(xindices);
+  mesh.setYDecompositionIndices(isSnowflakeMinus(snowflake_type)
+                                    ? snowflakeMinusIndices(snowflake_mysub)
+                                    : snowflakePlusIndices(snowflake_mysub));
   mesh.mesh_topology = MeshTopology::snowflake;
   mesh.snowflake_type = snowflake_type;
   mesh.topology();
+}
+
+/// As above, with the separatrices already in the order `topology()` enforces.
+void buildSnowflakeTopology(BoutMeshExposer& mesh, SnowflakeType snowflake_type) {
+  buildSnowflakeTopologyWithSeparatrices(
+      mesh, snowflake_type, {snowflake_ixseps_upper, snowflake_ixseps_lower});
 }
 
 /// Global y index of the first cell of the core, for this family member.
@@ -2946,6 +2953,166 @@ TEST_P(SnowflakeFamilyMeshTest, GlobalYIsNormalisedOverThisMembersCore) {
   ASSERT_EQ(mesh.getGlobalYIndexNoBoundaries(mesh.ystart), first_core);
 
   EXPECT_DOUBLE_EQ(mesh.GlobalY(mesh.ystart), 0.5 / core_length);
+}
+
+/// `ySize` has to return the length of the field line the connections actually
+/// build, for every x band and every y block of the layout.
+struct SnowflakeYSizes {
+  std::array<int, snowflake_nype> inside_lower;
+  std::array<int, snowflake_nype> between_separatrices;
+  std::array<int, snowflake_nype> outside_upper;
+};
+
+SnowflakeYSizes snowflakeYSizes(SnowflakeType snowflake_type) {
+  switch (snowflake_type) {
+  case SnowflakeType::SF_plus_high_field_side:
+    return {{8, 12, 4, 12, 12, 8}, {12, 12, 4, 12, 8, 8}, {16, 16, 16, 16, 8, 8}};
+  case SnowflakeType::SF_minus_low_field_side:
+    return {{8, 8, 8, 8, 8, 8}, {16, 16, 8, 8, 16, 16}, {12, 12, 12, 12, 12, 12}};
+  case SnowflakeType::SF_minus_high_field_side:
+    return {{8, 8, 8, 8, 8, 8}, {8, 16, 16, 16, 16, 8}, {12, 12, 12, 12, 12, 12}};
+  default:
+    return {{12, 4, 12, 8, 8, 12}, {12, 4, 12, 12, 8, 8}, {16, 16, 16, 16, 8, 8}};
+  }
+}
+
+TEST_P(SnowflakeFamilyMeshTest, YSizeMatchesTheFieldLineLengthInEveryBand) {
+  const auto expected = snowflakeYSizes(GetParam());
+
+  for (int pe_yind = 0; pe_yind < snowflake_nype; ++pe_yind) {
+    SCOPED_TRACE(fmt::format("pe_yind = {}", pe_yind));
+
+    BoutMeshExposer mesh(6, snowflake_mysub, 1, 1, snowflake_nype, 0, pe_yind, false);
+    buildSnowflakeTopology(mesh, GetParam());
+
+    for (int xpos = 0; xpos < snowflake_ixseps_lower; ++xpos) {
+      SCOPED_TRACE(fmt::format("xpos = {}", xpos));
+      EXPECT_EQ(mesh.ySize(xpos), expected.inside_lower[pe_yind]);
+    }
+    for (int xpos = snowflake_ixseps_lower; xpos < snowflake_ixseps_upper; ++xpos) {
+      SCOPED_TRACE(fmt::format("xpos = {}", xpos));
+      EXPECT_EQ(mesh.ySize(xpos), expected.between_separatrices[pe_yind]);
+    }
+    for (int xpos = snowflake_ixseps_upper; xpos < mesh.LocalNx; ++xpos) {
+      SCOPED_TRACE(fmt::format("xpos = {}", xpos));
+      EXPECT_EQ(mesh.ySize(xpos), expected.outside_upper[pe_yind]);
+    }
+  }
+}
+
+/// Regression: `topology()` used to have a "Reverse" branch, so a grid whose
+/// two separatrix indices came the other way round got different connections.
+TEST_P(SnowflakeFamilyMeshTest, TopologyIsIndependentOfTheSeparatrixOrder) {
+  for (int pe_yind = 0; pe_yind < snowflake_nype; ++pe_yind) {
+    SCOPED_TRACE(fmt::format("pe_yind = {}", pe_yind));
+
+    BoutMeshExposer ordered(6, snowflake_mysub, 1, 1, snowflake_nype, 0, pe_yind, false);
+    buildSnowflakeTopologyWithSeparatrices(
+        ordered, GetParam(), {snowflake_ixseps_upper, snowflake_ixseps_lower});
+
+    BoutMeshExposer swapped(6, snowflake_mysub, 1, 1, snowflake_nype, 0, pe_yind, false);
+    buildSnowflakeTopologyWithSeparatrices(
+        swapped, GetParam(), {snowflake_ixseps_lower, snowflake_ixseps_upper});
+
+    EXPECT_EQ(ordered.getConnectionInfo(), swapped.getConnectionInfo());
+
+    for (int xpos = 0; xpos < ordered.LocalNx; ++xpos) {
+      SCOPED_TRACE(fmt::format("xpos = {}", xpos));
+      EXPECT_EQ(ordered.ySize(xpos), swapped.ySize(xpos));
+    }
+  }
+}
+
+enum class SnowflakeRegion { core, pf_west, pf_east, pf_centre, pf_south, sol };
+
+struct SnowflakeRegionMap {
+  std::array<SnowflakeRegion, snowflake_nype> inside_lower;
+  std::array<SnowflakeRegion, snowflake_nype> between_separatrices;
+  std::array<SnowflakeRegion, snowflake_nype> outside_upper;
+};
+
+SnowflakeRegionMap snowflakeRegionMap(SnowflakeType snowflake_type) {
+  using R = SnowflakeRegion;
+  switch (snowflake_type) {
+  case SnowflakeType::SF_plus_high_field_side:
+    return {{R::pf_west, R::pf_east, R::core, R::pf_east, R::pf_east, R::pf_west},
+            {R::pf_centre, R::pf_centre, R::core, R::pf_centre, R::pf_south, R::pf_south},
+            {R::sol, R::sol, R::sol, R::sol, R::pf_south, R::pf_south}};
+  case SnowflakeType::SF_minus_low_field_side:
+    return {{R::pf_west, R::core, R::pf_east, R::pf_east, R::core, R::pf_west},
+            {R::pf_centre, R::pf_centre, R::pf_east, R::pf_east, R::pf_centre, R::pf_centre},
+            {R::sol, R::sol, R::sol, R::pf_south, R::pf_south, R::pf_south}};
+  case SnowflakeType::SF_minus_high_field_side:
+    return {{R::pf_west, R::core, R::pf_east, R::pf_east, R::core, R::pf_west},
+            {R::pf_west, R::pf_centre, R::pf_centre, R::pf_centre, R::pf_centre, R::pf_west},
+            {R::sol, R::sol, R::sol, R::pf_south, R::pf_south, R::pf_south}};
+  default:
+    return {{R::pf_west, R::core, R::pf_west, R::pf_east, R::pf_east, R::pf_west},
+            {R::pf_centre, R::core, R::pf_centre, R::pf_centre, R::pf_south, R::pf_south},
+            {R::sol, R::sol, R::sol, R::sol, R::pf_south, R::pf_south}};
+  }
+}
+
+const std::array<SnowflakeRegion, snowflake_nype>&
+regionsInBand(const SnowflakeRegionMap& map, int x) {
+  if (x < snowflake_ixseps_lower) {
+    return map.inside_lower;
+  }
+  if (x < snowflake_ixseps_upper) {
+    return map.between_separatrices;
+  }
+  return map.outside_upper;
+}
+
+TEST_P(SnowflakeFamilyMeshTest, PeriodicYIsTrueExactlyInTheCore) {
+  const auto map = snowflakeRegionMap(GetParam());
+
+  for (int pe_yind = 0; pe_yind < snowflake_nype; ++pe_yind) {
+    SCOPED_TRACE(fmt::format("pe_yind = {}", pe_yind));
+
+    BoutMeshExposer mesh(6, snowflake_mysub, 1, 1, snowflake_nype, 0, pe_yind, false);
+    buildSnowflakeTopology(mesh, GetParam());
+
+    for (int xpos = 0; xpos < mesh.LocalNx; ++xpos) {
+      SCOPED_TRACE(fmt::format("xpos = {}", xpos));
+      EXPECT_EQ(mesh.periodicY(xpos),
+                regionsInBand(map, xpos)[pe_yind] == SnowflakeRegion::core);
+    }
+  }
+}
+
+TEST_P(SnowflakeFamilyMeshTest, EveryRegionIsLabelledConsistently) {
+  const auto map = snowflakeRegionMap(GetParam());
+
+  for (int pe_yind = 0; pe_yind < snowflake_nype; ++pe_yind) {
+    SCOPED_TRACE(fmt::format("pe_yind = {}", pe_yind));
+
+    BoutMeshExposer mesh(6, snowflake_mysub, 1, 1, snowflake_nype, 0, pe_yind, false);
+    buildSnowflakeTopology(mesh, GetParam());
+
+    for (int xpos = 0; xpos < mesh.LocalNx; ++xpos) {
+      SCOPED_TRACE(fmt::format("xpos = {}", xpos));
+      const auto& band = regionsInBand(map, xpos);
+      const auto length = std::count(band.begin(), band.end(), band[pe_yind]);
+      EXPECT_EQ(mesh.ySize(xpos), snowflake_mysub * static_cast<int>(length));
+    }
+
+    BoutMeshExposer inner(6, snowflake_mysub, 1, 2, snowflake_nype, 0, pe_yind, false);
+    buildSnowflakeTopology(inner, GetParam());
+    inner.createXBoundaries();
+    const auto inner_boundaries = inner.getBoundaries();
+    ASSERT_EQ(inner_boundaries.size(), 1);
+    EXPECT_EQ(inner_boundaries[0]->label,
+              map.inside_lower[pe_yind] == SnowflakeRegion::core ? "core" : "pf");
+
+    BoutMeshExposer outer(6, snowflake_mysub, 1, 2, snowflake_nype, 1, pe_yind, false);
+    buildSnowflakeTopology(outer, GetParam());
+    outer.createXBoundaries();
+    const auto outer_boundaries = outer.getBoundaries();
+    ASSERT_EQ(outer_boundaries.size(), 1);
+    EXPECT_EQ(outer_boundaries[0]->label,
+              map.outside_upper[pe_yind] == SnowflakeRegion::sol ? "sol" : "south_pf_outer");
+  }
 }
 
 /// Regression: a closed field line has no X-points, so `topology()` used to
