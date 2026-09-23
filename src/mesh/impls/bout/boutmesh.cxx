@@ -3997,6 +3997,15 @@ void BoutMesh::topology() {
     add_target(ny_inner - 1, 0, nx);
 
   } else if (mesh_topology == MeshTopology::snowflake) {
+      if (ixseps1 == ixseps2) {
+        /*************** Snowflake topologies can't have the two same separatrices ******************/
+        throw BoutException("\t Topology error: Snowflake topology can't have the two same separatrices\n");
+      }
+      
+      //ixseps_outer / ixseps_upper should always be the separatrix for snowflake topologies. 
+      ixseps_inner = ixseps_lower = std::min(ixseps1, ixseps2);
+      ixseps_outer = ixseps_upper = std::max(ixseps1, ixseps2);
+      
       if (snowflake_type == SnowflakeType::SF_plus_low_field_side || snowflake_type == SnowflakeType::SF){
       /*************** Snowflake default operation *******************/
       /* Each PFR does not have to be the same length as each
@@ -4009,22 +4018,6 @@ void BoutMesh::topology() {
       if ((ny_inner - 1 - jyseps1_2) % MYSUB != 0 || (jyseps2_2 - ny_inner + 1) % MYSUB != 0) {
         throw BoutException("\tTopology error: East PFR does not have integer "
                             "number of processors\n");
-      }
-
-      if (ixseps1 == ixseps2) {
-        /*************** Snowflake topologies can't have the two same separatrices ******************/
-        throw BoutException("\t Topology error: Snowflake topology can't have the two same separatrices\n");
-
-      } else if (ixseps2 < ixseps1) {
-        /*************** snowflake Usual configuration **********************/
-        output_info.write("\tSF Usual configuration\n");
-        ixseps_inner = ixseps_lower = ixseps2;
-        ixseps_outer = ixseps_upper = ixseps1;
-      } else {
-        /*************** snowflake Reverse configuration **********************/
-        output_info.write("\tSF Reverse configuration\n");
-        ixseps_inner = ixseps_upper = ixseps1;
-        ixseps_outer = ixseps_lower = ixseps2;
       }
 
       /********* snowflake+ LFS CONNECTIONS **********/
@@ -4059,22 +4052,6 @@ void BoutMesh::topology() {
                             "number of processors\n");
       }
 
-      if (ixseps1 == ixseps2) {
-        /*************** Snowflake topologies can't have the two same separatrices ******************/
-        throw BoutException("\t Topology error: Snowflake topology can't have the two same separatrices\n");
-
-      } else if (ixseps2 < ixseps1) {
-        /*************** snowflake Usual configuration **********************/
-        output_info.write("\tSF Usual configuration\n");
-        ixseps_inner = ixseps_lower = ixseps2;
-        ixseps_outer = ixseps_upper = ixseps1;
-      } else {
-        /*************** snowflake Reverse configuration **********************/
-        output_info.write("\tSF Reverse configuration\n");
-        ixseps_inner = ixseps_upper = ixseps1;
-        ixseps_outer = ixseps_lower = ixseps2;
-      }
-
       /********* snowflake+ HFS CONNECTIONS **********/
       default_connections();
       set_connection(jyseps1_1 + 1, jyseps2_2, 0, ixseps_lower); /* E_PFR */
@@ -4106,22 +4083,6 @@ void BoutMesh::topology() {
                             "number of processors\n");
       }
 
-      if (ixseps1 == ixseps2) {
-        /*************** Snowflake topologies can't have the two same separatrices ******************/
-        throw BoutException("\t Topology error: Snowflake topology can't have the two same separatrices\n");
-
-      } else if (ixseps2 < ixseps1) {
-        /*************** snowflake Usual configuration **********************/
-        output_info.write("\tSF Usual configuration\n");
-        ixseps_inner = ixseps_lower = ixseps2;
-        ixseps_outer = ixseps_upper = ixseps1;
-      } else {
-        /*************** snowflake Reverse configuration **********************/
-        output_info.write("\tSF Reverse configuration\n");
-        ixseps_inner = ixseps_upper = ixseps1;
-        ixseps_outer = ixseps_lower = ixseps2;
-      }
-
       /********* snowflake- LFS CONNECTIONS **********/
       default_connections();
       set_connection(jyseps1_1 + 1, jyseps2_2, 0, ixseps_lower); /* W_PFR */
@@ -4149,22 +4110,6 @@ void BoutMesh::topology() {
       if ((ny_inner - 1 - jyseps2_1) % MYSUB != 0 || (jyseps1_2 - ny_inner + 1) % MYSUB != 0) {
         throw BoutException("\tTopology error: East PFR does not have integer "
                             "number of processors\n");
-      }
-
-      if (ixseps1 == ixseps2) {
-        /*************** Snowflake topologies can't have the two same separatrices ******************/
-        throw BoutException("\t Topology error: Snowflake topology can't have the two same separatrices\n");
-
-      } else if (ixseps2 < ixseps1) {
-        /*************** snowflake Usual configuration **********************/
-        output_info.write("\tSF Usual configuration\n");
-        ixseps_inner = ixseps_lower = ixseps2;
-        ixseps_outer = ixseps_upper = ixseps1;
-      } else {
-        /*************** snowflake Reverse configuration **********************/
-        output_info.write("\tSF Reverse configuration\n");
-        ixseps_inner = ixseps_upper = ixseps1;
-        ixseps_outer = ixseps_lower = ixseps2;
       }
 
       /********* snowflake- LFS CONNECTIONS **********/
