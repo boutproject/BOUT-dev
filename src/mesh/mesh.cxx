@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <filesystem>
 #include <iterator>
 #include <memory>
 #include <optional>
@@ -36,6 +37,8 @@
 #include <vector>
 
 #include "impls/bout/boutmesh.hxx"
+
+namespace fs = std::filesystem;
 
 MeshFactory::ReturnType MeshFactory::create(Options* options,
                                             GridDataSource* source) const {
@@ -67,14 +70,37 @@ MeshFactory::ReturnType MeshFactory::create(const std::string& type, Options* op
             grid_name1, grid_name);
       }
     }
-    output << "\nGetting grid data from file " << grid_name << "\n";
 
-    // Create a grid file, using specified format if given
-    const auto grid_ext =
-        (*options)["format"].withDefault(Options::root()["format"].withDefault(""));
+    // Resolve mesh files relative to datadir first, then the current directory.
+    const auto datadir = fs::path(Options::root()["datadir"].withDefault("data"));
+    const auto grid_path = fs::path(grid_name);
+    auto full_path = datadir / grid_path;
+
+    const bool full_path_exists = fs::exists(full_path);
+    const bool grid_path_exists = fs::exists(grid_path);
+
+    if (full_path_exists and grid_path_exists and !fs::equivalent(full_path, grid_path)) {
+      throw BoutException(
+          "Ambiguous grid file path `{:s}`: found both `{:s}` (relative to "
+          "`datadir`) and `{:s}` (relative to the current working directory).\n"
+          "Please specify an explicit path.",
+          grid_name, full_path.string(), grid_path.string());
+    }
+
+    if (!full_path_exists and !grid_path_exists) {
+      throw BoutException(
+          "Could not find grid file `{:s}`.\n"
+          "Looked for `{:s}` (relative to `datadir`) and `{:s}` (relative to "
+          "the current working directory).",
+          grid_name, full_path.string(), grid_path.string());
+    }
+
+    const auto resolved_path = full_path_exists ? full_path : grid_path;
+
+    output << "\nGetting grid data from file " << resolved_path << "\n";
 
     // Create a grid file
-    source = static_cast<GridDataSource*>(new GridFile(grid_name));
+    source = static_cast<GridDataSource*>(new GridFile(resolved_path));
   } else {
     output << "\nGetting grid data from options\n";
     source = static_cast<GridDataSource*>(new GridFromOptions(options));

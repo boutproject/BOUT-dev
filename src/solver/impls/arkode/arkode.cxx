@@ -162,7 +162,7 @@ ArkodeSolver::ArkodeSolver(Options* opts)
           (*options)["optimize"].doc("Use ARKode optimal parameters").withDefault(false)),
 #endif
       suncontext(createSUNContext(BoutComm::get())) {
-  has_constraints = false; // This solver doesn't have constraints
+  supports_constraints = false; // This solver doesn't have constraints
 
   // Add diagnostics to output
   add_int_diagnostic(nsteps, "arkode_nsteps", "Cumulative number of internal steps");

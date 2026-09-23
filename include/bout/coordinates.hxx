@@ -388,10 +388,17 @@ public:
 
   void normaliseMetric(const MetricNormaliser& norm);
 
-  ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
-  const FieldMetric& J() const;
+  /// Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
+  const FieldMetric& J() const {
+    if (jacobian_cache == nullptr) {
+      calcJ();
+    }
+    return *jacobian_cache;
+  }
+  // actually compute J
+  const FieldMetric& calcJ() const;
 
-  ///< Magnitude of B = nabla z times nabla x
+  /// Magnitude of B = nabla z times nabla x
   const FieldMetric& Bxy() const { return Bxy_; }
 
   void setJ(const FieldMetric& J, bool communicate = true);

@@ -43,6 +43,9 @@
 #if BOUT_HAS_UMPIRE
 #include "umpire/Allocator.hpp"
 #include "umpire/ResourceManager.hpp"
+#if BOUT_HAS_HIP && !defined(UMPIRE_ENABLE_HIP)
+#error "BOUT_ENABLE_HIP requires Umpire built with HIP support"
+#endif
 #endif
 
 #include <bout/assert.hxx>
@@ -68,7 +71,7 @@ struct ArrayData {
     //       even though the Array object itself can't.
 #if BOUT_HAS_UMPIRE
     auto& rm = umpire::ResourceManager::getInstance();
-#if BOUT_HAS_CUDA
+#if BOUT_HAS_CUDA || BOUT_HAS_HIP
     auto allocator = rm.getAllocator(umpire::resource::Pinned);
     //auto allocator = rm.getAllocator(umpire::resource::Unified);
 #else

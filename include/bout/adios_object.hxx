@@ -55,6 +55,8 @@ public:
 
   ~ADIOSStream();
 
+  bool isRetired() const { return retired_; }
+
   template <class T>
   adios2::Variable<T> GetValueVariable(const std::string& varname) {
     auto v = io.InquireVariable<T>(varname);
@@ -168,6 +170,10 @@ public:
   }
 
   auto engine() -> adios2::Engine& {
+    if (retired_) {
+      throw BoutException(
+          "ADIOS stream for '{:s}' has been finished and must be reopened", fname);
+    }
     if (not engine_) {
       engine_ = io.Open(fname, file_mode);
       if (not engine_) {
@@ -193,13 +199,17 @@ public:
   }
 
   void finish() {
+    if (engine_ and isInStep) {
+      engine().EndStep();
+      isInStep = false;
+    }
     if (engine_) {
-      if (isInStep) {
-        engine().EndStep();
-        isInStep = false;
-      }
       engine().Close();
       engine_ = adios2::Engine();
+    }
+    if (!retired_) {
+      GetADIOSPtr()->RemoveIO(io_name);
+      retired_ = true;
     }
   }
 
@@ -373,11 +383,13 @@ private:
   }
 
   std::string fname;
+  std::string io_name;
   adios2::Mode file_mode;
   adios2::Engine engine_;
 
   /// true if BeginStep was called and EndStep was not yet called
   bool isInStep = false;
+  bool retired_ = false;
 };
 
 } // namespace bout

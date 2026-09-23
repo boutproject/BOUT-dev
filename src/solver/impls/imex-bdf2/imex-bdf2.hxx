@@ -200,8 +200,8 @@ private:
   int linear_fails;    ///< Number of linear (KSP) convergence failures
   int nonlinear_fails; ///< Numbef of nonlinear (SNES) convergence failures
 
-  bool have_constraints;  ///< Are there any constraint variables?
-  Array<BoutReal> is_dae; ///< If using constraints, 1 -> DAE, 0 -> AE
+  bool has_constraint_variables; ///< Are there any constraint variables?
+  Array<BoutReal> is_dae;        ///< If using constraints, 1 -> DAE, 0 -> AE
 
   MatFDColoring fdcoloring; ///< Matrix coloring context, used for finite difference
                             ///< Jacobian evaluation

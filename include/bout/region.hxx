@@ -597,7 +597,7 @@ public:
   /// ensures the indices are sorted.
   Region<T> asSorted() {
     auto sortedIndices = getIndices();
-    std::sort(std::begin(sortedIndices), std::end(sortedIndices));
+    std::ranges::sort(sortedIndices);
     return Region<T>(sortedIndices);
   };
 
@@ -615,7 +615,7 @@ public:
     // OK. An alternative is to make a std::set from the indices and then
     // convert back to a vector, but this is typically more expensive.
     auto sortedIndices = getIndices();
-    std::sort(std::begin(sortedIndices), std::end(sortedIndices));
+    std::ranges::sort(sortedIndices);
     // Get iterator pointing at the end of the unique points
     auto newEnd = std::unique(std::begin(sortedIndices), std::end(sortedIndices));
     // Remove non-unique points from end of vector
@@ -635,7 +635,7 @@ public:
     // Get mask indices and sort as we're going to be searching through
     // this vector so if it's sorted we can be more efficient
     auto maskIndices = maskRegion.getIndices();
-    std::sort(std::begin(maskIndices), std::end(maskIndices));
+    std::ranges::sort(maskIndices);
 
     // Get the current set of indices that we're going to mask and then
     // use to create the result region.
@@ -683,7 +683,7 @@ public:
     // Get other indices and sort as we're going to be searching through
     // this vector so if it's sorted we can be more efficient
     auto otherIndices = otherRegion.getIndices();
-    std::sort(std::begin(otherIndices), std::end(otherIndices));
+    std::ranges::sort(otherIndices);
 
     // Get the current set of indices that we're going to get the
     // union with and then use to create the result region.

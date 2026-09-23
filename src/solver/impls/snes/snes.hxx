@@ -40,6 +40,7 @@ class SNESSolver;
 
 #include "mpi.h"
 
+#include <bout/array.hxx>
 #include <bout/bout_enum_class.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/field2d.hxx>
@@ -73,12 +74,16 @@ BOUT_ENUM_CLASS(BoutSnesOutput,
                 fixed_time_interval, ///< Output at fixed time intervals
                 residual_ratio);     ///< When the residual is reduced by a given ratio
 
+BOUT_ENUM_CLASS(BoutPseudoSquashMethod,
+                affine, ///< Affine dt_vec <- lambda * dt_vec + (1 - lambda) * timestep
+                log);   ///< Log squash dt_vec <- timestep * (dt_vec / timestep)^lambda
+
 /// Uses PETSc's SNES interface to find a steady state solution to a
 /// nonlinear ODE by integrating in time with Backward Euler
 class SNESSolver : public Solver {
 public:
   explicit SNESSolver(Options* opts = nullptr);
-  ~SNESSolver() override = default;
+  ~SNESSolver() override;
 
   int init() override;
   int run() override;
@@ -188,7 +193,12 @@ private:
   BoutReal pseudo_growth_factor;    ///< Timestep increase 1.1 - 1.2
   BoutReal pseudo_reduction_factor; ///< Timestep decrease 0.5
   BoutReal pseudo_max_ratio;        ///< Maximum timestep ratio between neighboring cells
-  Vec dt_vec;                       ///< Each quantity can have its own timestep
+  int pseudo_squash_failure_threshold; ///< Squash timestep variation when snes failures exceed this threshold
+  BoutPseudoSquashMethod
+      pseudo_squash_method; ///< Method to apply when squashing pseudo timesteps
+  BoutReal
+      pseudo_squash_lambda; ///< How much variation to keep? 0 = No variation; 1 = Full variation (no squashing).
+  Vec dt_vec; ///< Each quantity can have its own timestep
 
   /// Adjust the global timestep
   BoutReal updateGlobalTimestep(BoutReal timestep, int nl_its,
@@ -246,6 +256,12 @@ private:
 
   int nlocal; ///< Number of variables on local processor
   int neq;    ///< Number of variables in total
+
+  bool has_constraint_variables{false}; ///< Are there any constraint variables?
+  Array<BoutReal> is_dae;               ///< If using constraints, 1 -> DAE, 0 -> AE
+
+  IS is_diff = nullptr; // is_dae == 1
+  IS is_alg = nullptr;  // is_dae == 0 (phi constraint and any other algebraics)
 
   PetscLib lib; ///< Handles initialising, finalising PETSc
   Vec snes_f;   ///< Used by SNES to store function

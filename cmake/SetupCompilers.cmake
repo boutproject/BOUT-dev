@@ -32,6 +32,35 @@ set(BOUT_USE_OPENMP ${BOUT_ENABLE_OPENMP})
 message(STATUS "Enable OpenMP: ${BOUT_ENABLE_OPENMP}")
 
 option(BOUT_ENABLE_CUDA "Enable CUDA support" OFF)
+option(BOUT_ENABLE_HIP "Enable AMD HIP support" OFF)
+if(BOUT_ENABLE_CUDA AND BOUT_ENABLE_HIP)
+  message(
+    FATAL_ERROR "BOUT_ENABLE_CUDA and BOUT_ENABLE_HIP are mutually exclusive"
+  )
+endif()
+if(BOUT_ENABLE_HIP)
+  if(CMAKE_VERSION VERSION_LESS 3.21)
+    message(FATAL_ERROR "BOUT_ENABLE_HIP requires CMake 3.21 or newer")
+  endif()
+  if(NOT BOUT_ENABLE_RAJA OR NOT BOUT_ENABLE_UMPIRE)
+    message(
+      FATAL_ERROR
+        "BOUT_ENABLE_HIP requires BOUT_ENABLE_RAJA and BOUT_ENABLE_UMPIRE"
+    )
+  endif()
+  # Keep compiler detection and compilation on the same ROCm installation.
+  # Otherwise a Spack view can be mistaken for an implicit include directory.
+  if(CMAKE_HIP_COMPILER_ROCM_ROOT)
+    string(APPEND CMAKE_HIP_FLAGS_INIT
+           " --rocm-path=${CMAKE_HIP_COMPILER_ROCM_ROOT}"
+    )
+  endif()
+  enable_language(HIP)
+  set(CMAKE_HIP_STANDARD 20)
+  set(CMAKE_HIP_STANDARD_REQUIRED ON)
+  set(CMAKE_HIP_EXTENSIONS OFF)
+endif()
+set(BOUT_HAS_HIP ${BOUT_ENABLE_HIP})
 set(CUDA_ARCH
     "compute_70,code=sm_70"
     CACHE STRING "CUDA architecture"
