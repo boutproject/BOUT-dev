@@ -381,6 +381,28 @@ protected:
   /// Return the X processor number given a global X index
   int XPROC(int xind) const;
 
+  /// Last X processor holding cells with x < \p xseps
+  int lastXProcInside(int xseps) const;
+  /// First X processor holding cells with x >= \p xseps
+  int firstXProcOutside(int xseps) const;
+
+  /// Radial extent of a region, xge <= x < xlt, in global X indices
+  struct XBand {
+    int xge;
+    int xlt;
+  };
+
+  /// True if X processor \p xproc holds any cell of \p band
+  bool xProcInBand(int xproc, XBand band) const;
+
+  /// Radial extents of the four snowflake private flux regions
+  struct SnowflakePFBands {
+    XBand west, east, central, south;
+  };
+
+  /// Radial extents for the current `snowflake_type`, as used by `ySize`
+  SnowflakePFBands snowflakePFBands() const;
+
   /// Communication parameters calculated by topology
   struct ConnectionInfo {
     bool TS_up_in, TS_up_out, TS_down_in, TS_down_out;

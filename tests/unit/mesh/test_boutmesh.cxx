@@ -53,8 +53,14 @@ public:
   using BoutMesh::setXDecompositionIndices;
   using BoutMesh::setYDecompositionIndices;
   using BoutMesh::topology;
+  using BoutMesh::XBand;
   using BoutMesh::XDecompositionIndices;
   using BoutMesh::XPROC;
+  using BoutMesh::firstXProcOutside;
+  using BoutMesh::lastXProcInside;
+  using BoutMesh::SnowflakePFBands;
+  using BoutMesh::snowflakePFBands;
+  using BoutMesh::xProcInBand;
   using BoutMesh::YDecompositionIndices;
   using BoutMesh::YPROC;
   using BoutMesh::getMeshTopology;
@@ -3112,6 +3118,75 @@ TEST_P(SnowflakeFamilyMeshTest, EveryRegionIsLabelledConsistently) {
     ASSERT_EQ(outer_boundaries.size(), 1);
     EXPECT_EQ(outer_boundaries[0]->label,
               map.outside_upper[pe_yind] == SnowflakeRegion::sol ? "sol" : "south_pf_outer");
+  }
+}
+
+bool bandContains(BoutMeshExposer::XBand band, int xglobal) {
+  return (xglobal >= band.xge) && (xglobal < band.xlt);
+}
+
+/// The x ranges the PF communicators are built over have to hold exactly the
+/// regions the region map says are there, or a column of processors either
+/// misses a communicator or joins one it has no cells in.
+TEST_P(SnowflakeFamilyMeshTest, PFCommBandsMatchTheRegionMap) {
+  const auto map = snowflakeRegionMap(GetParam());
+
+  BoutMeshExposer mesh(6, snowflake_mysub, 1, 1, snowflake_nype, 0, 0, false);
+  buildSnowflakeTopology(mesh, GetParam());
+
+  const auto bands = mesh.snowflakePFBands();
+
+  for (int xglobal = 0; xglobal < mesh.GlobalNx; ++xglobal) {
+    SCOPED_TRACE(fmt::format("xglobal = {}", xglobal));
+
+    const auto& regions = regionsInBand(map, xglobal);
+    const auto present = [&](SnowflakeRegion region) {
+      return std::count(regions.begin(), regions.end(), region) > 0;
+    };
+
+    EXPECT_EQ(bandContains(bands.west, xglobal), present(SnowflakeRegion::pf_west));
+    EXPECT_EQ(bandContains(bands.east, xglobal), present(SnowflakeRegion::pf_east));
+    EXPECT_EQ(bandContains(bands.central, xglobal), present(SnowflakeRegion::pf_centre));
+    EXPECT_EQ(bandContains(bands.south, xglobal), present(SnowflakeRegion::pf_south));
+  }
+}
+
+/// `lastXProcInside` and `firstXProcOutside` select the processor columns that
+/// hold a region, for any decomposition. Both off-by-one forms (`i < XPROC(s)`
+/// and `i <= XPROC(s)`) fail this for some MXSUB.
+TEST_F(BoutMeshTest, XProcRangesSelectTheColumnsHoldingTheRegion) {
+  for (const int local_nx : {3, 4, 6, 7}) {
+    for (const int nxpe : {1, 2, 3, 4}) {
+      SCOPED_TRACE(fmt::format("local_nx = {}, nxpe = {}", local_nx, nxpe));
+
+      BoutMeshExposer mesh(local_nx, 4, 1, nxpe, 1, 0, 0, false);
+      const int mxg = 1;
+      const int mxsub = local_nx - 2;
+
+      for (int xseps = 0; xseps <= mesh.GlobalNx; ++xseps) {
+        SCOPED_TRACE(fmt::format("xseps = {}", xseps));
+
+        for (int xproc = 0; xproc < nxpe; ++xproc) {
+          SCOPED_TRACE(fmt::format("xproc = {}", xproc));
+
+          bool holds_inside = false;
+          bool holds_outside = false;
+          for (int xlocal = mxg; xlocal < mxg + mxsub; ++xlocal) {
+            const int xglobal = (xproc * mxsub) + xlocal;
+            holds_inside = holds_inside || (xglobal < xseps);
+            holds_outside = holds_outside || (xglobal >= xseps);
+          }
+
+          EXPECT_EQ(xproc >= mesh.firstXProcOutside(xseps), holds_outside);
+          EXPECT_EQ(mesh.xProcInBand(xproc, {0, xseps}), holds_inside);
+          EXPECT_EQ(mesh.xProcInBand(xproc, {xseps, mesh.GlobalNx}), holds_outside);
+
+          if (xseps > mxg) {
+            EXPECT_EQ(xproc <= mesh.lastXProcInside(xseps), holds_inside);
+          }
+        }
+      }
+    }
   }
 }
 

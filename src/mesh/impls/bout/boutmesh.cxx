@@ -1549,6 +1549,8 @@ void BoutMesh::createCommunicators() {
           output_debug << "done upper PF\n";
       }
      } else if (mesh_topology == MeshTopology::snowflake){
+        const auto pf_bands = snowflakePFBands();
+
         if (snowflake_type == SnowflakeType::SF_plus_low_field_side || snowflake_type == SnowflakeType::SF){ 
           //SF+ LFS
           // Snowflake central PF region communicators. Note there are 4 regions to consider here (Central, East, West, South).
@@ -1560,7 +1562,7 @@ void BoutMesh::createCommunicators() {
 
           TRACE("Creating Snowflake PF communicators for xp={:d}", i);
 
-          if (i >= 0 && i < XPROC(ixseps_lower)) {
+          if (xProcInBand(i, pf_bands.west)) {
 
             // PF_W
             MPI_Group pf_group = MPI_GROUP_EMPTY;
@@ -1609,7 +1611,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_E
 
-          if (i >= 0 && i < XPROC(ixseps_inner)) {
+          if (xProcInBand(i, pf_bands.east)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -1676,7 +1678,7 @@ void BoutMesh::createCommunicators() {
           // PF_C
           //ixseps2 is considered the ixseps_lower = ixseps_inner, ixseps1 is considered the ixseps_upper = ixseps_upper.
 
-          if (i >= XPROC(ixseps_inner) && i < XPROC(ixseps_outer)) {
+          if (xProcInBand(i, pf_bands.central)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -1718,7 +1720,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_S
 
-          if (i >= XPROC(ixseps_inner)) {
+          if (xProcInBand(i, pf_bands.south)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -1755,7 +1757,7 @@ void BoutMesh::createCommunicators() {
 
           TRACE("Creating Snowflake PF communicators for xp={:d}", i);
 
-          if (i >= 0 && i <= XPROC(ixseps_inner)) {
+          if (xProcInBand(i, pf_bands.west)) {
 
             // PF_W
             MPI_Group pf_group = MPI_GROUP_EMPTY;
@@ -1803,7 +1805,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_E
 
-          if (i >= 0 && i <= XPROC(ixseps_inner)) {
+          if (xProcInBand(i, pf_bands.east)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -1870,7 +1872,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_C
 
-          if (i >= XPROC(ixseps_inner) && i < XPROC(ixseps_outer)) {
+          if (xProcInBand(i, pf_bands.central)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -1912,7 +1914,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_S
 
-          if (i >= XPROC(ixseps_inner)) {
+          if (xProcInBand(i, pf_bands.south)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -1949,7 +1951,7 @@ void BoutMesh::createCommunicators() {
 
           TRACE("Creating Snowflake PF communicators for xp={:d}", i);
 
-          if (i >= 0 && i <= XPROC(ixseps_inner)) {
+          if (xProcInBand(i, pf_bands.west)) {
 
             // PF_W
             MPI_Group pf_group = MPI_GROUP_EMPTY;
@@ -1994,7 +1996,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_E
 
-          if (i >= 0 && i <= XPROC(ixseps_outer)) { //Different to SF+
+          if (xProcInBand(i, pf_bands.east)) { //Different to SF+
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -2060,7 +2062,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_C
 
-          if (i >= XPROC(ixseps_inner) && i < XPROC(ixseps_outer)) {
+          if (xProcInBand(i, pf_bands.central)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -2102,7 +2104,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_S
 
-          if (i >= XPROC(ixseps_outer)) {
+          if (xProcInBand(i, pf_bands.south)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -2140,7 +2142,7 @@ void BoutMesh::createCommunicators() {
           TRACE("Creating Snowflake PF communicators for xp={:d}", i);
 
           // PF_W
-          if (i >= 0 && i <= XPROC(ixseps_outer)) {
+          if (xProcInBand(i, pf_bands.west)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -2184,7 +2186,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_E
 
-          if (i >= 0 && i <= XPROC(ixseps_inner)) {
+          if (xProcInBand(i, pf_bands.east)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -2250,7 +2252,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_C
 
-          if (i >= XPROC(ixseps_inner) && i <= XPROC(ixseps_outer)) {
+          if (xProcInBand(i, pf_bands.central)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -2292,7 +2294,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_S
 
-          if (i >= XPROC(ixseps_outer)) {
+          if (xProcInBand(i, pf_bands.south)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -3604,6 +3606,41 @@ int BoutMesh::YPROC(int yind) const {
 }
 
 int BoutMesh::XPROC(int xind) const { return (xind >= MXG) ? (xind - MXG) / MXSUB : 0; }
+
+int BoutMesh::lastXProcInside(int xseps) const { return XPROC(xseps - 1); }
+
+int BoutMesh::firstXProcOutside(int xseps) const { return XPROC(xseps); }
+
+bool BoutMesh::xProcInBand(int xproc, XBand band) const {
+  if (band.xlt <= band.xge || band.xlt <= MXG) {
+    return false;
+  }
+  return (xproc >= firstXProcOutside(band.xge)) && (xproc <= lastXProcInside(band.xlt));
+}
+
+BoutMesh::SnowflakePFBands BoutMesh::snowflakePFBands() const {
+  switch (snowflake_type) {
+  case SnowflakeType::SF:
+  case SnowflakeType::SF_plus_low_field_side:
+  case SnowflakeType::SF_plus_high_field_side:
+    return {{0, ixseps_inner},
+            {0, ixseps_inner},
+            {ixseps_inner, ixseps_outer},
+            {ixseps_inner, nx}};
+  case SnowflakeType::SF_minus_low_field_side:
+    return {{0, ixseps_inner},
+            {0, ixseps_outer},
+            {ixseps_inner, ixseps_outer},
+            {ixseps_outer, nx}};
+  case SnowflakeType::SF_minus_high_field_side:
+    return {{0, ixseps_outer},
+            {0, ixseps_inner},
+            {ixseps_inner, ixseps_outer},
+            {ixseps_outer, nx}};
+  default:
+    throw BoutException("Unsupported snowflake type");
+  }
+}
 
 /****************************************************************
  *                     TESTING UTILITIES
