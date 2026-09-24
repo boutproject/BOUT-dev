@@ -56,6 +56,7 @@
 #include "bout/build_config.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/openmpwrap.hxx" // IWYU pragma: keep
+#include "fmt/base.h"
 #include <fmt/format.h>
 
 class BoutMask;
