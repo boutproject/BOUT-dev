@@ -312,7 +312,7 @@ struct SpecificInd {
   SpecificInd zm(int dz = 1) const {
     dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
     ASSERT3(dz >= 0);
-    return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
+    return {ind % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
   }
   /// Automatically select zm or zp depending on sign
   SpecificInd zpm(int dz) const { return dz > 0 ? zp(dz) : zm(-dz); }
@@ -823,12 +823,12 @@ public:
     auto minMaxSize = std::minmax_element(std::begin(blockSizes), std::end(blockSizes));
 
     // Note have to derefence to get actual value
-    result.minBlockSize = *(minMaxSize.first);
+    result.minBlockSize = *minMaxSize.first;
     result.numMinBlocks = static_cast<int>(
         std::count(std::begin(blockSizes), std::end(blockSizes), result.minBlockSize));
 
     // Note have to derefence to get actual value
-    result.maxBlockSize = *(minMaxSize.second);
+    result.maxBlockSize = *minMaxSize.second;
     result.numMaxBlocks = static_cast<int>(
         std::count(std::begin(blockSizes), std::end(blockSizes), result.maxBlockSize));
 
@@ -928,7 +928,7 @@ private:
         if (index >= npoints) {
           break;
         }
-        if ((indices[index].ind - indices[index - 1].ind) == 1) {
+        if (indices[index].ind - indices[index - 1].ind == 1) {
           count++;
         } else { // Reached the end of this block so break
           break;
