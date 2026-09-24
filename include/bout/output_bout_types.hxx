@@ -26,12 +26,15 @@ struct fmt::formatter<SpecificInd<N>> {
   // Presentation format: 'c' - components, 'i' - index.
   char presentation = 'c';
 
-  // Parses format specifications of the form ['c' | 'i'].
+  // Parses format specifications of the form ['c' | 'i' | 's'].
   constexpr auto parse(format_parse_context& ctx) {
     const auto* it = ctx.begin();
     const auto* end = ctx.end();
-    if (it != end && (*it == 'c' || *it == 'i')) {
-      presentation = *it++;
+
+    if (it != end && (*it == 'c' || *it == 'i' || *it == 's')) {
+      // If 's' is provided, fall back to the default 'c' representation
+      presentation = (*it == 's') ? 'c' : *it;
+      ++it;
     }
 
     // Check if reached the end of the range:
