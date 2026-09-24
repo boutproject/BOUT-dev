@@ -10,6 +10,7 @@
 #include "bout/output.hxx" // IWYU pragma: keep
 #include "bout/region.hxx"
 #include "bout/traits.hxx"
+#include "bout/utils.hxx"
 
 #include <fmt/base.h>
 #include <fmt/color.h>
@@ -238,6 +239,32 @@ public:
       previous_z = iz;
     }
     return format_to(ctx.out(), "");
+  }
+};
+
+/// Formatter for Fields
+template <>
+struct fmt::formatter<DirectionTypes> {
+  // Parses format specifications: accepts 's' or empty {}
+  constexpr auto parse(format_parse_context& ctx) {
+    auto it = ctx.begin();
+    auto end = ctx.end();
+
+    if (it != end && *it == 's') {
+      ++it;
+    }
+
+    if (it != end && *it != '}') {
+      throw format_error("invalid format");
+    }
+
+    return it;
+  }
+
+  template <typename FormatContext>
+  auto format(const DirectionTypes& dir, FormatContext& ctx) const {
+    // Uses existing toString(dir) function from utils.hxx
+    return fmt::format_to(ctx.out(), "{}", toString(dir));
   }
 };
 

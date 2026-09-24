@@ -42,7 +42,6 @@ class Field;
 #include "bout/field_data.hxx"
 #include "bout/region.hxx"
 #include "bout/traits.hxx"
-#include "bout/utils.hxx"
 #include <bout/globals.hxx>
 #include <bout/rvec.hxx>
 
@@ -164,8 +163,8 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
   if ((field1).getLocation() != (field2).getLocation()) {                                \
     throw BoutException("Error in {:s}:{:d}\nFields at different position:"              \
                         "`{:s}` at {:s}, `{:s}` at {:s}",                                \
-                        __FILE__, __LINE__, #field1, (field1).getLocation(),   \
-                        #field2, (field2).getLocation());                      \
+                        __FILE__, __LINE__, #field1, (field1).getLocation(),             \
+                        #field2, (field2).getLocation());                                \
   }                                                                                      \
   if ((field1).getCoordinates() != (field2).getCoordinates()) {                          \
     throw BoutException("Error in {:s}:{:d}\nFields have different coordinates:"         \
@@ -184,16 +183,16 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
   if (!areDirectionsCompatible((field1).getDirections(), (field2).getDirections())) {    \
     throw BoutException("Error in {:s}:{:d}\nFields at different directions:"            \
                         "`{:s}` at {:s}, `{:s}` at {:s}",                                \
-                        __FILE__, __LINE__, #field1, toString((field1).getDirections()), \
-                        #field2, toString((field2).getDirections()));                    \
+                        __FILE__, __LINE__, #field1, (field1).getDirections(),           \
+                        #field2, (field2).getDirections());                              \
   }
 
 #define ASSERT1_EXPR_COMPATIBLE(expr1, expr2)                                          \
   if ((expr1).getLocation() != (expr2).getLocation()) {                                \
     throw BoutException("Error in {:s}:{:d}\nFields at different position:"            \
                         "`{:s}` at {:s}, `{:s}` at {:s}",                              \
-                        __FILE__, __LINE__, #expr1, (expr1).getLocation(),   \
-                        #expr2, (expr2).getLocation());                      \
+                        __FILE__, __LINE__, #expr1, (expr1).getLocation(),             \
+                        #expr2, (expr2).getLocation());                                \
   }                                                                                    \
   if ((expr1).getMesh() != (expr2).getMesh()) {                                        \
     throw BoutException("Error in {:s}:{:d}\nFields are on different Meshes:"          \
@@ -205,8 +204,8 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
   if (!areDirectionsCompatible((expr1).getDirections(), (expr2).getDirections())) {    \
     throw BoutException("Error in {:s}:{:d}\nFields at different directions:"          \
                         "`{:s}` at {:s}, `{:s}` at {:s}",                              \
-                        __FILE__, __LINE__, #expr1, toString((expr1).getDirections()), \
-                        #expr2, toString((expr2).getDirections()));                    \
+                        __FILE__, __LINE__, #expr1, (expr1).getDirections(),           \
+                        #expr2, (expr2).getDirections());                              \
   }
 
 #else
@@ -324,7 +323,7 @@ inline void checkPositive(const T& f, const std::string& name = "field",
   BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
     if (f[i] <= 0.) {
       throw BoutException("{:s} ({:s} {:s}) is {:e} (not positive) at {:s}", name,
-                          f.getLocation(), toString(f.getDirections()), f[i], i);
+                          f.getLocation(), f.getDirections(), f[i], i);
     }
   }
 }
