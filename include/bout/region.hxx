@@ -891,7 +891,7 @@ private:
     int ind = -1;
     while (!done) {
       ind++;
-      region[ind].ind = ((x * ny + y) * nz) + z;
+      region[ind].ind = (((x * ny) + y) * nz) + z;
       if (x == xend && y == yend && z == zend) {
         done = true;
       }
