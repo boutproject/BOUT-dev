@@ -385,8 +385,8 @@ struct fmt::formatter<SpecificInd<N>> {
 
   // Parses format specifications: ['c' | 'i' | 's'] or empty {}
   constexpr auto parse(format_parse_context& ctx) {
-    auto it = ctx.begin();
-    auto end = ctx.end();
+    const auto* it = ctx.begin();
+    const auto* end = ctx.end();
 
     if (it != end && (*it == 'c' || *it == 'i' || *it == 's')) {
       presentation = (*it == 's') ? 'c' : *it;
