@@ -42,6 +42,7 @@ class Field;
 #include "bout/field_data.hxx"
 #include "bout/region.hxx"
 #include "bout/traits.hxx"
+#include "bout/utils.hxx"
 #include <bout/globals.hxx>
 #include <bout/rvec.hxx>
 
