@@ -1560,7 +1560,7 @@ void BoutMesh::createCommunicators() {
 
           TRACE("Creating Snowflake PF communicators for xp={:d}", i);
 
-          if (i >= 0 && i <= ixseps2) {
+          if (i >= 0 && i < XPROC(ixseps_lower)) {
 
             // PF_W
             MPI_Group pf_group = MPI_GROUP_EMPTY;
@@ -1609,7 +1609,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_E
 
-          if (i >= 0 && i <= ixseps2) {
+          if (i >= 0 && i < XPROC(ixseps_inner)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -1674,9 +1674,9 @@ void BoutMesh::createCommunicators() {
 
           ////////////////////////////////////////////////////
           // PF_C
-          //ixseps2 is considered the ixseps_lower, ixseps1 is considered the ixseps_uppeer.
+          //ixseps2 is considered the ixseps_lower = ixseps_inner, ixseps1 is considered the ixseps_upper = ixseps_upper.
 
-          if (i >= ixseps2 && i <= ixseps1) {
+          if (i >= XPROC(ixseps_inner) && i < XPROC(ixseps_outer)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -1718,7 +1718,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_S
 
-          if (i >= ixseps2 && i <= nx - 1) {
+          if (i >= XPROC(ixseps_inner)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -1755,7 +1755,7 @@ void BoutMesh::createCommunicators() {
 
           TRACE("Creating Snowflake PF communicators for xp={:d}", i);
 
-          if (i >= 0 && i <= ixseps2) {
+          if (i >= 0 && i <= XPROC(ixseps_inner)) {
 
             // PF_W
             MPI_Group pf_group = MPI_GROUP_EMPTY;
@@ -1803,7 +1803,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_E
 
-          if (i >= 0 && i <= ixseps2) {
+          if (i >= 0 && i <= XPROC(ixseps_inner)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -1870,7 +1870,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_C
 
-          if (i >= ixseps2 && i <= ixseps1) {
+          if (i >= XPROC(ixseps_inner) && i < XPROC(ixseps_outer)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -1912,7 +1912,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_S
 
-          if (i >= ixseps2 && i <= nx - 1) {
+          if (i >= XPROC(ixseps_inner)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -1949,7 +1949,7 @@ void BoutMesh::createCommunicators() {
 
           TRACE("Creating Snowflake PF communicators for xp={:d}", i);
 
-          if (i >= 0 && i <= ixseps2) {
+          if (i >= 0 && i <= XPROC(ixseps_inner)) {
 
             // PF_W
             MPI_Group pf_group = MPI_GROUP_EMPTY;
@@ -1994,7 +1994,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_E
 
-          if (i >= 0 && i <= ixseps1) { //Different to SF+
+          if (i >= 0 && i <= XPROC(ixseps_outer)) { //Different to SF+
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -2060,7 +2060,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_C
 
-          if (i >= ixseps2 && i <= ixseps1) {
+          if (i >= XPROC(ixseps_inner) && i < XPROC(ixseps_outer)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -2102,7 +2102,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_S
 
-          if (i >= ixseps1 && i <= nx - 1) {
+          if (i >= XPROC(ixseps_outer)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -2140,7 +2140,7 @@ void BoutMesh::createCommunicators() {
           TRACE("Creating Snowflake PF communicators for xp={:d}", i);
 
           // PF_W
-          if (i >= 0 && i <= ixseps1) {
+          if (i >= 0 && i <= XPROC(ixseps_outer)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -2184,7 +2184,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_E
 
-          if (i >= 0 && i <= ixseps2) {
+          if (i >= 0 && i <= XPROC(ixseps_inner)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -2250,7 +2250,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_C
 
-          if (i >= ixseps2 && i <= ixseps1) {
+          if (i >= XPROC(ixseps_inner) && i <= XPROC(ixseps_outer)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -2292,7 +2292,7 @@ void BoutMesh::createCommunicators() {
           ////////////////////////////////////////////////////
           // PF_S
 
-          if (i >= ixseps1 && i <= nx - 1) {
+          if (i >= XPROC(ixseps_outer)) {
 
             MPI_Group pf_group = MPI_GROUP_EMPTY;
 
