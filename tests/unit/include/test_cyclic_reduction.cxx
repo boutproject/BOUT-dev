@@ -2,6 +2,7 @@
 
 #include "test_extras.hxx"
 #include "bout/array.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/cyclic_reduction.hxx"
 
@@ -19,7 +20,7 @@ Array<BoutReal> makeArrayFromVector(const std::vector<BoutReal>& values) {
   using std::begin;
   using std::end;
 
-  Array<BoutReal> array{static_cast<Array<BoutReal>::size_type>(values.size())};
+  Array<BoutReal> array(static_cast<Array<BoutReal>::size_type>(values.size()));
   std::copy(begin(values), end(values), begin(array));
   return array;
 }
@@ -28,9 +29,9 @@ Matrix<BoutReal> makeMatrixFromVector(const std::vector<std::vector<BoutReal>>& 
   using std::begin;
   using std::end;
 
-  Matrix<BoutReal> matrix{static_cast<Matrix<BoutReal>::size_type>(values.size()),
-                          static_cast<Matrix<BoutReal>::size_type>(values[0].size())};
-  auto start = begin(matrix);
+  Matrix<BoutReal> matrix(static_cast<Matrix<BoutReal>::size_type>(values.size()),
+                          static_cast<Matrix<BoutReal>::size_type>(values[0].size()));
+  auto* start = begin(matrix);
   for (const auto& sub_values : values) {
     start = std::copy(begin(sub_values), end(sub_values), start);
   }
@@ -48,7 +49,7 @@ TEST(CyclicReduction, SerialSolveSingleArray) {
   reduce.setCoefs(a, b, c);
 
   auto rhs = makeArrayFromVector({0., 1., 2., 2., 3.});
-  Array<BoutReal> x{reduction_size};
+  Array<BoutReal> x(reduction_size);
 
   reduce.solve(rhs, x);
 
@@ -70,7 +71,7 @@ TEST(CyclicReduction, SerialSolveSingleMatrix) {
   reduce.setCoefs(a, b, c);
 
   auto rhs = makeMatrixFromVector({{0., 1., 2., 2., 3.}});
-  Matrix<BoutReal> x{1, reduction_size};
+  Matrix<BoutReal> x(1, reduction_size);
 
   reduce.solve(rhs, x);
 

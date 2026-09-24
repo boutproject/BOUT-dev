@@ -9,6 +9,7 @@
 #include "bout/bout_types.hxx"
 #include "bout/dcomplex.hxx"
 #include "bout/field3d.hxx"
+#include "bout/field_data.hxx"
 #include "bout/options.hxx"
 #include "bout/unused.hxx"
 
@@ -119,6 +120,8 @@ public:
    */
   void calcParallelSlices(Field3D& f) override;
 
+  using ParallelTransform::toFieldAligned;
+
   /*!
    * The field is already aligned in Y, so this
    * does nothing
@@ -135,6 +138,8 @@ public:
     FieldPerp result = f;
     return result.setDirectionY(YDirectionType::Aligned);
   }
+
+  using ParallelTransform::fromFieldAligned;
 
   /*!
    * The field is already aligned in Y, so this
@@ -191,6 +196,8 @@ public:
    */
   void calcParallelSlices(Field3D& f) override;
 
+  using ParallelTransform::toFieldAligned;
+
   /*!
    * Uses FFTs and a phase shift to align the grid points
    * with the y coordinate (along magnetic field usually).
@@ -203,6 +210,8 @@ public:
                          const std::string& region = "RGN_ALL") override;
   FieldPerp toFieldAligned(const FieldPerp& f,
                            const std::string& region = "RGN_ALL") override;
+
+  using ParallelTransform::fromFieldAligned;
 
   /*!
    * Converts a field back to X-Z orthogonal coordinates

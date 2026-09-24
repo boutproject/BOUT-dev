@@ -21,10 +21,10 @@ then
 	cmd="sudo docker"
     fi
     test . != ".$2" && mpi="$2" || mpi=openmpi
-    time $cmd pull ghcr.io/dschwoerer/bout-container-base:ci-fedora
+    time $cmd pull ghcr.io/boutproject/bout-container-base:main
     time $cmd create --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
-	 --shm-size 256M \
-         --name mobydick ghcr.io/dschwoerer/bout-container-base:ci-fedora \
+	 --shm-size 1G \
+         --name mobydick ghcr.io/boutproject/bout-container-base:main \
 	     /tmp/BOUT-dev/.ci_fedora.sh $mpi
     time $cmd cp ${TRAVIS_BUILD_DIR:-$(pwd)} mobydick:/tmp/BOUT-dev
     time $cmd start -a mobydick
@@ -37,9 +37,15 @@ test . != ".$1" && mpi="$1" || mpi=openmpi
     cp -a /tmp/BOUT-dev /home/test/
     . /etc/profile.d/modules.sh
     module load mpi/${1}-x86_64
-    export OMPI_MCA_rmaps_base_oversubscribe=yes
+    sudo dnf install -y python3-pytest python3-pytest-xdist
+    # OpenMPI Oversubscription Overrides
+    export OMPI_MCA_rmaps_base_oversubscribe=1
+    export OMPI_MCA_hwloc_base_binding_policy=none
+    export OMPI_MCA_rmaps_base_mapping_policy=core:OVERSUBSCRIBE
+    export PRTE_MCA_rmaps_default_mapping_policy=core:OVERSUBSCRIBE
     export PRTE_MCA_rmaps_default_mapping_policy=:oversubscribe
     export TRAVIS=true
+    export CI=true
     # Try limiting openmp threads
     export FLEXIBLAS=NETLIB
     export MKL_NUM_THREADS=1
@@ -47,12 +53,15 @@ test . != ".$1" && mpi="$1" || mpi=openmpi
     export OMP_NUM_THREADS=1
     cd
     cd BOUT-dev
+    python3 -m ensurepip
+    python3 -m pip install -r requirements.txt
     echo "starting configure"
     time cmake -S . -B build -DBOUT_USE_PETSC=ON \
 	 -DBOUT_UPDATE_GIT_SUBMODULE=OFF \
 	 -DBOUT_USE_SYSTEM_FMT=ON \
 	 -DBOUT_USE_SYSTEM_MPARK_VARIANT=ON \
-	 -DBOUT_USE_SUNDIALS=ON
+	 -DBOUT_USE_SUNDIALS=ON \
+	 -DBOUT_USE_SYSTEM_CPPTRACE=ON
 
     time make -C build build-check -j 2
-    time make -C build check
+    cd build && time cmake --build . --target check

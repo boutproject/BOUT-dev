@@ -54,7 +54,7 @@ mxstep = 50000
 
 #type=splitrk
 #timestep=1e-4
-use_precon = true
+cvode_precon_method = user
 output_step = 0.01   # time between outputs
 # Settings for split operator test case
 

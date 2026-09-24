@@ -1,5 +1,7 @@
 #include "bout/build_defines.hxx"
 
+#if BOUT_HAS_HYPRE
+
 #include <math.h>
 #include <tuple>
 
@@ -8,17 +10,19 @@
 #include "bout/invert_laplace.hxx"
 #include "gtest/gtest.h"
 
+#include "bout/bout_types.hxx"
+#include "bout/coordinates.hxx"
 #include "bout/derivs.hxx"
 #include "bout/difops.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
+#include "bout/globals.hxx"
 #include "bout/griddata.hxx"
 #include "bout/hypre_interface.hxx"
 #include "bout/mesh.hxx"
 #include "bout/options.hxx"
+#include "bout/region.hxx"
 #include "bout/vecops.hxx"
-
-#if BOUT_HAS_HYPRE
 
 #include "fake_mesh_fixture.hxx"
 
@@ -38,10 +42,10 @@ public:
     upper_y_neumann = yup_neumann;
   }
 
-  const Field3D operator()(Field3D& f) {
-    auto result = d * Laplace_perp(f, CELL_DEFAULT, "free", "RGN_NOY")
-                  + (Grad(f) * Grad(c2) - DDY(c2) * DDY(f) / coords->g_22) / c1 + a * f
-                  + ex * DDX(f) + ez * DDZ(f);
+  Field3D operator()(Field3D& f) {
+    Field3D result = d * Laplace_perp(f, CELL_DEFAULT, "free", "RGN_NOY")
+                     + (Grad(f) * Grad(c2) - DDY(c2) * DDY(f) / coords->g_22()) / c1
+                     + a * f + ex * DDX(f) + ez * DDZ(f);
     applyBoundaries(result, f);
     return result;
   }
@@ -53,10 +57,10 @@ private:
   bool inner_x_neumann, outer_x_neumann, // If false then use Dirichlet conditions
       lower_y_neumann, upper_y_neumann;
 
-  void applyBoundaries(Field3D& newF, Field3D& f) {
+  void applyBoundaries(Field3D& newF, Field3D& f) const {
     BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_INNER_X")) {
       if (inner_x_neumann) {
-        newF[i] = (f[i.xp()] - f[i]) / coords->dx[i] / sqrt(coords->g_11[i]);
+        newF[i] = (f[i.xp()] - f[i]) / coords->dx()[i] / sqrt(coords->g_11()[i]);
       } else {
         newF[i] = 0.5 * (f[i] + f[i.xp()]);
       }
@@ -64,7 +68,7 @@ private:
 
     BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_OUTER_X")) {
       if (outer_x_neumann) {
-        newF[i] = (f[i] - f[i.xm()]) / coords->dx[i] / sqrt(coords->g_11[i]);
+        newF[i] = (f[i] - f[i.xm()]) / coords->dx()[i] / sqrt(coords->g_11()[i]);
       } else {
         newF[i] = 0.5 * (f[i.xm()] + f[i]);
       }
@@ -72,7 +76,7 @@ private:
 
     BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_LOWER_Y")) {
       if (lower_y_neumann) {
-        newF[i] = (f[i.yp()] - f[i]) / coords->dx[i] / sqrt(coords->g_11[i]);
+        newF[i] = (f[i.yp()] - f[i]) / coords->dx()[i] / sqrt(coords->g_11()[i]);
       } else {
         newF[i] = 0.5 * (f[i] + f[i.yp()]);
       }
@@ -80,7 +84,7 @@ private:
 
     BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_UPPER_Y")) {
       if (upper_y_neumann) {
-        newF[i] = (f[i] - f[i.ym()]) / coords->dx[i] / sqrt(coords->g_11[i]);
+        newF[i] = (f[i] - f[i.ym()]) / coords->dx()[i] / sqrt(coords->g_11()[i]);
       } else {
         newF[i] = 0.5 * (f[i.ym()] + f[i]);
       }
@@ -98,20 +102,19 @@ public:
     int nx = mesh->GlobalNx, ny = mesh->GlobalNy, nz = mesh->GlobalNz;
     static_cast<FakeMesh*>(bout::globals::mesh)
         ->setGridDataSource(new GridFromOptions(Options::getRoot()));
-    bout::globals::mesh->getCoordinates()->geometry();
     f3.allocate();
     coef2.allocate();
     coef3.allocate();
 
     BOUT_FOR(i, mesh->getRegion2D("RGN_ALL")) {
-      BoutReal x = i.x() / (BoutReal)nx - 0.5;
-      BoutReal y = i.y() / (BoutReal)ny - 0.5;
+      const BoutReal x = i.x() / (BoutReal)nx - 0.5;
+      const BoutReal y = i.y() / (BoutReal)ny - 0.5;
       coef2[i] = x + y;
     }
     BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
-      BoutReal x = i.x() / (BoutReal)nx - 0.5;
-      BoutReal y = i.y() / (BoutReal)ny - 0.5;
-      BoutReal z = i.z() / (BoutReal)nz - 0.5;
+      const BoutReal x = i.x() / (BoutReal)nx - 0.5;
+      const BoutReal y = i.y() / (BoutReal)ny - 0.5;
+      const BoutReal z = i.z() / (BoutReal)nz - 0.5;
       f3[i] = 1e3 * exp(-0.5 * sqrt(x * x + y * y + z * z) / sigmasq);
       coef3[i] = x + y + sin(2 * 3.14159265358979323846 * z);
     }
@@ -345,6 +348,17 @@ TEST_P(LaplaceHypre3dTest, TestSolve3DGuess) {
   Field3D expected = f3, guess = f3 * 1.01;
   const Field3D actual = solver.solve(forward(f3), guess);
   BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) { EXPECT_NEAR(expected[i], actual[i], tol); }
+}
+
+TEST_P(LaplaceHypre3dTest, TestSolve3DRepeated) {
+  const Field3D rhs = forward(f3);
+  const Field3D first = solver.solve(rhs);
+  const Field3D second = solver.solve(rhs);
+
+  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
+    EXPECT_NEAR(f3[i], first[i], tol);
+    EXPECT_NEAR(f3[i], second[i], tol);
+  }
 }
 
 TEST_P(LaplaceHypre3dTest, TestSolvePerp) {

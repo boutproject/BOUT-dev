@@ -15,10 +15,12 @@ The documentation is divided into the following sections:
   * :ref:`model-outputs`
 
   * :ref:`bout-interfaces`
-  
+
+  * :ref:`performance-and-accelerators`
+
 * :ref:`developer-docs`
 
-     
+
 .. toctree::
    :maxdepth: 2
    :caption: Getting started
@@ -30,25 +32,24 @@ The documentation is divided into the following sections:
    user_docs/advanced_install
    user_docs/running_bout
    user_docs/new_in_v5
-   
+
 .. toctree::
    :maxdepth: 2
    :caption: BOUT++ models
    :name: bout-models
-      
+
    user_docs/physics_models
    user_docs/makefiles
    user_docs/variable_init
    user_docs/boundary_options
    user_docs/testing
-   user_docs/gpu_support
    user_docs/adios2
-   
+
 .. toctree::
    :maxdepth: 2
    :caption: Model inputs
    :name: model-inputs
-   
+
    user_docs/bout_options
    user_docs/input_grids
 
@@ -56,25 +57,34 @@ The documentation is divided into the following sections:
    :maxdepth: 2
    :caption: Model outputs
    :name: model-outputs
-   
+
    user_docs/output_and_post
    user_docs/python_boutpp
-   
+
 .. toctree::
    :maxdepth: 2
    :caption: BOUT++ interfaces
    :name: bout-interfaces
-   
+
    user_docs/time_integration
    user_docs/parallel-transforms
-   user_docs/laplacian
    user_docs/differential_operators
+   user_docs/parallel_operators
    user_docs/algebraic_operators
+   user_docs/field_expressions
    user_docs/staggered_grids
-   user_docs/eigenvalue_solver
-   user_docs/nonlocal
+   user_docs/laplacian
    user_docs/invertable_operator
    user_docs/petsc
+   user_docs/eigenvalue_solver
+   user_docs/nonlocal
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Performance and accelerators
+   :name: performance-and-accelerators
+
+   user_docs/gpu_support
 
 .. toctree::
    :maxdepth: 1

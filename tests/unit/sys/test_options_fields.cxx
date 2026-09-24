@@ -36,6 +36,36 @@ TEST_F(OptionsFieldTest, StoreField2D) {
   EXPECT_TRUE(options.isValue());
 }
 
+TEST_F(OptionsFieldTest, StoreEvaluatedField3DExpression) {
+  Field3D lhs = 1.0;
+  Field3D rhs = 2.0;
+  lhs(0, 1, 1) = 3.0;
+  rhs(0, 1, 1) = 4.0;
+
+  Options options;
+  options = lhs + rhs;
+
+  Field3D stored = options;
+
+  EXPECT_DOUBLE_EQ(stored(0, 1, 0), 3.0);
+  EXPECT_DOUBLE_EQ(stored(0, 1, 1), 7.0);
+}
+
+TEST_F(OptionsFieldTest, StoreEvaluatedField2DExpression) {
+  Field2D lhs = 1.0;
+  Field2D rhs = 2.0;
+  lhs(0, 1) = 3.0;
+  rhs(0, 1) = 4.0;
+
+  Options options;
+  options = lhs + rhs;
+
+  Field2D stored = options;
+
+  EXPECT_DOUBLE_EQ(stored(0, 0), 3.0);
+  EXPECT_DOUBLE_EQ(stored(0, 1), 7.0);
+}
+
 TEST_F(OptionsFieldTest, RetrieveField3D) {
   Field3D field = 1.0;
   field(0, 1, 1) = 2.0;

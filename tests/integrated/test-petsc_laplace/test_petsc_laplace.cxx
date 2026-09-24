@@ -37,7 +37,6 @@
 #include "bout/options.hxx"
 #include "bout/options_io.hxx"
 #include "bout/output.hxx"
-#include "bout/petsclib.hxx"
 #include "bout/traits.hxx"
 #include "bout/vecops.hxx"
 
@@ -99,7 +98,7 @@ void check_laplace(int test_num, std::string_view test_name, Laplacian& invert,
 template <class T>
 Field3D forward_laplace(const Field3D& field, const T& acoef, const T& ccoef,
                         const T& dcoef) {
-  auto bcoef =
+  Field3D bcoef =
       dcoef * Delp2(field) + Grad_perp(ccoef) * Grad_perp(field) / ccoef + acoef * field;
   apply_flat_boundary(bcoef);
   return bcoef;
@@ -174,9 +173,6 @@ int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
 
-  // Need this here to ensure PETSc isn't finalised until after the global mesh,
-  // otherwise we get problems from `MPI_Comm_free` on the X communicator
-  PetscLib lib{};
   {
     // Not be used for 3D metrics
     Options::root()["laplace"].setConditionallyUsed();

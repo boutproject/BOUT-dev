@@ -6,19 +6,32 @@
  * T. Xia
  *******************************************************************************/
 
+#include "bout/assert.hxx"
 #include "bout/bout.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/constants.hxx"
+#include "bout/coordinates.hxx"
 #include "bout/derivs.hxx"
+#include "bout/difops.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/fieldgroup.hxx"
 #include "bout/initialprofiles.hxx"
 #include "bout/interpolation_xz.hxx"
 #include "bout/invert_laplace.hxx"
-#include "bout/invert_parderiv.hxx"
 #include "bout/msg_stack.hxx"
+#include "bout/output.hxx"
 #include "bout/physicsmodel.hxx"
+#include "bout/smoothing.hxx"
 #include "bout/sourcex.hxx"
 #include "bout/tokamak_coordinates.hxx"
+#include "bout/unused.hxx"
+#include "bout/vecops.hxx"
+#include "bout/where.hxx"
 
 #include <cmath>
+#include <memory>
 
 constexpr BoutReal eV_K = 11605.0; // 1eV = 11605K
 
@@ -356,7 +369,7 @@ class Elm_6f : public PhysicsModel {
       result.allocate();
       for (auto i : result) {
         result[i] =
-            (fp[i.yp()] - fm[i.ym()]) / (2. * coord->dy[i] * sqrt(coord->g_22[i]));
+            (fp[i.yp()] - fm[i.ym()]) / (2. * coord->dy()[i] * sqrt(coord->g_22()[i]));
       }
     } else {
       result = Grad_par(f, loc);
@@ -696,7 +709,7 @@ protected:
 
     if (mesh->IncIntShear) {
       // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-      mesh->getCoordinates()->IntShiftTorsion = I;
+      mesh->getCoordinates()->setIntShiftTorsion(I);
     } else {
       // Dimits style, using local coordinate system
       if (include_curvature) {
@@ -929,7 +942,7 @@ protected:
     output.write("\tlog Lambda: {:e}\n", LnLambda);
 
     nu_e = 2.91e-6 * LnLambda * ((N0)*Nbar * density / 1.e6)
-           * pow(Te0 * Tebar, -1.5); // nu_e in 1/S.
+           * pow(Field2D{Te0 * Tebar}, -1.5); // nu_e in 1/S.
     output.write("\telectron collision rate: {:e} -> {:e} [1/s]\n", min(nu_e), max(nu_e));
     // nu_e.applyBoundary();
     // mesh->communicate(nu_e);
@@ -941,7 +954,8 @@ protected:
       // xqx addition, begin
       // Use Spitzer thermal conductivities
       nu_i = 4.80e-8 * (Zi * Zi * Zi * Zi / sqrt(AA)) * LnLambda
-             * ((N0)*Nbar * density / 1.e6) * pow(Ti0 * Tibar, -1.5); // nu_i in 1/S.
+             * ((N0)*Nbar * density / 1.e6)
+             * pow(Field2D{Ti0 * Tibar}, -1.5); // nu_i in 1/S.
       // output.write("\tCoulomb Logarithm: {:e} \n", max(LnLambda));
       output.write("\tion collision rate: {:e} -> {:e} [1/s]\n", min(nu_i), max(nu_i));
 
@@ -1006,8 +1020,9 @@ protected:
       // Use Spitzer resistivity
       output.write("\n\tSpizter parameters");
       // output.write("\tTemperature: {:e} -> {:e} [eV]\n", min(Te), max(Te));
-      eta_spitzer = 0.51 * 1.03e-4 * Zi * LnLambda
-                    * pow(Te0 * Tebar, -1.5); // eta in Ohm-m. NOTE: ln(Lambda) = 20
+      eta_spitzer =
+          0.51 * 1.03e-4 * Zi * LnLambda
+          * pow(Field2D{Te0 * Tebar}, -1.5); // eta in Ohm-m. NOTE: ln(Lambda) = 20
       output.write("\tSpitzer resistivity: {:e} -> {:e} [Ohm m]\n", min(eta_spitzer),
                    max(eta_spitzer));
       eta_spitzer /= SI::mu0 * Va * Lbar;
@@ -1114,7 +1129,7 @@ protected:
       // Only if not restarting: Check initial perturbation
 
       // Set U to zero where P0 < vacuum_pressure
-      U = where(P0 - vacuum_pressure, U, 0.0);
+      U = where(Field2D{P0 - vacuum_pressure}, U, 0.0);
 
       //    Field2D lap_temp = 0.0;
       Field2D logn0 = laplace_alpha * N0;
@@ -1241,24 +1256,25 @@ protected:
       // Update resistivity
       if (spitzer_resist) {
         // Use Spitzer formula
-        eta_spitzer = 0.51 * 1.03e-4 * Zi * LnLambda
-                      * pow(Te_tmp * Tebar, -1.5); // eta in Ohm-m. ln(Lambda) = 20
+        eta_spitzer =
+            0.51 * 1.03e-4 * Zi * LnLambda
+            * pow(Field3D{Te_tmp * Tebar}, -1.5); // eta in Ohm-m. ln(Lambda) = 20
         eta_spitzer /= SI::mu0 * Va * Lbar;
       } else {
         eta = core_resist + (vac_resist - core_resist) * vac_mask;
       }
 
       nu_e = 2.91e-6 * LnLambda * (N_tmp * Nbar * density / 1.e6)
-             * pow(Te_tmp * Tebar, -1.5); // nu_e in 1/S.
+             * pow(Field3D{Te_tmp * Tebar}, -1.5); // nu_e in 1/S.
 
       if (diffusion_par > 0.0) {
         // Use Spitzer thermal conductivities
 
         nu_i = 4.80e-8 * (Zi * Zi * Zi * Zi / sqrt(AA)) * LnLambda
                * (N_tmp * Nbar * density / 1.e6)
-               * pow(Ti_tmp * Tibar, -1.5);         // nu_i in 1/S.
-        vth_i = 9.79e3 * sqrt(Ti_tmp * Tibar / AA); // vth_i in m/S.
-        vth_e = 4.19e5 * sqrt(Te_tmp * Tebar);      // vth_e in m/S.
+               * pow(Field3D{Ti_tmp * Tibar}, -1.5); // nu_i in 1/S.
+        vth_i = 9.79e3 * sqrt(Ti_tmp * Tibar / AA);  // vth_i in m/S.
+        vth_e = 4.19e5 * sqrt(Te_tmp * Tebar);       // vth_e in m/S.
       }
 
       if (diffusion_par > 0.0) {
@@ -1399,11 +1415,11 @@ protected:
       if (hyperviscos > 0.0) {
         // Calculate coefficient.
 
-        hyper_mu_x = hyperviscos * coord->g_11 * SQ(coord->dx)
-                     * abs(coord->g11 * D2DX2(U)) / (abs(U) + 1e-3);
+        hyper_mu_x = hyperviscos * coord->g_11() * SQ(coord->dx())
+                     * abs(coord->g11() * D2DX2(U)) / (abs(U) + 1e-3);
         hyper_mu_x.applyBoundary("dirichlet"); // Set to zero on all boundaries
 
-        ddt(U) += hyper_mu_x * coord->g11 * D2DX2(U);
+        ddt(U) += hyper_mu_x * coord->g11() * D2DX2(U);
 
         if (first_run) {
           // Print out maximum values of viscosity used on this processor

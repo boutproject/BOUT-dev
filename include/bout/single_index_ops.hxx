@@ -5,18 +5,11 @@
 #ifndef SINGLE_INDEX_OPS_H
 #define SINGLE_INDEX_OPS_H
 
-#include "field_accessor.hxx"
-
-#if BOUT_HAS_RAJA
-//--  RAJA CUDA settings--------------------------------------------------------start
-#if BOUT_HAS_CUDA
-const int CUDA_BLOCK_SIZE = 256; // TODO: Make configurable
-using EXEC_POL = RAJA::cuda_exec<CUDA_BLOCK_SIZE>;
-#else  // not BOUT_USE_CUDA
-using EXEC_POL = RAJA::loop_exec;
-#endif // end BOUT_USE_CUDA
-////-----------CUDA settings------------------------------------------------------end
-#endif // end BOUT_HAS_RAJA
+#include "bout/bout_types.hxx"
+#include "bout/build_config.hxx"
+#include "bout/field_accessor.hxx"
+#include "bout/region.hxx"
+#include "bout/utils.hxx"
 
 // Ind3D: i.zp():
 BOUT_HOST_DEVICE inline int i_zp(const int id, const int nz) {
@@ -239,8 +232,8 @@ BOUT_HOST_DEVICE inline BoutReal Delp2(const FieldAccessor<location>& f, const i
   return (f.coords.G1(i) + f.coords.d1_dx(i) * f.coords.g11(i)) * (f[ixp] - f[ixm])
              / (2.0 * dx)                                            // DDX
          + f.coords.G3(i) * (f[izp] - f[izm]) / (2.0 * dz)           // DDZ
-         + f.coords.g11(i) * (f[ixp] - 2.0 * f[i] + f[ixm]) / SQ(dx) // D2DX2
-         + f.coords.g33(i) * (f[izp] - 2.0 * f[i] + f[izm]) / SQ(dz) // D2DZ2
+         + f.coords.g11(i) * (f[ixp] + f[ixm] - 2.0 * f[i]) / SQ(dx) // D2DX2
+         + f.coords.g33(i) * (f[izp] + f[izm] - 2.0 * f[i]) / SQ(dz) // D2DZ2
          + 2 * f.coords.g13(i) * ((f[izpxp] - f[izpxm]) - (f[izmxp] - f[izmxm]))
                / (4. * dz * dx); // D2DXDZ
 }

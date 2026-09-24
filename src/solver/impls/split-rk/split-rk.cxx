@@ -95,7 +95,7 @@ int SplitRK::init() {
 
 int SplitRK::run() {
 
-  for (int step = 0; step < getNumberOutputSteps(); step++) {
+  for (int step = 1; step <= getNumberOutputSteps(); step++) {
     // Take an output step
 
     BoutReal target = simtime + getOutputTimestep();

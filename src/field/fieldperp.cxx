@@ -2,7 +2,7 @@
  * Class for 2D X-Z slices
  *
  **************************************************************************
- * Copyright 2010 - 2025 BOUT++ developers
+ * Copyright 2010 - 2026 BOUT++ developers
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -150,11 +150,43 @@ FieldPerp fromFieldAligned(const FieldPerp& f, const std::string& region) {
 
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
 
-// Unary minus
-FieldPerp operator-(const FieldPerp& f) { return -1.0 * f; }
-
 /////////////////////////////////////////////////
 // functions
+
+FieldPerp pow(const FieldPerp& lhs, const FieldPerp& rhs, const std::string& rgn) {
+  checkData(lhs);
+  checkData(rhs);
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
+
+  FieldPerp result{emptyFrom(lhs)};
+
+  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
+
+  checkData(result);
+  return result;
+}
+
+FieldPerp pow(const FieldPerp& lhs, BoutReal rhs, const std::string& rgn) {
+  checkData(lhs);
+
+  FieldPerp result{emptyFrom(lhs)};
+
+  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs); }
+
+  checkData(result);
+  return result;
+}
+
+FieldPerp pow(BoutReal lhs, const FieldPerp& rhs, const std::string& rgn) {
+  checkData(rhs);
+
+  FieldPerp result{emptyFrom(rhs)};
+
+  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs, rhs[i]); }
+
+  checkData(result);
+  return result;
+}
 
 const FieldPerp sliceXZ(const Field3D& f, int y) {
   // Source field should be valid

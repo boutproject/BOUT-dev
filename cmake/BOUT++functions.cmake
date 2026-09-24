@@ -36,6 +36,23 @@ macro(bout_handle_requires_conflicts TYPENAME TYPEVAR)
   endforeach()
 endmacro()
 
+function(bout_target_enable_hip TARGET_NAME)
+  if(BOUT_HAS_HIP)
+    get_target_property(model_sources ${TARGET_NAME} SOURCES)
+    list(FILTER model_sources INCLUDE REGEX ".*\\.(cxx|cpp|cc)$")
+    if(model_sources)
+      set_source_files_properties(${model_sources} PROPERTIES LANGUAGE HIP)
+    endif()
+    set_target_properties(
+      ${TARGET_NAME}
+      PROPERTIES HIP_STANDARD 20
+                 HIP_STANDARD_REQUIRED ON
+                 HIP_EXTENSIONS OFF
+                 LINKER_LANGUAGE HIP
+    )
+  endif()
+endfunction()
+
 # Build a BOUT++ physics model
 #
 # This is basically just a simple wrapper around 'add_executable' and
@@ -69,6 +86,7 @@ function(bout_add_model MODEL)
   endif()
 
   add_executable(${MODEL} ${BOUT_MODEL_OPTIONS_SOURCES})
+  bout_target_enable_hip(${MODEL})
   target_link_libraries(${MODEL} bout++::bout++)
   target_include_directories(
     ${MODEL} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -172,7 +190,9 @@ endfunction()
 #
 function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
   set(options USE_RUNTEST USE_DATA_BOUT_INP)
-  set(oneValueArgs EXECUTABLE_NAME PROCESSORS DOWNLOAD DOWNLOAD_NAME)
+  set(oneValueArgs EXECUTABLE_NAME PROCESSORS DOWNLOAD DOWNLOAD_NAME
+                   PYTHON_TEST_FILE
+  )
   set(multiValueArgs SOURCES EXTRA_FILES REQUIRES CONFLICTS TESTARGS
                      EXTRA_DEPENDS
   )
@@ -191,6 +211,7 @@ function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
     # We've got some sources, so compile them into an executable and
     # link against BOUT++
     add_executable(${TESTNAME} ${BOUT_TEST_OPTIONS_SOURCES})
+    bout_target_enable_hip(${TESTNAME})
     target_link_libraries(${TESTNAME} bout++)
     target_include_directories(
       ${TESTNAME} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -233,8 +254,10 @@ function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
     set(output)
     add_custom_command(
       OUTPUT ${BOUT_TEST_OPTIONS_DOWNLOAD_NAME}
-      COMMAND wget ${BOUT_TEST_OPTIONS_DOWNLOAD} -O
-              ${BOUT_TEST_OPTIONS_DOWNLOAD_NAME} $ENV{BOUT_TEST_DOWNLOAD_FLAGS}
+      COMMAND
+        wget ${BOUT_TEST_OPTIONS_DOWNLOAD} -O ${BOUT_TEST_OPTIONS_DOWNLOAD_NAME}
+        $ENV{BOUT_TEST_DOWNLOAD_FLAGS} || curl ${BOUT_TEST_OPTIONS_DOWNLOAD} -o
+        ${BOUT_TEST_OPTIONS_DOWNLOAD_NAME}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Downloading ${BOUT_TEST_OPTIONS_DOWNLOAD_NAME}"
     )
@@ -254,14 +277,27 @@ function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
 
   # Set the actual test command
   if(BOUT_TEST_OPTIONS_USE_RUNTEST)
-    add_test(NAME ${TESTNAME} COMMAND ./runtest ${BOUT_TEST_OPTIONS_TESTARGS})
+    if(BOUT_TEST_OPTIONS_PYTHON_TEST_FILE)
+      # It's an integrated test with a specific python file
+      add_test(NAME ${TESTNAME}
+               COMMAND pytest ${BOUT_TEST_OPTIONS_PYTHON_TEST_FILE}
+                       ${BOUT_TEST_OPTIONS_TESTARGS}
+      )
+    else()
+      # It's an MMS test still using the 'runtest' script
+      add_test(NAME ${TESTNAME} COMMAND ./runtest ${BOUT_TEST_OPTIONS_TESTARGS})
+    endif()
+
     set_tests_properties(
       ${TESTNAME} PROPERTIES ENVIRONMENT
                              PYTHONPATH=${BOUT_PYTHONPATH}:$ENV{PYTHONPATH}
     )
-    bout_copy_file(runtest)
   else()
     add_test(NAME ${TESTNAME} COMMAND ${TESTNAME} ${BOUT_TEST_OPTIONS_TESTARGS})
+  endif()
+
+  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/runtest)
+    bout_copy_file(runtest)
   endif()
 
   set_tests_properties(
@@ -284,11 +320,23 @@ endfunction()
 
 # Add a new integrated test. See `bout_add_integrated_or_mms_test` for arguments
 function(bout_add_integrated_test TESTNAME)
-  bout_add_integrated_or_mms_test(
-    build-check-integrated-tests ${TESTNAME} ${ARGV}
+  # Construct the Python test filename
+  string(REGEX REPLACE "^(test-)?(.+)$" "test_\\2.py" TEST_FILENAME
+                       "${TESTNAME}"
   )
-endfunction()
+  string(REPLACE "-" "_" TEST_FILENAME "${TEST_FILENAME}")
+  string(REPLACE "test_test_" "test_" TEST_FILENAME "${TEST_FILENAME}")
 
+  bout_add_integrated_or_mms_test(
+    build-check-integrated-tests ${TESTNAME} PYTHON_TEST_FILE ${TEST_FILENAME}
+    ${ARGV}
+  )
+
+  # Only copy the file if the test wasn't skipped due to missing requirements
+  if(TARGET ${TESTNAME})
+    bout_copy_file(${TEST_FILENAME})
+  endif()
+endfunction()
 # Add a new MMS test. See `bout_add_integrated_or_mms_test` for arguments
 function(bout_add_mms_test TESTNAME)
   bout_add_integrated_or_mms_test(build-check-mms-tests ${TESTNAME} ${ARGV})

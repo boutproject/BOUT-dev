@@ -753,7 +753,7 @@ TEST_F(Field2DTest, ConstIndexingInd3D) {
   EXPECT_DOUBLE_EQ(field2[ind], 10);
 }
 
-#if CHECK > 2 && !BOUT_HAS_CUDA
+#if CHECK > 2 && !BOUT_HAS_CUDA && !BOUT_HAS_HIP
 TEST_F(Field2DTest, CheckNotEmpty) {
   Field2D field;
 
@@ -853,7 +853,7 @@ TEST_F(Field2DTest, InvalidateGuards) {
 
   sum = 0;
   for (const auto& i : field) {
-    if (!finite(field[i])) {
+    if (!std::isfinite(field[i])) {
       sum++;
     }
   }
@@ -1168,6 +1168,19 @@ TEST_F(Field2DTest, PowField2DField2D) {
   EXPECT_TRUE(IsFieldEqual(c, 64.0));
 }
 
+TEST_F(Field2DTest, PowExpressionUsesPowOp) {
+  Field2D field;
+
+  field = 2.0;
+  const auto expr = field + 1.0;
+
+  EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(pow(expr, 2.0))>,
+                              BinaryExpr<Field2D, std::decay_t<decltype(expr)>,
+                                         Constant<double>, bout::op::Pow>>));
+  EXPECT_TRUE(IsFieldEqual(pow(expr, 2.0), 9.0));
+  EXPECT_TRUE(IsFieldEqual(pow(expr, 2.0, "RGN_ALL"), 9.0));
+}
+
 TEST_F(Field2DTest, Sqrt) {
   Field2D field;
 
@@ -1175,11 +1188,47 @@ TEST_F(Field2DTest, Sqrt) {
   EXPECT_TRUE(IsFieldEqual(sqrt(field), 4.0));
 }
 
+TEST_F(Field2DTest, SQExpressionUsesSquareOp) {
+  Field2D field;
+
+  field = 2.0;
+  const auto expr = field + 1.0;
+
+  EXPECT_TRUE(
+      (std::is_same_v<std::decay_t<decltype(SQ(expr))>,
+                      BinaryExpr<Field2D, std::decay_t<decltype(expr)>,
+                                 std::decay_t<decltype(expr)>, bout::op::Square>>));
+  EXPECT_TRUE(IsFieldEqual(SQ(expr), 9.0));
+}
+
 TEST_F(Field2DTest, Abs) {
   Field2D field;
 
   field = -31.0;
   EXPECT_TRUE(IsFieldEqual(abs(field), 31.0));
+}
+
+TEST_F(Field2DTest, AbsExpressionUsesAbsOp) {
+  Field2D field;
+
+  field = -2.0;
+  const auto expr = field + 1.0;
+
+  EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(abs(expr))>,
+                              BinaryExpr<Field2D, std::decay_t<decltype(expr)>,
+                                         std::decay_t<decltype(expr)>, bout::op::abs>>));
+  EXPECT_TRUE(IsFieldEqual(abs(expr), 1.0));
+  EXPECT_TRUE(IsFieldEqual(abs(expr, "RGN_ALL"), 1.0));
+}
+
+TEST_F(Field2DTest, RegionLimitedExpressionConstructsField2D) {
+  Field2D field;
+
+  field = -31.0;
+
+  Field2D result = abs(field, "RGN_NOBNDRY");
+
+  EXPECT_TRUE(IsFieldEqual(result, 31.0, "RGN_NOBNDRY"));
 }
 
 TEST_F(Field2DTest, Exp) {
@@ -1281,6 +1330,19 @@ TEST_F(Field2DTest, Floor) {
   EXPECT_TRUE(IsFieldEqual(floor(field, floor_value), floor_value));
 }
 
+TEST_F(Field2DTest, FloorExpressionUsesFloorOp) {
+  Field2D field;
+
+  field = 2.0;
+  const auto expr = field + 1.0;
+
+  EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(floor(expr, 5.0))>,
+                              BinaryExpr<Field2D, std::decay_t<decltype(expr)>,
+                                         Constant<BoutReal>, bout::op::Floor>>));
+  EXPECT_TRUE(IsFieldEqual(floor(expr, 5.0), 5.0));
+  EXPECT_TRUE(IsFieldEqual(floor(expr, 5.0, "RGN_ALL"), 5.0));
+}
+
 TEST_F(Field2DTest, Min) {
   Field2D field;
 
@@ -1298,6 +1360,21 @@ TEST_F(Field2DTest, Min) {
   EXPECT_EQ(min(field, true, "RGN_ALL"), -99.0);
 }
 
+TEST_F(Field2DTest, MinBinaryExpr) {
+  Field2D field;
+
+  field = 50.0;
+  field(0, 0) = -99.0;
+  field(1, 1) = 60.0;
+  field(1, 2) = 40.0;
+  field(2, 4) = 99.0;
+
+  const auto expr = field / 2.0 - 5.0;
+
+  EXPECT_EQ(min(expr, false), 15.0);
+  EXPECT_EQ(min(expr, false, "RGN_ALL"), -54.5);
+}
+
 TEST_F(Field2DTest, Max) {
   Field2D field;
 
@@ -1313,6 +1390,21 @@ TEST_F(Field2DTest, Max) {
   EXPECT_EQ(max(field, false), max_value);
   EXPECT_EQ(max(field, false, "RGN_ALL"), 99.0);
   EXPECT_EQ(max(field, true, "RGN_ALL"), 99.0);
+}
+
+TEST_F(Field2DTest, MaxBinaryExpr) {
+  Field2D field;
+
+  field = 50.0;
+  field(0, 0) = -99.0;
+  field(1, 1) = 40.0;
+  field(1, 2) = 60.0;
+  field(2, 4) = 99.0;
+
+  const auto expr = field / 2.0 - 5.0;
+
+  EXPECT_EQ(max(expr, false), 25.0);
+  EXPECT_EQ(max(expr, false, "RGN_ALL"), 44.5);
 }
 
 TEST_F(Field2DTest, Swap) {
@@ -1434,6 +1526,23 @@ TEST_F(Field2DTest, OperatorEqualsField2D) {
   EXPECT_EQ(field.getLocation(), field2.getLocation());
   EXPECT_EQ(field.getDirectionY(), field2.getDirectionY());
   EXPECT_EQ(field.getDirectionZ(), field2.getDirectionZ());
+}
+
+TEST_F(Field2DTest, OperatorEqualsBinaryExprCopiesMetadata) {
+  Field2D source{
+      mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+  source = 4.;
+
+  Field2D target(mesh_staggered);
+  target = 0.;
+
+  target = sqrt(source);
+
+  EXPECT_EQ(target.getMesh(), source.getMesh());
+  EXPECT_EQ(target.getLocation(), source.getLocation());
+  EXPECT_EQ(target.getDirectionY(), source.getDirectionY());
+  EXPECT_EQ(target.getDirectionZ(), source.getDirectionZ());
+  EXPECT_TRUE(IsFieldEqual(target, 2.));
 }
 
 TEST_F(Field2DTest, EmptyFrom) {

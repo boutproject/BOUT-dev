@@ -2,5 +2,6 @@ Diagnostics:
   MissingIncludes: Strict
   ClangTidy:
     FastCheckFilter: None
+    Add: [modernize-use-ranges]
   Includes:
     IgnoreHeader: ["adios2/.*", "bits/.*", "cpptrace/.*", "petsc.*"]

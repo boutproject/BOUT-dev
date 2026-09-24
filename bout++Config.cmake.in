@@ -8,6 +8,21 @@ set(BOUT_USE_TRACK @BOUT_USE_TRACK@)
 set(BOUT_USE_SIGFPE @BOUT_USE_SIGFPE@)
 set(BOUT_USE_OPENMP @BOUT_USE_OPENMP@)
 set(BOUT_HAS_CUDA @BOUT_HAS_CUDA@)
+set(BOUT_HAS_HIP @BOUT_HAS_HIP@)
+if(BOUT_HAS_HIP)
+  if(NOT DEFINED CMAKE_HIP_ARCHITECTURES)
+    set(CMAKE_HIP_ARCHITECTURES "@CMAKE_HIP_ARCHITECTURES@")
+  endif()
+  if(CMAKE_VERSION VERSION_LESS 3.21)
+    message(FATAL_ERROR "HIP-enabled BOUT++ requires CMake 3.21 or newer")
+  endif()
+  if(CMAKE_HIP_COMPILER_ROCM_ROOT)
+    string(APPEND CMAKE_HIP_FLAGS_INIT
+      " --rocm-path=${CMAKE_HIP_COMPILER_ROCM_ROOT}")
+  endif()
+  enable_language(HIP)
+  find_dependency(hip CONFIG)
+endif()
 set(BOUT_USE_OUTPUT_DEBUG @BOUT_USE_OUTPUT_DEBUG@)
 set(BOUT_CHECK_LEVEL @BOUT_CHECK_LEVEL@)
 set(BOUT_USE_METRIC_3D @BOUT_USE_METRIC_3D@)
@@ -165,6 +180,12 @@ if (BOUT_HAS_GETTEXT)
   find_dependency(Gettext @Gettext_VERSION@)
   find_dependency(Intl @Intl_VERSION@)
 endif()
+if(BOUT_HAS_RAJA)
+  find_dependency(RAJA CONFIG)
+endif()
+if(BOUT_HAS_UMPIRE)
+  find_dependency(UMPIRE CONFIG)
+endif()
 find_dependency(mpark_variant @mpark_variant_VERSION@)
 find_dependency(fmt @fmt_VERSION@)
 find_dependency(cpptrace @cpptrace_VERSION@)
@@ -191,6 +212,7 @@ set_target_properties(bout++
   BOUT_USE_SIGFPE @BOUT_USE_SIGFPE@
   BOUT_USE_OPENMP @BOUT_USE_OPENMP@
   BOUT_HAS_CUDA @BOUT_HAS_CUDA@
+  BOUT_HAS_HIP @BOUT_HAS_HIP@
   BOUT_USE_OUTPUT_DEBUG @BOUT_USE_OUTPUT_DEBUG@
   BOUT_CHECK_LEVEL @BOUT_CHECK_LEVEL@
   BOUT_USE_METRIC_3D @BOUT_USE_METRIC_3D@

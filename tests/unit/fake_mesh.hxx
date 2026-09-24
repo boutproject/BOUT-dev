@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bout/boundary_region.hxx>
+#include <bout/boundary_region_iter.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
@@ -12,6 +13,7 @@
 #include <bout/griddata.hxx>
 #include <bout/mesh.hxx>
 #include <bout/mpi_wrapper.hxx>
+#include <bout/paralleltransform.hxx>
 #include <bout/region.hxx>
 #include <bout/sys/range.hxx>
 #include <bout/unused.hxx>
@@ -19,6 +21,7 @@
 #include <iterator>
 #include <memory>
 #include <numeric>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -88,17 +91,18 @@ public:
 
   void setCoordinates(std::shared_ptr<Coordinates> coords,
                       CELL_LOC location = CELL_CENTRE) {
-    coords_map[location] = coords;
+    coords_map[location] = std::move(coords);
   }
 
   void setGridDataSource(GridDataSource* source_in) { source = source_in; }
 
   // Use this if the FakeMesh needs x- and y-boundaries
   void createBoundaries() {
-    addBoundary(new BoundaryRegionXIn("core", ystart, yend, this));
-    addBoundary(new BoundaryRegionXOut("sol", ystart, yend, this));
-    addBoundary(new BoundaryRegionYUp("upper_target", xstart, xend, this));
-    addBoundary(new BoundaryRegionYDown("lower_target", xstart, xend, this));
+    addBoundary(bout::boundary::NewBoundaryRegionXIn("core", ystart, yend, this));
+    addBoundary(bout::boundary::NewBoundaryRegionXOut("sol", ystart, yend, this));
+    addBoundary(bout::boundary::NewBoundaryRegionYUp("upper_target", xstart, xend, this));
+    addBoundary(
+        bout::boundary::NewBoundaryRegionYDown("lower_target", xstart, xend, this));
   }
 
   comm_handle send(FieldGroup& UNUSED(g)) override { return nullptr; }
@@ -121,6 +125,7 @@ public:
                    [[maybe_unused]] int Z) const override {
     return 0;
   }
+  std::set<std::string> getPossibleBoundaries() const override { return {}; }
   bool firstX() const override { return true; }
   bool lastX() const override { return true; }
   int sendXOut(BoutReal* UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) override {
@@ -171,11 +176,15 @@ public:
   RangeIterator iterateBndryUpperInnerY() const override { return RangeIterator(); }
   bool hasBndryLowerY() const override { return false; }
   bool hasBndryUpperY() const override { return false; }
-  void addBoundary(BoundaryRegion* region) override { boundaries.push_back(region); }
-  std::vector<BoundaryRegion*> getBoundaries() override { return boundaries; }
-  std::vector<std::shared_ptr<BoundaryRegionPar>>
-  getBoundariesPar(BoundaryParType UNUSED(type)) override {
-    return std::vector<std::shared_ptr<BoundaryRegionPar>>();
+  void addBoundary(std::shared_ptr<BoundaryRegionBase> region) override {
+    boundaries.push_back(region);
+  }
+  std::vector<std::shared_ptr<BoundaryRegionBase>> getBoundaries() const override {
+    return boundaries;
+  }
+  std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>
+  getBoundariesPar(BoundaryParType UNUSED(type)) const override {
+    return std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>();
   }
   BoutReal GlobalX(int jx) const override { return jx; }
   BoutReal GlobalY(int jy) const override { return jy; }
@@ -264,7 +273,7 @@ public:
   using Mesh::msg_len;
 
 private:
-  std::vector<BoundaryRegion*> boundaries;
+  std::vector<std::shared_ptr<BoundaryRegionBase>> boundaries;
 };
 
 /// FakeGridDataSource provides a non-null GridDataSource* source to use with FakeMesh, to
@@ -280,7 +289,7 @@ public:
   /// Take an rvalue (e.g. initializer list), convert to lvalue and delegate constructor
   FakeGridDataSource(Options&& values) : FakeGridDataSource(values) {}
 
-  bool hasVar(const std::string& UNUSED(name)) override { return false; }
+  bool hasVar(const std::string& name) const override { return values.isSet(name); }
 
   bool get([[maybe_unused]] Mesh* m, std::string& sval, const std::string& name,
            const std::string& def = "") override {
@@ -357,4 +366,55 @@ public:
 
 private:
   Options values; ///< Store values to be returned by get()
+};
+
+// A mock ParallelTransform to test transform_from_field_aligned
+// property of FieldFactory. For now, the transform just returns the
+// negative of the input. Ideally, this will get moved to GoogleMock
+// when we start using it.
+//
+// Can turn off the ability to do the transform. Should still be valid
+class MockParallelTransform : public ParallelTransform {
+public:
+  MockParallelTransform(Mesh& mesh, bool allow_transform_)
+      : ParallelTransform(mesh), allow_transform(allow_transform_) {}
+  ~MockParallelTransform() = default;
+
+  void calcParallelSlices(Field3D&) override {}
+
+  bool canToFromFieldAligned() const override { return allow_transform; }
+
+  bool requiresTwistShift(bool, YDirectionType) override { return false; }
+
+  void checkInputGrid() override {}
+
+  Field3D fromFieldAligned(const Field3D& f, const std::string&) override {
+    if (f.getDirectionY() != YDirectionType::Aligned) {
+      throw BoutException("Unaligned field passed to fromFieldAligned");
+    }
+    return -f;
+  }
+
+  FieldPerp fromFieldAligned(const FieldPerp& f, const std::string&) override {
+    if (f.getDirectionY() != YDirectionType::Aligned) {
+      throw BoutException("Unaligned field passed to fromFieldAligned");
+    }
+    return -f;
+  }
+
+  Field3D toFieldAligned(const Field3D& f, const std::string&) override {
+    if (f.getDirectionY() != YDirectionType::Standard) {
+      throw BoutException("Aligned field passed to toFieldAligned");
+    }
+    return -f;
+  }
+  FieldPerp toFieldAligned(const FieldPerp& f, const std::string&) override {
+    if (f.getDirectionY() != YDirectionType::Standard) {
+      throw BoutException("Aligned field passed to toFieldAligned");
+    }
+    return -f;
+  }
+
+private:
+  const bool allow_transform;
 };

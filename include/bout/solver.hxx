@@ -1,20 +1,10 @@
 /**************************************************************************
  * Base class for all solvers. Specifies required interface functions
  *
- * Changelog:
- *
- * 2009-08 Ben Dudson, Sean Farley
- *    * Major overhaul, and changed API. Trying to make consistent
- *      interface to PETSc and SUNDIALS solvers
- *
- * 2013-08 Ben Dudson
- *    * Added OO-style API, to allow multiple physics models to coexist
- *      For now both APIs are supported
- *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -38,18 +28,27 @@
 
 #include "bout/build_defines.hxx"
 
+#include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/globals.hxx"
+#include "bout/mesh.hxx"
 #include "bout/monitor.hxx"
 #include "bout/options.hxx"
-#include "bout/unused.hxx"
+#include "bout/petsc_preconditioner.hxx"
+#include "bout/region.hxx"
 
+#include <algorithm>
+#include <cstdint>
+#include <iterator>
 #include <memory>
+#include <vector>
 
 ///////////////////////////////////////////////////////////////////
 // C function pointer types
 
 class Solver;
+class SundialsNVectorInterface;
 
 /// RHS function pointer
 using rhsfunc = int (*)(BoutReal);
@@ -91,7 +90,8 @@ constexpr auto SOLVERIMEXBDF2 = "imexbdf2";
 constexpr auto SOLVERSNES = "snes";
 constexpr auto SOLVERRKGENERIC = "rkgeneric";
 
-enum class SOLVER_VAR_OP { LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS };
+enum class FieldCategories : std::uint8_t { VARS, DERIVS, MMS };
+enum class SOLVER_VAR_OP : std::uint8_t { LOAD, SET_ID, SAVE };
 
 /// A type to set where in the list monitors are added
 enum class MonitorPosition { BACK, FRONT };
@@ -258,8 +258,8 @@ public:
   virtual void add(Vector3D& v, const std::string& name,
                    const std::string& description = "");
 
-  /// Returns true if constraints available
-  virtual bool constraints() { return has_constraints; }
+  /// Returns true if this solver supports constraint variables
+  virtual bool constraints() { return supports_constraints; }
 
   /// Add constraint functions (optional). These link a variable v to
   /// a control parameter C_v such that v is adjusted to keep C_v = 0.
@@ -358,6 +358,37 @@ public:
   int getIterationOffset() const { return iteration_offset; }
 
 protected:
+  friend class SundialsNVectorInterface;
+
+  /// Per-variable metadata written alongside Jacobian diagnostics.
+  ///
+  /// ``offset`` gives the variable position within the per-cell ordering used by
+  /// the PETSc matrix. The full row/column mapping is reconstructed by combining
+  /// these records with ``jacobian_index_base`` from the dump files.
+  struct JacobianVariableMetadata {
+    int offset{0};
+    std::string name;
+    std::string location;
+    bool evolve_bndry{false};
+    bool constraint{false};
+    std::string description;
+  };
+
+  /// Top-level JSON description of a saved Jacobian.
+  ///
+  /// This metadata is intentionally compact: per-variable properties are stored
+  /// once here, while per-cell offsets are reconstructed from
+  /// ``jacobian_index_base`` in the output data files.
+  struct JacobianMetadata {
+    int format_version{1};
+    std::string solver_name;
+    int n2d{0};
+    int n3d{0};
+    std::vector<JacobianVariableMetadata> variables_2d;
+    std::vector<JacobianVariableMetadata> variables_3d;
+    std::string ordering;
+  };
+
   /// Number of command-line arguments
   static int* pargc;
   /// Command-line arguments
@@ -388,6 +419,97 @@ protected:
     std::string description{""};         /// Description of what the variable is
   };
 
+  /// A structure for iterating over fields
+  template <FieldCategories C, class T>
+  struct VarIterator {
+    using iterator_category = std::random_access_iterator_tag;
+    using value_type = T;
+    using pointer = T*;
+    using reference = T&;
+    using underlying_iterator = std::vector<VarStr<T>>::iterator;
+    using difference_type = std::iterator_traits<underlying_iterator>::difference_type;
+
+    VarIterator(underlying_iterator _it) : it(std::move(_it)) {}
+
+    reference operator*() const {
+      if constexpr (C == FieldCategories::VARS) {
+        return *(it->var);
+      } else if constexpr (C == FieldCategories::DERIVS) {
+        return *(it->F_var);
+      } else {
+        static_assert(C == FieldCategories::MMS);
+        return *(it->MMS_err);
+      }
+    }
+    pointer operator->() const {
+      if constexpr (C == FieldCategories::VARS) {
+        return it->var;
+      } else if constexpr (C == FieldCategories::DERIVS) {
+        return it->F_var;
+      } else {
+        static_assert(C == FieldCategories::MMS);
+        return it->MMS_err.get();
+      }
+    }
+
+    VarIterator& operator++() {
+      it++;
+      return *this;
+    }
+    VarIterator operator++(int) {
+      VarIterator tmp = *this;
+      ++(*this);
+      return tmp;
+    }
+    VarIterator& operator+=(difference_type n) {
+      it += n;
+      return *this;
+    }
+    VarIterator operator+(difference_type n) const { return VarIterator(it + n); }
+    friend VarIterator operator+(difference_type n, const VarIterator& a) {
+      return VarIterator(n + a.it);
+    }
+
+    VarIterator& operator--() {
+      it--;
+      return *this;
+    }
+    VarIterator operator--(int) {
+      VarIterator tmp = *this;
+      --(*this);
+      return tmp;
+    }
+    VarIterator& operator-=(difference_type n) {
+      it -= n;
+      return *this;
+    }
+    VarIterator operator-(difference_type n) const { return VarIterator(it - n); }
+    friend VarIterator operator-(difference_type n, const VarIterator& a) {
+      return VarIterator(n - a.it);
+    }
+
+    difference_type operator-(const VarIterator& b) { return it - b.it; }
+    reference operator[](difference_type n) { return *VarIterator(it[n]); }
+
+    auto operator<=>(const VarIterator& rhs) const = default;
+
+  private:
+    underlying_iterator it{};
+  };
+
+  template <FieldCategories C, class T>
+  struct VarRange {
+    using iterator = VarIterator<C, T>;
+
+    VarRange(std::vector<VarStr<T>>& vars) : _begin(vars.begin()), _end(vars.end()) {}
+
+    iterator begin() const { return _begin; }
+    iterator end() const { return _end; }
+
+  private:
+    iterator _begin, _end;
+  };
+
   /// Does \p var represent field \p name?
   template <class T>
   friend bool operator==(const VarStr<T>& var, const std::string& name) {
@@ -397,8 +519,7 @@ protected:
   /// Does \p vars contain a field with \p name?
   template <class T>
   bool contains(const std::vector<VarStr<T>>& vars, const std::string& name) {
-    const auto in_vars = std::find(begin(vars), end(vars), name);
-    return in_vars != end(vars);
+    return std::ranges::find(vars, name, &VarStr<T>::name) != std::ranges::end(vars);
   }
 
   /// Vectors of variables to evolve
@@ -428,7 +549,7 @@ protected:
   };
 
   /// Can this solver handle constraints? Set to true if so.
-  bool has_constraints{false};
+  bool supports_constraints{false};
   /// Has init been called yet?
   bool initialised{false};
   /// If calling user RHS for the first time
@@ -451,19 +572,19 @@ protected:
   ///
   /// There are two important things to note about how \p iter is
   /// passed along to each monitor:
-  /// - The solvers all start their iteration numbering from zero, so the
-  ///   initial state is calculated at \p iter = -1
+  /// - The initial state is written at \p iter = 0, and solver output
+  ///   steps are numbered from 1 to NOUT
   /// - Secondly, \p iter is passed along to each monitor *relative to
   ///   that monitor's period*
   ///
   /// In practice, this means that each monitor is called like:
   ///
   ///     monitor->call(solver, simulation_time,
-  ///                   ((iter + 1) / monitor->period) - 1,
+  ///                   iter / monitor->period,
   ///                   NOUT / monitor->period);
   ///
-  /// e.g. for a monitor with period 10, passing \p iter = 9 will
-  /// result in it being called with a value of `(9 + 1)/10 - 1 == 0`
+  /// e.g. for a monitor with period 10, passing \p iter = 10 will
+  /// result in it being called with a value of `10/10 == 1`
   int call_monitors(BoutReal simtime, int iter, int NOUT);
 
   /// Should timesteps be monitored?
@@ -487,8 +608,34 @@ protected:
   void save_derivs(BoutReal* dudata);
   void set_id(BoutReal* udata);
 
-  /// Returns a Field3D containing the global indices
+  /// Returns a Field3D containing the global indices for each locally-owned DOF.
   Field3D globalIndex(int localStart);
+  /// Returns the base global index for the Jacobian ordering in each cell.
+  ///
+  /// Combined with the variable metadata JSON written by
+  /// ``writeJacobianMetadataJson()``, this allows PETSc matrix rows/columns to be
+  /// mapped back to variable names and ``(x, y, z)`` coordinates in Python.
+  Field3D jacobianIndexBase(int localStart = 0);
+  /// Return compact metadata for all evolved ``Field2D`` variables.
+  std::vector<JacobianVariableMetadata> getJacobianMetadata2D() const;
+  /// Return compact metadata for all evolved ``Field3D`` variables.
+  std::vector<JacobianVariableMetadata> getJacobianMetadata3D() const;
+  /// Build the complete Jacobian metadata record for JSON export.
+  JacobianMetadata getJacobianMetadata(const std::string& solver_name) const;
+  /// Write Jacobian metadata as JSON on rank 0.
+  ///
+  /// The JSON file is solver-independent; solver-specific matrix files and the
+  /// ``jacobian_index_base`` output together provide the remaining information
+  /// needed to reconstruct a labeled Jacobian in post-processing.
+  void writeJacobianMetadataJson(const std::string& filename,
+                                 const std::string& solver_name) const;
+
+  /// Writes the Jacobian metadata on first call
+  void writeOnceJacobianMetadata(const std::string& solver_name);
+
+#if BOUT_HAS_PETSC
+  void writeJacobianMatrix(bout::JacobianExportKind kind, Mat jacobian);
+#endif
 
   /// Maximum internal timestep
   BoutReal max_dt{-1.0};
@@ -516,6 +663,28 @@ protected:
   /// Get the currently set output timestep
   BoutReal getOutputTimestep() const { return output_timestep; }
 
+  /// Loop over variables (accessed by iterating the f2d_range and f3d_range
+  /// arguments) and domain. Used for all data operations for
+  /// consistency
+  template <class RangeF2D, class RangeF3D>
+  void loop_vars(RangeF2D f2d_range, RangeF3D f3d_range, BoutReal* udata,
+                 SOLVER_VAR_OP op) {
+    // Use global mesh: FIX THIS!
+    const Mesh* mesh = bout::globals::mesh;
+
+    int p = 0; // Counter for location in udata array
+
+    // All boundaries
+    for (const auto& i2d : mesh->getRegion2D("RGN_BNDRY")) {
+      loop_vars_op(f2d_range, f3d_range, i2d, udata, p, op, true);
+    }
+
+    // Bulk of points
+    for (const auto& i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
+      loop_vars_op(f2d_range, f3d_range, i2d, udata, p, op, false);
+    }
+  }
+
 private:
   /// Generate a random UUID (version 4) and broadcast it to all processors
   std::string createRunID() const;
@@ -531,6 +700,21 @@ private:
   std::string run_restart_from = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy";
   /// Save `run_id` and `run_restart_from` every output
   bool save_repeat_run_id{false};
+  /// Write ``jacobian_index_base`` to the dump files for Jacobian diagnostics.
+  bool save_jacobian_index_base{false};
+  /// Has the Jacobian metadata file been written?
+  bool jacobian_metadata_written{false};
+  /// Running counter appended to successive Jacobian saves
+  int jacobian_export_counter{0};
+  /// Prefix for matrix files and ``*_metadata.json``
+  std::string jacobian_export_prefix;
+  /// PETSc ``MatView`` format: binary or ascii
+  bout::PetscMatrixExportFormat jacobian_export_format;
+
+  /// Return the matrix filename including the extension for the selected format.
+  std::string getJacobianMatrixFilename(const std::string& jacobian_export_prefix,
+                                        bout::JacobianExportKind kind,
+                                        bout::PetscMatrixExportFormat format);
 
   /// Current iteration (output time-step) number
   int iteration{0};
@@ -570,9 +754,124 @@ private:
   /// Should be run after user RHS is called
   void post_rhs(BoutReal t);
 
-  /// Loading data from BOUT++ to/from solver
-  void loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op, bool bndry);
-  void loop_vars(BoutReal* udata, SOLVER_VAR_OP op);
+  /// Perform an operation at a given Ind2D (jx,jy) location, moving
+  /// data between BOUT++ and solver. This can be done on arbitrary
+  /// sets of fields (accessed using f2d_range and f3d_range), provided they
+  /// are the same number, shape, size, etc. as the fields being
+  /// solved for.
+  template <class RangeF2D, class RangeF3D>
+  void loop_vars_op(RangeF2D f2d_range, RangeF3D f3d_range, Ind2D i2d, BoutReal* udata,
+                    int& p, SOLVER_VAR_OP op, bool bndry) {
+    /**************************************************************************
+     * Looping over variables
+     *
+     * NOTE: This part is very inefficient, and should be replaced ASAP
+     * Is the interleaving of variables needed or helpful to the solver?
+     **************************************************************************/
+    // Use global mesh: FIX THIS!
+    const Mesh* mesh = bout::globals::mesh;
+
+    const int nz = mesh->LocalNz;
+
+    switch (op) {
+    case SOLVER_VAR_OP::LOAD: {
+      /// Load variables from IDA into BOUT++
+
+      // Loop over 2D variables
+      auto metadata_it = f2d.begin();
+      for (auto& field : f2d_range) {
+        const auto& metadata = *metadata_it;
+        ++metadata_it;
+        if (bndry && !metadata.evolve_bndry) {
+          continue;
+        }
+        field[i2d] = udata[p];
+        p++;
+      }
+
+      for (int jz = 0; jz < nz; jz++) {
+
+        auto metadata_it = f3d.begin();
+        // Loop over 3D variables
+        for (auto& field : f3d_range) {
+          const auto& metadata = *metadata_it;
+          ++metadata_it;
+          if (bndry && !metadata.evolve_bndry) {
+            continue;
+          }
+          field[field.getMesh()->ind2Dto3D(i2d, jz)] = udata[p];
+          p++;
+        }
+      }
+      break;
+    }
+    case SOLVER_VAR_OP::SET_ID: {
+      /// Set the type of equation (Differential or Algebraic)
+
+      // Loop over 2D variables
+      for (const auto& metadata : f2d) {
+        if (bndry && !metadata.evolve_bndry) {
+          continue;
+        }
+        if (metadata.constraint) {
+          udata[p] = 0;
+        } else {
+          udata[p] = 1;
+        }
+        p++;
+      }
+
+      for (int jz = 0; jz < nz; jz++) {
+
+        // Loop over 3D variables
+        for (const auto& metadata : f3d) {
+          if (bndry && !metadata.evolve_bndry) {
+            continue;
+          }
+          if (metadata.constraint) {
+            udata[p] = 0;
+          } else {
+            udata[p] = 1;
+          }
+          p++;
+        }
+      }
+
+      break;
+    }
+    case SOLVER_VAR_OP::SAVE: {
+      /// Save variables from BOUT++ into IDA (only used at start of simulation)
+
+      // Loop over 2D variables
+      auto metadata_it = f2d.begin();
+      for (const auto& field : f2d_range) {
+        const auto& metadata = *metadata_it;
+        ++metadata_it;
+        if (bndry && !metadata.evolve_bndry) {
+          continue;
+        }
+        udata[p] = field[i2d];
+        p++;
+      }
+
+      for (int jz = 0; jz < nz; jz++) {
+
+        auto metadata_it = f3d.begin();
+        // Loop over 3D variables
+        for (const auto& field : f3d_range) {
+          const auto& metadata = *metadata_it;
+          ++metadata_it;
+          if (bndry && !metadata.evolve_bndry) {
+            continue;
+          }
+          udata[p] = field[field.getMesh()->ind2Dto3D(i2d, jz)];
+          p++;
+        }
+      }
+      break;
+    }
+    }
+  }
 
   /// Check if a variable has already been added
   bool varAdded(const std::string& name);

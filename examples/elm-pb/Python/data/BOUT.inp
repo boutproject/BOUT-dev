@@ -67,7 +67,7 @@ upwind = W3
 atol = 1e-08 # absolute tolerance
 rtol = 1e-05  # relative tolerance
 
-use_precon = false    # Use preconditioner: User-supplied or BBD
+cvode_precon_method = none  # Disable CVODE preconditioning
 use_jacobian = false  # Use user-supplied Jacobian
 
 mxstep = 5000   # Number of internal steps between outputs

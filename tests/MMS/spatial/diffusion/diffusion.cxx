@@ -2,6 +2,7 @@
 #include <bout/constants.hxx>
 #include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>
+#include <bout/metric_tensor.hxx>
 #include <bout/physicsmodel.hxx>
 #include <math.h>
 
@@ -22,9 +23,9 @@ protected:
     meshoptions->get("Ly", Ly, 1.0);
 
     /*this assumes equidistant grid*/
-    coords->dx = Lx / (mesh->GlobalNx - 2 * mesh->xstart);
+    coords->setDx(Lx / (mesh->GlobalNx - 2 * mesh->xstart));
 
-    coords->dy = Ly / (mesh->GlobalNy - 2 * mesh->ystart);
+    coords->setDy(Ly / (mesh->GlobalNy - 2 * mesh->ystart));
 
     output.write("SIZES: {:d}, {:d}, {:e}\n", mesh->GlobalNy,
                  (mesh->GlobalNy - 2 * mesh->ystart), coords->dy(0, 0, 0));
@@ -39,20 +40,8 @@ protected:
     SAVE_ONCE3(Dx, Dy, Dz);
 
     // set mesh
-    coords->g11 = 1.0;
-    coords->g22 = 1.0;
-    coords->g33 = 1.0;
-    coords->g12 = 0.0;
-    coords->g13 = 0.0;
-    coords->g23 = 0.0;
-
-    coords->g_11 = 1.0;
-    coords->g_22 = 1.0;
-    coords->g_33 = 1.0;
-    coords->g_12 = 0.0;
-    coords->g_13 = 0.0;
-    coords->g_23 = 0.0;
-    coords->geometry();
+    coords->setMetricTensor(ContravariantMetricTensor(1.0, 1.0, 1.0, 0.0, 0.0, 0.0),
+                            CovariantMetricTensor(1.0, 1.0, 1.0, 0.0, 0.0, 0.0));
 
     // Tell BOUT++ to solve N
     SOLVE_FOR(N);

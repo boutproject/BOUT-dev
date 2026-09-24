@@ -849,7 +849,7 @@ TEST_F(FieldPerpTest, InvalidateGuards) {
 
   sum = 0;
   for (const auto& i : field) {
-    if (!finite(field[i])) {
+    if (!std::isfinite(field[i])) {
       sum++;
     }
   }
@@ -1577,12 +1577,31 @@ TEST_F(FieldPerpTest, Sqrt) {
   EXPECT_TRUE(IsFieldEqual(sqrt(field), 4.0));
 }
 
+TEST_F(FieldPerpTest, SQFieldPerp) {
+  FieldPerp field;
+  field.setIndex(0);
+
+  field = 3.0;
+  EXPECT_TRUE(IsFieldEqual(SQ(field), 9.0));
+}
+
 TEST_F(FieldPerpTest, Abs) {
   FieldPerp field;
   field.setIndex(0);
 
   field = -31.0;
   EXPECT_TRUE(IsFieldEqual(abs(field), 31.0));
+}
+
+TEST_F(FieldPerpTest, RegionLimitedExpressionConstructsFieldPerp) {
+  FieldPerp field;
+  field.setIndex(0);
+
+  field = -31.0;
+
+  FieldPerp result = abs(field, "RGN_NOX");
+
+  EXPECT_TRUE(IsFieldEqual(result, 31.0, "RGN_NOX"));
 }
 
 TEST_F(FieldPerpTest, Exp) {
@@ -1694,6 +1713,20 @@ TEST_F(FieldPerpTest, Floor) {
   EXPECT_TRUE(IsFieldEqual(floor(field, floor_value), floor_value));
 }
 
+TEST_F(FieldPerpTest, FloorExpressionUsesFloorOp) {
+  FieldPerp field;
+  field.setIndex(0);
+
+  field = 2.0;
+  const auto expr = field + 1.0;
+
+  EXPECT_TRUE((std::is_same_v<std::decay_t<decltype(floor(expr, 5.0))>,
+                              BinaryExpr<FieldPerp, std::decay_t<decltype(expr)>,
+                                         Constant<BoutReal>, bout::op::Floor>>));
+  EXPECT_TRUE(IsFieldEqual(floor(expr, 5.0), 5.0));
+  EXPECT_TRUE(IsFieldEqual(floor(expr, 5.0, "RGN_ALL"), 5.0));
+}
+
 TEST_F(FieldPerpTest, Min) {
   FieldPerp field;
   field.setIndex(0);
@@ -1730,6 +1763,22 @@ TEST_F(FieldPerpTest, Max) {
   EXPECT_EQ(max(field, true, "RGN_ALL"), 99.0);
 }
 
+TEST_F(FieldPerpTest, MaxBinaryExpr) {
+  FieldPerp field;
+  field.setIndex(0);
+
+  field = 50.0;
+  field(0, 0) = -99.0;
+  field(1, 1) = 40.0;
+  field(1, 2) = 60.0;
+  field(2, 4) = 99.0;
+
+  const auto expr = field / 2.0 - 5.0;
+
+  EXPECT_EQ(max(expr, false), 25.0);
+  EXPECT_EQ(max(expr, false, "RGN_ALL"), 44.5);
+}
+
 TEST_F(FieldPerpTest, OperatorEqualsFieldPerp) {
   FieldPerp field;
 
@@ -1747,6 +1796,42 @@ TEST_F(FieldPerpTest, OperatorEqualsFieldPerp) {
   EXPECT_EQ(field.getLocation(), field2.getLocation());
   EXPECT_EQ(field.getDirectionY(), field2.getDirectionY());
   EXPECT_EQ(field.getDirectionZ(), field2.getDirectionZ());
+}
+
+TEST_F(FieldPerpTest, ConstructFromBinaryExprCopiesMetadata) {
+  FieldPerp source{
+      mesh_staggered, CELL_XLOW, 3, {YDirectionType::Aligned, ZDirectionType::Average}};
+  source = 4.;
+
+  FieldPerp result{sqrt(source)};
+
+  EXPECT_EQ(result.getMesh(), source.getMesh());
+  EXPECT_EQ(result.getLocation(), source.getLocation());
+  EXPECT_EQ(result.getIndex(), source.getIndex());
+  EXPECT_EQ(result.getDirectionY(), source.getDirectionY());
+  EXPECT_EQ(result.getDirectionZ(), source.getDirectionZ());
+  EXPECT_TRUE(IsFieldEqual(result, 2.));
+}
+
+TEST_F(FieldPerpTest, OperatorEqualsBinaryExprCopiesMetadata) {
+  FieldPerp source{
+      mesh_staggered, CELL_XLOW, 3, {YDirectionType::Aligned, ZDirectionType::Average}};
+  source = 4.;
+
+  FieldPerp target{mesh_staggered,
+                   CELL_CENTRE,
+                   1,
+                   {YDirectionType::Standard, ZDirectionType::Standard}};
+  target = 0.;
+
+  target = sqrt(source);
+
+  EXPECT_EQ(target.getMesh(), source.getMesh());
+  EXPECT_EQ(target.getLocation(), source.getLocation());
+  EXPECT_EQ(target.getIndex(), source.getIndex());
+  EXPECT_EQ(target.getDirectionY(), source.getDirectionY());
+  EXPECT_EQ(target.getDirectionZ(), source.getDirectionZ());
+  EXPECT_TRUE(IsFieldEqual(target, 2.));
 }
 
 TEST_F(FieldPerpTest, EmptyFrom) {

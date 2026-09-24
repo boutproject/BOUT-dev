@@ -38,11 +38,13 @@
  *
  **************************************************************************/
 
+#include "bout/boutexception.hxx"
 class Mesh;
 
 #ifndef BOUT_MESH_H
 #define BOUT_MESH_H
 
+#include "bout/array.hxx"
 #include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/coordinates.hxx" // Coordinates class
@@ -66,7 +68,9 @@ class Mesh;
 #include <vector>
 
 class BoundaryRegion;
-class BoundaryRegionPar;
+namespace bout::boundary {
+class BoundaryRegionFCI;
+}
 class GridDataSource;
 
 class MeshFactory : public Factory<Mesh, MeshFactory, GridDataSource*, Options*> {
@@ -168,6 +172,9 @@ public:
   ///
   /// @returns zero if successful, non-zero on failure
   int get(bool& bval, const std::string& name, bool def = false);
+
+  int get(Array<int>& var, const std::string& name);
+  int get(Array<BoutReal>& var, const std::string& name);
 
   /// Get a Field2D from the input source
   /// including communicating guard cells
@@ -479,13 +486,17 @@ public:
   // Boundary regions
 
   /// Return a vector containing all the boundary regions on this processor
-  virtual std::vector<BoundaryRegion*> getBoundaries() = 0;
+  virtual std::vector<std::shared_ptr<BoundaryRegionBase>> getBoundaries() const = 0;
 
   /// Get the set of all possible boundaries in this configuration
-  virtual std::set<std::string> getPossibleBoundaries() const { return {}; }
+  virtual std::set<std::string> getPossibleBoundaries() const {
+    throw BoutException("Not implemented for this mesh");
+  };
 
   /// Add a boundary region to this processor
-  virtual void addBoundary(BoundaryRegion* UNUSED(bndry)) {}
+  virtual void addBoundary(std::shared_ptr<BoundaryRegionBase> UNUSED(bndry)) {
+    throw BoutException("This has never been implemented");
+  };
 
   /// Get the list of parallel boundary regions. The option specifies with
   /// region to get. Default is to get all regions. All possible options are
@@ -495,12 +506,13 @@ public:
   /// mesh->getBoundariesPar(Mesh::BoundaryParType::all)
   /// get only xout:
   /// mesh->getBoundariesPar(Mesh::BoundaryParType::xout)
-  virtual std::vector<std::shared_ptr<BoundaryRegionPar>>
-  getBoundariesPar(BoundaryParType type = BoundaryParType::all) = 0;
+  virtual std::vector<std::shared_ptr<bout::boundary::BoundaryRegionFCI>>
+  getBoundariesPar(BoundaryParType type = BoundaryParType::all) const = 0;
 
   /// Add a parallel(Y) boundary to this processor
-  virtual void addBoundaryPar(std::shared_ptr<BoundaryRegionPar> UNUSED(bndry),
-                              BoundaryParType UNUSED(type)) {}
+  virtual void
+  addBoundaryPar(std::shared_ptr<bout::boundary::BoundaryRegionFCI> UNUSED(bndry),
+                 BoundaryParType UNUSED(type)) {}
 
   virtual BoutReal GlobalX(int jx) const = 0;      ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(int jy) const = 0;      ///< Continuous Y index (0 -> 1)
@@ -597,7 +609,7 @@ public:
   virtual int getLocalZIndexNoBoundaries(int zglobal) const = 0;
 
   /// Size of the mesh on this processor including guard/boundary cells
-  int LocalNx, LocalNy, LocalNz;
+  int LocalNx{0}, LocalNy{0}, LocalNz{0};
 
   /// Local ranges of data (inclusive), excluding guard cells
   int xstart, xend, ystart, yend, zstart, zend;
@@ -612,25 +624,7 @@ public:
     return getCoordinatesSmart(location).get();
   };
 
-  std::shared_ptr<Coordinates>
-  getCoordinatesSmart(const CELL_LOC location = CELL_CENTRE) {
-    ASSERT1(location != CELL_DEFAULT);
-    ASSERT1(location != CELL_VSHIFT);
-
-    auto found = coords_map.find(location);
-    if (found != coords_map.end()) {
-      // True branch most common, returns immediately
-      return found->second;
-    }
-
-    // No coordinate system set. Create default
-    // Note that this can't be allocated here due to incomplete type
-    // (circular dependency between Mesh and Coordinates)
-    auto inserted = coords_map.emplace(location, nullptr);
-    inserted.first->second = createDefaultCoordinates(location);
-    inserted.first->second->geometry(false);
-    return inserted.first->second;
-  }
+  std::shared_ptr<Coordinates> getCoordinatesSmart(CELL_LOC location = CELL_CENTRE);
 
   std::shared_ptr<Coordinates>
   getCoordinatesConst(const CELL_LOC location = CELL_CENTRE) const {
@@ -781,6 +775,12 @@ public:
     return {(indPerp.ind - jz) * LocalNy + LocalNz * jy + jz, LocalNy, LocalNz};
   }
 
+  BOUT_HOST_DEVICE int flatIndPerpto3D(const int& flatIndPerp, const int nz,
+                                       int jy = 0) const {
+    int jz = flatIndPerp % nz;
+    return (flatIndPerp - jz) * LocalNy + LocalNz * jy + jz;
+  }
+
   /// Converts an Ind3D to an Ind2D representing a 2D index using a lookup -- to be used with care
   Ind2D map3Dto2D(const Ind3D& ind3D) {
     return {indexLookup3Dto2D[ind3D.ind], LocalNy, 1};
@@ -832,7 +832,8 @@ public:
   // Switch for communication of corner guard and boundary cells
   const bool include_corner_cells;
 
-  std::optional<size_t> getCommonRegion(std::optional<size_t>, std::optional<size_t>);
+  std::optional<size_t> getCommonRegion(std::optional<size_t> lhs,
+                                        std::optional<size_t> rhs);
   size_t getRegionID(const std::string& region) const;
   const Region<Ind3D>& getRegion(size_t RegionID) const { return region3D[RegionID]; }
   const Region<Ind3D>& getRegion(std::optional<size_t> RegionID) const {

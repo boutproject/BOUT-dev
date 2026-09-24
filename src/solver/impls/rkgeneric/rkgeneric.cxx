@@ -80,7 +80,7 @@ void RKGenericSolver::resetInternalFields() {
 }
 
 int RKGenericSolver::run() {
-  for (int s = 0; s < getNumberOutputSteps(); s++) {
+  for (int s = 1; s <= getNumberOutputSteps(); s++) {
     BoutReal target = simtime + getOutputTimestep();
 
     BoutReal dt;

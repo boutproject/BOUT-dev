@@ -4,9 +4,9 @@
  * \brief FFT routines using external libraries
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -25,9 +25,12 @@
  *
  **************************************************************************/
 
-#include "bout/build_defines.hxx"
-
+#include <bout/array.hxx>
+#include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/build_defines.hxx>
 #include <bout/coordinates.hxx>
+#include <bout/dcomplex.hxx>
 #include <bout/fft.hxx>
 #include <bout/globals.hxx>
 #include <bout/mesh.hxx>
@@ -518,7 +521,7 @@ Array<dcomplex> rfft(const Array<BoutReal>& in) {
   ASSERT1(!in.empty());
 
   int size{in.size()};
-  Array<dcomplex> out{(size / 2) + 1};
+  Array<dcomplex> out((size / 2) + 1);
 
   bout::fft::rfft(in.begin(), size, out.begin());
   return out;
@@ -528,7 +531,7 @@ Array<BoutReal> irfft(const Array<dcomplex>& in, int length) {
   ASSERT1(!in.empty());
   ASSERT1(in.size() == (length / 2) + 1);
 
-  Array<BoutReal> out{length};
+  Array<BoutReal> out(length);
 
   bout::fft::irfft(in.begin(), length, out.begin());
   return out;

@@ -4,12 +4,12 @@
 
 #include "test_extras.hxx"
 #include "bout/array.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/constants.hxx"
 #include "bout/dcomplex.hxx"
 #include "bout/fft.hxx"
 
 #include <algorithm>
-#include <iostream>
 #include <numeric>
 
 #if BOUT_HAS_FFTW
@@ -19,7 +19,7 @@ public:
       : size(GetParam()), nmodes((size / 2) + 1), real_signal(size), fft_signal(nmodes) {
 
     // Make grid indices from [0, size - 1]
-    Array<BoutReal> indices{size};
+    Array<BoutReal> indices(size);
     std::iota(indices.begin(), indices.end(), 0.0);
 
     // Calculate sin(x) + cos(2x) on [0, 2pi]
@@ -48,7 +48,7 @@ INSTANTIATE_TEST_SUITE_P(FFTEvenAndOddSamples, FFTTest, ::testing::Values(8, 9))
 
 TEST_P(FFTTest, rfft) {
 
-  Array<dcomplex> output{nmodes};
+  Array<dcomplex> output(nmodes);
 
   // Compute forward real FFT
   rfft(real_signal.begin(), size, output.begin());
@@ -63,7 +63,7 @@ TEST_P(FFTTest, rfft) {
 
 TEST_P(FFTTest, irfft) {
 
-  Array<BoutReal> output{size};
+  Array<BoutReal> output(size);
 
   // Compute inverse real FFT
   irfft(fft_signal.begin(), size, output.begin());

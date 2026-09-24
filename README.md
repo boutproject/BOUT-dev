@@ -62,7 +62,7 @@ Homepage found at [http://boutproject.github.io/](http://boutproject.github.io/)
 
 BOUT++ needs the following:
 
-* A C++17 compiler
+* A C++20 compiler
 * MPI
 * NetCDF
 
@@ -113,7 +113,7 @@ You can convert the CITATION.cff file into a Bibtex file as follows:
 See [CONTRIBUTING.md](CONTRIBUTING.md) and the [manual page](https://bout-dev.readthedocs.io/en/stable/developer_docs/contributing.html)
 
 ## License
-Copyright 2010-2024 BOUT++ contributors
+Copyright 2010-2026 BOUT++ contributors
 
 BOUT++ is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by

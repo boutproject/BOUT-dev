@@ -4,11 +4,15 @@
 
 #include "imex-bdf2.hxx"
 
+#include <bout/array.hxx>
 #include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/mesh.hxx>
+#include <bout/options.hxx>
 #include <bout/petsc_interface.hxx>
+#include <bout/solver.hxx>
 #include <bout/utils.hxx>
 
 #include <cmath>
@@ -80,7 +84,7 @@ IMEXBDF2::IMEXBDF2(Options* opt)
       verbose((*options)["verbose"]
                   .doc(" More outputs at each timestep")
                   .withDefault(false)) {
-  has_constraints = true; ///< This solver can handle constraints
+  supports_constraints = true; ///< This solver can handle constraints
 }
 
 IMEXBDF2::~IMEXBDF2() {
@@ -119,12 +123,9 @@ static PetscErrorCode FormFunctionForColoring(void* UNUSED(snes), Vec x, Vec f,
 }
 
 static PetscErrorCode imexbdf2PCapply(PC pc, Vec x, Vec y) {
-  int ierr;
-
   // Get the context
   IMEXBDF2* s;
-  ierr = PCShellGetContext(pc, reinterpret_cast<void**>(&s));
-  CHKERRQ(ierr);
+  PetscCall(PCShellGetContext(pc, reinterpret_cast<void**>(&s)));
 
   PetscFunctionReturn(s->precon(x, y));
 }
@@ -153,22 +154,22 @@ int IMEXBDF2::init() {
                n2Dvars(), neq, nlocal);
 
   // Check if there are any constraints
-  have_constraints = false;
+  has_constraint_variables = false;
 
   for (int i = 0; i < n2Dvars(); i++) {
     if (f2d[i].constraint) {
-      have_constraints = true;
+      has_constraint_variables = true;
       break;
     }
   }
   for (int i = 0; i < n3Dvars(); i++) {
     if (f3d[i].constraint) {
-      have_constraints = true;
+      has_constraint_variables = true;
       break;
     }
   }
 
-  if (have_constraints) {
+  if (has_constraint_variables) {
     is_dae.reallocate(nlocal);
     // Call the Solver function, which sets the array
     // to zero when not a constraint, one for constraint
@@ -197,8 +198,8 @@ int IMEXBDF2::init() {
   // Allocate memory and initialise structures
   u.reallocate(nlocal);
   for (int i = 0; i < maxOrder; i++) {
-    uV.emplace_back(Array<BoutReal>{nlocal});
-    fV.emplace_back(Array<BoutReal>{nlocal});
+    uV.emplace_back(Array<BoutReal>(nlocal));
+    fV.emplace_back(Array<BoutReal>(nlocal));
     timesteps.push_back(timestep);
     uFac.push_back(0.0);
     fFac.push_back(0.0);
@@ -220,16 +221,12 @@ int IMEXBDF2::init() {
   }
 
   // Initialise PETSc components
-  int ierr;
 
   // Vectors
-  ierr = VecCreate(BoutComm::get(), &snes_x);
-  CHKERRQ(ierr);
-  ierr = VecSetSizes(snes_x, nlocal, PETSC_DECIDE);
-  CHKERRQ(ierr);
-  ierr = VecSetFromOptions(snes_x);
-  CHKERRQ(ierr);
-  VecDuplicate(snes_x, &snes_f);
+  PetscCall(VecCreate(BoutComm::get(), &snes_x));
+  PetscCall(VecSetSizes(snes_x, nlocal, PETSC_DECIDE));
+  PetscCall(VecSetFromOptions(snes_x));
+  PetscCall(VecDuplicate(snes_x, &snes_f));
 
   // The SNES solver object(s)
   constructSNES(&snes);
@@ -751,7 +748,7 @@ int IMEXBDF2::run() {
 
   int internalCounter = 0; // Cumulative number of successful internal iterations
 
-  for (int s = 0; s < getNumberOutputSteps(); s++) {
+  for (int s = 1; s <= getNumberOutputSteps(); s++) {
     BoutReal cumulativeTime = 0.;
     int counter = 0; // How many iterations in this output step
 
@@ -1276,7 +1273,7 @@ PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f, bool linear) {
 
   // G(x) now in fdata
 
-  if (!have_constraints) {
+  if (!has_constraint_variables) {
     // No constraints, so simple loop over all variables
 
     for (int i = 0; i < nlocal; i++) {

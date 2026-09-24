@@ -27,6 +27,7 @@
 #define BOUT_ARRAY_H
 
 #include <algorithm>
+#include <initializer_list>
 #include <map>
 #include <memory>
 #include <tuple>
@@ -36,11 +37,15 @@
 #include <omp.h>
 #endif
 
+#include "bout/build_config.hxx"
 #include "bout/build_defines.hxx"
 
 #if BOUT_HAS_UMPIRE
 #include "umpire/Allocator.hpp"
 #include "umpire/ResourceManager.hpp"
+#if BOUT_HAS_HIP && !defined(UMPIRE_ENABLE_HIP)
+#error "BOUT_ENABLE_HIP requires Umpire built with HIP support"
+#endif
 #endif
 
 #include <bout/assert.hxx>
@@ -66,8 +71,9 @@ struct ArrayData {
     //       even though the Array object itself can't.
 #if BOUT_HAS_UMPIRE
     auto& rm = umpire::ResourceManager::getInstance();
-#if BOUT_HAS_CUDA
+#if BOUT_HAS_CUDA || BOUT_HAS_HIP
     auto allocator = rm.getAllocator(umpire::resource::Pinned);
+    //auto allocator = rm.getAllocator(umpire::resource::Unified);
 #else
     auto allocator = rm.getAllocator("HOST");
 #endif
@@ -96,7 +102,7 @@ struct ArrayData {
   }
   iterator<T> begin() const { return data; }
   iterator<T> end() const { return data + len; }
-  int size() const { return len; }
+  BOUT_FORCEINLINE int size() const { return len; }
 
   /// Copy assignment
   /// Copy the underlying data from one array to the other
@@ -187,9 +193,22 @@ public:
   Array() noexcept : ptr(nullptr) {}
 
   /*!
-   * Create an array of given length
+   * Create an array of given length.
    */
-  Array(size_type len) { ptr = get(len); }
+  Array(size_type len) : ptr(get(len)) {}
+
+  /*!
+   * Create an array with initializer list.
+   * This is explicit to avoid confusion with (size_type) constructor.
+   */
+  static Array fromValues(std::initializer_list<T> init) {
+    if (init.size() == 0) {
+      return Array();
+    }
+    Array array(init.size());
+    std::copy(init.begin(), init.end(), array.begin());
+    return array;
+  }
 
   /*!
    * Destructor. Releases the underlying dataBlock
@@ -199,7 +218,7 @@ public:
   /*!
    * Copy constructor
    */
-  Array(const Array& other) noexcept { ptr = other.ptr; }
+  Array(const Array& other) noexcept : ptr(other.ptr) {}
 
   /*!
    * Assignment operator

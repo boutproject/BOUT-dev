@@ -18,6 +18,12 @@ public:
     testboundary->keywords = keywords;
     return testboundary;
   }
+  BoundaryOp* clone(BoundaryRegion* UNUSED(region),
+                    const std::list<std::string>& args) override {
+    auto* testboundary = new TestBoundary();
+    testboundary->args = args;
+    return testboundary;
+  }
   std::list<std::string> args;
   std::map<std::string, std::string> keywords;
 
@@ -33,21 +39,20 @@ public:
 
     fac->add(new TestBoundary(), "testboundary");
 
-    region = new BoundaryRegionXIn{"test_region", 0, 1, mesh};
+    region = std::make_shared<BoundaryRegionXIn>("test_region", 0, 1, mesh);
   }
 
   virtual ~BoundaryFactoryTest() {
     delete mesh;
     mesh = nullptr;
 
-    delete region;
     BoundaryFactory::cleanup();
 
     delete boundary;
   }
 
   BoundaryFactory* fac{BoundaryFactory::getInstance()};
-  BoundaryRegionXIn* region{nullptr};
+  std::shared_ptr<BoundaryRegionXIn> region;
   BoundaryOpBase* boundary{nullptr};
 };
 

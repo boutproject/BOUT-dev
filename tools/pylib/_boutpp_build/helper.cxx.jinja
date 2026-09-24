@@ -170,8 +170,7 @@ Mesh * c_get_global_mesh(){
 void c_mesh_normalise(Mesh * msh, double norm){
   //printf("%g\n",norm);
   auto coord = msh->getCoordinates();
-  coord->dx /= norm;
-  coord->dy /= norm;
-  coord->dz /= norm;
-  coord->geometry();
+  coord->setDx(coord->dx() / norm);
+  coord->setDy(coord->dy() / norm);
+  coord->setDz(coord->dz() / norm);
 }

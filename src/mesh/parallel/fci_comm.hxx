@@ -67,7 +67,7 @@ struct ProcLocal {
 struct GlobalToLocal1D {
   GlobalToLocal1D(int mg, int npe, int localwith, bool periodic)
       : mg(mg), npe(npe), localwith(localwith), local(localwith - (2 * mg)),
-        global(local * npe), globalwith(global + (2 * mg)), periodic(periodic){};
+        global(local * npe), globalwith(global + (2 * mg)), periodic(periodic) {};
   ProcLocal convert(int id) const;
   int getLocalWith() const { return localwith; }
   int getGlobalWith() const { return globalwith; }
@@ -104,7 +104,7 @@ public:
   const BoutReal& operator[](IndG3D ind) const;
   GlobalField3DAccessInstance(const GlobalField3DAccess* gfa,
                               std::vector<BoutReal>&& data)
-      : gfa(gfa), data(std::move(data)){};
+      : gfa(gfa), data(std::move(data)) {};
 
 private:
   const GlobalField3DAccess* gfa;

@@ -1,6 +1,7 @@
 #include "bout/sys/timer.hxx"
 
 #include <bout/output.hxx>
+#include <algorithm>
 
 #include <fmt/core.h>
 
@@ -124,10 +125,10 @@ void Timer::printTimeReport() {
   // pairs into another container that we can sort ourselves
   std::vector<std::pair<std::string, timer_info>> sorted_info;
   sorted_info.reserve(info.size());
-  std::transform(begin(info), end(info), std::back_inserter(sorted_info),
-                 [](const auto& it) { return it; });
+  std::ranges::transform(info, std::back_inserter(sorted_info),
+                         [](const auto& it) { return it; });
   // Sort so that the largest total time is first
-  std::sort(begin(sorted_info), end(sorted_info), [](const auto& a, const auto& b) {
+  std::ranges::sort(sorted_info, [](const auto& a, const auto& b) {
     return a.second.total_time > b.second.total_time;
   });
 

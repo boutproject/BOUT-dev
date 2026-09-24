@@ -30,7 +30,9 @@ class FieldData;
 #ifndef FIELD_DATA_H
 #define FIELD_DATA_H
 
+#include "bout/boundary_region.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/sys/expressionparser.hxx"
 #include "bout/unused.hxx"
 
 #include <cstdint>
@@ -41,14 +43,13 @@ class FieldData;
 
 class BoundaryOp;
 class BoundaryOpPar;
+namespace bout::boundary {
+class BoundaryRegionFCI;
+}
 class Coordinates;
 class Mesh;
 
-#include "bout/boundary_region.hxx"
-class BoundaryRegionPar;
-enum class BndryLoc;
-
-#include "bout/sys/expressionparser.hxx"
+enum class BndryLoc : std::int8_t;
 
 /// Base class for both scalar and vector fields, holds common
 /// information about the grid, coordinates, and boundaries

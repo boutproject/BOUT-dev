@@ -1,4 +1,5 @@
 add_executable(MMS-advection advection.cxx)
+bout_target_enable_hip(MMS-advection)
 target_link_libraries(MMS-advection bout++)
 set_target_properties(MMS-advection PROPERTIES FOLDER tests/MMS)
 set_target_properties(MMS-advection PROPERTIES OUTPUT_NAME advection)

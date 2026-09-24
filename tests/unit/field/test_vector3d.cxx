@@ -21,11 +21,6 @@ protected:
     WithQuietOutput quiet{output_info};
     // Delete any existing mesh
     if (mesh != nullptr) {
-      // Delete boundary regions
-      for (auto& r : mesh->getBoundaries()) {
-        delete r;
-      }
-
       delete mesh;
       mesh = nullptr;
     }
@@ -34,17 +29,18 @@ protected:
     static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr);
     mesh->createDefaultRegions();
 
-    mesh->addBoundary(new BoundaryRegionXIn("core", 1, ny - 2, mesh));
-    mesh->addBoundary(new BoundaryRegionXOut("sol", 1, ny - 2, mesh));
-    mesh->addBoundary(new BoundaryRegionYUp("upper_target", 1, nx - 2, mesh));
-    mesh->addBoundary(new BoundaryRegionYDown("lower_target", 1, nx - 2, mesh));
+    mesh->addBoundary(bout::boundary::NewBoundaryRegionXIn("core", 1, ny - 2, mesh));
+    mesh->addBoundary(bout::boundary::NewBoundaryRegionXOut("sol", 1, ny - 2, mesh));
+    mesh->addBoundary(
+        bout::boundary::NewBoundaryRegionYUp("upper_target", 1, nx - 2, mesh));
+    mesh->addBoundary(
+        bout::boundary::NewBoundaryRegionYDown("lower_target", 1, nx - 2, mesh));
 
     static_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<Coordinates>(
         mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0}, Field2D{5.0},
         Field2D{6.0}, Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0},
         Field2D{5.0}, Field2D{6.0}, Field2D{0.0}, Field2D{0.0}));
-    // No call to Coordinates::geometry() needed here
 
     delete mesh_staggered;
     mesh_staggered = new FakeMesh(nx, ny, nz);
@@ -55,12 +51,6 @@ protected:
   }
 
   ~Vector3DTest() override {
-    if (mesh != nullptr) {
-      // Delete boundary regions
-      for (auto& r : mesh->getBoundaries()) {
-        delete r;
-      }
-    }
     delete mesh;
     mesh = nullptr;
     delete mesh_staggered;

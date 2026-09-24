@@ -1,5 +1,5 @@
 /**************************************************************************
- * Copyright 2010-2025 BOUT++ contributors
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -36,6 +36,7 @@
 #include <bout/utils.hxx>
 
 #include "fieldgenerators.hxx"
+#include "fmt/format.h"
 
 #include <cmath>
 #include <memory>
@@ -92,24 +93,30 @@ private:
 };
 
 // Read variables from the grid file and make them available in expressions
-template <class T>
 auto add_grid_variable(FieldFactory& factory, Mesh& mesh, const std::string& name) {
-  T var;
-  mesh.get(var, name);
-  factory.addGenerator(name, std::make_shared<GridVariable<T>>(var, name));
+  factory.addGenerator(fmt::format("gridvar:{}", name),
+                       std::make_shared<GridVariable>(&mesh, name));
 }
 
-auto read_grid_variables(FieldFactory& factory, Mesh& mesh, Options& options) {
+auto read_grid_variables(FieldFactory& factory, Mesh* mesh, Options& options) {
   auto& field_variables = options["input"]["grid_variables"].doc(
       "Variables to read from the grid file and make available in expressions");
 
+  if (field_variables.cbegin() == field_variables.cend()) {
+    return;
+  }
+
+  if (mesh == nullptr) {
+    throw BoutException("A mesh is required for `input:grid_variables`");
+  }
+
   for (const auto& [name, value] : field_variables) {
-    if (not mesh.isDataSourceGridFile()) {
+    if (not mesh->isDataSourceGridFile()) {
       throw BoutException(
           "A grid file ('mesh:file') is required for `input:grid_variables`");
     }
 
-    if (not mesh.sourceHasVar(name)) {
+    if (not mesh->sourceHasVar(name)) {
       const auto filename = Options::root()["mesh"]["file"].as<std::string>();
       throw BoutException(
           "Grid file '{}' missing `{}` specified in `input:grid_variables`", filename,
@@ -119,14 +126,12 @@ auto read_grid_variables(FieldFactory& factory, Mesh& mesh, Options& options) {
     const auto func = value.as<GridVariableFunction>();
     switch (func) {
     case GridVariableFunction::field3d:
-      add_grid_variable<Field3D>(factory, mesh, name);
-      break;
     case GridVariableFunction::field2d:
-      add_grid_variable<Field2D>(factory, mesh, name);
+      add_grid_variable(factory, *mesh, name);
       break;
     case GridVariableFunction::boutreal:
       BoutReal var{};
-      mesh.get(var, name);
+      mesh->get(var, name);
       factory.addGenerator(name, std::make_shared<FieldValue>(var));
       break;
     }
@@ -229,13 +234,11 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   // Where switch function
   addGenerator("where", std::make_shared<FieldWhere>(nullptr, nullptr, nullptr));
 
-  // Variables from the grid file
-  if (fieldmesh != nullptr) {
-    read_grid_variables(*this, *fieldmesh, nonconst_options);
-  }
-
   // Periodic in the Y direction?
   addGenerator("is_periodic_y", std::make_shared<FieldPeriodicY>());
+
+  // Variables from the grid file
+  read_grid_variables(*this, fieldmesh, nonconst_options);
 }
 
 Field2D FieldFactory::create2D(const std::string& value, const Options* opt,
@@ -298,8 +301,7 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
   };
 
   if (transform_from_field_aligned) {
-    auto coords = result.getCoordinates();
-    if (coords == nullptr) {
+    if (auto coords = result.getCoordinates(); coords == nullptr) {
       // Should not lead to issues. If called from the coordinates
       // constructor, then this is expected, and the result will be
       // transformed. Otherwise, if the field is used untransformed,
@@ -349,8 +351,7 @@ FieldPerp FieldFactory::createPerp(FieldGeneratorPtr gen, Mesh* localmesh, CELL_
   };
 
   if (transform_from_field_aligned) {
-    auto coords = result.getCoordinates();
-    if (coords == nullptr) {
+    if (auto coords = result.getCoordinates(); coords == nullptr) {
       // Should not lead to issues. If called from the coordinates
       // constructor, then this is expected, and the result will be
       // transformed. Otherwise, if the field is used untransformed,
@@ -373,8 +374,7 @@ const Options* FieldFactory::findOption(const Options* opt, const std::string& n
   const Options* result = opt;
 
   // Check if name contains a section separator ':'
-  size_t pos = name.find(':');
-  if (pos == std::string::npos) {
+  if (auto pos = name.find(':'); pos == std::string::npos) {
     // No separator. Try this section, and then go through parents
 
     while (!result->isSet(name)) {
@@ -514,8 +514,7 @@ FieldGeneratorPtr FieldFactory::parse(const std::string& input,
     key = opt->str() + key; // Include options context in key
   }
 
-  auto it = cache.find(key);
-  if (it != cache.end()) {
+  if (auto it = cache.find(key); it != cache.end()) {
     return it->second;
   }
 

@@ -31,6 +31,20 @@ if(BOUT_HAS_CUDA)
   set_target_properties(bout++ PROPERTIES LINKER_LANGUAGE CUDA)
 endif()
 
+if(BOUT_HAS_HIP)
+  get_target_property(BOUT_HIP_SOURCES bout++ SOURCES)
+  list(FILTER BOUT_HIP_SOURCES INCLUDE REGEX ".*\\.cxx$")
+  set_source_files_properties(${BOUT_HIP_SOURCES} PROPERTIES LANGUAGE HIP)
+  set_target_properties(
+    bout++
+    PROPERTIES HIP_STANDARD 20
+               HIP_STANDARD_REQUIRED ON
+               LINKER_LANGUAGE HIP
+  )
+  find_package(hip REQUIRED CONFIG)
+  target_link_libraries(bout++ PUBLIC hip::host)
+endif()
+
 # Caliper
 option(BOUT_ENABLE_CALIPER "Enable Caliper" OFF)
 if(BOUT_ENABLE_CALIPER)
@@ -44,7 +58,6 @@ set(BOUT_HAS_CALIPER ${BOUT_ENABLE_CALIPER})
 option(BOUT_ENABLE_UMPIRE "Enable UMPIRE memory management" OFF)
 if(BOUT_ENABLE_UMPIRE)
   find_package(UMPIRE REQUIRED)
-  target_include_directories(bout++ PUBLIC ${UMPIRE_INCLUDE_DIRS}/include)
   target_link_libraries(bout++ PUBLIC umpire)
 endif()
 set(BOUT_HAS_UMPIRE ${BOUT_ENABLE_UMPIRE})
@@ -53,12 +66,6 @@ set(BOUT_HAS_UMPIRE ${BOUT_ENABLE_UMPIRE})
 option(BOUT_ENABLE_RAJA "Enable RAJA" OFF)
 if(BOUT_ENABLE_RAJA)
   find_package(RAJA REQUIRED)
-  message(STATUS "RAJA_CONFIG:" ${RAJA_CONFIG})
-  string(FIND ${RAJA_CONFIG} "raja" loc)
-  math(EXPR value "${loc} + 5" OUTPUT_FORMAT DECIMAL)
-  string(SUBSTRING ${RAJA_CONFIG} 0 ${value} RAJA_PATH)
-  message(STATUS "RAJA_PATH" ${RAJA_PATH})
-  target_include_directories(bout++ PUBLIC ${RAJA_PATH}/include)
   target_link_libraries(bout++ PUBLIC RAJA)
 endif()
 set(BOUT_HAS_RAJA ${BOUT_ENABLE_RAJA})
@@ -284,7 +291,22 @@ if(BOUT_USE_ADIOS2)
   else()
     find_package(ADIOS2 REQUIRED)
   endif()
-  target_link_libraries(bout++ PUBLIC adios2::cxx11_mpi MPI::MPI_C)
+
+  foreach(_adios2_candidate adios2::cxx_mpi adios2::cxx20_mpi adios2::cxx17_mpi
+                            adios2::cxx11_mpi
+  )
+    if(TARGET ${_adios2_candidate})
+      set(_adios2_target ${_adios2_candidate})
+      break()
+    endif()
+  endforeach()
+
+  if(NOT DEFINED _adios2_target)
+    message(FATAL_ERROR "Could not find a usable ADIOS2 CXX CMake target. ")
+  endif()
+  message(STATUS "Using ADIOS2 CMake target: ${_adios2_target}")
+
+  target_link_libraries(bout++ PUBLIC ${_adios2_target} MPI::MPI_C)
 endif()
 message(STATUS "ADIOS2 support: ${BOUT_USE_ADIOS2}")
 set(BOUT_HAS_ADIOS2 ${BOUT_USE_ADIOS2})
@@ -338,6 +360,7 @@ cmake_dependent_option(
   BOUT_USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF
   "NOT BOUT_DOWNLOAD_SUNDIALS" ON
 )
+set(BOUT_HAS_SUNDIALS_MANYVECTOR OFF)
 if(BOUT_USE_SUNDIALS)
   enable_language(C)
   if(BOUT_DOWNLOAD_SUNDIALS)
@@ -391,6 +414,14 @@ if(BOUT_USE_SUNDIALS)
     set(SUNDIALS_ROOT "${SUNDIALS_DIR}")
   endif()
   target_link_libraries(bout++ PUBLIC SUNDIALS::nvecparallel)
+  if(TARGET SUNDIALS::nvecmanyvector)
+    target_link_libraries(bout++ PUBLIC SUNDIALS::nvecmanyvector)
+    set(BOUT_HAS_SUNDIALS_MANYVECTOR ON)
+  else()
+    message(
+      STATUS "SUNDIALS ManyVector support not found; custom N_Vector disabled"
+    )
+  endif()
   target_link_libraries(bout++ PUBLIC SUNDIALS::cvode)
   target_link_libraries(bout++ PUBLIC SUNDIALS::ida)
   target_link_libraries(bout++ PUBLIC SUNDIALS::arkode)

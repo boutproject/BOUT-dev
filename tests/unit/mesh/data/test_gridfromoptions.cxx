@@ -360,12 +360,12 @@ TEST_F(GridFromOptionsTest, CoordinatesCentre) {
 
   mesh_from_options.communicate(expected_2d);
 
-  EXPECT_TRUE(IsFieldEqual(coords->g11, expected_metric + 5.));
-  EXPECT_TRUE(IsFieldEqual(coords->g22, expected_metric + 4.));
-  EXPECT_TRUE(IsFieldEqual(coords->g33, expected_metric + 3.));
-  EXPECT_TRUE(IsFieldEqual(coords->g12, expected_metric + 2.));
-  EXPECT_TRUE(IsFieldEqual(coords->g13, expected_metric + 1.));
-  EXPECT_TRUE(IsFieldEqual(coords->g23, expected_metric));
+  EXPECT_TRUE(IsFieldEqual(coords->g11(), expected_metric + 5.));
+  EXPECT_TRUE(IsFieldEqual(coords->g22(), expected_metric + 4.));
+  EXPECT_TRUE(IsFieldEqual(coords->g33(), expected_metric + 3.));
+  EXPECT_TRUE(IsFieldEqual(coords->g12(), expected_metric + 2.));
+  EXPECT_TRUE(IsFieldEqual(coords->g13(), expected_metric + 1.));
+  EXPECT_TRUE(IsFieldEqual(coords->g23(), expected_metric));
 }
 
 #if not(BOUT_USE_METRIC_3D)
@@ -374,12 +374,12 @@ TEST_F(GridFromOptionsTest, CoordinatesZlow) {
 
   mesh_from_options.communicate(expected_2d);
 
-  EXPECT_TRUE(IsFieldEqual(coords->g11, expected_metric + 5.));
-  EXPECT_TRUE(IsFieldEqual(coords->g22, expected_metric + 4.));
-  EXPECT_TRUE(IsFieldEqual(coords->g33, expected_metric + 3.));
-  EXPECT_TRUE(IsFieldEqual(coords->g12, expected_metric + 2.));
-  EXPECT_TRUE(IsFieldEqual(coords->g13, expected_metric + 1.));
-  EXPECT_TRUE(IsFieldEqual(coords->g23, expected_metric));
+  EXPECT_TRUE(IsFieldEqual(coords->g11(), expected_metric + 5.));
+  EXPECT_TRUE(IsFieldEqual(coords->g22(), expected_metric + 4.));
+  EXPECT_TRUE(IsFieldEqual(coords->g33(), expected_metric + 3.));
+  EXPECT_TRUE(IsFieldEqual(coords->g12(), expected_metric + 2.));
+  EXPECT_TRUE(IsFieldEqual(coords->g13(), expected_metric + 1.));
+  EXPECT_TRUE(IsFieldEqual(coords->g23(), expected_metric));
 }
 #else
 // Maybe replace by MMS test, because we need a periodic function in z.
@@ -403,16 +403,16 @@ TEST_F(GridFromOptionsTest, CoordinatesXlowInterp) {
   mesh_from_options.communicate(expected_xlow);
 
   EXPECT_TRUE(
-      IsFieldEqual(coords->g11, expected_xlow + 5., "RGN_NOBNDRY", this_tolerance));
+      IsFieldEqual(coords->g11(), expected_xlow + 5., "RGN_NOBNDRY", this_tolerance));
   EXPECT_TRUE(
-      IsFieldEqual(coords->g22, expected_xlow + 4., "RGN_NOBNDRY", this_tolerance));
+      IsFieldEqual(coords->g22(), expected_xlow + 4., "RGN_NOBNDRY", this_tolerance));
   EXPECT_TRUE(
-      IsFieldEqual(coords->g33, expected_xlow + 3., "RGN_NOBNDRY", this_tolerance));
+      IsFieldEqual(coords->g33(), expected_xlow + 3., "RGN_NOBNDRY", this_tolerance));
   EXPECT_TRUE(
-      IsFieldEqual(coords->g12, expected_xlow + 2., "RGN_NOBNDRY", this_tolerance));
+      IsFieldEqual(coords->g12(), expected_xlow + 2., "RGN_NOBNDRY", this_tolerance));
   EXPECT_TRUE(
-      IsFieldEqual(coords->g13, expected_xlow + 1., "RGN_NOBNDRY", this_tolerance));
-  EXPECT_TRUE(IsFieldEqual(coords->g23, expected_xlow, "RGN_NOBNDRY", this_tolerance));
+      IsFieldEqual(coords->g13(), expected_xlow + 1., "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(IsFieldEqual(coords->g23(), expected_xlow, "RGN_NOBNDRY", this_tolerance));
 }
 
 TEST_F(GridFromOptionsTest, CoordinatesXlowRead) {
@@ -443,18 +443,18 @@ TEST_F(GridFromOptionsTest, CoordinatesXlowRead) {
 
   mesh_from_options.communicate(expected_xlow);
 
-  EXPECT_TRUE(IsFieldEqual(coords->g11, expected_xlow + 5.));
-  EXPECT_TRUE(coords->g11.getLocation() == CELL_XLOW);
-  EXPECT_TRUE(IsFieldEqual(coords->g22, expected_xlow + 4.));
-  EXPECT_TRUE(coords->g22.getLocation() == CELL_XLOW);
-  EXPECT_TRUE(IsFieldEqual(coords->g33, expected_xlow + 3.));
-  EXPECT_TRUE(coords->g33.getLocation() == CELL_XLOW);
-  EXPECT_TRUE(IsFieldEqual(coords->g12, expected_xlow + 2.));
-  EXPECT_TRUE(coords->g12.getLocation() == CELL_XLOW);
-  EXPECT_TRUE(IsFieldEqual(coords->g13, expected_xlow + 1.));
-  EXPECT_TRUE(coords->g13.getLocation() == CELL_XLOW);
-  EXPECT_TRUE(IsFieldEqual(coords->g23, expected_xlow));
-  EXPECT_TRUE(coords->g23.getLocation() == CELL_XLOW);
+  EXPECT_TRUE(IsFieldEqual(coords->g11(), expected_xlow + 5.));
+  EXPECT_TRUE(coords->g11().getLocation() == CELL_XLOW);
+  EXPECT_TRUE(IsFieldEqual(coords->g22(), expected_xlow + 4.));
+  EXPECT_TRUE(coords->g22().getLocation() == CELL_XLOW);
+  EXPECT_TRUE(IsFieldEqual(coords->g33(), expected_xlow + 3.));
+  EXPECT_TRUE(coords->g33().getLocation() == CELL_XLOW);
+  EXPECT_TRUE(IsFieldEqual(coords->g12(), expected_xlow + 2.));
+  EXPECT_TRUE(coords->g12().getLocation() == CELL_XLOW);
+  EXPECT_TRUE(IsFieldEqual(coords->g13(), expected_xlow + 1.));
+  EXPECT_TRUE(coords->g13().getLocation() == CELL_XLOW);
+  EXPECT_TRUE(IsFieldEqual(coords->g23(), expected_xlow));
+  EXPECT_TRUE(coords->g23().getLocation() == CELL_XLOW);
 }
 
 TEST_F(GridFromOptionsTest, CoordinatesYlowInterp) {
@@ -476,22 +476,22 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowInterp) {
   mesh_from_options.communicate(expected_ylow);
 
   EXPECT_TRUE(
-      IsFieldEqual(coords->g11, expected_ylow + 5., "RGN_NOBNDRY", this_tolerance));
-  EXPECT_TRUE(coords->g11.getLocation() == CELL_YLOW);
+      IsFieldEqual(coords->g11(), expected_ylow + 5., "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(coords->g11().getLocation() == CELL_YLOW);
   EXPECT_TRUE(
-      IsFieldEqual(coords->g22, expected_ylow + 4., "RGN_NOBNDRY", this_tolerance));
-  EXPECT_TRUE(coords->g22.getLocation() == CELL_YLOW);
+      IsFieldEqual(coords->g22(), expected_ylow + 4., "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(coords->g22().getLocation() == CELL_YLOW);
   EXPECT_TRUE(
-      IsFieldEqual(coords->g33, expected_ylow + 3., "RGN_NOBNDRY", this_tolerance));
-  EXPECT_TRUE(coords->g33.getLocation() == CELL_YLOW);
+      IsFieldEqual(coords->g33(), expected_ylow + 3., "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(coords->g33().getLocation() == CELL_YLOW);
   EXPECT_TRUE(
-      IsFieldEqual(coords->g12, expected_ylow + 2., "RGN_NOBNDRY", this_tolerance));
-  EXPECT_TRUE(coords->g12.getLocation() == CELL_YLOW);
+      IsFieldEqual(coords->g12(), expected_ylow + 2., "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(coords->g12().getLocation() == CELL_YLOW);
   EXPECT_TRUE(
-      IsFieldEqual(coords->g13, expected_ylow + 1., "RGN_NOBNDRY", this_tolerance));
-  EXPECT_TRUE(coords->g13.getLocation() == CELL_YLOW);
-  EXPECT_TRUE(IsFieldEqual(coords->g23, expected_ylow, "RGN_NOBNDRY", this_tolerance));
-  EXPECT_TRUE(coords->g23.getLocation() == CELL_YLOW);
+      IsFieldEqual(coords->g13(), expected_ylow + 1., "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(coords->g13().getLocation() == CELL_YLOW);
+  EXPECT_TRUE(IsFieldEqual(coords->g23(), expected_ylow, "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(coords->g23().getLocation() == CELL_YLOW);
 #endif
 }
 
@@ -525,18 +525,18 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowRead) {
 
   mesh_from_options.communicate(expected_ylow);
 
-  EXPECT_TRUE(IsFieldEqual(coords->g11, expected_ylow + 5., "RGN_ALL", this_tolerance));
-  EXPECT_TRUE(coords->g11.getLocation() == CELL_YLOW);
-  EXPECT_TRUE(IsFieldEqual(coords->g22, expected_ylow + 4., "RGN_ALL", this_tolerance));
-  EXPECT_TRUE(coords->g22.getLocation() == CELL_YLOW);
-  EXPECT_TRUE(IsFieldEqual(coords->g33, expected_ylow + 3., "RGN_ALL", this_tolerance));
-  EXPECT_TRUE(coords->g33.getLocation() == CELL_YLOW);
-  EXPECT_TRUE(IsFieldEqual(coords->g12, expected_ylow + 2., "RGN_ALL", this_tolerance));
-  EXPECT_TRUE(coords->g12.getLocation() == CELL_YLOW);
-  EXPECT_TRUE(IsFieldEqual(coords->g13, expected_ylow + 1., "RGN_ALL", this_tolerance));
-  EXPECT_TRUE(coords->g13.getLocation() == CELL_YLOW);
-  EXPECT_TRUE(IsFieldEqual(coords->g23, expected_ylow, "RGN_ALL", this_tolerance));
-  EXPECT_TRUE(coords->g23.getLocation() == CELL_YLOW);
+  EXPECT_TRUE(IsFieldEqual(coords->g11(), expected_ylow + 5., "RGN_ALL", this_tolerance));
+  EXPECT_TRUE(coords->g11().getLocation() == CELL_YLOW);
+  EXPECT_TRUE(IsFieldEqual(coords->g22(), expected_ylow + 4., "RGN_ALL", this_tolerance));
+  EXPECT_TRUE(coords->g22().getLocation() == CELL_YLOW);
+  EXPECT_TRUE(IsFieldEqual(coords->g33(), expected_ylow + 3., "RGN_ALL", this_tolerance));
+  EXPECT_TRUE(coords->g33().getLocation() == CELL_YLOW);
+  EXPECT_TRUE(IsFieldEqual(coords->g12(), expected_ylow + 2., "RGN_ALL", this_tolerance));
+  EXPECT_TRUE(coords->g12().getLocation() == CELL_YLOW);
+  EXPECT_TRUE(IsFieldEqual(coords->g13(), expected_ylow + 1., "RGN_ALL", this_tolerance));
+  EXPECT_TRUE(coords->g13().getLocation() == CELL_YLOW);
+  EXPECT_TRUE(IsFieldEqual(coords->g23(), expected_ylow, "RGN_ALL", this_tolerance));
+  EXPECT_TRUE(coords->g23().getLocation() == CELL_YLOW);
 #endif
 }
 
@@ -547,11 +547,11 @@ TEST_F(GridFromOptionsTest, CoordinatesZlowRead) {
 
   auto coords = mesh_from_options.getCoordinates(CELL_ZLOW);
 
-  EXPECT_TRUE(IsFieldEqual(coords->g11, expected_2d + 5.));
-  EXPECT_TRUE(IsFieldEqual(coords->g22, expected_2d + 4.));
-  EXPECT_TRUE(IsFieldEqual(coords->g33, expected_2d + 3.));
-  EXPECT_TRUE(IsFieldEqual(coords->g12, expected_2d + 2.));
-  EXPECT_TRUE(IsFieldEqual(coords->g13, expected_2d + 1.));
-  EXPECT_TRUE(IsFieldEqual(coords->g23, expected_2d));
+  EXPECT_TRUE(IsFieldEqual(coords->g11(), expected_2d + 5.));
+  EXPECT_TRUE(IsFieldEqual(coords->g22(), expected_2d + 4.));
+  EXPECT_TRUE(IsFieldEqual(coords->g33(), expected_2d + 3.));
+  EXPECT_TRUE(IsFieldEqual(coords->g12(), expected_2d + 2.));
+  EXPECT_TRUE(IsFieldEqual(coords->g13(), expected_2d + 1.));
+  EXPECT_TRUE(IsFieldEqual(coords->g23(), expected_2d));
 #endif
 }

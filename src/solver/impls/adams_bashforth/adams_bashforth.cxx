@@ -1,5 +1,6 @@
 #include "adams_bashforth.hxx"
 
+#include <algorithm>
 #include <array>
 
 #include <bout/boutcomm.hxx>
@@ -209,7 +210,7 @@ Array<BoutReal> AB_integrate(int nlocal, BoutReal timestep,
 
   // Zero-initialise to ensure we can operate on the contiguous
   // history arrays in order
-  std::fill(std::begin(update), std::end(update), 0.0);
+  std::ranges::fill(update, 0.0);
 
   AB_integrate_update(update, timestep, times, history, order);
   return update;
@@ -326,7 +327,7 @@ int AdamsBashforthSolver::init() {
   // Put starting values into states
   state.reallocate(nlocal);
   nextState.reallocate(nlocal);
-  std::fill(std::begin(nextState), std::end(nextState), 0.0);
+  std::ranges::fill(nextState, 0.0);
   save_vars(std::begin(state));
 
   // Set the starting order
@@ -345,17 +346,17 @@ void AdamsBashforthSolver::resetInternalFields() {
   current_order = 1;
 
   // States
-  std::fill(std::begin(nextState), std::end(nextState), 0.0);
+  std::ranges::fill(nextState, 0.0);
   save_vars(std::begin(state));
 }
 
 int AdamsBashforthSolver::run() {
 
   // Just for developer diagnostics
-  int nwasted = 0;
-  int nwasted_following_fail = 0;
+  [[maybe_unused]] int nwasted = 0;
+  [[maybe_unused]] int nwasted_following_fail = 0;
 
-  for (int s = 0; s < getNumberOutputSteps(); s++) {
+  for (int s = 1; s <= getNumberOutputSteps(); s++) {
     BoutReal target = simtime + getOutputTimestep();
 
     bool running = true;
@@ -373,7 +374,7 @@ int AdamsBashforthSolver::run() {
 
       // Just for developer diagnostics - set to true when the previous
       // attempt at a time step failed.
-      bool previous_fail = false;
+      [[maybe_unused]] bool previous_fail = false;
 
       // Flag to indicate if we want to use a lower order method
       bool use_lower = false;
@@ -488,12 +489,14 @@ int AdamsBashforthSolver::run() {
         // Be more conservative if we've failed;
         timestep = 0.9 * dt_lim;
 
+#if CHECK > 4
         // For developers
         if (previous_fail) {
           nwasted_following_fail++;
         }
         previous_fail = true;
         nwasted++;
+#endif
       }
 
       // Ditch last history point if we have enough

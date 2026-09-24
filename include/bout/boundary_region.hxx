@@ -1,12 +1,12 @@
-
-class BoundaryRegion;
-
 #ifndef BOUT_BNDRY_REGION_H
 #define BOUT_BNDRY_REGION_H
 
+#include <cstdint>
+#include <memory>
 #include <string>
 #include <utility>
 
+class BoundaryRegion;
 class Mesh;
 namespace bout {
 namespace globals {
@@ -15,16 +15,17 @@ extern Mesh* mesh; ///< Global mesh
 } // namespace bout
 
 /// Location of boundary
-enum class BndryLoc {
-  xin,
-  xout,
-  ydown,
-  yup,
-  all,
-  par_fwd_xin, // Don't include parallel boundaries
-  par_bkwd_xin,
-  par_fwd_xout, // Don't include parallel boundaries
-  par_bkwd_xout
+enum class BndryLoc : std::int8_t {
+  xin = 0,
+  xout = 1,
+  ydown = 2,
+  yup = 3,
+  all = 4,
+  par_fwd_xin = 5, // Don't include parallel boundaries
+  par_bkwd_xin = 6,
+  par_fwd_xout = 7, // Don't include parallel boundaries
+  par_bkwd_xout = 8,
+  invalid = -1
 };
 constexpr BndryLoc BNDRY_XIN = BndryLoc::xin;
 constexpr BndryLoc BNDRY_XOUT = BndryLoc::xout;
@@ -35,10 +36,19 @@ constexpr BndryLoc BNDRY_PAR_FWD_XIN = BndryLoc::par_fwd_xin;
 constexpr BndryLoc BNDRY_PAR_BKWD_XIN = BndryLoc::par_bkwd_xin;
 constexpr BndryLoc BNDRY_PAR_FWD_XOUT = BndryLoc::par_fwd_xout;
 constexpr BndryLoc BNDRY_PAR_BKWD_XOUT = BndryLoc::par_bkwd_xout;
+constexpr BndryLoc BNDRY_INVALID = BndryLoc::invalid;
 
+/// Physical type of y boundary
+enum class YBndryType : std::int8_t { sheath, not_sheath, all };
+
+/// Base class for boundary regions
 class BoundaryRegionBase {
 public:
   BoundaryRegionBase() = delete;
+  BoundaryRegionBase(const BoundaryRegionBase&) = delete;
+  BoundaryRegionBase(BoundaryRegionBase&&) = delete;
+  BoundaryRegionBase& operator=(const BoundaryRegionBase&) = delete;
+  BoundaryRegionBase& operator=(BoundaryRegionBase&&) = delete;
   BoundaryRegionBase(std::string name, Mesh* passmesh = nullptr)
       : localmesh(passmesh ? passmesh : bout::globals::mesh), label(std::move(name)) {}
   BoundaryRegionBase(std::string name, BndryLoc loc, Mesh* passmesh = nullptr)
@@ -47,12 +57,15 @@ public:
 
   virtual ~BoundaryRegionBase() = default;
 
+  virtual BoundaryRegion* getLegacyPointer();
   Mesh* localmesh; ///< Mesh does this boundary region belongs to
 
   std::string label; ///< Label for this boundary region
 
-  BndryLoc location;       ///< Which side of the domain is it on?
-  bool isParallel = false; ///< Is this a parallel boundary?
+  BndryLoc location{BndryLoc::invalid}; ///< Which side of the domain is it on?
+  bool isParallel = false;              ///< Is this a parallel boundary?
+  bool isX = false;
+  bool isY = false;
 
   virtual void first() = 0; ///< Move the region iterator to the start
   virtual void next() = 0;  ///< Get the next element in the loop
@@ -60,6 +73,8 @@ public:
                             ///  X or Y first)
   virtual bool
   isDone() = 0; ///< Returns true if outside domain. Can use this with nested nextX, nextY
+
+  std::unique_ptr<BoundaryRegion> legacy{nullptr};
 };
 
 /// Describes a region of the boundary, and a means of iterating over it
@@ -71,6 +86,7 @@ public:
   BoundaryRegion(std::string name, int xd, int yd, Mesh* passmesh = nullptr)
       : BoundaryRegionBase(name, passmesh), bx(xd), by(yd), width(2) {}
   ~BoundaryRegion() override = default;
+  BoundaryRegion* getLegacyPointer() override { return this; }
 
   int x, y;   ///< Indices of the point in the boundary
   int bx, by; ///< Direction of the boundary [x+bx][y+by] is going outwards

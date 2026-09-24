@@ -10,6 +10,7 @@
 #include "bout/invert_laplace.hxx"
 #include "gtest/gtest.h"
 
+#include "bout/bout_types.hxx"
 #include "bout/derivs.hxx"
 #include "bout/difops.hxx"
 #include "bout/field2d.hxx"
@@ -17,7 +18,6 @@
 #include "bout/griddata.hxx"
 #include "bout/mesh.hxx"
 #include "bout/options.hxx"
-#include "bout/vecops.hxx"
 
 #include "fake_mesh_fixture.hxx"
 
@@ -29,14 +29,13 @@ public:
   CyclicForwardOperator(bool xin_neumann, bool xout_neumann)
       : inner_x_neumann(xin_neumann), outer_x_neumann(xout_neumann),
 
-        a(0.0), c1(1.0), c2(1.0), d(1.0), ex(0.0), ez(0.0) {
-    coords = mesh->getCoordinates(CELL_CENTER);
-  }
+        a(0.0), c1(1.0), c2(1.0), d(1.0), ex(0.0), ez(0.0),
+        coords(mesh->getCoordinates(CELL_CENTER)) {}
 
-  const Field3D operator()(Field3D& f) {
-    auto result = d * Delp2(f)
-                  + (coords->g11 * DDX(f) + coords->g13 * DDZ(f)) * DDX(c2) / c1 + a * f
-                  + ex * DDX(f) + ez * DDZ(f);
+  Field3D operator()(Field3D& f) {
+    Field3D result = d * Delp2(f)
+                     + (coords->g11() * DDX(f) + coords->g13() * DDZ(f)) * DDX(c2) / c1
+                     + a * f + ex * DDX(f) + ez * DDZ(f);
     applyBoundaries(result, f);
     return result;
   }
@@ -45,10 +44,10 @@ private:
   CyclicForwardOperator();
   bool inner_x_neumann, outer_x_neumann; // If false then use Dirichlet conditions
 
-  void applyBoundaries(Field3D& newF, const Field3D& f) {
+  void applyBoundaries(Field3D& newF, const Field3D& f) const {
     BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_INNER_X")) {
       if (inner_x_neumann) {
-        newF[i] = (f[i.xp()] - f[i]) / coords->dx[i] / sqrt(coords->g_11[i]);
+        newF[i] = (f[i.xp()] - f[i]) / coords->dx()[i] / sqrt(coords->g_11()[i]);
       } else {
         newF[i] = 0.5 * (f[i] + f[i.xp()]);
       }
@@ -56,7 +55,7 @@ private:
 
     BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_OUTER_X")) {
       if (outer_x_neumann) {
-        newF[i] = (f[i] - f[i.xm()]) / coords->dx[i] / sqrt(coords->g_11[i]);
+        newF[i] = (f[i] - f[i.xm()]) / coords->dx()[i] / sqrt(coords->g_11()[i]);
       } else {
         newF[i] = 0.5 * (f[i.xm()] + f[i]);
       }
@@ -80,20 +79,19 @@ public:
 
     static_cast<FakeMesh*>(bout::globals::mesh)
         ->setGridDataSource(new GridFromOptions(Options::getRoot()));
-    bout::globals::mesh->getCoordinates()->geometry();
     f3.allocate();
     coef2.allocate();
     coef3.allocate();
 
     BOUT_FOR(i, mesh->getRegion2D("RGN_ALL")) {
-      BoutReal x = i.x() / (BoutReal)nx - 0.5;
-      BoutReal y = i.y() / (BoutReal)ny - 0.5;
+      const BoutReal x = i.x() / (BoutReal)nx - 0.5;
+      const BoutReal y = i.y() / (BoutReal)ny - 0.5;
       coef2[i] = x + y;
     }
     BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
-      BoutReal x = i.x() / (BoutReal)nx - 0.5;
-      BoutReal y = i.y() / (BoutReal)ny - 0.5;
-      BoutReal z = i.z() / (BoutReal)nz - 0.5;
+      const BoutReal x = i.x() / (BoutReal)nx - 0.5;
+      const BoutReal y = i.y() / (BoutReal)ny - 0.5;
+      const BoutReal z = i.z() / (BoutReal)nz - 0.5;
       f3[i] = 1e3 * exp(-0.5 * sqrt(x * x + y * y + z * z) / sigmasq);
       coef3[i] = x + y + sin(2 * 3.14159265358979323846 * z);
     }

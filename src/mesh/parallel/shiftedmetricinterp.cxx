@@ -28,13 +28,14 @@
  **************************************************************************/
 
 #include <algorithm>
+#include <memory>
 
 #include "shiftedmetricinterp.hxx"
 
+#include "bout/boundary_region_iter.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/constants.hxx"
 #include "bout/field3d.hxx"
-#include "bout/parallel_boundary_region.hxx"
 
 ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
                                          Field2D zShift_in, BoutReal zlength_in,
@@ -133,7 +134,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
   // Create regions for parallel boundary conditions
   Field2D dy;
   mesh.get(dy, "dy", 1.);
-  auto forward_boundary_xin = std::make_shared<BoundaryRegionPar>(
+  auto forward_boundary_xin = std::make_shared<bout::boundary::BoundaryRegionFCI>(
       "parallel_forward_xin", BNDRY_PAR_FWD_XIN, +1, &mesh);
   for (auto it = mesh.iterateBndryUpperY(); not it.isDone(); it.next()) {
     for (int z = mesh.zstart; z <= mesh.zend; z++) {
@@ -146,10 +147,10 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
           0.25
               * (1                                                     // dy/2
                  + dy(it.ind, mesh.yend + 1) / dy(it.ind, mesh.yend)), // length
-          yvalid);
+          yvalid, 1);
     }
   }
-  auto backward_boundary_xin = std::make_shared<BoundaryRegionPar>(
+  auto backward_boundary_xin = std::make_shared<bout::boundary::BoundaryRegionFCI>(
       "parallel_backward_xin", BNDRY_PAR_BKWD_XIN, -1, &mesh);
   for (auto it = mesh.iterateBndryLowerY(); not it.isDone(); it.next()) {
     for (int z = mesh.zstart; z <= mesh.zend; z++) {
@@ -162,11 +163,11 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
           0.25
               * (1 // dy/2
                  + dy(it.ind, mesh.ystart - 1) / dy(it.ind, mesh.ystart)),
-          yvalid);
+          yvalid, -1);
     }
   }
   // Create regions for parallel boundary conditions
-  auto forward_boundary_xout = std::make_shared<BoundaryRegionPar>(
+  auto forward_boundary_xout = std::make_shared<bout::boundary::BoundaryRegionFCI>(
       "parallel_forward_xout", BNDRY_PAR_FWD_XOUT, +1, &mesh);
   for (auto it = mesh.iterateBndryUpperY(); not it.isDone(); it.next()) {
     for (int z = mesh.zstart; z <= mesh.zend; z++) {
@@ -179,10 +180,10 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
           0.25
               * (1 // dy/2
                  + dy(it.ind, mesh.yend + 1) / dy(it.ind, mesh.yend)),
-          yvalid);
+          yvalid, 1);
     }
   }
-  auto backward_boundary_xout = std::make_shared<BoundaryRegionPar>(
+  auto backward_boundary_xout = std::make_shared<bout::boundary::BoundaryRegionFCI>(
       "parallel_backward_xout", BNDRY_PAR_BKWD_XOUT, -1, &mesh);
   for (auto it = mesh.iterateBndryLowerY(); not it.isDone(); it.next()) {
     for (int z = mesh.zstart; z <= mesh.zend; z++) {
@@ -195,7 +196,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
           0.25
               * (dy(it.ind, mesh.ystart - 1) / dy(it.ind, mesh.ystart) // dy/2
                  + 1),
-          yvalid);
+          yvalid, -1);
     }
   }
 
@@ -215,7 +216,7 @@ void ShiftedMetricInterp::checkInputGrid() {
                             "Should be 'orthogonal'.");
     }
   } // else: coordinate_system variable not found in grid input, indicates older input
-    //       file so must rely on the user having ensured the type is correct
+  //       file so must rely on the user having ensured the type is correct
 }
 
 /*!

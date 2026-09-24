@@ -1,17 +1,4 @@
-/*!
- * \file cyclic.cxx
- *
- * \brief FFT + Tridiagonal solver in serial or parallel
- *
- * Not particularly optimised: Each y slice is solved sequentially
- *
- * CHANGELOG
- * =========
- *
- * Jan 2014: Brendan Shanahan <bws502@york.ac.uk>
- *         * Added DST option
- *
- **************************************************************************
+/**************************************************************************
  * Copyright 2013 B.D.Dudson
  *
  * Contact: Ben Dudson, benjamin.dudson@york.ac.uk

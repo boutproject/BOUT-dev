@@ -4,7 +4,7 @@
  * Class for 2D X-Y profiles
  *
  **************************************************************************
- * Copyright 2010 - 2025 BOUT++ developers
+ * Copyright 2010 - 2026 BOUT++ developers
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -29,6 +29,7 @@
 #include "bout/build_defines.hxx"
 
 #include "bout/unused.hxx"
+#include <bout/array.hxx>
 #include <bout/assert.hxx>
 #include <bout/boundary_factory.hxx>
 #include <bout/boundary_op.hxx>
@@ -44,29 +45,27 @@
 #include <optional>
 
 Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in,
-                 std::optional<size_t> UNUSED(regionID))
+                 [[maybe_unused]] std::optional<size_t> regionID)
     : Field(localmesh, location_in, directions_in) {
-
-  if (fieldmesh) {
+  if (fieldmesh != nullptr) {
+    // Note: Even if fieldmesh is not null, LocalNx and LocalNy may
+    // not be initialised.
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
   }
-
 #if BOUT_USE_TRACK
   name = "<F2D>";
 #endif
 }
 
 Field2D::Field2D(const Field2D& f) : Field(f), data(f.data) {
-
-#if BOUT_USE_TRACK
-  name = f.name;
-#endif
-
-  if (fieldmesh) {
+  if (fieldmesh != nullptr) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
   }
+#if BOUT_USE_TRACK
+  name = f.name;
+#endif
 }
 
 Field2D::Field2D(BoutReal val, Mesh* localmesh) : Field2D(localmesh) { *this = val; }
@@ -89,13 +88,16 @@ Field2D::~Field2D() { delete deriv; }
 
 Field2D& Field2D::allocate() {
   if (data.empty()) {
-    if (!fieldmesh) {
+    if (fieldmesh == nullptr) {
       // fieldmesh was not initialized when this field was initialized, so use
-      // the global mesh and set some members to default values
+      // the global mesh
       fieldmesh = bout::globals::mesh;
-      nx = fieldmesh->LocalNx;
-      ny = fieldmesh->LocalNy;
     }
+    // Get size from the mesh.
+    nx = fieldmesh->LocalNx;
+    ny = fieldmesh->LocalNy;
+    ASSERT1(nx > 0);
+    ASSERT1(ny > 0);
     data.reallocate(nx * ny);
 #if CHECK > 2
     invalidateGuards(*this);
@@ -314,8 +316,9 @@ void Field2D::setBoundaryTo(const Field2D& f2d) {
   allocate(); // Make sure data allocated
 
   /// Loop over boundary regions
-  for (const auto& reg : fieldmesh->getBoundaries()) {
+  for (const auto& regnew : fieldmesh->getBoundaries()) {
     /// Loop within each region
+    auto* reg = regnew->getLegacyPointer();
     for (reg->first(); !reg->isDone(); reg->next()) {
       // Get value half-way between cells
       BoutReal val =
@@ -326,10 +329,9 @@ void Field2D::setBoundaryTo(const Field2D& f2d) {
   }
 }
 
-////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
+void Field2D::swapData(Field2D& other) { std::swap(data, other.data); }
 
-// Unary minus
-Field2D operator-(const Field2D& f) { return -1.0 * f; }
+////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 

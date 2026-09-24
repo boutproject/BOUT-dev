@@ -77,7 +77,8 @@ public:
   /// Dummy functions which should be optimised out
   int push(const std::string&) { return 0; }
   template <class... Args>
-  int push(fmt::format_string<Args...> format, const Args&... args) {
+  int push([[maybe_unused]] fmt::format_string<Args...> format,
+           [[maybe_unused]] const Args&... args) {
     return 0;
   }
 

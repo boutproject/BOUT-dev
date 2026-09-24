@@ -104,7 +104,7 @@ Laplacian::Laplacian(Options* options, const CELL_LOC loc, Mesh* mesh_in,
 
   nonuniform = (*options)["nonuniform"]
                    .doc("Use non-uniform grid corrections? Default is the mesh setting.")
-                   .withDefault(coords->non_uniform);
+                   .withDefault(coords->non_uniform());
 
   all_terms =
       (*options)["all_terms"].doc("Include first derivative terms?").withDefault(true);
@@ -218,10 +218,10 @@ Field3D Laplacian::solve(const Field3D& b, const Field3D& x0) {
 
   // Setting the start and end range of the y-slices
   int ys = localmesh->ystart, ye = localmesh->yend;
-  if (localmesh->hasBndryLowerY() && include_yguards) {
+  if (include_yguards && localmesh->hasBndryLowerY()) {
     ys = 0; // Mesh contains a lower boundary
   }
-  if (localmesh->hasBndryUpperY() && include_yguards) {
+  if (include_yguards && localmesh->hasBndryUpperY()) {
     ye = localmesh->LocalNy - 1; // Contains upper boundary
   }
 

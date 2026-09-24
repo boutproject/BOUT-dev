@@ -1,0 +1,1084 @@
+# Georgian translation for libbout.
+# Copyright (C) 2026 libbout's authors.
+# This file is distributed under the same license as the libbout package.
+# Ekaterine Papava <papava.e@gtu.ge>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: libbout\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-08-13 23:37+0100\n"
+"PO-Revision-Date: 2026-03-23 08:06+0100\n"
+"Last-Translator: Ekaterine Papava <papava.e@gtu.ge>\n"
+"Language-Team: Georgian <(nothing)>\n"
+"Language: ka\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.9\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:182
+#, c++-format
+msgid ""
+"\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must be a multiple "
+"of MYSUB ({:d})\n"
+msgstr ""
+"\t -> რეგიონი Core jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) MYSUB-ის ({:d}) "
+"ნამრავლი უნდა იყოს\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:215
+#, c++-format
+msgid ""
+"\t -> Core region jyseps2_2-jyseps1_1 ({:d}-{:d} = {:d}) must be a multiple "
+"of MYSUB ({:d})\n"
+msgstr ""
+"\t -> რეგიონი Core jyseps2_2-jyseps1_1 ({:d}-{:d} = {:d}) MYSUB-ის ({:d}) "
+"ნამრავლი უნდა იყოს\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:190
+#, c++-format
+msgid ""
+"\t -> Core region jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) must be a multiple "
+"of MYSUB ({:d})\n"
+msgstr ""
+"\t -> რეგიონი Core jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) MYSUB-ის ({:d}) "
+"ნამრავლი უნდა იყოს\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:300
+msgid "\t -> Good value\n"
+msgstr "\t -> კარგი მნიშვნელობა\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:171
+#, c++-format
+msgid ""
+"\t -> Leg region jyseps1_1+1 ({:d}) must be a multiple of MYSUB ({:d})\n"
+msgstr "\t -> რეგიონი Leg jyseps1_1+1 ({:d}) MYSUB-ის ({:d}) ნამრავლი უნდა იყოს\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:206
+#, c++-format
+msgid ""
+"\t -> leg region jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) must be a "
+"multiple of MYSUB ({:d})\n"
+msgstr ""
+"\t -> რეგიონი leg jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) MYSUB-ის ({:d}) "
+"ნამრავლი უნდა იყოს\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:223
+#, c++-format
+msgid ""
+"\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a multiple of "
+"MYSUB ({:d})\n"
+msgstr ""
+"\t -> რეგიონი leg ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) MYSUB-ის ({:d}) "
+"ნამრავლი უნდა იყოს\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:199
+#, c++-format
+msgid ""
+"\t -> leg region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must be a "
+"multiple of MYSUB ({:d})\n"
+msgstr ""
+"\t -> რეგიონი leg ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) MYSUB-ის ({:d}) "
+"ნამრავლი უნდა იყოს\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:166
+#, c++-format
+msgid "\t -> ny/NYPE ({:d}/{:d} = {:d}) must be >= MYG ({:d})\n"
+msgstr "\t -> ny/NYPE ({:d}/{:d} = {:d}) უნდა იყოს >= MYG ({:d})\n"
+
+#: ../src/bout++.cxx:575
+#, c++-format
+msgid "\tADIOS2 support {}\n"
+msgstr "\tADIOS2-ის მხარდაჭერა {}\n"
+
+#: ../src/bout++.cxx:583
+#, c++-format
+msgid "\tBacktrace in exceptions {}\n"
+msgstr "\tუკუტრეისი გამონაკლისებში {}\n"
+
+#. Loop over all possibilities
+#. Processors divide equally
+#. Mesh in X divides equally
+#. Mesh in Y divides equally
+#: ../src/mesh/impls/bout/boutmesh.cxx:288
+#, c++-format
+msgid "\tCandidate value: {:d}\n"
+msgstr "\tკანდიდატი მნიშვნელობა: {:d}\n"
+
+#: ../src/bout++.cxx:584
+#, c++-format
+msgid "\tColour in logs {}\n"
+msgstr "\tფერები ჟურნალში {}\n"
+
+#: ../src/bout++.cxx:599
+msgid "\tCommand line options for this run : "
+msgstr "\tბრძანების სტრიქონის პარამეტრები ამ გაშვებისთვის : "
+
+#. The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
+#. which could cause problems (e.g. terminate strings).
+#: ../src/bout++.cxx:595
+#, c++-format
+msgid "\tCompiled with flags : {:s}\n"
+msgstr "\tდაკომპილებულია ალმებით : {:s}\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:315
+#, c++-format
+msgid ""
+"\tDomain split (NXPE={:d}, NYPE={:d}) into domains (localNx={:d}, "
+"localNy={:d})\n"
+msgstr ""
+"\tდომენი დაყოფილია (NXPE={:d}, NYPE={:d}) დომენებად (localNx={:d}, "
+"localNy={:d})\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:357
+#, c++-format
+msgid "\tERROR: Cannot split {:d} Y points equally between {:d} processors\n"
+msgstr ""
+"\tშეცდომა: {:d} Y წერტილის თანაბრად განაწილება {:d} პროცესორს შორის "
+"შეუძლებელია\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:365
+#, c++-format
+msgid "\tERROR: Cannot split {:d} Z points equally between {:d} processors\n"
+msgstr ""
+"\tშეცდომა: {:d} Z წერტილის თანაბრად განაწილება {:d} პროცესორს შორის "
+"შეუძლებელია\n"
+
+#: ../src/sys/options/options_ini.cxx:200
+#, c++-format
+msgid ""
+"\tEmpty key\n"
+"\tLine: {:s}"
+msgstr ""
+"\tცარიელი გასაღები\n"
+"\tხაზი: {:s}"
+
+#: ../src/sys/optionsreader.cxx:127
+#, c++-format
+msgid "\tEmpty key or value in command line '{:s}'\n"
+msgstr "\tცარიელი გასაღები, ან მნიშვნელობა ბრძანების სტრიქონში '{:s}'\n"
+
+#: ../src/bout++.cxx:587
+#, c++-format
+msgid "\tExtra debug output {}\n"
+msgstr "\tგამართვის დამატებითი შეტყობინებები {}\n"
+
+#: ../src/bout++.cxx:568
+#, c++-format
+msgid "\tFFT support {}\n"
+msgstr "\tFFT-ის მხარდაჭერა {}\n"
+
+#: ../src/bout++.cxx:590
+#, c++-format
+msgid "\tField name tracking {}\n"
+msgstr "\tველის სახელის თვალყურის დევნება {}\n"
+
+#: ../src/bout++.cxx:588
+#, c++-format
+msgid "\tFloating-point exceptions {}\n"
+msgstr "\tმცურავმძიმიანი გამონაკლისები {}\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:476
+msgid "\tGrid size: "
+msgstr "\tბადის ზომა: "
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:499
+msgid "\tGuard cells (x,y,z): "
+msgstr "\tუჯრედების დაცვა (x,y,z): "
+
+#: ../src/sys/options/options_ini.cxx:204
+#, c++-format
+msgid ""
+"\tKey must not contain ':' character\n"
+"\tLine: {:s}"
+msgstr ""
+"\tგასაღები არ უნდა შეიცავდეს სიმბოლოს ':'\n"
+"\tხაზი: {:s}"
+
+#: ../src/bout++.cxx:570
+#, c++-format
+msgid "\tLAPACK support {}\n"
+msgstr "\tLAPACK-ის მხარდაჭერა {}\n"
+
+#: ../src/bout++.cxx:591
+#, c++-format
+msgid "\tMessage stack {}\n"
+msgstr "\tშეტყობინებების სტეკი {}\n"
+
+#: ../src/bout++.cxx:567
+#, c++-format
+msgid "\tMetrics mode is {}\n"
+msgstr "\tმეტრიკების რეჟიმია {}\n"
+
+#: ../src/sys/optionsreader.cxx:111
+#, c++-format
+msgid "\tMultiple '=' in command-line argument '{:s}'\n"
+msgstr "\tერთზე მეტი '=' ბრძანების სტრიქონის არგუმენტში '{:s}'\n"
+
+#: ../src/bout++.cxx:569
+#, c++-format
+msgid "\tNatural language support {}\n"
+msgstr "\tნატურალური ენის მხარდაჭერა {}\n"
+
+#: ../src/bout++.cxx:574
+#, c++-format
+msgid "\tNetCDF support {}{}\n"
+msgstr "\tNetCDF-ის მხარდაჭერა {}{}\n"
+
+#: ../src/bout++.cxx:585
+#, c++-format
+msgid "\tOpenMP parallelisation {}, using {} threads\n"
+msgstr "\tOpenMP-ის პარალელიზაცია {}. გამოიყენება {} ნაკადი\n"
+
+#. Mark the option as used
+#. Option not found
+#: ../include/bout/options.hxx:586 ../include/bout/options.hxx:619
+#: ../include/bout/options.hxx:643 ../include/bout/options.hxx:896
+msgid "\tOption "
+msgstr "\tპარამეტრი "
+
+#: ../src/sys/options.cxx:369
+#, c++-format
+msgid "\tOption {} = {}"
+msgstr "\tპარამეტრი {} = {}"
+
+#: ../src/sys/options/options_ini.cxx:70
+#, c++-format
+msgid "\tOptions file '{:s}' not found\n"
+msgstr "\tპარამეტრების ფაილი '{:s}' აღმოჩენილი არაა\n"
+
+#: ../src/bout++.cxx:576
+#, c++-format
+msgid "\tPETSc support {}\n"
+msgstr "\tPETSc-ის მხარდაჭერა {}\n"
+
+#: ../src/bout++.cxx:579
+#, c++-format
+msgid "\tPVODE support {}\n"
+msgstr "\tPVODE-ის მხარდაჭერა {}\n"
+
+#: ../src/bout++.cxx:564
+msgid "\tParallel NetCDF support disabled\n"
+msgstr "\tპარალელური NetCDF-ის მხარდაჭერა გათიშულია\n"
+
+#: ../src/bout++.cxx:562
+msgid "\tParallel NetCDF support enabled\n"
+msgstr "\tპარალელური NetCDF-ის მხარდაჭერა ჩართულია\n"
+
+#: ../src/bout++.cxx:577
+#, c++-format
+msgid "\tPretty function name support {}\n"
+msgstr "\tლამაზი ფუნქციის სახელის მხარდაჭერა {}\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:473
+msgid "\tRead nz from input grid file\n"
+msgstr "\tnz წაკითხულია შეყვანილი ბადის ფაილიდან\n"
+
+#: ../src/mesh/mesh.cxx:249
+msgid "\tReading contravariant vector "
+msgstr "\tკონტრავარიანტული ვექტორის წაკითხვა "
+
+#: ../src/mesh/mesh.cxx:242 ../src/mesh/mesh.cxx:263
+msgid "\tReading covariant vector "
+msgstr "\tკოვარიანტული ვექტორის წაკითხვა  "
+
+#: ../src/bout++.cxx:555
+#, c++-format
+msgid "\tRuntime error checking {}"
+msgstr "\tგაშვების დროის შემოწმება {}"
+
+#: ../src/bout++.cxx:581
+#, c++-format
+msgid "\tSLEPc support {}\n"
+msgstr "\tSLEPc-ის მხარდაჭერა {}\n"
+
+#: ../src/bout++.cxx:582
+#, c++-format
+msgid "\tSUNDIALS support {}\n"
+msgstr "\tSUNDIALS-ის მხარდაჭერა {}\n"
+
+#: ../src/bout++.cxx:580
+#, c++-format
+msgid "\tScore-P support {}\n"
+msgstr "\tScore-P-ის მხარდაჭერა {}\n"
+
+#: ../src/bout++.cxx:589
+#, c++-format
+msgid "\tSignal handling support {}\n"
+msgstr "\tსიგნალის დამუშავების მხარდაჭერა {}\n"
+
+#: ../src/solver/impls/split-rk/split-rk.cxx:76
+#, c++-format
+msgid "\tUsing a timestep {:e}\n"
+msgstr "\tგამოიყენება დროის შტამპი {:e}\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:613
+msgid "\tdone\n"
+msgstr "\tმზადაა\n"
+
+#: ../src/solver/impls/split-rk/split-rk.cxx:41
+msgid ""
+"\n"
+"\tSplit Runge-Kutta-Legendre and SSP-RK3 solver\n"
+msgstr ""
+"\n"
+"\tგაყოფილი Runge-Kutta-Legendre და SSP-RK3 ამომხსნელი\n"
+
+#: ../src/bout++.cxx:378
+msgid ""
+"\n"
+"  -d <data directory>\t\tLook in <data directory> for input/output files\n"
+"  -f <options filename>\t\tUse OPTIONS given in <options filename>\n"
+"  -o <settings filename>\tSave used OPTIONS given to <options filename>\n"
+"  -l, --log <log filename>\tPrint log to <log filename>\n"
+"  -v, --verbose\t\t\tIncrease verbosity\n"
+"  -q, --quiet\t\t\tDecrease verbosity\n"
+msgstr ""
+"\n"
+"  -d <მონაცემთა_საქაღალდე>\t\tშეტანა/გამოტანის ფაილების ძებნა "
+"<მონაცემთა_საქაღალდეში>\n"
+"  -f <პარამეტრების_ფაილის_სახელი>\t\t<პარამეტრების_ფაილში> მითითებული "
+"პარამეტრების გამოყენება\n"
+"  -o <პარამეტრების_ფაილი>\tგადაცემული პარამეტრების შენახვა "
+"<პარამეტრების_ფაილში>\n"
+"  -l, --log <ჟურნალის_ფაილის_სახელი>\tჟურნალის ჩაწერა "
+"<ჟურნალის_ფაილის_სახელში>\n"
+"  -v, --verbose\t\t\tმეტი შეტყობინების გამოტანა\n"
+"  -q, --quiet\t\t\tნაკლები შეტყობინების გამოტანა\n"
+
+#: ../src/sys/expressionparser.cxx:341
+#, c++-format
+msgid ""
+"\n"
+"  {1: ^{2}}{0}\n"
+"  Did you mean '{0}'?"
+msgstr ""
+"\n"
+"  {1: ^{2}}{0}\n"
+"  გულისხმობდით '{0}'-ს?"
+
+#: ../src/solver/solver.cxx:586
+#, c++-format
+msgid ""
+"\n"
+"Run finished at  : {:s}\n"
+msgstr ""
+"\n"
+"დასრულების დროა  : {:s}\n"
+
+#: ../src/solver/solver.cxx:540
+#, c++-format
+msgid ""
+"\n"
+"Run started at  : {:s}\n"
+msgstr ""
+"\n"
+"გაშვების დროა  : {:s}\n"
+
+#. Raw string to help with the formatting of the message, and a
+#. separate variable so clang-format doesn't barf on the
+#. exception
+#: ../src/sys/options.cxx:1158
+msgid ""
+"\n"
+"There were unused input options:\n"
+"-----\n"
+"{:i}\n"
+"-----\n"
+"It's possible you've mistyped some options. BOUT++ input arguments are\n"
+"now case-sensitive, and some have changed name. You can try running\n"
+"\n"
+"    <BOUT++ directory>/bin/bout-v5-input-file-upgrader.py {}/{}\n"
+"\n"
+"to automatically fix the most common issues. If these options above\n"
+"are sometimes used depending on other options, you can call\n"
+"`Options::setConditionallyUsed()`, for example:\n"
+"\n"
+"    Options::root()[\"{}\"].setConditionallyUsed();\n"
+"\n"
+"to mark a section or value as depending on other values, and so ignore\n"
+"it in this check. Alternatively, if you're sure the above inputs are\n"
+"not a mistake, you can set 'input:error_on_unused_options=false' to\n"
+"turn off this check for unused options. You can always set\n"
+"'input:validate=true' to check inputs without running the full\n"
+"simulation.\n"
+"\n"
+"{}"
+msgstr ""
+"\n"
+"აღმოჩენილია გამოუყენებელი შეყვანის პარამეტრები:\n"
+"-----\n"
+"{:i}\n"
+"-----\n"
+"შესაძლებელია, ზოგიერთი პარამეტრი შეცდომით გაქვთ აკრეფილი. BOUT++-ის "
+"შეყვანის არგუმენტები\n"
+"ახლა დიდ და პატარა ასოებს არჩევს და ზოგიერთ მათგანს სახელიც შეეცვალა. "
+"შეგიძლიათ გაუშვათ\n"
+"\n"
+"    <BOUT++ directory>/bin/bout-v5-input-file-upgrader.py {}/{}\n"
+"\n"
+"რათა ყველაზე გავრცელებული პრობლემები ავტომატურად გასწორდეს. თუ ზემოთ მოცემული "
+"პარამეტრები\n"
+"ზოგჯერ სხვა პარამეტრებზეა დამოკიდებული, შეგიძლიათ გამოიძახოთ\n"
+"`Options::setConditionallyUsed()`, მაგალითად:\n"
+"\n"
+"    Options::root()[\"{}\"].setConditionallyUsed();\n"
+"\n"
+"რათა მონაკვეთი ან მნიშვნელობა სხვა მნიშვნელობებზე დამოკიდებულად მონიშნოთ და ამ "
+"შემოწმებაში\n"
+"მისი იგნორირება მოხდეს. თუ დარწმუნებული ხართ, რომ ზემოთ მითითებული შეყვანები\n"
+"შეცდომა არაა, შეგიძლიათ დააყენოთ 'input:error_on_unused_options=false', რათა\n"
+"გამოუყენებელი პარამეტრების ეს შემოწმება გამოირთოს. ასევე ყოველთვის შეგიძლიათ\n"
+"'input:validate=true' დააყენოთ, რათა შეყვანები სრული სიმულაციის გაშვების "
+"გარეშე გადაამოწმოთ.\n"
+"\n"
+"{}"
+
+#: ../src/bout++.cxx:389
+#, c++-format
+msgid ""
+"  --print-config\t\tPrint the compile-time configuration\n"
+"  --list-solvers\t\tList the available time solvers\n"
+"  --help-solver <solver>\tPrint help for the given time solver\n"
+"  --list-laplacians\t\tList the available Laplacian inversion solvers\n"
+"  --help-laplacian <laplacian>\tPrint help for the given Laplacian inversion "
+"solver\n"
+"  --list-laplacexz\t\tList the available LaplaceXZ inversion solvers\n"
+"  --help-laplacexz <laplacexz>\tPrint help for the given LaplaceXZ inversion "
+"solver\n"
+"  --list-invertpars\t\tList the available InvertPar solvers\n"
+"  --help-invertpar <invertpar>\tPrint help for the given InvertPar solver\n"
+"  --list-rkschemes\t\tList the available Runge-Kutta schemes\n"
+"  --help-rkscheme <rkscheme>\tPrint help for the given Runge-Kutta scheme\n"
+"  --list-meshes\t\t\tList the available Meshes\n"
+"  --help-mesh <mesh>\t\tPrint help for the given Mesh\n"
+"  --list-xzinterpolations\tList the available XZInterpolations\n"
+"  --help-xzinterpolation <xzinterpolation>\tPrint help for the given "
+"XZInterpolation\n"
+"  --list-zinterpolations\tList the available ZInterpolations\n"
+"  --help-zinterpolation <zinterpolation>\tPrint help for the given "
+"ZInterpolation\n"
+"  -h, --help\t\t\tThis message\n"
+"  restart [append]\t\tRestart the simulation. If append is specified, append "
+"to the existing output files, otherwise overwrite them\n"
+"  VAR=VALUE\t\t\tSpecify a VALUE for input parameter VAR\n"
+"\n"
+"For all possible input parameters, see the user manual and/or the physics "
+"model source (e.g. {:s}.cxx)\n"
+msgstr ""
+"  --print-config\t\tკომპილაციის დროის კონფიგურაციის გამოტანა\n"
+"  --list-solvers\t\tხელმისაწვდომი დროის ამომხსნელების სია\n"
+"  --help-solver <solver>\tდახმარების გამოტანა მოცემული დროის ამოხსნელისთვის\n"
+"  --list-laplacians\t\tხელმისაწვდომი ლაპლასის ინვერსიის ამომხსნელების სია\n"
+"  --help-laplacian <laplacian>\tდახმარების გამოტანა მოცემული ლაპლასის "
+"ინვერსიის ამომხსნელისთვის\n"
+"  --list-laplacexz\t\tხელმისაწვდომი LaplaceXZ ინვერსიის ამომხსნელების სია\n"
+"  --help-laplacexz <laplacexz>\tდახმარების გამოტანა მოცემული LaplaceXZ "
+"ინვერსიის ამომხსნელისთვის\n"
+"  --list-invertpars\t\tხელმისაწვდომი InvertPar ამომხსნელების სია\n"
+"  --help-invertpar <invertpar>\tდახმარების გამოტანა მოცემული InvertPar "
+"ამომხსნელისთვის\n"
+"  --list-rkschemes\t\tხელმისაწვდომი Runge-Kutta სქემების სიის გამოტანა\n"
+"  --help-rkscheme <rkscheme>\tდახმარების გამოტანა მოცემული Runge-Kutta "
+"სქემისთვის\n"
+"  --list-meshes\t\t\tხელმისაწვდომი ბადეების სია\n"
+"  --help-mesh <mesh>\t\tდახმარების გამოტანა მოცემული ბადისთვის\n"
+"  --list-xzinterpolations\tხელმისაწვდომი XZInterpolation-ების სიის გამოტანა\n"
+"  --help-xzinterpolation <xzinterpolation>\tდახმარების გამოტანა მოცემული "
+"XZInterpolation-ისთვის\n"
+"  --list-zinterpolations\tხელმისაწვდომი ZInterpolation-ების სიის გამოტანა\n"
+"  --help-zinterpolation <zinterpolation>\tდახმარების გამოტანა მოცემული "
+"ZInterpolation-ისთვის\n"
+"  -h, --help\t\t\tეს შეტყობინება\n"
+"  restart [append]\t\tსიმულაციის თავიდან გაშვება. თუ მითითებულია append, "
+"გამოტანილი ინფორმაცია არსებულ გამოტანილ ფაილებს ბოლოში მიეწერება. წინააღმდეგ "
+"შემთხვევაში კი მოხდება თავზე გადაწერა\n"
+"  VAR=VALUE\t\t\tმიუთითეთ VALUE შეყვანის პარამეტრისტვის VAR\n"
+"\n"
+"ყველა შესაძლო შეყვანის პარამეტრის სანახავად იხილეთ სახელმძღვანელო, ან/და "
+"ფიზიკის მოდელის წყარო (მაგ: {:s}.cxx)\n"
+
+#: ../src/bout++.cxx:386
+msgid "  -c, --color\t\t\tColor output using bout-log-color\n"
+msgstr "  -c, --color\t\t\tფერადი გამოტანა bout-log-color-ის გამოყენეებით\n"
+
+#: ../include/bout/options.hxx:899
+msgid ") overwritten with:"
+msgstr ") თავსე გადაწერილია რით:"
+
+#: ../src/bout++.cxx:557
+#, c++-format
+msgid ", level {}"
+msgstr ", დონე {}"
+
+#: ../tests/unit/src/test_bout++.cxx:352
+msgid "4 of 8"
+msgstr "4 8-დან"
+
+#: ../src/sys/options.cxx:895
+msgid "All options used\n"
+msgstr "ყველა გამოყენებული პარამეტრი\n"
+
+#: ../src/bout++.cxx:535
+#, c++-format
+msgid "BOUT++ version {:s}\n"
+msgstr "BOUT++ ვერსია {:s}\n"
+
+#: ../src/bout++.cxx:147
+msgid "Bad command line arguments:\n"
+msgstr "არასწორი ბრძანების სტრიქონის არგუმენტები:\n"
+
+#: ../src/sys/expressionparser.cxx:192
+#, c++-format
+msgid "Boolean operator argument {:e} is not a bool"
+msgstr "ლოგიკური ოპერატორის არგუმენტი {:e} ლოგიკური არაა"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:595
+msgid "Boundary regions in this processor: "
+msgstr "სასაზღვრო რეგიონები ამ პროცესორში: "
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:348
+#, c++-format
+msgid "Cannot split {:d} X points equally between {:d} processors\n"
+msgstr "შეუძლებელია {:d} X წერტილის თანაბრად გაყოფა {:d} პროცესორს შორის\n"
+
+#: ../src/bout++.cxx:829
+msgid "Check if a file exists, and exit if it does."
+msgstr "შემოწმება, არსებობს, თუ არა ფაილი და გასვლა, თუ კი."
+
+#: ../src/bout++.cxx:540
+#, c++-format
+msgid ""
+"Code compiled on {:s} at {:s}\n"
+"\n"
+msgstr ""
+"კოდის კომპილაცია მოხდა მანქანაზე {:s} დრო: {:s}\n"
+"\n"
+
+#: ../src/sys/optionsreader.cxx:130
+msgid "Command line"
+msgstr "ბრძანების სტრიქონი"
+
+#: ../src/bout++.cxx:551 ../tests/unit/src/test_bout++.cxx:358
+msgid "Compile-time options:\n"
+msgstr "კომპილაციის დროის პარამეტრები:\n"
+
+#: ../tests/unit/src/test_bout++.cxx:362
+msgid "Compiled with flags"
+msgstr "კომპილაციის ალმები"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:604
+msgid "Constructing default regions"
+msgstr "ნაგულისხმევი რეგიონების აგება"
+
+#: ../src/bout++.cxx:527
+#, c++-format
+msgid "Could not create PID file {:s}"
+msgstr "ვერ შევქმენი PID ფაილი {:s}"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:309
+msgid ""
+"Could not find a valid value for NXPE. Try a different number of processors."
+msgstr ""
+"NXPE-ისთვის სწორი მნიშვნელობის პოვნა შეუძლებელია. სცადეთ პროცესორების სხვა "
+"რაოდენობა."
+
+#: ../src/sys/options/options_ini.cxx:160
+#, c++-format
+msgid "Could not open output file '{:s}'\n"
+msgstr "გახსნის შეცდომა გამოტანის ფაილისთვის '{:s}'\n"
+
+#: ../src/bout++.cxx:657
+#, c++-format
+msgid "Could not open {:s}/{:s}.{:d} for writing"
+msgstr "{:s}/{:s}.{:d}-ის ჩასაწერად გახსნა შეუძლებელია"
+
+#. Error reading
+#: ../src/mesh/mesh.cxx:543
+#, c++-format
+msgid "Could not read integer array '{:s}'\n"
+msgstr "წაკითხვის შეცდომა მთელი რიცხვების მასივისთვის '{:s}'\n"
+
+#. Failed . Probably not important enough to stop the simulation
+#: ../src/bout++.cxx:637
+msgid "Could not run bout-log-color. Make sure it is in your PATH\n"
+msgstr "bout-log-color-ის გაშვება შეუძლებელია. დარწმუნდით, რომ ის თქვენს PATH-შია\n"
+
+#: ../src/solver/solver.cxx:772
+#, c++-format
+msgid "Couldn't add Monitor: {:g} is not a multiple of {:g}!"
+msgstr "მონიტორის დამატება შეუძლებელია: {:g} {:g}-ის ნამრავლი არაა!"
+
+#: ../src/sys/expressionparser.cxx:312
+#, c++-format
+msgid ""
+"Couldn't find generator '{}'. BOUT++ expressions are now case-sensitive, so "
+"you\n"
+"may need to change your input file.\n"
+"{}"
+msgstr ""
+"გენერატორი '{}' აღმოჩენილი არაა. BOUT++-ის გამოსახულებები ახლა დიდ და პატარა "
+"ასოებს ანსხვავებს, ასე რომ,\n"
+"შეიძლება, თქვენი შეყვანის ფაილის შემოწმება დაგჭირდეთ.\n"
+"{}"
+
+#: ../src/mesh/mesh.cxx:587
+#, c++-format
+msgid "Couldn't find region {:s} in regionMap2D"
+msgstr "regionMap2D-ში რეგიონი {:s} აღმოჩენილი არაა"
+
+#: ../src/mesh/mesh.cxx:571 ../src/mesh/mesh.cxx:579
+#, c++-format
+msgid "Couldn't find region {:s} in regionMap3D"
+msgstr "regionMap3D-ში რეგიონი {:s} აღმოჩენილი არაა"
+
+#: ../src/mesh/mesh.cxx:595
+#, c++-format
+msgid "Couldn't find region {:s} in regionMapPerp"
+msgstr "regionMapPerp-ში რეგიონი {:s} აღმოჩენილი არაა"
+
+#. Convert any exceptions to something a bit more useful
+#: ../src/sys/options.cxx:361
+#, c++-format
+msgid "Couldn't get {} from option {:s} = '{:s}': {}"
+msgstr "{}-ის მიღება შეუძლებელია პარამეტრიდან {:s} = '{:s}': {}"
+
+#: ../src/bout++.cxx:515
+#, c++-format
+msgid "DataDir \"{:s}\" does not exist or is not accessible\n"
+msgstr "მონაცემთა საქაღალდე \"{:s}\" არ არსებობს, ან წვდომადი არაა\n"
+
+#: ../src/bout++.cxx:512
+#, c++-format
+msgid "DataDir \"{:s}\" is not a directory\n"
+msgstr "მონაცემთა საქაღალდე \"{:s}\" საქაღალდე არაა\n"
+
+#: ../src/solver/solver.cxx:671
+msgid "ERROR: Solver is already initialised\n"
+msgstr "შეცდომა: ამომხსნელი უკვე ინიციალიზებულია\n"
+
+#: ../src/bout++.cxx:216
+#, c++-format
+msgid "Error encountered during initialisation: {:s}\n"
+msgstr "ინიციალიზაციისას აღმოჩენილია შეცდომა: {:s}\n"
+
+#: ../src/bout++.cxx:751
+msgid "Error whilst writing settings"
+msgstr "შეცდომა პარამეტრების ჩაწერისას"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:323
+#, c++-format
+msgid "Error: nx must be greater than 2 times MXG (2 * {:d})"
+msgstr ""
+"შეცდომა: nx უფრო მეტი უნდა იყოს, ვიდრე ორზე გამრავლებული MXG (2 * {:d})"
+
+#: ../src/solver/solver.cxx:520
+msgid "Failed to initialise solver-> Aborting\n"
+msgstr "ამომხსნელის ინიციალიზაცია ჩავარდა -> შესრულება შეწყდა\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:281
+#, c++-format
+msgid "Finding value for NXPE (ideal = {:f})\n"
+msgstr "ვეძებ მნიშვნელობას NXPE-ისთვის (იდეალურია = {:f})\n"
+
+#: ../src/solver/solver.cxx:674
+msgid "Initialising solver\n"
+msgstr "ამომხსნელის ინიციალიზაცია\n"
+
+#: ../src/bout++.cxx:501
+msgid ""
+"Input and output file for settings must be different.\n"
+"Provide -o <settings file> to avoid this issue.\n"
+msgstr ""
+"შეყვანის და გამოტანის ფაილი პარამეტრებისთვის უნდა განსხვავდებოდეს.\n"
+"ამ პრობლემის თავიდან ასაცილებლად მიუთითეთ -o <settings file>.\n"
+
+#: ../src/sys/optionsreader.cxx:76
+msgid "Invalid command line option '-' found - maybe check whitespace?"
+msgstr ""
+"აღმოჩენილია არასწორი ბრძანების სტრიქონის პარამეტრი '-' - შეამოწმეთ ზედმეტი "
+"ჰარეები?"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:436
+msgid "Loading mesh"
+msgstr "ბადის ჩატვირთვა"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:451
+msgid "Mesh must contain nx"
+msgstr "ბადე უნდა შეიცავდეს nx-ს"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:455
+msgid "Mesh must contain ny"
+msgstr "ბადე უნდა შეიცავდეს ny-ს"
+
+#. Not found
+#: ../src/mesh/mesh.cxx:547
+#, c++-format
+msgid "Missing integer array {:s}\n"
+msgstr "აკლია მთელი რიცხვების მასივი {:s}\n"
+
+#: ../src/solver/solver.cxx:911
+#, c++-format
+msgid "Monitor signalled to quit (exception {})\n"
+msgstr "მონიტორმა გასვლის სიგნალი გამოაგზავნა (გამონაკლისი {})\n"
+
+#: ../src/solver/solver.cxx:889
+#, c++-format
+msgid "Monitor signalled to quit (return code {})"
+msgstr "მონიტორმა გასვლის სიგნალი გამოაგზავნა (დაბრუნების კოდი {})"
+
+#: ../src/bout++.cxx:834
+msgid "Name of file whose existence triggers a stop"
+msgstr "ფაილის სახელი, რომლის არსებობაც გაჩერებას იწვევს"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:601
+msgid "No boundary regions in this processor"
+msgstr "ამ პროცესორში სასაზღვრო რეგიონები არ არის"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:586
+msgid "No boundary regions; domain is periodic\n"
+msgstr "სასაზღვრო რეგიონების გარეშე. დომენი პერიოდულია\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:245
+#, c++-format
+msgid ""
+"Number of processors ({:d}) not divisible by NPs in x direction ({:d})\n"
+msgstr ""
+"პროცესორების რაოდენობა ({:d}), რომლებიც არ იყოფა NP-ებზე x მიმართულებით "
+"({:d})\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:258
+#, c++-format
+msgid ""
+"Number of processors ({:d}) not divisible by NPs in y direction ({:d})\n"
+msgstr ""
+"პროცესორების რაოდენობა ({:d}), რომლებიც არ იყოფა NP-ებზე y მიმართულებით "
+"({:d})\n"
+
+#. Less than 2 time-steps left
+#: ../src/bout++.cxx:908
+#, c++-format
+msgid "Only {:e} seconds ({:.2f} steps) left. Quitting\n"
+msgstr "დარჩა მხოლოდ {:e} წამი ({:.2f} ნაბიჯი). გასვლა\n"
+
+#: ../src/sys/options.cxx:382 ../src/sys/options.cxx:398
+#: ../src/sys/options.cxx:441 ../src/sys/options.cxx:471
+#: ../src/sys/options.cxx:745 ../src/sys/options.cxx:767
+#: ../src/sys/options.cxx:789
+#, c++-format
+msgid "Option {:s} has no value"
+msgstr "პარამეტრს {:s} მნიშვნელობა არ აქვს"
+
+#. Doesn't exist
+#: ../src/sys/options.cxx:172
+#, c++-format
+msgid "Option {:s}:{:s} does not exist"
+msgstr "პარამეტრი {:s}:{:s} არ არსებობს"
+
+#: ../include/bout/options.hxx:904
+#, c++-format
+msgid ""
+"Options: Setting a value from same source ({:s}) to new value '{:s}' - old "
+"value was '{:s}'."
+msgstr ""
+"პარამეტრები: მნიშვნელობის დაყენება იგივე წყაროდან ({:s}) ახალ მნიშვნელობაზე "
+"'{:s}' - ძველი მნიშვნელობა იყო '{:s}'."
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:588
+msgid "Possible boundary regions are: "
+msgstr "შესაძლო სასაზღვრო რეგიონებია: "
+
+#: ../src/bout++.cxx:545
+#, c++-format
+msgid ""
+"Processor number: {:d} of {:d}\n"
+"\n"
+msgstr ""
+"პროცესორის ნომერი: {:d} {:d}-დან\n"
+"\n"
+
+#: ../src/mesh/mesh.cxx:642
+#, c++-format
+msgid "Registered region 2D {:s}"
+msgstr "რეგისტრირებული რეგიონი 2D {:s}"
+
+#: ../src/mesh/mesh.cxx:632
+#, c++-format
+msgid "Registered region 3D {:s}"
+msgstr "რეგისტრირებული რეგიონი 3D {:s}"
+
+#: ../src/mesh/mesh.cxx:652
+#, c++-format
+msgid "Registered region Perp {:s}"
+msgstr "რეგისტრირებულია რეგიონი Perp {:s}"
+
+#: ../src/bout++.cxx:536
+#, c++-format
+msgid "Revision: {:s}\n"
+msgstr "რევიზია: {:s}\n"
+
+#: ../src/solver/solver.cxx:587
+msgid "Run time : "
+msgstr "გაშვებულობის დრო : "
+
+#. / Run the solver
+#: ../src/solver/solver.cxx:533
+msgid ""
+"Running simulation\n"
+"\n"
+msgstr ""
+"სიმულაციის გაშვება\n"
+"\n"
+
+#: ../tests/unit/src/test_bout++.cxx:359
+msgid "Signal"
+msgstr "სიგნალი"
+
+#: ../src/bout++.cxx:876
+msgid ""
+"Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n"
+"\n"
+msgstr ""
+"სიმ. დრო | RHS გამოთვ. | კედლ. დრო | გამოთვ. ინვ. კავშ. I/O  ამომხს.\n"
+"\n"
+
+#: ../src/bout++.cxx:879
+msgid ""
+"Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv   "
+"Comm    I/O   SOLVER\n"
+"\n"
+msgstr ""
+"სიმ. დრო | RHS_e გამოთვ. | RHS_I გამოთვ. | კედლ. დრო | გამოთვ. ინვ. კავშ. "
+"I/O  ამომხს.\n"
+"\n"
+
+#: ../src/solver/solver.cxx:514
+#, c++-format
+msgid "Solver running for {:d} outputs with monitor timestep of {:e}\n"
+msgstr ""
+"ამომხსნელი გაშვებულია {:d} გამოტანისთვის მონიტორინგის დროის ნაბიჯით {:e}\n"
+
+#: ../src/solver/solver.cxx:510
+#, c++-format
+msgid "Solver running for {:d} outputs with output timestep of {:e}\n"
+msgstr ""
+"ამომხსნელი გაშვებულია {:d} გამოტანისთვის გამოტანის დროის ნაბიჯით {:e}\n"
+
+#: ../src/solver/solver.cxx:788
+#, c++-format
+msgid ""
+"Solver::addMonitor: Cannot reduce timestep (from {:g} to {:g}) after init is "
+"called!"
+msgstr ""
+"Solver::addMonitor: init-ის გამოძახების შემდეგ დროის ნაბიჯს ({:g}-და {:g}-"
+"ზე) ვერ შეამცირებთ!"
+
+#: ../src/solver/solver.cxx:1289
+#, c++-format
+msgid ""
+"Time derivative at wrong location - Field is at {:s}, derivative is at {:s} "
+"for field '{:s}'\n"
+msgstr ""
+"დროითი წარმოებული არასწორ მდებარეობაზეა - ველი არის {:s}-ზე, წარმოებული კი "
+"{:s}-ზე ველისთვის '{:s}'\n"
+
+#: ../src/solver/solver.cxx:1494
+#, c++-format
+msgid "Time derivative for variable '{:s}' not set"
+msgstr "ცვლადისთვის '{:s}' დროის წარმოებული დაყენებული არაა"
+
+#: ../src/mesh/mesh.cxx:638
+#, c++-format
+msgid "Trying to add an already existing region {:s} to regionMap2D"
+msgstr "მცდელობა, დაემატოს უკვე არსებული რეგიონი {:s} regionMap2D-ს"
+
+#: ../src/mesh/mesh.cxx:614
+#, c++-format
+msgid "Trying to add an already existing region {:s} to regionMap3D"
+msgstr "მცდელობა, დაემატოს უკვე არსებული რეგიონი {:s} regionMap3D-ს"
+
+#: ../src/mesh/mesh.cxx:649
+#, c++-format
+msgid "Trying to add an already existing region {:s} to regionMapPerp"
+msgstr "მცდელობა, დაემატოს უკვე არსებული რეგიონი {:s} regionMapPerp-ს"
+
+#: ../src/sys/options.cxx:112 ../src/sys/options.cxx:151
+#, c++-format
+msgid ""
+"Trying to index Option '{0}' with '{1}', but '{0}' is a value, not a "
+"section.\n"
+"This is likely the result of clashing input options, and you may have to "
+"rename one of them.\n"
+msgstr ""
+"მიმდინარეობს პარამეტრის '{0}' ინდექსაცია '{1}'-ით, მაგრამ '{0}' მნიშვნელობაა "
+"და არა სექცია.\n"
+"ეს, სავარაუდოდ, კონფლიქტური შეყვანის პარამეტრების შედეგია და შეიძლება ერთ-"
+"ერთის სახელის გადარქმევა დაგჭირდეთ.\n"
+
+#: ../src/mesh/coordinates.cxx:1464
+msgid ""
+"Unrecognised paralleltransform option.\n"
+"Valid choices are 'identity', 'shifted', 'fci'"
+msgstr ""
+"უცნობი პარამეტრია paralleltransform.\n"
+"დასაშვები მნიშვნელობებია 'identity', 'shifted', 'fci'"
+
+#: ../src/sys/options.cxx:899
+msgid "Unused options:\n"
+msgstr "გამოუყენებელი პარამეტრები:\n"
+
+#: ../src/bout++.cxx:446
+#, c++-format
+msgid "Usage is {:s} -d <data directory>\n"
+msgstr "გამოყენება: {:s} -d <მონაცემების_სააღალდე>\n"
+
+#: ../src/bout++.cxx:455
+#, c++-format
+msgid "Usage is {:s} -f <options filename>\n"
+msgstr "გამოყენება: {:s} -f <პარამეტრების_ფაილის_სახელი>\n"
+
+#: ../src/bout++.cxx:473
+#, c++-format
+msgid "Usage is {:s} -l <log filename>\n"
+msgstr "გამოყენება: {:s} -l <ჟურნალის_ფაილის_სახელი>\n"
+
+#: ../src/bout++.cxx:464
+#, c++-format
+msgid "Usage is {:s} -o <settings filename>\n"
+msgstr "გამოყენება: {:s} -o <პარამეტრების_ფაილის_სახელი>\n"
+
+#: ../src/bout++.cxx:360
+#, c++-format
+msgid "Usage is {} {} <name>\n"
+msgstr "გამოყენება: {} {} <სახელი>\n"
+
+#: ../tests/unit/src/test_bout++.cxx:32 ../tests/unit/src/test_bout++.cxx:46
+msgid "Usage:"
+msgstr "გამოყენება:"
+
+#. Print help message -- note this will be displayed once per processor as we've not
+#. started MPI yet.
+#: ../src/bout++.cxx:374
+#, c++-format
+msgid ""
+"Usage: {:s} [-d <data directory>] [-f <options filename>] [restart [append]] "
+"[VAR=VALUE]\n"
+msgstr ""
+"გამოყენება: {:s} [-d <მონაცემთა_საქაღალდე>] [-f "
+"<პარამეტრების_ფაილის_სახელი>] [restart [append]] [VAR=VALUE]\n"
+
+#. restart file should be written by physics model
+#: ../src/solver/solver.cxx:927
+msgid "User signalled to quit. Returning\n"
+msgstr "მომხმარებელმა მიგვანიშნა, მუშაობა დაგვემთავრებინა\n"
+
+#: ../src/sys/options.cxx:486
+#, c++-format
+msgid "Value for option {:s} = {:e} is not a bool"
+msgstr "მნიშვნელობა პარამეტრისთვის {:s} = {:e} ლოგიკური არაა"
+
+#: ../src/sys/options.cxx:426
+#, c++-format
+msgid "Value for option {:s} = {:e} is not an integer"
+msgstr "მნიშვნელობა პარამეტრისთვის {:s} = {:e} მთელი რიცხვი არაა"
+
+#: ../src/sys/options.cxx:456
+#, c++-format
+msgid "Value for option {:s} cannot be converted to a BoutReal"
+msgstr "მნიშვნელობა პარამეტრისთვის {:s} BoutReal-ში გადაყვანილი ვერ იქნება"
+
+#: ../src/sys/options.cxx:623
+#, c++-format
+msgid "Value for option {:s} cannot be converted to a Field2D"
+msgstr "მნიშვნელობა პარამეტრისთვის {:s} Field2D-ში გადაყვანილი ვერ იქნება"
+
+#: ../src/sys/options.cxx:571
+#, c++-format
+msgid "Value for option {:s} cannot be converted to a Field3D"
+msgstr "მნიშვნელობა პარამეტრისთვის {:s} Field3D-ში გადაყვანილი ვერ იქნება"
+
+#: ../src/sys/options.cxx:705
+#, c++-format
+msgid "Value for option {:s} cannot be converted to a FieldPerp"
+msgstr "მნიშვნელობა პარამეტრისთვის {:s} FieldPerp-ში გადაყვანილი ვერ იქნება"
+
+#: ../src/sys/options.cxx:491
+#, c++-format
+msgid "Value for option {:s} cannot be converted to a bool"
+msgstr "მნიშვნელობა პარამეტრისთვის {:s} bool-ში გადაყვანილი ვერ იქნება"
+
+#: ../src/sys/options.cxx:751
+#, c++-format
+msgid "Value for option {:s} cannot be converted to an Array<BoutReal>"
+msgstr ""
+"მნიშვნელობა პარამეტრისთვის {:s} Array<BoutReal>-ში გადაყვანილი ვერ იქნება"
+
+#: ../src/sys/options.cxx:773
+#, c++-format
+msgid "Value for option {:s} cannot be converted to an Matrix<BoutReal>"
+msgstr ""
+"მნიშვნელობა პარამეტრისთვის {:s} Matrix<BoutReal>-ში გადაყვანილი ვერ იქნება"
+
+#: ../src/sys/options.cxx:795
+#, c++-format
+msgid "Value for option {:s} cannot be converted to an Tensor<BoutReal>"
+msgstr ""
+"მნიშვნელობა პარამეტრისთვის {:s} Tensor<BoutReal>-ში გადაყვანილი ვერ იქნება"
+
+#. Another type which can't be converted
+#: ../src/sys/options.cxx:418
+#, c++-format
+msgid "Value for option {:s} is not an integer"
+msgstr "მნიშვნელობა პარამეტრისთვის {:s} მთელი რიცხვი არაა"
+
+#: ../src/solver/solver.cxx:1240 ../src/solver/solver.cxx:1246
+#, c++-format
+msgid "Variable '{:s}' not initialised"
+msgstr "ცვლადი '{:s}' ინიციალიზებული არაა"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:467
+#, c++-format
+msgid ""
+"WARNING: Number of toroidal points should be 2^n for efficient FFT "
+"performance -- consider changing MZ ({:d}) if using FFTs\n"
+msgstr ""
+"გაფრთხილება: FFT-ის ეფექტური წარმადობისთვის ტოროიდული წერტილების რაოდენობა "
+"უნდა იყოს 2^n -- თუ FFT-ებს იყენებთ, განიხილეთ MZ-ის ({:d}) შეცვლა\n"
+
+#: ../src/mesh/coordinates.cxx:635
+msgid "WARNING: extrapolating input mesh quantities into x-boundary cells\n"
+msgstr "გაფრთხილება: შეყვანილი ბადის სიდიდეები ექსტრაპოლირდება x-სასაზღვრო უჯრედებში\n"
+
+#: ../src/mesh/coordinates.cxx:412
+msgid ""
+"WARNING: extrapolating input mesh quantities into x-boundary cells. Set "
+"option extrapolate_x=false to disable this.\n"
+msgstr ""
+"გაფრთხილება: შეყვანილი ბადის სიდიდეები ექსტრაპოლირდება x-სასაზღვრო უჯრედებში. "
+"ამის გასათიშად დააყენეთ პარამეტრი extrapolate_x=false.\n"
+
+#: ../src/mesh/coordinates.cxx:640
+msgid "WARNING: extrapolating input mesh quantities into y-boundary cells\n"
+msgstr "გაფრთხილება: შეყვანილი ბადის სიდიდეები ექსტრაპოლირდება y-სასაზღვრო უჯრედებში\n"
+
+#: ../src/mesh/coordinates.cxx:417
+msgid ""
+"WARNING: extrapolating input mesh quantities into y-boundary cells. Set "
+"option extrapolate_y=false to disable this.\n"
+msgstr ""
+"გაფრთხილება: შეყვანილი ბადის სიდიდეები ექსტრაპოლირდება y-სასაზღვრო უჯრედებში. "
+"ამის გასათიშად დააყენეთ პარამეტრი extrapolate_y=false.\n"
+
+#: ../src/bout++.cxx:825
+msgid "Wall time limit in hours. By default (< 0), no limit"
+msgstr "კედლის დროის ზღვარი საათებში. ნაგულისხმევად (< 0) ზღვარი არ არსებობს"
+
+#: ../src/sys/optionsreader.cxx:42
+#, c++-format
+msgid "Writing options to file {:s}\n"
+msgstr "პარამეტრების ჩაწერა ფაილში {:s}\n"
+
+#. / The source label given to default values
+#: ../src/sys/options.cxx:34
+msgid "default"
+msgstr "ნაგულისხმევი"

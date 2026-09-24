@@ -4,6 +4,7 @@
  */
 
 #include <bout/derivs.hxx>
+#include <bout/field2d.hxx>
 #include <bout/field_factory.hxx>
 #include <bout/physicsmodel.hxx>
 
@@ -18,8 +19,8 @@ public:
 
     Coordinates* coords = mesh->getCoordinates();
 
-    dx_sq_sq = SQ(SQ(coords->dx));
-    dz_sq_sq = SQ(SQ(coords->dz));
+    dx_sq_sq = SQ(SQ(coords->dx()));
+    dz_sq_sq = SQ(SQ(coords->dz()));
 
     return 0;
   }

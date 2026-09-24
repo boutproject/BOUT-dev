@@ -60,15 +60,19 @@ set(serial_tests_source
     ./field/test_field3d.cxx
     ./field/test_field_factory.cxx
     ./field/test_fieldgroup.cxx
+    ./field/test_if_else.cxx
     ./field/test_fieldperp.cxx
     ./field/test_initialprofiles.cxx
     ./field/test_vector2d.cxx
     ./field/test_vector3d.cxx
     ./field/test_where.cxx
     ./include/bout/test_array.cxx
+    ./include/bout/test_rajalib.cxx
     ./include/bout/test_assert.cxx
     ./include/bout/test_bout_enum_class.cxx
+    ./include/bout/test_boundary_iter.cxx
     ./include/bout/test_deriv_store.cxx
+    ./include/bout/test_fv_ops.cxx
     ./include/bout/test_generic_factory.cxx
     ./include/bout/test_macro_for_each.cxx
     ./include/bout/test_monitor.cxx
@@ -81,6 +85,7 @@ set(serial_tests_source
     ./include/bout/test_stencil.cxx
     ./include/bout/test_template_combinations.cxx
     ./include/bout/test_traits.cxx
+    ./include/bout/test_yboundary.cxx
     ./include/test_cyclic_reduction.cxx
     ./include/test_derivs.cxx
     ./include/test_mask.cxx
@@ -93,12 +98,16 @@ set(serial_tests_source
     ./mesh/test_boutmesh.cxx
     ./mesh/test_coordinates.cxx
     ./mesh/test_coordinates_accessor.cxx
+    ./mesh/test_fv_ops.cxx
+    ./mesh/test_tokamak_coordinates.cxx
     ./mesh/test_interpolation.cxx
     ./mesh/test_invert3x3.cxx
     ./mesh/test_mesh.cxx
     ./mesh/test_paralleltransform.cxx
+    ./mesh/test_petsc_operators.cxx
     ./solver/test_fakesolver.cxx
     ./solver/test_fakesolver.hxx
+    ./solver/test_nvector.cxx
     ./solver/test_solver.cxx
     ./solver/test_solverfactory.cxx
     ./sys/test_boutexception.cxx
@@ -143,7 +152,9 @@ add_test(NAME serial_tests COMMAND serial_tests --gtest_brief=1)
 set_target_properties(serial_tests PROPERTIES FOLDER tests/unit)
 add_dependencies(build-check-unit-tests serial_tests)
 
+bout_target_enable_hip(serial_tests)
+
 if(BOUT_HAS_CUDA)
   set_source_files_properties(${serial_tests_source} PROPERTIES LANGUAGE CUDA)
-  set_target_properties(serial_tests PROPERTIES CUDA_STANDARD 14)
+  set_target_properties(serial_tests PROPERTIES CUDA_STANDARD 20)
 endif()

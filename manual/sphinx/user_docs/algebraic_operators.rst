@@ -1,27 +1,38 @@
 .. _sec-algebraic-ops:
 
 Algebraic operators
-=========================
+===================
 
 BOUT++ provides a wide variety of algebraic operators acting on fields.
 
-The algebraic operators are listed in :numref:`tab-algebraic-ops`.
-For a completely up-to-date list, see the ``Non-member functions``
-part of :doc:`field2d.hxx<../_breathe_autogen/file/field2d_8hxx>`,
-:doc:`field3d.hxx<../_breathe_autogen/file/field3d_8hxx>`,
+Most of these operators can participate in the lazy field-expression
+system described in :ref:`sec-field-expressions`. In practice this means
+you can usually write ordinary algebraic code and let BOUT++ delay
+evaluation until assignment or reduction.
+
+For a completely up-to-date list, see the ``Non-member functions`` part
+of :doc:`field2d.hxx<../_breathe_autogen/file/field2d_8hxx>`,
+:doc:`field3d.hxx<../_breathe_autogen/file/field3d_8hxx>`, and
 :doc:`fieldperp.hxx<../_breathe_autogen/file/fieldperp_8hxx>`.
+
+Common operators
+----------------
 
 .. _tab-algebraic-ops:
 .. table:: Algebraic operators
 
-   +------------------------------------------+------------------------------------------------------+ 
-   |  Name                                    | Description                                          |
+   +------------------------------------------+------------------------------------------------------+
+   | Name                                     | Description                                          |
    +==========================================+======================================================+
-   | ``min(f, allpe=true, region)``           | Minimum (optionally over all processes)              | 
+   | ``min(f, allpe=true, region)``           | Minimum (optionally over all processes)              |
    +------------------------------------------+------------------------------------------------------+
    | ``max(f, allpe=true, region)``           | Maximum (optionally over all processes)              |
    +------------------------------------------+------------------------------------------------------+
-   | ``pow(lhs, rhs, region)``                | :math:`\mathtt{lhs}^\mathtt{rhs}`                    |
+   | ``mean(f, allpe=true, region)``          | Mean (optionally over all processes)                 |
+   +------------------------------------------+------------------------------------------------------+
+   | ``pow(lhs, rhs[, region])``              | :math:`\mathtt{lhs}^\mathtt{rhs}`                    |
+   +------------------------------------------+------------------------------------------------------+
+   | ``SQ(f, region)``                        | Square of ``f``                                      |
    +------------------------------------------+------------------------------------------------------+
    | ``sqrt(f, region)``                      | :math:`\sqrt{(f)}`                                   |
    +------------------------------------------+------------------------------------------------------+
@@ -43,7 +54,8 @@ part of :doc:`field2d.hxx<../_breathe_autogen/file/field2d_8hxx>`,
    +------------------------------------------+------------------------------------------------------+
    | ``tanh(f, region)``                      | :math:`\tanh(f)`                                     |
    +------------------------------------------+------------------------------------------------------+
-   | ``floor(f, region)``                     | Returns a field with the floor of `f` at each point  |
+   | ``floor(f, floor_value[, region])``      | Returns a field where values below ``floor_value``   |
+   |                                          | are replaced by ``floor_value``                      |
    +------------------------------------------+------------------------------------------------------+
    | ``filter(f, n, region)``                 | Calculate the amplitude of the Fourier mode in the   |
    |                                          | z-direction with mode number `n`                     |
@@ -65,24 +77,55 @@ part of :doc:`field2d.hxx<../_breathe_autogen/file/field2d_8hxx>`,
    |                                          | of `f` as opposed to the AC, alternating current, or |
    |                                          | fluctuating part)                                    |
    +------------------------------------------+------------------------------------------------------+
+   | ``if_else(cond, lhs, rhs)``              | Select between two algebraic branches                |
+   +------------------------------------------+------------------------------------------------------+
+   | ``if_else_zero(cond, expr)``             | Select either ``expr`` or zero                       |
+   +------------------------------------------+------------------------------------------------------+
 
-These operators take a ``region`` argument, whose values can be [#]_ (see
-:ref:`sec-iterating`)
+These operators can usually be combined directly in expressions::
 
--  `RGN_ALL`, which is the whole mesh;
+  Field3D rhs = sqrt(SQ(n) + SQ(T));
+  Field3D profile = pow(n + n0, 1.5);
+  Field3D masked = if_else(use_drive, source * profile, sink * profile);
+  BoutReal max_error = max(abs(lhs - rhs), true);
 
--  `RGN_NOBNDRY`, which skips all boundaries;
+Reductions such as ``min``, ``max``, and ``mean`` can operate directly
+on an expression, so an intermediate field is often unnecessary.
 
--  `RGN_NOX`, which skips the x boundaries
+``pow`` also participates in lazy field expressions, including mixed
+`Field2D`/`Field3D` cases where the `Field2D` operand is broadcast in
+``z``. `FieldPerp` also has ``pow`` overloads for `FieldPerp` with
+`FieldPerp` or a scalar.
 
--  `RGN_NOY`, which skips the y boundaries
+Region arguments
+----------------
 
-The default value for the region argument is `RGN_ALL` which should work in all
-cases.  However, the region argument can be used for optimization, to skip
-calculations in guard cells if it is known that those results will not be
-needed (for example, if no derivatives of the result will be calculated). Since
-these operators can be relatively expensive compared to addition, subtraction,
-multiplication this can be a useful performance improvement.
+These operators take a ``region`` argument. Common values are [#]_ (see
+:ref:`sec-iterating`):
 
-.. [#] More regions may be added in future, for example to act on only subsets of the
-       physical domain.
+- ``RGN_ALL``, which is the whole mesh
+- ``RGN_NOBNDRY``, which skips all boundaries
+- ``RGN_NOX``, which skips the x boundaries
+- ``RGN_NOY``, which skips the y boundaries
+
+The default is usually ``RGN_ALL``. Restricting the region can improve
+performance when guard-cell values will not be used.
+
+When a region-limited expression is materialized into a field, only the
+selected region is guaranteed to contain valid values. This is the same
+performance-oriented convention used by other field operators.
+
+`Field3DParallel` follows the same rule for the main field data. On FCI
+meshes, materializing a lazy expression into `Field3DParallel` also
+preserves the forward and backward parallel slices when those slices are
+available on the expression operands. Materializing the same expression
+into plain `Field3D` does not preserve those slices.
+
+Further reading
+---------------
+
+- :ref:`sec-field-expressions`
+- :ref:`sec-gpusupport`
+
+.. [#] More regions may be added in future, for example to act on only
+       subsets of the physical domain.

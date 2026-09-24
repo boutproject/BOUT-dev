@@ -55,6 +55,7 @@ class Options;
 #include <fmt/format.h>
 
 #include <cmath>
+#include <cstddef>
 #include <functional>
 #include <map>
 #include <ostream>
@@ -74,19 +75,19 @@ class Options;
  * which can be used as a map.
  *
  *     Options options;
- *     
+ *
  *     // Set values
  *     options["key"] = 1.0;
  *
  *     // Get values. Throws BoutException if not found
- *     int val = options["key"]; // Sets val to 1 
+ *     int val = options["key"]; // Sets val to 1
  *
  *     // Return as specified type. Throws BoutException if not found
  *     BoutReal var = options["key"].as<BoutReal>();
  *
  *     // A default value can be used if key is not found
  *     BoutReal value = options["pi"].withDefault(3.14);
- *    
+ *
  *     // Assign value with source label. Throws if already has a value from same source
  *     options["newkey"].assign(1.0, "some source");
  *
@@ -94,7 +95,7 @@ class Options;
  *     options["newkey"].force(2.0, "some source");
  *
  * A legacy interface is also supported:
- * 
+ *
  *     options.set("key", 1.0, "code"); // Sets a key from source "code"
  *
  *     int val;
@@ -119,9 +120,9 @@ class Options;
  *
  * Each Options object can also contain any number of sections, which are
  * themselves Options objects.
- * 
+ *
  *     Options &section = options["section"];
- * 
+ *
  * which can be nested:
  *
  *     options["section"]["subsection"]["value"] = 3;
@@ -134,13 +135,13 @@ class Options;
  *
  * e.g.
  *     options->getSection("section")->getSection("subsection")->set("value", 3);
- * 
+ *
  * Options also know about their parents:
  *
  *     Options &parent = section.parent();
- *     
+ *
  * or
- * 
+ *
  *     Options *parent = section->getParent();
  *
  * Root options object
@@ -150,8 +151,8 @@ class Options;
  * there is a global singleton Options object which can be accessed with a static function
  *
  *    Options &root = Options::root();
- * 
- * or 
+ *
+ * or
  *
  *    Options *root = Options::getRoot();
  *
@@ -193,7 +194,7 @@ public:
   /// @param[in] parent        Parent object
   /// @param[in] sectionName   Name of the section, including path from the root
   Options(Options* parent_instance, std::string full_name)
-      : parent_instance(parent_instance), full_name(std::move(full_name)){};
+      : parent_instance(parent_instance), full_name(std::move(full_name)) {};
 
   /// Initialise with a value
   /// These enable Options to be constructed using initializer lists
@@ -354,9 +355,7 @@ public:
   std::map<std::string, AttributeType> attributes;
 
   /// Return true if this value has attribute \p key
-  bool hasAttribute(const std::string& key) const {
-    return attributes.find(key) != attributes.end();
-  }
+  bool hasAttribute(const std::string& key) const { return attributes.contains(key); }
 
   /// Set attributes, overwriting any already set
   ///
@@ -411,9 +410,8 @@ public:
     /// Edit distance from original search term
     std::string::size_type distance;
     /// Comparison operator so this works in a std::multiset
-    friend bool operator<(const FuzzyMatch& lhs, const FuzzyMatch& rhs) {
-      return lhs.distance < rhs.distance;
-    }
+    auto operator<=>(const FuzzyMatch& rhs) const { return distance <=> rhs.distance; }
+    bool operator==(const FuzzyMatch& rhs) const { return distance == rhs.distance; }
   };
 
   /// Find approximate matches for \p name throughout the whole
@@ -439,6 +437,13 @@ public:
   T operator=(T inputvalue) {
     assign<T>(inputvalue);
     return inputvalue;
+  }
+
+  template <typename ResT, typename L, typename R, typename Func>
+  ResT operator=(const BinaryExpr<ResT, L, R, Func>& expr) {
+    ResT value{expr};
+    assign<ResT>(value);
+    return value;
   }
 
   /// Assign a value to the option.
@@ -572,7 +577,7 @@ public:
     value_used = true; // Note this is mutable
 
     output_info << "\tOption " << full_name << " = " << val;
-    if (attributes.count("source")) {
+    if (attributes.contains("source")) {
       // Specify the source of the setting
       output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
     }
@@ -900,7 +905,7 @@ private:
     // If already set, and not time evolving then check for changing values
     // If a variable has a "time_dimension" attribute then it is assumed
     // that updates to the value is ok and don't need to be forced.
-    if (isSet() && (attributes.find("time_dimension") == attributes.end())) {
+    if (isSet() && (!attributes.contains("time_dimension"))) {
       // Check if current value the same as new value
       if (!bout::utils::variantEqualTo(value, val)) {
         if (force or !bout::utils::variantEqualTo(attributes["source"], source)) {
@@ -927,6 +932,9 @@ private:
   bool similar(T lhs, T rhs) const {
     return lhs == rhs;
   }
+
+  /// Replaces the start of the name of an Option and any children
+  void recursively_update_names(size_t len, const std::string& new_prefix);
 };
 
 // Specialised assign methods for types stored in ValueType

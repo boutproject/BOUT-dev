@@ -45,11 +45,14 @@
 #include "../../common_transform.hxx"
 
 #include <bout/array.hxx>
+#include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/dcomplex.hxx>
 #include <bout/fft.hxx>
+#include <bout/fieldperp.hxx>
 #include <bout/globals.hxx>
 #include <bout/lapack_routines.hxx>
 #include <bout/mesh.hxx>
@@ -124,8 +127,8 @@ LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in, Solver* UNUSED
                                   // (unless periodic in x)
     xe = localmesh->LocalNx - 1;
   }
-  int n = xe - xs + 1; // Number of X points on this processor,
-                       // including boundaries but not guard cells
+  const int n = xe - xs + 1; // Number of X points on this processor,
+                             // including boundaries but not guard cells
 
   a.reallocate(nmode, n);
   b.reallocate(nmode, n);
@@ -148,7 +151,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 
   FieldPerp x{emptyFrom(rhs)}; // Result
 
-  int jy = rhs.getIndex(); // Get the Y index
+  const int jy = rhs.getIndex(); // Get the Y index
   x.setIndex(jy);
 
   // Get the width of the boundary
@@ -215,7 +218,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
     outbndry = 1;
   }
 
-  int nx = xe - xs + 1; // Number of X points on this processor
+  const int nx = xe - xs + 1; // Number of X points on this processor
 
   // Get range of Y indices
   int ys = localmesh->ystart;
@@ -313,7 +316,7 @@ void LaplacePCR ::cr_pcr_solver(Matrix<dcomplex>& a_mpi, Matrix<dcomplex>& b_mpi
       // don't want to copy them.
       // xs = xstart if a proc has no boundary points
       // xs = 0 if a proc has boundary points
-      int offset = localmesh->xstart - xs;
+      const int offset = localmesh->xstart - xs;
       aa(kz, ix + 1) = a_mpi(kz, ix + offset);
       bb(kz, ix + 1) = b_mpi(kz, ix + offset);
       cc(kz, ix + 1) = c_mpi(kz, ix + offset);
@@ -400,7 +403,7 @@ void LaplacePCR ::apply_boundary_conditions(const Matrix<dcomplex>& a,
     }
   }
   if (localmesh->lastX()) {
-    int n = xe - xs + 1; // actual length of array
+    const int n = xe - xs + 1; // actual length of array
     for (int kz = 0; kz < nsys; kz++) {
       for (int ix = n - localmesh->xstart; ix < n; ix++) {
         x(kz, ix) = (r(kz, ix) - a(kz, ix) * x(kz, ix - 1)) / b(kz, ix);
@@ -419,7 +422,7 @@ void LaplacePCR ::cr_forward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>&
                                           Matrix<dcomplex>& r) const {
   const int nsys = std::get<0>(a.shape());
 
-  MPI_Comm comm = BoutComm::get();
+  const MPI_Comm comm = BoutComm::get();
   Array<dcomplex> alpha(nsys);
   Array<dcomplex> gamma(nsys);
   Array<dcomplex> sbuf(4 * nsys);
@@ -494,7 +497,7 @@ void LaplacePCR ::cr_backward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>
                                            Matrix<dcomplex>& x) const {
   const int nsys = std::get<0>(a.shape());
 
-  MPI_Comm comm = BoutComm::get();
+  const MPI_Comm comm = BoutComm::get();
 
   MPI_Status status;
   MPI_Request request[2];
@@ -533,7 +536,7 @@ void LaplacePCR ::cr_backward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>
     dist_row = dist_row / 2;
   }
   if (xproc < nprocs - 1) {
-    MPI_Wait(request + 1, &status);
+    MPI_Wait(&request[1], &status);
   }
 }
 
@@ -555,12 +558,11 @@ void LaplacePCR ::pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcomplex>& 
 
   MPI_Status status;
   Array<MPI_Request> request(4);
-  MPI_Comm comm = BoutComm::get();
+  const MPI_Comm comm = BoutComm::get();
 
   const int nlevel = log2(nprocs);
   const int nhprocs = nprocs / 2;
   int dist_rank = 1;
-  int dist2_rank = 2;
 
   /// Parallel cyclic reduction continues until 2x2 matrix are made between a pair of
   /// rank, (myrank, myrank+nhprocs).
@@ -678,7 +680,6 @@ void LaplacePCR ::pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcomplex>& 
     }
 
     dist_rank *= 2;
-    dist2_rank *= 2;
   }
 
   /// Solving 2x2 matrix. All pair of ranks, myrank and myrank+nhprocs, solves it

@@ -113,27 +113,6 @@ BoutMeshExposer::BoutMeshExposer(const BoutMeshParameters& inputs, bool periodic
                inputs.y_indices.jyseps2_1, inputs.y_indices.jyseps1_2,
                inputs.y_indices.jyseps2_2, inputs.y_indices.ny_inner) {}
 
-/// Equality operator to help testing
-bool operator==(const BoutMeshExposer::YDecompositionIndices& lhs,
-                const BoutMeshExposer::YDecompositionIndices& rhs) {
-  return (lhs.jyseps1_1 == rhs.jyseps1_1) and (lhs.jyseps2_1 == rhs.jyseps2_1)
-         and (lhs.jyseps1_2 == rhs.jyseps1_2) and (lhs.jyseps2_2 == rhs.jyseps2_2)
-         and (lhs.ny_inner == rhs.ny_inner);
-}
-
-bool operator==(const BoutMeshExposer::ConnectionInfo& lhs,
-                const BoutMeshExposer::ConnectionInfo& rhs) {
-  return (lhs.TS_up_in == rhs.TS_up_in) and (lhs.TS_up_out == rhs.TS_up_out)
-         and (lhs.TS_down_in == rhs.TS_down_in) and (lhs.TS_down_out == rhs.TS_down_out)
-         and (lhs.UDATA_INDEST == rhs.UDATA_INDEST)
-         and (lhs.UDATA_OUTDEST == rhs.UDATA_OUTDEST)
-         and (lhs.UDATA_XSPLIT == rhs.UDATA_XSPLIT)
-         and (lhs.DDATA_INDEST == rhs.DDATA_INDEST)
-         and (lhs.DDATA_OUTDEST == rhs.DDATA_OUTDEST)
-         and (lhs.DDATA_XSPLIT == rhs.DDATA_XSPLIT) and (lhs.IDATA_DEST == rhs.IDATA_DEST)
-         and (lhs.ODATA_DEST == rhs.ODATA_DEST);
-}
-
 /// Stream operator to print a nice message instead of bytes if a test fails
 std::ostream& operator<<(std::ostream& out,
                          const BoutMeshExposer::YDecompositionIndices& value) {
@@ -576,7 +555,6 @@ TEST_P(BadBoutMeshDecompositionTest, BadSingleCoreYDecomposition) {
   using ::testing::HasSubstr;
 
   EXPECT_FALSE(result.success);
-  //Ask Peter about baddecomtest
   EXPECT_THAT(result.reason, HasSubstr(params.expected_message));
 }
 
@@ -920,11 +898,7 @@ TEST(BoutMeshDecompositionTest, SingleProcessorOnly) {
   EXPECT_THAT(result.reason, HasSubstr("NPES=1"));
 }
 
-  //End of new bit
-
-//End of the test
-TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPE) {
-  WithQuietOutput info{output_info};
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPETooManyXProcs) {
   Options options{{"NXPE", 3}};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1, 8);
@@ -933,7 +907,6 @@ TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPE) {
 }
 
 TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPETooManyYProcs) {
-  WithQuietOutput info{output_info};
   Options options{{"NYPE", 7}};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1, 8);
@@ -941,16 +914,34 @@ TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPETooManyYProcs) {
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
 
-TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPENotDivisibleByNYPE) {
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPENotDivisible_0) {
   WithQuietOutput info{output_info};
   Options options{{"NXPE", 5}};
 
-  BoutMeshExposer mesh(4, 24, 1, 1, 1, 8);
+  BoutMeshExposer mesh(5, 24, 1, 1, 1, 8);
 
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
 
-TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisibleByNYPE) {
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisible_0) {
+  WithQuietOutput info{output_info};
+  Options options{{"NYPE", 5}};
+
+  BoutMeshExposer mesh(5, 5, 1, 1, 1, 8);
+
+  EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
+}
+
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPENotDivisible_1) {
+  WithQuietOutput info{output_info};
+  Options options{{"NXPE", 5}};
+
+  BoutMeshExposer mesh(5, 24, 1, 1, 1, 8);
+
+  EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
+}
+
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisible_1) {
   WithQuietOutput info{output_info};
   Options options{{"NYPE", 5}};
 
@@ -962,7 +953,7 @@ TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisibleByNYPE) {
 TEST_F(BoutMeshTest, ChooseProcessorSplitNXPE) {
   Options options{{"NXPE", 4}};
 
-  BoutMeshExposer mesh(4, 24, 1, 1, 1, 8);
+  BoutMeshExposer mesh(6, 24, 1, 1, 1, 8);
 
   EXPECT_NO_THROW(mesh.chooseProcessorSplit(options));
 
@@ -1496,7 +1487,7 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(BoutMeshProcNumTest, ProcNum) {
   WithQuietOutput info{output_info};
-  BoutMeshExposer mesh(4, 4, 1, 1, 1, 4);
+  BoutMeshExposer mesh(6, 4, 1, 1, 1, 4);
 
   const auto params = GetParam();
   Options options{{"NXPE", params.nxpe}};

@@ -1,0 +1,5 @@
+[mesh]
+file = "grid.fci.nc"
+
+[mesh:paralleltransform]
+type = fci
