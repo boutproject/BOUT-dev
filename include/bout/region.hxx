@@ -523,9 +523,9 @@ public:
   using value_type = T;
   using reference = value_type&;
   using const_reference = const value_type&;
-  using size_type = typename RegionIndices::size_type;
-  using iterator = typename RegionIndices::iterator;
-  using const_iterator = typename RegionIndices::const_iterator;
+  using size_type = RegionIndices::size_type;
+  using iterator = RegionIndices::iterator;
+  using const_iterator = RegionIndices::const_iterator;
 
   // NOTE::
   // Probably want to require a mesh in constructor, both to know nx/ny/nz
@@ -599,12 +599,12 @@ public:
   ///
   /// Note that if the indices are altered using these iterators, the
   /// blocks may become out of sync and will need to manually updated
-  typename RegionIndices::iterator begin() { return std::begin(indices); };
-  typename RegionIndices::const_iterator begin() const { return std::begin(indices); };
-  typename RegionIndices::const_iterator cbegin() const { return indices.cbegin(); };
-  typename RegionIndices::iterator end() { return std::end(indices); };
-  typename RegionIndices::const_iterator end() const { return std::end(indices); };
-  typename RegionIndices::const_iterator cend() const { return indices.cend(); };
+  RegionIndices::iterator begin() { return std::begin(indices); };
+  RegionIndices::const_iterator begin() const { return std::begin(indices); };
+  RegionIndices::const_iterator cbegin() const { return indices.cbegin(); };
+  RegionIndices::iterator end() { return std::end(indices); };
+  RegionIndices::const_iterator end() const { return std::end(indices); };
+  RegionIndices::const_iterator cend() const { return indices.cend(); };
 
   const ContiguousBlocks& getBlocks() const { return blocks; };
   const RegionIndices& getIndices() const { return indices; };
