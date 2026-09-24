@@ -51,6 +51,7 @@ constexpr CELL_LOC CELL_VSHIFT = CELL_LOC::vshift;
 
 std::string toString(CELL_LOC location);
 CELL_LOC CELL_LOCFromString(const std::string& location_string);
+inline std::string format_as(CELL_LOC loc) { return toString(loc); }
 
 /// Differential methods. Both central and upwind
 enum class DIFF_METHOD { deflt, u1, u2, c2, w2, w3, c4, u3, fft, split, s2 };
@@ -67,6 +68,7 @@ constexpr DIFF_METHOD DIFF_SPLIT = DIFF_METHOD::split;
 constexpr DIFF_METHOD DIFF_S2 = DIFF_METHOD::s2;
 
 std::string toString(DIFF_METHOD location);
+inline std::string format_as(DIFF_METHOD method) { return toString(method); }
 
 /// Specify grid region for looping
 enum class REGION { all, nobndry, nox, noy, noz };
@@ -77,6 +79,7 @@ constexpr REGION RGN_NOY = REGION::noy;
 constexpr REGION RGN_NOZ = REGION::noz;
 
 std::string toString(REGION region);
+inline std::string format_as(REGION region) { return toString(region); }
 
 /// To identify particular directions (in index space):
 ///   - X, Y, Z are the coordinate directions
@@ -88,6 +91,7 @@ std::string toString(REGION region);
 enum class DIRECTION { X, Y, Z, YAligned, YOrthogonal };
 
 std::string toString(DIRECTION direction);
+inline std::string format_as(DIRECTION dir) { return toString(dir); }
 
 /// Identify kind of a field's y-direction
 /// - Standard is the default for the Mesh/Coordinates/ParallelTransform
@@ -97,6 +101,7 @@ enum class YDirectionType { Standard, Aligned };
 
 std::string toString(YDirectionType d);
 YDirectionType YDirectionTypeFromString(const std::string& y_direction_string);
+inline std::string format_as(YDirectionType d) { return toString(d); }
 
 /// Identify kind of a field's z-direction
 /// - Standard is the default
@@ -107,6 +112,7 @@ enum class ZDirectionType { Standard, Average };
 
 std::string toString(ZDirectionType d);
 ZDirectionType ZDirectionTypeFromString(const std::string& z_direction_string);
+inline std::string format_as(ZDirectionType d) { return toString(d); }
 
 /// Container for direction types
 struct DirectionTypes {
@@ -124,11 +130,13 @@ void swap(const DirectionTypes& first, const DirectionTypes& second);
 enum class STAGGER { None, C2L, L2C };
 
 std::string toString(STAGGER stagger);
+inline std::string format_as(STAGGER stagger) { return toString(stagger); }
 
 /// To identify types of derivative method combinations
 enum class DERIV { Standard, StandardSecond, StandardFourth, Upwind, Flux };
 
 std::string toString(DERIV deriv);
+inline std::string format_as(DERIV deriv) { return toString(deriv); }
 
 // A small struct that can be used to wrap a specific enum value, giving
 // it a unique type that can be passed as a valid type to templates and
