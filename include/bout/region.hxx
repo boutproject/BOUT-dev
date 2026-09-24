@@ -402,17 +402,16 @@ struct fmt::formatter<SpecificInd<N>> {
 
   template <typename FormatContext>
   auto format(const SpecificInd<N>& ind, FormatContext& ctx) const {
-    if (presentation == 'i') {
-      return fmt::format_to(ctx.out(), "({})", ind.ind);
+    if (presentation == 'c') {
+      if constexpr (N == IND_TYPE::IND_2D) {
+        return fmt::format_to(ctx.out(), "({}, {})", ind.x(), ind.y());
+      } else if constexpr (N == IND_TYPE::IND_3D) {
+        return fmt::format_to(ctx.out(), "({}, {}, {})", ind.x(), ind.y(), ind.z());
+      } else if constexpr (N == IND_TYPE::IND_PERP) {
+        return fmt::format_to(ctx.out(), "({}, {})", ind.x(), ind.z());
+      }
     }
-
-    if constexpr (N == IND_TYPE::IND_2D) {
-      return fmt::format_to(ctx.out(), "({}, {})", ind.x(), ind.y());
-    } else if constexpr (N == IND_TYPE::IND_PERP) {
-      return fmt::format_to(ctx.out(), "({}, {})", ind.x(), ind.z());
-    } else {
-      return fmt::format_to(ctx.out(), "({}, {}, {})", ind.x(), ind.y(), ind.z());
-    }
+    return fmt::format_to(ctx.out(), "({})", ind.ind);
   }
 };
 
