@@ -56,6 +56,7 @@
 #include "bout/build_config.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/openmpwrap.hxx" // IWYU pragma: keep
+#include <fmt/format.h>
 
 class BoutMask;
 
@@ -376,6 +377,44 @@ inline std::string toString(const Ind2D& i) {
 inline std::string toString(const IndPerp& i) {
   return "(" + std::to_string(i.x()) + ", " + std::to_string(i.z()) + ")";
 }
+
+// Custom fmt formatter for SpecificInd
+template <IND_TYPE N>
+struct fmt::formatter<SpecificInd<N>> {
+  char presentation = 'c';
+
+  // Parses format specifications: ['c' | 'i' | 's'] or empty {}
+  constexpr auto parse(format_parse_context& ctx) {
+    auto it = ctx.begin();
+    auto end = ctx.end();
+
+    if (it != end && (*it == 'c' || *it == 'i' || *it == 's')) {
+      presentation = (*it == 's') ? 'c' : *it;
+      ++it;
+    }
+
+    if (it != end && *it != '}') {
+      throw format_error("invalid format");
+    }
+
+    return it;
+  }
+
+  template <typename FormatContext>
+  auto format(const SpecificInd<N>& ind, FormatContext& ctx) const {
+    if (presentation == 'i') {
+      return fmt::format_to(ctx.out(), "({})", ind.ind);
+    }
+
+    if constexpr (N == IND_TYPE::IND_2D) {
+      return fmt::format_to(ctx.out(), "({}, {})", ind.x(), ind.y());
+    } else if constexpr (N == IND_TYPE::IND_PERP) {
+      return fmt::format_to(ctx.out(), "({}, {})", ind.x(), ind.z());
+    } else {
+      return fmt::format_to(ctx.out(), "({}, {}, {})", ind.x(), ind.y(), ind.z());
+    }
+  }
+};
 
 /// Structure to hold various derived "statistics" from a particular region
 struct RegionStats {
