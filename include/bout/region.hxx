@@ -863,7 +863,7 @@ private:
 
   /// Helper function to create a RegionIndices, given the start and end
   /// points in x, y, z, and the total y, z lengths
-  inline RegionIndices createRegionIndices(int xstart, int xend, int ystart, int yend,
+  RegionIndices createRegionIndices(int xstart, int xend, int ystart, int yend,
                                            int zstart, int zend, int ny, int nz) {
 
     if ((xend + 1 <= xstart) || (yend + 1 <= ystart) || (zend + 1 <= zstart)) {
