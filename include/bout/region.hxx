@@ -793,7 +793,7 @@ public:
     for (unsigned int i = 0; i < newInd.size(); i++) {
       const int index = newInd[i].ind;
       const int whichBlock = index / period;
-      newInd[i].ind = ((index + shift) % period) + period * whichBlock;
+      newInd[i].ind = ((index + shift) % period) + (period * whichBlock);
     };
 
     setIndices(newInd);
@@ -891,7 +891,7 @@ private:
     int ind = -1;
     while (!done) {
       ind++;
-      region[ind].ind = (x * ny + y) * nz + z;
+      region[ind].ind = ((x * ny + y) * nz) + z;
       if (x == xend && y == yend && z == zend) {
         done = true;
       }
