@@ -88,6 +88,8 @@ public:
 BOUT_ENUM_CLASS(BoundaryParType, all, xin, xout, fwd, bwd, xin_fwd, xout_fwd, xin_bwd,
                 xout_bwd, SIZE);
 
+inline auto format_as(BoundaryParType type) { return toString(type); }
+
 template <class DerivedType>
 using RegisterMesh = MeshFactory::RegisterInFactory<DerivedType>;
 
