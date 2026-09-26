@@ -166,7 +166,7 @@ public:
 
   /// Returns a list of indices for which the stencils contain the
   /// argument
-  const std::vector<T> getIndicesWithStencilIncluding(const T& i) const {
+  std::vector<T> getIndicesWithStencilIncluding(const T& i) const {
     std::vector<T> indices;
     int count = 0;
     for (const auto& item : stencils) {
