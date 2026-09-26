@@ -33,10 +33,12 @@
 #include <algorithm>
 #include <functional>
 #include <iterator>
+#include <set>
 #include <type_traits>
 #include <vector>
 
 #include "bout/boutexception.hxx"
+#include "bout/unused.hxx"
 #include <bout/mesh.hxx>
 #include <bout/region.hxx>
 
