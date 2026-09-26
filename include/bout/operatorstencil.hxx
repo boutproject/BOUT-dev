@@ -179,10 +179,10 @@ public:
   }
 
   /// Iterators for the underlying vector data type
-  using iterator = typename std::vector<Stencil>::iterator;
-  using const_iterator = typename std::vector<Stencil>::const_iterator;
-  using reverse_iterator = typename std::vector<Stencil>::reverse_iterator;
-  using const_reverse_iterator = typename std::vector<Stencil>::const_reverse_iterator;
+  using iterator = std::vector<Stencil>::iterator;
+  using const_iterator = std::vector<Stencil>::const_iterator;
+  using reverse_iterator = std::vector<Stencil>::reverse_iterator;
+  using const_reverse_iterator = std::vector<Stencil>::const_reverse_iterator;
 
   iterator begin() { return std::begin(stencils); }
   const_iterator begin() const { return std::begin(stencils); }
