@@ -36,6 +36,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "bout/boutexception.hxx"
 #include <bout/mesh.hxx>
 #include <bout/region.hxx>
 
