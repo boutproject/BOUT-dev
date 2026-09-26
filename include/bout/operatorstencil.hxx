@@ -51,12 +51,12 @@ struct IndexOffset {
                 "IndexOffset only works with SpecificInd types");
   int dx = 0, dy = 0, dz = 0;
 
-  IndexOffset xp(int delta_x = 1) const { return {dx + delta_x, dy, dz}; }
-  IndexOffset xm(int delta_x = 1) const { return xp(-delta_x); }
-  IndexOffset yp(int delta_y = 1) const { return {dx, dy + delta_y, dz}; }
-  IndexOffset ym(int delta_y = 1) const { return yp(-delta_y); }
-  IndexOffset zp(int delta_z = 1) const { return {dx, dy, dz + delta_z}; }
-  IndexOffset zm(int delta_z = 1) const { return zp(-delta_z); }
+  IndexOffset xp(const int delta_x = 1) const { return {dx + delta_x, dy, dz}; }
+  IndexOffset xm(const int delta_x = 1) const { return xp(-delta_x); }
+  IndexOffset yp(const int delta_y = 1) const { return {dx, dy + delta_y, dz}; }
+  IndexOffset ym(const int delta_y = 1) const { return yp(-delta_y); }
+  IndexOffset zp(const int delta_z = 1) const { return {dx, dy, dz + delta_z}; }
+  IndexOffset zm(const int delta_z = 1) const { return zp(-delta_z); }
 
   IndexOffset& operator+=(const IndexOffset& n) {
     dx += n.dx;
@@ -155,7 +155,7 @@ public:
   }
 
   /// Get the number of elements in the ith stencil-part
-  int getStencilSize(int i) const { return getStencilPart(i).size(); }
+  int getStencilSize(const int i) const { return getStencilPart(i).size(); }
 
   /// Get the number of elements in the stencil part to be used at
   /// this index.
