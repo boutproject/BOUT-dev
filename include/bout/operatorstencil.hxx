@@ -222,7 +222,7 @@ private:
 /// depend on all of their neighbours to a depth of one, including
 /// corners.
 template <class T>
-OperatorStencil<T> squareStencil(Mesh* localmesh) {
+OperatorStencil<T> squareStencil(const Mesh* localmesh) {
   OperatorStencil<T> stencil;
   IndexOffset<T> zero;
   std::set<IndexOffset<T>> offsets = {
@@ -270,7 +270,7 @@ OperatorStencil<T> squareStencil(Mesh* localmesh) {
 /// depend on all of their neighbours to a depth of one, excluding
 /// corners.
 template <class T>
-OperatorStencil<T> starStencil(Mesh* localmesh) {
+OperatorStencil<T> starStencil(const Mesh* localmesh) {
   OperatorStencil<T> stencil;
   IndexOffset<T> zero;
   std::set<IndexOffset<T>> offsets = {
