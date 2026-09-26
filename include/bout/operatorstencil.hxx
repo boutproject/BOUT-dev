@@ -146,7 +146,7 @@ public:
         std::find_if(std::begin(stencils), std::end(stencils),
                      [&i](const auto& stencil) -> bool { return stencil.test(i); });
     if (result == std::end(stencils)) {
-      throw BoutException("No stencil was specified for element " + toString(i));
+      throw BoutException("No stencil was specified for element {}", i);
     }
     return result->part;
   }
