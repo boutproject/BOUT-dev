@@ -67,7 +67,6 @@ set(serial_tests_source
     ./field/test_vector3d.cxx
     ./field/test_where.cxx
     ./include/bout/test_array.cxx
-    ./include/bout/test_rajalib.cxx
     ./include/bout/test_assert.cxx
     ./include/bout/test_bout_enum_class.cxx
     ./include/bout/test_boundary_iter.cxx
@@ -136,6 +135,10 @@ set(serial_tests_source
 if(BOUT_HAS_HYPRE)
   list(APPEND serial_tests_source ./include/bout/test_hypre_interface.cxx)
   list(APPEND serial_tests_source ./invert/laplace/test_laplace_hypre3d.cxx)
+endif()
+
+if(BOUT_HAS_RAJA)
+  list(APPEND serial_tests_source ./include/bout/test_rajalib.cxx)
 endif()
 
 add_executable(serial_tests ${serial_tests_source})
