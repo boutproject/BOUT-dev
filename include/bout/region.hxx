@@ -49,6 +49,7 @@
 #include <utility>
 #include <vector>
 
+#include "fmt/base.h"
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
@@ -56,7 +57,6 @@
 #include "bout/build_config.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/openmpwrap.hxx" // IWYU pragma: keep
-#include "fmt/base.h"
 #include <fmt/format.h>
 
 class BoutMask;
@@ -864,7 +864,7 @@ private:
   /// Helper function to create a RegionIndices, given the start and end
   /// points in x, y, z, and the total y, z lengths
   RegionIndices createRegionIndices(int xstart, int xend, int ystart, int yend,
-                                           int zstart, int zend, int ny, int nz) {
+                                    int zstart, int zend, int ny, int nz) {
 
     if ((xend + 1 <= xstart) || (yend + 1 <= ystart) || (zend + 1 <= zstart)) {
       // Empty region
