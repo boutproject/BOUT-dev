@@ -22,6 +22,13 @@ namespace boundary {
 /// ../../manual/sphinx/user_docs/boundary_options.rst
 class YBoundary {
 public:
+  YBoundary() = default;
+  YBoundary(const YBoundary&) = default;
+  YBoundary(YBoundary&&) = default;
+  YBoundary& operator=(const YBoundary&) = default;
+  YBoundary& operator=(YBoundary&&) = default;
+  ~YBoundary() = default;
+
   /// Create a Y boundary on the \p lower and/or \p upper sides
   YBoundary(const Mesh& mesh, bool lower, bool upper);
 
@@ -79,8 +86,8 @@ public:
   }
 
 private:
-  bool lower;
-  bool upper;
+  bool lower{false};
+  bool upper{false};
 
   std::vector<std::shared_ptr<BoundaryRegionFCI>> boundary_regions_par;
   std::vector<std::shared_ptr<BoundaryRegionY>> boundary_regions;
