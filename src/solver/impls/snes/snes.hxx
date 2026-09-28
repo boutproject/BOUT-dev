@@ -78,6 +78,10 @@ BOUT_ENUM_CLASS(BoutPseudoSquashMethod,
                 affine, ///< Affine dt_vec <- lambda * dt_vec + (1 - lambda) * timestep
                 log);   ///< Log squash dt_vec <- timestep * (dt_vec / timestep)^lambda
 
+BOUT_ENUM_CLASS(BoutSnesPredictor,
+                none,    ///< No predictor. Start solve with previous solution
+                linear); ///< Linear extrapolation
+
 /// Uses PETSc's SNES interface to find a steady state solution to a
 /// nonlinear ODE by integrating in time with Backward Euler
 class SNESSolver : public Solver {
@@ -273,9 +277,9 @@ private:
   Vec output_x; ///< Solution to output. Used if interpolating.
   Vec output_f; ///< Residual to output, if diagnose == true. Used if interpolating.
 
-  bool predictor;       ///< Use linear predictor?
-  Vec x1;               ///< Previous solution
-  BoutReal time1{-1.0}; ///< Time of previous solution
+  BoutSnesPredictor predictor_type; ///< The type of predictor
+  Vec x1;                           ///< Previous solution
+  BoutReal time1{-1.0};             ///< Time of previous solution
 
   SNES snes; ///< SNES context
   Mat Jmf;   ///< Matrix Free Jacobian
