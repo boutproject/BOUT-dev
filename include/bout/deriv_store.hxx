@@ -135,7 +135,7 @@ struct DerivativeStore {
       if (standard.count(key) != 0) {
         throw BoutException("Trying to override standard derivative : "
                             "direction {:s}, stagger {:s}, key {:s}",
-                            toString(direction), toString(stagger), methodName);
+                            direction, stagger, methodName);
       }
       standard[key] = func;
       break;
@@ -143,7 +143,7 @@ struct DerivativeStore {
       if (standardSecond.count(key) != 0) {
         throw BoutException("Trying to override standardSecond derivative : "
                             "direction {:s}, stagger {:s}, key {:s}",
-                            toString(direction), toString(stagger), methodName);
+                            direction, stagger, methodName);
       }
       standardSecond[key] = func;
       break;
@@ -151,14 +151,14 @@ struct DerivativeStore {
       if (standardFourth.count(key) != 0) {
         throw BoutException("Trying to override standardFourth derivative : "
                             "direction {:s}, stagger {:s}, key {:s}",
-                            toString(direction), toString(stagger), methodName);
+                            direction, stagger, methodName);
       }
       standardFourth[key] = func;
       break;
     default:
       throw BoutException("Invalid function signature in registerDerivative : Function "
                           "signature 'standard' but derivative type {:s} passed",
-                          toString(derivType));
+                          derivType);
     };
 
     // Register this method name in lookup of known methods
@@ -177,7 +177,7 @@ struct DerivativeStore {
       if (upwind.count(key) != 0) {
         throw BoutException("Trying to override upwind derivative : "
                             "direction {:s}, stagger {:s}, key {:s}",
-                            toString(direction), toString(stagger), methodName);
+                            direction, stagger, methodName);
       }
       upwind[key] = func;
       break;
@@ -185,14 +185,14 @@ struct DerivativeStore {
       if (flux.count(key) != 0) {
         throw BoutException("Trying to override flux derivative : "
                             "direction {:s}, stagger {:s}, key {:s}",
-                            toString(direction), toString(stagger), methodName);
+                            direction, stagger, methodName);
       }
       flux[key] = func;
       break;
     default:
       throw BoutException("Invalid function signature in registerDerivative : Function "
                           "signature 'upwind/flux' but derivative type {:s} passed",
-                          toString(derivType));
+                          derivType);
     };
 
     // Register this method name in lookup of known methods
@@ -239,7 +239,7 @@ struct DerivativeStore {
     } else {
       throw BoutException("getStandardDerivative only works for derivType in {{Standard, "
                           "StandardSecond, StandardFourth}} but receieved {:s}",
-                          toString(derivType));
+                          derivType);
     };
 
     const auto resultOfFind = theMap->find(key);
@@ -249,7 +249,7 @@ struct DerivativeStore {
 
     throw BoutException("Couldn't find requested method {:s} in map for standard "
                         "derivative of type {:s}.",
-                        getMethodName(realName, direction, stagger), toString(derivType));
+                        getMethodName(realName, direction, stagger), derivType);
   };
 
   standardFunc getStandard2ndDerivative(std::string name, DIRECTION direction,
@@ -282,7 +282,7 @@ struct DerivativeStore {
       throw BoutException(
           "getFlowDerivative only works for derivType in {{Upwind, Flux}} "
           "but received {:s}",
-          toString(derivType));
+          derivType);
     };
 
     const auto resultOfFind = theMap->find(key);
@@ -292,7 +292,7 @@ struct DerivativeStore {
 
     throw BoutException(
         "Couldn't find requested method {:s} in map for standard flow of type {:s}.",
-        getMethodName(realName, direction, stagger), toString(derivType));
+        getMethodName(realName, direction, stagger), derivType);
   }
 
   upwindFunc getUpwindDerivative(std::string name, DIRECTION direction,
