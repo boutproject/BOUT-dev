@@ -482,10 +482,6 @@ public:
   /// If using FCI, uses ``outer_x``/``inner_x`` instead.
   const bout::boundary::YBoundary& getYBoundary(Options* options = nullptr) const;
 
-  /// Return the `bout::boundary::YBoundary` with \p name with boundaries at the
-  /// lower/upper end of Y corresponding to \p lower, \p upper respectively.
-  const bout::boundary::YBoundary& getYBoundary(bool lower, bool upper) const;
-
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;
@@ -566,6 +562,10 @@ private:
 protected:
   /// For testing purposes only; inherit and make this public
   void splitBxyParallelSlices();
+
+  /// Return the `bout::boundary::YBoundary` with \p name with boundaries at the
+  /// lower/upper end of Y corresponding to \p lower, \p upper respectively.
+  const bout::boundary::YBoundary& getYBoundary(bool lower, bool upper) const;
 };
 
 namespace bout {
