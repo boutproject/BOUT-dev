@@ -8,8 +8,10 @@
 #include "bout/bout_types.hxx"
 
 #include <string>
+#include <type_traits>
 #include <typeinfo>
 
+// Forward declarations
 class Field2D;
 class Field3D;
 class FieldPerp;
@@ -18,49 +20,53 @@ class Matrix;
 template <class T>
 class Tensor;
 
-namespace bout {
-namespace utils {
+namespace bout::utils {
 
 template <typename T>
 std::string typeName() {
+  if constexpr (std::is_same_v<T, bool>) {
+    return "bool";
+  }
+  if constexpr (std::is_same_v<T, int>) {
+    return "int";
+  }
+  if constexpr (std::is_same_v<T, std::string>) {
+    return "string";
+  }
+  // Specialised for BOUT++ types to ensure that the result is human-readable
+  if constexpr (std::is_same_v<T, BoutReal>) {
+    return "BoutReal";
+  }
+  if constexpr (std::is_same_v<T, Field2D>) {
+    return "Field2D";
+  }
+  if constexpr (std::is_same_v<T, Field3D>) {
+    return "Field3D";
+  }
+  if constexpr (std::is_same_v<T, FieldPerp>) {
+    return "FieldPerp";
+  }
+  if constexpr (std::is_same_v<T, Array<int>>) {
+    return "Array<int>";
+  }
+  if constexpr (std::is_same_v<T, Array<BoutReal>>) {
+    return "Array<BoutReal>";
+  }
+  if constexpr (std::is_same_v<T, Matrix<int>>) {
+    return "Matrix<int>";
+  }
+  if constexpr (std::is_same_v<T, Matrix<BoutReal>>) {
+    return "Matrix<BoutReal>";
+  }
+  if constexpr (std::is_same_v<T, Tensor<int>>) {
+    return "Tensor<int>";
+  }
+  if constexpr (std::is_same_v<T, Tensor<BoutReal>>) {
+    return "Tensor<BoutReal>";
+  }
   return typeid(T).name();
 }
 
-template <>
-std::string typeName<bool>();
+} // namespace bout::utils
 
-template <>
-std::string typeName<int>();
-
-template <>
-std::string typeName<std::string>();
-
-// Specialised for BOUT++ types to ensure that the result is human-readable
-template <>
-std::string typeName<BoutReal>();
-
-template <>
-std::string typeName<Field2D>();
-
-template <>
-std::string typeName<Field3D>();
-
-template <>
-std::string typeName<FieldPerp>();
-
-template <>
-std::string typeName<Array<int>>();
-template <>
-std::string typeName<Array<BoutReal>>();
-template <>
-std::string typeName<Matrix<int>>();
-template <>
-std::string typeName<Matrix<BoutReal>>();
-template <>
-std::string typeName<Tensor<int>>();
-template <>
-std::string typeName<Tensor<BoutReal>>();
-} // namespace utils
-} // namespace bout
-
-#endif //TYPE_NAME_HXX
+#endif // TYPE_NAME_HXX
