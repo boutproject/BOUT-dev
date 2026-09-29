@@ -28,8 +28,6 @@
 #include <optional>
 #include <string>
 
-struct DirectionTypes;
-
 /// Size of real numbers
 using BoutReal = double;
 
@@ -95,9 +93,6 @@ enum class DIRECTION { X, Y, Z, YAligned, YOrthogonal };
 std::string toString(DIRECTION direction);
 inline std::string format_as(const DIRECTION& dir) { return toString(dir); }
 
-std::string toString(const DirectionTypes& dir);
-inline std::string format_as(const DirectionTypes& dir) { return toString(dir); }
-
 /// Identify kind of a field's y-direction
 /// - Standard is the default for the Mesh/Coordinates/ParallelTransform
 /// - Aligned indicates that the field has been transformed to field-aligned
@@ -124,6 +119,9 @@ struct DirectionTypes {
   YDirectionType y;
   ZDirectionType z;
 };
+
+std::string toString(const DirectionTypes& dir);
+inline std::string format_as(const DirectionTypes& dir) { return toString(dir); }
 
 /// Check whether direction types are compatible, so two fields with attributes
 /// d1 and d2 respectively can be added, subtracted, etc.
