@@ -35,7 +35,9 @@
 
 class SNESSolver;
 
+#include <array>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "mpi.h"
@@ -79,8 +81,92 @@ BOUT_ENUM_CLASS(BoutPseudoSquashMethod,
                 log);   ///< Log squash dt_vec <- timestep * (dt_vec / timestep)^lambda
 
 BOUT_ENUM_CLASS(BoutSnesPredictor,
-                none,    ///< No predictor. Start solve with previous solution
-                linear); ///< Linear extrapolation
+                constant, ///< Start solve with previous solution
+                linear);  ///< Linear extrapolation
+
+class Predictor {
+  using State = std::pair<BoutReal, Vec>;
+
+public:
+  explicit Predictor(Options& opts)
+      : default_predictor_type(opts["predictor_type"]
+                                   .doc("Type of predictor to use. 'none' or 'linear'")
+                                   .withDefault(BoutSnesPredictor::linear)) {
+    // Mark all history states as unallocated
+    for (auto& state : this->history) {
+      state.second = nullptr;
+    }
+  }
+
+  /// Push a state and time, leaving input unchanged
+  void push_state(BoutReal time, Vec x) {
+    // Cycle states right one place, so that the last element
+    // becomes the first.
+    std::ranges::rotate(this->history, this->history.end() - 1);
+
+    auto& [t0, x0] = this->history[0];
+    t0 = time;
+    if (x0 == nullptr) {
+      // Create a new vector like x
+      BOUT_DO_PETSC(VecDuplicate(x, &x0));
+    }
+    // Copy x into reuse
+    BOUT_DO_PETSC(VecCopy(x, x0));
+  }
+
+  /// Predict state `x` at `time` using method `predictor_type`.
+  /// `x` must already be allocated and will be overwritten.
+  void predict(BoutSnesPredictor predictor_type, BoutReal time, Vec& x) {
+    // [t0, x0] is the most recent state
+    const auto& [t0, x0] = this->history[0];
+    ASSERT0(x0 != nullptr);
+
+    switch (predictor_type) {
+    case BoutSnesPredictor::constant:
+      // Copy most recent state into output
+      BOUT_DO_PETSC(VecCopy(x0, x));
+      return;
+    case BoutSnesPredictor::linear: {
+      const auto& [t1, x1] = this->history[1];
+
+      // Need at least two previous states
+      if (x1 == nullptr) {
+        predict(BoutSnesPredictor::constant, time, x);
+        return;
+      }
+
+      // x <- x0 + (time - t0) / (t0 - t1) * (x0 - x1)
+      // x <- (1 + β) * x0 - β * x1
+      const BoutReal beta = (time - t0) / (t0 - t1);
+      VecAXPBYPCZ(x, (1 + beta), -beta, 0.0, x0, x1);
+      return;
+    }
+    };
+  }
+
+  /// Predict state `x` at `time` using the default method.
+  /// `x` must already be allocated and will be overwritten.
+  void predict(BoutReal time, Vec& x) { predict(default_predictor_type, time, x); }
+
+  /// Apply per-component rescaling factors to all allocated history states.
+  void rescale(Vec norms) {
+    for (auto& state : history) {
+      if (state.second == nullptr) {
+        continue;
+      }
+      BOUT_DO_PETSC(VecPointwiseDivide(state.second, state.second, norms));
+    }
+  }
+
+  /// Set default predictor to a given type
+  void setDefault(BoutSnesPredictor predictor_type) {
+    default_predictor_type = predictor_type;
+  }
+
+private:
+  BoutSnesPredictor default_predictor_type; ///< The type of predictor
+  std::array<State, 2> history;             ///< 0 is most recent, end-1 is oldest state
+};
 
 /// Uses PETSc's SNES interface to find a steady state solution to a
 /// nonlinear ODE by integrating in time with Backward Euler
@@ -277,9 +363,7 @@ private:
   Vec output_x; ///< Solution to output. Used if interpolating.
   Vec output_f; ///< Residual to output, if diagnose == true. Used if interpolating.
 
-  BoutSnesPredictor predictor_type; ///< The type of predictor
-  Vec x1;                           ///< Previous solution
-  BoutReal time1{-1.0};             ///< Time of previous solution
+  Predictor predictor; ///< Predicts starting state for next step
 
   SNES snes; ///< SNES context
   Mat Jmf;   ///< Matrix Free Jacobian
@@ -317,6 +401,7 @@ private:
   BoutReal
       rescale_threshold; //< How much change in the state there should be before rescaling
   Vec var_scaling_factors; ///< Factors to multiply variables when passing to user
+  Vec norm_factors;        ///< Per-component norms used when rescaling solver variables
   Vec scaled_x;            ///< The values passed to the user RHS
 
   bool asinh_vars; ///< Evolve asinh(vars) to compress magnitudes while preserving signs

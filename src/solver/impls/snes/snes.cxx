@@ -367,12 +367,9 @@ SNESSolver::SNESSolver(Options* opts)
       diagnose_failures((*options)["diagnose_failures"]
                             .doc("Print more diagnostics when SNES fails")
                             .withDefault<bool>(false)),
-      predictor_type((*options)["predictor_type"]
-                         .doc("Type of predictor to use. 'none' or 'linear'")
-                         .withDefault(BoutSnesPredictor::linear)),
-      use_precon((*options)["use_precon"]
-                     .doc("Use user-supplied preconditioner?")
-                     .withDefault<bool>(false)),
+      predictor(*options), use_precon((*options)["use_precon"]
+                                          .doc("Use user-supplied preconditioner?")
+                                          .withDefault<bool>(false)),
       ksp_type((*options)["ksp_type"]
                    .doc("Linear solver type. By default let PETSc decide (gmres)")
                    .withDefault("default")),
@@ -584,11 +581,6 @@ int SNESSolver::init() {
     PetscCall(VecDuplicate(snes_x, &delta_x));
   }
 
-  if (predictor_type != BoutSnesPredictor::none) {
-    // Storage for previous solution
-    PetscCall(VecDuplicate(snes_x, &x1));
-  }
-
   if (scale_rhs) {
     // Storage for rhs factors, one per evolving variable
     PetscCall(VecDuplicate(snes_x, &rhs_scaling_factors));
@@ -603,6 +595,8 @@ int SNESSolver::init() {
     PetscCall(VecDuplicate(snes_x, &var_scaling_factors));
     // Set all factors to 1 to start with
     PetscCall(VecSet(var_scaling_factors, 1.0));
+    // Scratch storage for per-component norms when rescaling solver variables
+    PetscCall(VecDuplicate(snes_x, &norm_factors));
     // Storage for scaled 'x' state vectors
     PetscCall(VecDuplicate(snes_x, &scaled_x));
   } else if (asinh_vars) {
@@ -815,39 +809,34 @@ PetscErrorCode SNESSolver::rescale() {
   // Individual variable scaling
   // Note: If variables are rescaled then the Jacobian columns
   //       need to be scaled or recalculated
-  int istart = 0;
-  int iend = 0;
-  VecGetOwnershipRange(snes_x, &istart, &iend);
+  PetscInt local_size = 0;
+  PetscCall(VecGetLocalSize(snes_x, &local_size));
 
-  // Take ownership of snes_x and var_scaling_factors data
+  // Take ownership of snes_x, norms, and var_scaling_factors data
   PetscScalar* snes_x_data = nullptr;
   PetscCall(VecGetArray(snes_x, &snes_x_data));
-  PetscScalar* x1_data = nullptr;
-  if (predictor_type != BoutSnesPredictor::none) {
-    // x1 is only allocated if predictor is enabled
-    PetscCall(VecGetArray(x1, &x1_data));
-  }
+  PetscScalar* norm_factors_data = nullptr;
+  PetscCall(VecGetArray(norm_factors, &norm_factors_data));
   PetscScalar* var_scaling_factors_data = nullptr;
   PetscCall(VecGetArray(var_scaling_factors, &var_scaling_factors_data));
 
-  // Normalise each value in the state
+  // Normalise each value in the current state and store the norms so that
+  // accepted predictor history can be rescaled consistently.
   // Limit normalisation so scaling factor is never smaller than rtol
-  for (int i = 0; i < iend - istart; ++i) {
+  for (PetscInt i = 0; i < local_size; ++i) {
     const PetscScalar norm =
         BOUTMAX(std::abs(snes_x_data[i]), rtol / var_scaling_factors_data[i]);
+    norm_factors_data[i] = norm;
     snes_x_data[i] /= norm;
-    if (predictor_type != BoutSnesPredictor::none) {
-      x1_data[i] /= norm; // Update history for predictor
-    }
     var_scaling_factors_data[i] *= norm;
   }
 
   // Restore vector underlying data
   PetscCall(VecRestoreArray(var_scaling_factors, &var_scaling_factors_data));
-  if (predictor_type != BoutSnesPredictor::none) {
-    PetscCall(VecRestoreArray(x1, &x1_data));
-  }
+  PetscCall(VecRestoreArray(norm_factors, &norm_factors_data));
   PetscCall(VecRestoreArray(snes_x, &snes_x_data));
+
+  predictor.rescale(norm_factors);
 
   if (diagnose) {
     // Print maximum and minimum scaling factors
@@ -901,6 +890,9 @@ int SNESSolver::run() {
     snes_function(snes_x, snes_f, false);
   }
 
+  // Push initial state into the predictor
+  predictor.push_state(simtime, snes_x);
+
   BoutReal target = simtime;
   recent_failure_rate = 0.0;
   int steps_since_rescale = 0;
@@ -936,8 +928,8 @@ int SNESSolver::run() {
         steps_since_rescale = 0;
       }
 
-      // Copy the state (snes_x) into initial values (x0)
-      VecCopy(snes_x, x0);
+      // Copy the start-of-step state used by the transient term in snes_function().
+      PetscCall(VecCopy(snes_x, x0));
       if (diagnose) {
         VecCopy(snes_f, f0);
       }
@@ -969,8 +961,9 @@ int SNESSolver::run() {
           PetscCall(SNESSetLagJacobianPersists(snes, PETSC_FALSE));
           persist_jac_lag_off = true;
           timestep = getOutputTimestep();
-          predictor_type = BoutSnesPredictor::
-              none; // Predictor can cause problems in near steady-state.
+          predictor.setDefault(
+              BoutSnesPredictor::
+                  constant); // Predictor can cause problems in near steady-state.
         }
 
         // Set the timestep
@@ -988,13 +981,8 @@ int SNESSolver::run() {
           looping = false;
         }
 
-        if ((predictor_type == BoutSnesPredictor::linear) and (time1 > 0.0)) {
-          // Use (time1, x1) and (simtime, x0) to make prediction
-          // snes_x <- x0 + (dt / (simtime - time1)) * (x0 - x1)
-          // snes_x <- -β * x1 + (1 + β) * snes_x
-          const BoutReal beta = dt / (simtime - time1);
-          VecAXPBY(snes_x, -beta, (1. + beta), x1);
-        }
+        // Use the predictor to get starting snes_x
+        predictor.predict(simtime + dt, snes_x);
       }
 
       // Run the solver
@@ -1107,8 +1095,8 @@ int SNESSolver::run() {
           // Try a smaller timestep
           timestep *= timestep_factor_on_failure;
         }
-        // Restore state
-        VecCopy(x0, snes_x);
+        // Restore the accepted state at the start of this step.
+        PetscCall(VecCopy(x0, snes_x));
 
         // Recalculate the Jacobian
         if (jacobian_pruned and (snes_failures > 2) and (4 * lin_its > 3 * maxl)) {
@@ -1135,12 +1123,6 @@ int SNESSolver::run() {
         }
         looping = true;
         continue; // Try again
-      }
-
-      if (predictor_type != BoutSnesPredictor::none) {
-        // Save previous values: x1 <- x0
-        VecCopy(x0, x1);
-        time1 = simtime;
       }
 
       if (nl_its == 0) {
@@ -1199,6 +1181,10 @@ int SNESSolver::run() {
 
       simtime += dt;
 
+      // Push state into predictor
+      // Predictor always contains the most recent successfully converged state
+      predictor.push_state(simtime, snes_x);
+
       // Update local and global residuals
       PetscCall(updateResiduals(snes_x));
       change_since_rescale += global_residual * dt;
@@ -1255,19 +1241,11 @@ int SNESSolver::run() {
       ASSERT2(simtime >= target);
       ASSERT2(simtime - dt <= target);
       // Stepped over output timestep => Interpolate
-      // snes_x is the solution at t = simtime
-      // x0 is the solution at t = simtime - dt
-      // Calculate output_x at t = target
-      VecCopy(snes_x, output_x);
-
-      // Note: If simtime = target then alpha = 0
-      //       and output_x = snes_x
-      const BoutReal alpha = (simtime - target) / dt;
-
-      // output_x <- alpha * x0 + (1 - alpha) * output_x
-      VecAXPBY(output_x, alpha, 1. - alpha, x0);
+      predictor.predict(BoutSnesPredictor::linear, target, output_x);
 
       if (diagnose) {
+        // Residual history is still tracked separately from predictor state history.
+        const BoutReal alpha = (simtime - target) / dt;
         VecCopy(snes_f, output_f);
         VecAXPBY(output_f, alpha, 1 - alpha, f0);
       }
