@@ -11,7 +11,6 @@
 #include "bout/region.hxx"
 #include "bout/traits.hxx"
 #include "bout/utils.hxx"
-
 #include <fmt/base.h>
 #include <fmt/color.h>
 #include <fmt/format.h>
