@@ -382,6 +382,7 @@ inline std::string toString(const IndPerp& i) {
 // Custom fmt formatter for SpecificInd
 template <IND_TYPE N>
 struct fmt::formatter<SpecificInd<N>> {
+  // Presentation format: 'c' - components, 'i' - index, 's' - string.
   char presentation = 'c';
 
   // Parses format specifications: ['c' | 'i' | 's'] or empty {}
@@ -394,15 +395,20 @@ struct fmt::formatter<SpecificInd<N>> {
       ++it;
     }
 
+    // Check if reached the end of the range:
     if (it != end && *it != '}') {
       throw format_error("invalid format");
     }
 
+    // Return an iterator past the end of the parsed range:
     return it;
   }
 
+  // Formats the point p using the parsed format specification (presentation)
+  // stored in this formatter.
   template <typename FormatContext>
   auto format(const SpecificInd<N>& ind, FormatContext& ctx) const {
+    // ctx.out() is an output iterator to write to.
     if (presentation == 'c') {
       if constexpr (N == IND_TYPE::IND_2D) {
         return fmt::format_to(ctx.out(), "({}, {})", ind.x(), ind.y());
