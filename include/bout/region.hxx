@@ -49,6 +49,7 @@
 #include <utility>
 #include <vector>
 
+#include "fmt/base.h"
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
@@ -56,6 +57,7 @@
 #include "bout/build_config.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/openmpwrap.hxx" // IWYU pragma: keep
+#include <fmt/format.h>
 
 class BoutMask;
 
@@ -310,7 +312,7 @@ struct SpecificInd {
   SpecificInd zm(int dz = 1) const {
     dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
     ASSERT3(dz >= 0);
-    return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
+    return {ind % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
   }
   /// Automatically select zm or zp depending on sign
   SpecificInd zpm(int dz) const { return dz > 0 ? zp(dz) : zm(-dz); }
@@ -376,6 +378,49 @@ inline std::string toString(const Ind2D& i) {
 inline std::string toString(const IndPerp& i) {
   return "(" + std::to_string(i.x()) + ", " + std::to_string(i.z()) + ")";
 }
+
+// Custom fmt formatter for SpecificInd
+template <IND_TYPE N>
+struct fmt::formatter<SpecificInd<N>> {
+  // Presentation format: 'c' - components, 'i' - index, 's' - string.
+  char presentation = 'c';
+
+  // Parses format specifications: ['c' | 'i' | 's'] or empty {}
+  constexpr auto parse(format_parse_context& ctx) {
+    const auto* it = ctx.begin();
+    const auto* end = ctx.end();
+
+    if (it != end && (*it == 'c' || *it == 'i' || *it == 's')) {
+      presentation = (*it == 's') ? 'c' : *it;
+      ++it;
+    }
+
+    // Check if reached the end of the range:
+    if (it != end && *it != '}') {
+      throw format_error("invalid format");
+    }
+
+    // Return an iterator past the end of the parsed range:
+    return it;
+  }
+
+  // Formats the point p using the parsed format specification (presentation)
+  // stored in this formatter.
+  template <typename FormatContext>
+  auto format(const SpecificInd<N>& ind, FormatContext& ctx) const {
+    // ctx.out() is an output iterator to write to.
+    if (presentation == 'c') {
+      if constexpr (N == IND_TYPE::IND_2D) {
+        return fmt::format_to(ctx.out(), "({}, {})", ind.x(), ind.y());
+      } else if constexpr (N == IND_TYPE::IND_3D) {
+        return fmt::format_to(ctx.out(), "({}, {}, {})", ind.x(), ind.y(), ind.z());
+      } else if constexpr (N == IND_TYPE::IND_PERP) {
+        return fmt::format_to(ctx.out(), "({}, {})", ind.x(), ind.z());
+      }
+    }
+    return fmt::format_to(ctx.out(), "({})", ind.ind);
+  }
+};
 
 /// Structure to hold various derived "statistics" from a particular region
 struct RegionStats {
@@ -484,9 +529,9 @@ public:
   using value_type = T;
   using reference = value_type&;
   using const_reference = const value_type&;
-  using size_type = typename RegionIndices::size_type;
-  using iterator = typename RegionIndices::iterator;
-  using const_iterator = typename RegionIndices::const_iterator;
+  using size_type = RegionIndices::size_type;
+  using iterator = RegionIndices::iterator;
+  using const_iterator = RegionIndices::const_iterator;
 
   // NOTE::
   // Probably want to require a mesh in constructor, both to know nx/ny/nz
@@ -560,12 +605,12 @@ public:
   ///
   /// Note that if the indices are altered using these iterators, the
   /// blocks may become out of sync and will need to manually updated
-  typename RegionIndices::iterator begin() { return std::begin(indices); };
-  typename RegionIndices::const_iterator begin() const { return std::begin(indices); };
-  typename RegionIndices::const_iterator cbegin() const { return indices.cbegin(); };
-  typename RegionIndices::iterator end() { return std::end(indices); };
-  typename RegionIndices::const_iterator end() const { return std::end(indices); };
-  typename RegionIndices::const_iterator cend() const { return indices.cend(); };
+  RegionIndices::iterator begin() { return std::begin(indices); };
+  RegionIndices::const_iterator begin() const { return std::begin(indices); };
+  RegionIndices::const_iterator cbegin() const { return indices.cbegin(); };
+  RegionIndices::iterator end() { return std::end(indices); };
+  RegionIndices::const_iterator end() const { return std::end(indices); };
+  RegionIndices::const_iterator cend() const { return indices.cend(); };
 
   const ContiguousBlocks& getBlocks() const { return blocks; };
   const RegionIndices& getIndices() const { return indices; };
@@ -754,7 +799,7 @@ public:
     for (unsigned int i = 0; i < newInd.size(); i++) {
       const int index = newInd[i].ind;
       const int whichBlock = index / period;
-      newInd[i].ind = ((index + shift) % period) + period * whichBlock;
+      newInd[i].ind = ((index + shift) % period) + (period * whichBlock);
     };
 
     setIndices(newInd);
@@ -784,12 +829,12 @@ public:
     auto minMaxSize = std::minmax_element(std::begin(blockSizes), std::end(blockSizes));
 
     // Note have to derefence to get actual value
-    result.minBlockSize = *(minMaxSize.first);
+    result.minBlockSize = *minMaxSize.first;
     result.numMinBlocks = static_cast<int>(
         std::count(std::begin(blockSizes), std::end(blockSizes), result.minBlockSize));
 
     // Note have to derefence to get actual value
-    result.maxBlockSize = *(minMaxSize.second);
+    result.maxBlockSize = *minMaxSize.second;
     result.numMaxBlocks = static_cast<int>(
         std::count(std::begin(blockSizes), std::end(blockSizes), result.maxBlockSize));
 
@@ -824,8 +869,8 @@ private:
 
   /// Helper function to create a RegionIndices, given the start and end
   /// points in x, y, z, and the total y, z lengths
-  inline RegionIndices createRegionIndices(int xstart, int xend, int ystart, int yend,
-                                           int zstart, int zend, int ny, int nz) {
+  RegionIndices createRegionIndices(int xstart, int xend, int ystart, int yend,
+                                    int zstart, int zend, int ny, int nz) {
 
     if ((xend + 1 <= xstart) || (yend + 1 <= ystart) || (zend + 1 <= zstart)) {
       // Empty region
@@ -852,7 +897,7 @@ private:
     int ind = -1;
     while (!done) {
       ind++;
-      region[ind].ind = (x * ny + y) * nz + z;
+      region[ind].ind = (((x * ny) + y) * nz) + z;
       if (x == xend && y == yend && z == zend) {
         done = true;
       }
@@ -889,7 +934,7 @@ private:
         if (index >= npoints) {
           break;
         }
-        if ((indices[index].ind - indices[index - 1].ind) == 1) {
+        if (indices[index].ind - indices[index - 1].ind == 1) {
           count++;
         } else { // Reached the end of this block so break
           break;

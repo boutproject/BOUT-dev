@@ -10,7 +10,7 @@
 #include "bout/output.hxx" // IWYU pragma: keep
 #include "bout/region.hxx"
 #include "bout/traits.hxx"
-
+#include "bout/utils.hxx"
 #include <fmt/base.h>
 #include <fmt/color.h>
 #include <fmt/format.h>
@@ -20,47 +20,6 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
-
-template <IND_TYPE N>
-struct fmt::formatter<SpecificInd<N>> {
-  // Presentation format: 'c' - components, 'i' - index.
-  char presentation = 'c';
-
-  // Parses format specifications of the form ['c' | 'i'].
-  constexpr auto parse(format_parse_context& ctx) {
-    const auto* it = ctx.begin();
-    const auto* end = ctx.end();
-    if (it != end && (*it == 'c' || *it == 'i')) {
-      presentation = *it++;
-    }
-
-    // Check if reached the end of the range:
-    if (it != end && *it != '}') {
-      throw format_error("invalid format");
-    }
-
-    // Return an iterator past the end of the parsed range:
-    return it;
-  }
-
-  // Formats the point p using the parsed format specification (presentation)
-  // stored in this formatter.
-  template <typename FormatContext>
-  auto format(const SpecificInd<N>& ind, FormatContext& ctx) const {
-    // ctx.out() is an output iterator to write to.
-    if (presentation == 'c') {
-      switch (N) {
-      case IND_TYPE::IND_2D:
-        return format_to(ctx.out(), "({}, {})", ind.x(), ind.y());
-      case IND_TYPE::IND_3D:
-        return format_to(ctx.out(), "({}, {}, {})", ind.x(), ind.y(), ind.z());
-      case IND_TYPE::IND_PERP:
-        return format_to(ctx.out(), "({}, {})", ind.x(), ind.z());
-      }
-    }
-    return format_to(ctx.out(), "({})", ind.ind);
-  }
-};
 
 namespace bout {
 namespace details {
