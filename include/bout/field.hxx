@@ -291,19 +291,8 @@ namespace bout {
 /// used during initialization, where we always want to check inputs, even for optimized
 /// builds.
 template <typename T>
-inline void checkFinite(const T& f, const std::string& name = "field",
-                        const std::string& rgn = "RGN_ALL") {
-
-  if (!f.isAllocated()) {
-    throw BoutException("{:s} is not allocated", name);
-  }
-
-  BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
-    if (!std::isfinite(f[i])) {
-      throw BoutException("{:s} is not finite at {}", name, i);
-    }
-  }
-}
+void checkFinite(const T& f, const std::string& name = "field",
+                        const std::string& rgn = "RGN_ALL");
 
 /// Check if all values of a field \p var are positive.  Loops over all points including
 /// the boundaries by default (can be changed using the \p rgn argument)
@@ -314,20 +303,8 @@ inline void checkFinite(const T& f, const std::string& name = "field",
 /// be used during initialization, where we always want to check inputs, even for
 /// optimized builds.
 template <typename T>
-inline void checkPositive(const T& f, const std::string& name = "field",
-                          const std::string& rgn = "RGN_ALL") {
-
-  if (!f.isAllocated()) {
-    throw BoutException("{:s} is not allocated", name);
-  }
-
-  BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
-    if (f[i] <= 0.) {
-      throw BoutException("{:s} ({:s} {:s}) is {:e} (not positive) at {}", name,
-                          f.getLocation(), f.getDirections(), f[i], i);
-    }
-  }
-}
+void checkPositive(const T& f, const std::string& name = "field",
+                          const std::string& rgn = "RGN_ALL");
 } // namespace bout
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
