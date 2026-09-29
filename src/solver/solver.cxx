@@ -1191,8 +1191,7 @@ void Solver::save_derivs(BoutReal* dudata) {
     if (f.var->getLocation() != (f.F_var)->getLocation()) {
       throw BoutException(_f("Time derivative at wrong location - Field is at {:s}, "
                              "derivative is at {:s} for field '{:s}'\n"),
-                          f.var->getLocation(),
-                          f.F_var->getLocation(), f.name);
+                          f.var->getLocation(), f.F_var->getLocation(), f.name);
     }
   }
 
