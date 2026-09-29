@@ -382,16 +382,15 @@ inline std::string toString(const IndPerp& i) {
 // Custom fmt formatter for SpecificInd
 template <IND_TYPE N>
 struct fmt::formatter<SpecificInd<N>> {
-  // Presentation format: 'c' - components, 'i' - index, 's' - string.
+  // Presentation format: 'c' - components, 'i' - index.
   char presentation = 'c';
 
-  // Parses format specifications: ['c' | 'i' | 's'] or empty {}
+  // Parses format specifications of the form ['c' | 'i'].
   constexpr auto parse(format_parse_context& ctx) {
     const auto* it = ctx.begin();
     const auto* end = ctx.end();
-
-    if (it != end && (*it == 'c' || *it == 'i' || *it == 's')) {
-      presentation = (*it == 's') ? 'c' : *it;
+    if (it != end && (*it == 'c' || *it == 'i')) {
+      presentation = *it;
       ++it;
     }
 
@@ -410,15 +409,16 @@ struct fmt::formatter<SpecificInd<N>> {
   auto format(const SpecificInd<N>& ind, FormatContext& ctx) const {
     // ctx.out() is an output iterator to write to.
     if (presentation == 'c') {
-      if constexpr (N == IND_TYPE::IND_2D) {
-        return fmt::format_to(ctx.out(), "({}, {})", ind.x(), ind.y());
-      } else if constexpr (N == IND_TYPE::IND_3D) {
-        return fmt::format_to(ctx.out(), "({}, {}, {})", ind.x(), ind.y(), ind.z());
-      } else if constexpr (N == IND_TYPE::IND_PERP) {
-        return fmt::format_to(ctx.out(), "({}, {})", ind.x(), ind.z());
+      switch (N) {
+      case IND_TYPE::IND_2D:
+        return format_to(ctx.out(), "({}, {})", ind.x(), ind.y());
+      case IND_TYPE::IND_3D:
+        return format_to(ctx.out(), "({}, {}, {})", ind.x(), ind.y(), ind.z());
+      case IND_TYPE::IND_PERP:
+        return format_to(ctx.out(), "({}, {})", ind.x(), ind.z());
       }
     }
-    return fmt::format_to(ctx.out(), "({})", ind.ind);
+    return format_to(ctx.out(), "({})", ind.ind);
   }
 };
 

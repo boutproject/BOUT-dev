@@ -300,7 +300,7 @@ inline void checkFinite(const T& f, const std::string& name = "field",
 
   BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
     if (!std::isfinite(f[i])) {
-      throw BoutException("{:s} is not finite at {:s}", name, i);
+      throw BoutException("{:s} is not finite at {}", name, i);
     }
   }
 }
@@ -323,7 +323,7 @@ inline void checkPositive(const T& f, const std::string& name = "field",
 
   BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
     if (f[i] <= 0.) {
-      throw BoutException("{:s} ({:s} {:s}) is {:e} (not positive) at {:s}", name,
+      throw BoutException("{:s} ({:s} {:s}) is {:e} (not positive) at {}", name,
                           f.getLocation(), f.getDirections(), f[i], i);
     }
   }
