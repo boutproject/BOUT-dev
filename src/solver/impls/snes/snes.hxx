@@ -89,9 +89,10 @@ class Predictor {
 
 public:
   explicit Predictor(Options& opts)
-      : default_predictor_type(opts["predictor_type"]
-                                   .doc("Type of predictor to use. 'none' or 'linear'")
-                                   .withDefault(BoutSnesPredictor::linear)) {
+      : default_predictor_type(
+            opts["predictor_type"]
+                .doc("Type of predictor to use. 'constant' or 'linear'")
+                .withDefault(BoutSnesPredictor::linear)) {
     // Mark all history states as unallocated
     for (auto& state : this->history) {
       state.second = nullptr;
