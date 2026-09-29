@@ -220,10 +220,8 @@ Field3D Div_par_K_Grad_par(const Field3DParallel& kY, const Field3DParallel& f,
 BOUT_ENUM_CLASS_NS(bout, ConductionMethod, Original, ProductJK, Harmonic);
 
 namespace bout {
-inline std::string format_as(const ConductionMethod& method) {
-  return toString(method);
-}
-}
+inline std::string format_as(const ConductionMethod& method) { return toString(method); }
+} // namespace bout
 
 /// Version with energy flow diagnostic
 /// For FCI fields, `flow_ylow` is currently returned as zero.
