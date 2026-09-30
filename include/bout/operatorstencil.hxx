@@ -37,6 +37,7 @@
 #include <type_traits>
 #include <vector>
 
+#include <bout/output_bout_types.hxx>
 #include "bout/boutexception.hxx"
 #include "bout/unused.hxx"
 #include <bout/mesh.hxx>
