@@ -25,16 +25,13 @@
 
 #include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
-#include <bout/output_bout_types.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/field.hxx>
-#include <bout/field_data.hxx>
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
-#include <bout/mesh.hxx>
+#include <bout/field_data.hxx>
+#include <bout/output_bout_types.hxx>
 #include <bout/region.hxx>
-#include <bout/output.hxx>
-#include <bout/utils.hxx>
 #include <string>
 
 Field::Field(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
