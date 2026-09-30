@@ -292,7 +292,7 @@ namespace bout {
 /// builds.
 template <typename T>
 void checkFinite(const T& f, const std::string& name = "field",
-                        const std::string& rgn = "RGN_ALL");
+                 const std::string& rgn = "RGN_ALL");
 
 /// Check if all values of a field \p var are positive.  Loops over all points including
 /// the boundaries by default (can be changed using the \p rgn argument)
@@ -304,7 +304,7 @@ void checkFinite(const T& f, const std::string& name = "field",
 /// optimized builds.
 template <typename T>
 void checkPositive(const T& f, const std::string& name = "field",
-                          const std::string& rgn = "RGN_ALL");
+                   const std::string& rgn = "RGN_ALL");
 } // namespace bout
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
