@@ -61,7 +61,7 @@ public:
 
 protected:
   Options options;
-  Predictor predictor;
+  bout::Predictor predictor;
 };
 
 TEST_F(PredictorTest, ConstantPredictReturnsMostRecentState) {
@@ -70,7 +70,7 @@ TEST_F(PredictorTest, ConstantPredictReturnsMostRecentState) {
   Vec out_vec = out.get();
 
   predictor.push_state(1.5, state.get());
-  predictor.predict(BoutSnesPredictor::constant, 2.0, out_vec);
+  predictor.predict(bout::SnesPredictor::constant, 2.0, out_vec);
 
   expectVecValues(out.get(), {1.0, -2.0, 3.5});
 }
@@ -81,7 +81,7 @@ TEST_F(PredictorTest, LinearPredictFallsBackToConstantWithOneState) {
   Vec out_vec = out.get();
 
   predictor.push_state(3.0, state.get());
-  predictor.predict(BoutSnesPredictor::linear, 5.0, out_vec);
+  predictor.predict(bout::SnesPredictor::linear, 5.0, out_vec);
 
   expectVecValues(out.get(), {2.0, 4.0});
 }
@@ -94,7 +94,7 @@ TEST_F(PredictorTest, LinearPredictExtrapolatesFromTwoStates) {
 
   predictor.push_state(1.0, older.get());
   predictor.push_state(2.0, newer.get());
-  predictor.predict(BoutSnesPredictor::linear, 2.5, out_vec);
+  predictor.predict(bout::SnesPredictor::linear, 2.5, out_vec);
 
   expectVecValues(out.get(), {4.0, 11.0});
 }
@@ -107,7 +107,7 @@ TEST_F(PredictorTest, LinearPredictInterpolatesInsideInterval) {
 
   predictor.push_state(0.0, older.get());
   predictor.push_state(2.0, newer.get());
-  predictor.predict(BoutSnesPredictor::linear, 1.0, out_vec);
+  predictor.predict(bout::SnesPredictor::linear, 1.0, out_vec);
 
   expectVecValues(out.get(), {4.0, 12.0});
 }
@@ -122,7 +122,7 @@ TEST_F(PredictorTest, PushStateKeepsOnlyTwoMostRecentStates) {
   predictor.push_state(0.0, oldest.get());
   predictor.push_state(1.0, middle.get());
   predictor.push_state(2.0, newest.get());
-  predictor.predict(BoutSnesPredictor::linear, 3.0, out_vec);
+  predictor.predict(bout::SnesPredictor::linear, 3.0, out_vec);
 
   expectVecValues(out.get(), {7.0});
 }
@@ -136,11 +136,11 @@ TEST_F(PredictorTest, SetDefaultChangesPredictBehavior) {
   predictor.push_state(0.0, older.get());
   predictor.push_state(1.0, newer.get());
 
-  predictor.setDefault(BoutSnesPredictor::constant);
+  predictor.setDefault(bout::SnesPredictor::constant);
   predictor.predict(2.0, out_vec);
   expectVecValues(out.get(), {5.0});
 
-  predictor.setDefault(BoutSnesPredictor::linear);
+  predictor.setDefault(bout::SnesPredictor::linear);
   predictor.predict(2.0, out_vec);
   expectVecValues(out.get(), {8.0});
 }
@@ -162,10 +162,10 @@ TEST_F(PredictorTest, RescaleAppliesToAllAllocatedHistoryStates) {
   predictor.push_state(1.0, newer.get());
   predictor.rescale(norms.get());
 
-  predictor.predict(BoutSnesPredictor::constant, 2.0, out_vec);
+  predictor.predict(bout::SnesPredictor::constant, 2.0, out_vec);
   expectVecValues(out.get(), {4.0, 5.0});
 
-  predictor.predict(BoutSnesPredictor::linear, 0.0, out_vec);
+  predictor.predict(bout::SnesPredictor::linear, 0.0, out_vec);
   expectVecValues(out.get(), {2.0, 3.0});
 }
 
@@ -179,7 +179,7 @@ TEST_F(PredictorTest, RescalePreservesSubsequentLinearPrediction) {
   predictor.push_state(1.0, older.get());
   predictor.push_state(3.0, newer.get());
   predictor.rescale(norms.get());
-  predictor.predict(BoutSnesPredictor::linear, 4.0, out_vec);
+  predictor.predict(bout::SnesPredictor::linear, 4.0, out_vec);
 
   expectVecValues(out.get(), {4.0, 3.5});
 }
