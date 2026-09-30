@@ -25,6 +25,7 @@
 
 #include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/output_bout_types.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/field.hxx>
 #include <bout/field_data.hxx>
