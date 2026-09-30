@@ -31,7 +31,6 @@
 #include <bout/field3d.hxx>
 #include <bout/field_data.hxx>
 #include <bout/output_bout_types.hxx>
-#include <bout/region.hxx>
 #include <string>
 
 Field::Field(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
