@@ -35,14 +35,15 @@
 
 class SNESSolver;
 
+#include <algorithm>
 #include <array>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "mpi.h"
 
 #include <bout/array.hxx>
+#include <bout/assert.hxx>
 #include <bout/bout_enum_class.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/field2d.hxx>
@@ -86,19 +87,17 @@ BOUT_ENUM_CLASS_NS(bout, SnesPredictor,
 
 namespace bout {
 class Predictor {
-  using State = std::pair<BoutReal, Vec>;
+  struct State {
+    BoutReal time{0.0};
+    Vec x{nullptr};
+  };
 
 public:
   explicit Predictor(Options& opts)
       : default_predictor_type(
             opts["predictor_type"]
                 .doc("Type of predictor to use. 'constant' or 'linear'")
-                .withDefault(SnesPredictor::linear)) {
-    // Mark all history states as unallocated
-    for (auto& state : this->history) {
-      state.second = nullptr;
-    }
-  }
+                .withDefault(SnesPredictor::linear)) {}
 
   /// Push a state and time, leaving input unchanged
   void push_state(BoutReal time, Vec x) {
@@ -153,10 +152,10 @@ public:
   /// Apply per-component rescaling factors to all allocated history states.
   void rescale(Vec norms) {
     for (auto& state : history) {
-      if (state.second == nullptr) {
+      if (state.x == nullptr) {
         continue;
       }
-      BOUT_DO_PETSC(VecPointwiseDivide(state.second, state.second, norms));
+      BOUT_DO_PETSC(VecPointwiseDivide(state.x, state.x, norms));
     }
   }
 
