@@ -63,7 +63,7 @@ for nx in nxlist:
     error_2.append(l2)
     error_inf.append(linf)
 
-    print("fError norm: l-2 {l2} l-inf {linf}")
+    print(f"Error norm: l-2 {l2} l-inf {linf}")
 
 # Calculate grid spacing
 dx = 1.0 / (array(nxlist) - 2.0)
@@ -77,7 +77,7 @@ try:
 
     plt.plot(dx, error_2, "-o", label=r"$l^2$")
     plt.plot(dx, error_inf, "-x", label=r"$l^\infty$")
-    plt.plot(dx, error_2[-1] * (dx / dx[-1]) ** order, "--", label="Order {order:.1f}")
+    plt.plot(dx, error_2[-1] * (dx / dx[-1]) ** order, "--", label=f"Order {order:.1f}")
 
     plt.legend(loc="upper left")
     plt.grid()
