@@ -4,9 +4,9 @@
 # Run the test, check it completed successfully
 #
 
-from boututils.run_wrapper import shell, launch
 from sys import stdout
 
+from boututils.run_wrapper import launch, shell
 
 flags = ["", "nsys=2", "nsys=5 periodic", "nsys=7 n=10"]
 
@@ -17,12 +17,12 @@ def test_cyclic():
     for nproc in [1, 2, 4]:
         cmd = "./test_cyclic"
 
-        print("   %d processors...." % (nproc))
+        print(f"   {nproc} processors....")
         r = 0
         for f in flags:
             stdout.write("\tflags '" + f + "' ... ")
 
-            shell(["rm data/BOUT.dmp.* 2> err.log"])
+            shell(["rm -rf data/BOUT.dmp.* 2> err.log"])
 
             # Run the case
             status, out = launch(cmd + " " + f, nproc=nproc, mthread=1, pipe=True)

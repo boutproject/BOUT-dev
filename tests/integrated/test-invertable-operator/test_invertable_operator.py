@@ -4,8 +4,8 @@
 #
 
 import pytest
-from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
+from boututils.run_wrapper import launch_safe, shell
 
 nprocs = [1, 2]  # Number of processors to run on
 reltol = 1.0e-3  # Allowed relative tolerance
@@ -13,34 +13,29 @@ nthreads = 1
 
 
 # Delete old output files
-shell(["rm data/BOUT.dmp.*"])
+shell(["rm -rf data/BOUT.dmp.*"])
 
 
 def run(path, nproc, log=False):
     pipe = bool(log)
-    s, out = launch_safe(
+    _s, out = launch_safe(
         "./invertable_operator -d " + path, nproc=nproc, mthread=nthreads, pipe=pipe
     )
     if pipe:
-        f = open(log, "w")
-        f.write(out)
-        f.close()
+        with open(log, "w") as f:
+            f.write(out)
 
     # Get result of the test
     passVerification = collect("passVerification", path=path)[-1]
     maxRelErrLaplacians = collect("maxRelErrLaplacians", path=path)[-1]
 
     if passVerification == 0:
-        print(
-            "  => Failed (verification step - value is {s})".format(s=passVerification)
-        )
+        print(f"  => Failed (verification step - value is {passVerification})")
         pytest.fail()
 
     if maxRelErrLaplacians > reltol:
         print(
-            "  => Failed (relative tolerance step -- difference of {s})".format(
-                s=maxRelErrLaplacians
-            )
+            f"  => Failed (relative tolerance step -- difference of {maxRelErrLaplacians})"
         )
         pytest.fail()
 

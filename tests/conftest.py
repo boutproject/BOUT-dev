@@ -7,6 +7,14 @@ from pathlib import Path
 import pytest
 
 
+def remove_bout_dmp_files(path: Path) -> None:
+    for entry in path.rglob("BOUT.dmp.*"):
+        if entry.is_dir():
+            shutil.rmtree(entry)
+        elif entry.exists() or entry.is_symlink():
+            entry.unlink()
+
+
 def pytest_configure(config):
     config.addinivalue_line(
         "markers",
@@ -46,10 +54,16 @@ def copy_and_cwd_to_unique_tmp_dir(request, tmp_path_factory, monkeypatch):
     monkeypatch.chdir(run_dir)
 
 
+@pytest.fixture(scope="function", autouse=True)
+def remove_bout_dmp_before_test(copy_and_cwd_to_unique_tmp_dir):
+    remove_bout_dmp_files(Path("."))
+
+
 @pytest.fixture
 def assert_success_in_shell(test_dir):
 
     def inner_function(command: str):
+        remove_bout_dmp_files(Path("."))
         # MPI oversubscribe for communications test
         os.environ["OMPI_MCA_rmaps_base_oversubscribe"] = "1"  # Allows 18 procs
         start = time.time()
