@@ -52,7 +52,7 @@ OptionsIOFactory::ReturnType OptionsIOFactory::createOutput(Options* optionsptr)
 }
 
 OptionsIOFactory::ReturnType OptionsIOFactory::createFile(const std::string& file) const {
-  Options options{{"file", file}};
+  Options options{{"file", file}, {"replace", true}};
   return create(getDefaultType(), options);
 }
 
