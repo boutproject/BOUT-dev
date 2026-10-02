@@ -1,9 +1,10 @@
-import pytest
-import shutil
 import os
+import shutil
 import subprocess
 import time
 from pathlib import Path
+
+import pytest
 
 
 def pytest_configure(config):
@@ -34,7 +35,12 @@ def copy_and_cwd_to_unique_tmp_dir(request, tmp_path_factory, monkeypatch):
     run_dir = tmp_path_factory.mktemp(test_file_dir.name)
 
     # Copy the original test directory into it
-    shutil.copytree(test_file_dir, run_dir, dirs_exist_ok=True)
+    shutil.copytree(
+        test_file_dir,
+        run_dir,
+        dirs_exist_ok=True,
+        ignore=shutil.ignore_patterns("BOUT.dmp.*"),
+    )
 
     # Change working directory to the copy
     monkeypatch.chdir(run_dir)
@@ -48,7 +54,12 @@ def assert_success_in_shell(test_dir):
         os.environ["OMPI_MCA_rmaps_base_oversubscribe"] = "1"  # Allows 18 procs
         start = time.time()
         result = subprocess.run(
-            command, shell=True, capture_output=True, text=True, timeout=600
+            command,
+            shell=True,
+            capture_output=True,
+            text=True,
+            timeout=600,
+            check=False,
         )
         elapsed = time.time() - start
         assert result.returncode == 0, (
