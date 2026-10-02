@@ -183,6 +183,7 @@ set(BOUT_SOURCES
     ./include/bout/paralleltransform.hxx
     ./include/bout/petsc_interface.hxx
     ./include/bout/petsc_operators.hxx
+    ./include/bout/petsc_jacobian.hxx
     ./include/bout/petsclib.hxx
     ./include/bout/physicsmodel.hxx
     ./include/bout/rajalib.hxx
@@ -321,6 +322,7 @@ set(BOUT_SOURCES
     ./src/mesh/parallel_boundary_op.cxx
     ./src/mesh/parallel_boundary_region.cxx
     ./src/mesh/petsc_operators.cxx
+    ./src/mesh/petsc_jacobian.cxx
     ./src/mesh/surfaceiter.cxx
     ./src/mesh/tokamak_coordinates.cxx
     ./src/mesh/yboundary_regions.cxx
