@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import os
+
 import numpy as np
 import numpy.testing as npt
 from boututils.datafile import DataFile
-from boututils.run_wrapper import shell, launch_safe
+from boututils.run_wrapper import launch_safe, shell
 
 # Note, the expected values for the communicated cells, which are used to test the
 # results, are shown in corner_communication_diagram.ods
@@ -37,11 +38,11 @@ def test_communications():
     command = "./test-communications NXPE=" + str(nxpe)
 
     # remove old outputs
-    shell(["rm data/BOUT.dmp.*"])
+    shell(["rm -rf data/BOUT.dmp.*"])
 
     print("Running Communications Test, nproc=" + str(nxpe * nype))
 
-    s, out = launch_safe(command, nproc=nxpe * nype, pipe=True)
+    _s, out = launch_safe(command, nproc=nxpe * nype, pipe=True)
     with open("run.log." + str(nxpe), "w") as f:
         f.write(out)
 
@@ -179,11 +180,11 @@ def test_communications():
     command = "./test-communications NXPE=" + str(nxpe)
 
     # remove old outputs
-    shell(["rm data/BOUT.dmp.*"])
+    shell(["rm -rf data/BOUT.dmp.*"])
 
     print("Running Communications Test, nproc=" + str(nxpe * nype))
 
-    s, out = launch_safe(command, nproc=nxpe * nype, pipe=True)
+    _s, out = launch_safe(command, nproc=nxpe * nype, pipe=True)
     with open("run.log." + str(nxpe), "w") as f:
         f.write(out)
 
@@ -279,11 +280,11 @@ def test_communications():
     command = "./test-communications NXPE=" + str(nxpe)
 
     # remove old outputs
-    shell(["rm data/BOUT.dmp.*"])
+    shell(["rm -rf data/BOUT.dmp.*"])
 
     print("Running Communications Test, nproc=" + str(nxpe * nype))
 
-    s, out = launch_safe(command, nproc=nxpe * nype, pipe=True)
+    _s, out = launch_safe(command, nproc=nxpe * nype, pipe=True)
     with open("run.log." + str(nxpe), "w") as f:
         f.write(out)
 
@@ -342,11 +343,11 @@ def test_communications():
     command = "./test-communications -d data_limiter NXPE=" + str(nxpe)
 
     # remove old outputs
-    shell(["rm data_limiter/BOUT.dmp.*"])
+    shell(["rm -rf data_limiter/BOUT.dmp.*"])
 
     print("Running Communications Test, nproc=" + str(nxpe * nype))
 
-    s, out = launch_safe(command, nproc=nxpe * nype, pipe=True)
+    _s, out = launch_safe(command, nproc=nxpe * nype, pipe=True)
     with open("run_limiter.log." + str(nxpe), "w") as f:
         f.write(out)
 
@@ -378,11 +379,11 @@ def test_communications():
     command = "./test-communications -d data_limiter NXPE=" + str(nxpe)
 
     # remove old outputs
-    shell(["rm data_limiter/BOUT.dmp.*"])
+    shell(["rm -rf data_limiter/BOUT.dmp.*"])
 
     print("Running Communications Test, nproc=" + str(nxpe * nype))
 
-    s, out = launch_safe(command, nproc=nxpe * nype, pipe=True)
+    _s, out = launch_safe(command, nproc=nxpe * nype, pipe=True)
     with open("run_limiter.log." + str(nxpe), "w") as f:
         f.write(out)
 
@@ -407,11 +408,11 @@ def test_communications():
     command = "./test-communications -d data_limiter NXPE=" + str(nxpe)
 
     # remove old outputs
-    shell(["rm data_limiter/BOUT.dmp.*"])
+    shell(["rm -rf data_limiter/BOUT.dmp.*"])
 
     print("Running Communications Test, nproc=" + str(nxpe * nype))
 
-    s, out = launch_safe(command, nproc=nxpe * nype, pipe=True)
+    _s, out = launch_safe(command, nproc=nxpe * nype, pipe=True)
     with open("run_limiter.log." + str(nxpe), "w") as f:
         f.write(out)
 

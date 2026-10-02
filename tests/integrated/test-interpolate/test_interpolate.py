@@ -4,13 +4,13 @@
 # Run the test, compare results against the benchmark
 #
 
-import pytest
-from boututils.run_wrapper import shell, launch_safe
-from boutdata import collect
-import boutconfig
-from numpy import sqrt, max, abs, mean, array, log, polyfit
 from sys import stdout
 
+import boutconfig
+import pytest
+from boutdata import collect
+from boututils.run_wrapper import launch_safe, shell
+from numpy import abs, array, log, max, mean, polyfit, sqrt
 
 # Display the plots as well as saving to file
 show_plot = False
@@ -39,7 +39,7 @@ def test_interpolate(method):
     success = True
 
     print("------------------------------")
-    print("Using {} interpolation".format(method))
+    print(f"Using {method} interpolation")
 
     error_2 = {}
     error_inf = {}
@@ -56,10 +56,10 @@ def test_interpolate(method):
 
         cmd = "./test_interpolate" + args
 
-        shell(["rm data/BOUT.dmp.*.nc"])
+        shell(["rm -rf data/BOUT.dmp.*"])
 
-        s, out = launch_safe(cmd, nproc=nproc, pipe=True)
-        with open("run.log.{}.{}".format(method, nx), "w") as f:
+        _s, out = launch_safe(cmd, nproc=nproc, pipe=True)
+        with open(f"run.log.{method}.{nx}", "w") as f:
             f.write(out)
 
         # Collect output data
@@ -88,14 +88,14 @@ def test_interpolate(method):
             error_2[var].append(l2)
             error_inf[var].append(linf)
 
-            print("{0:s} : l-2 {1:.8f} l-inf {2:.8f}".format(var, l2, linf))
+            print(f"{var:s} : l-2 {l2:.8f} l-inf {linf:.8f}")
 
     dx = 1.0 / array(nxlist)
 
     for var in varlist:
         fit = polyfit(log(dx), log(error_2[var]), 1)
         order = fit[0]
-        stdout.write("{0:s} Convergence order = {1:.2f}".format(var, order))
+        stdout.write(f"{var:s} Convergence order = {order:.2f}")
 
         # Make sure scaling is at least 90% of expected order
         if order < 0.9 * methods[method]:
@@ -123,11 +123,11 @@ def test_interpolate(method):
 
             plt.xlabel(r"Mesh spacing $\delta x$")
             plt.ylabel("Error norm")
-            plt.title("Error scaling for {}".format(method))
+            plt.title(f"Error scaling for {method}")
 
-            name = "error_scaling_{}.pdf".format(method)
+            name = f"error_scaling_{method}.pdf"
             plt.savefig(name)
-            print("Plot saved to {}".format(name))
+            print(f"Plot saved to {name}")
 
             if show_plot:
                 plt.show()

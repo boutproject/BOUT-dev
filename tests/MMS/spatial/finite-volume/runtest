@@ -70,8 +70,8 @@ def assert_convergence(error, dx, name, expected) -> bool:
 
 
 def run_fv_operators(nz: int) -> dict[str, float]:
-    # Command to run
-    cmd = f"./fv_mms MZ={nz} mesh:ny={nz}"
+    # Command to run. Replace previous outputs if present
+    cmd = f"./fv_mms MZ={nz} mesh:ny={nz} replace"
     print(f"Running command: {cmd}", end="")
 
     # Launch using MPI
