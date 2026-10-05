@@ -525,6 +525,10 @@ Field3D Div_par_K_Grad_par_mod_impl(const Field3DParallel& Kin,
   result = fromFieldAligned(result, "RGN_NOBNDRY");
   flow_ylow = fromFieldAligned(flow_ylow);
 
+#if CHECK > 2
+  bout::checkFinite(result);
+#endif
+
   return result;
 }
 } // namespace
