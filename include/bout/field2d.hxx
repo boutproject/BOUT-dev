@@ -43,6 +43,9 @@ class Field2D;
 #include "bout/fieldperp.hxx"
 #include "bout/region.hxx"
 
+#include <fmt/core.h>
+#include <fmt/ranges.h>
+
 #include <cstddef>
 #include <iostream>
 #include <ostream>
@@ -616,5 +619,8 @@ inline std::string format_as<>([[maybe_unused]] const Field2D& val) {
 bool operator==(const Field2D& a, const Field2D& b);
 
 std::ostream& operator<<(std::ostream& out, const Field2D& value);
+
+// Tell {fmt} not to treat these as ranges so it uses format_as() instead
+template <> struct fmt::is_range<Field2D, char> : std::false_type {};
 
 #endif /* BOUT_FIELD2D_H */

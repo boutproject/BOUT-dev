@@ -1237,4 +1237,7 @@ filledFrom(const Field3DParallel& f,
   return result;
 }
 
+// Tell {fmt} not to treat these as ranges so it uses format_as() instead
+template <> struct fmt::is_range<Field3D, char> : std::false_type {};
+
 #endif /* BOUT_FIELD3D_H */
