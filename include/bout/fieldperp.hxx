@@ -485,4 +485,7 @@ struct is_expr_fieldperp<BinaryExpr<ResT, L, R, Fun>>
                                        || (is_expr_fieldperp_v<std::decay_t<L>>
                                            && is_expr_constant_v<std::decay_t<R>>)> {};
 
+// Tell {fmt} not to treat these as ranges so it uses format_as() instead
+template <> struct fmt::is_range<FieldPerp, char> : std::false_type {};
+
 #endif
