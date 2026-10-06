@@ -128,6 +128,158 @@ PetscErrorCode ComputeJacobianDefaultMaybeExport(SNES snes, Vec x1, Mat Jac, Mat
                                                  void* ctx);
 } // namespace
 
+namespace bout {
+void Predictor::push_state(BoutReal time, Vec x) {
+
+  if (this->last_prediction == nullptr) {
+    // Allocate storage for the last prediction
+    BOUT_DO_PETSC(VecDuplicate(x, &this->last_prediction));
+
+    // Two temporary Vecs for calculating norms
+    BOUT_DO_PETSC(VecDuplicate(x, &this->diff1));
+    BOUT_DO_PETSC(VecDuplicate(x, &this->diff2));
+  } else {
+    // Compare x with the last prediction
+    BoutReal q = quality(this->history[0].x, x, this->last_prediction);
+    output.write("Quality: {}\n", q);
+
+    for (auto method :
+         {SnesPredictor::constant, SnesPredictor::linear, SnesPredictor::be_rational}) {
+
+      predict(method, time, this->last_prediction);
+      q = quality(this->history[0].x, x, this->last_prediction);
+      output.write("{} : {}\n", toString(method), q);
+    }
+  }
+  // Cycle states right one place, so that the last element
+  // becomes the first.
+  std::ranges::rotate(this->history, this->history.end() - 1);
+
+  auto& [t0, x0] = this->history[0];
+  t0 = time;
+  if (x0 == nullptr) {
+    // Create a new vector like x
+    BOUT_DO_PETSC(VecDuplicate(x, &x0));
+  }
+  // Copy x into reuse
+  BOUT_DO_PETSC(VecCopy(x, x0));
+}
+
+void Predictor::predict(SnesPredictor predictor_type, BoutReal time, Vec& x) {
+  // [t0, x0] is the most recent state
+  const auto& [t0, x0] = this->history[0];
+  ASSERT0(x0 != nullptr);
+
+  // Time step to predicted state
+  BoutReal dt = time - t0;
+
+  switch (predictor_type) {
+  case SnesPredictor::constant:
+    // Copy most recent state into output
+    BOUT_DO_PETSC(VecCopy(x0, x));
+    break;
+  case SnesPredictor::linear: {
+    const auto& [t1, x1] = this->history[1];
+
+    // Need at least two previous states
+    if (x1 == nullptr) {
+      predict(SnesPredictor::constant, time, x);
+      return;
+    }
+
+    // x <- x0 + (time - t0) / (t0 - t1) * (x0 - x1)
+    // x <- (1 + β) * x0 - β * x1
+    const BoutReal beta = dt / (t0 - t1);
+    VecAXPBYPCZ(x, (1 + beta), -beta, 0.0, x0, x1);
+    break;
+  }
+  case SnesPredictor::be_rational: {
+    // For a linear mode with rate `λ`,
+    // backward Euler gives an error that decays per step
+    // as `e_{n+1} = e_n / (1 + λ dt_n)`.
+    const auto& [t1, x1] = this->history[1];
+    const auto& [t2, x2] = this->history[2];
+
+    // Need at least three previous states
+    if (x2 == nullptr) {
+      predict(SnesPredictor::linear, time, x);
+      return;
+    }
+    // Step sizes
+    BoutReal h0 = t0 - t1;
+    BoutReal h1 = t1 - t2;
+    // Solution differences d0 = x0 - x1, d1 = x1 - x2
+    // Secant slopes s0 = d0 / h0, s1 = d1 / h1
+
+    PetscInt local_size = 0;
+    BOUT_DO_PETSC(VecGetLocalSize(x0, &local_size));
+
+    const PetscScalar* x0_data = nullptr;
+    BOUT_DO_PETSC(VecGetArrayRead(x0, &x0_data));
+    const PetscScalar* x1_data = nullptr;
+    BOUT_DO_PETSC(VecGetArrayRead(x1, &x1_data));
+    const PetscScalar* x2_data = nullptr;
+    BOUT_DO_PETSC(VecGetArrayRead(x2, &x2_data));
+
+    PetscScalar* x_data;
+    BOUT_DO_PETSC(VecGetArray(x, &x_data));
+
+    for (PetscInt i = 0; i != local_size; ++i) {
+      BoutReal d0 = x0_data[i] - x1_data[i];
+      BoutReal s0 = d0 / h0;
+      BoutReal s1 = (x1_data[i] - x2_data[i]) / h1;
+      if (s0 * s1 <= 0.0) {
+        // turning point, oscillation, or exact zero => constant
+        x_data[i] = x0_data[i];
+        continue;
+      }
+      if (std::abs(d0) < this->noise_rtol * std::abs(x0_data[i]) + this->noise_atol) {
+        // below noise threshold => constant
+        x_data[i] = x0_data[i];
+        continue;
+      }
+      const BoutReal lambda_min = 0.0;
+      BoutReal lambda = std::max((s1 / s0 - 1) / h0, lambda_min);
+
+      // Damping factor
+      BoutReal damp = 1 / (1 + lambda * dt);
+
+      // Predicted state
+      // `x` always lies between `x0` (constant prediction) and the linear prediction.
+      x_data[i] = x0_data[i] + dt * s0 * damp;
+    }
+
+    BOUT_DO_PETSC(VecRestoreArray(x, &x_data));
+    BOUT_DO_PETSC(VecRestoreArrayRead(x2, &x2_data));
+    BOUT_DO_PETSC(VecRestoreArrayRead(x1, &x1_data));
+    BOUT_DO_PETSC(VecRestoreArrayRead(x0, &x0_data));
+    break;
+  }
+  };
+
+  // Copy prediction for comparison in push_state
+  VecCopy(x, this->last_prediction);
+}
+
+BoutReal Predictor::quality(Vec x0, Vec x_new, Vec x_pred) {
+  PetscReal norm_num, norm_den;
+
+  VecWAXPY(diff1, -1.0, x_pred, x_new); // diff1 = x_new - x_pred
+  VecWAXPY(diff2, -1.0, x0, x_new);     // diff2 = x_new - x0
+
+  VecNormBegin(diff1, NORM_2, &norm_num);
+  VecNormBegin(diff2, NORM_2, &norm_den);
+
+  VecNormEnd(diff1, NORM_2, &norm_num);
+  VecNormEnd(diff2, NORM_2, &norm_den);
+
+  if (std::abs(norm_den) < 1e-5) {
+    return 0.0;
+  }
+  return norm_num / norm_den;
+}
+} // namespace bout
+
 PetscErrorCode SNESSolver::FDJinitialise() {
   if (use_coloring) {
     Field3D index = globalIndex(0);
@@ -444,7 +596,7 @@ SNESSolver::SNESSolver(Options* opts)
   if ((*options)["predictor"].isSet()) {
     throw BoutException("solver:predictor is deprecated for SNES/beuler and is now "
                         "ignored. To reproduce behaviour of predictor=false, "
-                        "set predictor_type=linear.\n");
+                        "set predictor_type=constant.\n");
   }
 }
 

@@ -82,8 +82,9 @@ BOUT_ENUM_CLASS_NS(bout, PseudoSquashMethod,
                    log);   ///< Log squash dt_vec <- timestep * (dt_vec / timestep)^lambda
 
 BOUT_ENUM_CLASS_NS(bout, SnesPredictor,
-                   constant, ///< Start solve with previous solution
-                   linear);  ///< Linear extrapolation
+                   constant,     ///< Start solve with previous solution
+                   linear,       ///< Linear extrapolation
+                   be_rational); ///< Backward Euler rational
 
 namespace bout {
 class Predictor {
@@ -97,53 +98,20 @@ public:
       : default_predictor_type(
             opts["predictor_type"]
                 .doc("Type of predictor to use. 'constant' or 'linear'")
-                .withDefault(SnesPredictor::linear)) {}
+                .withDefault(SnesPredictor::linear)),
+        noise_rtol(opts["predictor_noise_rtol"]
+                       .doc("Predictor relative tolerance")
+                       .withDefault(1e-5)),
+        noise_atol(opts["predictor_noise_atol"]
+                       .doc("Predictor absolute tolerance")
+                       .withDefault(1e-12)) {}
 
   /// Push a state and time, leaving input unchanged
-  void push_state(BoutReal time, Vec x) {
-    // Cycle states right one place, so that the last element
-    // becomes the first.
-    std::ranges::rotate(this->history, this->history.end() - 1);
-
-    auto& [t0, x0] = this->history[0];
-    t0 = time;
-    if (x0 == nullptr) {
-      // Create a new vector like x
-      BOUT_DO_PETSC(VecDuplicate(x, &x0));
-    }
-    // Copy x into reuse
-    BOUT_DO_PETSC(VecCopy(x, x0));
-  }
+  void push_state(BoutReal time, Vec x);
 
   /// Predict state `x` at `time` using method `predictor_type`.
   /// `x` must already be allocated and will be overwritten.
-  void predict(SnesPredictor predictor_type, BoutReal time, Vec& x) {
-    // [t0, x0] is the most recent state
-    const auto& [t0, x0] = this->history[0];
-    ASSERT0(x0 != nullptr);
-
-    switch (predictor_type) {
-    case SnesPredictor::constant:
-      // Copy most recent state into output
-      BOUT_DO_PETSC(VecCopy(x0, x));
-      return;
-    case SnesPredictor::linear: {
-      const auto& [t1, x1] = this->history[1];
-
-      // Need at least two previous states
-      if (x1 == nullptr) {
-        predict(SnesPredictor::constant, time, x);
-        return;
-      }
-
-      // x <- x0 + (time - t0) / (t0 - t1) * (x0 - x1)
-      // x <- (1 + β) * x0 - β * x1
-      const BoutReal beta = (time - t0) / (t0 - t1);
-      VecAXPBYPCZ(x, (1 + beta), -beta, 0.0, x0, x1);
-      return;
-    }
-    };
-  }
+  void predict(SnesPredictor predictor_type, BoutReal time, Vec& x);
 
   /// Predict state `x` at `time` using the default method.
   /// `x` must already be allocated and will be overwritten.
@@ -166,7 +134,27 @@ public:
 
 private:
   SnesPredictor default_predictor_type; ///< The type of predictor
-  std::array<State, 2> history;         ///< 0 is most recent, end-1 is oldest state
+  std::array<State, 3> history;         ///< 0 is most recent, end-1 is oldest state
+
+  Vec last_prediction{nullptr}; ///< Most recent prediction
+
+  /// @brief  Calculate quality metric for prediction
+  ///
+  /// Smaller is better: A value of zero means the predictor
+  /// was perfect. A value over 1 means the predicted state
+  /// was further from the solution than the initial (constant).
+  ///
+  /// @param x0
+  /// @param x_new
+  /// @param x_pred
+  /// @return q = ||x_new - x_pred|| / ||x_new - x0||
+  BoutReal quality(Vec x0, Vec x_new, Vec x_pred);
+  // Temporary vectors
+  Vec diff1{nullptr};
+  Vec diff2{nullptr};
+
+  BoutReal noise_rtol; ///< Relative tolerance
+  BoutReal noise_atol; ///< Absolute tolerance
 };
 } // namespace bout
 
