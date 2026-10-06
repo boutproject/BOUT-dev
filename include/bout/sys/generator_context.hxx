@@ -39,6 +39,7 @@ public:
   BoutReal y() const { return get("y"); }
   BoutReal z() const { return get("z"); }
   BoutReal t() const { return get("t"); }
+  CELL_LOC location() const { return location_; }
 
   /// Cell indices
   int ix() const { return ix_; }
@@ -80,6 +81,7 @@ private:
   int ix_{0};
   int jy_{0};
   int kz_{0};
+  CELL_LOC location_{CELL_CENTRE};
 
   Mesh* localmesh{nullptr}; ///< The mesh on which the position is defined
 
