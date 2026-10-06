@@ -37,6 +37,8 @@
 #include "bout/region.hxx"
 #include "bout/unused.hxx"
 
+#include <fmt/ranges.h>
+
 #include <algorithm>
 #include <cmath>
 #include <ctime>
@@ -549,6 +551,22 @@ template <typename T>
 inline std::string format_as(const Tensor<T>& UNUSED(val)) {
   return "<Tensor>";
 }
+
+// Tell {fmt} not to treat these as ranges so it uses format_as() instead
+template <typename T, typename Char>
+struct fmt::range_format_kind<Array<T>, Char> {
+  static constexpr auto value = fmt::range_format::disabled;
+};
+
+template <typename T, typename Char>
+struct fmt::range_format_kind<Matrix<T>, Char> {
+  static constexpr auto value = fmt::range_format::disabled;
+};
+
+template <typename T, typename Char>
+struct fmt::range_format_kind<Tensor<T>, Char> {
+  static constexpr auto value = fmt::range_format::disabled;
+};
 
 /// Convert a bool to "true" or "false"
 inline std::string format_as(const bool& val) {

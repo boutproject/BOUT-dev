@@ -1001,9 +1001,11 @@ inline Field3D& residual(Field3D& f) { return *(f.timeDeriv()); }
 /// format_as template specialisation
 /// Defined in utils.hxx
 template <>
-inline std::string format_as<>([[maybe_unused]] const Field3D& val) {
-  return "<Field3D>";
-}
+struct fmt::formatter<Field3D> : fmt::formatter<std::string_view> {
+  auto format(const Field3D&, format_context& ctx) const {
+    return fmt::formatter<std::string_view>::format("<Field3D>", ctx);
+  }
+};
 
 /// Test if two fields are the same, by calculating
 /// the minimum absolute difference between them
@@ -1236,8 +1238,5 @@ filledFrom(const Field3DParallel& f,
 
   return result;
 }
-
-// Tell {fmt} not to treat these as ranges so it uses format_as() instead
-template <> struct fmt::is_range<Field3D, char> : std::false_type {};
 
 #endif /* BOUT_FIELD3D_H */

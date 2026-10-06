@@ -464,9 +464,11 @@ inline void invalidateGuards(FieldPerp& UNUSED(var)) {}
 /// format_as template specialisation
 /// Defined in utils.hxx
 template <>
-inline std::string format_as<>([[maybe_unused]] const FieldPerp& val) {
-  return "<FieldPerp>";
-}
+struct fmt::formatter<FieldPerp> : fmt::formatter<std::string_view> {
+  auto format(const FieldPerp&, format_context& ctx) const {
+    return fmt::formatter<std::string_view>::format("<FieldPerp>", ctx);
+  }
+};
 
 /// Test if two fields are the same, by checking that they are defined
 /// at the same y-index, and if the minimum absolute difference
@@ -484,8 +486,5 @@ struct is_expr_fieldperp<BinaryExpr<ResT, L, R, Fun>>
                                            && is_expr_fieldperp_v<std::decay_t<R>>)
                                        || (is_expr_fieldperp_v<std::decay_t<L>>
                                            && is_expr_constant_v<std::decay_t<R>>)> {};
-
-// Tell {fmt} not to treat these as ranges so it uses format_as() instead
-template <> struct fmt::is_range<FieldPerp, char> : std::false_type {};
 
 #endif

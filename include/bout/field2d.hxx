@@ -43,6 +43,7 @@ class Field2D;
 #include "bout/fieldperp.hxx"
 #include "bout/region.hxx"
 
+#include <fmt/base.h>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
@@ -610,17 +611,16 @@ inline Field2D& residual(Field2D& f) { return *(f.timeDeriv()); }
 /// format_as template specialisation
 /// Defined in utils.hxx
 template <>
-inline std::string format_as<>([[maybe_unused]] const Field2D& val) {
-  return "<Field2D>";
-}
+struct fmt::formatter<Field2D> : fmt::formatter<std::string_view> {
+  auto format(const Field2D&, format_context& ctx) const {
+    return fmt::formatter<std::string_view>::format("<Field2D>", ctx);
+  }
+};
 
 /// Test if two fields are the same, by calculating
 /// the minimum absolute difference between them
 bool operator==(const Field2D& a, const Field2D& b);
 
 std::ostream& operator<<(std::ostream& out, const Field2D& value);
-
-// Tell {fmt} not to treat these as ranges so it uses format_as() instead
-template <> struct fmt::is_range<Field2D, char> : std::false_type {};
 
 #endif /* BOUT_FIELD2D_H */
