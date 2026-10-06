@@ -107,7 +107,7 @@ FieldPerp& FieldPerp::operator=(const BoutReal rhs) {
 }
 
 const Region<IndPerp>& FieldPerp::getRegion(REGION region) const {
-  return fieldmesh->getRegionPerp(toString(region));
+  return fieldmesh->getRegionPerp(format_as(region));
 }
 const Region<IndPerp>& FieldPerp::getRegion(const std::string& region_name) const {
   return fieldmesh->getRegionPerp(region_name);
@@ -245,7 +245,7 @@ bool operator==(const FieldPerp& a, const FieldPerp& b) {
 }
 
 std::ostream& operator<<(std::ostream& out, const FieldPerp& value) {
-  out << toString(value);
+  out << format_as(value);
   return out;
 }
 

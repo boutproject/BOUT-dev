@@ -458,10 +458,10 @@ void invalidateGuards(FieldPerp& var);
 inline void invalidateGuards(FieldPerp& UNUSED(var)) {}
 #endif
 
-/// toString template specialisation
+/// format_as template specialisation
 /// Defined in utils.hxx
 template <>
-inline std::string toString<>([[maybe_unused]] const FieldPerp& val) {
+inline std::string format_as<>([[maybe_unused]] const FieldPerp& val) {
   return "<FieldPerp>";
 }
 

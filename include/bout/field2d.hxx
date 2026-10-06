@@ -604,10 +604,10 @@ inline Field2D& ddt(Field2D& f) { return *(f.timeDeriv()); }
 /// Alias for ddt that is more readable for constraints
 inline Field2D& residual(Field2D& f) { return *(f.timeDeriv()); }
 
-/// toString template specialisation
+/// format_as template specialisation
 /// Defined in utils.hxx
 template <>
-inline std::string toString<>([[maybe_unused]] const Field2D& val) {
+inline std::string format_as<>([[maybe_unused]] const Field2D& val) {
   return "<Field2D>";
 }
 

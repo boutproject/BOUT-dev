@@ -524,34 +524,34 @@ char* copy_string(const char* s);
 /// Convert a value to a string
 /// by writing to a stringstream
 template <class T>
-std::string toString(const T& val) {
+std::string format_as(const T& val) {
   std::stringstream ss;
   ss << val;
   return ss.str();
 }
 
 /// Simple case where input is already a string
-/// This is so that toString can be used in templates
+/// This is so that format_as can be used in templates
 /// where the type may be std::string.
-inline std::string toString(const std::string& val) { return val; }
+inline std::string format_as(const std::string& val) { return val; }
 
 template <typename T>
-inline std::string toString(const Array<T>& UNUSED(val)) {
+inline std::string format_as(const Array<T>& UNUSED(val)) {
   return "<Array>";
 }
 
 template <typename T>
-inline std::string toString(const Matrix<T>& UNUSED(val)) {
+inline std::string format_as(const Matrix<T>& UNUSED(val)) {
   return "<Matrix>";
 }
 
 template <typename T>
-inline std::string toString(const Tensor<T>& UNUSED(val)) {
+inline std::string format_as(const Tensor<T>& UNUSED(val)) {
   return "<Tensor>";
 }
 
 /// Convert a bool to "true" or "false"
-inline std::string toString(const bool& val) {
+inline std::string format_as(const bool& val) {
   if (val) {
     return "true";
   }
@@ -560,7 +560,7 @@ inline std::string toString(const bool& val) {
 
 /// Convert a time stamp to a string
 /// This uses std::localtime and std::put_time
-std::string toString(const time_t& time);
+std::string format_as(const time_t& time);
 
 /*!
  * Convert a string to lower case

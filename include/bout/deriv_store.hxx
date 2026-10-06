@@ -87,7 +87,7 @@ struct DerivativeStore {
                STAGGER stagger = STAGGER::None) const {
 
     // Get the key
-    auto key = getKey(direction, stagger, toString(derivType));
+    auto key = getKey(direction, stagger, format_as(derivType));
     return isEmpty(key);
   }
 
@@ -97,7 +97,7 @@ struct DerivativeStore {
                                             STAGGER stagger = STAGGER::None) const {
 
     // Get the key
-    auto key = getKey(direction, stagger, toString(derivType));
+    auto key = getKey(direction, stagger, format_as(derivType));
     if (isEmpty(key)) {
       return std::set<std::string>{};
     } else {
@@ -112,11 +112,11 @@ struct DerivativeStore {
 
     // Introductory information
     output_info << "Available methods for derivative type '";
-    output_info << toString(derivType);
+    output_info << format_as(derivType);
     output_info << "' in direction ";
-    output_info << toString(direction);
+    output_info << format_as(direction);
     output_info << " ( Staggering : ";
-    output_info << toString(stagger) << " ) : \n";
+    output_info << format_as(stagger) << " ) : \n";
 
     for (const auto& i : getAvailableMethods(derivType, direction, stagger)) {
       output_info << "\t" << i << "\n";
@@ -162,7 +162,7 @@ struct DerivativeStore {
     };
 
     // Register this method name in lookup of known methods
-    registeredMethods[getKey(direction, stagger, toString(derivType))].insert(methodName);
+    registeredMethods[getKey(direction, stagger, format_as(derivType))].insert(methodName);
   };
 
   /// Register a function with upwindFunc/fluxFunc interface. Which map is used
@@ -196,7 +196,7 @@ struct DerivativeStore {
     };
 
     // Register this method name in lookup of known methods
-    registeredMethods[getKey(direction, stagger, toString(derivType))].insert(methodName);
+    registeredMethods[getKey(direction, stagger, format_as(derivType))].insert(methodName);
   };
 
   /// Templated versions of the above registration routines.
@@ -225,7 +225,7 @@ struct DerivativeStore {
                                      DERIV derivType = DERIV::Standard) const {
 
     const auto realName = nameLookup(
-        name, defaultMethods.at(getKey(direction, stagger, toString(derivType))));
+        name, defaultMethods.at(getKey(direction, stagger, format_as(derivType))));
     const auto key = getKey(direction, stagger, realName);
 
     const storageType<std::size_t, standardFunc>* theMap = nullptr;
@@ -269,7 +269,7 @@ struct DerivativeStore {
                              DERIV derivType = DERIV::Upwind) const {
 
     const auto realName = nameLookup(
-        name, defaultMethods.at(getKey(direction, stagger, toString(derivType))));
+        name, defaultMethods.at(getKey(direction, stagger, format_as(derivType))));
     const auto key = getKey(direction, stagger, realName);
 
     const storageType<std::size_t, flowFunc>* theMap = nullptr;
@@ -331,7 +331,7 @@ struct DerivativeStore {
 
         const auto theDirection = direction.first;
         const auto theDerivType = deriv.first;
-        const auto theDerivTypeString = toString(theDerivType);
+        const auto theDerivTypeString = format_as(theDerivType);
 
         // Note both staggered and unstaggered have the same fallback default currently
         std::string theDefault{
@@ -360,7 +360,7 @@ struct DerivativeStore {
         defaultMethods[getKey(theDirection, STAGGER::None, theDerivTypeString)] =
             theDefault;
         output_verbose << "The default method for derivative type " << theDerivTypeString
-                       << " in direction " << toString(theDirection) << " is "
+                       << " in direction " << format_as(theDirection) << " is "
                        << theDefault << "\n";
 
         //-------------------------------------------------------------
@@ -384,7 +384,7 @@ struct DerivativeStore {
         defaultMethods[getKey(theDirection, STAGGER::C2L, theDerivTypeString)] =
             theDefault;
         output_verbose << "The default method for staggered derivative type "
-                       << theDerivTypeString << " in direction " << toString(theDirection)
+                       << theDerivTypeString << " in direction " << format_as(theDirection)
                        << " is " << theDefault << "\n";
       }
     }
@@ -393,7 +393,7 @@ struct DerivativeStore {
   /// Provide a method to override/force a specific default method
   void forceDefaultMethod(std::string methodName, DERIV deriv, DIRECTION direction,
                           STAGGER stagger = STAGGER::None) {
-    const auto key = getKey(direction, stagger, toString(deriv));
+    const auto key = getKey(direction, stagger, format_as(deriv));
     defaultMethods[key] = uppercase(methodName);
   }
 
@@ -461,7 +461,7 @@ private:
     for (const auto& direction : directions) {
       for (const auto& deriv : derivTypes) {
         const auto theDirection = direction.first;
-        const auto theDerivTypeString = toString(deriv.first);
+        const auto theDerivTypeString = format_as(deriv.first);
         const std::string theDefault{uppercase(initialDefaultMethods[deriv.first])};
 
         //-------------------------------------------------------------
@@ -482,11 +482,11 @@ private:
   std::string getMethodName(std::string name, DIRECTION direction,
                             STAGGER stagger = STAGGER::None) const {
 
-    return name + " (" + toString(direction) + ", " + toString(stagger) + ")";
+    return name + " (" + format_as(direction) + ", " + format_as(stagger) + ")";
   };
 
   std::string nameLookup(const std::string name, const std::string defaultName) const {
-    return name != toString(DIFF_DEFAULT) ? name : defaultName;
+    return name != format_as(DIFF_DEFAULT) ? name : defaultName;
   }
 
   /// Provides a routine to produce a unique key given information
@@ -503,8 +503,8 @@ private:
     // maps to store the different field types as the signature is
     // different.
     std::size_t result;
-    result = std::hash<std::string>{}(toString(direction));
-    result = result ^ std::hash<std::string>{}(toString(stagger));
+    result = std::hash<std::string>{}(format_as(direction));
+    result = result ^ std::hash<std::string>{}(format_as(stagger));
     result = result ^ std::hash<std::string>{}(key);
     return result;
   }

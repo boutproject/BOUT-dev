@@ -25,7 +25,7 @@ const T& safeAt(const std::map<std::string, T>& mymap, const std::string& s) {
 }
 } // namespace
 
-std::string toString(CELL_LOC location) {
+std::string format_as(const CELL_LOC& location) {
 
   const static std::map<CELL_LOC, std::string> CELL_LOCtoString = {
       ENUMSTR(CELL_DEFAULT), ENUMSTR(CELL_CENTRE), ENUMSTR(CELL_XLOW),
@@ -43,17 +43,17 @@ CELL_LOC CELL_LOCFromString(const std::string& location_string) {
   return safeAt(stringtoCELL_LOC, location_string);
 }
 
-std::string toString(DIFF_METHOD location) {
+std::string format_as(DIFF_METHOD method) {
 
   const static std::map<DIFF_METHOD, std::string> DIFF_METHODtoString = {
       {DIFF_DEFAULT, "DEFAULT"}, {DIFF_U1, "U1"},   {DIFF_U2, "U2"},      {DIFF_U3, "U3"},
       {DIFF_C2, "C2"},           {DIFF_C4, "C4"},   {DIFF_S2, "S2"},      {DIFF_W2, "W2"},
       {DIFF_W3, "W3"},           {DIFF_FFT, "FFT"}, {DIFF_SPLIT, "SPLIT"}};
 
-  return safeAt(DIFF_METHODtoString, location);
+  return safeAt(DIFF_METHODtoString, method);
 }
 
-std::string toString(REGION region) {
+std::string format_as(const REGION& region) {
 
   const static std::map<REGION, std::string> REGIONtoString = {
       ENUMSTR(RGN_ALL), ENUMSTR(RGN_NOBNDRY), ENUMSTR(RGN_NOX), ENUMSTR(RGN_NOY),
@@ -61,7 +61,7 @@ std::string toString(REGION region) {
   return safeAt(REGIONtoString, region);
 }
 
-std::string toString(DIRECTION direction) {
+std::string format_as(const DIRECTION& direction) {
 
   const static std::map<DIRECTION, std::string> DIRECTIONtoString = {
       {DIRECTION::X, "X"},
@@ -73,8 +73,8 @@ std::string toString(DIRECTION direction) {
   return safeAt(DIRECTIONtoString, direction);
 }
 
-std::string toString(const DirectionTypes& dir) {
-  return "{" + toString(dir.y) + ", " + toString(dir.z) + "}";
+std::string format_as(const DirectionTypes& dir) {
+  return "{" + format_as(dir.y) + ", " + format_as(dir.z) + "}";
 }
 
 void swap(DirectionTypes& first, DirectionTypes& second) {
@@ -119,7 +119,7 @@ bool areDirectionsCompatible(const DirectionTypes& d1, const DirectionTypes& d2)
   return false;
 }
 
-std::string toString(STAGGER stagger) {
+std::string format_as(const STAGGER& stagger) {
 
   const static std::map<STAGGER, std::string> STAGGERtoString = {
       {STAGGER::None, "No staggering"},
@@ -129,7 +129,7 @@ std::string toString(STAGGER stagger) {
   return safeAt(STAGGERtoString, stagger);
 }
 
-std::string toString(DERIV deriv) {
+std::string format_as(const DERIV& deriv) {
 
   const static std::map<DERIV, std::string> DERIVtoString = {
       {DERIV::Standard, "Standard"},
@@ -141,7 +141,7 @@ std::string toString(DERIV deriv) {
   return safeAt(DERIVtoString, deriv);
 }
 
-std::string toString(YDirectionType d) {
+std::string format_as(const YDirectionType& d) {
 
   const static std::map<YDirectionType, std::string> YDirectionTypeToString = {
       {YDirectionType::Standard, "Standard"}, {YDirectionType::Aligned, "Aligned"}};
@@ -157,7 +157,7 @@ YDirectionType YDirectionTypeFromString(const std::string& y_direction_string) {
   return safeAt(stringToYDirectionType, y_direction_string);
 }
 
-std::string toString(ZDirectionType d) {
+std::string format_as(const ZDirectionType& d) {
 
   const static std::map<ZDirectionType, std::string> ZDirectionTypeToString = {
       {ZDirectionType::Standard, "Standard"}, {ZDirectionType::Average, "Average"}};

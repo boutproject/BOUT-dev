@@ -64,12 +64,12 @@
 
 #define BOUT_MAKE_FROMSTRING_NAME(enumname) enumname##FromString
 
-/// Create an enum class with toString and <enum name>FromString functions, and an
+/// Create an enum class with format_as and <enum name>FromString functions, and an
 /// Options::as<enum> overload to read the enum
 #define BOUT_ENUM_CLASS(enumname, ...)                                         \
   enum class enumname : std::uint8_t { __VA_ARGS__ };                          \
                                                                                \
-  inline std::string toString(enumname e) {                                    \
+  inline std::string format_as(enumname e) {                                    \
                                                                                \
     const static std::map<enumname, std::string> toString_map = {              \
         BOUT_ENUM_CLASS_MAP_ARGS(BOUT_ENUM_CLASS_STR, enumname, __VA_ARGS__)}; \
@@ -102,17 +102,17 @@
   }                                                                            \
                                                                                \
   inline std::ostream& operator<<(std::ostream& out, const enumname& e) {      \
-    return out << toString(e);                                                 \
+    return out << format_as(e);                                                \
   }
 
-/// Create an enum class with toString and <enum name>FromString functions, and an
+/// Create an enum class with format_as and <enum name>FromString functions, and an
 /// Options::as<enum> overload to read the enum
 #define BOUT_ENUM_CLASS_NS(ns, enumname, ...)                                      \
   namespace ns {                                                                   \
   enum class enumname : std::uint8_t { __VA_ARGS__ };                              \
   }                                                                                \
                                                                                    \
-  inline std::string toString(ns::enumname e) {                                    \
+  inline std::string format_as(const ns::enumname& e) {                                    \
                                                                                    \
     const static std::map<ns::enumname, std::string> toString_map = {              \
         BOUT_ENUM_CLASS_MAP_ARGS(BOUT_ENUM_CLASS_STR, ns::enumname, __VA_ARGS__)}; \
@@ -145,7 +145,7 @@
   }                                                                                \
   namespace ns {                                                                   \
   inline std::ostream& operator<<(std::ostream& out, const enumname& e) {          \
-    return out << toString(e);                                                     \
+    return out << format_as(e);                                                     \
   }                                                                                \
   }
 

@@ -119,7 +119,7 @@ Field2D* Field2D::timeDeriv() {
 ////////////// Indexing ///////////////////
 
 const Region<Ind2D>& Field2D::getRegion(REGION region) const {
-  return fieldmesh->getRegion2D(toString(region));
+  return fieldmesh->getRegion2D(format_as(region));
 }
 const Region<Ind2D>& Field2D::getRegion(const std::string& region_name) const {
   return fieldmesh->getRegion2D(region_name);
@@ -380,7 +380,7 @@ bool operator==(const Field2D& a, const Field2D& b) {
 }
 
 std::ostream& operator<<(std::ostream& out, const Field2D& value) {
-  out << toString(value);
+  out << format_as(value);
   return out;
 }
 

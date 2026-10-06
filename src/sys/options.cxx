@@ -1197,8 +1197,6 @@ bout::details::OptionsFormatterBase::format(const Options& options,
   return ctx.out();
 }
 
-std::string toString(const Options& value) { return fmt::format("{}", value); }
-
 namespace bout {
 void checkForUnusedOptions() {
   auto& options = Options::root();

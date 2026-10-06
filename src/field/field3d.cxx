@@ -264,14 +264,14 @@ const BoutReal& Field3D::operator()(const Ind2D& d, int jz) const {
 }
 
 const Region<Ind3D>& Field3D::getRegion(REGION region) const {
-  return fieldmesh->getRegion3D(toString(region));
+  return fieldmesh->getRegion3D(format_as(region));
 }
 const Region<Ind3D>& Field3D::getRegion(const std::string& region_name) const {
   return fieldmesh->getRegion3D(region_name);
 }
 
 const Region<Ind2D>& Field3D::getRegion2D(REGION region) const {
-  return fieldmesh->getRegion2D(toString(region));
+  return fieldmesh->getRegion2D(format_as(region));
 }
 const Region<Ind2D>& Field3D::getRegion2D(const std::string& region_name) const {
   return fieldmesh->getRegion2D(region_name);
@@ -715,7 +715,7 @@ Field3D filter(const Field3D& var, int N0, const std::string& rgn) {
 
   Field3D result{emptyFrom(var)};
 
-  const auto region_str = toString(rgn);
+  const auto region_str = format_as(rgn);
 
   // Only allow a whitelist of regions for now
   ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY"
@@ -765,7 +765,7 @@ Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal, const std::string
 
   Field3D result{emptyFrom(var)};
 
-  const auto region_str = toString(rgn);
+  const auto region_str = format_as(rgn);
 
   // Only allow a whitelist of regions for now
   ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY"
@@ -829,7 +829,7 @@ void shiftZ(Field3D& var, int jx, int jy, double zangle) {
 }
 
 void shiftZ(Field3D& var, double zangle, const std::string& rgn) {
-  const auto region_str = toString(rgn);
+  const auto region_str = format_as(rgn);
 
   // Only allow a whitelist of regions for now
   ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY"
@@ -906,7 +906,7 @@ bool operator==(const Field3D& a, const Field3D& b) {
 }
 
 std::ostream& operator<<(std::ostream& out, const Field3D& value) {
-  out << toString(value);
+  out << format_as(value);
   return out;
 }
 

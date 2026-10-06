@@ -950,7 +950,7 @@ Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal,
 [[deprecated("Please use a bool for `keep_zonal`")]] inline Field3D
 lowPass(const Field3D& var, int zmax, int keep_zonal, REGION rgn = RGN_ALL) {
   ASSERT0(static_cast<bool>(keep_zonal) == keep_zonal);
-  return lowPass(var, zmax, static_cast<bool>(keep_zonal), toString(rgn));
+  return lowPass(var, zmax, static_cast<bool>(keep_zonal), format_as(rgn));
 }
 
 /// Fourier low pass filtering. Removes modes higher than \p zmax
@@ -998,10 +998,10 @@ inline Field3D& ddt(Field3D& f) { return *(f.timeDeriv()); }
 /// Alias for ddt that is more readable for constraints
 inline Field3D& residual(Field3D& f) { return *(f.timeDeriv()); }
 
-/// toString template specialisation
+/// format_as template specialisation
 /// Defined in utils.hxx
 template <>
-inline std::string toString<>([[maybe_unused]] const Field3D& val) {
+inline std::string format_as<>([[maybe_unused]] const Field3D& val) {
   return "<Field3D>";
 }
 
