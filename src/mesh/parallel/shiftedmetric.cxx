@@ -169,7 +169,7 @@ Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
 
   Field3D result{emptyFrom(f).setDirectionY(y_direction_out)};
 
-  BOUT_FOR(i, mesh.getRegion2D(toString(region))) {
+  BOUT_FOR(i, mesh.getRegion2D(region)) {
     shiftZ(&f(i, 0), &phs(i.x(), i.y(), 0), &result(i, 0));
   }
 
