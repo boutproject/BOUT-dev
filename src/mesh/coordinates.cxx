@@ -624,7 +624,7 @@ void Coordinates::readParallelMetricComponents() {
 void Coordinates::outputVars(Options& output_options) {
   const Timer time("io");
   const std::string loc_string =
-      (location == CELL_CENTRE) ? "" : "_" + toString(location);
+      (location == CELL_CENTRE) ? "" : "_" + format_as(location);
 
   output_options["dx" + loc_string].force(dx(), "Coordinates");
   output_options["dy" + loc_string].force(dy(), "Coordinates");
