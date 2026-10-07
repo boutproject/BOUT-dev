@@ -110,19 +110,17 @@
 #define BOUT_ENUM_CLASS_NS(ns, enumname, ...)                                      \
   namespace ns {                                                                   \
   enum class enumname : std::uint8_t { __VA_ARGS__ };                              \
-  }                                                                                \
                                                                                    \
-  inline std::string format_as(const ns::enumname& e) {                                    \
-                                                                                   \
-    const static std::map<ns::enumname, std::string> toString_map = {              \
-        BOUT_ENUM_CLASS_MAP_ARGS(BOUT_ENUM_CLASS_STR, ns::enumname, __VA_ARGS__)}; \
+  inline std::string format_as(const enumname& e) {                                \
+    const static std::map<enumname, std::string> toString_map = {                  \
+        BOUT_ENUM_CLASS_MAP_ARGS(BOUT_ENUM_CLASS_STR, enumname, __VA_ARGS__)};     \
     auto found = toString_map.find(e);                                             \
     if (found == toString_map.end()) {                                             \
       throw BoutException("Did not find enum {:d}", static_cast<int>(e));          \
     }                                                                              \
     return found->second;                                                          \
   }                                                                                \
-  namespace ns {                                                                   \
+                                                                                   \
   inline enumname BOUT_MAKE_FROMSTRING_NAME(enumname)(const std::string& s) {      \
     const static std::map<std::string, enumname> fromString_map = {                \
         BOUT_ENUM_CLASS_MAP_ARGS(BOUT_STR_ENUM_CLASS, enumname, __VA_ARGS__)};     \
@@ -137,16 +135,15 @@
     }                                                                              \
     return found->second;                                                          \
   }                                                                                \
+                                                                                   \
+  inline std::ostream& operator<<(std::ostream& out, const enumname& e) {          \
+    return out << format_as(e);                                                    \
   }                                                                                \
+  } /* end namespace ns */                                                         \
                                                                                    \
   template <>                                                                      \
   inline ns::enumname Options::as<ns::enumname>(const ns::enumname&) const {       \
     return ns::BOUT_MAKE_FROMSTRING_NAME(enumname)(this->as<std::string>());       \
-  }                                                                                \
-  namespace ns {                                                                   \
-  inline std::ostream& operator<<(std::ostream& out, const enumname& e) {          \
-    return out << format_as(e);                                                     \
-  }                                                                                \
   }
 
 #endif // BOUT_ENUM_CLASS_H
