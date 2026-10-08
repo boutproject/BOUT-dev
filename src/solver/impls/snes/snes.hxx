@@ -35,12 +35,15 @@
 
 class SNESSolver;
 
+#include <algorithm>
+#include <array>
 #include <string>
 #include <vector>
 
 #include "mpi.h"
 
 #include <bout/array.hxx>
+#include <bout/assert.hxx>
 #include <bout/bout_enum_class.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/field2d.hxx>
@@ -56,27 +59,116 @@ RegisterSolver<SNESSolver> registersolversnes("snes");
 RegisterSolver<SNESSolver> registersolverbeuler("beuler");
 } // namespace
 
-BOUT_ENUM_CLASS(BoutSnesEquationForm, pseudo_transient, rearranged_backward_euler,
-                backward_euler, direct_newton);
+BOUT_ENUM_CLASS_NS(bout, SnesEquationForm, pseudo_transient, rearranged_backward_euler,
+                   backward_euler, direct_newton);
 
-BOUT_ENUM_CLASS(BoutPTCStrategy,
-                inverse_residual, ///< dt = pseudo_alpha / residual
-                history_based,    ///< Grow/shrink dt based on residual decrease/increase
-                hybrid); ///< Combine inverse_residual and history_based strategies
+BOUT_ENUM_CLASS_NS(bout, PTCStrategy,
+                   inverse_residual, ///< dt = pseudo_alpha / residual
+                   history_based, ///< Grow/shrink dt based on residual decrease/increase
+                   hybrid); ///< Combine inverse_residual and history_based strategies
 
-BOUT_ENUM_CLASS(BoutSnesTimestep,
-                pid_nonlinear_its,       ///< PID controller on nonlinear iterations
-                threshold_nonlinear_its, ///< Use thresholds on nonlinear iterations
-                residual_ratio,          ///< Use ratio of previous and current residual
-                fixed);                  ///< Fixed timestep (no adaptation)
+BOUT_ENUM_CLASS_NS(bout, SnesTimestep,
+                   pid_nonlinear_its,       ///< PID controller on nonlinear iterations
+                   threshold_nonlinear_its, ///< Use thresholds on nonlinear iterations
+                   residual_ratio, ///< Use ratio of previous and current residual
+                   fixed);         ///< Fixed timestep (no adaptation)
 
-BOUT_ENUM_CLASS(BoutSnesOutput,
-                fixed_time_interval, ///< Output at fixed time intervals
-                residual_ratio);     ///< When the residual is reduced by a given ratio
+BOUT_ENUM_CLASS_NS(bout, SnesOutput,
+                   fixed_time_interval, ///< Output at fixed time intervals
+                   residual_ratio);     ///< When the residual is reduced by a given ratio
 
-BOUT_ENUM_CLASS(BoutPseudoSquashMethod,
-                affine, ///< Affine dt_vec <- lambda * dt_vec + (1 - lambda) * timestep
-                log);   ///< Log squash dt_vec <- timestep * (dt_vec / timestep)^lambda
+BOUT_ENUM_CLASS_NS(bout, PseudoSquashMethod,
+                   affine, ///< Affine dt_vec <- lambda * dt_vec + (1 - lambda) * timestep
+                   log);   ///< Log squash dt_vec <- timestep * (dt_vec / timestep)^lambda
+
+BOUT_ENUM_CLASS_NS(bout, SnesPredictor,
+                   constant, ///< Start solve with previous solution
+                   linear);  ///< Linear extrapolation
+
+namespace bout {
+class Predictor {
+  struct State {
+    BoutReal time{0.0};
+    Vec x{nullptr};
+  };
+
+public:
+  explicit Predictor(Options& opts)
+      : default_predictor_type(
+            opts["predictor_type"]
+                .doc("Type of predictor to use. 'constant' or 'linear'")
+                .withDefault(SnesPredictor::linear)) {}
+
+  /// Push a state and time, leaving input unchanged
+  void push_state(BoutReal time, Vec x) {
+    // Cycle states right one place, so that the last element
+    // becomes the first.
+    std::ranges::rotate(this->history, this->history.end() - 1);
+
+    auto& [t0, x0] = this->history[0];
+    t0 = time;
+    if (x0 == nullptr) {
+      // Create a new vector like x
+      BOUT_DO_PETSC(VecDuplicate(x, &x0));
+    }
+    // Copy x into reuse
+    BOUT_DO_PETSC(VecCopy(x, x0));
+  }
+
+  /// Predict state `x` at `time` using method `predictor_type`.
+  /// `x` must already be allocated and will be overwritten.
+  void predict(SnesPredictor predictor_type, BoutReal time, Vec& x) {
+    // [t0, x0] is the most recent state
+    const auto& [t0, x0] = this->history[0];
+    ASSERT0(x0 != nullptr);
+
+    switch (predictor_type) {
+    case SnesPredictor::constant:
+      // Copy most recent state into output
+      BOUT_DO_PETSC(VecCopy(x0, x));
+      return;
+    case SnesPredictor::linear: {
+      const auto& [t1, x1] = this->history[1];
+
+      // Need at least two previous states
+      if (x1 == nullptr) {
+        predict(SnesPredictor::constant, time, x);
+        return;
+      }
+
+      // x <- x0 + (time - t0) / (t0 - t1) * (x0 - x1)
+      // x <- (1 + β) * x0 - β * x1
+      const BoutReal beta = (time - t0) / (t0 - t1);
+      VecAXPBYPCZ(x, (1 + beta), -beta, 0.0, x0, x1);
+      return;
+    }
+    };
+  }
+
+  /// Predict state `x` at `time` using the default method.
+  /// `x` must already be allocated and will be overwritten.
+  void predict(BoutReal time, Vec& x) { predict(default_predictor_type, time, x); }
+
+  /// Apply per-component rescaling factors to all allocated history states.
+  void rescale(Vec norms) {
+    for (auto& state : history) {
+      if (state.x == nullptr) {
+        continue;
+      }
+      BOUT_DO_PETSC(VecPointwiseDivide(state.x, state.x, norms));
+    }
+  }
+
+  /// Set default predictor to a given type
+  void setDefault(SnesPredictor predictor_type) {
+    default_predictor_type = predictor_type;
+  }
+
+private:
+  SnesPredictor default_predictor_type; ///< The type of predictor
+  std::array<State, 2> history;         ///< 0 is most recent, end-1 is oldest state
+};
+} // namespace bout
 
 /// Uses PETSc's SNES interface to find a steady state solution to a
 /// nonlinear ODE by integrating in time with Backward Euler
@@ -158,7 +250,7 @@ private:
   /// Write the matrix and shared JSON metadata for one diagnostic Jacobian.
   void exportMatrixAndMetadata(bout::JacobianExportKind kind, Mat jacobian);
 
-  BoutSnesOutput output_trigger; ///< Sets when outputs are written
+  bout::SnesOutput output_trigger; ///< Sets when outputs are written
 
   BoutReal output_residual_ratio; ///< Trigger an output when residual falls by this ratio
 
@@ -168,7 +260,7 @@ private:
   BoutReal max_timestep; ///< Maximum timestep
 
   /// Form of the equation to solve
-  BoutSnesEquationForm equation_form;
+  bout::SnesEquationForm equation_form;
 
   std::string snes_type;
   BoutReal atol; ///< Absolute tolerance
@@ -187,14 +279,14 @@ private:
 
   // Pseudo-Transient Continuation (PTC) variables
   // These are used if equation_form = pseudo_transient
-  BoutPTCStrategy pseudo_strategy;  ///< Strategy to use when setting timesteps
-  BoutReal pseudo_alpha;            ///< dt = alpha / residual
-  BoutReal pseudo_alpha_minimum;    ///< Minimum value of alpha
-  BoutReal pseudo_growth_factor;    ///< Timestep increase 1.1 - 1.2
-  BoutReal pseudo_reduction_factor; ///< Timestep decrease 0.5
-  BoutReal pseudo_max_ratio;        ///< Maximum timestep ratio between neighboring cells
+  bout::PTCStrategy pseudo_strategy; ///< Strategy to use when setting timesteps
+  BoutReal pseudo_alpha;             ///< dt = alpha / residual
+  BoutReal pseudo_alpha_minimum;     ///< Minimum value of alpha
+  BoutReal pseudo_growth_factor;     ///< Timestep increase 1.1 - 1.2
+  BoutReal pseudo_reduction_factor;  ///< Timestep decrease 0.5
+  BoutReal pseudo_max_ratio;         ///< Maximum timestep ratio between neighboring cells
   int pseudo_squash_failure_threshold; ///< Squash timestep variation when snes failures exceed this threshold
-  BoutPseudoSquashMethod
+  bout::PseudoSquashMethod
       pseudo_squash_method; ///< Method to apply when squashing pseudo timesteps
   BoutReal
       pseudo_squash_lambda; ///< How much variation to keep? 0 = No variation; 1 = Full variation (no squashing).
@@ -230,7 +322,7 @@ private:
   Field3D pseudo_timestep;
 
   /// Timestep controller method
-  BoutSnesTimestep timestep_control;
+  bout::SnesTimestep timestep_control;
 
   /// When using BoutSnesTimestep::residual_ratio
   BoutReal timestep_factor; ///< Multiply timestep by this each step
@@ -273,9 +365,7 @@ private:
   Vec output_x; ///< Solution to output. Used if interpolating.
   Vec output_f; ///< Residual to output, if diagnose == true. Used if interpolating.
 
-  bool predictor;       ///< Use linear predictor?
-  Vec x1;               ///< Previous solution
-  BoutReal time1{-1.0}; ///< Time of previous solution
+  bout::Predictor predictor; ///< Predicts starting state for next step
 
   SNES snes; ///< SNES context
   Mat Jmf;   ///< Matrix Free Jacobian
@@ -313,6 +403,7 @@ private:
   BoutReal
       rescale_threshold; //< How much change in the state there should be before rescaling
   Vec var_scaling_factors; ///< Factors to multiply variables when passing to user
+  Vec norm_factors;        ///< Per-component norms used when rescaling solver variables
   Vec scaled_x;            ///< The values passed to the user RHS
 
   bool asinh_vars; ///< Evolve asinh(vars) to compress magnitudes while preserving signs

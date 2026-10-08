@@ -263,7 +263,7 @@ SNESSolver::SNESSolver(Options* opts)
       output_trigger(
           (*options)["output_trigger"]
               .doc("Decides when to save outputs. fixed_time_interval, residual_ratio")
-              .withDefault(BoutSnesOutput::fixed_time_interval)),
+              .withDefault(bout::SnesOutput::fixed_time_interval)),
       output_residual_ratio(
           (*options)["output_residual_ratio"]
               .doc("Trigger an output when residual falls by this ratio")
@@ -278,7 +278,7 @@ SNESSolver::SNESSolver(Options* opts)
           (*options)["equation_form"]
               .doc("Form of equation to solve: rearranged_backward_euler (default);"
                    " pseudo_transient; backward_euler; direct_newton")
-              .withDefault(BoutSnesEquationForm::rearranged_backward_euler)),
+              .withDefault(bout::SnesEquationForm::rearranged_backward_euler)),
       snes_type((*options)["snes_type"]
                     .doc("PETSc nonlinear solver method to use")
                     .withDefault("anderson")),
@@ -316,7 +316,7 @@ SNESSolver::SNESSolver(Options* opts)
               .withDefault(1.4)),
       pseudo_strategy((*options)["pseudo_strategy"]
                           .doc("PTC strategy to use when setting timesteps")
-                          .withDefault(BoutPTCStrategy::inverse_residual)),
+                          .withDefault(bout::PTCStrategy::inverse_residual)),
       pseudo_alpha((*options)["pseudo_alpha"]
                        .doc("Sets timestep using dt = alpha / residual")
                        .withDefault(100. * atol * timestep)),
@@ -339,14 +339,14 @@ SNESSolver::SNESSolver(Options* opts)
       pseudo_squash_method(
           (*options)["pseudo_squash_method"]
               .doc("Method to apply when squashing pseudo timesteps: affine or log.")
-              .withDefault(BoutPseudoSquashMethod::log)),
+              .withDefault(bout::PseudoSquashMethod::log)),
       pseudo_squash_lambda((*options)["pseudo_squash_lambda"]
                                .doc("How much variation to keep? 0 = No variation; 1 = "
                                     "Full variation (no squashing)")
                                .withDefault(0.5)),
       timestep_control((*options)["timestep_control"]
                            .doc("Timestep control method")
-                           .withDefault(BoutSnesTimestep::pid_nonlinear_its)),
+                           .withDefault(bout::SnesTimestep::pid_nonlinear_its)),
       timestep_factor((*options)["timestep_factor"]
                           .doc("When timestep_control=residual_ratio, multiply timestep "
                                "by this factor each step")
@@ -367,10 +367,9 @@ SNESSolver::SNESSolver(Options* opts)
       diagnose_failures((*options)["diagnose_failures"]
                             .doc("Print more diagnostics when SNES fails")
                             .withDefault<bool>(false)),
-      predictor((*options)["predictor"].doc("Use linear predictor?").withDefault(true)),
-      use_precon((*options)["use_precon"]
-                     .doc("Use user-supplied preconditioner?")
-                     .withDefault<bool>(false)),
+      predictor(*options), use_precon((*options)["use_precon"]
+                                          .doc("Use user-supplied preconditioner?")
+                                          .withDefault<bool>(false)),
       ksp_type((*options)["ksp_type"]
                    .doc("Linear solver type. By default let PETSc decide (gmres)")
                    .withDefault("default")),
@@ -441,6 +440,12 @@ SNESSolver::SNESSolver(Options* opts)
   supports_constraints = true; // This solver can handle constraints
 
   ASSERT0((pseudo_squash_lambda >= 0.0) and (pseudo_squash_lambda <= 1.0));
+
+  if ((*options)["predictor"].isSet()) {
+    throw BoutException("solver:predictor is deprecated for SNES/beuler and is now "
+                        "ignored. To reproduce behaviour of predictor=false, "
+                        "set predictor_type=linear.\n");
+  }
 }
 
 SNESSolver::~SNESSolver() {
@@ -570,15 +575,10 @@ int SNESSolver::init() {
     PetscCall(VecDuplicate(snes_f, &deriv));
   }
 
-  if ((equation_form == BoutSnesEquationForm::rearranged_backward_euler)
-      || (equation_form == BoutSnesEquationForm::pseudo_transient)) {
+  if ((equation_form == bout::SnesEquationForm::rearranged_backward_euler)
+      || (equation_form == bout::SnesEquationForm::pseudo_transient)) {
     // Need an intermediate vector for rearranged Backward Euler or Pseudo-Transient Continuation
     PetscCall(VecDuplicate(snes_x, &delta_x));
-  }
-
-  if (predictor) {
-    // Storage for previous solution
-    PetscCall(VecDuplicate(snes_x, &x1));
   }
 
   if (scale_rhs) {
@@ -595,13 +595,15 @@ int SNESSolver::init() {
     PetscCall(VecDuplicate(snes_x, &var_scaling_factors));
     // Set all factors to 1 to start with
     PetscCall(VecSet(var_scaling_factors, 1.0));
+    // Scratch storage for per-component norms when rescaling solver variables
+    PetscCall(VecDuplicate(snes_x, &norm_factors));
     // Storage for scaled 'x' state vectors
     PetscCall(VecDuplicate(snes_x, &scaled_x));
   } else if (asinh_vars) {
     PetscCall(VecDuplicate(snes_x, &scaled_x));
   }
 
-  if (equation_form == BoutSnesEquationForm::pseudo_transient) {
+  if (equation_form == bout::SnesEquationForm::pseudo_transient) {
     PetscCall(initPseudoTimestepping());
   }
   // Per-cell residuals
@@ -807,39 +809,34 @@ PetscErrorCode SNESSolver::rescale() {
   // Individual variable scaling
   // Note: If variables are rescaled then the Jacobian columns
   //       need to be scaled or recalculated
-  int istart = 0;
-  int iend = 0;
-  VecGetOwnershipRange(snes_x, &istart, &iend);
+  PetscInt local_size = 0;
+  PetscCall(VecGetLocalSize(snes_x, &local_size));
 
-  // Take ownership of snes_x and var_scaling_factors data
+  // Take ownership of snes_x, norms, and var_scaling_factors data
   PetscScalar* snes_x_data = nullptr;
   PetscCall(VecGetArray(snes_x, &snes_x_data));
-  PetscScalar* x1_data = nullptr;
-  if (predictor) {
-    // x1 is only allocated if predictor is enabled
-    PetscCall(VecGetArray(x1, &x1_data));
-  }
+  PetscScalar* norm_factors_data = nullptr;
+  PetscCall(VecGetArray(norm_factors, &norm_factors_data));
   PetscScalar* var_scaling_factors_data = nullptr;
   PetscCall(VecGetArray(var_scaling_factors, &var_scaling_factors_data));
 
-  // Normalise each value in the state
+  // Normalise each value in the current state and store the norms so that
+  // accepted predictor history can be rescaled consistently.
   // Limit normalisation so scaling factor is never smaller than rtol
-  for (int i = 0; i < iend - istart; ++i) {
+  for (PetscInt i = 0; i < local_size; ++i) {
     const PetscScalar norm =
         BOUTMAX(std::abs(snes_x_data[i]), rtol / var_scaling_factors_data[i]);
+    norm_factors_data[i] = norm;
     snes_x_data[i] /= norm;
-    if (predictor) {
-      x1_data[i] /= norm; // Update history for predictor
-    }
     var_scaling_factors_data[i] *= norm;
   }
 
   // Restore vector underlying data
   PetscCall(VecRestoreArray(var_scaling_factors, &var_scaling_factors_data));
-  if (predictor) {
-    PetscCall(VecRestoreArray(x1, &x1_data));
-  }
+  PetscCall(VecRestoreArray(norm_factors, &norm_factors_data));
   PetscCall(VecRestoreArray(snes_x, &snes_x_data));
+
+  predictor.rescale(norm_factors);
 
   if (diagnose) {
     // Print maximum and minimum scaling factors
@@ -893,6 +890,9 @@ int SNESSolver::run() {
     snes_function(snes_x, snes_f, false);
   }
 
+  // Push initial state into the predictor
+  predictor.push_state(simtime, snes_x);
+
   BoutReal target = simtime;
   recent_failure_rate = 0.0;
   int steps_since_rescale = 0;
@@ -907,8 +907,8 @@ int SNESSolver::run() {
 
     const BoutReal start_global_residual = global_residual;
     do {
-      if ((output_trigger == BoutSnesOutput::fixed_time_interval && (simtime >= target))
-          || (output_trigger == BoutSnesOutput::residual_ratio
+      if ((output_trigger == bout::SnesOutput::fixed_time_interval && (simtime >= target))
+          || (output_trigger == bout::SnesOutput::residual_ratio
               && (global_residual <= start_global_residual * output_residual_ratio))) {
         break; // Could happen if step over multiple outputs
       }
@@ -928,13 +928,13 @@ int SNESSolver::run() {
         steps_since_rescale = 0;
       }
 
-      // Copy the state (snes_x) into initial values (x0)
-      VecCopy(snes_x, x0);
+      // Copy the start-of-step state used by the transient term in snes_function().
+      PetscCall(VecCopy(snes_x, x0));
       if (diagnose) {
         VecCopy(snes_f, f0);
       }
 
-      if (equation_form == BoutSnesEquationForm::pseudo_transient) {
+      if (equation_form == bout::SnesEquationForm::pseudo_transient) {
         // Pseudo-Transient Continuation
         // Each evolving quantity may have its own timestep
         // Set timestep and dt scalars to the minimum of dt_vec
@@ -942,7 +942,7 @@ int SNESSolver::run() {
         PetscCall(VecMin(dt_vec, nullptr, &timestep));
         dt = timestep;
 
-        if (output_trigger == BoutSnesOutput::fixed_time_interval
+        if (output_trigger == bout::SnesOutput::fixed_time_interval
             && simtime + timestep >= target) {
           looping = false;
         }
@@ -961,12 +961,14 @@ int SNESSolver::run() {
           PetscCall(SNESSetLagJacobianPersists(snes, PETSC_FALSE));
           persist_jac_lag_off = true;
           timestep = getOutputTimestep();
-          predictor = false; // Predictor can cause problems in near steady-state.
+          predictor.setDefault(
+              bout::SnesPredictor::
+                  constant); // Predictor can cause problems in near steady-state.
         }
 
         // Set the timestep
         dt = timestep;
-        if (output_trigger == BoutSnesOutput::fixed_time_interval
+        if (output_trigger == bout::SnesOutput::fixed_time_interval
             && simtime + dt >= target) {
           // Note: When the timestep is changed the preconditioner needs to be updated
           // => Step over the output time and interpolate if not matrix free
@@ -979,13 +981,8 @@ int SNESSolver::run() {
           looping = false;
         }
 
-        if (predictor and (time1 > 0.0)) {
-          // Use (time1, x1) and (simtime, x0) to make prediction
-          // snes_x <- x0 + (dt / (simtime - time1)) * (x0 - x1)
-          // snes_x <- -β * x1 + (1 + β) * snes_x
-          const BoutReal beta = dt / (simtime - time1);
-          VecAXPBY(snes_x, -beta, (1. + beta), x1);
-        }
+        // Use the predictor to get starting snes_x
+        predictor.predict(simtime + dt, snes_x);
       }
 
       // Run the solver
@@ -1035,7 +1032,7 @@ int SNESSolver::run() {
           return 1;
         }
 
-        if (equation_form == BoutSnesEquationForm::pseudo_transient) {
+        if (equation_form == bout::SnesEquationForm::pseudo_transient) {
           if (snes_failures == max_snes_failures - 1) {
             // Last chance. Set to uniform smallest timestep
             PetscCall(VecSet(dt_vec, dt_min_reset));
@@ -1049,7 +1046,7 @@ int SNESSolver::run() {
             // pseudo_squash_lambda determines how much variation to keep.
 
             switch (pseudo_squash_method) {
-            case BoutPseudoSquashMethod::affine:
+            case bout::PseudoSquashMethod::affine:
               // Modify dt_vec using Affine squash
               // dt_vec <- lambda * dt_vec + (1 - lambda) * timestep
 
@@ -1060,7 +1057,7 @@ int SNESSolver::run() {
               pseudo_timestep = pseudo_squash_lambda * pseudo_timestep
                                 + (1 - pseudo_squash_lambda) * timestep;
               break;
-            case BoutPseudoSquashMethod::log:
+            case bout::PseudoSquashMethod::log:
               // Log squash
               // dt_vec <- timestep * (dt_vec / timestep)^lambda
               PetscInt size;
@@ -1098,8 +1095,8 @@ int SNESSolver::run() {
           // Try a smaller timestep
           timestep *= timestep_factor_on_failure;
         }
-        // Restore state
-        VecCopy(x0, snes_x);
+        // Restore the accepted state at the start of this step.
+        PetscCall(VecCopy(x0, snes_x));
 
         // Recalculate the Jacobian
         if (jacobian_pruned and (snes_failures > 2) and (4 * lin_its > 3 * maxl)) {
@@ -1126,12 +1123,6 @@ int SNESSolver::run() {
         }
         looping = true;
         continue; // Try again
-      }
-
-      if (predictor) {
-        // Save previous values: x1 <- x0
-        VecCopy(x0, x1);
-        time1 = simtime;
       }
 
       if (nl_its == 0) {
@@ -1190,6 +1181,10 @@ int SNESSolver::run() {
 
       simtime += dt;
 
+      // Push state into predictor
+      // Predictor always contains the most recent successfully converged state
+      predictor.push_state(simtime, snes_x);
+
       // Update local and global residuals
       PetscCall(updateResiduals(snes_x));
       change_since_rescale += global_residual * dt;
@@ -1216,7 +1211,7 @@ int SNESSolver::run() {
         FDJpruneJacobian();
       }
 
-      if (equation_form == BoutSnesEquationForm::pseudo_transient) {
+      if (equation_form == bout::SnesEquationForm::pseudo_transient) {
         // Adjust pseudo_alpha to globally scale timesteps
         pseudo_alpha =
             std::max({updateGlobalTimestep(pseudo_alpha, nl_its, recent_failure_rate,
@@ -1242,23 +1237,15 @@ int SNESSolver::run() {
     } while (looping);
 
     BoutReal output_time = simtime;
-    if (output_trigger == BoutSnesOutput::fixed_time_interval && !matrix_free) {
+    if (output_trigger == bout::SnesOutput::fixed_time_interval && !matrix_free) {
       ASSERT2(simtime >= target);
       ASSERT2(simtime - dt <= target);
       // Stepped over output timestep => Interpolate
-      // snes_x is the solution at t = simtime
-      // x0 is the solution at t = simtime - dt
-      // Calculate output_x at t = target
-      VecCopy(snes_x, output_x);
-
-      // Note: If simtime = target then alpha = 0
-      //       and output_x = snes_x
-      const BoutReal alpha = (simtime - target) / dt;
-
-      // output_x <- alpha * x0 + (1 - alpha) * output_x
-      VecAXPBY(output_x, alpha, 1. - alpha, x0);
+      predictor.predict(bout::SnesPredictor::linear, target, output_x);
 
       if (diagnose) {
+        // Residual history is still tracked separately from predictor state history.
+        const BoutReal alpha = (simtime - target) / dt;
         VecCopy(snes_f, output_f);
         VecAXPBY(output_f, alpha, 1 - alpha, f0);
       }
@@ -1330,11 +1317,11 @@ BoutReal SNESSolver::updateGlobalTimestep(BoutReal timestep, int nl_its,
   // effective.
 
   switch (timestep_control) {
-  case BoutSnesTimestep::pid_nonlinear_its:
+  case bout::SnesTimestep::pid_nonlinear_its:
     // Changing the timestep using a PID controller.
     return pid(timestep, nl_its, max_dt);
 
-  case BoutSnesTimestep::threshold_nonlinear_its:
+  case bout::SnesTimestep::threshold_nonlinear_its:
     // Consider changing the timestep, based on thresholds in NL iterations
     if ((nl_its <= lower_its) && (timestep < max_timestep)
         && (recent_failure_rate < 0.5)) {
@@ -1349,7 +1336,7 @@ BoutReal SNESSolver::updateGlobalTimestep(BoutReal timestep, int nl_its,
     }
     return timestep; // No change
 
-  case BoutSnesTimestep::residual_ratio:
+  case bout::SnesTimestep::residual_ratio:
     // Use ratio of previous and current global residual
     // Intended to be the same as https://petsc.org/release/manualpages/TS/TSPSEUDO/
     // (Note the PETSc manual has the expression for dt_n upside down)
@@ -1357,7 +1344,7 @@ BoutReal SNESSolver::updateGlobalTimestep(BoutReal timestep, int nl_its,
     return std::min({timestep_factor * timestep * global_residual_prev / global_residual,
                      max_timestep});
 
-  case BoutSnesTimestep::fixed:
+  case bout::SnesTimestep::fixed:
     break;
   }
   return timestep; // No change
@@ -1640,14 +1627,14 @@ BoutReal SNESSolver::updatePseudoTimestep(BoutReal previous_timestep,
                                           BoutReal previous_residual,
                                           BoutReal current_residual) {
   switch (pseudo_strategy) {
-  case BoutPTCStrategy::inverse_residual:
+  case bout::PTCStrategy::inverse_residual:
     return updatePseudoTimestep_inverse_residual(previous_timestep, current_residual);
 
-  case BoutPTCStrategy::history_based:
+  case bout::PTCStrategy::history_based:
     return updatePseudoTimestep_history_based(previous_timestep, previous_residual,
                                               current_residual);
 
-  case BoutPTCStrategy::hybrid:
+  case bout::PTCStrategy::hybrid:
     // A hybrid strategy may be most effective, in which the timestep is
     // inversely proportional to residual initially, or when residuals are large,
     // and then the method transitions to being history-based
@@ -1657,7 +1644,7 @@ BoutReal SNESSolver::updatePseudoTimestep(BoutReal previous_timestep,
     return updatePseudoTimestep_history_based(previous_timestep, previous_residual,
                                               current_residual);
   };
-  throw BoutException("SNESSolver::updatePseudoTimestep invalid BoutPTCStrategy");
+  throw BoutException("SNESSolver::updatePseudoTimestep invalid PTCStrategy");
 }
 
 PetscErrorCode SNESSolver::toPhysicalState(Vec x, Vec physical_x) {
@@ -1764,7 +1751,7 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
   ASSERT2(!has_constraint_variables || is_diff != nullptr);
 
   switch (equation_form) {
-  case BoutSnesEquationForm::rearranged_backward_euler: {
+  case bout::SnesEquationForm::rearranged_backward_euler: {
     // Rearranged Backward Euler
     // F = (x0 - x)/Δt + f
     // Algebraic:     F = G(x)  (already stored in f by rhs_function)
@@ -1780,7 +1767,7 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
         has_constraint_variables ? is_diff : nullptr, x, x0, delta_x, f));
     break;
   }
-  case BoutSnesEquationForm::pseudo_transient: {
+  case bout::SnesEquationForm::pseudo_transient: {
     // Pseudo-transient timestepping. Same as Rearranged Backward Euler
     // except that Δt is a vector
     // F = (x0 - x)/Δt + f
@@ -1799,7 +1786,7 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
         has_constraint_variables ? is_diff : nullptr, x, x0, delta_x, f, dt_vec));
     break;
   }
-  case BoutSnesEquationForm::backward_euler: {
+  case bout::SnesEquationForm::backward_euler: {
     // Backward Euler:
     // Differential:  F = x - x0 - dt*f
     // Algebraic:     F = G(x)  (already stored in f by rhs_function)
@@ -1815,7 +1802,7 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
         has_constraint_variables ? is_diff : nullptr, x, x0, f));
     break;
   }
-  case BoutSnesEquationForm::direct_newton: {
+  case bout::SnesEquationForm::direct_newton: {
     // Direct Newton solve -> don't modify f
     break;
   }
@@ -2015,7 +2002,7 @@ void SNESSolver::outputVars(Options& output_options, bool save_repeat) {
   output_options["snes_global_residual"].assignRepeat(global_residual, "t", save_repeat,
                                                       "SNESSolver");
 
-  if (equation_form == BoutSnesEquationForm::pseudo_transient) {
+  if (equation_form == bout::SnesEquationForm::pseudo_transient) {
     output_options["snes_pseudo_alpha"].assignRepeat(pseudo_alpha, "t", save_repeat,
                                                      "SNESSolver");
     output_options["snes_pseudo_timestep"].assignRepeat(pseudo_timestep, "t", save_repeat,
