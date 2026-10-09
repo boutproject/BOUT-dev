@@ -2,17 +2,16 @@
 
 # Test initial conditions
 
-import pytest
 import configparser
 import itertools
 import platform
 import warnings
-import numpy as np
-from scipy.special import erf
 from pathlib import Path
 
-from boututils.run_wrapper import shell, launch_safe
+import numpy as np
+import pytest
 from boutdata.collect import collect
+from boututils.run_wrapper import launch_safe, shell
 
 ########################################
 # Implementations of BOUT++ functions
@@ -135,7 +134,6 @@ def fmod(x, denominator=1.0):
 abs = np.abs
 asin = np.arcsin
 acos = np.arccos
-ballooning = ballooning
 cos = np.cos
 cosh = np.cosh
 exp = np.exp
@@ -149,7 +147,6 @@ sqrt = np.sqrt
 tan = np.tan
 TanhHat = tanhhat
 pi = np.pi
-erf = erf
 
 
 @pytest.mark.parametrize("nproc", [1, 2, 3, 4])
@@ -159,7 +156,7 @@ def test_initial(nproc):
     datadir = Path("data")
     inputfile = datadir / "BOUT.inp"
 
-    shell(["rm -f data/BOUT.dmp.*.nc"])
+    shell(["rm -rf data/BOUT.dmp.*"])
 
     # Read the input file
     config = configparser.ConfigParser()
