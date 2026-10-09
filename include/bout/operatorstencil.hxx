@@ -33,9 +33,13 @@
 #include <algorithm>
 #include <functional>
 #include <iterator>
+#include <set>
 #include <type_traits>
 #include <vector>
 
+#include <bout/output_bout_types.hxx>
+#include "bout/boutexception.hxx"
+#include "bout/unused.hxx"
 #include <bout/mesh.hxx>
 #include <bout/region.hxx>
 
@@ -48,12 +52,12 @@ struct IndexOffset {
                 "IndexOffset only works with SpecificInd types");
   int dx = 0, dy = 0, dz = 0;
 
-  IndexOffset xp(int delta_x = 1) const { return {dx + delta_x, dy, dz}; }
-  IndexOffset xm(int delta_x = 1) const { return xp(-delta_x); }
-  IndexOffset yp(int delta_y = 1) const { return {dx, dy + delta_y, dz}; }
-  IndexOffset ym(int delta_y = 1) const { return yp(-delta_y); }
-  IndexOffset zp(int delta_z = 1) const { return {dx, dy, dz + delta_z}; }
-  IndexOffset zm(int delta_z = 1) const { return zp(-delta_z); }
+  IndexOffset xp(const int delta_x = 1) const { return {dx + delta_x, dy, dz}; }
+  IndexOffset xm(const int delta_x = 1) const { return xp(-delta_x); }
+  IndexOffset yp(const int delta_y = 1) const { return {dx, dy + delta_y, dz}; }
+  IndexOffset ym(const int delta_y = 1) const { return yp(-delta_y); }
+  IndexOffset zp(const int delta_z = 1) const { return {dx, dy, dz + delta_z}; }
+  IndexOffset zm(const int delta_z = 1) const { return zp(-delta_z); }
 
   IndexOffset& operator+=(const IndexOffset& n) {
     dx += n.dx;
@@ -146,13 +150,13 @@ public:
         std::find_if(std::begin(stencils), std::end(stencils),
                      [&i](const auto& stencil) -> bool { return stencil.test(i); });
     if (result == std::end(stencils)) {
-      throw BoutException("No stencil was specified for element " + toString(i));
+      throw BoutException("No stencil was specified for element {}", i);
     }
     return result->part;
   }
 
   /// Get the number of elements in the ith stencil-part
-  int getStencilSize(int i) const { return getStencilPart(i).size(); }
+  int getStencilSize(const int i) const { return getStencilPart(i).size(); }
 
   /// Get the number of elements in the stencil part to be used at
   /// this index.
@@ -163,7 +167,7 @@ public:
 
   /// Returns a list of indices for which the stencils contain the
   /// argument
-  const std::vector<T> getIndicesWithStencilIncluding(const T& i) const {
+  std::vector<T> getIndicesWithStencilIncluding(const T& i) const {
     std::vector<T> indices;
     int count = 0;
     for (const auto& item : stencils) {
@@ -179,10 +183,10 @@ public:
   }
 
   /// Iterators for the underlying vector data type
-  using iterator = typename std::vector<Stencil>::iterator;
-  using const_iterator = typename std::vector<Stencil>::const_iterator;
-  using reverse_iterator = typename std::vector<Stencil>::reverse_iterator;
-  using const_reverse_iterator = typename std::vector<Stencil>::const_reverse_iterator;
+  using iterator = std::vector<Stencil>::iterator;
+  using const_iterator = std::vector<Stencil>::const_iterator;
+  using reverse_iterator = std::vector<Stencil>::reverse_iterator;
+  using const_reverse_iterator = std::vector<Stencil>::const_reverse_iterator;
 
   iterator begin() { return std::begin(stencils); }
   const_iterator begin() const { return std::begin(stencils); }
@@ -219,7 +223,7 @@ private:
 /// depend on all of their neighbours to a depth of one, including
 /// corners.
 template <class T>
-OperatorStencil<T> squareStencil(Mesh* localmesh) {
+OperatorStencil<T> squareStencil(const Mesh* localmesh) {
   OperatorStencil<T> stencil;
   IndexOffset<T> zero;
   std::set<IndexOffset<T>> offsets = {
@@ -267,7 +271,7 @@ OperatorStencil<T> squareStencil(Mesh* localmesh) {
 /// depend on all of their neighbours to a depth of one, excluding
 /// corners.
 template <class T>
-OperatorStencil<T> starStencil(Mesh* localmesh) {
+OperatorStencil<T> starStencil(const Mesh* localmesh) {
   OperatorStencil<T> stencil;
   IndexOffset<T> zero;
   std::set<IndexOffset<T>> offsets = {

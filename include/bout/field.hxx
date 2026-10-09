@@ -160,53 +160,53 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
 }
 
 #if CHECKLEVEL >= 1
-#define ASSERT1_FIELDS_COMPATIBLE(field1, field2)                                        \
-  if ((field1).getLocation() != (field2).getLocation()) {                                \
-    throw BoutException("Error in {:s}:{:d}\nFields at different position:"              \
-                        "`{:s}` at {:s}, `{:s}` at {:s}",                                \
-                        __FILE__, __LINE__, #field1, toString((field1).getLocation()),   \
-                        #field2, toString((field2).getLocation()));                      \
-  }                                                                                      \
-  if ((field1).getCoordinates() != (field2).getCoordinates()) {                          \
-    throw BoutException("Error in {:s}:{:d}\nFields have different coordinates:"         \
-                        "`{:s}` at {:p}, `{:s}` at {:p}",                                \
-                        __FILE__, __LINE__, #field1,                                     \
-                        static_cast<void*>((field1).getCoordinates()), #field2,          \
-                        static_cast<void*>((field2).getCoordinates()));                  \
-  }                                                                                      \
-  if ((field1).getMesh() != (field2).getMesh()) {                                        \
-    throw BoutException("Error in {:s}:{:d}\nFields are on different Meshes:"            \
-                        "`{:s}` at {:p}, `{:s}` at {:p}",                                \
-                        __FILE__, __LINE__, #field1,                                     \
-                        static_cast<void*>((field1).getMesh()), #field2,                 \
-                        static_cast<void*>((field2).getMesh()));                         \
-  }                                                                                      \
-  if (!areDirectionsCompatible((field1).getDirections(), (field2).getDirections())) {    \
-    throw BoutException("Error in {:s}:{:d}\nFields at different directions:"            \
-                        "`{:s}` at {:s}, `{:s}` at {:s}",                                \
-                        __FILE__, __LINE__, #field1, toString((field1).getDirections()), \
-                        #field2, toString((field2).getDirections()));                    \
+#define ASSERT1_FIELDS_COMPATIBLE(field1, field2)                                       \
+  if ((field1).getLocation() != (field2).getLocation()) {                               \
+    throw BoutException("Error in {:s}:{:d}\nFields at different position:"             \
+                        "`{:s}` at {:s}, `{:s}` at {:s}",                               \
+                        __FILE__, __LINE__, #field1, (field1).getLocation(), #field2,   \
+                        (field2).getLocation());                                        \
+  }                                                                                     \
+  if ((field1).getCoordinates() != (field2).getCoordinates()) {                         \
+    throw BoutException("Error in {:s}:{:d}\nFields have different coordinates:"        \
+                        "`{:s}` at {:p}, `{:s}` at {:p}",                               \
+                        __FILE__, __LINE__, #field1,                                    \
+                        static_cast<void*>((field1).getCoordinates()), #field2,         \
+                        static_cast<void*>((field2).getCoordinates()));                 \
+  }                                                                                     \
+  if ((field1).getMesh() != (field2).getMesh()) {                                       \
+    throw BoutException("Error in {:s}:{:d}\nFields are on different Meshes:"           \
+                        "`{:s}` at {:p}, `{:s}` at {:p}",                               \
+                        __FILE__, __LINE__, #field1,                                    \
+                        static_cast<void*>((field1).getMesh()), #field2,                \
+                        static_cast<void*>((field2).getMesh()));                        \
+  }                                                                                     \
+  if (!areDirectionsCompatible((field1).getDirections(), (field2).getDirections())) {   \
+    throw BoutException("Error in {:s}:{:d}\nFields at different directions:"           \
+                        "`{:s}` at {:s}, `{:s}` at {:s}",                               \
+                        __FILE__, __LINE__, #field1, (field1).getDirections(), #field2, \
+                        (field2).getDirections());                                      \
   }
 
-#define ASSERT1_EXPR_COMPATIBLE(expr1, expr2)                                          \
-  if ((expr1).getLocation() != (expr2).getLocation()) {                                \
-    throw BoutException("Error in {:s}:{:d}\nFields at different position:"            \
-                        "`{:s}` at {:s}, `{:s}` at {:s}",                              \
-                        __FILE__, __LINE__, #expr1, toString((expr1).getLocation()),   \
-                        #expr2, toString((expr2).getLocation()));                      \
-  }                                                                                    \
-  if ((expr1).getMesh() != (expr2).getMesh()) {                                        \
-    throw BoutException("Error in {:s}:{:d}\nFields are on different Meshes:"          \
-                        "`{:s}` at {:p}, `{:s}` at {:p}",                              \
-                        __FILE__, __LINE__, #expr1,                                    \
-                        static_cast<void*>((expr1).getMesh()), #expr2,                 \
-                        static_cast<void*>((expr2).getMesh()));                        \
-  }                                                                                    \
-  if (!areDirectionsCompatible((expr1).getDirections(), (expr2).getDirections())) {    \
-    throw BoutException("Error in {:s}:{:d}\nFields at different directions:"          \
-                        "`{:s}` at {:s}, `{:s}` at {:s}",                              \
-                        __FILE__, __LINE__, #expr1, toString((expr1).getDirections()), \
-                        #expr2, toString((expr2).getDirections()));                    \
+#define ASSERT1_EXPR_COMPATIBLE(expr1, expr2)                                        \
+  if ((expr1).getLocation() != (expr2).getLocation()) {                              \
+    throw BoutException("Error in {:s}:{:d}\nFields at different position:"          \
+                        "`{:s}` at {:s}, `{:s}` at {:s}",                            \
+                        __FILE__, __LINE__, #expr1, (expr1).getLocation(), #expr2,   \
+                        (expr2).getLocation());                                      \
+  }                                                                                  \
+  if ((expr1).getMesh() != (expr2).getMesh()) {                                      \
+    throw BoutException("Error in {:s}:{:d}\nFields are on different Meshes:"        \
+                        "`{:s}` at {:p}, `{:s}` at {:p}",                            \
+                        __FILE__, __LINE__, #expr1,                                  \
+                        static_cast<void*>((expr1).getMesh()), #expr2,               \
+                        static_cast<void*>((expr2).getMesh()));                      \
+  }                                                                                  \
+  if (!areDirectionsCompatible((expr1).getDirections(), (expr2).getDirections())) {  \
+    throw BoutException("Error in {:s}:{:d}\nFields at different directions:"        \
+                        "`{:s}` at {:s}, `{:s}` at {:s}",                            \
+                        __FILE__, __LINE__, #expr1, (expr1).getDirections(), #expr2, \
+                        (expr2).getDirections());                                    \
   }
 
 #else
@@ -291,19 +291,8 @@ namespace bout {
 /// used during initialization, where we always want to check inputs, even for optimized
 /// builds.
 template <typename T>
-inline void checkFinite(const T& f, const std::string& name = "field",
-                        const std::string& rgn = "RGN_ALL") {
-
-  if (!f.isAllocated()) {
-    throw BoutException("{:s} is not allocated", name);
-  }
-
-  BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
-    if (!std::isfinite(f[i])) {
-      throw BoutException("{:s} is not finite at {:s}", name, toString(i));
-    }
-  }
-}
+void checkFinite(const T& f, const std::string& name = "field",
+                 const std::string& rgn = "RGN_ALL");
 
 /// Check if all values of a field \p var are positive.  Loops over all points including
 /// the boundaries by default (can be changed using the \p rgn argument)
@@ -314,21 +303,8 @@ inline void checkFinite(const T& f, const std::string& name = "field",
 /// be used during initialization, where we always want to check inputs, even for
 /// optimized builds.
 template <typename T>
-inline void checkPositive(const T& f, const std::string& name = "field",
-                          const std::string& rgn = "RGN_ALL") {
-
-  if (!f.isAllocated()) {
-    throw BoutException("{:s} is not allocated", name);
-  }
-
-  BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
-    if (f[i] <= 0.) {
-      throw BoutException("{:s} ({:s} {:s}) is {:e} (not positive) at {:s}", name,
-                          toString(f.getLocation()), toString(f.getDirections()), f[i],
-                          toString(i));
-    }
-  }
-}
+void checkPositive(const T& f, const std::string& name = "field",
+                   const std::string& rgn = "RGN_ALL");
 } // namespace bout
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
