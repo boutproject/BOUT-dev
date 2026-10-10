@@ -22,8 +22,6 @@ if(BOUT_HAS_CUDA)
   set(BOUT_SOURCES_CXX ${BOUT_SOURCES})
   list(FILTER BOUT_SOURCES_CXX INCLUDE REGEX ".*\.cxx")
 
-  # NOTE: CUDA inherits the CXX standard setting from the top-level
-  # compile features, set for the bout++ target.
   set_source_files_properties(${BOUT_SOURCES_CXX} PROPERTIES LANGUAGE CUDA)
 
   # timer.cxx contains no device code, and compiling its C++20 formatting and
@@ -44,8 +42,7 @@ if(BOUT_HAS_HIP)
   set_source_files_properties(${BOUT_HIP_SOURCES} PROPERTIES LANGUAGE HIP)
   set_target_properties(
     bout++
-    PROPERTIES HIP_STANDARD 20
-               HIP_STANDARD_REQUIRED ON
+    PROPERTIES HIP_EXTENSIONS OFF
                LINKER_LANGUAGE HIP
   )
   find_package(hip REQUIRED CONFIG)

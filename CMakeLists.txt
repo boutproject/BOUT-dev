@@ -560,10 +560,11 @@ set_target_properties(
 set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -L\$BOUT_LIB_PATH -lbout++")
 set(BOUT_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(CONFIG_CFLAGS
-    "${CONFIG_CFLAGS} -I\${BOUT_INCLUDE_PATH} -I${CMAKE_CURRENT_BINARY_DIR}/include ${CMAKE_CXX_FLAGS} -std=c++20"
+    "${CONFIG_CFLAGS} -I\${BOUT_INCLUDE_PATH} -I${CMAKE_CURRENT_BINARY_DIR}/include ${CMAKE_CXX_FLAGS} -std=c++${BOUT_CXX_STANDARD}"
 )
 
-target_compile_features(bout++ PUBLIC cxx_std_20)
+target_compile_features(bout++ PUBLIC cxx_std_${BOUT_CXX_STANDARD})
+bout_target_set_language_standards(bout++)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 
 # Optional compiler features
@@ -783,6 +784,7 @@ option(
 if(BOUT_TESTS)
   set(CMAKE_CTEST_ARGUMENTS "--output-on-failure" "--timeout" "300")
   enable_testing()
+  add_subdirectory(tests/cmake)
   # Targets for just building the tests
   # Tests need to add themselves as dependencies to these targets
   add_custom_target(build-check-unit-tests)
@@ -803,7 +805,8 @@ if(BOUT_TESTS)
   # Targets for running the tests
   if(BOUT_ENABLE_UNIT_TESTS)
     add_custom_target(
-      check-unit-tests COMMAND ctest -R serial_tests --output-on-failure
+      check-unit-tests COMMAND ctest -R "serial_tests|cmake-language-standards"
+                               --output-on-failure
     )
     add_dependencies(check-unit-tests build-check-unit-tests)
   endif()

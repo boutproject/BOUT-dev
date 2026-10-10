@@ -158,5 +158,4 @@ bout_target_enable_hip(serial_tests)
 
 if(BOUT_HAS_CUDA)
   set_source_files_properties(${serial_tests_source} PROPERTIES LANGUAGE CUDA)
-  set_target_properties(serial_tests PROPERTIES CUDA_STANDARD 20)
 endif()
