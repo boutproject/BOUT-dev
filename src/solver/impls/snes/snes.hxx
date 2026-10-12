@@ -96,29 +96,27 @@ class Predictor {
 public:
   explicit Predictor(Options& opts)
       : default_predictor_type(
-            opts["predictor_type"]
+            opts["type"]
                 .doc("Type of predictor to use. 'constant' or 'linear'")
                 .withDefault(SnesPredictor::linear)),
-        blend(opts["predictor_blend"]
+        blend(opts["blend"]
                   .doc("Enable self-tuning blend? Predictor step is scaled by 0 < 0 < "
                        "0_max.")
                   .withDefault<bool>(false)),
         blend_weight(
-            opts["predictor_blend_weight"]
+            opts["blend_weight"]
                 .doc("Step size update weight: θ  ← (1 - w) θ + w · clamp(θ*, 0, θ_max)")
                 .withDefault(0.3)),
-        blend_max(opts["predictor_blend_max"]
-                      .doc("The maximum update weight θ_max")
-                      .withDefault(1.0)),
-        blend_initial(opts["predictor_blend_initial"]
+        blend_max(
+            opts["blend_max"].doc("The maximum update weight θ_max").withDefault(1.0)),
+        blend_initial(opts["blend_initial"]
                           .doc("Initial value of blend factor 0")
                           .withDefault(1.0)),
-        blend_factor(blend_initial), noise_rtol(opts["predictor_noise_rtol"]
-                                                    .doc("Predictor relative tolerance")
-                                                    .withDefault(1e-5)),
-        noise_atol(opts["predictor_noise_atol"]
-                       .doc("Predictor absolute tolerance")
-                       .withDefault(1e-12)) {}
+        blend_factor(blend_initial),
+        noise_rtol(
+            opts["noise_rtol"].doc("Predictor relative tolerance").withDefault(1e-5)),
+        noise_atol(
+            opts["noise_atol"].doc("Predictor absolute tolerance").withDefault(1e-12)) {}
 
   /// Push a state and time, leaving input unchanged
   void push_state(BoutReal time, Vec x);

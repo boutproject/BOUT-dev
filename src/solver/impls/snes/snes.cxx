@@ -563,9 +563,10 @@ SNESSolver::SNESSolver(Options* opts)
       diagnose_failures((*options)["diagnose_failures"]
                             .doc("Print more diagnostics when SNES fails")
                             .withDefault<bool>(false)),
-      predictor(*options), use_precon((*options)["use_precon"]
-                                          .doc("Use user-supplied preconditioner?")
-                                          .withDefault<bool>(false)),
+      predictor((*options)["predictor"]),
+      use_precon((*options)["use_precon"]
+                     .doc("Use user-supplied preconditioner?")
+                     .withDefault<bool>(false)),
       ksp_type((*options)["ksp_type"]
                    .doc("Linear solver type. By default let PETSc decide (gmres)")
                    .withDefault("default")),
