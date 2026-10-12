@@ -917,8 +917,8 @@ private:
                       << ")\n";
         } else {
           throw BoutException(
-              _f("Options: Setting a value from same source ({:s}) to new value "
-                 "'{:s}' - old value was '{:s}'."),
+              _f("Options: Setting a value from same source ({}) to new value "
+                 "'{}' - old value was '{:s}'."),
               source, val, bout::utils::variantToString(value));
         }
       }
