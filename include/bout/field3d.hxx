@@ -19,12 +19,14 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
+#pragma once
 
+#include "fmt/base.h"
+#include "fmt/format.h"
 #include "bout/utils.hxx"
 #include <cstddef>
 class Field3D;
 
-#pragma once
 #ifndef BOUT_FIELD3D_H
 #define BOUT_FIELD3D_H
 

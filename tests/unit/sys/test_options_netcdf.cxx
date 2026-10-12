@@ -189,7 +189,7 @@ TEST_F(OptionsNetCDFTest, Field2DWriteCellCentre) {
   Options data = OptionsIO::create(filename)->read();
 
   EXPECT_EQ(data["f2d"].attributes["cell_location"].as<std::string>(),
-            toString(CELL_CENTRE));
+            format_as(CELL_CENTRE));
 }
 
 TEST_F(OptionsNetCDFTest, Field2DWriteCellYLow) {
@@ -205,7 +205,7 @@ TEST_F(OptionsNetCDFTest, Field2DWriteCellYLow) {
   Options data = OptionsIO::create(filename)->read();
 
   EXPECT_EQ(data["f2d"].attributes["cell_location"].as<std::string>(),
-            toString(CELL_YLOW));
+            format_as(CELL_YLOW));
 }
 
 TEST_F(OptionsNetCDFTest, Field3DWriteCellCentre) {
@@ -221,7 +221,7 @@ TEST_F(OptionsNetCDFTest, Field3DWriteCellCentre) {
   Options data = OptionsIO::create(filename)->read();
 
   EXPECT_EQ(data["f3d"].attributes["cell_location"].as<std::string>(),
-            toString(CELL_CENTRE));
+            format_as(CELL_CENTRE));
 }
 
 TEST_F(OptionsNetCDFTest, Field3DWriteCellYLow) {
@@ -237,7 +237,7 @@ TEST_F(OptionsNetCDFTest, Field3DWriteCellYLow) {
   Options data = OptionsIO::create(filename)->read();
 
   EXPECT_EQ(data["f3d"].attributes["cell_location"].as<std::string>(),
-            toString(CELL_YLOW));
+            format_as(CELL_YLOW));
 }
 
 TEST_F(OptionsNetCDFTest, FieldPerpWriteCellCentre) {
@@ -259,7 +259,7 @@ TEST_F(OptionsNetCDFTest, FieldPerpWriteCellCentre) {
   Options data = OptionsIO::create(filename)->read();
 
   EXPECT_EQ(data["fperp"].attributes["cell_location"].as<std::string>(),
-            toString(CELL_CENTRE));
+            format_as(CELL_CENTRE));
   EXPECT_EQ(data["fperp"].attributes["yindex_global"].as<int>(), 2);
 }
 
