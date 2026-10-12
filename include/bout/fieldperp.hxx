@@ -461,8 +461,6 @@ void invalidateGuards(FieldPerp& var);
 inline void invalidateGuards(FieldPerp& UNUSED(var)) {}
 #endif
 
-/// format_as template specialisation
-/// Defined in utils.hxx
 template <>
 struct fmt::formatter<FieldPerp> : fmt::formatter<std::string_view> {
   auto format(const FieldPerp&, format_context& ctx) const {

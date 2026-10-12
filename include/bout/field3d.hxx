@@ -1000,8 +1000,6 @@ inline Field3D& ddt(Field3D& f) { return *(f.timeDeriv()); }
 /// Alias for ddt that is more readable for constraints
 inline Field3D& residual(Field3D& f) { return *(f.timeDeriv()); }
 
-/// format_as template specialisation
-/// Defined in utils.hxx
 template <>
 struct fmt::formatter<Field3D> : fmt::formatter<std::string_view> {
   auto format(const Field3D&, format_context& ctx) const {
