@@ -10,13 +10,13 @@ BOUT_ENUM_CLASS_NS(bout, TestEnum, foo, bar);
 BOUT_ENUM_CLASS_NS(bout::test, TestEnum, foo, bar);
 
 TEST(BoutEnumClassNS, toString) {
-  EXPECT_EQ(toString(bout::TestEnum::foo), "foo");
-  EXPECT_EQ(toString(bout::TestEnum::bar), "bar");
+  EXPECT_EQ(format_as(bout::TestEnum::foo), "foo");
+  EXPECT_EQ(format_as(bout::TestEnum::bar), "bar");
 }
 
 TEST(BoutEnumClass, toString) {
-  EXPECT_EQ(toString(TestEnum::foo), "foo");
-  EXPECT_EQ(toString(TestEnum::bar), "bar");
+  EXPECT_EQ(format_as(TestEnum::foo), "foo");
+  EXPECT_EQ(format_as(TestEnum::bar), "bar");
 }
 
 TEST(BoutEnumClassNS, fromString) {
