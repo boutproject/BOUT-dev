@@ -37,10 +37,10 @@
 #include <type_traits>
 #include <vector>
 
-#include <bout/output_bout_types.hxx>
 #include "bout/boutexception.hxx"
 #include "bout/unused.hxx"
 #include <bout/mesh.hxx>
+#include <bout/output_bout_types.hxx>
 #include <bout/region.hxx>
 
 /// A representation of offsets for indices, which can be added and
