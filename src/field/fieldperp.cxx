@@ -245,7 +245,7 @@ bool operator==(const FieldPerp& a, const FieldPerp& b) {
 }
 
 std::ostream& operator<<(std::ostream& out, const FieldPerp& value) {
-  out << format_as(value);
+  out << fmt::to_string(value);
   return out;
 }
 

@@ -1023,11 +1023,11 @@ void saveParallel(Options& opt, const std::string& name, const Field3D& tosave);
 
 /// Output a stringified \p value to a stream
 ///
-/// This is templated to avoid implict casting: anything is
+/// This is templated to avoid implicit casting: anything is
 /// convertible to an `Options`, and we want _exactly_ `Options`
 template <class T, typename = bout::utils::EnableIfOptions<T>>
 inline std::ostream& operator<<(std::ostream& out, const T& value) {
-  return out << format_as(value);
+  return out << fmt::to_string(value);
 }
 
 namespace bout {

@@ -545,14 +545,14 @@ TEST(StringUtilitiesTest, IntToString) {
   int number_int = 42;
   std::string number_string = "42";
 
-  EXPECT_EQ(number_string, format_as(number_int));
+  EXPECT_EQ(number_string, fmt::to_string(number_int));
 }
 
 TEST(StringUtilitiesTest, RealToString) {
   BoutReal number_real = 3.142e8;
   std::string number_string = "3.142e+08";
 
-  EXPECT_EQ(number_string, format_as(number_real));
+  EXPECT_EQ(number_string, fmt::to_string(number_real));
 }
 
 TEST(StringUtilitiesTest, StringSplit) {
