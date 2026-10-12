@@ -99,9 +99,23 @@ public:
             opts["predictor_type"]
                 .doc("Type of predictor to use. 'constant' or 'linear'")
                 .withDefault(SnesPredictor::linear)),
-        noise_rtol(opts["predictor_noise_rtol"]
-                       .doc("Predictor relative tolerance")
-                       .withDefault(1e-5)),
+        blend(opts["predictor_blend"]
+                  .doc("Enable self-tuning blend? Predictor step is scaled by 0 < 0 < "
+                       "0_max.")
+                  .withDefault<bool>(false)),
+        blend_weight(
+            opts["predictor_blend_weight"]
+                .doc("Step size update weight: θ  ← (1 - w) θ + w · clamp(θ*, 0, θ_max)")
+                .withDefault(0.3)),
+        blend_max(opts["predictor_blend_max"]
+                      .doc("The maximum update weight θ_max")
+                      .withDefault(1.0)),
+        blend_initial(opts["predictor_blend_initial"]
+                          .doc("Initial value of blend factor 0")
+                          .withDefault(1.0)),
+        blend_factor(blend_initial), noise_rtol(opts["predictor_noise_rtol"]
+                                                    .doc("Predictor relative tolerance")
+                                                    .withDefault(1e-5)),
         noise_atol(opts["predictor_noise_atol"]
                        .doc("Predictor absolute tolerance")
                        .withDefault(1e-12)) {}
@@ -136,7 +150,8 @@ private:
   SnesPredictor default_predictor_type; ///< The type of predictor
   std::array<State, 3> history;         ///< 0 is most recent, end-1 is oldest state
 
-  Vec last_prediction{nullptr}; ///< Most recent prediction
+  Vec last_prediction{nullptr};      ///< Most recent prediction
+  SnesPredictor last_predictor_type; ///< Predictor type used in last prediction
 
   /// @brief  Calculate quality metric for prediction
   ///
@@ -144,11 +159,27 @@ private:
   /// was perfect. A value over 1 means the predicted state
   /// was further from the solution than the initial (constant).
   ///
+  /// Uses this->diff1 and this->diff2 temporaries
+  ///
   /// @param x0
   /// @param x_new
   /// @param x_pred
   /// @return q = ||x_new - x_pred|| / ||x_new - x0||
   BoutReal quality(Vec x0, Vec x_new, Vec x_pred);
+
+  /// The least-squares optimal weight for the step
+  /// θ* = <x_new - x0, δ> / <δ, δ>
+  /// where δ = x_pred - x0
+  ///
+  BoutReal optimal_weight(Vec x0, Vec x_new, Vec x_pred);
+
+  bool blend; ///< Enable self-tuning blend? Predictor step is scaled by 0 < 0 < 0_max.
+  BoutReal
+      blend_weight; ///< Step size update weight: θ  ← (1 - w) θ + w · clamp(θ*, 0, θ_max)
+  BoutReal blend_max;     ///< The maximum update weight θ_max
+  BoutReal blend_initial; ///< Initial value of blend factor 0
+  BoutReal blend_factor;  ///< The blend factor 0
+
   // Temporary vectors
   Vec diff1{nullptr};
   Vec diff2{nullptr};

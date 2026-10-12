@@ -150,6 +150,22 @@ void Predictor::push_state(BoutReal time, Vec x) {
       q = quality(this->history[0].x, x, this->last_prediction);
       output.write("{} : {}\n", toString(method), q);
     }
+
+    if (this->blend and last_predictor_type != SnesPredictor::constant) {
+      // Calculate the optimal step weight on the last step
+      // This doesn't make sense if the last prediction was made using the constant method
+      // Note: The last step was multiplied by the blend_factor
+      BoutReal theta_opt = optimal_weight(this->history[0].x, x, this->last_prediction)
+                           * this->blend_factor;
+      output.write("Optimal blend factor: {}\n", theta_opt);
+
+      // Update the blend factor for next prediction
+      // θ  ← (1 - w) θ + w · clamp(θ*, 0, θ_max)
+      this->blend_factor =
+          (1. - this->blend_weight) * this->blend_factor
+          + this->blend_weight * std::clamp(theta_opt, 0.0, this->blend_max);
+      output.write("New blend factor: {}\n", this->blend_factor);
+    }
   }
   // Cycle states right one place, so that the last element
   // becomes the first.
@@ -257,8 +273,18 @@ void Predictor::predict(SnesPredictor predictor_type, BoutReal time, Vec& x) {
   }
   };
 
+  if (this->blend) {
+    // Scale the predictor update by predictor_blend_factor
+    // δ = x - x0
+    // x <- x0 + 0 δ =  0 x + (1 - 0) x0
+    BOUT_DO_PETSC(VecAXPBY(x, this->blend_factor, (1. - this->blend_factor), x0));
+  }
+
   // Copy prediction for comparison in push_state
   VecCopy(x, this->last_prediction);
+
+  // Record predictor type used
+  this->last_predictor_type = predictor_type;
 }
 
 BoutReal Predictor::quality(Vec x0, Vec x_new, Vec x_pred) {
@@ -278,6 +304,24 @@ BoutReal Predictor::quality(Vec x0, Vec x_new, Vec x_pred) {
   }
   return norm_num / norm_den;
 }
+
+BoutReal Predictor::optimal_weight(Vec x0, Vec x_new, Vec x_pred) {
+  PetscReal norm_delta, norm_align;
+  VecWAXPY(diff1, -1.0, x0, x_pred); // diff1 = δ = x_pred - x0
+  VecWAXPY(diff2, -1.0, x0, x_new);  // diff2 = x_new - x0
+
+  VecDotBegin(diff1, diff1, &norm_delta);
+  VecDotBegin(diff2, diff1, &norm_align);
+
+  VecDotEnd(diff1, diff1, &norm_delta);
+  VecDotEnd(diff2, diff1, &norm_align);
+
+  if (std::abs(norm_delta) < 1e-5) {
+    return 0.0;
+  }
+  return norm_align / norm_delta;
+}
+
 } // namespace bout
 
 PetscErrorCode SNESSolver::FDJinitialise() {
