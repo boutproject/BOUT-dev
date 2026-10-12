@@ -115,10 +115,12 @@ constexpr auto parse_nonnegative_int(const char*& begin, const char* end,
 /// - ``#``: Plot slices as 2D heatmap
 /// - ``e<N>``: Number of elements at each edge to show
 /// - ``f``: Show full field
+namespace fmt {
+
 template <class T>
-struct fmt::formatter<T, char, std::enable_if_t<bout::utils::is_Field_v<std::remove_cv_t<T>>>> {
+struct formatter<T, char, std::enable_if_t<bout::utils::is_Field_v<std::remove_cv_t<T>>>> {
 private:
-  fmt::formatter<BoutReal> underlying;
+  formatter<BoutReal> underlying;
 
   static constexpr auto default_region = "RGN_ALL";
   std::string_view region = default_region;
@@ -281,5 +283,7 @@ public:
     return format_to(ctx.out(), "");
   }
 };
+
+} // namespace fmt
 
 #endif // OUTPUT_BOUT_TYPES_H
