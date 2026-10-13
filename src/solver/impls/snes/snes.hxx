@@ -48,6 +48,7 @@ class SNESSolver;
 #include <bout/bout_types.hxx>
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
+#include <bout/petsc_interface.hxx>
 #include <bout/petsc_preconditioner.hxx>
 #include <bout/petsclib.hxx>
 
@@ -90,15 +91,19 @@ namespace bout {
 class Predictor {
   struct State {
     BoutReal time{0.0};
-    Vec x{nullptr};
+    bout::petsc::UniqueVec x{nullptr};
   };
 
 public:
+  /// Construct a predictor and load options from the ``predictor`` subsection.
   explicit Predictor(Options& opts)
       : default_predictor_type(
             opts["type"]
-                .doc("Type of predictor to use. 'constant' or 'linear'")
+                .doc("Type of predictor to use. 'constant', 'linear', or 'be_rational'")
                 .withDefault(SnesPredictor::linear)),
+        shadow(opts["shadow"]
+                   .doc("Evaluate shadow predictor quality diagnostics?")
+                   .withDefault<bool>(false)),
         blend(opts["blend"]
                   .doc("Enable self-tuning blend? Predictor step is scaled by 0 < 0 < "
                        "0_max.")
@@ -118,38 +123,89 @@ public:
         noise_atol(
             opts["noise_atol"].doc("Predictor absolute tolerance").withDefault(1e-12)) {}
 
-  /// Push a state and time, leaving input unchanged
+  /// Record a newly accepted solver state and update predictor diagnostics.
+  ///
+  /// Stores a copy of ``x`` as the newest history state and, if a previous
+  /// prediction was recorded, evaluates its quality against the converged state.
+  /// Shadow diagnostics and adaptive blend updates are also processed here.
+  ///
+  /// @param time Time associated with the converged state.
+  /// @param x Accepted solver state to copy into predictor history.
   void push_state(BoutReal time, Vec x);
 
   /// Predict state `x` at `time` using method `predictor_type`.
   /// `x` must already be allocated and will be overwritten.
+  ///
+  /// Records the prediction for later quality/blend analysis when the step is
+  /// accepted.
+  ///
+  /// @param predictor_type Predictor variant to apply.
+  /// @param time Target time for the predicted state.
+  /// @param x Output vector to overwrite with the predicted state.
   void predict(SnesPredictor predictor_type, BoutReal time, Vec& x);
 
   /// Predict state `x` at `time` using the default method.
   /// `x` must already be allocated and will be overwritten.
+  ///
+  /// @param time Target time for the predicted state.
+  /// @param x Output vector to overwrite with the predicted state.
   void predict(BoutReal time, Vec& x) { predict(default_predictor_type, time, x); }
 
   /// Apply per-component rescaling factors to all allocated history states.
+  ///
+  /// This keeps stored predictor history consistent with solver-side variable
+  /// rescaling.
+  ///
+  /// @param norms Per-component scaling factors used by the solver.
   void rescale(Vec norms) {
     for (auto& state : history) {
-      if (state.x == nullptr) {
+      if (!state.x) {
         continue;
       }
-      BOUT_DO_PETSC(VecPointwiseDivide(state.x, state.x, norms));
+      BOUT_DO_PETSC(VecPointwiseDivide(*state.x, *state.x, norms));
     }
   }
 
-  /// Set default predictor to a given type
+  /// Set the predictor used by the overload of ``predict()`` without an
+  /// explicit method argument.
+  ///
+  /// @param predictor_type Predictor variant to use by default.
   void setDefault(SnesPredictor predictor_type) {
     default_predictor_type = predictor_type;
   }
 
 private:
+  /// Allocate scratch and bookkeeping vectors lazily, matching ``like``.
+  ///
+  /// @param like Vector whose layout is used for new allocations.
+  void ensureWorkspace(Vec like);
+
+  /// Implementation helper for predictor evaluation.
+  ///
+  /// When ``record_prediction`` is true, stores the resulting prediction and
+  /// predictor type so a later ``push_state()`` call can evaluate quality and
+  /// update blend state using the actual step that was taken.
+  ///
+  /// @param predictor_type Predictor variant to apply.
+  /// @param time Target time for the predicted state.
+  /// @param x Output vector to overwrite with the predicted state.
+  /// @param record_prediction If true, save this prediction as the active one.
+  void predictInternal(SnesPredictor predictor_type, BoutReal time, Vec x,
+                       bool record_prediction);
+
+  /// Return the raw PETSc handle stored in a ``UniqueVec``.
+  ///
+  /// @param vec Owned vector wrapper.
+  /// @return Raw ``Vec`` handle, or ``nullptr`` if unallocated.
+  static Vec rawVec(const bout::petsc::UniqueVec& vec) { return vec ? *vec : nullptr; }
+
   SnesPredictor default_predictor_type; ///< The type of predictor
   std::array<State, 3> history;         ///< 0 is most recent, end-1 is oldest state
 
-  Vec last_prediction{nullptr};      ///< Most recent prediction
+  bout::petsc::UniqueVec last_prediction{nullptr};   ///< Most recent prediction
+  bout::petsc::UniqueVec shadow_prediction{nullptr}; ///< Scratch vector for shadow runs
   SnesPredictor last_predictor_type; ///< Predictor type used in last prediction
+  bool has_last_prediction{false}; ///< Has a prediction been recorded for the last step?
 
   /// @brief  Calculate quality metric for prediction
   ///
@@ -171,7 +227,8 @@ private:
   ///
   BoutReal optimal_weight(Vec x0, Vec x_new, Vec x_pred);
 
-  bool blend; ///< Enable self-tuning blend? Predictor step is scaled by 0 < 0 < 0_max.
+  bool shadow; ///< Evaluate shadow predictor quality diagnostics?
+  bool blend;  ///< Enable self-tuning blend? Predictor step is scaled by 0 < 0 < 0_max.
   BoutReal
       blend_weight; ///< Step size update weight: θ  ← (1 - w) θ + w · clamp(θ*, 0, θ_max)
   BoutReal blend_max;     ///< The maximum update weight θ_max
@@ -179,8 +236,8 @@ private:
   BoutReal blend_factor;  ///< The blend factor 0
 
   // Temporary vectors
-  Vec diff1{nullptr};
-  Vec diff2{nullptr};
+  bout::petsc::UniqueVec diff1{nullptr};
+  bout::petsc::UniqueVec diff2{nullptr};
 
   BoutReal noise_rtol; ///< Relative tolerance
   BoutReal noise_atol; ///< Absolute tolerance

@@ -129,34 +129,48 @@ PetscErrorCode ComputeJacobianDefaultMaybeExport(SNES snes, Vec x1, Mat Jac, Mat
 } // namespace
 
 namespace bout {
+
+void Predictor::ensureWorkspace(Vec like) {
+  auto ensure_like = [like](bout::petsc::UniqueVec& vec) {
+    if (!vec) {
+      vec.reset(new Vec{nullptr});
+      BOUT_DO_PETSC(VecDuplicate(like, vec.get()));
+    }
+  };
+
+  ensure_like(last_prediction);
+  ensure_like(shadow_prediction);
+  ensure_like(diff1);
+  ensure_like(diff2);
+}
+
 void Predictor::push_state(BoutReal time, Vec x) {
+  ensureWorkspace(x);
 
-  if (this->last_prediction == nullptr) {
-    // Allocate storage for the last prediction
-    BOUT_DO_PETSC(VecDuplicate(x, &this->last_prediction));
+  if (this->has_last_prediction) {
+    Vec x0 = rawVec(this->history[0].x);
+    ASSERT0(x0 != nullptr);
 
-    // Two temporary Vecs for calculating norms
-    BOUT_DO_PETSC(VecDuplicate(x, &this->diff1));
-    BOUT_DO_PETSC(VecDuplicate(x, &this->diff2));
-  } else {
     // Compare x with the last prediction
-    BoutReal q = quality(this->history[0].x, x, this->last_prediction);
+    BoutReal q = quality(x0, x, *this->last_prediction);
     output.write("Quality: {}\n", q);
 
-    for (auto method :
-         {SnesPredictor::constant, SnesPredictor::linear, SnesPredictor::be_rational}) {
+    if (this->shadow) {
+      for (auto method :
+           {SnesPredictor::constant, SnesPredictor::linear, SnesPredictor::be_rational}) {
 
-      predict(method, time, this->last_prediction);
-      q = quality(this->history[0].x, x, this->last_prediction);
-      output.write("{} : {}\n", toString(method), q);
+        predictInternal(method, time, *this->shadow_prediction, false);
+        q = quality(x0, x, *this->shadow_prediction);
+        output.write("{} : {}\n", toString(method), q);
+      }
     }
 
     if (this->blend and last_predictor_type != SnesPredictor::constant) {
       // Calculate the optimal step weight on the last step
       // This doesn't make sense if the last prediction was made using the constant method
       // Note: The last step was multiplied by the blend_factor
-      BoutReal theta_opt = optimal_weight(this->history[0].x, x, this->last_prediction)
-                           * this->blend_factor;
+      BoutReal theta_opt =
+          optimal_weight(x0, x, *this->last_prediction) * this->blend_factor;
       output.write("Optimal blend factor: {}\n", theta_opt);
 
       // Update the blend factor for next prediction
@@ -173,18 +187,27 @@ void Predictor::push_state(BoutReal time, Vec x) {
 
   auto& [t0, x0] = this->history[0];
   t0 = time;
-  if (x0 == nullptr) {
+  if (!x0) {
     // Create a new vector like x
-    BOUT_DO_PETSC(VecDuplicate(x, &x0));
+    x0.reset(new Vec{nullptr});
+    BOUT_DO_PETSC(VecDuplicate(x, x0.get()));
   }
   // Copy x into reuse
-  BOUT_DO_PETSC(VecCopy(x, x0));
+  BOUT_DO_PETSC(VecCopy(x, *x0));
 }
 
 void Predictor::predict(SnesPredictor predictor_type, BoutReal time, Vec& x) {
+  predictInternal(predictor_type, time, x, true);
+}
+
+void Predictor::predictInternal(SnesPredictor predictor_type, BoutReal time, Vec x,
+                                bool record_prediction) {
   // [t0, x0] is the most recent state
-  const auto& [t0, x0] = this->history[0];
+  const auto& [t0, x0_storage] = this->history[0];
+  Vec x0 = rawVec(x0_storage);
   ASSERT0(x0 != nullptr);
+
+  ensureWorkspace(x0);
 
   // Time step to predicted state
   BoutReal dt = time - t0;
@@ -195,11 +218,12 @@ void Predictor::predict(SnesPredictor predictor_type, BoutReal time, Vec& x) {
     BOUT_DO_PETSC(VecCopy(x0, x));
     break;
   case SnesPredictor::linear: {
-    const auto& [t1, x1] = this->history[1];
+    const auto& [t1, x1_storage] = this->history[1];
+    Vec x1 = rawVec(x1_storage);
 
     // Need at least two previous states
     if (x1 == nullptr) {
-      predict(SnesPredictor::constant, time, x);
+      predictInternal(SnesPredictor::constant, time, x, record_prediction);
       return;
     }
 
@@ -213,12 +237,14 @@ void Predictor::predict(SnesPredictor predictor_type, BoutReal time, Vec& x) {
     // For a linear mode with rate `λ`,
     // backward Euler gives an error that decays per step
     // as `e_{n+1} = e_n / (1 + λ dt_n)`.
-    const auto& [t1, x1] = this->history[1];
-    const auto& [t2, x2] = this->history[2];
+    const auto& [t1, x1_storage] = this->history[1];
+    const auto& [t2, x2_storage] = this->history[2];
+    Vec x1 = rawVec(x1_storage);
+    Vec x2 = rawVec(x2_storage);
 
     // Need at least three previous states
     if (x2 == nullptr) {
-      predict(SnesPredictor::linear, time, x);
+      predictInternal(SnesPredictor::linear, time, x, record_prediction);
       return;
     }
     // Step sizes
@@ -276,28 +302,28 @@ void Predictor::predict(SnesPredictor predictor_type, BoutReal time, Vec& x) {
   if (this->blend) {
     // Scale the predictor update by predictor_blend_factor
     // δ = x - x0
-    // x <- x0 + 0 δ =  0 x + (1 - 0) x0
-    BOUT_DO_PETSC(VecAXPBY(x, this->blend_factor, (1. - this->blend_factor), x0));
+    // x <- x0 + θ δ = θ x + (1 - θ) x0
+    BOUT_DO_PETSC(VecAXPBY(x, (1. - this->blend_factor), this->blend_factor, x0));
   }
 
-  // Copy prediction for comparison in push_state
-  VecCopy(x, this->last_prediction);
+  if (record_prediction) {
+    // Copy prediction for comparison in push_state
+    BOUT_DO_PETSC(VecCopy(x, *this->last_prediction));
 
-  // Record predictor type used
-  this->last_predictor_type = predictor_type;
+    // Record predictor type used
+    this->last_predictor_type = predictor_type;
+    this->has_last_prediction = true;
+  }
 }
 
 BoutReal Predictor::quality(Vec x0, Vec x_new, Vec x_pred) {
   PetscReal norm_num, norm_den;
 
-  VecWAXPY(diff1, -1.0, x_pred, x_new); // diff1 = x_new - x_pred
-  VecWAXPY(diff2, -1.0, x0, x_new);     // diff2 = x_new - x0
+  BOUT_DO_PETSC(VecWAXPY(*diff1, -1.0, x_pred, x_new)); // diff1 = x_new - x_pred
+  BOUT_DO_PETSC(VecWAXPY(*diff2, -1.0, x0, x_new));     // diff2 = x_new - x0
 
-  VecNormBegin(diff1, NORM_2, &norm_num);
-  VecNormBegin(diff2, NORM_2, &norm_den);
-
-  VecNormEnd(diff1, NORM_2, &norm_num);
-  VecNormEnd(diff2, NORM_2, &norm_den);
+  BOUT_DO_PETSC(VecNorm(*diff1, NORM_2, &norm_num));
+  BOUT_DO_PETSC(VecNorm(*diff2, NORM_2, &norm_den));
 
   if (std::abs(norm_den) < 1e-5) {
     return 0.0;
@@ -307,14 +333,11 @@ BoutReal Predictor::quality(Vec x0, Vec x_new, Vec x_pred) {
 
 BoutReal Predictor::optimal_weight(Vec x0, Vec x_new, Vec x_pred) {
   PetscReal norm_delta, norm_align;
-  VecWAXPY(diff1, -1.0, x0, x_pred); // diff1 = δ = x_pred - x0
-  VecWAXPY(diff2, -1.0, x0, x_new);  // diff2 = x_new - x0
+  BOUT_DO_PETSC(VecWAXPY(*diff1, -1.0, x0, x_pred)); // diff1 = δ = x_pred - x0
+  BOUT_DO_PETSC(VecWAXPY(*diff2, -1.0, x0, x_new));  // diff2 = x_new - x0
 
-  VecDotBegin(diff1, diff1, &norm_delta);
-  VecDotBegin(diff2, diff1, &norm_align);
-
-  VecDotEnd(diff1, diff1, &norm_delta);
-  VecDotEnd(diff2, diff1, &norm_align);
+  BOUT_DO_PETSC(VecDot(*diff1, *diff1, &norm_delta));
+  BOUT_DO_PETSC(VecDot(*diff2, *diff1, &norm_align));
 
   if (std::abs(norm_delta) < 1e-5) {
     return 0.0;
@@ -641,7 +664,7 @@ SNESSolver::SNESSolver(Options* opts)
   if ((*options)["predictor"].isSet()) {
     throw BoutException("solver:predictor is deprecated for SNES/beuler and is now "
                         "ignored. To reproduce behaviour of predictor=false, "
-                        "set predictor_type=constant.\n");
+                        "set predictor:type=constant.\n");
   }
 }
 

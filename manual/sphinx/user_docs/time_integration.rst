@@ -354,8 +354,12 @@ affect this implicit part of the solve are:
 | maxl             | 20        | Maximum number of linear iterations                |
 |                  |           | If adaptive, failure will cause timestep reduction |
 +------------------+-----------+----------------------------------------------------+
-| predictor        | 1         | Starting guess for the nonlinear solve             |
-|                  |           | Specifies order of extrapolating polynomial        |
+| predictor:type   | linear    | Starting guess for the nonlinear solve:            |
+|                  |           | ``constant``, ``linear``, or ``be_rational``       |
++------------------+-----------+----------------------------------------------------+
+| predictor:blend  | false     | Enable self-tuning scaling of predictor updates    |
++------------------+-----------+----------------------------------------------------+
+| predictor:shadow | false     | Print quality of shadow predictor candidates       |
 +------------------+-----------+----------------------------------------------------+
 | use_precon       | false     | Use user-supplied preconditioner?                  |
 +------------------+-----------+----------------------------------------------------+
@@ -372,10 +376,12 @@ values might be 1e-10 and 1e-5, but this must be explicitly asked for in the inp
 
 The predictor extrapolates from previous timesteps to get a starting estimate for the value
 at the next timestep. This estimate is then used to initialise the SNES nonlinear solve.
-The value is the order of the extrapolating polynomial, so 1 (the default) is a linear extrapolation
-from the last two steps, 0 is the same as the last step. A value of -1 uses the explicit
-update to the state as the starting guess, i.e. assuming that the implicit part of the problem is small.
-This is usually not a good guess.
+``predictor:type=linear`` is the default linear extrapolation from the last two steps,
+``predictor:type=constant`` reuses the last accepted state, and
+``predictor:type=be_rational`` damps extrapolation based on the last three accepted states.
+``predictor:blend=true`` enables an adaptive global scaling of the predictor increment, and
+``predictor:shadow=true`` prints quality diagnostics for additional predictor candidates
+without changing the actual solve or blend update.
 
 To diagnose what is happening in the time integration, for example to see why it is
 failing to converge or why timesteps are small, there are two settings which can be
@@ -1118,7 +1124,21 @@ Summary of solver options
 +---------------------------+---------------+----------------------------------------------------+
 | timestep                  | 1             | Initial timestep                                   |
 +---------------------------+---------------+----------------------------------------------------+
-| predictor_type            | linear        | ``constant`` or ``linear``                         |
+| predictor:type            | linear        | ``constant``, ``linear``, or ``be_rational``      |
++---------------------------+---------------+----------------------------------------------------+
+| predictor:blend           | false         | Enable self-tuning predictor step scaling          |
++---------------------------+---------------+----------------------------------------------------+
+| predictor:blend_weight    | 0.3           | Weight for updating the blend factor               |
++---------------------------+---------------+----------------------------------------------------+
+| predictor:blend_max       | 1.0           | Maximum blend factor                               |
++---------------------------+---------------+----------------------------------------------------+
+| predictor:blend_initial   | 1.0           | Initial blend factor                               |
++---------------------------+---------------+----------------------------------------------------+
+| predictor:noise_rtol      | 1e-5          | Relative threshold for tiny predictor increments   |
++---------------------------+---------------+----------------------------------------------------+
+| predictor:noise_atol      | 1e-12         | Absolute threshold for tiny predictor increments   |
++---------------------------+---------------+----------------------------------------------------+
+| predictor:shadow          | false         | Print shadow predictor quality diagnostics         |
 +---------------------------+---------------+----------------------------------------------------+
 | matrix_free               | false         | Matrix-free preconditioning?                       |
 +---------------------------+---------------+----------------------------------------------------+
@@ -1156,8 +1176,9 @@ Summary of solver options
 |                           |               | so saved Jacobians can be reconstructed            |
 +---------------------------+---------------+----------------------------------------------------+
 
-The predictor is linear extrapolation from the last two timesteps. It seems to be
-effective, but can be disabled by setting ``predictor = false``.
+The default predictor is ``predictor:type=linear``. It can be disabled by setting
+``predictor:type=constant``, or replaced with ``predictor:type=be_rational``.
+Additional tuning options are available under the ``predictor`` subsection.
 
 The default `newtonls` SNES type can be very effective if combined
 with Jacobian coloring: The coloring enables the Jacobian to be
