@@ -801,34 +801,37 @@ void OptionsNetCDF::verifyTimesteps() const {
 void OptionsNetCDF::write(const Options& options, const std::string& time_dim) {
   const Timer timer("io");
 
-  // Check the file mode to use
-  auto ncmode = NcFile::replace;
-  switch (file_mode) {
-  case FileMode::append: {
-    // NetCDF doesn't have a "read-write, create if exists" mode, so
-    // we need to check ourselves if the file already exists; if it
-    // doesn't, tell NetCDF to create it
-    const std::ifstream file(filename);
-    ncmode = file.good() ? NcFile::FileMode::write : NcFile::FileMode::newFile;
-    break;
-  }
-  case FileMode::replace: {
-    // Replacing the file if it exists
-    break;
-  }
-  case FileMode::newFile:
-    // Creating a new file. Don't overwrite existing data.
-    const std::ifstream file(filename);
-    if (file.good()) {
-      throw BoutException(
-          "Output file '{:s}' already exists. Aborting rather than overwriting data.\n"
-          "Set 'append=true' to append, or 'replace=true' to overwrite.",
-          filename);
-    }
-    break;
-  };
-
   if (not data_file) {
+    // Check the file mode to use when opening the file for the first time.
+    // A single output timestep can call write() multiple times, so only
+    // guard against overwriting on the initial open.
+    auto ncmode = NcFile::replace;
+    switch (file_mode) {
+    case FileMode::append: {
+      // NetCDF doesn't have a "read-write, create if exists" mode, so
+      // we need to check ourselves if the file already exists; if it
+      // doesn't, tell NetCDF to create it
+      const std::ifstream file(filename);
+      ncmode = file.good() ? NcFile::FileMode::write : NcFile::FileMode::newFile;
+      break;
+    }
+    case FileMode::replace: {
+      // Replacing the file if it exists
+      break;
+    }
+    case FileMode::newFile: {
+      // Creating a new file. Don't overwrite existing data.
+      const std::ifstream file(filename);
+      if (file.good()) {
+        throw BoutException(
+            "Output file '{:s}' already exists. Aborting rather than overwriting data.\n"
+            "Set 'append=true' to append, or 'replace=true' to overwrite.",
+            filename);
+      }
+      break;
+    }
+    };
+
     data_file = std::make_unique<netCDF::NcFile>(filename, ncmode);
   }
 

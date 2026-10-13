@@ -323,4 +323,23 @@ TEST_F(OptionsNetCDFTest, WriteMultipleTimeDimensions) {
   EXPECT_NO_THROW(OptionsIO::create(filename)->verifyTimesteps());
 }
 
+TEST_F(OptionsNetCDFTest, MultipleWritesSingleOpenWithReplaceFalse) {
+  auto file = OptionsIO::create(
+      {{"type", "netcdf"}, {"file", filename.string()}, {"replace", false}});
+
+  Options first_write;
+  first_write["thing1"].assignRepeat(1.0);
+
+  Options second_write;
+  second_write["thing2"].assignRepeat(2.0);
+
+  EXPECT_NO_THROW(file->write(first_write));
+  EXPECT_NO_THROW(file->write(second_write));
+  EXPECT_NO_THROW(file->verifyTimesteps());
+
+  Options data = OptionsIO::create(filename)->read();
+  EXPECT_TRUE(data.isSet("thing1"));
+  EXPECT_TRUE(data.isSet("thing2"));
+}
+
 #endif // BOUT_HAS_NETCDF
