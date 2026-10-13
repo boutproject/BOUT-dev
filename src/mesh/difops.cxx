@@ -372,7 +372,8 @@ std::shared_ptr<PetscOperators::Parallel> getParallelOp(Mesh* mesh) {
       return spt;
     }
   }
-  auto par = std::make_shared<PetscOperators::Parallel>(*mesh);
+  auto op = PetscOperators(mesh);
+  auto par = std::make_shared<PetscOperators::Parallel>(op.getParallel());
   petsc_par_op_cache[mesh] = par;
   return par;
 }
@@ -400,7 +401,7 @@ Field3D Div_par_K_Grad_par_mod_impl(const Field3DParallel& Kin,
     if constexpr (conduction_method == bout::ConductionMethod::PetscOperator) {
 #if BOUT_HAS_PETSC
       auto par = getParallelOp(Kin.getMesh());
-      return par.Div_par_K_Grad_par(Kin, fin);
+      return par->Div_par_K_Grad_par(Kin, fin);
 #else
       throw BoutException("BOUT++ was compiled without PETSc.");
 #endif
