@@ -665,7 +665,7 @@ public:
     if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
       // Check that the default values are the same
       if (!similar(val, def)) {
-        throw BoutException("Inconsistent default values for '{:s}': '{:s}' then '{:s}'",
+        throw BoutException("Inconsistent default values for '{}': '{}' then '{}'",
                             full_name, bout::utils::variantToString(value),
                             def);
       }
