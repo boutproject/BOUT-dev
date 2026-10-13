@@ -362,7 +362,7 @@ Field3D Div_par_K_Grad_par(const Field3DParallel& kY, const Field3DParallel& f,
 }
 
 namespace {
-#if BOUT_USE_PETSC
+#if BOUT_HAS_PETSC
 std::map<Mesh*, std::weak_ptr<PetscOperators::Parallel>> petsc_par_op_cache;
 
 std::shared_ptr<PetscOperators::Parallel> getParallelOp(Mesh* mesh) {
@@ -398,7 +398,7 @@ Field3D Div_par_K_Grad_par_mod_impl(const Field3DParallel& Kin,
     flow_ylow = zeroFrom(fin);
 
     if constexpr (conduction_method == bout::ConductionMethod::PetscOperator) {
-#if BOUT_USE_PETSC
+#if BOUT_HAS_PETSC
       auto par = getParallelOp(Kin.getMesh());
       return par.Div_par_K_Grad_par(Kin, fin);
 #else
