@@ -15,6 +15,7 @@
 #include <bout/output_bout_types.hxx>
 #include <bout/petsc_interface.hxx>
 #include <bout/petsc_preconditioner.hxx>
+#include <bout/petsclib.hxx>
 #include <bout/solver.hxx>
 #include <bout/unused.hxx>
 #include <bout/utils.hxx>
@@ -176,8 +177,8 @@ void Predictor::push_state(BoutReal time, Vec x) {
       // Update the blend factor for next prediction
       // θ  ← (1 - w) θ + w · clamp(θ*, 0, θ_max)
       this->blend_factor =
-          (1. - this->blend_weight) * this->blend_factor
-          + this->blend_weight * std::clamp(theta_opt, 0.0, this->blend_max);
+          ((1. - this->blend_weight) * this->blend_factor)
+          + (this->blend_weight * std::clamp(theta_opt, 0.0, this->blend_max));
       output.write("New blend factor: {}\n", this->blend_factor);
     }
   }
@@ -210,7 +211,7 @@ void Predictor::predictInternal(SnesPredictor predictor_type, BoutReal time, Vec
   ensureWorkspace(x0);
 
   // Time step to predicted state
-  BoutReal dt = time - t0;
+  const BoutReal dt = time - t0;
 
   switch (predictor_type) {
   case SnesPredictor::constant:
@@ -248,8 +249,8 @@ void Predictor::predictInternal(SnesPredictor predictor_type, BoutReal time, Vec
       return;
     }
     // Step sizes
-    BoutReal h0 = t0 - t1;
-    BoutReal h1 = t1 - t2;
+    const BoutReal h0 = t0 - t1;
+    const BoutReal h1 = t1 - t2;
     // Solution differences d0 = x0 - x1, d1 = x1 - x2
     // Secant slopes s0 = d0 / h0, s1 = d1 / h1
 
@@ -263,32 +264,32 @@ void Predictor::predictInternal(SnesPredictor predictor_type, BoutReal time, Vec
     const PetscScalar* x2_data = nullptr;
     BOUT_DO_PETSC(VecGetArrayRead(x2, &x2_data));
 
-    PetscScalar* x_data;
+    PetscScalar* x_data{nullptr};
     BOUT_DO_PETSC(VecGetArray(x, &x_data));
 
     for (PetscInt i = 0; i != local_size; ++i) {
-      BoutReal d0 = x0_data[i] - x1_data[i];
-      BoutReal s0 = d0 / h0;
-      BoutReal s1 = (x1_data[i] - x2_data[i]) / h1;
+      const BoutReal d0 = x0_data[i] - x1_data[i];
+      const BoutReal s0 = d0 / h0;
+      const BoutReal s1 = (x1_data[i] - x2_data[i]) / h1;
       if (s0 * s1 <= 0.0) {
         // turning point, oscillation, or exact zero => constant
         x_data[i] = x0_data[i];
         continue;
       }
-      if (std::abs(d0) < this->noise_rtol * std::abs(x0_data[i]) + this->noise_atol) {
+      if (std::abs(d0) < (this->noise_rtol * std::abs(x0_data[i])) + this->noise_atol) {
         // below noise threshold => constant
         x_data[i] = x0_data[i];
         continue;
       }
       const BoutReal lambda_min = 0.0;
-      BoutReal lambda = std::max((s1 / s0 - 1) / h0, lambda_min);
+      const BoutReal lambda = std::max((s1 / s0 - 1) / h0, lambda_min);
 
       // Damping factor
-      BoutReal damp = 1 / (1 + lambda * dt);
+      const BoutReal damp = 1 / (1 + lambda * dt);
 
       // Predicted state
       // `x` always lies between `x0` (constant prediction) and the linear prediction.
-      x_data[i] = x0_data[i] + dt * s0 * damp;
+      x_data[i] = x0_data[i] + (dt * s0 * damp);
     }
 
     BOUT_DO_PETSC(VecRestoreArray(x, &x_data));
@@ -317,7 +318,8 @@ void Predictor::predictInternal(SnesPredictor predictor_type, BoutReal time, Vec
 }
 
 BoutReal Predictor::quality(Vec x0, Vec x_new, Vec x_pred) {
-  PetscReal norm_num, norm_den;
+  PetscReal norm_num{0.0};
+  PetscReal norm_den{0.0};
 
   BOUT_DO_PETSC(VecWAXPY(*diff1, -1.0, x_pred, x_new)); // diff1 = x_new - x_pred
   BOUT_DO_PETSC(VecWAXPY(*diff2, -1.0, x0, x_new));     // diff2 = x_new - x0
@@ -332,7 +334,9 @@ BoutReal Predictor::quality(Vec x0, Vec x_new, Vec x_pred) {
 }
 
 BoutReal Predictor::optimal_weight(Vec x0, Vec x_new, Vec x_pred) {
-  PetscReal norm_delta, norm_align;
+  PetscReal norm_delta{0.0};
+  PetscReal norm_align{0.0};
+
   BOUT_DO_PETSC(VecWAXPY(*diff1, -1.0, x0, x_pred)); // diff1 = δ = x_pred - x0
   BOUT_DO_PETSC(VecWAXPY(*diff2, -1.0, x0, x_new));  // diff2 = x_new - x0
 
@@ -409,11 +413,12 @@ PetscErrorCode SNESSolver::FDJpruneJacobian() {
   int total_elements = 0;
 
   // Get index of rows owned by this processor
-  int rstart, rend;
+  int rstart{0};
+  int rend{0};
   MatGetOwnershipRange(Jfd, &rstart, &rend);
 
-  PetscInt ncols;
-  const PetscScalar* vals;
+  PetscInt ncols{0};
+  const PetscScalar* vals{nullptr};
   for (int row = rstart; row < rend; row++) {
     MatGetRow(Jfd, row, &ncols, nullptr, &vals);
     for (int col = 0; col < ncols; col++) {
@@ -833,7 +838,8 @@ int SNESSolver::init() {
 
   if (has_constraint_variables) {
     // CreatePETSc-native index sets representing the two parts of your DAE.
-    PetscInt istart, iend;
+    PetscInt istart{0};
+    PetscInt iend{0};
     PetscCall(VecGetOwnershipRange(snes_x, &istart, &iend));
     ASSERT2(iend - istart == nlocal);
 

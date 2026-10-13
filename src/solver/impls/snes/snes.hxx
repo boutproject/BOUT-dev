@@ -35,7 +35,6 @@
 
 class SNESSolver;
 
-#include <algorithm>
 #include <array>
 #include <string>
 #include <vector>
@@ -204,7 +203,8 @@ private:
 
   bout::petsc::UniqueVec last_prediction{nullptr};   ///< Most recent prediction
   bout::petsc::UniqueVec shadow_prediction{nullptr}; ///< Scratch vector for shadow runs
-  SnesPredictor last_predictor_type; ///< Predictor type used in last prediction
+  SnesPredictor last_predictor_type{
+      SnesPredictor::constant};    ///< Predictor type used in last prediction
   bool has_last_prediction{false}; ///< Has a prediction been recorded for the last step?
 
   /// @brief  Calculate quality metric for prediction
