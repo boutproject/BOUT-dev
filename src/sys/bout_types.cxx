@@ -1,3 +1,4 @@
+#include "fmt/format.h"
 #include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
 

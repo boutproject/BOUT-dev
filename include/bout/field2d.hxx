@@ -24,11 +24,14 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-#include "bout/utils.hxx"
-#include <optional>
-class Field2D;
 
 #pragma once
+
+#include "bout/utils.hxx"
+#include <optional>
+
+class Field2D;
+
 #ifndef BOUT_FIELD2D_H
 #define BOUT_FIELD2D_H
 
@@ -46,6 +49,7 @@ class Field2D;
 #include <fmt/base.h>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
+#include "fmt/format.h"
 
 #include <cstddef>
 #include <iostream>

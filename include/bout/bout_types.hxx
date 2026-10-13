@@ -95,8 +95,8 @@ std::string format_as(const DIRECTION& dir);
 ///   coordinates
 enum class YDirectionType { Standard, Aligned };
 
-YDirectionType YDirectionTypeFromString(const std::string& y_direction_string);
 std::string format_as(const YDirectionType& d);
+YDirectionType YDirectionTypeFromString(const std::string& y_direction_string);
 
 /// Identify kind of a field's z-direction
 /// - Standard is the default
@@ -105,8 +105,8 @@ std::string format_as(const YDirectionType& d);
 ///   Field2D)
 enum class ZDirectionType { Standard, Average };
 
-ZDirectionType ZDirectionTypeFromString(const std::string& z_direction_string);
 std::string format_as(const ZDirectionType& d);
+ZDirectionType ZDirectionTypeFromString(const std::string& z_direction_string);
 
 /// Container for direction types
 struct DirectionTypes {
