@@ -395,6 +395,8 @@ Field3D Div_par_K_Grad_par_mod_impl(const Field3DParallel& Kin,
     //       -> Only B, dy and g_22 can be used in yup/ydown
     //          Others (e.g J) may not be averaged between y planes.
 
+    flow_ylow = zeroFrom(fin);
+
     if constexpr (conduction_method == bout::ConductionMethod::PetscOperator) {
 #if BOUT_USE_PETSC
       auto par = getParallelOp(Kin.getMesh());
@@ -415,7 +417,6 @@ Field3D Div_par_K_Grad_par_mod_impl(const Field3DParallel& Kin,
     const auto& f_down = fin.ydown();
 
     Field3D result{zeroFrom(fin)};
-    flow_ylow = zeroFrom(fin);
 
     const auto yboundary = coord->getYBoundary();
 
