@@ -667,7 +667,7 @@ public:
       if (!similar(val, def)) {
         throw BoutException("Inconsistent default values for '{:s}': '{:s}' then '{:s}'",
                             full_name, bout::utils::variantToString(value),
-                            format_as(def));
+                            def);
       }
     }
     return val;
