@@ -40,6 +40,7 @@
 #include <bout/interpolation.hxx>
 #include <bout/invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 #include <bout/mesh.hxx>
+#include <bout/petsc_operators.hxx>
 #include <bout/region.hxx>
 #include <bout/solver.hxx>
 #include <bout/unused.hxx>
@@ -361,6 +362,22 @@ Field3D Div_par_K_Grad_par(const Field3DParallel& kY, const Field3DParallel& f,
 }
 
 namespace {
+#if BOUT_USE_PETSC
+std::map<Mesh*, std::weak_ptr<PetscOperators::Parallel>> petsc_par_op_cache;
+
+std::shared_ptr<PetscOperators::Parallel> getParallelOp(Mesh* mesh) {
+  //petsc_par_op_cache
+  if (auto search = petsc_par_op_cache.find(mesh); search != petsc_par_op_cache.end()) {
+    if (std::shared_ptr<PetscOperators::Parallel> spt = search->second.lock()) {
+      return spt;
+    }
+  }
+  auto par = std::make_shared<PetscOperators::Parallel>(*mesh);
+  petsc_par_op_cache[mesh] = par;
+  return par;
+}
+#endif
+
 template <bout::ConductionMethod conduction_method>
 Field3D Div_par_K_Grad_par_mod_impl(const Field3DParallel& Kin,
                                     const Field3DParallel& fin, Field3D& flow_ylow,
@@ -377,6 +394,15 @@ Field3D Div_par_K_Grad_par_mod_impl(const Field3DParallel& Kin,
     // Note: Y slices may use different coordinate systems
     //       -> Only B, dy and g_22 can be used in yup/ydown
     //          Others (e.g J) may not be averaged between y planes.
+
+    if constexpr (conduction_method == bout::ConductionMethod::PetscOperator) {
+#if BOUT_USE_PETSC
+      auto par = getParallelOp(Kin.getMesh());
+      return par.Div_par_K_Grad_par(Kin, fin);
+#else
+      throw BoutException("BOUT++ was compiled without PETSc.");
+#endif
+    }
 
     if constexpr (conduction_method != bout::ConductionMethod::Original) {
       throw BoutException("Only bout::ConductionMethod::Original is supported for FCI");
@@ -477,6 +503,8 @@ Field3D Div_par_K_Grad_par_mod_impl(const Field3DParallel& Kin,
                 : 0.0;
 
         flux = C_edge * (f[iyp] - f[i]);
+      } else {
+        throw BoutException("Unsupported option {}", toString(conduction_method));
       }
       result[i] += flux / (coord->dy()[i] * coord->J()[i]);
     }
@@ -549,10 +577,12 @@ Field3D Div_par_K_Grad_par_mod(const Field3DParallel& Kin, const Field3DParallel
     return Div_par_K_Grad_par_mod_impl<ProductJK>(Kin, fin, flow_ylow, bndry_flux);
   case Harmonic:
     return Div_par_K_Grad_par_mod_impl<Harmonic>(Kin, fin, flow_ylow, bndry_flux);
+  case PetscOperator:
+    return Div_par_K_Grad_par_mod_impl<PetscOperator>(Kin, fin, flow_ylow, bndry_flux);
   }
-  throw BoutException(
-      "Unknown method `{}` - choose from `Original`, `ProductJK` or `Harmonic`.",
-      toString(method));
+  throw BoutException("Unknown method `{}` - choose from `Original`, `ProductJK`, "
+                      "`Harmonic` or `PetscOperator`.",
+                      toString(method));
 }
 /*******************************************************************************
 * Delp2
