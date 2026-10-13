@@ -523,11 +523,6 @@ inline void checkData(BoutReal UNUSED(f)) {};
  */
 char* copy_string(const char* s);
 
-/// Simple case where input is already a string
-/// This is so that format_as can be used in templates
-/// where the type may be std::string.
-inline std::string format_as(const std::string& val) { return val; }
-
 template <typename T>
 inline std::string format_as(const Array<T>& UNUSED(val)) {
   return "<Array>";
@@ -558,14 +553,6 @@ template <typename T, typename Char>
 struct fmt::range_format_kind<Tensor<T>, Char> {
   static constexpr auto value = fmt::range_format::disabled;
 };
-
-/// Convert a bool to "true" or "false"
-inline std::string format_as(const bool& val) {
-  if (val) {
-    return "true";
-  }
-  return "false";
-}
 
 /*!
  * Convert a string to lower case
