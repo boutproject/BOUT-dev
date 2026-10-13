@@ -378,6 +378,10 @@ Field3D Div_par_K_Grad_par_mod_impl(const Field3DParallel& Kin,
     //       -> Only B, dy and g_22 can be used in yup/ydown
     //          Others (e.g J) may not be averaged between y planes.
 
+    if constexpr (conduction_method != bout::ConductionMethod::Original) {
+      throw BoutException("Only bout::ConductionMethod::Original is supported for FCI");
+    }
+
     const auto& K_up = Kin.yup();
     const auto& K_down = Kin.ydown();
 
