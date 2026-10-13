@@ -567,10 +567,6 @@ inline std::string format_as(const bool& val) {
   return "false";
 }
 
-/// Convert a time stamp to a string
-/// This uses std::localtime and std::put_time
-std::string format_as(const time_t& time);
-
 /*!
  * Convert a string to lower case
  */

@@ -35,8 +35,8 @@
 #include <bout/unused.hxx>
 #include <bout/utils.hxx>
 
-void printLocation(const Field3D& var) { output << format_as(var.getLocation()); }
-void printLocation(const Field2D& var) { output << format_as(var.getLocation()); }
+void printLocation(const Field3D& var) { output << fmt::to_string(var.getLocation()); }
+void printLocation(const Field2D& var) { output << fmt::to_string(var.getLocation()); }
 
 const Field3D interpolate(const Field3D& f, const Field3D& delta_x,
                           const Field3D& delta_z) {

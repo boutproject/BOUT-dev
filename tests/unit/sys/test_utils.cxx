@@ -1,3 +1,4 @@
+#include "fmt/format.h"
 #include "bout/utils.hxx"
 #include "gtest/gtest.h"
 
@@ -527,18 +528,18 @@ TEST(StringUtilitiesTest, BoolToString) {
   std::string true_string = "true";
   std::string false_string = "false";
 
-  EXPECT_EQ(true_string, format_as(true));
-  EXPECT_EQ(false_string, format_as(false));
+  EXPECT_EQ(true_string, fmt::to_string(true));
+  EXPECT_EQ(false_string, fmt::to_string(false));
 }
 
 TEST(StringUtilitiesTest, ConstCharToString) {
-  EXPECT_EQ(std::string("hello"), format_as("hello"));
+  EXPECT_EQ(std::string("hello"), fmt::to_string("hello"));
 }
 
 TEST(StringUtilitiesTest, StringToString) {
   std::string test_string = "dlkjl872kj";
 
-  EXPECT_EQ(test_string, format_as(test_string));
+  EXPECT_EQ(test_string, fmt::to_string(test_string));
 }
 
 TEST(StringUtilitiesTest, IntToString) {

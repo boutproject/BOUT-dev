@@ -281,7 +281,7 @@ void Solver::add(Field3D& v, const std::string& name, const std::string& descrip
 
   if (mesh->StaggerGrids && (v.getLocation() != CELL_CENTRE)) {
     output_info.write("\tVariable {:s} shifted to {:s}\n", name,
-                      format_as(v.getLocation()));
+                      fmt::to_string(v.getLocation()));
     ddt(v).setLocation(v.getLocation()); // Make sure both at the same location
   }
 
@@ -605,7 +605,7 @@ int Solver::solve(int nout, BoutReal timestep) {
   }
 
   time_t start_time = time(nullptr);
-  output_progress.write(_f("\nRun started at  : {:s}\n"), format_as(start_time));
+  output_progress.write(_f("\nRun started at  : {:s}\n"), fmt::to_string(start_time));
 
   Timer timer("run"); // Start timer
 
@@ -651,7 +651,7 @@ int Solver::solve(int nout, BoutReal timestep) {
     status = run();
 
     time_t end_time = time(nullptr);
-    output_progress.write(_f("\nRun finished at  : {:s}\n"), format_as(end_time));
+    output_progress.write(_f("\nRun finished at  : {:s}\n"), fmt::to_string(end_time));
     output_progress.write(_("Run time : "));
 
     int dt = end_time - start_time;
@@ -1274,7 +1274,7 @@ std::vector<Solver::JacobianVariableMetadata> Solver::getJacobianMetadata2D() co
   metadata.reserve(f2d.size());
 
   for (int i = 0; i < static_cast<int>(f2d.size()); ++i) {
-    metadata.push_back(JacobianVariableMetadata{i, f2d[i].name, format_as(f2d[i].location),
+    metadata.push_back(JacobianVariableMetadata{i, f2d[i].name, fmt::to_string(f2d[i].location),
                                                 f2d[i].evolve_bndry, f2d[i].constraint,
                                                 f2d[i].description});
   }
@@ -1287,7 +1287,7 @@ std::vector<Solver::JacobianVariableMetadata> Solver::getJacobianMetadata3D() co
   metadata.reserve(f3d.size());
 
   for (int i = 0; i < static_cast<int>(f3d.size()); ++i) {
-    metadata.push_back(JacobianVariableMetadata{i, f3d[i].name, format_as(f3d[i].location),
+    metadata.push_back(JacobianVariableMetadata{i, f3d[i].name, fmt::to_string(f3d[i].location),
                                                 f3d[i].evolve_bndry, f3d[i].constraint,
                                                 f3d[i].description});
   }
@@ -1390,7 +1390,7 @@ std::string Solver::getJacobianMatrixFilename(const std::string& jacobian_export
   // The directory the output data is stored in
   const std::string datadir = Options::root()["datadir"];
   const std::string stem = fmt::format("{}/{}_{}_{:06d}", datadir, jacobian_export_prefix,
-                                       format_as(kind), this->jacobian_export_counter++);
+                                       fmt::to_string(kind), this->jacobian_export_counter++);
   return stem + (format == bout::PetscMatrixExportFormat::binary ? ".dat" : ".txt");
 }
 

@@ -74,7 +74,7 @@ std::string format_as(const DIRECTION& direction) {
 }
 
 std::string format_as(const DirectionTypes& dir) {
-  return "{" + format_as(dir.y) + ", " + format_as(dir.z) + "}";
+  return "{" + fmt::to_string(dir.y) + ", " + fmt::to_string(dir.z) + "}";
 }
 
 void swap(DirectionTypes& first, DirectionTypes& second) {

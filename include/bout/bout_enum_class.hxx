@@ -69,7 +69,7 @@
 #define BOUT_ENUM_CLASS(enumname, ...)                                         \
   enum class enumname : std::uint8_t { __VA_ARGS__ };                          \
                                                                                \
-  inline std::string format_as(enumname e) {                                    \
+  inline std::string format_as(enumname e) {                                   \
                                                                                \
     const static std::map<enumname, std::string> toString_map = {              \
         BOUT_ENUM_CLASS_MAP_ARGS(BOUT_ENUM_CLASS_STR, enumname, __VA_ARGS__)}; \
@@ -102,7 +102,7 @@
   }                                                                            \
                                                                                \
   inline std::ostream& operator<<(std::ostream& out, const enumname& e) {      \
-    return out << format_as(e);                                                \
+    return out << fmt::to_string(e);                                           \
   }
 
 /// Create an enum class with format_as and <enum name>FromString functions, and an
@@ -137,7 +137,7 @@
   }                                                                                \
                                                                                    \
   inline std::ostream& operator<<(std::ostream& out, const enumname& e) {          \
-    return out << format_as(e);                                                    \
+    return out << fmt::to_string(e);                                              \
   }                                                                                \
   } /* end namespace ns */                                                         \
                                                                                    \

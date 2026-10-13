@@ -68,7 +68,7 @@ inline std::ostream& operator<<(std::ostream& out, const metaData& meta) {
   out << ", ";
   out << "nGuards : " << meta.nGuards;
   out << ", ";
-  out << "type : " << format_as(meta.derivType);
+  out << "type : " << fmt::to_string(meta.derivType);
   return out;
 }
 

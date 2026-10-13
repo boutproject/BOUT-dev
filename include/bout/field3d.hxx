@@ -952,7 +952,7 @@ Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal,
 [[deprecated("Please use a bool for `keep_zonal`")]] inline Field3D
 lowPass(const Field3D& var, int zmax, int keep_zonal, REGION rgn = RGN_ALL) {
   ASSERT0(static_cast<bool>(keep_zonal) == keep_zonal);
-  return lowPass(var, zmax, static_cast<bool>(keep_zonal), format_as(rgn));
+  return lowPass(var, zmax, static_cast<bool>(keep_zonal), fmt::to_string(rgn));
 }
 
 /// Fourier low pass filtering. Removes modes higher than \p zmax

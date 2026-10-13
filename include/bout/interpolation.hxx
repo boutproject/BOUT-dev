@@ -88,7 +88,7 @@ interp_to(const T& var, CELL_LOC loc, const std::string& region = "RGN_ALL") {
   T result{emptyFrom(var).setLocation(loc)};
 
   // Staggered grids enabled, and need to perform interpolation
-  TRACE("Interpolating {} -> {}", format_as(var.getLocation()), format_as(loc));
+  TRACE("Interpolating {} -> {}", fmt::to_string(var.getLocation()), fmt::to_string(loc));
 
   if (region != "RGN_NOBNDRY") {
     // result is requested in some boundary region(s)
