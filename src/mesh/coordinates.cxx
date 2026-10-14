@@ -1129,6 +1129,7 @@ void Coordinates::_compute_cell_area_x() const {
   {
     if (!_cell_area_xlow.has_value()) {
       const FieldMetric area_centre = J() / sqrt(g_11()) * dy_ * dz_;
+      // avoid TOCTOU race condition in cell_area_*
       auto tmp_xlow = emptyFrom(area_centre);
       auto tmp_xhigh = emptyFrom(area_centre);
       // We cannot setLocation, as that would trigger the computation of staggered
@@ -1178,6 +1179,7 @@ void Coordinates::_compute_cell_area_y() const {
       } else {
         // Field aligned
         const FieldMetric area_centre = J() / sqrt(g_22()) * dx_ * dz_;
+        // avoid TOCTOU race condition in cell_area_*
         auto tmp_ylow = emptyFrom(area_centre);
         auto tmp_yhigh = emptyFrom(area_centre);
         // We cannot setLocation, as that would trigger the computation of staggered
@@ -1206,6 +1208,7 @@ void Coordinates::_compute_cell_area_z() const {
   {
     if (!_cell_area_zlow.has_value()) {
       const FieldMetric area_centre = J() / sqrt(g_33()) * dx_ * dy_;
+      // avoid TOCTOU race condition in cell_area_*
       auto tmp_zlow = emptyFrom(area_centre);
       auto tmp_zhigh = emptyFrom(area_centre);
       // We cannot setLocation, as that would trigger the computation of staggered
