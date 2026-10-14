@@ -172,16 +172,18 @@ void Predictor::push_state(BoutReal time, Vec x) {
       // Calculate the optimal step weight on the last step
       // This doesn't make sense if the last prediction was made using the constant method
       // Note: The last step was multiplied by the blend_factor
-      BoutReal theta_opt =
+      const BoutReal theta_opt =
           optimal_weight(x0, x, *this->last_prediction) * this->blend_factor;
-      output.write("Optimal blend factor: {}\n", theta_opt);
 
       // Update the blend factor for next prediction
       // θ  ← (1 - w) θ + w · clamp(θ*, 0, θ_max)
       this->blend_factor =
           ((1. - this->blend_weight) * this->blend_factor)
           + (this->blend_weight * std::clamp(theta_opt, 0.0, this->blend_max));
-      output.write("New blend factor: {}\n", this->blend_factor);
+      if (diagnose) {
+        output.write("Optimal blend factor: {}\n", theta_opt);
+        output.write(" => New blend factor: {}\n", this->blend_factor);
+      }
     }
   }
   // Cycle states right one place, so that the last element
