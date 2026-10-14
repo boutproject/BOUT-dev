@@ -1,4 +1,5 @@
 #include "bout/build_defines.hxx"
+#include <map>
 
 #if BOUT_HAS_PETSC
 

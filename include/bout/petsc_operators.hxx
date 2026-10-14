@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #ifndef BOUT_PETSC_OPERATORS
 #define BOUT_PETSC_OPERATORS
 
