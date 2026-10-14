@@ -559,4 +559,29 @@ PetscCellOperator makeNeumannOperator(const PetscCellMappingPtr& mapping,
   return PetscCellOperator(mapping, mapping, std::move(out));
 }
 
+std::shared_ptr<PetscOperators> PetscOperators::Cache::get(Mesh* mesh) {
+  if (auto search = petscOp.find(mesh); search != petscOp.end()) {
+    if (std::shared_ptr<PetscOperators> spt = search->second.lock()) {
+      return spt;
+    }
+  }
+  auto op = std::make_shared<PetscOperators>(mesh);
+  petscOp[mesh] = op;
+  return op;
+}
+
+std::shared_ptr<PetscOperators::Parallel> PetscOperators::Cache::getParallel(Mesh* mesh) {
+  if (auto search = parOp.find(mesh); search != parOp.end()) {
+    if (std::shared_ptr<PetscOperators::Parallel> spt = search->second.lock()) {
+      return spt;
+    }
+  }
+  auto op = get(mesh);
+  auto par = std::make_shared<PetscOperators::Parallel>(op->getParallel());
+  parOp[mesh] = par;
+  return par;
+}
+
+std::map<Mesh*, std::weak_ptr<PetscOperators::Parallel>> PetscOperators::Cache::parOp;
+std::map<Mesh*, std::weak_ptr<PetscOperators>> PetscOperators::Cache::petscOp;
 #endif
