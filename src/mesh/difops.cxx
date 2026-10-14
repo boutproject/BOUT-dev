@@ -362,23 +362,6 @@ Field3D Div_par_K_Grad_par(const Field3DParallel& kY, const Field3DParallel& f,
 }
 
 namespace {
-#if BOUT_HAS_PETSC
-std::map<Mesh*, std::weak_ptr<PetscOperators::Parallel>> petsc_par_op_cache;
-
-std::shared_ptr<PetscOperators::Parallel> getParallelOp(Mesh* mesh) {
-  //petsc_par_op_cache
-  if (auto search = petsc_par_op_cache.find(mesh); search != petsc_par_op_cache.end()) {
-    if (std::shared_ptr<PetscOperators::Parallel> spt = search->second.lock()) {
-      return spt;
-    }
-  }
-  auto op = PetscOperators(mesh);
-  auto par = std::make_shared<PetscOperators::Parallel>(op.getParallel());
-  petsc_par_op_cache[mesh] = par;
-  return par;
-}
-#endif
-
 template <bout::ConductionMethod conduction_method>
 Field3D Div_par_K_Grad_par_mod_impl(const Field3DParallel& Kin,
                                     const Field3DParallel& fin, Field3D& flow_ylow,
@@ -400,7 +383,7 @@ Field3D Div_par_K_Grad_par_mod_impl(const Field3DParallel& Kin,
 
     if constexpr (conduction_method == bout::ConductionMethod::PetscOperator) {
 #if BOUT_HAS_PETSC
-      auto par = getParallelOp(Kin.getMesh());
+      auto par = PetscOperators::Cache::getParallel(Kin.getMesh());
       return par->Div_par_K_Grad_par(Kin, fin);
 #else
       throw BoutException("BOUT++ was compiled without PETSc.");
