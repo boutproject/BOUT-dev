@@ -805,7 +805,9 @@ if(BOUT_TESTS)
   # Targets for running the tests
   if(BOUT_ENABLE_UNIT_TESTS)
     add_custom_target(
-      check-unit-tests COMMAND ctest -R "serial_tests|cmake-language-standards"
+      check-unit-tests
+      COMMAND ${CMAKE_CTEST_COMMAND} -R serial_tests --output-on-failure
+      COMMAND ${CMAKE_CTEST_COMMAND} -R cmake-language-standards
                                --output-on-failure
     )
     add_dependencies(check-unit-tests build-check-unit-tests)
