@@ -1139,8 +1139,8 @@ void Coordinates::_compute_cell_area_x() const {
         tmp_xlow[i] = 0.5 * (area_centre[i] + area_centre[i.xm()]);
         tmp_xhigh[i] = 0.5 * (area_centre[i] + area_centre[i.xp()]);
       }
-      _cell_area_xlow.emplace(tmp_xlow);
-      _cell_area_xhigh.emplace(tmp_xhigh);
+      _cell_area_xlow.emplace(std::move(tmp_xlow));
+      _cell_area_xhigh.emplace(std::move(tmp_xhigh));
     }
   }
 }
@@ -1196,8 +1196,8 @@ void Coordinates::_compute_cell_area_y() const {
             tmp_yhigh[i] = BoutNaN;
           }
         }
-        _cell_area_ylow.emplace(tmp_ylow);
-        _cell_area_yhigh.emplace(tmp_yhigh);
+        _cell_area_ylow.emplace(std::move(tmp_ylow));
+        _cell_area_yhigh.emplace(std::move(tmp_yhigh));
       }
     }
   }
@@ -1217,8 +1217,8 @@ void Coordinates::_compute_cell_area_z() const {
         tmp_zlow[i] = 0.5 * (area_centre[i] + area_centre[i.zm()]);
         tmp_zhigh[i] = 0.5 * (area_centre[i] + area_centre[i.zp()]);
       }
-      _cell_area_zlow.emplace(tmp_zlow);
-      _cell_area_zhigh.emplace(tmp_zhigh);
+      _cell_area_zlow.emplace(std::move(tmp_zlow));
+      _cell_area_zhigh.emplace(std::move(tmp_zhigh));
     }
   }
 }
