@@ -524,17 +524,17 @@ inline void checkData(BoutReal UNUSED(f)) {};
 char* copy_string(const char* s);
 
 template <typename T>
-inline std::string format_as(const Array<T>& UNUSED(val)) {
+inline std::string toString(const Array<T>& UNUSED(val)) {
   return "<Array>";
 }
 
 template <typename T>
-inline std::string format_as(const Matrix<T>& UNUSED(val)) {
+inline std::string toString(const Matrix<T>& UNUSED(val)) {
   return "<Matrix>";
 }
 
 template <typename T>
-inline std::string format_as(const Tensor<T>& UNUSED(val)) {
+inline std::string toString(const Tensor<T>& UNUSED(val)) {
   return "<Tensor>";
 }
 
@@ -553,6 +553,15 @@ template <typename T, typename Char>
 struct fmt::range_format_kind<Tensor<T>, Char> {
   static constexpr auto value = fmt::range_format::disabled;
 };
+
+/// Convert a value to a string
+/// by writing to a stringstream
+template <class T>
+std::string toString(const T& val) {
+  std::stringstream ss;
+  ss << val;
+  return ss.str();
+}
 
 /*!
  * Convert a string to lower case

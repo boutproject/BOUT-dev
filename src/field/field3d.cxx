@@ -40,6 +40,7 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
+#include <ostream>
 #include <string>
 #include <utility>
 
@@ -906,7 +907,7 @@ bool operator==(const Field3D& a, const Field3D& b) {
 }
 
 std::ostream& operator<<(std::ostream& out, const Field3D& value) {
-  out << fmt::to_string(value);
+  out << toString(value);
   return out;
 }
 

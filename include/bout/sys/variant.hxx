@@ -146,7 +146,7 @@ namespace details {
 struct ToString {
   template <typename T>
   std::string operator()(T&& val) {
-    return fmt::to_string(std::forward<T>(val));
+    return toString(std::forward<T>(val));
   }
 };
 

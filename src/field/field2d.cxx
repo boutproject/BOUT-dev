@@ -44,6 +44,7 @@
 #include <cmath>
 #include <cstddef>
 #include <optional>
+#include <ostream>
 
 Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in,
                  [[maybe_unused]] std::optional<size_t> regionID)
@@ -381,7 +382,7 @@ bool operator==(const Field2D& a, const Field2D& b) {
 }
 
 std::ostream& operator<<(std::ostream& out, const Field2D& value) {
-  out << fmt::to_string(value);
+  out << toString(value);
   return out;
 }
 

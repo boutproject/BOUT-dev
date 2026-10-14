@@ -612,12 +612,12 @@ inline Field2D& ddt(Field2D& f) { return *(f.timeDeriv()); }
 /// Alias for ddt that is more readable for constraints
 inline Field2D& residual(Field2D& f) { return *(f.timeDeriv()); }
 
+/// toString template specialisation
+/// Defined in utils.hxx
 template <>
-struct fmt::formatter<Field2D> : fmt::formatter<std::string_view> {
-  auto format(const Field2D&, format_context& ctx) const {
-    return fmt::formatter<std::string_view>::format("<Field2D>", ctx);
+inline std::string toString<>([[maybe_unused]] const Field2D& val) {
+  return "<Field2D>";
   }
-};
 
 /// Test if two fields are the same, by calculating
 /// the minimum absolute difference between them

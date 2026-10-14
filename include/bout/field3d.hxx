@@ -1000,12 +1000,12 @@ inline Field3D& ddt(Field3D& f) { return *(f.timeDeriv()); }
 /// Alias for ddt that is more readable for constraints
 inline Field3D& residual(Field3D& f) { return *(f.timeDeriv()); }
 
+/// toString template specialisation
+/// Defined in utils.hxx
 template <>
-struct fmt::formatter<Field3D> : fmt::formatter<std::string_view> {
-  auto format(const Field3D&, format_context& ctx) const {
-    return fmt::formatter<std::string_view>::format("<Field3D>", ctx);
+inline std::string toString<>([[maybe_unused]] const Field3D& val) {
+  return "<Field3D>";
   }
-};
 
 /// Test if two fields are the same, by calculating
 /// the minimum absolute difference between them

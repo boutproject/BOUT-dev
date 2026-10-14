@@ -1027,7 +1027,7 @@ void saveParallel(Options& opt, const std::string& name, const Field3D& tosave);
 /// convertible to an `Options`, and we want _exactly_ `Options`
 template <class T, typename = bout::utils::EnableIfOptions<T>>
 inline std::ostream& operator<<(std::ostream& out, const T& value) {
-  return out << fmt::to_string(value);
+  return out << toString(value);
 }
 
 namespace bout {

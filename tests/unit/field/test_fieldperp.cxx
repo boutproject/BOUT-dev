@@ -1876,7 +1876,7 @@ TEST_F(FieldPerpTest, ToString) {
   // Just check we can call toString
   const std::string expected = "<FieldPerp>";
   const FieldPerp field{};
-  EXPECT_EQ(fmt::to_string(field), expected);
+  EXPECT_EQ(toString(field), expected);
 }
 
 TEST_F(FieldPerpTest, OperatorStream) {
@@ -1884,7 +1884,7 @@ TEST_F(FieldPerpTest, OperatorStream) {
   const FieldPerp field{};
   std::stringstream stream;
   stream << field;
-  EXPECT_EQ(stream.str(), fmt::to_string(field));
+  EXPECT_EQ(stream.str(), toString(field));
 }
 
 TEST_F(FieldPerpTest, Equality) {

@@ -461,12 +461,12 @@ void invalidateGuards(FieldPerp& var);
 inline void invalidateGuards(FieldPerp& UNUSED(var)) {}
 #endif
 
+/// toString template specialisation
+/// Defined in utils.hxx
 template <>
-struct fmt::formatter<FieldPerp> : fmt::formatter<std::string_view> {
-  auto format(const FieldPerp&, format_context& ctx) const {
-    return fmt::formatter<std::string_view>::format("<FieldPerp>", ctx);
+inline std::string toString<>([[maybe_unused]] const FieldPerp& val) {
+  return "<FieldPerp>";
   }
-};
 
 /// Test if two fields are the same, by checking that they are defined
 /// at the same y-index, and if the minimum absolute difference
