@@ -120,12 +120,14 @@ public:
         noise_rtol(
             opts["noise_rtol"].doc("Predictor relative tolerance").withDefault(1e-5)),
         noise_atol(
-            opts["noise_atol"].doc("Predictor absolute tolerance").withDefault(1e-12)) {}
+            opts["noise_atol"].doc("Predictor absolute tolerance").withDefault(1e-12)),
+        diagnose(opts["diagnose"].doc("Output diagnostics?").withDefault<bool>(false)) {}
 
   /// Record a newly accepted solver state and update predictor diagnostics.
   ///
   /// Stores a copy of ``x`` as the newest history state and, if a previous
-  /// prediction was recorded, evaluates its quality against the converged state.
+  /// prediction was recorded, evaluates its prediction error ratio against the
+  /// converged state.
   /// Shadow diagnostics and adaptive blend updates are also processed here.
   ///
   /// @param time Time associated with the converged state.
@@ -135,8 +137,8 @@ public:
   /// Predict state `x` at `time` using method `predictor_type`.
   /// `x` must already be allocated and will be overwritten.
   ///
-  /// Records the prediction for later quality/blend analysis when the step is
-  /// accepted.
+  /// Records the prediction for later prediction-error/blend analysis when the
+  /// step is accepted.
   ///
   /// @param predictor_type Predictor variant to apply.
   /// @param time Target time for the predicted state.
@@ -182,8 +184,9 @@ private:
   /// Implementation helper for predictor evaluation.
   ///
   /// When ``record_prediction`` is true, stores the resulting prediction and
-  /// predictor type so a later ``push_state()`` call can evaluate quality and
-  /// update blend state using the actual step that was taken.
+  /// predictor type so a later ``push_state()`` call can evaluate the
+  /// prediction error ratio and update blend state using the actual step that
+  /// was taken.
   ///
   /// @param predictor_type Predictor variant to apply.
   /// @param time Target time for the predicted state.
@@ -207,7 +210,7 @@ private:
       SnesPredictor::constant};    ///< Predictor type used in last prediction
   bool has_last_prediction{false}; ///< Has a prediction been recorded for the last step?
 
-  /// @brief  Calculate quality metric for prediction
+  /// Calculate the prediction error ratio for a candidate predictor.
   ///
   /// Smaller is better: A value of zero means the predictor
   /// was perfect. A value over 1 means the predicted state
@@ -215,11 +218,11 @@ private:
   ///
   /// Uses this->diff1 and this->diff2 temporaries
   ///
-  /// @param x0
-  /// @param x_new
-  /// @param x_pred
+  /// @param x0      The initial state
+  /// @param x_new   The final converged state
+  /// @param x_pred  The predicted state
   /// @return q = ||x_new - x_pred|| / ||x_new - x0||
-  BoutReal quality(Vec x0, Vec x_new, Vec x_pred);
+  BoutReal prediction_error_ratio(Vec x0, Vec x_new, Vec x_pred);
 
   /// The least-squares optimal weight for the step
   /// θ* = <x_new - x0, δ> / <δ, δ>
@@ -241,6 +244,8 @@ private:
 
   BoutReal noise_rtol; ///< Relative tolerance
   BoutReal noise_atol; ///< Absolute tolerance
+
+  bool diagnose; ///< Output additional diagnostics?
 };
 } // namespace bout
 

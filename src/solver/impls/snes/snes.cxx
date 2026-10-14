@@ -152,17 +152,19 @@ void Predictor::push_state(BoutReal time, Vec x) {
     Vec x0 = rawVec(this->history[0].x);
     ASSERT0(x0 != nullptr);
 
-    // Compare x with the last prediction
-    BoutReal q = quality(x0, x, *this->last_prediction);
-    output.write("Quality: {}\n", q);
+    if (diagnose) {
+      // Compare x with the last prediction
+      BoutReal q = prediction_error_ratio(x0, x, *this->last_prediction);
+      output.write("\nPrediction error ratio: {}\n", q);
+    }
 
     if (this->shadow) {
       for (auto method :
            {SnesPredictor::constant, SnesPredictor::linear, SnesPredictor::be_rational}) {
 
         predictInternal(method, time, *this->shadow_prediction, false);
-        q = quality(x0, x, *this->shadow_prediction);
-        output.write("{} : {}\n", toString(method), q);
+        BoutReal q = prediction_error_ratio(x0, x, *this->shadow_prediction);
+        output.write("    {} : {}\n", toString(method), q);
       }
     }
 
@@ -317,7 +319,7 @@ void Predictor::predictInternal(SnesPredictor predictor_type, BoutReal time, Vec
   }
 }
 
-BoutReal Predictor::quality(Vec x0, Vec x_new, Vec x_pred) {
+BoutReal Predictor::prediction_error_ratio(Vec x0, Vec x_new, Vec x_pred) {
   PetscReal norm_num{0.0};
   PetscReal norm_den{0.0};
 
