@@ -107,6 +107,7 @@ set(serial_tests_source
     ./solver/test_fakesolver.cxx
     ./solver/test_fakesolver.hxx
     ./solver/test_nvector.cxx
+    ./solver/test_snes_predictor.cxx
     ./solver/test_solver.cxx
     ./solver/test_solverfactory.cxx
     ./sys/test_boutexception.cxx
