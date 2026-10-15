@@ -759,6 +759,7 @@ void Solver::readEvolvingVariablesFromOptions(Options& options) {
   for (const auto& f : f3d) {
     if (options.isSet(f.name)) {
       *(f.var) = options[f.name].as<Field3D>();
+      f.var->name = f.name; //IB_TODO: Fix to carry name through from restart file for IB map.
       if (mms) {
         *(f.MMS_err) = options["E_" + f.name].as<Field3D>();
       }

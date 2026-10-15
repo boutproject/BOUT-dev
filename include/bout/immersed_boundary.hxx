@@ -28,13 +28,14 @@ public:
   bool IsGhost(const Ind3D& ind) const;
   bool IsUsableGhost(const Ind3D& ind) const;
   bool IsCutCell(const Ind3D& ind) const;
-  float xFaceFrac(const Ind3D& ind) const;
-  float zFaceFrac(const Ind3D& ind) const;
+  BoutReal xFaceFrac(const Ind3D& ind) const;
+  BoutReal zFaceFrac(const Ind3D& ind) const;
   int xFaceGradOffset(const Ind3D& ind) const;
   int zFaceGradOffset(const Ind3D& ind) const;
 
   void FieldSetup(Field3D& f);
-  void FloorField(Field3D& f, const float val = 0.0) const;
+  Field3D DeepCopyField(const Field3D& src) const;
+  void FloorField(Field3D& f, const BoutReal val = 0.0) const;
   bool CheckFieldSetUp(const std::string& name);
 
 private:

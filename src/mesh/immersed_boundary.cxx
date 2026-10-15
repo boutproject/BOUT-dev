@@ -187,11 +187,11 @@ bool ImmersedBoundary::IsCutCell(const Ind3D& ind) const {
   return get_as<int>(bound_ids[ind]) >= 0;
 }
 
-float ImmersedBoundary::xFaceFrac(const Ind3D& ind) const {
+BoutReal ImmersedBoundary::xFaceFrac(const Ind3D& ind) const {
   return x_face_frac[ind];
 }
 
-float ImmersedBoundary::zFaceFrac(const Ind3D& ind) const {
+BoutReal ImmersedBoundary::zFaceFrac(const Ind3D& ind) const {
   return z_face_frac[ind];
 }
 
@@ -279,9 +279,21 @@ void ImmersedBoundary::FieldSetup(Field3D& f) {
   }
 }
 
-void ImmersedBoundary::FloorField(Field3D& f, const float val) const {
+Field3D ImmersedBoundary::DeepCopyField(const Field3D& src) const {
+  Field3D dst = copy(src); // Detaches central storage
+
+  if (src.hasParallelSlices()) {  
+    dst.yup() = copy(src.yup());
+    dst.ydown() = copy(src.ydown());
+  }
+
+  return dst;
+}
+
+void ImmersedBoundary::FloorField(Field3D& f, const BoutReal val) const {
   //Just floor plasma cells, not ghosts.
   //IB_TODO: Reset boundary after flooring?
+  //IB_TODO: Make sure fci slices exist first. Same for IB loops in evolve_ functions, etc.
   BOUT_FOR(i, f.getRegion("RGN_NO_IMM_BNDRY")) {
     if (f[i] < val) {
       f[i] = val;
