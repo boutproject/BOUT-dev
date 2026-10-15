@@ -63,6 +63,7 @@ public:
 
 private:
   enum class FileMode {
+    newFile, ///< Create a new file. Do not overwrite or append
     replace, ///< Overwrite file when writing
     append   ///< Append to file when writing
   };

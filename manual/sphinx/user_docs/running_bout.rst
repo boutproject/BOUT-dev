@@ -96,12 +96,20 @@ Restart files allow the run to be restarted from where they left off::
 
      $ mpirun -np 2 ./conduction restart
 
-This will delete the output data ``BOUT.dmp.*.nc`` files, and start
-again. If you want to keep the output from the first run, add “append”::
+By default, this will keep the existing output data ``BOUT.dmp.*.nc``
+files and then stop with an error rather than overwrite them. To
+continue from the restart files and add new time points to the existing
+output, add ``append``::
 
      $ mpirun -np 2 ./conduction restart append
 
-which will then append any new outputs to the end of the old data files.
+To continue from the restart files and overwrite the existing output,
+add ``replace``::
+
+     $ mpirun -np 2 ./conduction restart replace
+
+which will replace the old dump files with new output from the restarted
+run. Restart files are still overwritten by default.
 For more information on restarting, see :ref:`sec-restarting`.
 
 To see some of the other command-line options try "-h"::
@@ -538,14 +546,24 @@ of the command, for example::
 
      $ mpirun -np 2 ./conduction restart
 
-Equivalently, put “restart=true” near the top of the BOUT.inp input
-file. Note that this will overwrite the existing data in the
-``BOUT.dmp.\*.nc`` files. If you want to append to them instead then add
-the keyword append to the command, for example::
+Equivalently, put ``restart=true`` near the top of the ``BOUT.inp`` input
+file. By default, BOUT++ will refuse to overwrite existing
+``BOUT.dmp.\*.nc`` files and will stop with an error instead. If you want
+to append to them then add the keyword ``append`` to the command, for example::
 
      $ mpirun -np 2 ./conduction restart append
 
-or also put ``append=true`` near the top of the BOUT.inp input file.
+or put ``append=true`` near the top of the ``BOUT.inp`` input file.
+
+If you want to overwrite the existing dump files, add ``replace`` to the
+command::
+
+     $ mpirun -np 2 ./conduction restart replace
+
+or put ``replace=true`` near the top of the ``BOUT.inp`` input file.
+
+Restart files are not affected by this change: they are still overwritten
+by default so that restarting continues to update the saved restart state.
 
 When restarting simulations BOUT++ will by default output the initial
 state, unless appending to existing data files when it will not output

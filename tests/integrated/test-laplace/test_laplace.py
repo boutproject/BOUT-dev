@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
+import numpy.testing as npt
+
 #
 # Run the test, compare results against the benchmark
 #
-
 import pytest
-import numpy.testing as npt
-from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect, create_cache
-
+from boututils.run_wrapper import launch_safe, shell
 
 # Variables to compare
 vars = [
@@ -51,9 +50,9 @@ def test_laplace(solver, nproc, benchmark_data):
     nxpe = 2 if nproc > 2 else 1
     cmd = f"./test_laplace NXPE={nxpe} laplace:type={solver}"
 
-    shell("rm data/BOUT.dmp.*.nc")
+    shell("rm -rf data/BOUT.dmp.*")
 
-    s, out = launch_safe(cmd, nproc=nproc, mthread=1, pipe=True)
+    _s, out = launch_safe(cmd, nproc=nproc, mthread=1, pipe=True)
 
     with open(f"run.log.{nproc}", "w") as f:
         f.write(out)
