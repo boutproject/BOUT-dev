@@ -554,6 +554,14 @@ struct fmt::range_format_kind<Tensor<T>, Char> {
   static constexpr auto value = fmt::range_format::disabled;
 };
 
+/// Convert a bool to "true" or "false"
+inline std::string toString(const bool& val) {
+  if (val) {
+    return "true";
+  }
+  return "false";
+}
+
 /// Convert a value to a string
 /// by writing to a stringstream
 template <class T>
