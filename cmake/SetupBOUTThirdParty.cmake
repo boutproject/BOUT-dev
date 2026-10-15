@@ -41,9 +41,7 @@ if(BOUT_HAS_HIP)
   list(FILTER BOUT_HIP_SOURCES INCLUDE REGEX ".*\\.cxx$")
   set_source_files_properties(${BOUT_HIP_SOURCES} PROPERTIES LANGUAGE HIP)
   set_target_properties(
-    bout++
-    PROPERTIES HIP_EXTENSIONS OFF
-               LINKER_LANGUAGE HIP
+    bout++ PROPERTIES HIP_EXTENSIONS OFF LINKER_LANGUAGE HIP
   )
   find_package(hip REQUIRED CONFIG)
   target_link_libraries(bout++ PUBLIC hip::host)

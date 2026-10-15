@@ -808,7 +808,7 @@ if(BOUT_TESTS)
       check-unit-tests
       COMMAND ${CMAKE_CTEST_COMMAND} -R serial_tests --output-on-failure
       COMMAND ${CMAKE_CTEST_COMMAND} -R cmake-language-standards
-                               --output-on-failure
+              --output-on-failure
     )
     add_dependencies(check-unit-tests build-check-unit-tests)
   endif()

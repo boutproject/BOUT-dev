@@ -7,11 +7,18 @@ set(BOUT_CXX_STANDARD 20)
 function(bout_target_set_language_standards TARGET_NAME)
   foreach(language IN ITEMS CXX CUDA HIP)
     get_target_property(standard ${TARGET_NAME} ${language}_STANDARD)
-    if(NOT standard OR standard EQUAL 98 OR standard LESS BOUT_CXX_STANDARD)
-      set_property(TARGET ${TARGET_NAME} PROPERTY ${language}_STANDARD
-                   ${BOUT_CXX_STANDARD})
+    if(NOT standard
+       OR standard EQUAL 98
+       OR standard LESS BOUT_CXX_STANDARD
+    )
+      set_property(
+        TARGET ${TARGET_NAME} PROPERTY ${language}_STANDARD
+                                       ${BOUT_CXX_STANDARD}
+      )
     endif()
-    set_property(TARGET ${TARGET_NAME} PROPERTY ${language}_STANDARD_REQUIRED ON)
+    set_property(
+      TARGET ${TARGET_NAME} PROPERTY ${language}_STANDARD_REQUIRED ON
+    )
   endforeach()
 endfunction()
 
@@ -60,9 +67,7 @@ function(bout_target_enable_hip TARGET_NAME)
       set_source_files_properties(${model_sources} PROPERTIES LANGUAGE HIP)
     endif()
     set_target_properties(
-      ${TARGET_NAME}
-      PROPERTIES HIP_EXTENSIONS OFF
-                 LINKER_LANGUAGE HIP
+      ${TARGET_NAME} PROPERTIES HIP_EXTENSIONS OFF LINKER_LANGUAGE HIP
     )
   endif()
 endfunction()

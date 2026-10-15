@@ -5,7 +5,9 @@ include("${BOUT_SOURCE_DIR}/cmake/BOUT++functions.cmake")
 function(expect_property target property expected)
   get_target_property(actual ${target} ${property})
   if(NOT actual STREQUAL expected)
-    message(FATAL_ERROR "${target}.${property}: expected ${expected}, got ${actual}")
+    message(
+      FATAL_ERROR "${target}.${property}: expected ${expected}, got ${actual}"
+    )
   endif()
 endfunction()
 
@@ -38,8 +40,10 @@ endforeach()
 foreach(old_standard IN ITEMS 98 17)
   add_library(older_${old_standard} INTERFACE)
   foreach(language IN ITEMS CXX CUDA HIP)
-    set_property(TARGET older_${old_standard} PROPERTY ${language}_STANDARD
-                 ${old_standard})
+    set_property(
+      TARGET older_${old_standard} PROPERTY ${language}_STANDARD
+                                            ${old_standard}
+    )
   endforeach()
   bout_target_set_language_standards(older_${old_standard})
   foreach(language IN ITEMS CXX CUDA HIP)
@@ -67,7 +71,10 @@ function(enable_language language)
   if(NOT language STREQUAL "HIP")
     message(FATAL_ERROR "Unexpected language detection: ${language}")
   endif()
-  set(hip_detection_requested ON PARENT_SCOPE)
+  set(hip_detection_requested
+      ON
+      PARENT_SCOPE
+  )
 endfunction()
 set(BOUT_ENABLE_MPI OFF)
 set(BOUT_ENABLE_HIP ON)
@@ -77,8 +84,11 @@ set(BOUT_ENABLE_UMPIRE ON)
 set(CMAKE_HIP_STANDARD_REQUIRED OFF)
 set(CMAKE_HIP_EXTENSIONS ON)
 include("${BOUT_SOURCE_DIR}/cmake/SetupCompilers.cmake")
-if(NOT hip_detection_requested OR NOT CMAKE_HIP_STANDARD EQUAL 23
-   OR CMAKE_HIP_STANDARD_REQUIRED OR NOT CMAKE_HIP_EXTENSIONS)
+if(NOT hip_detection_requested
+   OR NOT CMAKE_HIP_STANDARD EQUAL 23
+   OR CMAKE_HIP_STANDARD_REQUIRED
+   OR NOT CMAKE_HIP_EXTENSIONS
+)
   message(FATAL_ERROR "HIP setup changed caller's directory defaults")
 endif()
 
