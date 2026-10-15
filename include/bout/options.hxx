@@ -609,8 +609,7 @@ public:
       // Check that the default values are the same
       if (!similar(val, def)) {
         throw BoutException("Inconsistent default values for '{}': '{}' then '{}'",
-                            full_name, bout::utils::variantToString(value),
-                            def);
+                            full_name, bout::utils::variantToString(value), def);
       }
     }
     return val;
@@ -666,8 +665,7 @@ public:
       // Check that the default values are the same
       if (!similar(val, def)) {
         throw BoutException("Inconsistent default values for '{}': '{}' then '{}'",
-                            full_name, bout::utils::variantToString(value),
-                            def);
+                            full_name, bout::utils::variantToString(value), def);
       }
     }
     return val;
@@ -913,8 +911,8 @@ private:
                       << bout::utils::variantToString(value) << " ("
                       << bout::utils::variantToString(attributes["source"])
                       << _(") overwritten with:") << "\n"
-                      << "\t\t" << full_name << " = " << fmt::to_string(val) << " (" << source
-                      << ")\n";
+                      << "\t\t" << full_name << " = " << fmt::to_string(val) << " ("
+                      << source << ")\n";
         } else {
           throw BoutException(
               _f("Options: Setting a value from same source ({}) to new value "

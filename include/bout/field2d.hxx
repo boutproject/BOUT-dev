@@ -46,10 +46,10 @@ class Field2D;
 #include "bout/fieldperp.hxx"
 #include "bout/region.hxx"
 
+#include "fmt/format.h"
 #include <fmt/base.h>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
-#include "fmt/format.h"
 
 #include <cstddef>
 #include <iostream>
@@ -617,7 +617,7 @@ inline Field2D& residual(Field2D& f) { return *(f.timeDeriv()); }
 template <>
 inline std::string toString<>([[maybe_unused]] const Field2D& val) {
   return "<Field2D>";
-  }
+}
 
 /// Test if two fields are the same, by calculating
 /// the minimum absolute difference between them
@@ -626,6 +626,7 @@ bool operator==(const Field2D& a, const Field2D& b);
 std::ostream& operator<<(std::ostream& out, const Field2D& value);
 
 // Tell {fmt} not to treat these as ranges so it uses format_as() instead
-template <> struct fmt::is_range<Field2D, char> : std::false_type {};
+template <>
+struct fmt::is_range<Field2D, char> : std::false_type {};
 
 #endif /* BOUT_FIELD2D_H */

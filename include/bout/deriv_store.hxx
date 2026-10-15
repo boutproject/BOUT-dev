@@ -163,7 +163,8 @@ struct DerivativeStore {
     };
 
     // Register this method name in lookup of known methods
-    registeredMethods[getKey(direction, stagger, fmt::to_string(derivType))].insert(methodName);
+    registeredMethods[getKey(direction, stagger, fmt::to_string(derivType))].insert(
+        methodName);
   };
 
   /// Register a function with upwindFunc/fluxFunc interface. Which map is used
@@ -197,7 +198,8 @@ struct DerivativeStore {
     };
 
     // Register this method name in lookup of known methods
-    registeredMethods[getKey(direction, stagger, fmt::to_string(derivType))].insert(methodName);
+    registeredMethods[getKey(direction, stagger, fmt::to_string(derivType))].insert(
+        methodName);
   };
 
   /// Templated versions of the above registration routines.
@@ -385,8 +387,8 @@ struct DerivativeStore {
         defaultMethods[getKey(theDirection, STAGGER::C2L, theDerivTypeString)] =
             theDefault;
         output_verbose << "The default method for staggered derivative type "
-                       << theDerivTypeString << " in direction " << fmt::to_string(theDirection)
-                       << " is " << theDefault << "\n";
+                       << theDerivTypeString << " in direction "
+                       << fmt::to_string(theDirection) << " is " << theDefault << "\n";
       }
     }
   }

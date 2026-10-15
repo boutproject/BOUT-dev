@@ -1274,9 +1274,9 @@ std::vector<Solver::JacobianVariableMetadata> Solver::getJacobianMetadata2D() co
   metadata.reserve(f2d.size());
 
   for (int i = 0; i < static_cast<int>(f2d.size()); ++i) {
-    metadata.push_back(JacobianVariableMetadata{i, f2d[i].name, fmt::to_string(f2d[i].location),
-                                                f2d[i].evolve_bndry, f2d[i].constraint,
-                                                f2d[i].description});
+    metadata.push_back(JacobianVariableMetadata{
+        i, f2d[i].name, fmt::to_string(f2d[i].location), f2d[i].evolve_bndry,
+        f2d[i].constraint, f2d[i].description});
   }
 
   return metadata;
@@ -1287,9 +1287,9 @@ std::vector<Solver::JacobianVariableMetadata> Solver::getJacobianMetadata3D() co
   metadata.reserve(f3d.size());
 
   for (int i = 0; i < static_cast<int>(f3d.size()); ++i) {
-    metadata.push_back(JacobianVariableMetadata{i, f3d[i].name, fmt::to_string(f3d[i].location),
-                                                f3d[i].evolve_bndry, f3d[i].constraint,
-                                                f3d[i].description});
+    metadata.push_back(JacobianVariableMetadata{
+        i, f3d[i].name, fmt::to_string(f3d[i].location), f3d[i].evolve_bndry,
+        f3d[i].constraint, f3d[i].description});
   }
 
   return metadata;
@@ -1389,8 +1389,9 @@ std::string Solver::getJacobianMatrixFilename(const std::string& jacobian_export
                                               bout::PetscMatrixExportFormat format) {
   // The directory the output data is stored in
   const std::string datadir = Options::root()["datadir"];
-  const std::string stem = fmt::format("{}/{}_{}_{:06d}", datadir, jacobian_export_prefix,
-                                       fmt::to_string(kind), this->jacobian_export_counter++);
+  const std::string stem =
+      fmt::format("{}/{}_{}_{:06d}", datadir, jacobian_export_prefix,
+                  fmt::to_string(kind), this->jacobian_export_counter++);
   return stem + (format == bout::PetscMatrixExportFormat::binary ? ".dat" : ".txt");
 }
 

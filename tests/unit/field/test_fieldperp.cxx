@@ -3,6 +3,7 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "gtest/gtest.h"
 
+#include "fmt/format.h"
 #include "test_extras.hxx"
 #include "bout/array.hxx"
 #include "bout/boutexception.hxx"
@@ -12,7 +13,6 @@
 #include "bout/output.hxx"
 #include "bout/unused.hxx"
 #include "bout/utils.hxx"
-#include "fmt/format.h"
 
 #include <cmath>
 #include <numeric>

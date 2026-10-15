@@ -107,44 +107,44 @@
 
 /// Create an enum class with format_as and <enum name>FromString functions, and an
 /// Options::as<enum> overload to read the enum
-#define BOUT_ENUM_CLASS_NS(ns, enumname, ...)                                      \
-  namespace ns {                                                                   \
-  enum class enumname : std::uint8_t { __VA_ARGS__ };                              \
-                                                                                   \
-  inline std::string format_as(const enumname& e) {                                \
-                                                                                   \
-    const static std::map<enumname, std::string> toString_map = {                  \
-        BOUT_ENUM_CLASS_MAP_ARGS(BOUT_ENUM_CLASS_STR, enumname, __VA_ARGS__)};     \
-    auto found = toString_map.find(e);                                             \
-    if (found == toString_map.end()) {                                             \
-      throw BoutException("Did not find enum {:d}", static_cast<int>(e));          \
-    }                                                                              \
-    return found->second;                                                          \
-  }                                                                                \
-                                                                                   \
-  inline enumname BOUT_MAKE_FROMSTRING_NAME(enumname)(const std::string& s) {      \
-    const static std::map<std::string, enumname> fromString_map = {                \
-        BOUT_ENUM_CLASS_MAP_ARGS(BOUT_STR_ENUM_CLASS, enumname, __VA_ARGS__)};     \
-    auto found = fromString_map.find(s);                                           \
-    if (found == fromString_map.end()) {                                           \
-      std::string valid_values{};                                                  \
-      for (auto const& entry : fromString_map) {                                   \
-        valid_values += std::string(" ") + entry.first;                            \
-      }                                                                            \
-      throw BoutException("Did not find enum {:s}. Valid values: {:s}", s,         \
-                          valid_values);                                           \
-    }                                                                              \
-    return found->second;                                                          \
-  }                                                                                \
-                                                                                   \
-  inline std::ostream& operator<<(std::ostream& out, const enumname& e) {          \
-    return out << fmt::to_string(e);                                              \
-  }                                                                                \
-  } /* end namespace ns */                                                         \
-                                                                                   \
-  template <>                                                                      \
-  inline ns::enumname Options::as<ns::enumname>(const ns::enumname&) const {       \
-    return ns::BOUT_MAKE_FROMSTRING_NAME(enumname)(this->as<std::string>());       \
+#define BOUT_ENUM_CLASS_NS(ns, enumname, ...)                                  \
+  namespace ns {                                                               \
+  enum class enumname : std::uint8_t { __VA_ARGS__ };                          \
+                                                                               \
+  inline std::string format_as(const enumname& e) {                            \
+                                                                               \
+    const static std::map<enumname, std::string> toString_map = {              \
+        BOUT_ENUM_CLASS_MAP_ARGS(BOUT_ENUM_CLASS_STR, enumname, __VA_ARGS__)}; \
+    auto found = toString_map.find(e);                                         \
+    if (found == toString_map.end()) {                                         \
+      throw BoutException("Did not find enum {:d}", static_cast<int>(e));      \
+    }                                                                          \
+    return found->second;                                                      \
+  }                                                                            \
+                                                                               \
+  inline enumname BOUT_MAKE_FROMSTRING_NAME(enumname)(const std::string& s) {  \
+    const static std::map<std::string, enumname> fromString_map = {            \
+        BOUT_ENUM_CLASS_MAP_ARGS(BOUT_STR_ENUM_CLASS, enumname, __VA_ARGS__)}; \
+    auto found = fromString_map.find(s);                                       \
+    if (found == fromString_map.end()) {                                       \
+      std::string valid_values{};                                              \
+      for (auto const& entry : fromString_map) {                               \
+        valid_values += std::string(" ") + entry.first;                        \
+      }                                                                        \
+      throw BoutException("Did not find enum {:s}. Valid values: {:s}", s,     \
+                          valid_values);                                       \
+    }                                                                          \
+    return found->second;                                                      \
+  }                                                                            \
+                                                                               \
+  inline std::ostream& operator<<(std::ostream& out, const enumname& e) {      \
+    return out << fmt::to_string(e);                                           \
+  }                                                                            \
+  } /* end namespace ns */                                                     \
+                                                                               \
+  template <>                                                                  \
+  inline ns::enumname Options::as<ns::enumname>(const ns::enumname&) const {   \
+    return ns::BOUT_MAKE_FROMSTRING_NAME(enumname)(this->as<std::string>());   \
   }
 
 #endif // BOUT_ENUM_CLASS_H
