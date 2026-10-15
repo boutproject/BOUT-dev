@@ -523,6 +523,15 @@ inline void checkData(BoutReal UNUSED(f)) {};
  */
 char* copy_string(const char* s);
 
+/// Convert a value to a string
+/// by writing to a stringstream
+template <class T>
+std::string toString(const T& val) {
+  std::stringstream ss;
+  ss << val;
+  return ss.str();
+}
+
 template <typename T>
 inline std::string toString(const Array<T>& UNUSED(val)) {
   return "<Array>";
@@ -560,15 +569,6 @@ inline std::string toString(const bool& val) {
     return "true";
   }
   return "false";
-}
-
-/// Convert a value to a string
-/// by writing to a stringstream
-template <class T>
-std::string toString(const T& val) {
-  std::stringstream ss;
-  ss << val;
-  return ss.str();
 }
 
 /*!
