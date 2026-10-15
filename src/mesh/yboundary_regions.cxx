@@ -8,8 +8,7 @@
 
 namespace bout::boundary {
 YBoundary::YBoundary(const Mesh& mesh, bool lower, bool upper)
-    : lower(lower), upper(upper), _contains_lower(&mesh, false),
-      _contains_upper(&mesh, false) {
+    : _contains_lower(&mesh, false), _contains_upper(&mesh, false) {
 
   if (mesh.isFci()) {
     if (lower) {

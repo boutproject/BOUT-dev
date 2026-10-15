@@ -52,11 +52,6 @@ public:
     }
   }
 
-  /// True if this boundary is defined on the lower side
-  bool isLower() const { return lower; }
-  /// True if this boundary is defined on the upper side
-  bool isUpper() const { return upper; }
-
   /// Return true if this boundary in the lower direction contains point \p ind
   bool containsLower(const Ind3D& ind) const { return _contains_lower[ind]; }
   /// Return true if this boundary in the upper direction contains point \p ind
@@ -86,9 +81,6 @@ public:
   }
 
 private:
-  bool lower{false};
-  bool upper{false};
-
   std::vector<std::shared_ptr<BoundaryRegionFCI>> boundary_regions_par;
   std::vector<std::shared_ptr<BoundaryRegionY>> boundary_regions;
 
