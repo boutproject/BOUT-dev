@@ -44,7 +44,7 @@ CELL_LOC CELL_LOCFromString(const std::string& location_string) {
   return safeAt(stringtoCELL_LOC, location_string);
 }
 
-std::string format_as(DIFF_METHOD method) {
+std::string format_as(const DIFF_METHOD& method) {
 
   const static std::map<DIFF_METHOD, std::string> DIFF_METHODtoString = {
       {DIFF_DEFAULT, "DEFAULT"}, {DIFF_U1, "U1"},   {DIFF_U2, "U2"},      {DIFF_U3, "U3"},
