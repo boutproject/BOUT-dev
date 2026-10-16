@@ -198,14 +198,6 @@ void Field3D::splitParallelSlices() {
       ydown_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", -i - 1));
     }
   }
-}
-void Field3D::splitParallelSlicesAndAllocate() {
-  splitParallelSlices();
-  allocate();
-  for (int i = 0; i < fieldmesh->ystart; ++i) {
-    yup_fields[i].allocate();
-    ydown_fields[i].allocate();
-  }
   resetRegionParallel();
 }
 

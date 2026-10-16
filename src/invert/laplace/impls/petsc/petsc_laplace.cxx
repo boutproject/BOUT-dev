@@ -207,6 +207,10 @@ LaplacePetsc::~LaplacePetsc() {
 
 FieldPerp LaplacePetsc::solve(const FieldPerp& b) { return solve(b, b); }
 
+FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
+  return solve(b, x0, false);
+}
+
 /*!
  * Solves Ax=b for x given a b and an initial guess for x (x0)
  *
@@ -224,7 +228,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b) { return solve(b, b); }
  *
  * \returns sol     The solution x of the problem Ax=b.
  */
-FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
+FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0, bool forward) {
 
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
   ASSERT1(b.getLocation() == location);
@@ -325,6 +329,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
       lib.setOptionsFromInputFile(ksp);
     }
   }
+  }
 
   PetscVector<FieldPerp> rhs(b, indexer);
   PetscVector<FieldPerp> guess(x0, indexer);
@@ -347,26 +352,28 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
   // Call the actual solver
   {
     const Timer timer("petscsolve");
-    KSPSolve(ksp, *rhs.get(), *guess.get());
-  }
-
-  KSPConvergedReason reason = KSP_CONVERGED_ITERATING;
-  KSPGetConvergedReason(ksp, &reason);
-  if (reason == -3) { // Too many iterations, might be fixed by taking smaller timestep
-    throw BoutIterationFail("petsc_laplace: too many iterations");
-  }
-  if (reason <= 0) {
-    throw BoutException(
-        "petsc_laplace: inversion failed to converge. KSPConvergedReason: {} ({})",
-        KSPConvergedReasons[reason], static_cast<int>(reason));
-  }
+    if (not forward) {
+      KSPSolve(ksp, *rhs.get(), *guess.get());
     } else {
-      timer.reset();
-      PetscErrorCode err = MatMult(MatA, bs, xs);
+      const PetscErrorCode err = MatMult(*operator2D.get(), *rhs.get(), *guess.get());
       if (err != PETSC_SUCCESS) {
         throw BoutException("MatMult failed with {:d}", static_cast<int>(err));
       }
     }
+  }
+
+  if (not forward) {
+    KSPConvergedReason reason = KSP_CONVERGED_ITERATING;
+    KSPGetConvergedReason(ksp, &reason);
+    if (reason == -3) { // Too many iterations, might be fixed by taking smaller timestep
+      throw BoutIterationFail("petsc_laplace: too many iterations");
+    }
+    if (reason <= 0) {
+      throw BoutException(
+          "petsc_laplace: inversion failed to converge. KSPConvergedReason: {} ({})",
+          KSPConvergedReasons[reason], static_cast<int>(reason));
+    }
+  }
 
   auto sol = guess.toField();
   sol.setIndex(yindex);

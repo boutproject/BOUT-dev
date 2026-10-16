@@ -184,8 +184,6 @@ public:
           DirectionTypes directions_in = {YDirectionType::Standard,
                                           ZDirectionType::Standard},
           std::optional<size_t> regionID = {});
-                                          ZDirectionType::Standard},
-          std::optional<size_t> regionID = {});
 
   /*!
    * Copy constructor
@@ -653,7 +651,6 @@ public:
   void setBoundaryTo(const Field3D& f3d, bool copyParallelSlices,
                      bool forceLegacy = false);
 
-  using FieldData::applyParallelBoundary;
   using FieldData::applyParallelBoundary;
   void applyParallelBoundary() override;
   void applyParallelBoundary(BoutReal t) override;

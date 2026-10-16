@@ -546,8 +546,7 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
     if (not localmesh->sourceHasVar("IntShiftTorsion" + suffix)) {
       output_warn.write("\tWARNING: No Integrated torsion specified\n");
     } else {
-      // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
-      IntShiftTorsion = 0.;
+      IntShiftTorsion_ = readAndFillGuards("IntShiftTorsion", 0.0);
     }
   }
 }

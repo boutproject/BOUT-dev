@@ -66,8 +66,6 @@ public:
             DirectionTypes directions_in = {YDirectionType::Standard,
                                             ZDirectionType::Standard},
             std::optional<size_t> regionID = {});
-                                            ZDirectionType::Standard},
-            std::optional<size_t> regionID = {});
 
   /*!
    * Copy constructor. After this the data

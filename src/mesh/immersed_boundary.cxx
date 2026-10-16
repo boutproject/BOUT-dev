@@ -12,8 +12,6 @@
 using bout::globals::mesh;
 
 ImmersedBoundary::ImmersedBoundary() {
-  AUTO_TRACE();
-
   ASSERT0(mesh->get(bndry_mask,        "in_mask") == 0);
   ASSERT0(mesh->get(ghost_ids,        "ghost_id") == 0);
   ASSERT0(mesh->get(num_ghosts,             "ng") == 0);

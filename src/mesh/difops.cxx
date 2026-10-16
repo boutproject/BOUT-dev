@@ -63,7 +63,8 @@ bout::FieldMetric Grad_par(const Field2D& var, CELL_LOC outloc,
 }
 
 Field3D Grad_par(const Field3DParallel& var, CELL_LOC outloc, const std::string& method) {
-  return DDY(var, outloc, method) * var.getCoordinates(outloc)->invSg();
+  const auto region = immBndry ? "RGN_NO_IMM_BNDRY" : "RGN_NOBNDRY";
+  return DDY(var, outloc, method, region) * var.getCoordinates(outloc)->invSg();
 }
 
 /*******************************************************************************
@@ -240,36 +241,36 @@ Field3D Div_par(const Field3DParallel& f, const Field3DParallel& v) {
 
   // Parallel divergence, using velocities at cell boundaries
   // Note: Not guaranteed to be flux conservative
-  const Mesh* mesh = f.getMesh();
-
   Field3D result{emptyFrom(f)};
 
   const Coordinates* coord = f.getCoordinates();
 
-  for (int i = mesh->xstart; i <= mesh->xend; i++) {
-    for (int j = mesh->ystart; j <= mesh->yend; j++) {
-      for (int k = mesh->zstart; k <= mesh->zend; k++) {
-        // Value of f and v at left cell face
-        const BoutReal fL = 0.5 * (f(i, j, k) + f.ydown()(i, j - 1, k));
-        const BoutReal vL = 0.5 * (v(i, j, k) + v.ydown()(i, j - 1, k));
-
-        const BoutReal fR = 0.5 * (f(i, j, k) + f.yup()(i, j + 1, k));
-        const BoutReal vR = 0.5 * (v(i, j, k) + v.yup()(i, j + 1, k));
-
-        // Calculate flux at right boundary (y+1/2)
-        const BoutReal fluxRight =
-            fR * vR * (coord->J(i, j, k) + coord->J(i, j + 1, k))
-            / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j + 1, k)));
-
-        // Calculate at left boundary (y-1/2)
-        const BoutReal fluxLeft =
-            fL * vL * (coord->J(i, j, k) + coord->J(i, j - 1, k))
-            / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j - 1, k)));
-
-        result(i, j, k) =
-            (fluxRight - fluxLeft) / (coord->dy(i, j, k) * coord->J(i, j, k));
-      }
+  BOUT_FOR(i, f.getValidRegionWithDefault("RGN_NOBNDRY")) {
+    if (immBndry && !immBndry->IsInside(i)) {
+      continue;
     }
+
+    const auto iym = i.ym();
+    const auto iyp = i.yp();
+
+    // Value of f and v at left cell face
+    const BoutReal fL = 0.5 * (f[i] + f.ydown()[iym]);
+    const BoutReal vL = 0.5 * (v[i] + v.ydown()[iym]);
+
+    const BoutReal fR = 0.5 * (f[i] + f.yup()[iyp]);
+    const BoutReal vR = 0.5 * (v[i] + v.yup()[iyp]);
+
+    // Calculate flux at right boundary (y+1/2)
+    const BoutReal fluxRight =
+        fR * vR * (coord->J()[i] + coord->J()[iyp])
+        / (sqrt(coord->g_22()[i]) + sqrt(coord->g_22()[iyp]));
+
+    // Calculate at left boundary (y-1/2)
+    const BoutReal fluxLeft =
+        fL * vL * (coord->J()[i] + coord->J()[iym])
+        / (sqrt(coord->g_22()[i]) + sqrt(coord->g_22()[iym]));
+
+    result[i] = (fluxRight - fluxLeft) / (coord->dy()[i] * coord->J()[i]);
   }
 
   return result;

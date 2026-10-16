@@ -194,9 +194,7 @@ public:
 
   using Laplacian::solve;
   FieldPerp solve(const FieldPerp& b) override;
-  FieldPerp solve(const FieldPerp& b, const FieldPerp& x0) override {
-    return solve(b, x0, false);
-  }
+  FieldPerp solve(const FieldPerp& b, const FieldPerp& x0) override;
   FieldPerp solve(const FieldPerp& b, const FieldPerp& x0, bool forward);
 
   using Laplacian::forward;

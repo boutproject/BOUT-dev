@@ -229,20 +229,6 @@ int Mesh::get(Array<BoutReal>& var, const std::string& name) {
   return source->get(var, name) ? 0 : 1;
 }
 
-int Mesh::get(Array<BoutReal>& rval, const std::string& name, BoutReal def) {
-  TRACE("Mesh::get(rval, {:s})", name);
-
-  if (source == nullptr) {
-    warn_default_used(def, name);
-    rval = Array<BoutReal>(0);
-    return true;
-  }
-
-  bool success = source->get(this, rval, name, def);
-
-  return !success;
-}
-
 int Mesh::get(Matrix<BoutReal>& rval, const std::string& name, BoutReal def) {
   TRACE("Mesh::get(rval, {:s})", name);
 

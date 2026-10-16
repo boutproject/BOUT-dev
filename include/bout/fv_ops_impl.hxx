@@ -10,6 +10,7 @@
 #include "bout/boutexception.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/coordinates.hxx"
+#include "bout/difops.hxx"
 #include "bout/field.hxx"
 #include "bout/field3d.hxx"
 #include "bout/fv_ops.hxx" // NOLINT(unused-includes, misc-include-cleaner)
@@ -305,6 +306,10 @@ Slices<T> makeslices(bool use_slices, const T& field) {
 template <typename CellEdges>
 Field3D Div_par(const Field3D& f_in, const Field3D& v_in, const Field3D& wave_speed_in,
                 bool fixflux) {
+
+  if (f_in.isFci()) {
+    return ::Div_par(f_in.asField3DParallel(), v_in.asField3DParallel());
+  }
 
   ASSERT1_FIELDS_COMPATIBLE(f_in, v_in);
   ASSERT1_FIELDS_COMPATIBLE(f_in, wave_speed_in);

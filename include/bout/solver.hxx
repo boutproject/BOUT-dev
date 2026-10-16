@@ -689,6 +689,8 @@ protected:
     for (const auto& i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
       loop_vars_op(f2d_range, f3d_range, i2d, udata, p, op, false);
     }
+
+    ASSERT1(p == getLocalN());
   }
 
 private:
@@ -805,7 +807,12 @@ private:
           if (bndry && !metadata.evolve_bndry) {
             continue;
           }
-          field[field.getMesh()->ind2Dto3D(i2d, jz)] = udata[p];
+          const auto ind = field.getMesh()->ind2Dto3D(i2d, jz);
+          if (!validCell3D(ind)) {
+            field[ind] = 0.0;
+            continue;
+          }
+          field[ind] = udata[p];
           p++;
         }
       }
@@ -832,6 +839,10 @@ private:
         // Loop over 3D variables
         for (const auto& metadata : f3d) {
           if (bndry && !metadata.evolve_bndry) {
+            continue;
+          }
+          const auto ind = metadata.var->getMesh()->ind2Dto3D(i2d, jz);
+          if (!validCell3D(ind)) {
             continue;
           }
           if (metadata.constraint) {
@@ -870,7 +881,11 @@ private:
           if (bndry && !metadata.evolve_bndry) {
             continue;
           }
-          udata[p] = field[field.getMesh()->ind2Dto3D(i2d, jz)];
+          const auto ind = field.getMesh()->ind2Dto3D(i2d, jz);
+          if (!validCell3D(ind)) {
+            continue;
+          }
+          udata[p] = field[ind];
           p++;
         }
       }
