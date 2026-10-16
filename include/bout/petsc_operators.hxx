@@ -1,6 +1,5 @@
 #pragma once
 
-#include <map>
 #ifndef BOUT_PETSC_OPERATORS
 #define BOUT_PETSC_OPERATORS
 
@@ -24,6 +23,7 @@
 #include <petscvec.h>
 
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
 #include <type_traits>

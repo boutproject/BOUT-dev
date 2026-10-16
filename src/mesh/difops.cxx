@@ -386,12 +386,15 @@ Field3D Div_par_K_Grad_par_mod_impl(const Field3DParallel& Kin,
       auto par = PetscOperators::Cache::getParallel(Kin.getMesh());
       return par->Div_par_K_Grad_par(Kin, fin);
 #else
-      throw BoutException("Cannot use `bout::ConductionMethod::PetscOperator`: BOUT++ was compiled without PETSc.");
+      throw BoutException("Cannot use `bout::ConductionMethod::PetscOperator`: BOUT++ "
+                          "was compiled without PETSc.");
 #endif
     }
 
     if constexpr (conduction_method != bout::ConductionMethod::Original) {
-      throw BoutException("Only bout::ConductionMethod::Original is supported for FCI");
+      throw BoutException(
+          "Only bout::ConductionMethod::Original and "
+          "\nbout::ConductionMethod::PetscOperator (with PETSc) are supported for FCI");
     }
 
     const auto& K_up = Kin.yup();
