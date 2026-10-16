@@ -73,6 +73,10 @@ std::string toString(DIRECTION direction) {
   return safeAt(DIRECTIONtoString, direction);
 }
 
+std::string toString(const DirectionTypes& dir) {
+  return "{" + toString(dir.y) + ", " + toString(dir.z) + "}";
+}
+
 void swap(DirectionTypes& first, DirectionTypes& second) {
   DirectionTypes temp = first;
   first = second;
