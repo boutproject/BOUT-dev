@@ -907,7 +907,7 @@ bool operator==(const Field3D& a, const Field3D& b) {
 }
 
 std::ostream& operator<<(std::ostream& out, const Field3D& value) {
-  out << toString(value);
+  out << fmt::to_string(value);
   return out;
 }
 

@@ -382,7 +382,7 @@ bool operator==(const Field2D& a, const Field2D& b) {
 }
 
 std::ostream& operator<<(std::ostream& out, const Field2D& value) {
-  out << toString(value);
+  out << fmt::to_string(value);
   return out;
 }
 
