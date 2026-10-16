@@ -396,7 +396,7 @@ Field3D Div_par_K_Grad_par_mod_impl(const Field3DParallel& Kin,
           "Only bout::ConductionMethod::Original and "
           "\nbout::ConductionMethod::PetscOperator (with PETSc) are supported for FCI"
           "\nbut found {}.",
-          toString(conduction_method));
+          conduction_method);
     }
 
     const auto& K_up = Kin.yup();
@@ -494,7 +494,7 @@ Field3D Div_par_K_Grad_par_mod_impl(const Field3DParallel& Kin,
 
         flux = C_edge * (f[iyp] - f[i]);
       } else {
-        throw BoutException("Unsupported option {}", toString(conduction_method));
+        throw BoutException("Unsupported option {}", conduction_method);
       }
       result[i] += flux / (coord->dy()[i] * coord->J()[i]);
     }
