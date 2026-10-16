@@ -386,7 +386,7 @@ Field3D Div_par_K_Grad_par_mod_impl(const Field3DParallel& Kin,
       auto par = PetscOperators::Cache::getParallel(Kin.getMesh());
       return par->Div_par_K_Grad_par(Kin, fin);
 #else
-      throw BoutException("BOUT++ was compiled without PETSc.");
+      throw BoutException("Cannot use `bout::ConductionMethod::PetscOperator`: BOUT++ was compiled without PETSc.");
 #endif
     }
 
@@ -489,7 +489,7 @@ Field3D Div_par_K_Grad_par_mod_impl(const Field3DParallel& Kin,
 
         flux = C_edge * (f[iyp] - f[i]);
       } else {
-        throw BoutException("Unsupported option {}", toString(conduction_method));
+        throw BoutException("Unsupported option {}", conduction_method);
       }
       result[i] += flux / (coord->dy()[i] * coord->J()[i]);
     }
