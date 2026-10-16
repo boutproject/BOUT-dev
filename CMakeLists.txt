@@ -151,6 +151,7 @@ set(BOUT_SOURCES
     ./include/bout/gyro_average.hxx
     ./include/bout/hypre_interface.hxx
     ./include/bout/hyprelib.hxx
+    ./include/bout/immersed_boundary.hxx
     ./include/bout/index_derivs.hxx
     ./include/bout/index_derivs_interface.hxx
     ./include/bout/initialprofiles.hxx
@@ -298,6 +299,7 @@ set(BOUT_SOURCES
     ./src/mesh/difops.cxx
     ./src/mesh/fv_ops.cxx
     ./src/mesh/g_values.cxx
+    ./src/mesh/immersed_boundary.cxx
     ./src/mesh/impls/bout/boutmesh.cxx
     ./src/mesh/impls/bout/boutmesh.hxx
     ./src/mesh/index_derivs.cxx

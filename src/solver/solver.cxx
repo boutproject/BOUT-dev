@@ -31,6 +31,7 @@
 #include "bout/field3d.hxx"
 #include "bout/field_factory.hxx"
 #include "bout/globals.hxx"
+#include "bout/immersed_boundary.hxx"
 #include "bout/initialprofiles.hxx"
 #include "bout/interpolation.hxx"
 #include "bout/monitor.hxx"
@@ -317,7 +318,17 @@ void Solver::add(Field3D& v, const std::string& name, const std::string& descrip
   d.evolve_bndry = Options::root()["all"]["evolve_bndry"].withDefault(false);
   d.evolve_bndry = Options::root()[name]["evolve_bndry"].withDefault(d.evolve_bndry);
 
-  v.applyBoundary(true);     // Make sure initial profile obeys boundary conditions
+  if (immBndry) {
+    v.name = name;
+    //IB_TODO: Complex setup logic in case field not yet setup. Maybe theres a cleaner way?
+    if (!immBndry->CheckFieldSetUp(v.name)) {
+      immBndry->FieldSetup(v);
+    }
+    //IB_TODO: Does applyBoundary below also handle parallel BCs? If so its getting missed here.
+    immBndry->SetBoundary(v);
+  } else {
+    v.applyBoundary(true);     // Make sure initial profile obeys boundary conditions
+  }
   v.setLocation(d.location); // Restore location if changed
 
   f3d.emplace_back(std::move(d));
@@ -744,6 +755,10 @@ int Solver::init() {
   return 0;
 }
 
+void Solver::modelOutputVars(Options& output_options) {
+  model->outputVars(output_options);
+}
+
 void Solver::outputVars(Options& output_options, bool save_repeat) {
   Timer time("io");
   output_options["tt"].force(simtime, "Solver");
@@ -817,6 +832,7 @@ void Solver::readEvolvingVariablesFromOptions(Options& options) {
   for (const auto& f : f3d) {
     if (options.isSet(f.name)) {
       *(f.var) = options[f.name].as<Field3D>();
+      f.var->name = f.name; //IB_TODO: Fix to carry name through from restart file for IB map.
       if (mms) {
         *(f.MMS_err) = options["E_" + f.name].as<Field3D>();
       }
@@ -1052,6 +1068,10 @@ int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
  * Useful routines (protected)
  **************************************************************************/
 
+bool Solver::validCell3D(const Ind3D& ind) {
+  return !immBndry || immBndry->IsInside(ind);
+}
+
 int Solver::getLocalN() {
 
   // Cache the value, so this is not repeatedly called.
@@ -1071,9 +1091,22 @@ int Solver::getLocalN() {
         field.evolve_bndry ? size(field.var->getRegion("RGN_BNDRY")) : 0;
     return value + boundary_size + size(field.var->getRegion("RGN_NOBNDRY"));
   };
+  //Immersed boundary only affects 3D fields so separate sums. Equivalent to above if !immBndry.
+  auto local_N_3D_sum = [this](int value, const auto& field) -> int {
+    int count = 0;
+    if (field.evolve_bndry) {
+      BOUT_FOR_SERIAL(i, field.var->getRegion("RGN_BNDRY")) {
+        if (validCell3D(i)) {++count;}
+      }
+    }
+    BOUT_FOR_SERIAL(i, field.var->getRegion("RGN_NOBNDRY")) {
+      if (validCell3D(i)) {++count;}
+    }
+    return value + count;
+  };
 
   const auto local_N_2D = std::accumulate(begin(f2d), end(f2d), 0, local_N_sum);
-  const auto local_N_3D = std::accumulate(begin(f3d), end(f3d), 0, local_N_sum);
+  const auto local_N_3D = std::accumulate(begin(f3d), end(f3d), 0, local_N_3D_sum);
   const auto local_N = local_N_2D + local_N_3D;
 
   cacheLocalN = local_N;
@@ -1236,26 +1269,42 @@ Field3D Solver::globalIndex(int localStart) {
     // Some boundary points evolving
 
     for (const auto& i2d : mesh->getRegion2D("RGN_BNDRY")) {
-      // Zero index contains 2D and 3D variables
-      index[mesh->ind2Dto3D(i2d, 0)] = ind;
-      ind += n2dbndry + n3dbndry;
+      // Zero index contains 2D and, for plasma cells, 3D variables
+      // No 3D vars included if cell not evolved (not plasma cell per IB).
+      const auto ind3d = mesh->ind2Dto3D(i2d, 0);
+      const int ncells = n2dbndry + (validCell3D(ind3d) ? n3dbndry : 0);
+      if (ncells > 0) {
+        index[ind3d] = ind;
+      }
+      ind += ncells;
 
       for (int jz = 1; jz < nz; jz++) {
-        index[mesh->ind2Dto3D(i2d, jz)] = ind;
-        ind += n3dbndry;
+        const auto ind3d = mesh->ind2Dto3D(i2d, jz);
+        if (validCell3D(ind3d) && n3dbndry > 0) {
+          index[ind3d] = ind;
+          ind += n3dbndry;
+        }
       }
     }
   }
 
   // Bulk of points
   for (const auto& i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
-    // Zero index contains 2D and 3D variables
-    index[mesh->ind2Dto3D(i2d, 0)] = ind;
-    ind += n2d + n3d;
+    // Zero index contains 2D and, for plasma cells, 3D variables
+    // No 3D vars included if cell not evolved (not plasma cell per IB).
+    const auto ind3d = mesh->ind2Dto3D(i2d, 0);
+    const int ncells = n2d + (validCell3D(ind3d) ? n3d : 0);
+    if (ncells > 0) {
+      index[ind3d] = ind;
+    }
+    ind += ncells;
 
     for (int jz = 1; jz < nz; jz++) {
-      index[mesh->ind2Dto3D(i2d, jz)] = ind;
-      ind += n3d;
+      const auto ind3d = mesh->ind2Dto3D(i2d, jz);
+      if (validCell3D(ind3d) && n3d > 0) {
+        index[ind3d] = ind;
+        ind += n3d;
+      }
     }
   }
 
@@ -1516,7 +1565,11 @@ void Solver::pre_rhs(BoutReal t) {
 
   for (const auto& f : f3d) {
     if (!f.constraint) {
-      f.var->applyBoundary(t);
+      if (immBndry) {
+        immBndry->SetBoundary(*(f.var));
+      } else {
+        f.var->applyBoundary(t);
+      }
     }
   }
 }

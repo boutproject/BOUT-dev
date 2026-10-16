@@ -26,6 +26,7 @@
 #include "bout/boutexception.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/globals.hxx"
+#include "bout/immersed_boundary.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/interpolation_xz.hxx"
 #include "bout/mask.hxx"
@@ -423,13 +424,20 @@ Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(
 #if BOUT_HAS_PETSC
     BoutReal* ptr = nullptr;
     const BoutReal* cptr = nullptr;
+    const auto valid_ib_value = [](const Ind3D& ind) {
+      return !immBndry || immBndry->IsInside(ind) || immBndry->IsUsableGhost(ind);
+    };
     VecGetArray(rhs, &ptr);
-    BOUT_FOR(i, f.getRegion("RGN_NOY")) { ptr[int(i)] = f[i]; }
+    BOUT_FOR(i, f.getRegion("RGN_NOY")) {
+      //IB_TODO: Do this by region so checks not necessary?
+      ptr[int(i)] = valid_ib_value(i) ? f[i] : 0;
+    }
     VecRestoreArray(rhs, &ptr);
     MatMult(petscWeights, rhs, result);
     VecGetArrayRead(result, &cptr);
     BOUT_FOR(i, f.getRegion(region2)) {
-      f_interp[i] = cptr[int(i)];
+      //IB_TODO: Do this by region so checks not necessary?
+      f_interp[i] = valid_ib_value(i) ? cptr[int(i)] : 0;
       if constexpr (monotonic) {
         const auto iyp = i;
         const auto i = iyp.ym(y_offset);

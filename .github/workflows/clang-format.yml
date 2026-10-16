@@ -1,0 +1,31 @@
+name: clang-format-command
+
+on:
+  pull_request:
+    paths:
+      - '**.cxx'
+      - '**.hxx'
+
+jobs:
+  clang-format:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the pull request branch, also include all history
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      # This also installs git-clang-format
+      - name: Install clang-format
+        run: sudo apt install clang-format
+
+      - name: Run clang-format
+        id: format
+        run:
+          while ! git clang-format origin/${{ github.base_ref }} ; do git add . ; done
+
+      - name: Commit to the PR branch
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Apply clang-format changes"

@@ -10,7 +10,7 @@
 #include "bout/field3d.hxx"
 #include "bout/field_data.hxx"
 #include "bout/g_values.hxx"
-#include <bout/assert.hxx>
+ #include <bout/assert.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/build_config.hxx>
@@ -546,7 +546,8 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
     if (not localmesh->sourceHasVar("IntShiftTorsion" + suffix)) {
       output_warn.write("\tWARNING: No Integrated torsion specified\n");
     } else {
-      IntShiftTorsion_ = readAndFillGuards("IntShiftTorsion", 0.0);
+      // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
+      IntShiftTorsion = 0.;
     }
   }
 }

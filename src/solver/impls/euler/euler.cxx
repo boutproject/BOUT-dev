@@ -172,6 +172,9 @@ void EulerSolver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& star
     for (auto& f : f3d) {
       f.F_var->disableTracking();
     }
+    for (auto& f : f3d) {
+      f.F_var->disableTracking();
+    }
   }
   save_derivs(std::begin(result));
 

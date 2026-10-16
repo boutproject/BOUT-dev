@@ -37,6 +37,7 @@
 #include "bout/options.hxx"
 #include "bout/options_io.hxx"
 #include "bout/output.hxx"
+#include "bout/sys/timer.hxx"
 #include "bout/traits.hxx"
 #include "bout/vecops.hxx"
 
@@ -72,14 +73,10 @@ void check_laplace(int test_num, std::string_view test_name, Laplacian& invert,
   Field3D abs_error;
   BoutReal max_error = -1;
 
-  try {
-    sol = invert.solve(sliceXZ(bcoef, ystart));
-    error = (field - sol) / field;
-    abs_error = field - sol;
-    max_error = max_error_at_ystart(abs(abs_error));
-  } catch (BoutException& err) {
-    output.write("BoutException occured in invert->solve(b1): {}\n", err.what());
-  }
+  sol = invert.solve(sliceXZ(bcoef, ystart));
+  error = (field - sol) / field;
+  abs_error = field - sol;
+  max_error = max_error_at_ystart(abs(abs_error));
 
   output.write("\nTest {}: {}\n", test_num, test_name);
   output.write("Magnitude of maximum absolute error is {}\n", max_error);
@@ -239,7 +236,7 @@ int main(int argc, char** argv) {
                   dump);
 
     //////////////////////////////////////////////
-    // Test 5: Cosine x-profiles, 2nd order Krylov
+    // Test 4: Cosine x-profiles, 2nd order Krylov
     Field3D f_5 = generate_f5(*mesh);
     Field3D a_5 = generate_a5(*mesh);
     Field3D c_5 = generate_c5(*mesh);
@@ -253,13 +250,13 @@ int main(int argc, char** argv) {
                   INVERT_AC_GRAD, a_5, c_5, d_5, b_5, f_5, mesh->ystart, dump);
 
     //////////////////////////////////////////////
-    // Test 6: Cosine x-profiles, 4th order Krylov
+    // Test 5: Cosine x-profiles, 4th order Krylov
 
     check_laplace(6, "different profiles, PETSc 4th order", *invert_4th, INVERT_AC_GRAD,
                   INVERT_AC_GRAD, a_5, c_5, d_5, b_5, f_5, mesh->ystart, dump);
 
     //////////////////////////////////////////////////////////////////////////////////////
-    // Test 7+8: Cosine x-profiles, z-independent coefficients and compare with SPT method
+    // Test 6: Cosine x-profiles, z-independent coefficients
 
     const Field2D a_7 = DC(a_5);
     const Field2D c_7 = DC(c_5);
@@ -276,6 +273,9 @@ int main(int argc, char** argv) {
 
     MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
   }
+
+  output.write("Used {}s for setup and {}s for solving\n",
+               Timer::getTotalTime("petscsetup"), Timer::getTotalTime("petscsolve"));
 
   bout::checkForUnusedOptions();
 

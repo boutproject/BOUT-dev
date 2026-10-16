@@ -4,10 +4,9 @@
  * Definition of main derivative kernels
  *
  **************************************************************************
- * Copyright 2018
- *    D.Dickinson
+ * Copyright 2018 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *

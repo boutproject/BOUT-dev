@@ -788,6 +788,10 @@ pow(L lhs, const R& rhs, const std::string& rgn) {
  * and uses checkData() to, if CHECK >= 3, check
  * result for non-finite numbers
  *
+ * If the input field has parallel slices, then those will also be
+ * operated on. To avoid this, use `withoutParallelSlices()` to
+ * discard slices before calling.
+ *
  */
 class Field3DParallel;
 class FieldPerp;
@@ -1079,6 +1083,8 @@ class Field3DParallel;
 
 /// Apply a floor value \p f to a field \p var. Any value lower than
 /// the floor is set to the floor.
+///
+/// If the field has parallel slices then they will also be floored.
 ///
 /// @param[in] var  Variable to apply floor to
 /// @param[in] f    The floor value

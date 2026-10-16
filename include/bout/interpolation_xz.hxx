@@ -40,6 +40,7 @@ enum class implementation_type { new_weights, petsc, legacy };
 
 class Options;
 class GlobalField3DAccess;
+class GlobalField3DAccess;
 
 /// Interpolate a field onto a perturbed set of points
 const Field3D interpolate(const Field3D& f, const Field3D& delta_x,
@@ -313,6 +314,15 @@ public:
   Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
                       const BoutMask& mask,
                       const std::string& region = "RGN_NOBNDRY") override;
+};
+
+class XZMonotonicHermiteSplineLegacy : public XZHermiteSplineBase<false> {
+public:
+  using XZHermiteSplineBase<false>::interpolate;
+  virtual Field3D interpolate(const Field3D& f,
+                              const std::string& region = "RGN_NOBNDRY") const override;
+  template <class... Ts>
+  XZMonotonicHermiteSplineLegacy(Ts... args) : XZHermiteSplineBase<false>(args...) {}
 };
 
 class XZInterpolationFactory

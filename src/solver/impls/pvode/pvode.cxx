@@ -39,6 +39,7 @@
 #include <bout/options_io.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
+#include <bout/version.hxx>
 
 #include <pvode/cvode.h>
 #include <pvode/cvspgmr.h>  // use CVSPGMR linear solver each internal step

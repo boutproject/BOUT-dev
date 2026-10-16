@@ -260,7 +260,8 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
     KSPCreate(localmesh->getXZcomm(), &ksp);
     ksp_initialised = true;
 
-    // Configure Linear Solver
+    if (not forward) {
+      // Configure Linear Solver
 #if PETSC_VERSION_GE(3, 5, 0)
     KSPSetOperators(ksp, *operator2D.get(), *operator2D.get());
 #else
@@ -359,6 +360,13 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
         "petsc_laplace: inversion failed to converge. KSPConvergedReason: {} ({})",
         KSPConvergedReasons[reason], static_cast<int>(reason));
   }
+    } else {
+      timer.reset();
+      PetscErrorCode err = MatMult(MatA, bs, xs);
+      if (err != PETSC_SUCCESS) {
+        throw BoutException("MatMult failed with {:d}", static_cast<int>(err));
+      }
+    }
 
   auto sol = guess.toField();
   sol.setIndex(yindex);

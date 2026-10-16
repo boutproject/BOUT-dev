@@ -121,6 +121,35 @@ bool GridFile::get(Mesh* UNUSED(m), BoutReal& rval, const std::string& name,
   return success;
 }
 
+bool GridFile::get(Mesh* UNUSED(m), Array<double>& rval, const std::string& name,
+                   BoutReal def) {
+  Timer timer("io");
+  TRACE("GridFile::get(BoutArray)");
+  const bool success = data.isSet(name);
+  if (not success) {
+    // Override any previously set defaults
+    data[name].force(def);
+  }
+  rval = data[name];
+  return success;
+}
+
+bool GridFile::get(Mesh* UNUSED(m), Matrix<double>& rval, const std::string& name,
+                   BoutReal def) {
+  Timer timer("io");
+  TRACE("GridFile::get(BoutMatrix)");
+  const bool success = data.isSet(name);
+  if (not success) {
+    // Override any previously set defaults
+    data[name].force(def);
+    rval = data[name].as<double>();
+  }
+  else {
+    rval = data[name].as<Matrix<double>>();
+  }
+  return success;
+}
+
 /*!
  * Reads a 2D, 3D or FieldPerp field variable from a file
  *

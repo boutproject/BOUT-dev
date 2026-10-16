@@ -229,6 +229,34 @@ int Mesh::get(Array<BoutReal>& var, const std::string& name) {
   return source->get(var, name) ? 0 : 1;
 }
 
+int Mesh::get(Array<BoutReal>& rval, const std::string& name, BoutReal def) {
+  TRACE("Mesh::get(rval, {:s})", name);
+
+  if (source == nullptr) {
+    warn_default_used(def, name);
+    rval = Array<BoutReal>(0);
+    return true;
+  }
+
+  bool success = source->get(this, rval, name, def);
+
+  return !success;
+}
+
+int Mesh::get(Matrix<BoutReal>& rval, const std::string& name, BoutReal def) {
+  TRACE("Mesh::get(rval, {:s})", name);
+
+  if (source == nullptr) {
+    warn_default_used(def, name);
+    rval = Matrix<BoutReal>();
+    return true;
+  }
+
+  bool success = source->get(this, rval, name, def);
+
+  return !success;
+}
+
 int Mesh::get(Field2D& var, const std::string& name, BoutReal def, bool communicate,
               CELL_LOC location) {
   TRACE("Loading 2D field: Mesh::get(Field2D, {:s})", name);
@@ -660,6 +688,17 @@ bool Mesh::hasRegionPerp(const std::string& region_name) const {
   return regionMapPerp.find(region_name) != std::end(regionMapPerp);
 }
 
+void Mesh::upsertRegion3D(const std::string& region_name, const Region<>& new_region) {
+  //Update if existing region, otherwise just insert.
+  if (this->hasRegion3D(region_name)) {
+    const auto region_id = regionMap3D[region_name];
+    region3D[region_id] = new_region;
+    output_warn.write("WARNING: Updating region 3D, " + region_name);
+  } else {
+    this->addRegion3D(region_name, new_region);
+  }
+}
+
 void Mesh::addRegion3D(const std::string& region_name, const Region<>& region) {
   if (regionMap3D.count(region_name)) {
     throw BoutException(
@@ -682,6 +721,16 @@ void Mesh::addRegion3D(const std::string& region_name, const Region<>& region) {
 
   output_verbose.write(_f("Registered region 3D {:s}"), region_name);
   output_verbose << "\n:\t" << region.getStats() << "\n";
+}
+
+void Mesh::upsertRegion2D(const std::string& region_name, const Region<Ind2D>& new_region) {
+  //Update if existing region, otherwise just insert.
+  if (this->hasRegion2D(region_name)) {
+    const auto region_id = regionMap2D[region_name];
+    output_warn.write("WARNING: Updating region 2D, " + region_name);
+  } else {
+    this->addRegion2D(region_name, new_region);
+  }
 }
 
 void Mesh::addRegion2D(const std::string& region_name, const Region<Ind2D>& region) {

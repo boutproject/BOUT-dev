@@ -38,7 +38,7 @@ bndry_par_ydown = parallel_neumann_o2
 
 [nv]
 
-bndry_par_all = parallel_dirichlet
+bndry_par_all = parallel_dirichlet_o2
 
 [solver]
 output_step = 0.1

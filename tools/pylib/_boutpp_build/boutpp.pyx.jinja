@@ -305,6 +305,7 @@ cdef {{ field.field_type }} {{ field.fdd }}FromPtr(c.{{ field.field_type }}* i):
         cdef np.ndarray[double, mode="c", ndim={{ field.ndims }}] data_ = np.ascontiguousarray(data)
         c_set_all(self.cobj,&data_[{{ zeros }}])
         return self
+        return self
 
     def get(self):
         """
@@ -897,7 +898,20 @@ Equation solved is: d\\nabla^2_\\perp x + (1/c1)\\nabla_perp c2\\cdot\\nabla_\\p
         """
         checkInit()
         cdef c.Options* copt = NULL
+        cdef c.Options* copt = NULL
         if section:
+            if isinstance(section, str):
+                section = Options.root(section)
+            copt = (<Options?>section).cobj
+        cdef benum.CELL_LOC cloc = benum.resolve_cell_loc(loc)
+        cdef c.Mesh* cmesh = NULL
+        if mesh:
+            cmesh = (<Mesh?>mesh).cobj
+        # Solver is not exposed yet
+        # cdef c.Solver* csolver = NULL
+        # if solver:
+        #     csolver = (<Solver?>solver).cobj
+        self.cobj = c.Laplacian.create(copt, cloc, cmesh, NULL)
             if isinstance(section, str):
                 section = Options.root(section)
             copt = (<Options?>section).cobj

@@ -52,6 +52,7 @@
 #include <bout/dcomplex.hxx>
 #include <bout/fft.hxx>
 #include <bout/field3d.hxx>
+#include <bout/immersed_boundary.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/mesh.hxx>
 #include <bout/output.hxx>
@@ -192,6 +193,18 @@ void Field3D::splitParallelSlices() {
     // ParallelTransform, so we don't need a full constructor
     yup_fields.emplace_back(fieldmesh);
     ydown_fields.emplace_back(fieldmesh);
+    if (isFci()) {
+      yup_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", i + 1));
+      ydown_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", -i - 1));
+    }
+  }
+}
+void Field3D::splitParallelSlicesAndAllocate() {
+  splitParallelSlices();
+  allocate();
+  for (int i = 0; i < fieldmesh->ystart; ++i) {
+    yup_fields[i].allocate();
+    ydown_fields[i].allocate();
   }
   resetRegionParallel();
 }
@@ -357,14 +370,19 @@ void Field3D::operator=(const FieldPerp& rhs) {
 Field3D& Field3D::operator=(const BoutReal val) {
   track(val, "operator=");
 
-  // Delete existing parallel slices. We don't copy parallel slices, so any
-  // that currently exist will be incorrect.
-  clearParallelSlices();
+  if (hasParallelSlices()) {
+    for (size_t i = 0; i < numberParallelSlices(); ++i) {
+      yup(i) = val;
+      ydown(i) = val;
+    }
+  }
+
   resetRegion();
 
   allocate();
 
   BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = val; }
+  this->name = "BR";
   this->name = "BR";
 
   return *this;
@@ -519,6 +537,12 @@ void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices,
         }
       }
     }
+  }
+
+  //IB_TODO: Can just override non-fci code like this with immersed boundary BCs?
+  if (immBndry) {
+    immBndry->SetBoundary(*this);
+    return;
   }
 
   // Non-FCI.

@@ -59,6 +59,9 @@ class Mesh;
 #include "bout/region.hxx"
 #include "bout/sys/range.hxx" // RangeIterator
 #include "bout/unused.hxx"
+#include "bout/utils.hxx"
+
+#include "mpi.h"
 
 #include <map>
 #include <memory>
@@ -175,6 +178,7 @@ public:
 
   int get(Array<int>& var, const std::string& name);
   int get(Array<BoutReal>& var, const std::string& name);
+  int get(Matrix<BoutReal>& rval, const std::string& name, BoutReal def = 0.0); //IB_TODO: Fix this and use above two gets if needed.
 
   /// Get a Field2D from the input source
   /// including communicating guard cells
@@ -637,6 +641,18 @@ public:
       return found->second;
     }
     throw BoutException("Coordinates not yet set. Use non-const version!");
+
+  std::shared_ptr<Coordinates>
+  getCoordinatesConst(const CELL_LOC location = CELL_CENTRE) const {
+    ASSERT1(location != CELL_DEFAULT);
+    ASSERT1(location != CELL_VSHIFT);
+
+    auto found = coords_map.find(location);
+    if (found != coords_map.end()) {
+      // True branch most common, returns immediately
+      return found->second;
+    }
+    throw BoutException("Coordinates not yet set. Use non-const version!");
   }
 
   /// Returns the non-CELL_CENTRE location
@@ -755,6 +771,9 @@ public:
   void addRegion3D(const std::string& region_name, const Region<Ind3D>& region);
   void addRegion2D(const std::string& region_name, const Region<Ind2D>& region);
   void addRegionPerp(const std::string& region_name, const Region<IndPerp>& region);
+
+  void upsertRegion2D(const std::string& region_name, const Region<Ind2D>& new_region);
+  void upsertRegion3D(const std::string& region_name, const Region<>& new_region);
 
   /// Converts an Ind2D to an Ind3D using calculation
   Ind3D ind2Dto3D(const Ind2D& ind2D, int jz = 0) const {

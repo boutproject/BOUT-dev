@@ -35,6 +35,7 @@ class GridDataSource;
 #include <bout/mesh.hxx>
 #include <bout/options.hxx>
 #include <bout/unused.hxx>
+#include <bout/utils.hxx>
 
 #include <string>
 #include <vector>
@@ -60,6 +61,11 @@ public:
   virtual bool get(Mesh* m, int& ival, const std::string& name, int def = 0) = 0;
   /// Get a BoutReal number
   virtual bool get(Mesh* m, BoutReal& rval, const std::string& name,
+                   BoutReal def = 0.0) = 0;
+                   
+  virtual bool get(Mesh* m, Array<double>& rval, const std::string& name,
+                   BoutReal def = 0.0) = 0;
+  virtual bool get(Mesh* m, Matrix<double>& rval, const std::string& name,
                    BoutReal def = 0.0) = 0;
   virtual bool get(Mesh* m, Field2D& var, const std::string& name, BoutReal def = 0.0,
                    CELL_LOC location = CELL_DEFAULT) = 0;
@@ -119,6 +125,8 @@ public:
   bool get(Mesh* m, int& ival, const std::string& name, int def = 0) override;
   /// Get a BoutReal number
   bool get(Mesh* m, BoutReal& rval, const std::string& name, BoutReal def = 0.0) override;
+  bool get(Mesh* m, Array<double>& rval, const std::string& name, BoutReal def = 0.0) override;
+  bool get(Mesh* m, Matrix<double>& rval, const std::string& name, BoutReal def = 0.0) override;
   bool get(Mesh* m, Field2D& var, const std::string& name, BoutReal def = 0.0,
            CELL_LOC location = CELL_DEFAULT) override;
   bool get(Mesh* m, Field3D& var, const std::string& name, BoutReal def = 0.0,
@@ -236,6 +244,19 @@ public:
    */
   bool get(Mesh* mesh, BoutReal& rval, const std::string& name,
            BoutReal def = 0.0) override;
+
+  /*!
+   * Reads BoutReal Array or Matrix from options. Uses Options::get to handle
+   * expressions
+   *
+   * @param[in] mesh   Not used
+   * @param[in] name   Name of variable
+   * @param[out] rval  Always given a value, defaults to 0
+   *
+   * @return True if option is set, false if ival is default (0)
+   */
+  bool get(Mesh* m, Array<double>& rval, const std::string& name, BoutReal def = 0.0) override;
+  bool get(Mesh* m, Matrix<double>& rval, const std::string& name, BoutReal def = 0.0) override;
 
   /*!
    * Get a Field2D object by finding the option with the given name,

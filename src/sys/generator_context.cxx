@@ -17,8 +17,14 @@ Context::Context(int ix, int iy, int iz, CELL_LOC loc, Mesh* msh, BoutReal t)
   parameters["y"] = (loc == CELL_YLOW) ? PI * (msh->GlobalY(iy) + msh->GlobalY(iy - 1))
                                        : TWOPI * msh->GlobalY(iy);
 
-  parameters["z"] = (loc == CELL_ZLOW) ? PI * (msh->GlobalZ(iz) + msh->GlobalZ(iz - 1))
-                                       : TWOPI * msh->GlobalZ(iz);
+
+
+  //IB_TODO: Remove 2pi factor and shift z like x for mms testing. Use zn for this when available (znorm).
+  parameters["z"] = (loc == CELL_ZLOW)
+                        ? (iz) / static_cast<BoutReal>(msh->LocalNz) // * TWOPI
+                        : (iz + 0.5) / static_cast<BoutReal>(msh->LocalNz); // * TWOPI;
+  //parameters["z"] = (loc == CELL_ZLOW) ? PI * (msh->GlobalZ(iz) + msh->GlobalZ(iz - 1))
+  //                                     : TWOPI * msh->GlobalZ(iz);
 
   parameters["t"] = t;
 }

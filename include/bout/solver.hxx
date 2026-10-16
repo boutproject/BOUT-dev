@@ -321,6 +321,8 @@ public:
   /// @param[in] save_repeat    If true, add variables with time dimension
   virtual void outputVars(Options& output_options, bool save_repeat = true);
 
+  void modelOutputVars(Options& output_options);
+
   /// Copy evolving variables out of \p options
   virtual void readEvolvingVariablesFromOptions(Options& options);
 
@@ -607,6 +609,10 @@ protected:
   void save_vars(BoutReal* udata);
   void save_derivs(BoutReal* dudata);
   void set_id(BoutReal* udata);
+
+  /// Useful function for IB method to evolve only plasma cells.
+  /// Currently only 3D and requires immBndry setup first.
+  bool validCell3D(const Ind3D& ind);
 
   /// Returns a Field3D containing the global indices for each locally-owned DOF.
   Field3D globalIndex(int localStart);

@@ -37,9 +37,11 @@
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
 #include <bout/globals.hxx>
+#include <bout/immersed_boundary.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 #include <bout/mesh.hxx>
+#include <bout/output_bout_types.hxx>
 #include <bout/region.hxx>
 #include <bout/solver.hxx>
 #include <bout/unused.hxx>
@@ -223,6 +225,16 @@ Field3D Div_par(const Field3DParallel& f, CELL_LOC outloc, const std::string& me
 
 Field3D Div_par(const Field3DParallel& f, const Field3DParallel& v) {
   ASSERT1_FIELDS_COMPATIBLE(f, v);
+
+  // Either both have parallel slices or neither
+  if (!f.hasParallelSlices()) {
+    // No parallel slices
+    ASSERT1(!v.hasParallelSlices());
+
+    return Div_par(f * v);
+  }
+
+  // Using parallel slices
   ASSERT1(f.hasParallelSlices());
   ASSERT1(v.hasParallelSlices());
 
