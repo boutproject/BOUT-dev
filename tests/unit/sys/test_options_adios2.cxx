@@ -235,8 +235,7 @@ TEST_F(OptionsAdios2Test, Field2DWriteCellCentre) {
   // Read file
   Options data = OptionsIO::create(file_options)->read();
 
-  EXPECT_EQ(data["f2d"].attributes["cell_location"].as<std::string>(),
-            toString(CELL_CENTRE));
+  EXPECT_EQ(data["f2d"].attributes["cell_location"].as<std::string>(), CELL_CENTRE);
 }
 
 TEST_F(OptionsAdios2Test, Field2DWriteCellYLow) {
@@ -251,8 +250,7 @@ TEST_F(OptionsAdios2Test, Field2DWriteCellYLow) {
   // Read file
   Options data = OptionsIO::create(file_options)->read();
 
-  EXPECT_EQ(data["f2d"].attributes["cell_location"].as<std::string>(),
-            toString(CELL_YLOW));
+  EXPECT_EQ(data["f2d"].attributes["cell_location"].as<std::string>(), CELL_YLOW);
 }
 
 TEST_F(OptionsAdios2Test, Field3DWriteCellCentre) {
@@ -267,8 +265,7 @@ TEST_F(OptionsAdios2Test, Field3DWriteCellCentre) {
   // Read file
   Options data = OptionsIO::create(file_options)->read();
 
-  EXPECT_EQ(data["f3d"].attributes["cell_location"].as<std::string>(),
-            toString(CELL_CENTRE));
+  EXPECT_EQ(data["f3d"].attributes["cell_location"].as<std::string>(), CELL_CENTRE);
 }
 
 TEST_F(OptionsAdios2Test, Field3DWriteCellYLow) {
@@ -283,8 +280,7 @@ TEST_F(OptionsAdios2Test, Field3DWriteCellYLow) {
   // Read file
   Options data = OptionsIO::create(file_options)->read();
 
-  EXPECT_EQ(data["f3d"].attributes["cell_location"].as<std::string>(),
-            toString(CELL_YLOW));
+  EXPECT_EQ(data["f3d"].attributes["cell_location"].as<std::string>(), CELL_YLOW);
 }
 
 TEST_F(OptionsAdios2Test, FieldPerpWriteCellCentre) {
@@ -305,8 +301,7 @@ TEST_F(OptionsAdios2Test, FieldPerpWriteCellCentre) {
   // Read file
   Options data = OptionsIO::create(file_options)->read();
 
-  EXPECT_EQ(data["fperp"].attributes["cell_location"].as<std::string>(),
-            toString(CELL_CENTRE));
+  EXPECT_EQ(data["fperp"].attributes["cell_location"].as<std::string>(), CELL_CENTRE);
   EXPECT_EQ(data["fperp"].attributes["yindex_global"].as<int>(), 2);
 }
 

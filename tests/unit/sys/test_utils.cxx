@@ -1,3 +1,4 @@
+#include "fmt/format.h"
 #include "bout/utils.hxx"
 #include "gtest/gtest.h"
 
@@ -527,32 +528,32 @@ TEST(StringUtilitiesTest, BoolToString) {
   std::string true_string = "true";
   std::string false_string = "false";
 
-  EXPECT_EQ(true_string, toString(true));
-  EXPECT_EQ(false_string, toString(false));
+  EXPECT_EQ(true_string, fmt::to_string(true));
+  EXPECT_EQ(false_string, fmt::to_string(false));
 }
 
 TEST(StringUtilitiesTest, ConstCharToString) {
-  EXPECT_EQ(std::string("hello"), toString("hello"));
+  EXPECT_EQ(std::string("hello"), fmt::to_string("hello"));
 }
 
 TEST(StringUtilitiesTest, StringToString) {
   std::string test_string = "dlkjl872kj";
 
-  EXPECT_EQ(test_string, toString(test_string));
+  EXPECT_EQ(test_string, fmt::to_string(test_string));
 }
 
 TEST(StringUtilitiesTest, IntToString) {
   int number_int = 42;
   std::string number_string = "42";
 
-  EXPECT_EQ(number_string, toString(number_int));
+  EXPECT_EQ(number_string, fmt::to_string(number_int));
 }
 
 TEST(StringUtilitiesTest, RealToString) {
   BoutReal number_real = 3.142e8;
   std::string number_string = "3.142e+08";
 
-  EXPECT_EQ(number_string, toString(number_real));
+  EXPECT_EQ(number_string, fmt::to_string(number_real));
 }
 
 TEST(StringUtilitiesTest, StringSplit) {
@@ -667,7 +668,7 @@ TEST(FunctionTraitsTest, SecondArg) {
 #ifndef __cpp_lib_erase_if
 TEST(StdLibBackPorts, EraseIfMultiset) {
   std::multiset<int> data{3, 3, 4, 5, 5, 6, 6, 7, 2, 1, 0};
-  auto divisible_by_3 = [](auto const& x) { return (x % 3) == 0; };
+  auto divisible_by_3 = [](const auto& x) { return (x % 3) == 0; };
 
   bout::utils::erase_if(data, divisible_by_3);
 
@@ -678,7 +679,7 @@ TEST(StdLibBackPorts, EraseIfMultiset) {
 
 TEST(StdLibBackPorts, EraseIfSet) {
   std::set<int> data{3, 4, 5, 6, 7, 2, 1, 0};
-  auto divisible_by_3 = [](auto const& x) { return (x % 3) == 0; };
+  auto divisible_by_3 = [](const auto& x) { return (x % 3) == 0; };
 
   bout::utils::erase_if(data, divisible_by_3);
 
@@ -696,7 +697,7 @@ TEST(StdLibBackPorts, EraseVector) {
 
 TEST(StdLibBackPorts, EraseIfVector) {
   std::vector<int> data{3, 3, 4, 5, 5, 6, 6, 7, 2, 1, 0};
-  auto divisible_by_3 = [](auto const& x) { return (x % 3) == 0; };
+  auto divisible_by_3 = [](const auto& x) { return (x % 3) == 0; };
 
   bout::utils::erase_if(data, divisible_by_3);
 
