@@ -40,7 +40,6 @@
 #include <bout/globals.hxx> // for mesh
 #include <bout/mesh.hxx>
 #include <bout/output.hxx>
-#include <bout/output_bout_types.hxx>
 
 #include <cmath>
 #include <cstddef>
@@ -383,7 +382,7 @@ bool operator==(const Field2D& a, const Field2D& b) {
 }
 
 std::ostream& operator<<(std::ostream& out, const Field2D& value) {
-  out << fmt::to_string(value);
+  out << toString(value);
   return out;
 }
 

@@ -34,7 +34,6 @@
 #include <bout/boutexception.hxx>
 #include <bout/fieldperp.hxx>
 #include <bout/mesh.hxx>
-#include <bout/output_bout_types.hxx>
 #include <bout/utils.hxx>
 
 FieldPerp::FieldPerp(Mesh* localmesh, CELL_LOC location_in, int yindex_in,
@@ -246,7 +245,7 @@ bool operator==(const FieldPerp& a, const FieldPerp& b) {
 }
 
 std::ostream& operator<<(std::ostream& out, const FieldPerp& value) {
-  out << fmt::to_string(value);
+  out << toString(value);
   return out;
 }
 

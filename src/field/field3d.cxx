@@ -28,6 +28,7 @@
 #include "bout/array.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/build_defines.hxx"
+#include "bout/field2d.hxx"
 
 #include "bout/index_derivs_interface.hxx"
 #include "bout/yboundary_regions.hxx"
@@ -52,11 +53,9 @@
 #include <bout/dcomplex.hxx>
 #include <bout/fft.hxx>
 #include <bout/field3d.hxx>
-#include <bout/field2d.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/mesh.hxx>
 #include <bout/output.hxx>
-#include <bout/output_bout_types.hxx>
 #include <bout/parallel_boundary_op.hxx>
 #include <bout/region.hxx>
 #include <bout/utils.hxx>
@@ -908,7 +907,7 @@ bool operator==(const Field3D& a, const Field3D& b) {
 }
 
 std::ostream& operator<<(std::ostream& out, const Field3D& value) {
-  out << fmt::to_string(value);
+  out << toString(value);
   return out;
 }
 
