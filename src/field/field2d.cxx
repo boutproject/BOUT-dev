@@ -40,6 +40,7 @@
 #include <bout/globals.hxx> // for mesh
 #include <bout/mesh.hxx>
 #include <bout/output.hxx>
+#include <bout/output_bout_types.hxx>
 
 #include <cmath>
 #include <cstddef>
