@@ -1137,7 +1137,7 @@ value4 = 3.2
 value6 = 12
 )";
 
-  EXPECT_EQ(fmt::to_string(option), expected);
+  EXPECT_EQ(toString(option), expected);
 }
 
 TEST_F(OptionsTest, InvalidFormat) {
