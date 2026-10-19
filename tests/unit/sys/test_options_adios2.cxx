@@ -284,7 +284,7 @@ TEST_F(OptionsAdios2Test, Field3DWriteCellYLow) {
   Options data = OptionsIO::create(file_options)->read();
 
   EXPECT_EQ(data["f3d"].attributes["cell_location"].as<std::string>(),
-            toString(CELL_YLOW));
+            fmt::to_string(CELL_YLOW));
 }
 
 TEST_F(OptionsAdios2Test, FieldPerpWriteCellCentre) {
