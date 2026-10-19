@@ -16,7 +16,7 @@ int test(const std::string& acoef, const std::string& bcoef, const std::string& 
          BoutReal tol, FieldFactory& f, CELL_LOC location) {
   output_error.write(
       "acoef={:s} bcoef={:s} ccoef={:s} dcoef={:s} ecoef{:s} with {:s} at {:s} ...",
-      acoef, bcoef, ccoef, dcoef, ecoef, func, toString(location));
+      acoef, bcoef, ccoef, dcoef, ecoef, func, fmt::to_string(location));
   auto inv = InvertPar::create(nullptr, location, mesh);
 
   Field2D A = f.create2D(acoef, nullptr, nullptr, location);

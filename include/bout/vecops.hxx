@@ -64,7 +64,7 @@ Vector3D Grad(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
 Vector3D Grad_perp(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
                    const std::string& method = "DEFAULT");
 inline Vector3D Grad_perp(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method) {
-  return Grad_perp(f, outloc, toString(method));
+  return Grad_perp(f, outloc, fmt::to_string(method));
 }
 Vector2D Grad_perp(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                    const std::string& method = "DEFAULT");
@@ -92,7 +92,7 @@ Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
 
 inline Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc,
                    DIFF_METHOD method = DIFF_DEFAULT) {
-  return Div(v, f, outloc, toString(method));
+  return Div(v, f, outloc, fmt::to_string(method));
 }
 
 /// Curl of a vector

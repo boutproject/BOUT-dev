@@ -32,9 +32,10 @@ using bout::generator::Context;
 // Reuse the "standard" fixture for FakeMesh
 template <typename T>
 class FieldFactoryCreationTest : public FakeMeshFixture {
+  Options options;
+
 public:
   FieldFactoryCreationTest() : FakeMeshFixture() {
-    Options options;
     options["input"]["transform_from_field_aligned"] = false;
     factory = FieldFactory{mesh, &options};
   }
