@@ -101,6 +101,7 @@ def make_grid(nz: int):
     # Create the grid
     grid = zb.grid.Grid(poloidal_grid, ycoords, ylength, yperiodic=True)
     maps = zb.make_maps(grid, field, nslice=1, quiet=True, MXG=1)
+    zb.weights.modify_maps(maps, partial_boundaries=False)
     zb.write_maps(
         grid,
         field,
