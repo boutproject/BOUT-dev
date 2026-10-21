@@ -235,6 +235,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
   ///Check if field dimensions are correct. x-direction
   int grid_xguards = (size[0] - (m->GlobalNx - 2 * mxg)) / 2;
   // Check there is no rounding in calculation of grid_xguards
+  output.write("\nDEBUG: {}: {} {} {}\n\n", name, size[0], m->GlobalNx, mxg);
   ASSERT1((size[0] - (m->GlobalNx - 2 * mxg)) % 2 == 0);
   if (grid_xguards >= 0) { ///including ghostpoints
     nx_to_read = m->LocalNx;

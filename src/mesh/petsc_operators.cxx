@@ -24,10 +24,10 @@
 
 PetscIndexMapping::~PetscIndexMapping() {
   if (mat_stored_to_petsc != nullptr) {
-    MatDestroy(&mat_stored_to_petsc);
+    BOUT_DO_PETSC(MatDestroy(&mat_stored_to_petsc));
   }
   if (mat_petsc_to_stored != nullptr) {
-    MatDestroy(&mat_petsc_to_stored);
+    BOUT_DO_PETSC(MatDestroy(&mat_petsc_to_stored));
   }
 }
 

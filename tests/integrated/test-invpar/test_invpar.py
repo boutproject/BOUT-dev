@@ -4,7 +4,7 @@
 # Run the test, check it completed successfully
 #
 
-from boututils.run_wrapper import shell, launch
+from boututils.run_wrapper import shell, launch_safe
 
 
 flags_src = [
@@ -32,7 +32,6 @@ def test_invpar():
     regions = ["", " mesh:ixseps1=0 mesh:ixseps2=0"]
     flags = [flags + r for r in regions]
 
-    code = 0  # Return code
     for nproc in [1, 2, 4]:
         cmd = "./test_invpar"
 
@@ -42,10 +41,4 @@ def test_invpar():
             shell(["rm data/BOUT.dmp.* 2> err.log"])
 
             # Run the case
-            s, _ = launch(cmd + " -q -q -q " + f, nproc=nproc, mthread=1)
-
-            code += s
-            print(
-                "Run with flags {f} and {nproc} cores {'PASSED' if s == 0 else 'FAILED'}"
-            )
-    assert code == 0, "Some tests failed"
+            launch_safe(cmd + " -q -q -q " + f, nproc=nproc, mthread=1)
