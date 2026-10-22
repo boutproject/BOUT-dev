@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import os
+
 import pytest
-from boututils.run_wrapper import launch_safe
 from boutdata.collect import collect
-from numpy import max, abs
+from boututils.run_wrapper import launch_safe, shell
+from numpy import abs, max
 
 shift_types = ["shifted", "shiftedinterp"]
 
@@ -13,7 +14,9 @@ def test_case(shift_type):
 
     os.environ["OMPI_MCA_rmaps_base_oversubscribe"] = "1"  # MPI oversubscribe
 
-    s, out = launch_safe(
+    shell(["rm -rf data/BOUT.dmp.*"])
+
+    _s, out = launch_safe(
         "./test_yupdown mesh:paralleltransform:type=" + shift_type,
         nproc=1,
         pipe=True,
@@ -25,7 +28,7 @@ def test_case(shift_type):
 
     errors = []
     for v, v_check in [("ddy", "ddy_check"), ("ddy2", "ddy_check")]:
-        print("Testing %s and %s ... " % (v, v_check))
+        print(f"Testing {v} and {v_check} ... ")
         ddy = collect(v, path="data", xguards=False, yguards=False, info=False)
         ddy_check = collect(
             v_check, path="data", xguards=False, yguards=False, info=False

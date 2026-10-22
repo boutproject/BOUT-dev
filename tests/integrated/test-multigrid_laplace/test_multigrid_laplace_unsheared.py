@@ -5,8 +5,8 @@
 #
 
 import pytest
-from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
+from boututils.run_wrapper import launch_safe, shell
 
 tol = 1e-9  # Absolute tolerance
 numTests = 4  # We test 4 different boundary conditions (with slightly different inputs for each)
@@ -23,13 +23,13 @@ def test_multigrid_laplace_unsheared(nproc):
     inputfile = "BOUT_unsheared.inp"
     cmd = f"./test_multigrid_laplace -f {inputfile} NXPE={nproc}"
 
-    shell(["rm -f data/BOUT.dmp.*.nc"])
+    shell(["rm -rf data/BOUT.dmp.*"])
 
     print(
         f"Running unsheared multigrid Laplacian test: {nproc} procs, {mthread} thread(s)"
     )
 
-    s, out = launch_safe(cmd, nproc=nproc, mthread=mthread, pipe=True)
+    _s, out = launch_safe(cmd, nproc=nproc, mthread=mthread, pipe=True)
 
     with open(f"run.log.{nproc}", "w") as f:
         f.write(out)

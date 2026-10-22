@@ -5,8 +5,8 @@
 #
 
 import pytest
-from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
+from boututils.run_wrapper import launch_safe, shell
 
 tol = 2e-6  # Absolute tolerance
 numTests = 4  # We test 4 different boundary conditions (with slightly different inputs for each)
@@ -21,12 +21,12 @@ def test_multigrid_laplace(nproc, inputfile):
     # so splitting in y-direction is redundant (and also doesn't help test the multigrid solver)
     cmd = f"./test_multigrid_laplace -f {inputfile} NXPE={nproc} input:error_on_unused_options=false"
 
-    shell(["rm -f data/BOUT.dmp.*.nc"])
+    shell(["rm -rf data/BOUT.dmp.*"])
 
     print("Running multigrid Laplacian inversion test")
     print(f"{nproc} processors, input file is: {inputfile}")
 
-    s, out = launch_safe(cmd, nproc=nproc, pipe=True)
+    _s, out = launch_safe(cmd, nproc=nproc, pipe=True)
 
     # Save a log file uniquely named for this specific combination
     input_file_name = inputfile.replace(".inp", "")

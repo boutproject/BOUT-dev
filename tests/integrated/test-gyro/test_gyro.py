@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 from pathlib import Path
+from sys import stdout
+
+import numpy as np
 
 #
 # Run the test, compare results against the benchmark
 #
 import pytest
-import numpy as np
-from sys import stdout
-from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
+from boututils.run_wrapper import launch_safe, shell
 
 # Variables to compare
 variables = ["pade1", "pade2"]
@@ -40,10 +41,10 @@ def test_gyro(benchmark_data):
 
         cmd = f"./test_gyro NXPE={nxpe}"
 
-        shell("rm -f data/BOUT.dmp.*.nc")
+        shell("rm -rf data/BOUT.dmp.*")
 
-        print("   %d processors (nxpe = %d)...." % (nproc, nxpe))
-        s, out = launch_safe(cmd, nproc=nproc, pipe=True)
+        print(f"   {nproc} processors (nxpe = {nxpe})....")
+        _s, out = launch_safe(cmd, nproc=nproc, pipe=True)
         with open("run.log." + str(nproc), "w") as f:
             f.write(out)
 

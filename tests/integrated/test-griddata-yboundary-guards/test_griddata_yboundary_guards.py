@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
-import pytest
-import numpy
 from pathlib import Path
-from netCDF4 import Dataset
-from boututils.run_wrapper import shell, launch_safe
+
+import numpy
+import pytest
 from boutdata.collect import collect
+from boututils.run_wrapper import launch_safe, shell
+from netCDF4 import Dataset
 
 
 @pytest.mark.parametrize("topology", ["doublenull", "singlenull"])
@@ -83,13 +84,13 @@ def test_griddata_yboundary_guards(topology, n_yguards):
         gridfile.createVariable("test", float, ("x", "y"))
         gridfile["test"][...] = testdata
 
-    shell([f"rm -f {datadir}/BOUT.dmp.*.nc run.log.*"])
+    shell([f"rm -rf {datadir}/BOUT.dmp.* run.log.*"])
 
     print(
         f"Running {topology} test with n_yguards={n_yguards} on {nproc} processors..."
     )
 
-    s, out = launch_safe(f"./test_griddata -d {datadir}", nproc=nproc, pipe=True)
+    _s, out = launch_safe(f"./test_griddata -d {datadir}", nproc=nproc, pipe=True)
 
     with open(f"run.log.{topology}.{n_yguards}.{nproc}", "w") as f:
         f.write(out)

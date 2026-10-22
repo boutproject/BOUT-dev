@@ -4,8 +4,8 @@
 # Run the test, compare results against the benchmark
 #
 import numpy as np
-from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
+from boututils.run_wrapper import launch_safe, shell
 
 nproc = 2  # Number of processors to run on
 reltol = 1.0e-3  # Allowed relative tolerance in growth-rate
@@ -16,12 +16,12 @@ nthreads = 1
 def test_interchange_instability():
 
     # Delete old output files
-    shell("rm data_1/BOUT.dmp.*")
-    shell("rm data_10/BOUT.dmp.*")
+    shell("rm -rf data_1/BOUT.dmp.*")
+    shell("rm -rf data_10/BOUT.dmp.*")
 
     def growth_rate(path, nproc, log=False):
         pipe = bool(log)
-        s, out = launch_safe(
+        _s, out = launch_safe(
             "./2fluid -d " + path, nproc=nproc, mthread=nthreads, pipe=pipe
         )
         if pipe:
@@ -54,12 +54,10 @@ def test_interchange_instability():
     print("   Log file run_1.log")
     orig = 2.148177e05  # 24th October 2011, revision c4f7ec92786b333a5502c5256b5e602ba867090f
     analytic = 2.2e5
-    print(
-        "   Growth-rate = %e, original = %e, analytic = %e" % (growth, orig, analytic)
-    )
+    print(f"   Growth-rate = {growth:e}, original = {orig:e}, analytic = {analytic:e}")
     absdev = abs(growth - orig)
     reldev = absdev / orig
-    print("   Deviation from original: %e (%e %%)" % (absdev, reldev * 100.0))
+    print(f"   Deviation from original: {absdev:e} ({reldev * 100.0:e} %)")
 
     assert reldev <= reltol, "  => Failed"
 
@@ -71,11 +69,9 @@ def test_interchange_instability():
     # orig = 65570. # 24th October 2011, revision c4f7ec92786b333a5502c5256b5e602ba867090f
     orig = 6.457835e04  # 25th April 2014, revision fd032da
     analytic = 6.3e4
-    print(
-        "   Growth-rate = %e, original = %e, analytic = %e" % (growth, orig, analytic)
-    )
+    print(f"   Growth-rate = {growth:e}, original = {orig:e}, analytic = {analytic:e}")
     absdev = abs(growth - orig)
     reldev = absdev / orig
-    print("   Deviation from original: %e (%e %%)" % (absdev, reldev * 100.0))
+    print(f"   Deviation from original: {absdev:e} ({reldev * 100.0:e} %)")
 
     assert reldev <= reltol, "  => Failed"
