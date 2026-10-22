@@ -899,6 +899,39 @@ public:
   /// @returns A diagonal PetscBackwardLegOperator.
   PetscBackwardLegOperator diagonal(const PetscBackwardLegVector& v) const;
 
+  /// @brief Compute both the forward (y+1) and backward (y-1) parallel
+  ///        slices of a field, using the same interpolation weights as the
+  ///        SOM parallel operators (@ref forward, @ref backward).
+  ///
+  /// Overwrites f.yup() and f.ydown() in place. The field must already have
+  /// parallel slices allocated, and f.yup()/f.ydown() must already hold valid
+  /// values at the handful of boundary virtual cells whose forward/backward
+  /// map lies entirely outside the domain (these act as inputs -- e.g. from a
+  /// physics boundary condition -- and are read back via the "boundary leg"
+  /// contribution, not computed here).
+  ///
+  /// @param f Field to update in place.
+  void computeParallelSlices(Field3D& f) const;
+
+  /// @brief Compute the forward (y+1) parallel slice using the same
+  ///        interpolation weights used by the SOM parallel operators.
+  ///
+  /// Requires f.yup() to already hold valid values for the small subset of
+  /// cells whose forward map lies entirely outside the domain (boundary
+  /// virtual cells) -- these are inputs (e.g. from a physics boundary
+  /// condition), not computed here.
+  ///
+  /// @param f Field whose yup() slice should be (re)computed. Must have
+  ///          parallel slices allocated.
+  /// @returns A Field3D containing the forward-interpolated values, indexed
+  ///          the same way as f.yup() (i.e. at i.yp()).
+  Field3D computeYup(const Field3D& f) const;
+
+  /// @brief Compute the backward (y-1) parallel slice using the SOM weights.
+  /// @param f Field whose ydown() slice should be (re)computed. Must have
+  ///          parallel slices allocated.
+  Field3D computeYdown(const Field3D& f) const;
+
   /// @brief Collection of parallel differential operators assembled for the
   ///        Support Operator Method (SOM).
   ///

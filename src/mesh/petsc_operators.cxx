@@ -582,6 +582,135 @@ std::shared_ptr<PetscOperators::Parallel> PetscOperators::Cache::getParallel(Mes
   return par;
 }
 
+void PetscOperators::computeParallelSlices(Field3D& f) const {
+  ASSERT1(f.hasParallelSlices());
+  ASSERT1(f.yup().isAllocated());
+  ASSERT1(f.ydown().isAllocated());
+
+  auto Forward = this->forward();   // L+ <- C
+  auto Backward = this->backward(); // L- <- C
+
+  auto leg_plus = Forward(f);   // PetscForwardLegVector
+  auto leg_minus = Backward(f); // PetscBackwardLegVector
+
+  auto w_plus = this->forwardLegWeights();
+  auto w_minus = this->backwardLegWeights();
+
+  const PetscScalar* lp{nullptr};
+  const PetscScalar* lm{nullptr};
+  const PetscScalar* wp{nullptr};
+  const PetscScalar* wm{nullptr};
+  BOUT_DO_PETSC(VecGetArrayRead(leg_plus.raw(), &lp));
+  BOUT_DO_PETSC(VecGetArrayRead(leg_minus.raw(), &lm));
+  BOUT_DO_PETSC(VecGetArrayRead(w_plus.raw(), &wp));
+  BOUT_DO_PETSC(VecGetArrayRead(w_minus.raw(), &wm));
+
+  const PetscInt plus_row_start = forward_leg_mapping->rowStart();
+  const PetscInt minus_row_start = backward_leg_mapping->rowStart();
+
+  auto& yup = f.yup();
+  auto& ydown = f.ydown();
+
+  cell_mapping->mapOwnedInteriorCells([&](PetscInt /*cell_row*/, const Ind3D& i, int) {
+    // Forward (y+1) slice
+    const int f_int = ROUND(forward_leg_interior_number[i]);
+    const int f_bnd = ROUND(forward_leg_boundary_number[i]);
+    BoutReal yup_val = 0.0;
+    if (f_int >= 0) {
+      const PetscInt row = forward_leg_mapping->storedToPetsc(f_int) - plus_row_start;
+      yup_val += wp[row] * lp[row];
+    }
+    if (f_bnd >= 0) {
+      const PetscInt row = forward_leg_mapping->storedToPetsc(f_bnd) - plus_row_start;
+      yup_val += wp[row] * lp[row];
+    }
+    yup[i.yp()] = yup_val;
+
+    // Backward (y-1) slice
+    const int b_int = ROUND(backward_leg_interior_number[i]);
+    const int b_bnd = ROUND(backward_leg_boundary_number[i]);
+    BoutReal ydown_val = 0.0;
+    if (b_int >= 0) {
+      const PetscInt row = backward_leg_mapping->storedToPetsc(b_int) - minus_row_start;
+      ydown_val += wm[row] * lm[row];
+    }
+    if (b_bnd >= 0) {
+      const PetscInt row = backward_leg_mapping->storedToPetsc(b_bnd) - minus_row_start;
+      ydown_val += wm[row] * lm[row];
+    }
+    ydown[i.ym()] = ydown_val;
+  });
+
+  BOUT_DO_PETSC(VecRestoreArrayRead(leg_plus.raw(), &lp));
+  BOUT_DO_PETSC(VecRestoreArrayRead(leg_minus.raw(), &lm));
+  BOUT_DO_PETSC(VecRestoreArrayRead(w_plus.raw(), &wp));
+  BOUT_DO_PETSC(VecRestoreArrayRead(w_minus.raw(), &wm));
+}
+
+Field3D PetscOperators::computeYup(const Field3D& f) const {
+  ASSERT1(f.hasParallelSlices());
+  ASSERT1(f.yup().isAllocated());
+  ASSERT1(f.ydown().isAllocated());
+
+  auto leg = this->forward()(f);
+
+  const PetscScalar* leg_x{nullptr};
+  BOUT_DO_PETSC(VecGetArrayRead(leg.raw(), &leg_x));
+
+  Field3D result{emptyFrom(f)};
+
+  const PetscInt leg_row_start = forward_leg_mapping->rowStart();
+
+  cell_mapping->mapOwnedInteriorCells([&](PetscInt /*cell_row*/, const Ind3D& i, int) {
+    const int interior = ROUND(forward_leg_interior_number[i]);
+
+    BoutReal value = 0.0;
+    if (interior >= 0) {
+      const PetscInt row = forward_leg_mapping->storedToPetsc(interior) - leg_row_start;
+      value = leg_x[row];
+    } else {
+      value = BoutNaN;
+    }
+    result[i.yp()] = value;
+  });
+
+  BOUT_DO_PETSC(VecRestoreArrayRead(leg.raw(), &leg_x));
+
+  return result;
+}
+
+Field3D PetscOperators::computeYdown(const Field3D& f) const {
+  ASSERT1(f.hasParallelSlices());
+  ASSERT1(f.yup().isAllocated());
+  ASSERT1(f.ydown().isAllocated());
+
+  auto leg = this->backward()(f);
+
+  const PetscScalar* leg_x{nullptr};
+  BOUT_DO_PETSC(VecGetArrayRead(leg.raw(), &leg_x));
+
+  Field3D result{emptyFrom(f)};
+
+  const PetscInt leg_row_start = backward_leg_mapping->rowStart();
+
+  cell_mapping->mapOwnedInteriorCells([&](PetscInt /*cell_row*/, const Ind3D& i, int) {
+    const int interior = ROUND(backward_leg_interior_number[i]);
+
+    BoutReal value = 0.0;
+    if (interior >= 0) {
+      const PetscInt row = backward_leg_mapping->storedToPetsc(interior) - leg_row_start;
+      value = leg_x[row];
+    } else {
+      value = BoutNaN;
+    }
+    result[i.ym()] = value;
+  });
+
+  BOUT_DO_PETSC(VecRestoreArrayRead(leg.raw(), &leg_x));
+
+  return result;
+}
+
 std::map<Mesh*, std::weak_ptr<PetscOperators::Parallel>> PetscOperators::Cache::parOp;
 std::map<Mesh*, std::weak_ptr<PetscOperators>> PetscOperators::Cache::petscOp;
 #endif
