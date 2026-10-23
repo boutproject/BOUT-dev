@@ -760,6 +760,7 @@ public:
   void addRegion2D(const std::string& region_name, const Region<Ind2D>& region);
   void addRegionPerp(const std::string& region_name, const Region<IndPerp>& region);
 
+  //IB_TODO: Use these or delete related funcitonality.
   void upsertRegion2D(const std::string& region_name, const Region<Ind2D>& new_region);
   void upsertRegion3D(const std::string& region_name, const Region<>& new_region);
 

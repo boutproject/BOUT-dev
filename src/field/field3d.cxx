@@ -375,7 +375,6 @@ Field3D& Field3D::operator=(const BoutReal val) {
 
   BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = val; }
   this->name = "BR";
-  this->name = "BR";
 
   return *this;
 }

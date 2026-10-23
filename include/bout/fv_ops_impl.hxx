@@ -865,7 +865,7 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
 
     Field3D result{emptyFrom(f_in)};
     BOUT_FOR(i, f_in.getRegion("RGN_NOBNDRY")) {
-      if (!immBndry->IsInside(i)) {continue;}
+      if (immBndry && !immBndry->IsInside(i)) {continue;}
       const auto iyp = i.yp();
       const auto iym = i.ym();
 
