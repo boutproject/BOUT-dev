@@ -1039,13 +1039,13 @@ INSTANTIATE_TEST_SUITE_P(
         SnowflakeTypeParameters{MeshTopology::snowflake, "SF15",
                                 SnowflakeType::SF_minus_low_field_side, "SF15"},
         SnowflakeTypeParameters{MeshTopology::snowflake, "SF45",
-                                SnowflakeType::SF_plus_low_field_side, "SF45"},
+                                SnowflakeType::SF_minus_low_field_side, "SF45"},
         SnowflakeTypeParameters{MeshTopology::snowflake, "SF75",
                                 SnowflakeType::SF_plus_low_field_side, "SF75"},
         SnowflakeTypeParameters{MeshTopology::snowflake, "SF105",
                                 SnowflakeType::SF_plus_high_field_side, "SF105"},
         SnowflakeTypeParameters{MeshTopology::snowflake, "SF135",
-                                SnowflakeType::SF_plus_high_field_side, "SF135"},
+                                SnowflakeType::SF_minus_high_field_side, "SF135"},
         SnowflakeTypeParameters{MeshTopology::snowflake, "SF165",
                                 SnowflakeType::SF_minus_high_field_side, "SF165"},
         // The INGRID label is upper-cased by readIngridTopology, but
@@ -1053,7 +1053,7 @@ INSTANTIATE_TEST_SUITE_P(
         SnowflakeTypeParameters{MeshTopology::snowflake, "sf165",
                                 SnowflakeType::SF_minus_high_field_side, "SF165LowerCase"},
         SnowflakeTypeParameters{MeshTopology::snowflake, " SF45 ",
-                                SnowflakeType::SF_plus_low_field_side, "SF45Padded"}),
+                                SnowflakeType::SF_minus_low_field_side, "SF45Padded"}),
     SnowflakeTypeParametersToString);
 
 INSTANTIATE_TEST_SUITE_P(

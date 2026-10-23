@@ -274,13 +274,13 @@ MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Retu
 
 SnowflakeType BoutMesh::getSnowflakeType(MeshTopology mesh_topology_,
                                          const std::string IngridTopology) {
-  if (contains(IngridTopology, "105") || contains(IngridTopology, "135")) {
+  if (contains(IngridTopology, "105")) {
     return SnowflakeType::SF_plus_high_field_side; //snowflake+ HFS
-  }  else if (contains(IngridTopology, "165")) {
+  }  else if (contains(IngridTopology, "165") || contains(IngridTopology, "135")) {
     return SnowflakeType::SF_minus_high_field_side;; //snowflake- HFS
-  } else if (contains(IngridTopology, "15")) {
+  } else if (contains(IngridTopology, "15") || contains(IngridTopology, "45")) {
     return SnowflakeType::SF_minus_low_field_side;; //snowflake- LFS
-  } else if (contains(IngridTopology, "45") || contains(IngridTopology, "75")) {
+  } else if (contains(IngridTopology, "75")) {
     return SnowflakeType::SF_plus_low_field_side;; //snowflake+ LFS
   } else if (contains(IngridTopology, "target")) {
     return SnowflakeType::XPT; //X-Point Target is topologically the same as a snowflake minus, but has a different separatrix structure and a bigger X-Point separation //TODO double check this is correct
