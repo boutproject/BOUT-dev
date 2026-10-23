@@ -290,6 +290,37 @@ public:
     }
   }
 
+  /// @brief Create a PETSc IS containing the global PETSc indices of all
+  ///        locally owned evolving interior cells, in the order that
+  ///        mapOwnedInteriorCells visits them.
+  ///
+  /// The returned IS selects the evolving subset of the full cell space C,
+  /// excluding inner/outer X-boundary cells and forward/backward parallel
+  /// boundary virtual cells.  It is the correct IS to pass to
+  /// MatCreateSubMatrix when restricting a PetscCellOperator to the degrees
+  /// of freedom that the SNES solver actually integrates.
+  ///
+  /// The caller owns the returned IS and must call ISDestroy when finished.
+  ///
+  /// @returns A PETSc IS of local size equal to the number of locally owned
+  ///          evolving cells, holding global PETSc row indices.
+  IS makeEvolvingIS() const;
+
+  /// @brief Extract the evolving-cell submatrix from a cell-to-cell operator.
+  ///
+  /// Restricts @p op to the rows and columns that correspond to evolving
+  /// interior cells, discarding any rows or columns that belong to inner/outer
+  /// X-boundary cells or forward/backward parallel boundary virtual cells.
+  ///
+  /// The returned Mat is an independent copy (MAT_INITIAL_MATRIX): subsequent
+  /// modifications to @p op do not affect it.  The caller owns the returned
+  /// Mat and must call MatDestroy when finished.
+  ///
+  /// @param op A cell-to-cell operator whose row and column space is the full
+  ///           cell space C managed by this mapping.
+  /// @returns  A square Mat of global size n_evolving × n_evolving.
+  Mat extractEvolvingSubmatrix(const PetscOperator<CellSpaceTag, CellSpaceTag>& op) const;
+
   friend PetscOperator<CellSpaceTag, CellSpaceTag>
   makeNeumannOperator(const PetscCellMappingPtr& mapping, BoundaryDirection direction);
 
@@ -677,6 +708,16 @@ public:
   /// Intended for use by the free @c operator* (matrix composition) and other
   /// low-level callers that need direct PETSc access.
   Mat raw() const { return *this->mat_operator; }
+
+  /// @brief Return the shared mapping for the operator's output (row) space.
+  const std::shared_ptr<const PetscIndexMapping>& getOutMapping() const {
+    return out_mapping;
+  }
+
+  /// @brief Return the shared mapping for the operator's input (column) space.
+  const std::shared_ptr<const PetscIndexMapping>& getInMapping() const {
+    return in_mapping;
+  }
 
   /// @brief Construct a diagonal operator from a vector of diagonal entries.
   ///
@@ -1077,6 +1118,6 @@ PetscCellOperator makeNeumannOperator(const PetscCellMappingPtr& mapping,
 
 #warning PETSc not available. No PetscOperators.
 
-#endif
+#endif // BOUT_HAS_PETSC
 
 #endif // BOUT_PETSC_OPERATORS
