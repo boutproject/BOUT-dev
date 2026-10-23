@@ -450,7 +450,7 @@ PetscCellOperator makeNeumannOperator(const PetscCellMappingPtr& mapping,
   bout::petsc::UniqueMat temp{new Mat{nullptr}};
   BOUT_DO_PETSC(MatCreate(BoutComm::get(), temp.get()));
   BOUT_DO_PETSC(MatSetType(*temp, MATMPIAIJ));
-  BOUT_DO_PETSC(MatSetSizes(*temp, n_local, PETSC_DECIDE, n_global, n_global));
+  BOUT_DO_PETSC(MatSetSizes(*temp, n_local, n_local, n_global, n_global));
   BOUT_DO_PETSC(MatMPIAIJSetPreallocation(*temp, 1, nullptr, 1, nullptr));
 
   const PetscScalar one = 1.0;

@@ -280,7 +280,7 @@ void ImmersedBoundary::FieldSetup(Field3D& f) {
 Field3D ImmersedBoundary::DeepCopyField(const Field3D& src) const {
   Field3D dst = copy(src); // Detaches central storage
 
-  if (src.hasParallelSlices()) {  
+  if (src.hasParallelSlices()) {
     dst.yup() = copy(src.yup());
     dst.ydown() = copy(src.ydown());
   }
@@ -328,7 +328,7 @@ void ImmersedBoundary::ComputeBoundaryFluxes(const Field3D& a, const Field3D& f,
       if (bc_type == BoundCond::NEUMANN) {
         dfdn = bc_val; //Note, using outward normal derivative here.
       } else if (bc_type == BoundCond::DIRICHLET) {
-        //Perform bilinear interpolation for points along the boundary normal, and 
+        //Perform bilinear interpolation for points along the boundary normal, and
         //calculate normal derivative at boundary.
         const int ai0_global = GetGridInd(bbase_inds(b, 0));
         const int aj0 = GetGridInd(bbase_inds(b, 1));
@@ -379,10 +379,10 @@ BoutReal ImmersedBoundary::GetImageValue(Field3D& f, const int gid,
   const int indx_global = GetGridInd(image_inds(gid,0));
   const int indx = mesh->getLocalXIndex(indx_global);
   const int indz = GetGridInd(image_inds(gid,1));
-  
+
   //IB_TODO: Need indy for ghost cells in y? Same below. Or do everything in 2d?
   //IB_TODO: Use num_weights instead of 4, same for below where 4s used.
-  auto node_vals = std::array<BoutReal, 4>{f(indx,1,indz), f(indx,1,indz+1), 
+  auto node_vals = std::array<BoutReal, 4>{f(indx,1,indz), f(indx,1,indz+1),
                                            f(indx+1,1,indz), f(indx+1,1,indz+1)};
 
   if (!(bc_type == BoundCond::DIRICHLET || bc_type == BoundCond::NEUMANN)) {

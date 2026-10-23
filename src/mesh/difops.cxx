@@ -63,6 +63,7 @@ bout::FieldMetric Grad_par(const Field2D& var, CELL_LOC outloc,
 }
 
 Field3D Grad_par(const Field3DParallel& var, CELL_LOC outloc, const std::string& method) {
+  //IB_TODO: How to do this w/ default option?
   const auto region = immBndry ? "RGN_NO_IMM_BNDRY" : "RGN_NOBNDRY";
   return DDY(var, outloc, method, region) * var.getCoordinates(outloc)->invSg();
 }
@@ -246,6 +247,7 @@ Field3D Div_par(const Field3DParallel& f, const Field3DParallel& v) {
   const Coordinates* coord = f.getCoordinates();
 
   BOUT_FOR(i, f.getValidRegionWithDefault("RGN_NOBNDRY")) {
+    //IB_TODO: Double check new logic here ok.
     if (immBndry && !immBndry->IsInside(i)) {
       continue;
     }

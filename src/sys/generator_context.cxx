@@ -19,6 +19,7 @@ Context::Context(int ix, int iy, int iz, CELL_LOC loc, Mesh* msh, BoutReal t)
 
 
 
+  //IB_TODO: Get normalized z coord working with evolving variables.
   //IB_TODO: Remove 2pi factor and shift z like x for mms testing. Use zn for this when available (znorm).
   parameters["z"] = (loc == CELL_ZLOW)
                         ? (iz) / static_cast<BoutReal>(msh->LocalNz) // * TWOPI

@@ -40,7 +40,6 @@ enum class implementation_type { new_weights, petsc, legacy };
 
 class Options;
 class GlobalField3DAccess;
-class GlobalField3DAccess;
 
 /// Interpolate a field onto a perturbed set of points
 const Field3D interpolate(const Field3D& f, const Field3D& delta_x,

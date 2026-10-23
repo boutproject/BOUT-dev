@@ -1566,6 +1566,7 @@ void Solver::pre_rhs(BoutReal t) {
   for (const auto& f : f3d) {
     if (!f.constraint) {
       if (immBndry) {
+        f.var->name = f.name; //IB_TODO: Temp fix to reset name if messed up elsewhere.
         immBndry->SetBoundary(*(f.var));
       } else {
         f.var->applyBoundary(t);

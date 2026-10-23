@@ -62,7 +62,7 @@ public:
   /// Get a BoutReal number
   virtual bool get(Mesh* m, BoutReal& rval, const std::string& name,
                    BoutReal def = 0.0) = 0;
-                   
+
   virtual bool get(Mesh* m, Array<double>& rval, const std::string& name,
                    BoutReal def = 0.0) = 0;
   virtual bool get(Mesh* m, Matrix<double>& rval, const std::string& name,

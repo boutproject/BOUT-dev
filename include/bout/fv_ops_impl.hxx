@@ -15,6 +15,7 @@
 #include "bout/field3d.hxx"
 #include "bout/fv_ops.hxx" // NOLINT(unused-includes, misc-include-cleaner)
 #include "bout/globals.hxx"
+#include "bout/immersed_boundary.hxx"
 #include "bout/mesh.hxx"
 #include "bout/output_bout_types.hxx" // NOLINT(unused-includes, misc-include-cleaner)
 #include "bout/region.hxx"
@@ -864,6 +865,7 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
 
     Field3D result{emptyFrom(f_in)};
     BOUT_FOR(i, f_in.getRegion("RGN_NOBNDRY")) {
+      if (!immBndry->IsInside(i)) {continue;}
       const auto iyp = i.yp();
       const auto iym = i.ym();
 

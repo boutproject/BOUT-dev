@@ -407,7 +407,7 @@ public:
 
   FieldMetric cellvolume, cellarea_ydown, cellarea_yup, g_22_cell_ylow, g_22_cell_yhigh, By_cell_ylow, By_cell_yhigh, J_perp;
   Field3D has_bndry_yup, has_bndry_ydown;
-  
+
   /// d pitch angle / dx. Needed for vector differentials (Curl)
   const FieldMetric& ShiftTorsion() const { return ShiftTorsion_; }
 
