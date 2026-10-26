@@ -274,22 +274,24 @@ MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Retu
 
 SnowflakeType BoutMesh::getSnowflakeType(MeshTopology mesh_topology_,
                                          const std::string IngridTopology) {
-  if (contains(IngridTopology, "105")) {
-    return SnowflakeType::SF_plus_high_field_side; //snowflake+ HFS
-  }  else if (contains(IngridTopology, "165") || contains(IngridTopology, "135")) {
-    return SnowflakeType::SF_minus_high_field_side;; //snowflake- HFS
-  } else if (contains(IngridTopology, "15") || contains(IngridTopology, "45")) {
+   if (contains(IngridTopology, "15")) {
+    return SnowflakeType::SF_minus_exact_low_field_side;; //snowflake- LFS
+  } else if (contains(IngridTopology, "45")) {
     return SnowflakeType::SF_minus_low_field_side;; //snowflake- LFS
   } else if (contains(IngridTopology, "75")) {
     return SnowflakeType::SF_plus_low_field_side;; //snowflake+ LFS
+  } else if (contains(IngridTopology, "105")) {
+    return SnowflakeType::SF_plus_high_field_side; //snowflake+ HFS
+  } else if (contains(IngridTopology, "135")) {
+    return SnowflakeType::SF_minus_high_field_side;; //snowflake- HFS
+  } else if (contains(IngridTopology, "165")) {
+    return SnowflakeType::SF_minus_exact_high_field_side;; //snowflake- HFS
   } else if (contains(IngridTopology, "target")) {
-    return SnowflakeType::XPT; //X-Point Target is topologically the same as a snowflake minus, but has a different separatrix structure and a bigger X-Point separation //TODO double check this is correct
+    return SnowflakeType::XPT; //X-Point Target is topologically the same as a snowflake minus, but has a different separatrix structure and a bigger X-Point separation //TODO: add full support.
   } else {
-    return SnowflakeType::SF; //Return a generic snowflake type if no specific type is found. This will be treated as a snowflake+ LFS. (an identifier may be built if the X-Point coordinates are provided)
+    return SnowflakeType::SF; //Return a generic snowflake type if no specific type is found. This will be treated as a snowflake+ LFS.
   }
 } //No option for ideal snowflake yet since we haven't found a gridding tool that can handle that.
-
-//TODO: modify everything with new naming conventions.
 
 
 namespace bout {
@@ -492,7 +494,7 @@ namespace bout {
                           ny, ny_inner, ny - ny_inner, num_local_y_points)};
           }
 
-        } else if ((snowflake_type == SnowflakeType::SF_minus_low_field_side)) { //SF- LFS
+        } else if ((snowflake_type == SnowflakeType::SF_minus_exact_low_field_side)) { //SF- LFS
           //Check Core region
           if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
           return {
@@ -516,7 +518,7 @@ namespace bout {
               false,
               fmt::format(_f("\t -> leg region jyseps1_2-ny_inner ({:d}-{:d} + 1 = {:d}) must "
                               "be a multiple of MYSUB ({:d})\n"),
-                          jyseps2_2, ny_inner, jyseps2_2 - ny_inner + 1, num_local_y_points)};
+                          jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, num_local_y_points)};
           }
 
           if ((ny_inner - 1 - jyseps2_1) % num_local_y_points != 0) {
@@ -524,7 +526,7 @@ namespace bout {
               false,
               fmt::format(_f("\t -> leg region ny_inner - 1 - jyseps2_1({:d}-{:d} = {:d}) must "
                               "be a multiple of MYSUB ({:d})\n"),
-                          ny_inner, jyseps1_2, ny_inner - 1 - jyseps1_2, num_local_y_points)};
+                          ny_inner, jyseps2_1, ny_inner - 1 - jyseps1_2, num_local_y_points)};
           }
 
           //Just for safety, but should always pass if the others do:
@@ -562,7 +564,130 @@ namespace bout {
                               "be a multiple of MYSUB ({:d})\n"),
                           ny, ny_inner, ny - ny_inner, num_local_y_points)};
           }
-        } else if ((snowflake_type == SnowflakeType::SF_minus_high_field_side)) { //SF- HFS TODO
+        } else if ((snowflake_type == SnowflakeType::SF_minus_low_field_side)) { //SF- LFS
+          //Check Core region
+          if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, num_local_y_points)};
+          }
+          //Check E leg region
+          if ((jyseps2_2 - ny_inner + 1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region jyseps2_2-ny_inner ({:d}-{:d} + 1 = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          jyseps2_2, ny_inner, jyseps2_2 - ny_inner + 1, num_local_y_points)};
+          }
+
+          if ((ny_inner - 1 - jyseps1_2) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region ny_inner - 1 - jyseps1_2({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          ny_inner, jyseps1_2, ny_inner - 1 - jyseps1_2, num_local_y_points)};
+          }
+
+          //Check W leg region
+          if ((jyseps1_2 - jyseps2_1) % num_local_y_points != 0) {
+          return {
+            false, 
+            fmt::format(_f("\t -> leg region jyseps1_2-jyseps2_1 ({:d}-{:d}-1 = {:d}) must be a "
+                              "multiple of MYSUB ({:d})\n"),
+                            jyseps1_2, jyseps2_1, jyseps1_2 - jyseps2_1, num_local_y_points)};
+          }
+
+          //Check central region
+          if ((jyseps1_2 + 1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> central region jyseps1_2+1 ({:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          jyseps1_2 + 1, num_local_y_points)};
+          }
+          
+          if ((ny - 1 - jyseps2_2) % num_local_y_points != 0) {
+          return {
+            false, 
+            fmt::format(_f("\t -> leg and central region ny-1-jyseps2_2 ({:d}-{:d}-1 = {:d}) must be a "
+                              "multiple of MYSUB ({:d})\n"),
+                            ny - 1, jyseps2_2, ny - 1 - jyseps2_2, num_local_y_points)};
+          }
+
+          //Check South leg region
+          if ((ny - ny_inner) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region ny - 1 - ny_inner + 1 ({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          ny, ny_inner, ny - ny_inner, num_local_y_points)};
+          }
+
+        } else if ((snowflake_type == SnowflakeType::SF_minus_high_field_side)) { //SF- HFS
+          //Check Core region
+          if ((jyseps1_2 - jyseps2_1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> Core region jyseps1_2-jyseps2_1 ({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          jyseps1_2, jyseps2_1, jyseps1_2 - jyseps2_1, num_local_y_points)};
+          }
+
+          //Check E leg region
+          if ((jyseps2_2 - ny_inner + 1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region jyseps2_2-ny_inner ({:d}-{:d} + 1 = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          jyseps2_2, ny_inner, jyseps2_2 - ny_inner + 1, num_local_y_points)};
+          }
+
+          if ((ny_inner - 1 - jyseps1_2) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region ny_inner - 1 - jyseps1_2({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          ny_inner, jyseps1_2, ny_inner - 1 - jyseps1_2, num_local_y_points)};
+          }
+
+                    
+          if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, num_local_y_points)};
+          }
+
+          //Check W leg region
+          if ((ny - 1 - jyseps2_2) % num_local_y_points != 0) {
+          return {
+            false, 
+            fmt::format(_f("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
+                              "multiple of MYSUB ({:d})\n"),
+                            ny - 1, jyseps2_2, ny - 1 - jyseps2_2, num_local_y_points)};
+          }
+
+          //Check central region
+          if ((jyseps2_2 - jyseps1_1) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> Central region jyseps2_2-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must be a "
+                              "multiple of MYSUB ({:d})\n"),
+                          jyseps2_2, jyseps1_1, jyseps2_2 - jyseps1_1, num_local_y_points)};
+          }
+          
+          //Check South leg region
+          if ((ny - ny_inner) % num_local_y_points != 0) {
+          return {
+              false,
+              fmt::format(_f("\t -> leg region ny - 1 - ny_inner + 1 ({:d}-{:d} = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
+                          ny, ny_inner, ny - ny_inner, num_local_y_points)};
+          }
+        } else if ((snowflake_type == SnowflakeType::SF_minus_exact_high_field_side)) { //SF- HFS
           //Check Core region
           if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
           return {
@@ -577,7 +702,7 @@ namespace bout {
               false,
               fmt::format(_f("\t -> Core region jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) must "
                               "be a multiple of MYSUB ({:d})\n"),
-                          jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, num_local_y_points)};
+                          jyseps2_1, jyseps1_2, jyseps2_1 - jyseps1_2, num_local_y_points)};
           }
           
           //Check E leg region
@@ -586,7 +711,7 @@ namespace bout {
               false,
               fmt::format(_f("\t -> leg region jyseps1_2-ny_inner ({:d}-{:d} + 1 = {:d}) must "
                               "be a multiple of MYSUB ({:d})\n"),
-                          jyseps2_2, ny_inner, jyseps2_2 - ny_inner + 1, num_local_y_points)};
+                          jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, num_local_y_points)};
           }
 
           if ((ny_inner - 1 - jyseps2_1) % num_local_y_points != 0) {
@@ -594,7 +719,7 @@ namespace bout {
               false,
               fmt::format(_f("\t -> leg region ny_inner - 1 - jyseps2_1({:d}-{:d} = {:d}) must "
                               "be a multiple of MYSUB ({:d})\n"),
-                          ny_inner, jyseps1_2, ny_inner - 1 - jyseps1_2, num_local_y_points)};
+                          ny_inner, jyseps2_1, ny_inner - 1 - jyseps2_1, num_local_y_points)};
           }
 
           //Just for safety, but should always pass if the others do:
@@ -756,14 +881,28 @@ namespace bout {
                   ny_inner < jyseps2_2)){
                   continue;
                   }
-                } else if (snowflake_type == SnowflakeType::SF_minus_low_field_side){ //SF- LFS
+                } else if (snowflake_type == SnowflakeType::SF_minus_exact_low_field_side){ //SF- LFS
                   if (not (jyseps1_1 < jyseps2_1 &&
                   jyseps2_1 < ny_inner &&
                   ny_inner < jyseps1_2 &&
                   jyseps1_2 < jyseps2_2)){
                   continue;
                   }
+                }else if (snowflake_type == SnowflakeType::SF_minus_low_field_side){ //SF- LFS
+                  if (not (jyseps1_1 < jyseps2_1 &&
+                  jyseps2_1 < jyseps1_2 &&
+                  jyseps1_2 < ny_inner &&
+                  ny_inner < jyseps2_2)){
+                  continue;
+                  }
                 } else if (snowflake_type == SnowflakeType::SF_minus_high_field_side){ //SF- HFS
+                  if (not (jyseps1_1 < jyseps2_1 &&
+                  jyseps2_1 < jyseps1_2 &&
+                  jyseps1_2 < ny_inner &&
+                  ny_inner < jyseps2_2)){
+                  continue;
+                  }
+                } else if (snowflake_type == SnowflakeType::SF_minus_exact_high_field_side){ //SF- HFS
                   if (not (jyseps1_1 < jyseps2_1 &&
                   jyseps2_1 < ny_inner &&
                   ny_inner < jyseps1_2 &&
@@ -1937,7 +2076,7 @@ void BoutMesh::createCommunicators() {
               << " C=" << (comm_pf_c != MPI_COMM_NULL)
               << " S=" << (comm_pf_s != MPI_COMM_NULL)
               << endl;
-      } else if (snowflake_type == SnowflakeType::SF_minus_low_field_side){ 
+      } else if (snowflake_type == SnowflakeType::SF_minus_exact_low_field_side){ 
           //SF- LFS
           // Snowflake upper PF region communicators. Note there are 4 regions to consider here (Central, East, West, South).
 
@@ -2127,6 +2266,200 @@ void BoutMesh::createCommunicators() {
               << " C=" << (comm_pf_c != MPI_COMM_NULL)
               << " S=" << (comm_pf_s != MPI_COMM_NULL)
               << endl;
+      } else if (snowflake_type == SnowflakeType::SF_minus_low_field_side){ 
+          //SF- LFS
+          // Snowflake PF region communicators. Note there are 4 regions to consider here (Central, East, West, South).
+
+            MPI_Comm comm_pf_w{};
+            MPI_Comm comm_pf_e{};
+            MPI_Comm comm_pf_c{};
+            MPI_Comm comm_pf_s{};
+
+          TRACE("Creating Snowflake PF communicators for xp={:d}", i);
+
+          if (xProcInBand(i, pf_bands.west)) {
+
+            // PF_W
+            MPI_Group pf_group = MPI_GROUP_EMPTY;
+
+            auto add_pf_range = [&](int ylo, int yhi) {
+              if (ylo > yhi) return;
+
+              proc[0] = PROC_NUM(i, YPROC(ylo));
+              proc[1] = PROC_NUM(i, YPROC(yhi));
+              proc[2] = NXPE;
+
+              MPI_Group tmp;
+              MPI_Group_range_incl(group_world, 1, &proc, &tmp);
+
+              if (pf_group == MPI_GROUP_EMPTY) {
+                pf_group = tmp;
+              } else {
+                MPI_Group new_group;
+                MPI_Group_union(pf_group, tmp, &new_group);
+                MPI_Group_free(&pf_group);
+                MPI_Group_free(&tmp);
+                pf_group = new_group;
+              }
+            };
+
+            // PF_W Y ranges: West target + Central segment + South target in order.
+            // Use jyseps2_1+1 (not jyseps2_1) so the last core cell is excluded.
+            // Use jyseps2_2+1 (not jyseps2_2) so the last E_PFR cell is excluded.
+            add_pf_range(0, jyseps1_1); //NWest target
+            add_pf_range(jyseps2_1 + 1, jyseps1_2); //Central segment
+            add_pf_range(jyseps2_2 + 1, ny - 1); //SWest target
+
+            MPI_Comm_create(BoutComm::get(), pf_group, &comm_tmp);
+            if (comm_tmp != MPI_COMM_NULL) {
+              comm_pf_w = comm_tmp;
+              // Assign W_PFR processors to comm_inner (core section below will
+              // overwrite for YPROC covering core y-range, which is correct).
+              comm_inner = comm_pf_w;
+            }
+
+            if (pf_group != MPI_GROUP_EMPTY) {
+              MPI_Group_free(&pf_group);
+            }
+          }
+
+          ////////////////////////////////////////////////////
+          // PF_E
+
+          if (xProcInBand(i, pf_bands.east)) { //Different to SF+
+
+            MPI_Group pf_group = MPI_GROUP_EMPTY;
+
+            auto add_pf_range = [&](int ylo, int yhi) {
+              if (ylo > yhi) return;
+
+              proc[0] = PROC_NUM(i, YPROC(ylo));
+              proc[1] = PROC_NUM(i, YPROC(yhi));
+              proc[2] = NXPE;
+
+              MPI_Group tmp;
+              MPI_Group_range_incl(group_world, 1, &proc, &tmp);
+
+              if (pf_group == MPI_GROUP_EMPTY) {
+                pf_group = tmp;
+              } else {
+                MPI_Group new_group;
+                MPI_Group_union(pf_group, tmp, &new_group);
+                MPI_Group_free(&pf_group);
+                MPI_Group_free(&tmp);
+                pf_group = new_group;
+              }
+            };
+
+            // PF_E Y ranges: the two E_PFR segments.
+            // IMPORTANT: add the H1 segment (ny_inner+1..jyseps2_2) FIRST so it
+            // becomes rank 0 in comm_pf_e → firstY=true.  Then add the G1 segment
+            // (jyseps1_2+1..ny_inner-1) so it becomes rank 1 → lastY=true.
+            //
+            // Region naming (INGRID convention):
+            //   G1: y = jyseps1_2+1 .. ny_inner-1  (YPROC 6, lower Y-index)
+            //       Physical target at UPPER face (y=ny_inner-1); branch cut at lower face.
+            //   H1: y = ny_inner+1  .. jyseps2_2   (YPROC 7, higher Y-index)
+            //       Physical target at LOWER face (y=ny_inner);   branch cut at upper face.
+            //   (I1 is the third segment of the W_PFR, not part of E_PFR.)
+            //
+            // This ordering is the INVERSE of the W_PFR ordering because the E_PFR
+            // topology is inverted: G1 (lower Y-index) has its target at the TOP,
+            // while H1 (higher Y-index) has its target at the BOTTOM.  The branch
+            // cut connects G1 lower face ↔ H1 upper face.
+            //
+            // With rank 0 = H1 (firstY=true → ys=ystart, no lower extension) and
+            // rank 1 = G1 (lastY=true → ye=yend, no upper extension), FV parallel
+            // operators stop at the physical target face instead of extending into
+            // guard cells and double-counting the sheath flux.
+            add_pf_range(ny_inner + 1, jyseps2_2);       // H1 first  → rank 0 → firstY=true
+            add_pf_range(jyseps1_2 + 1, ny_inner - 1);  // G1 second → rank 1 → lastY=true
+
+            MPI_Comm_create(BoutComm::get(), pf_group, &comm_tmp);
+            if (comm_tmp != MPI_COMM_NULL) {
+              comm_pf_e = comm_tmp;
+              // Assign to comm_inner so firstY/lastY return the correct values:
+              //   rank 0 = H1 → firstY=true at south target (lower face)
+              //   rank 1 = G1 → lastY=true  at east  target (upper face)
+              comm_inner = comm_pf_e;
+            }
+
+            if (pf_group != MPI_GROUP_EMPTY) {
+              MPI_Group_free(&pf_group);
+            }
+          }
+
+          ////////////////////////////////////////////////////
+          // PF_C
+
+          if (xProcInBand(i, pf_bands.central)) {
+
+            MPI_Group pf_group = MPI_GROUP_EMPTY;
+
+            auto add_pf_range = [&](int ylo, int yhi) {
+              if (ylo > yhi) return;
+
+              proc[0] = PROC_NUM(i, YPROC(ylo));
+              proc[1] = PROC_NUM(i, YPROC(yhi));
+              proc[2] = NXPE;
+
+              MPI_Group tmp;
+              MPI_Group_range_incl(group_world, 1, &proc, &tmp);
+
+              if (pf_group == MPI_GROUP_EMPTY) {
+                pf_group = tmp;
+              } else {
+                MPI_Group new_group;
+                MPI_Group_union(pf_group, tmp, &new_group);
+                MPI_Group_free(&pf_group);
+                MPI_Group_free(&tmp);
+                pf_group = new_group;
+              }
+            };
+
+            // PF_C Y ranges
+            add_pf_range(0, jyseps1_2);
+            add_pf_range(jyseps2_2 + 1, ny -1);
+
+            MPI_Comm_create(BoutComm::get(), pf_group, &comm_tmp);
+            if (comm_tmp != MPI_COMM_NULL) {
+              comm_pf_c = comm_tmp;
+            }
+
+            if (pf_group != MPI_GROUP_EMPTY) {
+              MPI_Group_free(&pf_group);
+            }
+          }
+
+          ////////////////////////////////////////////////////
+          // PF_S
+
+          if (xProcInBand(i, pf_bands.south)) {
+
+            MPI_Group pf_group = MPI_GROUP_EMPTY;
+
+            proc[0] = PROC_NUM(i, YPROC(ny_inner + 1));
+            proc[1] = PROC_NUM(i, YPROC(ny - 1));
+            proc[2] = NXPE;
+
+            MPI_Group_range_incl(group_world, 1, &proc, &pf_group);
+            MPI_Comm_create(BoutComm::get(), pf_group, &comm_tmp);
+
+            if (comm_tmp != MPI_COMM_NULL) {
+              comm_pf_s = comm_tmp;
+            }
+
+            if (pf_group != MPI_GROUP_EMPTY) {
+              MPI_Group_free(&pf_group);
+            }
+          }
+        output_debug << "snowflake PF rank "
+              << PE_XIND << "," << PE_YIND
+              << " W=" << (comm_pf_w != MPI_COMM_NULL)
+              << " E=" << (comm_pf_e != MPI_COMM_NULL)
+              << " C=" << (comm_pf_c != MPI_COMM_NULL)
+              << " S=" << (comm_pf_s != MPI_COMM_NULL)
+              << endl;
       } else if (snowflake_type == SnowflakeType::SF_minus_high_field_side){ 
           //SF- HFS
           // Snowflake upper PF region communicators. Note there are 4 regions to consider here (Central, East, West, South).
@@ -2229,8 +2562,10 @@ void BoutMesh::createCommunicators() {
             // rank 1 = G1 (lastY=true → ye=yend, no upper extension), FV parallel
             // operators stop at the physical target face instead of extending into
             // guard cells and double-counting the sheath flux.
-            add_pf_range(ny_inner + 1, jyseps1_2);       // H1 first  → rank 0 → firstY=true
-            add_pf_range(jyseps2_1 + 1, ny_inner - 1);  // G1 second → rank 1 → lastY=true
+            add_pf_range(ny_inner + 1, jyseps2_2);      // H1 
+            add_pf_range(jyseps1_1 + 1, jyseps2_1);     // (I1) Central segment
+            add_pf_range(jyseps1_2 + 1, ny_inner - 1);  // G1 
+
 
             MPI_Comm_create(BoutComm::get(), pf_group, &comm_tmp);
             if (comm_tmp != MPI_COMM_NULL) {
@@ -2324,10 +2659,10 @@ void BoutMesh::createCommunicators() {
 
     // Core region
     TRACE("Creating core communicators");
-    //Works for SN and every snowflake but SF+ HFS. For connected_double_null and unconnected_double_null its the inner core region.
+    //Works for SN and every snowflake but SF+ HFS and SF- HFS. For connected_double_null and unconnected_double_null its the inner core region. 
     if (mesh_topology == MeshTopology::single_null || mesh_topology == MeshTopology::closed_field_line || 
         mesh_topology == MeshTopology::connected_double_null || mesh_topology == MeshTopology::unconnected_double_null || 
-        (mesh_topology == MeshTopology::snowflake && snowflake_type != SnowflakeType::SF_plus_high_field_side)) {
+        (mesh_topology == MeshTopology::snowflake && (snowflake_type != SnowflakeType::SF_plus_high_field_side && snowflake_type != SnowflakeType::SF_minus_high_field_side))) {
         
       group_tmp1 = MPI_GROUP_EMPTY;
       group_tmp2 = MPI_GROUP_EMPTY;
@@ -2347,7 +2682,7 @@ void BoutMesh::createCommunicators() {
         group_tmp1 = MPI_GROUP_EMPTY;
       }
 
-    } else if (mesh_topology == MeshTopology::snowflake && snowflake_type == SnowflakeType::SF_plus_high_field_side){
+    } else if (mesh_topology == MeshTopology::snowflake && (snowflake_type == SnowflakeType::SF_plus_high_field_side || snowflake_type == SnowflakeType::SF_minus_high_field_side)){
         
       group_tmp1 = MPI_GROUP_EMPTY;
       group_tmp2 = MPI_GROUP_EMPTY;
@@ -2368,10 +2703,11 @@ void BoutMesh::createCommunicators() {
       }
     }
 
-    //For connected_double_null and unconnected_double_null outer core region, for the extra core region in SF- configurations, or for the union of the SN and CFS domain: (jyseps1_1, jyseps2_1] ∪ (jyseps1_2, jyseps2_2].
+    //For connected_double_null and unconnected_double_null outer core region, for the extra core region in SF- exact configurations, 
+    //or for the union of the SN and CFS domain: (jyseps1_1, jyseps2_1] ∪ (jyseps1_2, jyseps2_2].
     if (mesh_topology == MeshTopology::single_null || mesh_topology == MeshTopology::closed_field_line || 
         mesh_topology == MeshTopology::connected_double_null || mesh_topology == MeshTopology::unconnected_double_null ||
-       (mesh_topology == MeshTopology::snowflake && (snowflake_type == SnowflakeType::SF_minus_low_field_side || snowflake_type == SnowflakeType::SF_minus_high_field_side))){
+       (mesh_topology == MeshTopology::snowflake && (snowflake_type == SnowflakeType::SF_minus_exact_low_field_side || snowflake_type == SnowflakeType::SF_minus_exact_high_field_side))){
 
       if (jyseps2_2 > jyseps1_2) {
         proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
@@ -2532,7 +2868,7 @@ void BoutMesh::createCommunicators() {
         }
         MPI_Group_free(&group);
       }
-    } else if (snowflake_type == SnowflakeType::SF_minus_low_field_side) {
+    } else if (snowflake_type == SnowflakeType::SF_minus_exact_low_field_side) {
       TRACE("Creating snowflake C_PFR comm_middle communicators");
       for (int i = 0; i < NXPE; i++) {
         // Lower C_PFR
@@ -2542,6 +2878,33 @@ void BoutMesh::createCommunicators() {
 
         // Upper C_PFR
         proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
+        proc[1] = PROC_NUM(i, YPROC(ny - 1));
+        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+
+        MPI_Group_union(group_tmp1, group_tmp2, &group);
+        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+        if (comm_tmp != MPI_COMM_NULL) {
+          comm_middle = comm_tmp;
+        }
+
+        if (group_tmp1 != MPI_GROUP_EMPTY) {
+          MPI_Group_free(&group_tmp1);
+        }
+        if (group_tmp2 != MPI_GROUP_EMPTY) {
+          MPI_Group_free(&group_tmp2);
+        }
+        MPI_Group_free(&group);
+      }
+    } else if (snowflake_type == SnowflakeType::SF_minus_low_field_side) {
+      TRACE("Creating snowflake C_PFR comm_middle communicators");
+      for (int i = 0; i < NXPE; i++) {
+        // Lower C_PFR
+        proc[0] = PROC_NUM(i, 0);
+        proc[1] = PROC_NUM(i, YPROC(jyseps1_2));
+        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+
+        // Upper C_PFR
+        proc[0] = PROC_NUM(i, YPROC(jyseps2_2 + 1));
         proc[1] = PROC_NUM(i, YPROC(ny - 1));
         MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
 
@@ -2587,11 +2950,39 @@ void BoutMesh::createCommunicators() {
         }
         MPI_Group_free(&group);
       }
+    } else if (snowflake_type == SnowflakeType::SF_minus_exact_high_field_side) {
+      TRACE("Creating snowflake C_PFR comm_middle communicators");
+      for (int i = 0; i < NXPE; i++) {
+        // Lower C_PFR
+        proc[0] = PROC_NUM(i, YPROC(jyseps1_1 + 1));
+        proc[1] = PROC_NUM(i, YPROC(ny_inner - 1));
+        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+
+        // Upper C_PFR
+        proc[0] = PROC_NUM(i, YPROC(ny_inner + 1));
+        proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
+        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+
+        // The group has to follow the field line in y positive direction, starting at the processor whose lower face is a target and ending at the one whose upper face is a target.
+        MPI_Group_union(group_tmp2, group_tmp1, &group);
+        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+        if (comm_tmp != MPI_COMM_NULL) {
+          comm_middle = comm_tmp;
+        }
+
+        if (group_tmp1 != MPI_GROUP_EMPTY) {
+          MPI_Group_free(&group_tmp1);
+        }
+        if (group_tmp2 != MPI_GROUP_EMPTY) {
+          MPI_Group_free(&group_tmp2);
+        }
+        MPI_Group_free(&group);
+      }
     }
   }
 
-  // For snowflake topology, create a dedicated "South PFR" comm_middle for the
-  // South East target
+  // For snowflake + topology, create a dedicated "South PFR" comm_middle for theSouth target
+  // For SF- this is the extra region in either the E or W PFRs.
   if (mesh_topology == MeshTopology::snowflake) {
     if (snowflake_type == SnowflakeType::SF_plus_low_field_side || snowflake_type == SnowflakeType::SF_plus_high_field_side || snowflake_type == SnowflakeType::SF){
       TRACE("Creating snowflake S_PFR comm_middle communicators");
@@ -2622,7 +3013,7 @@ void BoutMesh::createCommunicators() {
         }
         MPI_Group_free(&group);
       }
-    } else if (snowflake_type == SnowflakeType::SF_minus_low_field_side){
+    } else if (snowflake_type == SnowflakeType::SF_minus_exact_low_field_side){
       TRACE("Creating snowflake E_PFR comm_middle communicators");
       for (int i = 0; i < NXPE; i++) {
 
@@ -2651,7 +3042,36 @@ void BoutMesh::createCommunicators() {
         }
         MPI_Group_free(&group);
       }
-    } else if (snowflake_type == SnowflakeType::SF_minus_high_field_side){
+    } else if (snowflake_type == SnowflakeType::SF_minus_low_field_side){
+      TRACE("Creating snowflake E_PFR comm_middle communicators");
+      for (int i = 0; i < NXPE; i++) {
+
+        proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
+        proc[1] = PROC_NUM(i, YPROC(ny_inner - 1));
+        proc[2] = NXPE;
+        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+
+        proc[0] = PROC_NUM(i, YPROC(ny_inner + 1));
+        proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
+        proc[2] = NXPE;
+        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+
+        // The group has to follow the field line in y positive direction, starting at the processor whose lower face is a target and ending at the one whose upper face is a target.
+        MPI_Group_union(group_tmp2, group_tmp1, &group);
+        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+        if (comm_tmp != MPI_COMM_NULL) {
+          comm_middle = comm_tmp;
+        }
+
+        if (group_tmp1 != MPI_GROUP_EMPTY) {
+          MPI_Group_free(&group_tmp1);
+        }
+        if (group_tmp2 != MPI_GROUP_EMPTY) {
+          MPI_Group_free(&group_tmp2);
+        }
+        MPI_Group_free(&group);
+      }
+    } else if (snowflake_type == SnowflakeType::SF_minus_exact_high_field_side || snowflake_type == SnowflakeType::SF_minus_high_field_side){
       TRACE("Creating snowflake W_PFR comm_middle communicators");
       for (int i = 0; i < NXPE; i++) {
 
@@ -2738,8 +3158,8 @@ void BoutMesh::createXBoundaries() {
       }
     }
     else{
-      if (snowflake_type == SnowflakeType::SF_plus_low_field_side || snowflake_type == SnowflakeType::SF){ 
-        //Snowflake + LFS has one core region at (jyseps1_1, jyseps2_1].
+      if (snowflake_type == SnowflakeType::SF_plus_low_field_side || snowflake_type == SnowflakeType::SF || snowflake_type == SnowflakeType::SF_minus_low_field_side){ 
+        //Snowflake + and - LFS have one core region at (jyseps1_1, jyseps2_1].
         const bool in_core = ((yg > jyseps1_1) and (yg <= jyseps2_1));
 
         if (in_core) {
@@ -2748,8 +3168,8 @@ void BoutMesh::createXBoundaries() {
           boundary.push_back(bout::boundary::NewBoundaryRegionXIn("pf", ystart, yend, this));
         }
 
-      } else if (snowflake_type == SnowflakeType::SF_plus_high_field_side){ 
-        //Snowflake + HFS has one core region at (jyseps2_1, jyseps1_2].
+      } else if (snowflake_type == SnowflakeType::SF_plus_high_field_side || snowflake_type == SnowflakeType::SF_minus_high_field_side){ 
+        //Snowflake + and - HFS have one core region at (jyseps2_1, jyseps1_2].
         const bool in_core = ((yg > jyseps2_1) and (yg <= jyseps1_2));
 
         if (in_core) {
@@ -2758,8 +3178,8 @@ void BoutMesh::createXBoundaries() {
           boundary.push_back(bout::boundary::NewBoundaryRegionXIn("pf", ystart, yend, this));
         }
 
-      } else if (snowflake_type == SnowflakeType::SF_minus_low_field_side){ 
-        //Snowflake - LFS has one core region at (jyseps1_1, jyseps2_1] U (jyseps1_2, jyseps2_2].
+      } else if (snowflake_type == SnowflakeType::SF_minus_exact_low_field_side){ 
+        //Snowflake- exact LFS has the core region at (jyseps1_1, jyseps2_1] U (jyseps1_2, jyseps2_2].
         const bool in_core = ((yg > jyseps1_1) and (yg <= jyseps2_1))
           or ((yg > jyseps1_2) and (yg <= jyseps2_2));
 
@@ -2769,8 +3189,8 @@ void BoutMesh::createXBoundaries() {
           boundary.push_back(bout::boundary::NewBoundaryRegionXIn("pf", ystart, yend, this));
         }
 
-      } else if (snowflake_type == SnowflakeType::SF_minus_high_field_side){ 
-        //Snowflake - HFS has one core region at (jyseps1_1, jyseps2_1] U (jyseps1_2, jyseps2_2].
+      } else if (snowflake_type == SnowflakeType::SF_minus_exact_high_field_side){ 
+        //Snowflake- exact HFS has the core region at (jyseps1_1, jyseps2_1] U (jyseps1_2, jyseps2_2].
         const bool in_core = ((yg > jyseps1_1) and (yg <= jyseps2_1))
           or ((yg > jyseps1_2) and (yg <= jyseps2_2));
 
@@ -2785,7 +3205,7 @@ void BoutMesh::createXBoundaries() {
 
   if (PE_XIND == (NXPE - 1)) {
     // In snowflake topology the region above ny_inner at the outer X face is the South PFR,
-    // not the outer SOL.
+    // not the outer SOL (in all SF configurations).
     if (mesh_topology == MeshTopology::snowflake and yg >= ny_inner) {
       boundary.push_back(bout::boundary::NewBoundaryRegionXOut("south_pf_outer", ystart, yend, this));
     } else {
@@ -3633,6 +4053,16 @@ BoutMesh::SnowflakePFBands BoutMesh::snowflakePFBands() const {
             {0, ixseps_inner},
             {ixseps_inner, ixseps_outer},
             {ixseps_outer, nx}};
+  case SnowflakeType::SF_minus_exact_low_field_side:
+    return {{0, ixseps_inner},
+            {0, ixseps_outer},
+            {ixseps_inner, ixseps_outer},
+            {ixseps_outer, nx}};
+  case SnowflakeType::SF_minus_exact_high_field_side:
+    return {{0, ixseps_outer},
+            {0, ixseps_inner},
+            {ixseps_inner, ixseps_outer},
+            {ixseps_outer, nx}};
   default:
     throw BoutException("Unsupported snowflake type");
   }
@@ -4038,7 +4468,7 @@ void BoutMesh::topology() {
 
   } else if (mesh_topology == MeshTopology::snowflake) {
       if (ixseps1 == ixseps2) {
-        /*************** Snowflake topologies can't have the two same separatrices ******************/
+        /*************** Snowflake topologies can't have the two same separatrices --> Ideal SF ******************/
         throw BoutException("\t Topology error: Snowflake topology can't have the two same separatrices\n");
       }
       
@@ -4108,7 +4538,7 @@ void BoutMesh::topology() {
       // Add East target
       add_target(ny_inner - 1, 0, nx);
 
-    } else if (snowflake_type == SnowflakeType::SF_minus_low_field_side){
+    } else if (snowflake_type == SnowflakeType::SF_minus_exact_low_field_side){
       /*************** Snowflake- LFS operation *******************/
       /* Each PFR does not have to be the same length as each
         other, but do have to have an integer number
@@ -4137,6 +4567,37 @@ void BoutMesh::topology() {
       // Add East target
       add_target(ny_inner - 1, 0, nx);
 
+    } else if (snowflake_type == SnowflakeType::SF_minus_low_field_side){
+      /*************** Snowflake- LFS operation *******************/
+      /* Each PFR does not have to be the same length as each
+        other, but do have to have an integer number
+        of processors */
+      if ((jyseps1_2 + 1) % MYSUB != 0 || (ny - 1 - jyseps2_2) % MYSUB != 0) {
+        throw BoutException("\tTopology error: Central PFR does not have integer "
+                            "number of processors\n");
+      }
+      if ((ny_inner - 1 - jyseps1_2) % MYSUB != 0 || (jyseps1_2 - ny_inner + 1) % MYSUB != 0) {
+        throw BoutException("\tTopology error: East PFR does not have integer "
+                            "number of processors\n");
+      }
+
+      /********* snowflake- LFS CONNECTIONS **********/
+      default_connections();
+
+      set_connection(jyseps1_2 + 1, jyseps2_2, 0, ixseps_upper); /* E_PFR */
+                    
+      set_connection(jyseps1_2, jyseps2_2 + 1, 0, ixseps_upper); /* W_PFR at E_PFR boundary */
+
+
+      set_connection(jyseps1_1 + 1, jyseps2_1, 0, ixseps_lower); /* Core  */
+
+      set_connection(jyseps1_1, jyseps2_1 + 1, 0, ixseps_lower); /* W_PFR at Core boundary */
+
+      // Snowflake has multiple physical targets, but only one Y-boundary.
+      // Other targets are reached via X-connectivity.
+      // Add East target
+      add_target(ny_inner - 1, 0, nx);
+
     } else if (snowflake_type == SnowflakeType::SF_minus_high_field_side){
       /*************** Snowflake- HFS operation *******************/
       /* Each PFR does not have to be the same length as each
@@ -4151,7 +4612,37 @@ void BoutMesh::topology() {
                             "number of processors\n");
       }
 
-      /********* snowflake- LFS CONNECTIONS **********/
+      /********* snowflake- HFS CONNECTIONS **********/
+      default_connections();
+      set_connection(jyseps1_1 + 1, jyseps2_2, 0, ixseps_upper); /* W_PFR */
+                    
+      set_connection(jyseps1_1, jyseps2_2 + 1, 0, ixseps_upper); /* Core */
+
+      set_connection(jyseps2_1, jyseps1_2 + 1, 0, ixseps_lower); /* Core */
+
+      set_connection(jyseps2_1 + 1, jyseps1_2, 0, ixseps_lower); /* E_PFR  */
+
+
+      // Snowflake has multiple physical targets, but only one Y-boundary.
+      // Other targets are reached via X-connectivity.
+      // Add East target
+      add_target(ny_inner - 1, 0, nx);
+
+    } else if (snowflake_type == SnowflakeType::SF_minus_exact_high_field_side){
+      /*************** Snowflake- HFS operation *******************/
+      /* Each PFR does not have to be the same length as each
+        other, but do have to have an integer number
+        of processors */
+      if ((jyseps2_2 - jyseps1_1) % MYSUB != 0) {
+        throw BoutException("\tTopology error: Central PFR does not have integer "
+                            "number of processors\n");
+      }
+      if ((ny_inner - 1 - jyseps2_1) % MYSUB != 0 || (jyseps1_2 - ny_inner + 1) % MYSUB != 0) {
+        throw BoutException("\tTopology error: East PFR does not have integer "
+                            "number of processors\n");
+      }
+
+      /********* snowflake- exact HFS CONNECTIONS **********/
       default_connections();
       set_connection(jyseps1_1 + 1, jyseps2_2, 0, ixseps_upper); /* W_PFR */
                     
@@ -4202,19 +4693,19 @@ void BoutMesh::topology() {
   }
 
   if (mesh_topology == MeshTopology::snowflake) {
-    if (snowflake_type == SnowflakeType::SF_plus_low_field_side || snowflake_type == SnowflakeType::SF) {
+    if (snowflake_type == SnowflakeType::SF_plus_low_field_side || snowflake_type == SnowflakeType::SF || snowflake_type == SnowflakeType::SF_minus_low_field_side) {
       if (ixseps_inner > 0 &&
         (PE_YIND * MYSUB > jyseps1_1) &&
         (PE_YIND * MYSUB <= jyseps2_1)) {
           MYPE_IN_CORE = true;
       }
-    } else if (snowflake_type == SnowflakeType::SF_plus_high_field_side) {
+    } else if (snowflake_type == SnowflakeType::SF_plus_high_field_side || snowflake_type == SnowflakeType::SF_minus_high_field_side ) {
       if (ixseps_inner > 0 &&
         (PE_YIND * MYSUB > jyseps2_1) &&
         (PE_YIND * MYSUB <= jyseps1_2)) {
           MYPE_IN_CORE = true;
       }
-    } else if (snowflake_type == SnowflakeType::SF_minus_low_field_side || snowflake_type == SnowflakeType::SF_minus_high_field_side) {
+    } else if (snowflake_type == SnowflakeType::SF_minus_exact_low_field_side || snowflake_type == SnowflakeType::SF_minus_exact_high_field_side) {
       if (ixseps_inner > 0 &&
          (((PE_YIND * MYSUB > jyseps1_1) && (PE_YIND * MYSUB <= jyseps2_1))
           || ((PE_YIND * MYSUB > jyseps1_2) && (PE_YIND * MYSUB <= jyseps2_2)))) {
@@ -4511,7 +5002,7 @@ bool BoutMesh::periodicY(int jx) const {
   && (snowflake_type == SnowflakeType::SF_plus_low_field_side
   || snowflake_type == SnowflakeType::SF_plus_high_field_side
   || snowflake_type == SnowflakeType::SF)) {
-  return MYPE_IN_CORE and (getGlobalXIndex(jx) < ixseps_upper);
+  return MYPE_IN_CORE and (getGlobalXIndex(jx) < ixseps_upper); //Only SF+ have two rows of X in the core
   }
   return MYPE_IN_CORE and (getGlobalXIndex(jx) < ixseps_inner);
 }
@@ -4630,7 +5121,7 @@ int BoutMesh::ySize(int xpos) const {
           return (ny - 1 - ny_inner + 1);
         }
       }
-    } else if (snowflake_type == SnowflakeType::SF_minus_low_field_side) {
+    } else if (snowflake_type == SnowflakeType::SF_minus_exact_low_field_side) {
         if (xglobal < ixseps_lower) {
         if ((yglobal <= jyseps1_1) || (yglobal > jyseps2_2)) {
           // West PF region in Snowflake
@@ -4661,7 +5152,71 @@ int BoutMesh::ySize(int xpos) const {
           return (ny - 1 - ny_inner + 1);
         }
       }
+    } else if (snowflake_type == SnowflakeType::SF_minus_low_field_side) {
+        if (xglobal < ixseps_lower) {
+        if ((yglobal <= jyseps1_1) || (yglobal > jyseps2_2) || 
+          (yglobal <= jyseps1_2 && yglobal > jyseps2_1)) {
+          // West PF region in Snowflake
+          return (jyseps1_1 + 1) + (ny - 1 - jyseps2_2) + (jyseps1_2 - jyseps2_1);
+
+        }  else if (((yglobal > jyseps1_1) && (yglobal <= jyseps2_1))) {
+        // Core
+        return (jyseps2_1 - jyseps1_1);
+        } 
+        return (jyseps2_2 - jyseps1_2); //East PFR
+
+      } else if ((xglobal < ixseps_upper)){
+        if ((yglobal > jyseps2_2) || (yglobal <= jyseps1_2)) {
+        // Center PF region in Snowflake
+        return (ny - 1 - jyseps2_2) + (jyseps1_2 + 1);
+        
+      } else if ((yglobal > jyseps1_2) && (yglobal <= jyseps2_2)) {
+          // East PF region in Snowflake
+          return (jyseps2_2 - ny_inner + 1) + (ny_inner - 1 - jyseps1_2);
+        }
+
+      } else if (xglobal >= ixseps_upper){
+        if (yglobal <= ny_inner - 1){
+          // Outer SOL
+          return ny_inner;
+        } else {
+          // South PF region in Snowflake
+          return (ny - 1 - ny_inner + 1);
+        }
+      }
     } else if (snowflake_type == SnowflakeType::SF_minus_high_field_side) {
+        if (xglobal < ixseps_lower) {
+        if (((yglobal > jyseps1_1) && (yglobal <= jyseps2_1)) || ((yglobal > jyseps1_2) && (yglobal <= jyseps2_2))) {
+          // East PF region in Snowflake
+          return (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
+
+        } else if (((yglobal > jyseps2_1) && (yglobal <= jyseps1_2))) {
+        // Core
+        return (jyseps1_2 - jyseps2_1);
+        } 
+        return (jyseps1_1 + 1) + (ny - 1 - jyseps2_2); //West PFR
+
+      } else if ((xglobal < ixseps_upper)){
+        if ((yglobal > jyseps1_1) && (yglobal <= jyseps2_2)) {
+        // Center PF region in Snowflake
+        return jyseps2_2 - jyseps1_1;
+        
+      } else if ((yglobal <= jyseps1_1) || (yglobal > jyseps2_2)) {
+          // West PF region in Snowflake
+          return (jyseps1_1 + 1) + (ny - 1 - jyseps2_2);
+
+        } 
+
+      } else if (xglobal >= ixseps_upper){
+        if (yglobal <= ny_inner - 1){
+          // Outer SOL
+          return ny_inner;
+        } else {
+          // South PF region in Snowflake
+          return (ny - 1- ny_inner + 1);
+        }
+      }
+    } else if (snowflake_type == SnowflakeType::SF_minus_exact_high_field_side) {
         if (xglobal < ixseps_lower) {
         if ((yglobal > jyseps2_1) && (yglobal <= jyseps1_2)) {
           // East PF region in Snowflake
@@ -5390,7 +5945,8 @@ BoutReal BoutMesh::GlobalX(BoutReal jx) const {
 
 BoutReal BoutMesh::GlobalY(int jy) const {
   if (mesh_topology == MeshTopology::snowflake){
-    if (snowflake_type != SnowflakeType::SF_plus_high_field_side) {
+    if (snowflake_type != SnowflakeType::SF_plus_high_field_side && snowflake_type != SnowflakeType::SF_minus_high_field_side 
+      && snowflake_type != SnowflakeType::SF_minus_exact_low_field_side && snowflake_type != SnowflakeType::SF_minus_exact_high_field_side) {
       if (symmetricGlobalY) {
       BoutReal yi = getGlobalYIndexNoBoundaries(jy);
       int nycore = (jyseps2_1 - jyseps1_1);
@@ -5419,7 +5975,7 @@ BoutReal BoutMesh::GlobalY(int jy) const {
     }
       return static_cast<BoutReal>(ly) / static_cast<BoutReal>(nycore); 
 
-    } else if (snowflake_type == SnowflakeType::SF_plus_high_field_side) { //Only SF member that has a different core range.
+    } else if (snowflake_type == SnowflakeType::SF_plus_high_field_side || snowflake_type == SnowflakeType::SF_minus_high_field_side) { //Only SF members that have a different core range.
       if (symmetricGlobalY) {
       BoutReal yi = getGlobalYIndexNoBoundaries(jy);
       int nycore = (jyseps1_2 - jyseps2_1);
@@ -5446,9 +6002,42 @@ BoutReal BoutMesh::GlobalY(int jy) const {
           ly = nycore;
         }
     }
-      return static_cast<BoutReal>(ly) / static_cast<BoutReal>(nycore); 
+      return static_cast<BoutReal>(ly) / static_cast<BoutReal>(nycore);
 
-    } 
+    } else if (snowflake_type == SnowflakeType::SF_minus_exact_low_field_side || snowflake_type == SnowflakeType::SF_minus_exact_high_field_side) {
+      if (symmetricGlobalY) {
+      BoutReal yi = getGlobalYIndexNoBoundaries(jy);
+      int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
+
+      if (yi < ny_inner) {
+        yi -= jyseps1_1 + 0.5;
+      } else {
+        yi -= jyseps1_1 + 0.5 + (jyseps1_2 - jyseps2_1);
+      }
+      return yi / nycore;
+      }
+
+      int ly = getGlobalYIndexNoBoundaries(jy);
+      int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
+
+      if (MYPE_IN_CORE) {
+        if (ly <= jyseps2_1) {
+          ly -= jyseps1_1 + 1;
+        } else {
+          ly -= jyseps1_1 + 1 + (jyseps1_2 - jyseps2_1);
+        }
+      } else {
+        if (ly <= jyseps1_1) {
+          ly = 0;
+        } else if ((ly > jyseps2_1) && (ly <= jyseps1_2)) {
+          ly = jyseps2_1 - jyseps1_1;
+        } else if (ly > jyseps2_2) {
+          ly = nycore;
+        }
+      }
+      return static_cast<BoutReal>(ly) / static_cast<BoutReal>(nycore);
+
+    }
   } else {
   //Keep previous behaviour.
   if (symmetricGlobalY) {
@@ -5495,10 +6084,10 @@ BoutReal BoutMesh::GlobalY(int jy) const {
 
 BoutReal BoutMesh::GlobalY(BoutReal jy) const {
   if (mesh_topology == MeshTopology::snowflake){
-    if (snowflake_type != SnowflakeType::SF_plus_high_field_side) {
+    if (snowflake_type != SnowflakeType::SF_plus_high_field_side && snowflake_type != SnowflakeType::SF_minus_high_field_side 
+      && snowflake_type != SnowflakeType::SF_minus_exact_low_field_side && snowflake_type != SnowflakeType::SF_minus_exact_high_field_side) {
       // Get global Y index as a BoutReal
-      BoutReal yglo;
-      YGLOBAL(jy, yglo);
+      BoutReal yglo = getGlobalYIndex(jy);
 
       if (symmetricGlobalY) {
         BoutReal yi = yglo;
@@ -5523,16 +6112,15 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
       }
 
       return yglo / static_cast<BoutReal>(nycore);
-    } else if (snowflake_type == SnowflakeType::SF_plus_high_field_side) { //Only SF member that has a different core range.
+    } else if (snowflake_type == SnowflakeType::SF_plus_high_field_side || snowflake_type == SnowflakeType::SF_minus_high_field_side) { //Only SF members that have a different core range.
       // Get global Y index as a BoutReal
-      BoutReal yglo;
-      YGLOBAL(jy, yglo);
+      BoutReal yglo = getGlobalYIndex(jy);
 
       if (symmetricGlobalY) {
         BoutReal yi = yglo;
         int nycore = (jyseps1_2 - jyseps2_1);
 
-        yi -= jyseps1_1 + 0.5;
+        yi -= jyseps2_1 + 0.5;
         return yi / nycore;
       }
 
@@ -5540,12 +6128,46 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
 
       if (MYPE_IN_CORE) {
         // Turn yglo into an index over the core cells onyglo
-          yglo -= jyseps1_1 + 1;
+          yglo -= jyseps2_1 + 1;
       } else {
         // Not in core. Need to get the last "core" value
         if (yglo <= jyseps2_1) {
           yglo = 0;
         } else {
+          yglo = nycore;
+        }
+      }
+
+      return yglo / static_cast<BoutReal>(nycore);
+    } else if (snowflake_type == SnowflakeType::SF_minus_exact_low_field_side || snowflake_type == SnowflakeType::SF_minus_exact_high_field_side) {
+      BoutReal yglo = getGlobalYIndex(jy);
+
+      if (symmetricGlobalY) {
+        BoutReal yi = yglo;
+        int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
+
+        if (yi < ny_inner) {
+          yi -= jyseps1_1 + 0.5;
+        } else {
+          yi -= jyseps1_1 + 0.5 + (jyseps1_2 - jyseps2_1);
+        }
+        return yi / nycore;
+      }
+
+      int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
+
+      if (MYPE_IN_CORE) {
+        if (yglo <= jyseps2_1) {
+          yglo -= jyseps1_1 + 1;
+        } else {
+          yglo -= jyseps1_1 + 1 + (jyseps1_2 - jyseps2_1);
+        }
+      } else {
+        if (yglo <= jyseps1_1) {
+          yglo = 0;
+        } else if ((yglo > jyseps2_1) && (yglo <= jyseps1_2)) {
+          yglo = jyseps2_1 - jyseps1_1;
+        } else if (yglo > jyseps2_2) {
           yglo = nycore;
         }
       }

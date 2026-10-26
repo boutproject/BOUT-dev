@@ -34,6 +34,8 @@ BOUT_ENUM_CLASS(MeshTopology,
 
 //New snowflake class for classifying snowflake family members.              
 BOUT_ENUM_CLASS(SnowflakeType,
+                SF_minus_exact_low_field_side,  //exact snowflake- LFS (Secondary X-Point on the separatrix)
+                SF_minus_exact_high_field_side, //exact snowflake- HFS
                 SF_minus_low_field_side,  //snowflake- LFS
                 SF_minus_high_field_side, //snowflake- HFS
                 SF_plus_low_field_side,   //snowflake+ LFS

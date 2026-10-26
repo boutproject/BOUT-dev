@@ -570,13 +570,13 @@ TEST_P(BadBoutMeshDecompositionTest, BadSingleCoreYDecomposition) {
 ///   (jyseps1_2, ny_inner-1]   E PFR above the E target
 ///   [ny_inner, jyseps2_2]     E PFR below the E target
 ///   (jyseps2_2, ny-1]         S target
-BoutMeshExposer::YDecompositionIndices snowflakePlusIndices(int mysub) {
+BoutMeshExposer::YDecompositionIndices snowflakeIndices(int mysub) {
   return {mysub - 1, (2 * mysub) - 1, (3 * mysub) - 1, (5 * mysub) - 1, 4 * mysub};
 }
 
-/// As `snowflakePlusIndices`, but for SF-: the second X-point is in the SOL, so
+/// As `snowflakeIndices`, but for SF-: the second X-point is in the SOL, so
 /// `ny_inner` sits between `jyseps2_1` and `jyseps1_2` instead.
-BoutMeshExposer::YDecompositionIndices snowflakeMinusIndices(int mysub) {
+BoutMeshExposer::YDecompositionIndices snowflakeExactIndices(int mysub) {
   return {mysub - 1, (2 * mysub) - 1, (4 * mysub) - 1, (5 * mysub) - 1, 3 * mysub};
 }
 
@@ -609,19 +609,25 @@ INSTANTIATE_TEST_SUITE_P(
     EveryRegionExactlyOneProcessor, SnowflakeFamilyDecompositionTest,
     ::testing::Values(
         SnowflakeDecompositionParameters{SnowflakeType::SF_plus_low_field_side,
-                                         snowflakePlusIndices(snowflake_mysub),
+                                         snowflakeIndices(snowflake_mysub),
                                          "SFplusLFS"},
         SnowflakeDecompositionParameters{SnowflakeType::SF_plus_high_field_side,
-                                         snowflakePlusIndices(snowflake_mysub),
+                                         snowflakeIndices(snowflake_mysub),
                                          "SFplusHFS"},
         SnowflakeDecompositionParameters{SnowflakeType::SF_minus_low_field_side,
-                                         snowflakeMinusIndices(snowflake_mysub),
+                                         snowflakeIndices(snowflake_mysub),
                                          "SFminusLFS"},
         SnowflakeDecompositionParameters{SnowflakeType::SF_minus_high_field_side,
-                                         snowflakeMinusIndices(snowflake_mysub),
+                                         snowflakeIndices(snowflake_mysub),
                                          "SFminusHFS"},
+        SnowflakeDecompositionParameters{SnowflakeType::SF_minus_exact_low_field_side,
+                                         snowflakeExactIndices(snowflake_mysub),
+                                         "SFminusExactLFS"},
+        SnowflakeDecompositionParameters{SnowflakeType::SF_minus_exact_high_field_side,
+                                         snowflakeExactIndices(snowflake_mysub),
+                                         "SFminusExactHFS"},
         SnowflakeDecompositionParameters{SnowflakeType::SF,
-                                         snowflakePlusIndices(snowflake_mysub),
+                                         snowflakeIndices(snowflake_mysub),
                                          "GenericSF"}),
     SnowflakeDecompositionParametersToString);
 
@@ -724,11 +730,11 @@ TEST_P(SnowflakeFamilyDecompositionTest, SuggestedDecompositionHasTheRightOrderi
 
   EXPECT_LT(jyseps1_1, jyseps2_1) << suggestion.reason;
 
-  const bool is_snowflake_minus =
-      params.snowflake_type == SnowflakeType::SF_minus_low_field_side
-      or params.snowflake_type == SnowflakeType::SF_minus_high_field_side;
+  const bool is_snowflake_minus_exact =
+      params.snowflake_type == SnowflakeType::SF_minus_exact_low_field_side
+      or params.snowflake_type == SnowflakeType::SF_minus_exact_high_field_side;
 
-  if (is_snowflake_minus) {
+  if (is_snowflake_minus_exact) {
     EXPECT_LT(jyseps2_1, ny_inner) << suggestion.reason;
     EXPECT_LE(ny_inner, jyseps1_2) << suggestion.reason;
     EXPECT_LT(jyseps1_2, jyseps2_2) << suggestion.reason;
@@ -1037,7 +1043,7 @@ INSTANTIATE_TEST_SUITE_P(
     SnowflakeFamily, GetSnowflakeTypeTest,
     ::testing::Values(
         SnowflakeTypeParameters{MeshTopology::snowflake, "SF15",
-                                SnowflakeType::SF_minus_low_field_side, "SF15"},
+                                SnowflakeType::SF_minus_exact_low_field_side, "SF15"},
         SnowflakeTypeParameters{MeshTopology::snowflake, "SF45",
                                 SnowflakeType::SF_minus_low_field_side, "SF45"},
         SnowflakeTypeParameters{MeshTopology::snowflake, "SF75",
@@ -1047,11 +1053,11 @@ INSTANTIATE_TEST_SUITE_P(
         SnowflakeTypeParameters{MeshTopology::snowflake, "SF135",
                                 SnowflakeType::SF_minus_high_field_side, "SF135"},
         SnowflakeTypeParameters{MeshTopology::snowflake, "SF165",
-                                SnowflakeType::SF_minus_high_field_side, "SF165"},
+                                SnowflakeType::SF_minus_exact_high_field_side, "SF165"},
         // The INGRID label is upper-cased by readIngridTopology, but
         // getSnowflakeType is also called directly with raw strings
         SnowflakeTypeParameters{MeshTopology::snowflake, "sf165",
-                                SnowflakeType::SF_minus_high_field_side, "SF165LowerCase"},
+                                SnowflakeType::SF_minus_exact_high_field_side, "SF165LowerCase"},
         SnowflakeTypeParameters{MeshTopology::snowflake, " SF45 ",
                                 SnowflakeType::SF_minus_low_field_side, "SF45Padded"}),
     SnowflakeTypeParametersToString);
@@ -2786,8 +2792,13 @@ TEST_F(BoutMeshTest, CreateXBoundariesSnowflakeSingleCoreInX) {
 // not recoverable from the separatrix indices alone, it comes from the INGRID
 // label.
 
-bool isSnowflakeMinus(SnowflakeType snowflake_type) {
-  return snowflake_type == SnowflakeType::SF_minus_low_field_side
+bool isSnowflakeMinusExact(SnowflakeType snowflake_type) {
+  return snowflake_type == SnowflakeType::SF_minus_exact_low_field_side
+         or snowflake_type == SnowflakeType::SF_minus_exact_high_field_side;
+}
+
+bool hasHighFieldSideCore(SnowflakeType snowflake_type) {
+  return snowflake_type == SnowflakeType::SF_plus_high_field_side
          or snowflake_type == SnowflakeType::SF_minus_high_field_side;
 }
 
@@ -2801,9 +2812,9 @@ void buildSnowflakeTopologyWithSeparatrices(
     BoutMeshExposer& mesh, SnowflakeType snowflake_type,
     BoutMeshExposer::XDecompositionIndices xindices) {
   mesh.setXDecompositionIndices(xindices);
-  mesh.setYDecompositionIndices(isSnowflakeMinus(snowflake_type)
-                                    ? snowflakeMinusIndices(snowflake_mysub)
-                                    : snowflakePlusIndices(snowflake_mysub));
+  mesh.setYDecompositionIndices(isSnowflakeMinusExact(snowflake_type)
+                                    ? snowflakeExactIndices(snowflake_mysub)
+                                    : snowflakeIndices(snowflake_mysub));
   mesh.mesh_topology = MeshTopology::snowflake;
   mesh.snowflake_type = snowflake_type;
   mesh.topology();
@@ -2817,14 +2828,27 @@ void buildSnowflakeTopology(BoutMeshExposer& mesh, SnowflakeType snowflake_type)
 
 /// Global y index of the first cell of the core, for this family member.
 int firstCoreCell(SnowflakeType snowflake_type) {
-  const auto indices = isSnowflakeMinus(snowflake_type)
-                           ? snowflakeMinusIndices(snowflake_mysub)
-                           : snowflakePlusIndices(snowflake_mysub);
+  const auto indices = isSnowflakeMinusExact(snowflake_type)
+                           ? snowflakeExactIndices(snowflake_mysub)
+                           : snowflakeIndices(snowflake_mysub);
   // SF+ HFS is the one member whose core starts at jyseps2_1 instead of
   // jyseps1_1
-  return (snowflake_type == SnowflakeType::SF_plus_high_field_side ? indices.jyseps2_1
-                                                                   : indices.jyseps1_1)
+  return (hasHighFieldSideCore(snowflake_type) ? indices.jyseps2_1
+                                               : indices.jyseps1_1)
          + 1;
+}
+
+int coreLength(SnowflakeType snowflake_type) {
+  const auto indices = isSnowflakeMinusExact(snowflake_type)
+                           ? snowflakeExactIndices(snowflake_mysub)
+                           : snowflakeIndices(snowflake_mysub);
+  int core_length = hasHighFieldSideCore(snowflake_type)
+                        ? indices.jyseps1_2 - indices.jyseps2_1
+                        : indices.jyseps2_1 - indices.jyseps1_1;
+  if (isSnowflakeMinusExact(snowflake_type)) {
+    core_length += indices.jyseps2_2 - indices.jyseps1_2;
+  }
+  return core_length;
 }
 
 struct SnowflakeFamilyMeshTest : public ::testing::TestWithParam<SnowflakeType> {
@@ -2843,6 +2867,8 @@ INSTANTIATE_TEST_SUITE_P(SnowflakeFamily, SnowflakeFamilyMeshTest,
                                            SnowflakeType::SF_plus_high_field_side,
                                            SnowflakeType::SF_minus_low_field_side,
                                            SnowflakeType::SF_minus_high_field_side,
+                                           SnowflakeType::SF_minus_exact_low_field_side,
+                                           SnowflakeType::SF_minus_exact_high_field_side,
                                            SnowflakeType::SF),
                          SnowflakeTypeToTestName);
 
@@ -2916,9 +2942,9 @@ TEST_P(SnowflakeFamilyMeshTest, YSizeIsAlwaysAValidFieldLineLength) {
 /// Every member of the family has a single outer SOL, running from y = 0 up to
 /// the east target at y = ny_inner - 1.
 TEST_P(SnowflakeFamilyMeshTest, YSizeOfTheOuterSOL) {
-  const auto indices = isSnowflakeMinus(GetParam())
-                           ? snowflakeMinusIndices(snowflake_mysub)
-                           : snowflakePlusIndices(snowflake_mysub);
+  const auto indices = isSnowflakeMinusExact(GetParam())
+                           ? snowflakeExactIndices(snowflake_mysub)
+                           : snowflakeIndices(snowflake_mysub);
 
   // pe_yind = 0 is below ny_inner for both layouts
   BoutMeshExposer mesh(6, snowflake_mysub, 1, 1, snowflake_nype, 0, 0, false);
@@ -2932,14 +2958,8 @@ TEST_P(SnowflakeFamilyMeshTest, YSizeOfTheOuterSOL) {
 /// cell in: 0.5 / (number of core cells).
 TEST_P(SnowflakeFamilyMeshTest, GlobalYIsNormalisedOverThisMembersCore) {
   const auto snowflake_type = GetParam();
-  const auto indices = isSnowflakeMinus(snowflake_type)
-                           ? snowflakeMinusIndices(snowflake_mysub)
-                           : snowflakePlusIndices(snowflake_mysub);
-
   const int first_core = firstCoreCell(snowflake_type);
-  const int core_length = snowflake_type == SnowflakeType::SF_plus_high_field_side
-                              ? indices.jyseps1_2 - indices.jyseps2_1
-                              : indices.jyseps2_1 - indices.jyseps1_1;
+  const int core_length = coreLength(snowflake_type);
 
   BoutMeshExposer mesh(6, snowflake_mysub, 1, 1, snowflake_nype, 0,
                        first_core / snowflake_mysub, false);
@@ -2950,6 +2970,49 @@ TEST_P(SnowflakeFamilyMeshTest, GlobalYIsNormalisedOverThisMembersCore) {
   ASSERT_EQ(mesh.getGlobalYIndexNoBoundaries(mesh.ystart), first_core);
 
   EXPECT_DOUBLE_EQ(mesh.GlobalY(mesh.ystart), 0.5 / core_length);
+}
+
+TEST_P(SnowflakeFamilyMeshTest, GlobalYAtARealIndexIsNormalisedOverThisMembersCore) {
+  const auto snowflake_type = GetParam();
+  const int first_core = firstCoreCell(snowflake_type);
+  const int core_length = coreLength(snowflake_type);
+
+  BoutMeshExposer mesh(6, snowflake_mysub, 1, 1, snowflake_nype, 0,
+                       first_core / snowflake_mysub, false);
+  buildSnowflakeTopology(mesh, snowflake_type);
+
+  ASSERT_EQ(mesh.getGlobalYIndexNoBoundaries(mesh.ystart), first_core);
+
+  EXPECT_DOUBLE_EQ(mesh.GlobalY(static_cast<BoutReal>(mesh.ystart)), 0.5 / core_length);
+}
+
+struct SnowflakeExactMeshTest : public SnowflakeFamilyMeshTest {};
+
+INSTANTIATE_TEST_SUITE_P(SnowflakeMinusExact, SnowflakeExactMeshTest,
+                         ::testing::Values(SnowflakeType::SF_minus_exact_low_field_side,
+                                           SnowflakeType::SF_minus_exact_high_field_side),
+                         SnowflakeTypeToTestName);
+
+TEST_P(SnowflakeExactMeshTest, GlobalYRunsThroughTheSecondCorePiece) {
+  const auto snowflake_type = GetParam();
+  const auto indices = snowflakeExactIndices(snowflake_mysub);
+  const int first_core_piece = indices.jyseps2_1 - indices.jyseps1_1;
+  const int core_length = coreLength(snowflake_type);
+
+  BoutMeshExposer mesh(6, snowflake_mysub, 1, 1, snowflake_nype, 0,
+                       (indices.jyseps1_2 + 1) / snowflake_mysub, false);
+  buildSnowflakeTopology(mesh, snowflake_type);
+
+  ASSERT_EQ(mesh.getGlobalYIndexNoBoundaries(mesh.ystart), indices.jyseps1_2 + 1);
+  ASSERT_EQ(mesh.getGlobalYIndexNoBoundaries(mesh.yend), indices.jyseps2_2);
+
+  const BoutReal first = (first_core_piece + 0.5) / core_length;
+  const BoutReal last = (core_length - 0.5) / core_length;
+
+  EXPECT_DOUBLE_EQ(mesh.GlobalY(mesh.ystart), first);
+  EXPECT_DOUBLE_EQ(mesh.GlobalY(mesh.yend), last);
+  EXPECT_DOUBLE_EQ(mesh.GlobalY(static_cast<BoutReal>(mesh.ystart)), first);
+  EXPECT_DOUBLE_EQ(mesh.GlobalY(static_cast<BoutReal>(mesh.yend)), last);
 }
 
 /// `ySize` has to return the length of the field line the connections actually
@@ -2964,9 +3027,13 @@ SnowflakeYSizes snowflakeYSizes(SnowflakeType snowflake_type) {
   switch (snowflake_type) {
   case SnowflakeType::SF_plus_high_field_side:
     return {{8, 12, 4, 12, 12, 8}, {12, 12, 4, 12, 8, 8}, {16, 16, 16, 16, 8, 8}};
-  case SnowflakeType::SF_minus_low_field_side:
-    return {{8, 8, 8, 8, 8, 8}, {16, 16, 8, 8, 16, 16}, {12, 12, 12, 12, 12, 12}};
   case SnowflakeType::SF_minus_high_field_side:
+    return {{8, 12, 4, 12, 12, 8}, {8, 16, 16, 16, 16, 8}, {16, 16, 16, 16, 8, 8}};
+  case SnowflakeType::SF_minus_low_field_side:
+    return {{12, 4, 12, 8, 8, 12}, {16, 16, 16, 8, 8, 16}, {16, 16, 16, 16, 8, 8}};
+  case SnowflakeType::SF_minus_exact_low_field_side:
+    return {{8, 8, 8, 8, 8, 8}, {16, 16, 8, 8, 16, 16}, {12, 12, 12, 12, 12, 12}};
+  case SnowflakeType::SF_minus_exact_high_field_side:
     return {{8, 8, 8, 8, 8, 8}, {8, 16, 16, 16, 16, 8}, {12, 12, 12, 12, 12, 12}};
   default:
     return {{12, 4, 12, 8, 8, 12}, {12, 4, 12, 12, 8, 8}, {16, 16, 16, 16, 8, 8}};
@@ -3035,11 +3102,19 @@ SnowflakeRegionMap snowflakeRegionMap(SnowflakeType snowflake_type) {
     return {{R::pf_west, R::pf_east, R::core, R::pf_east, R::pf_east, R::pf_west},
             {R::pf_centre, R::pf_centre, R::core, R::pf_centre, R::pf_south, R::pf_south},
             {R::sol, R::sol, R::sol, R::sol, R::pf_south, R::pf_south}};
+  case SnowflakeType::SF_minus_high_field_side:
+    return {{R::pf_west, R::pf_east, R::core, R::pf_east, R::pf_east, R::pf_west},
+            {R::pf_west, R::pf_centre, R::pf_centre, R::pf_centre, R::pf_centre, R::pf_west},
+            {R::sol, R::sol, R::sol, R::sol, R::pf_south, R::pf_south}};
   case SnowflakeType::SF_minus_low_field_side:
+    return {{R::pf_west, R::core, R::pf_west, R::pf_east, R::pf_east, R::pf_west},
+            {R::pf_centre, R::pf_centre, R::pf_centre, R::pf_east, R::pf_east, R::pf_centre},
+            {R::sol, R::sol, R::sol, R::sol, R::pf_south, R::pf_south}};
+  case SnowflakeType::SF_minus_exact_low_field_side:
     return {{R::pf_west, R::core, R::pf_east, R::pf_east, R::core, R::pf_west},
             {R::pf_centre, R::pf_centre, R::pf_east, R::pf_east, R::pf_centre, R::pf_centre},
             {R::sol, R::sol, R::sol, R::pf_south, R::pf_south, R::pf_south}};
-  case SnowflakeType::SF_minus_high_field_side:
+  case SnowflakeType::SF_minus_exact_high_field_side:
     return {{R::pf_west, R::core, R::pf_east, R::pf_east, R::core, R::pf_west},
             {R::pf_west, R::pf_centre, R::pf_centre, R::pf_centre, R::pf_centre, R::pf_west},
             {R::sol, R::sol, R::sol, R::pf_south, R::pf_south, R::pf_south}};
