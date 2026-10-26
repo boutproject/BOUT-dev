@@ -5,8 +5,8 @@
 #
 
 import pytest
-from boututils.run_wrapper import shell, launch, launch_safe
 from boutdata.collect import collect
+from boututils.run_wrapper import launch, launch_safe, shell
 
 tol_orth = 5.0e-8
 
@@ -17,12 +17,18 @@ tol_orth = 5.0e-8
 tol_nonorth = 2.0e-5
 
 argslist = [
-    "laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=dirichlet "
-    "f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=dirichlet f:bndry_ydown=dirichlet",
-    "laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=neumann "
-    "f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann",
-    "laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=free_o3 "
-    "f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=free_o3 f:bndry_ydown=free_o3",
+    (
+        "laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=dirichlet "
+        "f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=dirichlet f:bndry_ydown=dirichlet"
+    ),
+    (
+        "laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=neumann "
+        "f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann"
+    ),
+    (
+        "laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=free_o3 "
+        "f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=free_o3 f:bndry_ydown=free_o3"
+    ),
     #'laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=dirichlet '
     #'f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=dirichlet f:bndry_ydown=dirichlet',
     #'laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=neumann '
@@ -33,18 +39,30 @@ argslist = [
     #'f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann',
     #'laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=dirichlet '
     #'f:bndry_xin=neumann f:bndry_xout=neumann f:bndry_yup=dirichlet f:bndry_ydown=dirichlet',
-    "laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=neumann "
-    "f:bndry_xin=neumann f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann laplacexy:pctype=hypre",
-    "laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=free_o3 "
-    "f:bndry_xin=neumann f:bndry_xout=dirichlet f:bndry_yup=free_o3 f:bndry_ydown=free_o3 laplacexy:pctype=hypre",
-    "laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=neumann "
-    "f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann b:function=.1",
-    "laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=free_o3 "
-    "f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=free_o3 f:bndry_ydown=free_o3 b:function=.1",
-    "laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=neumann "
-    "f:bndry_xin=neumann f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann b:function=.1 laplacexy:pctype=hypre",
-    "laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=free_o3 "
-    "f:bndry_xin=neumann f:bndry_xout=dirichlet f:bndry_yup=free_o3 f:bndry_ydown=free_o3 b:function=.1 laplacexy:pctype=hypre",
+    (
+        "laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=neumann "
+        "f:bndry_xin=neumann f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann laplacexy:pctype=hypre"
+    ),
+    (
+        "laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=free_o3 "
+        "f:bndry_xin=neumann f:bndry_xout=dirichlet f:bndry_yup=free_o3 f:bndry_ydown=free_o3 laplacexy:pctype=hypre"
+    ),
+    (
+        "laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=neumann "
+        "f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann b:function=.1"
+    ),
+    (
+        "laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=free_o3 "
+        "f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=free_o3 f:bndry_ydown=free_o3 b:function=.1"
+    ),
+    (
+        "laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=neumann "
+        "f:bndry_xin=neumann f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann b:function=.1 laplacexy:pctype=hypre"
+    ),
+    (
+        "laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=free_o3 "
+        "f:bndry_xin=neumann f:bndry_xout=dirichlet f:bndry_yup=free_o3 f:bndry_ydown=free_o3 b:function=.1 laplacexy:pctype=hypre"
+    ),
 ]
 
 
@@ -60,7 +78,7 @@ def test_laplacexy(is_nonorth, tol, case_idx, base_args):
     args = base_args if is_nonorth else f"{base_args} mesh:g12=0."
     cmd = f"./test-laplacexy {args}"
 
-    shell(["rm -f data/BOUT.dmp.*.nc"])
+    shell(["rm -rf data/BOUT.dmp.*"])
 
     if "hypre" in args:
         s, out = launch(cmd, nproc=nproc, pipe=True, verbose=True)
