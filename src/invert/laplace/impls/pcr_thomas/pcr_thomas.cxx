@@ -64,7 +64,7 @@
 #include <cstdlib>
 #include <mpi.h>
 
-using namespace std;
+using std::min;
 
 LaplacePCR_THOMAS::LaplacePCR_THOMAS(Options* opt, CELL_LOC loc, Mesh* mesh_in,
                                      Solver* UNUSED(solver))

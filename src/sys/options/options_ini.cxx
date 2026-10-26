@@ -8,7 +8,7 @@
  * name = string # comment
  *
  * [section:subsection]  # Sub-sections separated by colons. Arbitrary depth.
- * 
+ *
  * ChangeLog
  * =========
  *
@@ -63,7 +63,11 @@
 
 #include "fmt/format.h"
 
-using namespace std;
+using std::getline;
+using std::ifstream;
+using std::ios;
+using std::size_t;
+using std::string;
 
 /**************************************************************************
  * Read input file

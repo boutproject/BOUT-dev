@@ -131,7 +131,16 @@ protected:
     /// Edit distance from original search term
     std::string::size_type distance;
     /// Comparison operator so this works in a std::multiset
-    auto operator<=>(const FuzzyMatch&) const = default;
+    // Explicit comparisons avoid NVCC/libstdc++ constexpr issues with std::string.
+    auto operator<=>(const FuzzyMatch& rhs) const {
+      if (const auto order = name <=> rhs.name; order != 0) {
+        return order;
+      }
+      return distance <=> rhs.distance;
+    }
+    bool operator==(const FuzzyMatch& rhs) const {
+      return name == rhs.name && distance == rhs.distance;
+    }
   };
 
   /// Find approximate matches for \p name in the known generators. \p
