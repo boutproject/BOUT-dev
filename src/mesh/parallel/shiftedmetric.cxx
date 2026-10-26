@@ -48,7 +48,7 @@ void ShiftedMetric::checkInputGrid() {
 void ShiftedMetric::outputVars(Options& output_options) {
   Timer time("io");
   const std::string loc_string =
-      (location == CELL_CENTRE) ? "" : "_" + toString(location);
+      (location == CELL_CENTRE) ? "" : "_" + fmt::to_string(location);
 
   output_options["zShift" + loc_string].force(zShift, "ShiftedMetric");
 }
