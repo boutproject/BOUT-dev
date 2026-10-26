@@ -59,7 +59,7 @@ namespace {
 // initializing yet, leading to an infinite recursion.
 // Also, here we interpolate for the boundary points at xstart/ystart and
 // (xend+1)/(yend+1) instead of extrapolating.
-template <class T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 void fillGuards_impl(T& result, CELL_LOC location, const T& f, bool extrapolate_x,
                      bool extrapolate_y, bool no_extra_interpolate = false) {
   const auto* localmesh = result.getMesh();
@@ -175,7 +175,7 @@ void fillGuards_impl(T& result, CELL_LOC location, const T& f, bool extrapolate_
 /// Boundary guard cells are set by extrapolating from the grid, like
 /// 'free_o3' boundary conditions
 /// Corner guard cells are set to BoutNaN
-template <class T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 auto interpolateAndExtrapolate(const T& f_, CELL_LOC location, bool extrapolate_x,
                                bool extrapolate_y, bool no_extra_interpolate,
                                ParallelTransform* pt_ = nullptr) -> T {
@@ -1083,18 +1083,18 @@ const Coordinates::FieldMetric& Coordinates::g_22_ylow() const {
   BOUT_OMP_SAFE(critical)
   {
     if (!_g_22_ylow.has_value()) {
-      _g_22_ylow.emplace(emptyFrom(g_22()));
+      auto tmp_ylow = emptyFrom(g_22());
       if (Bxy().isFci()) {
-        if (localmesh->get(_g_22_ylow.value(), "g_22_cell_ylow", 0.0, false) != 0) {
+        if (localmesh->get(tmp_ylow, "g_22_cell_ylow", 0.0, false) != 0) {
           throw BoutException("The grid file does not contain `g_22_cell_ylow`.");
         }
       } else {
         ASSERT0(localmesh->ystart > 0);
         BOUT_FOR(i, g_22().getRegion("RGN_NOY")) {
-          _g_22_ylow.value()[i] =
-              SQ(0.5 * (std::sqrt(g_22()[i]) + std::sqrt(g_22()[i.ym()])));
+          tmp_ylow[i] = SQ(0.5 * (std::sqrt(g_22()[i]) + std::sqrt(g_22()[i.ym()])));
         }
       }
+      _g_22_ylow.emplace(tmp_ylow);
     }
   }
   return g_22_ylow();
@@ -1107,18 +1107,18 @@ const Coordinates::FieldMetric& Coordinates::g_22_yhigh() const {
   BOUT_OMP_SAFE(critical)
   {
     if (!_g_22_yhigh.has_value()) {
-      _g_22_yhigh.emplace(emptyFrom(g_22()));
+      auto tmp_yhigh = emptyFrom(g_22());
       if (Bxy().isFci()) {
-        if (localmesh->get(_g_22_yhigh.value(), "g_22_cell_yhigh", 0.0, false) != 0) {
+        if (localmesh->get(tmp_yhigh, "g_22_cell_yhigh", 0.0, false) != 0) {
           throw BoutException("The grid file does not contain `g_22_cell_yhigh`.");
         }
       } else {
         ASSERT0(localmesh->ystart > 0);
         BOUT_FOR(i, g_22().getRegion("RGN_NOY")) {
-          _g_22_yhigh.value()[i] =
-              SQ(0.5 * (std::sqrt(g_22()[i]) + std::sqrt(g_22()[i.yp()])));
+          tmp_yhigh[i] = SQ(0.5 * (std::sqrt(g_22()[i]) + std::sqrt(g_22()[i.yp()])));
         }
       }
+      _g_22_yhigh.emplace(tmp_yhigh);
     }
   }
   return g_22_yhigh();
@@ -1129,15 +1129,18 @@ void Coordinates::_compute_cell_area_x() const {
   {
     if (!_cell_area_xlow.has_value()) {
       const FieldMetric area_centre = J() / sqrt(g_11()) * dy_ * dz_;
-      _cell_area_xlow.emplace(emptyFrom(area_centre));
-      _cell_area_xhigh.emplace(emptyFrom(area_centre));
+      // avoid TOCTOU race condition in cell_area_*
+      auto tmp_xlow = emptyFrom(area_centre);
+      auto tmp_xhigh = emptyFrom(area_centre);
       // We cannot setLocation, as that would trigger the computation of staggered
       // metrics.
       ASSERT0(localmesh->xstart > 0);
       BOUT_FOR(i, area_centre.getRegion("RGN_NOX")) {
-        (*_cell_area_xlow)[i] = 0.5 * (area_centre[i] + area_centre[i.xm()]);
-        (*_cell_area_xhigh)[i] = 0.5 * (area_centre[i] + area_centre[i.xp()]);
+        tmp_xlow[i] = 0.5 * (area_centre[i] + area_centre[i.xm()]);
+        tmp_xhigh[i] = 0.5 * (area_centre[i] + area_centre[i.xp()]);
       }
+      _cell_area_xlow.emplace(std::move(tmp_xlow));
+      _cell_area_xhigh.emplace(std::move(tmp_xhigh));
     }
   }
 }
@@ -1176,22 +1179,25 @@ void Coordinates::_compute_cell_area_y() const {
       } else {
         // Field aligned
         const FieldMetric area_centre = J() / sqrt(g_22()) * dx_ * dz_;
-        _cell_area_ylow.emplace(emptyFrom(area_centre));
-        _cell_area_yhigh.emplace(emptyFrom(area_centre));
+        // avoid TOCTOU race condition in cell_area_*
+        auto tmp_ylow = emptyFrom(area_centre);
+        auto tmp_yhigh = emptyFrom(area_centre);
         // We cannot setLocation, as that would trigger the computation of staggered
         // metrics.
         BOUT_FOR(i, localmesh->getRegion("RGN_ALL")) {
           if (i.y() > 0) {
-            (*_cell_area_ylow)[i] = 0.5 * (area_centre[i] + area_centre[i.ym()]);
+            tmp_ylow[i] = 0.5 * (area_centre[i] + area_centre[i.ym()]);
           } else {
-            (*_cell_area_ylow)[i] = BoutNaN;
+            tmp_ylow[i] = BoutNaN;
           }
           if (i.y() < localmesh->LocalNy - 1) {
-            (*_cell_area_yhigh)[i] = 0.5 * (area_centre[i] + area_centre[i.yp()]);
+            tmp_yhigh[i] = 0.5 * (area_centre[i] + area_centre[i.yp()]);
           } else {
-            (*_cell_area_yhigh)[i] = BoutNaN;
+            tmp_yhigh[i] = BoutNaN;
           }
         }
+        _cell_area_ylow.emplace(std::move(tmp_ylow));
+        _cell_area_yhigh.emplace(std::move(tmp_yhigh));
       }
     }
   }
@@ -1202,14 +1208,17 @@ void Coordinates::_compute_cell_area_z() const {
   {
     if (!_cell_area_zlow.has_value()) {
       const FieldMetric area_centre = J() / sqrt(g_33()) * dx_ * dy_;
-      _cell_area_zlow.emplace(emptyFrom(area_centre));
-      _cell_area_zhigh.emplace(emptyFrom(area_centre));
+      // avoid TOCTOU race condition in cell_area_*
+      auto tmp_zlow = emptyFrom(area_centre);
+      auto tmp_zhigh = emptyFrom(area_centre);
       // We cannot setLocation, as that would trigger the computation of staggered
       // metrics.
       BOUT_FOR(i, area_centre.getRegion("RGN_NOZ")) {
-        (*_cell_area_zlow)[i] = 0.5 * (area_centre[i] + area_centre[i.zm()]);
-        (*_cell_area_zhigh)[i] = 0.5 * (area_centre[i] + area_centre[i.zp()]);
+        tmp_zlow[i] = 0.5 * (area_centre[i] + area_centre[i.zm()]);
+        tmp_zhigh[i] = 0.5 * (area_centre[i] + area_centre[i.zp()]);
       }
+      _cell_area_zlow.emplace(std::move(tmp_zlow));
+      _cell_area_zhigh.emplace(std::move(tmp_zhigh));
     }
   }
 }
@@ -1223,13 +1232,45 @@ void Coordinates::_compute_cell_volume() const {
   }
 }
 
-const bout::boundary::YBoundary& Coordinates::getYBoundary(YBndryType type) const {
-  using bout::boundary::YBoundary;
-  const auto itype = static_cast<int>(type);
-  if (ybndrys.at(itype) == nullptr) {
-    ybndrys.at(itype) = std::make_shared<YBoundary>(type, localoptions, *localmesh);
+const bout::boundary::YBoundary& Coordinates::getYBoundary(Options* options) const {
+  Options* opts = (options == nullptr) ? localoptions : options;
+
+  const bool lower_y =
+      localmesh->isFci()
+          ? (*opts)["outer_x"].doc("Boundary on outer x?").withDefault<bool>(true)
+          : (*opts)["lower_y"].doc("Boundary on lower y?").withDefault<bool>(true);
+  const bool upper_y =
+      localmesh->isFci()
+          ? (*opts)["inner_x"].doc("Boundary on inner x?").withDefault<bool>(false)
+          : (*opts)["upper_y"].doc("Boundary on upper y?").withDefault<bool>(true);
+
+  return getYBoundary(lower_y, upper_y);
+}
+
+namespace {
+std::size_t boundary_bools_to_index(bool lower, bool upper) {
+  if (lower and upper) {
+    return 2;
   }
-  return *ybndrys.at(itype);
+  if (upper) {
+    return 1;
+  }
+  if (lower) {
+    return 0;
+  }
+  return 3;
+}
+} // namespace
+
+const bout::boundary::YBoundary& Coordinates::getYBoundary(bool lower_y,
+                                                           bool upper_y) const {
+  const auto index = boundary_bools_to_index(lower_y, upper_y);
+  if (ybndrys.at(index) == nullptr) {
+    ybndrys.at(index) =
+        std::make_shared<bout::boundary::YBoundary>(*localmesh, lower_y, upper_y);
+  }
+
+  return *ybndrys.at(index);
 }
 
 void Coordinates::setBxy(FieldMetric Bxy, const bool communicate) {

@@ -100,7 +100,7 @@ private:
 public:
   BoutNVector() = delete; // Enforce static access only
 
-  template <typename T, typename Ctx, typename = bout::utils::EnableIfField<T>>
+  template <IsField T, typename Ctx>
   static N_Vector create(Ctx&& ctx, T& field, const bool evolve_bndry,
                          const bool own = false) {
     N_Vector v = callWithSUNContext(N_VNewEmpty, std::forward<Ctx>(ctx));
@@ -186,12 +186,12 @@ public:
     return v;
   }
 
-  template <typename T, typename = bout::utils::EnableIfField<T>>
+  template <IsField T>
   static void swap(const N_Vector v, T& field) {
     field.swapData(get_field<T>(v));
   }
 
-  template <typename T, typename = bout::utils::EnableIfField<T>>
+  template <IsField T>
   static T& get(const N_Vector v) {
     return get_field<T>(v);
   }
@@ -205,12 +205,12 @@ public:
     return v;
   }
 
-  template <typename T, typename = bout::utils::EnableIfField<T>>
+  template <IsField T>
   static void swap(const N_Vector v, T& field, std::size_t subvector) {
     return BoutNVector::swap(N_VGetSubvector_ManyVector(v, subvector), field);
   }
 
-  template <typename T, typename = bout::utils::EnableIfField<T>>
+  template <IsField T>
   static T& get(const N_Vector v, std::size_t subvector) {
     return BoutNVector::get<T>(N_VGetSubvector_ManyVector(v, subvector));
   }

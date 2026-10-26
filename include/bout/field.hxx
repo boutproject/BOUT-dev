@@ -160,53 +160,53 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
 }
 
 #if CHECKLEVEL >= 1
-#define ASSERT1_FIELDS_COMPATIBLE(field1, field2)                                        \
-  if ((field1).getLocation() != (field2).getLocation()) {                                \
-    throw BoutException("Error in {:s}:{:d}\nFields at different position:"              \
-                        "`{:s}` at {:s}, `{:s}` at {:s}",                                \
-                        __FILE__, __LINE__, #field1, toString((field1).getLocation()),   \
-                        #field2, toString((field2).getLocation()));                      \
-  }                                                                                      \
-  if ((field1).getCoordinates() != (field2).getCoordinates()) {                          \
-    throw BoutException("Error in {:s}:{:d}\nFields have different coordinates:"         \
-                        "`{:s}` at {:p}, `{:s}` at {:p}",                                \
-                        __FILE__, __LINE__, #field1,                                     \
-                        static_cast<void*>((field1).getCoordinates()), #field2,          \
-                        static_cast<void*>((field2).getCoordinates()));                  \
-  }                                                                                      \
-  if ((field1).getMesh() != (field2).getMesh()) {                                        \
-    throw BoutException("Error in {:s}:{:d}\nFields are on different Meshes:"            \
-                        "`{:s}` at {:p}, `{:s}` at {:p}",                                \
-                        __FILE__, __LINE__, #field1,                                     \
-                        static_cast<void*>((field1).getMesh()), #field2,                 \
-                        static_cast<void*>((field2).getMesh()));                         \
-  }                                                                                      \
-  if (!areDirectionsCompatible((field1).getDirections(), (field2).getDirections())) {    \
-    throw BoutException("Error in {:s}:{:d}\nFields at different directions:"            \
-                        "`{:s}` at {:s}, `{:s}` at {:s}",                                \
-                        __FILE__, __LINE__, #field1, toString((field1).getDirections()), \
-                        #field2, toString((field2).getDirections()));                    \
+#define ASSERT1_FIELDS_COMPATIBLE(field1, field2)                                       \
+  if ((field1).getLocation() != (field2).getLocation()) {                               \
+    throw BoutException("Error in {:s}:{:d}\nFields at different position:"             \
+                        "`{:s}` at {:s}, `{:s}` at {:s}",                               \
+                        __FILE__, __LINE__, #field1, (field1).getLocation(), #field2,   \
+                        (field2).getLocation());                                        \
+  }                                                                                     \
+  if ((field1).getCoordinates() != (field2).getCoordinates()) {                         \
+    throw BoutException("Error in {:s}:{:d}\nFields have different coordinates:"        \
+                        "`{:s}` at {:p}, `{:s}` at {:p}",                               \
+                        __FILE__, __LINE__, #field1,                                    \
+                        static_cast<void*>((field1).getCoordinates()), #field2,         \
+                        static_cast<void*>((field2).getCoordinates()));                 \
+  }                                                                                     \
+  if ((field1).getMesh() != (field2).getMesh()) {                                       \
+    throw BoutException("Error in {:s}:{:d}\nFields are on different Meshes:"           \
+                        "`{:s}` at {:p}, `{:s}` at {:p}",                               \
+                        __FILE__, __LINE__, #field1,                                    \
+                        static_cast<void*>((field1).getMesh()), #field2,                \
+                        static_cast<void*>((field2).getMesh()));                        \
+  }                                                                                     \
+  if (!areDirectionsCompatible((field1).getDirections(), (field2).getDirections())) {   \
+    throw BoutException("Error in {:s}:{:d}\nFields at different directions:"           \
+                        "`{:s}` at {:s}, `{:s}` at {:s}",                               \
+                        __FILE__, __LINE__, #field1, (field1).getDirections(), #field2, \
+                        (field2).getDirections());                                      \
   }
 
-#define ASSERT1_EXPR_COMPATIBLE(expr1, expr2)                                          \
-  if ((expr1).getLocation() != (expr2).getLocation()) {                                \
-    throw BoutException("Error in {:s}:{:d}\nFields at different position:"            \
-                        "`{:s}` at {:s}, `{:s}` at {:s}",                              \
-                        __FILE__, __LINE__, #expr1, toString((expr1).getLocation()),   \
-                        #expr2, toString((expr2).getLocation()));                      \
-  }                                                                                    \
-  if ((expr1).getMesh() != (expr2).getMesh()) {                                        \
-    throw BoutException("Error in {:s}:{:d}\nFields are on different Meshes:"          \
-                        "`{:s}` at {:p}, `{:s}` at {:p}",                              \
-                        __FILE__, __LINE__, #expr1,                                    \
-                        static_cast<void*>((expr1).getMesh()), #expr2,                 \
-                        static_cast<void*>((expr2).getMesh()));                        \
-  }                                                                                    \
-  if (!areDirectionsCompatible((expr1).getDirections(), (expr2).getDirections())) {    \
-    throw BoutException("Error in {:s}:{:d}\nFields at different directions:"          \
-                        "`{:s}` at {:s}, `{:s}` at {:s}",                              \
-                        __FILE__, __LINE__, #expr1, toString((expr1).getDirections()), \
-                        #expr2, toString((expr2).getDirections()));                    \
+#define ASSERT1_EXPR_COMPATIBLE(expr1, expr2)                                        \
+  if ((expr1).getLocation() != (expr2).getLocation()) {                              \
+    throw BoutException("Error in {:s}:{:d}\nFields at different position:"          \
+                        "`{:s}` at {:s}, `{:s}` at {:s}",                            \
+                        __FILE__, __LINE__, #expr1, (expr1).getLocation(), #expr2,   \
+                        (expr2).getLocation());                                      \
+  }                                                                                  \
+  if ((expr1).getMesh() != (expr2).getMesh()) {                                      \
+    throw BoutException("Error in {:s}:{:d}\nFields are on different Meshes:"        \
+                        "`{:s}` at {:p}, `{:s}` at {:p}",                            \
+                        __FILE__, __LINE__, #expr1,                                  \
+                        static_cast<void*>((expr1).getMesh()), #expr2,               \
+                        static_cast<void*>((expr2).getMesh()));                      \
+  }                                                                                  \
+  if (!areDirectionsCompatible((expr1).getDirections(), (expr2).getDirections())) {  \
+    throw BoutException("Error in {:s}:{:d}\nFields at different directions:"        \
+                        "`{:s}` at {:s}, `{:s}` at {:s}",                            \
+                        __FILE__, __LINE__, #expr1, (expr1).getDirections(), #expr2, \
+                        (expr2).getDirections());                                    \
   }
 
 #else
@@ -263,8 +263,20 @@ inline T filledFrom(const T& f, Function func, std::string region_string = "RGN_
   return result;
 }
 
+template <typename T>
+concept IsField = std::is_base_of_v<Field, T>;
+
+template <typename T>
+concept ExprField2D = is_expr_field2d_v<T>;
+
+template <typename T>
+concept ExprField3D = is_expr_field3d_v<T>;
+
+template <typename T>
+concept ExprConstant = is_expr_constant_v<T>;
+
 /// Unary + operator. This doesn't do anything
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 T operator+(const T& f) {
   return f;
 }
@@ -279,19 +291,8 @@ namespace bout {
 /// used during initialization, where we always want to check inputs, even for optimized
 /// builds.
 template <typename T>
-inline void checkFinite(const T& f, const std::string& name = "field",
-                        const std::string& rgn = "RGN_ALL") {
-
-  if (!f.isAllocated()) {
-    throw BoutException("{:s} is not allocated", name);
-  }
-
-  BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
-    if (!std::isfinite(f[i])) {
-      throw BoutException("{:s} is not finite at {:s}", name, toString(i));
-    }
-  }
-}
+void checkFinite(const T& f, const std::string& name = "field",
+                 const std::string& rgn = "RGN_ALL");
 
 /// Check if all values of a field \p var are positive.  Loops over all points including
 /// the boundaries by default (can be changed using the \p rgn argument)
@@ -302,21 +303,8 @@ inline void checkFinite(const T& f, const std::string& name = "field",
 /// be used during initialization, where we always want to check inputs, even for
 /// optimized builds.
 template <typename T>
-inline void checkPositive(const T& f, const std::string& name = "field",
-                          const std::string& rgn = "RGN_ALL") {
-
-  if (!f.isAllocated()) {
-    throw BoutException("{:s} is not allocated", name);
-  }
-
-  BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
-    if (f[i] <= 0.) {
-      throw BoutException("{:s} ({:s} {:s}) is {:e} (not positive) at {:s}", name,
-                          toString(f.getLocation()), toString(f.getDirections()), f[i],
-                          toString(i));
-    }
-  }
-}
+void checkPositive(const T& f, const std::string& name = "field",
+                   const std::string& rgn = "RGN_ALL");
 } // namespace bout
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
@@ -346,7 +334,7 @@ inline T fromFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
 /// @param[in] f      Input field
 /// @param[in] allpe  Minimum over all processors?
 /// @param[in] rgn    The region to calculate the result over
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 inline BoutReal min(const T& f, bool allpe = false,
                     const std::string& rgn = "RGN_NOBNDRY") {
 
@@ -395,7 +383,7 @@ inline BoutReal min(const BinaryExpr<ResT, L, R, Func>& f, bool allpe = false,
 /// @param[in] f       The field to check
 /// @param[in] allpe   Check over all processors
 /// @param[in] region  The region to check for uniformity over
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 inline bool isUniform(const T& f, bool allpe = false,
                       const std::string& region = "RGN_ALL") {
   bool result = true;
@@ -423,7 +411,7 @@ inline bool isUniform(const T& f, bool allpe = false,
 /// @param[in] f       The field to check
 /// @param[in] allpe   Check over all processors
 /// @param[in] region  The region to assume is uniform
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 inline BoutReal getUniform(const T& f, [[maybe_unused]] bool allpe = false,
                            const std::string& region = "RGN_ALL") {
 #if CHECK > 1
@@ -448,7 +436,7 @@ inline BoutReal getUniform(const T& f, [[maybe_unused]] bool allpe = false,
 /// @param[in] f      Input field
 /// @param[in] allpe  Maximum over all processors?
 /// @param[in] rgn    The region to calculate the result over
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 inline BoutReal max(const T& f, bool allpe = false,
                     const std::string& rgn = "RGN_NOBNDRY") {
 
@@ -499,7 +487,7 @@ inline BoutReal max(const BinaryExpr<ResT, L, R, Func>& f, bool allpe = false,
 /// @param[in] f      Input field
 /// @param[in] allpe  Mean over all processors?
 /// @param[in] rgn    The region to calculate the result over
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 inline BoutReal mean(const T& f, bool allpe = false,
                      const std::string& rgn = "RGN_NOBNDRY") {
 
@@ -590,10 +578,8 @@ auto makePowExpr(const LView& lhs_view, const RView& rhs_view, Mesh* mesh,
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument)
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-template <typename L, typename R>
-std::enable_if_t<is_expr_field2d_v<L> && is_expr_field2d_v<R>,
-                 BinaryExpr<Field2D, L, R, bout::op::Pow>>
-pow(const L& lhs, const R& rhs) {
+template <ExprField2D L, ExprField2D R>
+BinaryExpr<Field2D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs) {
   ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
   return bout::detail::makePowExpr<Field2D, L, R>(
       static_cast<typename L::View>(lhs), static_cast<typename R::View>(rhs),
@@ -601,10 +587,9 @@ pow(const L& lhs, const R& rhs) {
       lhs.getMesh()->getRegion2D("RGN_ALL"));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field2d_v<L> && is_expr_field2d_v<R>,
-                 BinaryExpr<Field2D, L, R, bout::op::Pow>>
-pow(const L& lhs, const R& rhs, const std::string& rgn) {
+template <ExprField2D L, ExprField2D R>
+BinaryExpr<Field2D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs,
+                                             const std::string& rgn) {
   ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
   return bout::detail::makePowExpr<Field2D, L, R>(
       static_cast<typename L::View>(lhs), static_cast<typename R::View>(rhs),
@@ -612,10 +597,8 @@ pow(const L& lhs, const R& rhs, const std::string& rgn) {
       lhs.getMesh()->getRegion2D(rgn));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>,
-                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
-pow(const L& lhs, const R& rhs) {
+template <ExprField3D L, ExprField3D R>
+BinaryExpr<Field3D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs) {
   ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
   auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
   return bout::detail::makePowExpr<Field3D, L, R>(
@@ -626,10 +609,9 @@ pow(const L& lhs, const R& rhs) {
       bout::detail::getPerpYIndex(lhs));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>,
-                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
-pow(const L& lhs, const R& rhs, const std::string& rgn) {
+template <ExprField3D L, ExprField3D R>
+BinaryExpr<Field3D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs,
+                                             const std::string& rgn) {
   ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
   return bout::detail::makePowExpr<Field3D, L, R>(
       static_cast<typename L::View>(lhs), static_cast<typename R::View>(rhs),
@@ -638,10 +620,8 @@ pow(const L& lhs, const R& rhs, const std::string& rgn) {
       lhs.getMesh()->getRegion(rgn), bout::detail::getPerpYIndex(lhs));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>,
-                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
-pow(const L& lhs, const R& rhs) {
+template <ExprField3D L, ExprField2D R>
+BinaryExpr<Field3D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs) {
   ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
   int mesh_nz = lhs.getMesh()->LocalNz;
   return bout::detail::makePowExpr<Field3D, L, R>(
@@ -651,10 +631,9 @@ pow(const L& lhs, const R& rhs) {
       lhs.getMesh()->getRegion("RGN_ALL"), bout::detail::getPerpYIndex(lhs));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>,
-                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
-pow(const L& lhs, const R& rhs, const std::string& rgn) {
+template <ExprField3D L, ExprField2D R>
+BinaryExpr<Field3D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs,
+                                             const std::string& rgn) {
   ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
   int mesh_nz = lhs.getMesh()->LocalNz;
   return bout::detail::makePowExpr<Field3D, L, R>(
@@ -665,10 +644,8 @@ pow(const L& lhs, const R& rhs, const std::string& rgn) {
       lhs.getMesh()->getRegion(rgn), bout::detail::getPerpYIndex(lhs));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field2d_v<L> && is_expr_field3d_v<R>,
-                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
-pow(const L& lhs, const R& rhs) {
+template <ExprField2D L, ExprField3D R>
+BinaryExpr<Field3D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs) {
   ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
   int mesh_nz = rhs.getMesh()->LocalNz;
   return bout::detail::makePowExpr<Field3D, L, R>(
@@ -678,10 +655,9 @@ pow(const L& lhs, const R& rhs) {
       bout::detail::getPerpYIndex(rhs));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field2d_v<L> && is_expr_field3d_v<R>,
-                 BinaryExpr<Field3D, L, R, bout::op::Pow>>
-pow(const L& lhs, const R& rhs, const std::string& rgn) {
+template <ExprField2D L, ExprField3D R>
+BinaryExpr<Field3D, L, R, bout::op::Pow> pow(const L& lhs, const R& rhs,
+                                             const std::string& rgn) {
   ASSERT1_EXPR_COMPATIBLE(lhs, rhs);
   int mesh_nz = rhs.getMesh()->LocalNz;
   return bout::detail::makePowExpr<Field3D, L, R>(
@@ -691,60 +667,51 @@ pow(const L& lhs, const R& rhs, const std::string& rgn) {
       rhs.getMesh()->getRegion(rgn), bout::detail::getPerpYIndex(rhs));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field2d_v<L> && is_expr_constant_v<R>,
-                 BinaryExpr<Field2D, L, Constant<R>, bout::op::Pow>>
-pow(const L& lhs, R rhs) {
+template <ExprField2D L, ExprConstant R>
+BinaryExpr<Field2D, L, Constant<R>, bout::op::Pow> pow(const L& lhs, R rhs) {
   return bout::detail::makePowExpr<Field2D, L, Constant<R>>(
       static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
       lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), std::nullopt,
       lhs.getMesh()->getRegion2D("RGN_ALL"));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field2d_v<L> && is_expr_constant_v<R>,
-                 BinaryExpr<Field2D, L, Constant<R>, bout::op::Pow>>
-pow(const L& lhs, R rhs, const std::string& rgn) {
+template <ExprField2D L, ExprConstant R>
+BinaryExpr<Field2D, L, Constant<R>, bout::op::Pow> pow(const L& lhs, R rhs,
+                                                       const std::string& rgn) {
   return bout::detail::makePowExpr<Field2D, L, Constant<R>>(
       static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
       lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), std::nullopt,
       lhs.getMesh()->getRegion2D(rgn));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_constant_v<L> && is_expr_field2d_v<R>,
-                 BinaryExpr<Field2D, Constant<L>, R, bout::op::Pow>>
-pow(L lhs, const R& rhs) {
+template <ExprConstant L, ExprField2D R>
+BinaryExpr<Field2D, Constant<L>, R, bout::op::Pow> pow(L lhs, const R& rhs) {
   return bout::detail::makePowExpr<Field2D, Constant<L>, R>(
       static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
       rhs.getMesh(), rhs.getLocation(), rhs.getDirections(), std::nullopt,
       rhs.getMesh()->getRegion2D("RGN_ALL"));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_constant_v<L> && is_expr_field2d_v<R>,
-                 BinaryExpr<Field2D, Constant<L>, R, bout::op::Pow>>
-pow(L lhs, const R& rhs, const std::string& rgn) {
+template <ExprConstant L, ExprField2D R>
+BinaryExpr<Field2D, Constant<L>, R, bout::op::Pow> pow(L lhs, const R& rhs,
+                                                       const std::string& rgn) {
   return bout::detail::makePowExpr<Field2D, Constant<L>, R>(
       static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
       rhs.getMesh(), rhs.getLocation(), rhs.getDirections(), std::nullopt,
       rhs.getMesh()->getRegion2D(rgn));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field3d_v<L> && is_expr_constant_v<R>,
-                 BinaryExpr<Field3D, L, Constant<R>, bout::op::Pow>>
-pow(const L& lhs, R rhs) {
+template <ExprField3D L, ExprConstant R>
+BinaryExpr<Field3D, L, Constant<R>, bout::op::Pow> pow(const L& lhs, R rhs) {
   return bout::detail::makePowExpr<Field3D, L, Constant<R>>(
       static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
       lhs.getMesh(), lhs.getLocation(), lhs.getDirections(), lhs.getRegionID(),
       lhs.getMesh()->getRegion("RGN_ALL"), bout::detail::getPerpYIndex(lhs));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_field3d_v<L> && is_expr_constant_v<R>,
-                 BinaryExpr<Field3D, L, Constant<R>, bout::op::Pow>>
-pow(const L& lhs, R rhs, const std::string& rgn) {
+template <ExprField3D L, ExprConstant R>
+BinaryExpr<Field3D, L, Constant<R>, bout::op::Pow> pow(const L& lhs, R rhs,
+                                                       const std::string& rgn) {
   return bout::detail::makePowExpr<Field3D, L, Constant<R>>(
       static_cast<typename L::View>(lhs), static_cast<typename Constant<R>::View>(rhs),
       lhs.getMesh(), lhs.getLocation(), lhs.getDirections(),
@@ -752,20 +719,17 @@ pow(const L& lhs, R rhs, const std::string& rgn) {
       lhs.getMesh()->getRegion(rgn), bout::detail::getPerpYIndex(lhs));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_constant_v<L> && is_expr_field3d_v<R>,
-                 BinaryExpr<Field3D, Constant<L>, R, bout::op::Pow>>
-pow(L lhs, const R& rhs) {
+template <ExprConstant L, ExprField3D R>
+BinaryExpr<Field3D, Constant<L>, R, bout::op::Pow> pow(L lhs, const R& rhs) {
   return bout::detail::makePowExpr<Field3D, Constant<L>, R>(
       static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
       rhs.getMesh(), rhs.getLocation(), rhs.getDirections(), rhs.getRegionID(),
       rhs.getMesh()->getRegion("RGN_ALL"), bout::detail::getPerpYIndex(rhs));
 }
 
-template <typename L, typename R>
-std::enable_if_t<is_expr_constant_v<L> && is_expr_field3d_v<R>,
-                 BinaryExpr<Field3D, Constant<L>, R, bout::op::Pow>>
-pow(L lhs, const R& rhs, const std::string& rgn) {
+template <ExprConstant L, ExprField3D R>
+BinaryExpr<Field3D, Constant<L>, R, bout::op::Pow> pow(L lhs, const R& rhs,
+                                                       const std::string& rgn) {
   return bout::detail::makePowExpr<Field3D, Constant<L>, R>(
       static_cast<typename Constant<L>::View>(lhs), static_cast<typename R::View>(rhs),
       rhs.getMesh(), rhs.getLocation(), rhs.getDirections(),
@@ -838,7 +802,7 @@ std::optional<int> getPerpYIndex(const BinaryExpr<ResT, L, R, Func>& expr) {
     }                                                                                   \
   };                                                                                    \
   };                                                                                    \
-  template <typename T, typename = bout::utils::EnableIfField<T>>                       \
+  template <IsField T>                                                                  \
   inline auto name(const T& f, const std::string& rgn = "RGN_ALL") {                    \
     using ResT = bout::detail::UnaryFieldResult_t<T>;                                   \
     return BinaryExpr<ResT, T, T, bout::op::name>{                                      \
@@ -908,7 +872,7 @@ struct Floor {
 };
 }; // namespace bout::op
 
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 inline auto SQ(const T& f, const std::string& rgn = "RGN_ALL") {
   using ResT = bout::detail::UnaryFieldResult_t<T>;
   return BinaryExpr<ResT, T, T, bout::op::Square>{
@@ -1050,7 +1014,7 @@ FIELD_FUNC(tanh, ::tanh)
 /// Check if all values of a field \p var are finite.
 /// Loops over all points including the boundaries by
 /// default (can be changed using the \p rgn argument
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 inline bool finite(const T& f, const std::string& rgn = "RGN_ALL") {
 
   if (!f.isAllocated()) {
@@ -1068,7 +1032,7 @@ inline bool finite(const T& f, const std::string& rgn = "RGN_ALL") {
 
 /// Makes a copy of a field \p f, ensuring that the underlying data is
 /// not shared.
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 T copy(const T& f) {
   T result = f;
   result.allocate();
@@ -1083,7 +1047,7 @@ class Field3DParallel;
 /// @param[in] var  Variable to apply floor to
 /// @param[in] f    The floor value
 /// @param[in] rgn  The region to calculate the result over
-template <typename T, typename = bout::utils::EnableIfField<T>>
+template <IsField T>
 inline auto floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
   using ResT = bout::detail::UnaryFieldResult_t<T>;
   return BinaryExpr<ResT, T, Constant<BoutReal>, bout::op::Floor>{

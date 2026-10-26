@@ -107,6 +107,7 @@ set(serial_tests_source
     ./solver/test_fakesolver.cxx
     ./solver/test_fakesolver.hxx
     ./solver/test_nvector.cxx
+    ./solver/test_snes_predictor.cxx
     ./solver/test_solver.cxx
     ./solver/test_solverfactory.cxx
     ./sys/test_boutexception.cxx
@@ -120,7 +121,6 @@ set(serial_tests_source
     ./sys/test_output.cxx
     ./sys/test_range.cxx
     ./sys/test_timer.cxx
-    ./sys/test_type_name.cxx
     ./sys/test_utils.cxx
     ./sys/test_variant.cxx
     ./sys/test_raja.cxx

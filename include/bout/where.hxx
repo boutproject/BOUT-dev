@@ -31,14 +31,17 @@
 #include "bout/field.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
+#include <type_traits>
 
 /// For each point, choose between two inputs based on a third input
 ///
 /// @param[in] test   The value which determines which input to use
 /// @param[in] gt0    Uses this value if test > 0.0
 /// @param[in] le0    Uses this value if test <= 0.0
-template <class T, class U, class V,
-          class ResultType = typename bout::utils::EnableIfField<T, U, V>>
+
+// Overload 1: Three fields
+template <IsField T, IsField U, IsField V,
+          typename ResultType = std::common_type_t<T, U, V>>
 auto where(const T& test, const U& gt0, const V& le0) -> ResultType {
   ASSERT1_FIELDS_COMPATIBLE(test, gt0);
   ASSERT1_FIELDS_COMPATIBLE(test, le0);
@@ -51,7 +54,8 @@ auto where(const T& test, const U& gt0, const V& le0) -> ResultType {
   return result;
 }
 
-template <class T, class U, class ResultType = typename bout::utils::EnableIfField<T, U>>
+// Overload 2: Two fields, one BoutReal (le0)
+template <IsField T, IsField U, typename ResultType = std::common_type_t<T, U>>
 auto where(const T& test, const U& gt0, BoutReal le0) -> ResultType {
   ASSERT1_FIELDS_COMPATIBLE(test, gt0);
 
@@ -63,7 +67,8 @@ auto where(const T& test, const U& gt0, BoutReal le0) -> ResultType {
   return result;
 }
 
-template <class T, class V, class ResultType = typename bout::utils::EnableIfField<T, V>>
+// Overload 3: Two fields, one BoutReal (gt0)
+template <IsField T, IsField V, typename ResultType = std::common_type_t<T, V>>
 auto where(const T& test, BoutReal gt0, const V& le0) -> ResultType {
   ASSERT1_FIELDS_COMPATIBLE(test, le0);
 
@@ -75,7 +80,8 @@ auto where(const T& test, BoutReal gt0, const V& le0) -> ResultType {
   return result;
 }
 
-template <class T, class ResultType = T>
+// Overload 4: One field, two BoutReals
+template <IsField T, typename ResultType = T>
 auto where(const T& test, BoutReal gt0, BoutReal le0) -> ResultType {
   ResultType result{emptyFrom(test)};
 
