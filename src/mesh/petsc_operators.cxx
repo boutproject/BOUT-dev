@@ -176,7 +176,7 @@ Field3D toField3D(const PetscCellVector& vec, const Field3D& prototype) {
 
 Field3D PetscOperators::meshGetField3D(Mesh* mesh, const std::string& name) {
   Field3D result;
-  if (mesh->get(result, name) != 0) {
+  if (mesh->get(result, name, 0.0, false) != 0) {
     throw BoutException("PetscOperators requires field '{}'", name);
   }
   return result;
