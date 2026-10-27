@@ -978,7 +978,10 @@ Div_a_Grad_perp_FCI_unstructured::Div_a_Grad_perp_FCI_unstructured(Mesh* mesh,
   BOUT_DO_PETSC(VecCreate(BoutComm::get(), &vecGrad));
   BOUT_DO_PETSC(VecCreate(BoutComm::get(), &vecInterp));
   BOUT_DO_PETSC(VecCreate(BoutComm::get(), &multiplied));
-
+  PetscInt M, N;
+  BOUT_DO_PETSC(MatGetSize(Div, &M, &N));
+  PetscInt m, n;
+  BOUT_DO_PETSC(MatGetLocalSize(Div, &m, &n));
   for (auto vec : {inField, inA, result, vecGrad, vecInterp, multiplied}) {
     BOUT_DO_PETSC(VecSetType(vec, VECSTANDARD));
   }
