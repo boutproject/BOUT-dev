@@ -2610,7 +2610,198 @@ void BoutMesh::createCommunicators() {
             };
 
             // PF_C Y ranges
-            add_pf_range(jyseps1_1, ny_inner - 1);
+            add_pf_range(jyseps1_1 + 1, ny_inner - 1);
+            add_pf_range(ny_inner + 1, jyseps2_2);
+
+            MPI_Comm_create(BoutComm::get(), pf_group, &comm_tmp);
+            if (comm_tmp != MPI_COMM_NULL) {
+              comm_pf_c = comm_tmp;
+            }
+
+            if (pf_group != MPI_GROUP_EMPTY) {
+              MPI_Group_free(&pf_group);
+            }
+          }
+
+          ////////////////////////////////////////////////////
+          // PF_S
+
+          if (xProcInBand(i, pf_bands.south)) {
+
+            MPI_Group pf_group = MPI_GROUP_EMPTY;
+
+            proc[0] = PROC_NUM(i, YPROC(ny_inner + 1));
+            proc[1] = PROC_NUM(i, YPROC(ny - 1));
+            proc[2] = NXPE;
+
+            MPI_Group_range_incl(group_world, 1, &proc, &pf_group);
+            MPI_Comm_create(BoutComm::get(), pf_group, &comm_tmp);
+
+            if (comm_tmp != MPI_COMM_NULL) {
+              comm_pf_s = comm_tmp;
+            }
+
+            if (pf_group != MPI_GROUP_EMPTY) {
+              MPI_Group_free(&pf_group);
+            }
+          }
+        output_debug << "snowflake PF rank "
+              << PE_XIND << "," << PE_YIND
+              << " W=" << (comm_pf_w != MPI_COMM_NULL)
+              << " E=" << (comm_pf_e != MPI_COMM_NULL)
+              << " C=" << (comm_pf_c != MPI_COMM_NULL)
+              << " S=" << (comm_pf_s != MPI_COMM_NULL)
+              << endl;
+      }else if (snowflake_type == SnowflakeType::SF_minus_exact_high_field_side){ 
+          //SF- HFS
+          // Snowflake upper PF region communicators. Note there are 4 regions to consider here (Central, East, West, South).
+
+            MPI_Comm comm_pf_w{};
+            MPI_Comm comm_pf_e{};
+            MPI_Comm comm_pf_c{};
+            MPI_Comm comm_pf_s{};
+
+          TRACE("Creating Snowflake PF communicators for xp={:d}", i);
+
+          // PF_W
+          if (xProcInBand(i, pf_bands.west)) {
+
+            MPI_Group pf_group = MPI_GROUP_EMPTY;
+
+            auto add_pf_range = [&](int ylo, int yhi) {
+              if (ylo > yhi) return;
+
+              proc[0] = PROC_NUM(i, YPROC(ylo));
+              proc[1] = PROC_NUM(i, YPROC(yhi));
+              proc[2] = NXPE;
+
+              MPI_Group tmp;
+              MPI_Group_range_incl(group_world, 1, &proc, &tmp);
+
+              if (pf_group == MPI_GROUP_EMPTY) {
+                pf_group = tmp;
+              } else {
+                MPI_Group new_group;
+                MPI_Group_union(pf_group, tmp, &new_group);
+                MPI_Group_free(&pf_group);
+                MPI_Group_free(&tmp);
+                pf_group = new_group;
+              }
+            };
+
+            add_pf_range(0, jyseps1_1); //NWest target
+            add_pf_range(jyseps2_2 + 1, ny - 1); //SW target
+
+            MPI_Comm_create(BoutComm::get(), pf_group, &comm_tmp);
+            if (comm_tmp != MPI_COMM_NULL) {
+              comm_pf_w = comm_tmp;
+              // Assign W_PFR processors to comm_inner (core section below will
+              // overwrite for YPROC covering core y-range, which is correct).
+              comm_inner = comm_pf_w;
+            }
+
+            if (pf_group != MPI_GROUP_EMPTY) {
+              MPI_Group_free(&pf_group);
+            }
+          }
+
+          ////////////////////////////////////////////////////
+          // PF_E
+
+          if (xProcInBand(i, pf_bands.east)) {
+
+            MPI_Group pf_group = MPI_GROUP_EMPTY;
+
+            auto add_pf_range = [&](int ylo, int yhi) {
+              if (ylo > yhi) return;
+
+              proc[0] = PROC_NUM(i, YPROC(ylo));
+              proc[1] = PROC_NUM(i, YPROC(yhi));
+              proc[2] = NXPE;
+
+              MPI_Group tmp;
+              MPI_Group_range_incl(group_world, 1, &proc, &tmp);
+
+              if (pf_group == MPI_GROUP_EMPTY) {
+                pf_group = tmp;
+              } else {
+                MPI_Group new_group;
+                MPI_Group_union(pf_group, tmp, &new_group);
+                MPI_Group_free(&pf_group);
+                MPI_Group_free(&tmp);
+                pf_group = new_group;
+              }
+            };
+
+            // PF_E Y ranges: the two E_PFR segments.
+            // IMPORTANT: add the H1 segment (ny_inner+1..jyseps2_2) FIRST so it
+            // becomes rank 0 in comm_pf_e → firstY=true.  Then add the G1 segment
+            // (jyseps2_1+1..ny_inner-1) so it becomes rank 1 → lastY=true.
+            //
+            // Region naming (INGRID convention):
+            //   G1: y = jyseps2_1+1 .. ny_inner-1  (YPROC 6, lower Y-index)
+            //       Physical target at UPPER face (y=ny_inner-1); branch cut at lower face.
+            //   H1: y = ny_inner+1  .. jyseps2_2   (YPROC 7, higher Y-index)
+            //       Physical target at LOWER face (y=ny_inner);   branch cut at upper face.
+            //   (I1 is the third segment of the W_PFR, not part of E_PFR.)
+            //
+            // This ordering is the INVERSE of the W_PFR ordering because the E_PFR
+            // topology is inverted: G1 (lower Y-index) has its target at the TOP,
+            // while H1 (higher Y-index) has its target at the BOTTOM.  The branch
+            // cut connects G1 lower face ↔ H1 upper face.
+            //
+            // With rank 0 = H1 (firstY=true → ys=ystart, no lower extension) and
+            // rank 1 = G1 (lastY=true → ye=yend, no upper extension), FV parallel
+            // operators stop at the physical target face instead of extending into
+            // guard cells and double-counting the sheath flux.
+            add_pf_range(ny_inner + 1, jyseps1_2);      
+            add_pf_range(jyseps2_1 + 1, ny_inner - 1);  
+
+
+            MPI_Comm_create(BoutComm::get(), pf_group, &comm_tmp);
+            if (comm_tmp != MPI_COMM_NULL) {
+              comm_pf_e = comm_tmp;
+              // Assign to comm_inner so firstY/lastY return the correct values:
+              //   rank 0 = H1 → firstY=true at south target (lower face)
+              //   rank 1 = G1 → lastY=true  at east  target (upper face)
+              comm_inner = comm_pf_e;
+            }
+
+            if (pf_group != MPI_GROUP_EMPTY) {
+              MPI_Group_free(&pf_group);
+            }
+          }
+
+          ////////////////////////////////////////////////////
+          // PF_C
+
+          if (xProcInBand(i, pf_bands.central)) {
+
+            MPI_Group pf_group = MPI_GROUP_EMPTY;
+
+            auto add_pf_range = [&](int ylo, int yhi) {
+              if (ylo > yhi) return;
+
+              proc[0] = PROC_NUM(i, YPROC(ylo));
+              proc[1] = PROC_NUM(i, YPROC(yhi));
+              proc[2] = NXPE;
+
+              MPI_Group tmp;
+              MPI_Group_range_incl(group_world, 1, &proc, &tmp);
+
+              if (pf_group == MPI_GROUP_EMPTY) {
+                pf_group = tmp;
+              } else {
+                MPI_Group new_group;
+                MPI_Group_union(pf_group, tmp, &new_group);
+                MPI_Group_free(&pf_group);
+                MPI_Group_free(&tmp);
+                pf_group = new_group;
+              }
+            };
+
+            // PF_C Y ranges
+            add_pf_range(jyseps1_1 + 1, ny_inner - 1);
             add_pf_range(ny_inner + 1, jyseps2_2);
 
             MPI_Comm_create(BoutComm::get(), pf_group, &comm_tmp);
@@ -4576,7 +4767,7 @@ void BoutMesh::topology() {
         throw BoutException("\tTopology error: Central PFR does not have integer "
                             "number of processors\n");
       }
-      if ((ny_inner - 1 - jyseps1_2) % MYSUB != 0 || (jyseps1_2 - ny_inner + 1) % MYSUB != 0) {
+      if ((ny_inner - 1 - jyseps1_2) % MYSUB != 0 || (jyseps2_2 - ny_inner + 1) % MYSUB != 0) {
         throw BoutException("\tTopology error: East PFR does not have integer "
                             "number of processors\n");
       }
@@ -4607,7 +4798,7 @@ void BoutMesh::topology() {
         throw BoutException("\tTopology error: Central PFR does not have integer "
                             "number of processors\n");
       }
-      if ((ny_inner - 1 - jyseps2_1) % MYSUB != 0 || (jyseps1_2 - ny_inner + 1) % MYSUB != 0) {
+      if ((ny_inner - 1 - jyseps1_2) % MYSUB != 0 || (jyseps2_2 - ny_inner + 1) % MYSUB != 0) {
         throw BoutException("\tTopology error: East PFR does not have integer "
                             "number of processors\n");
       }
