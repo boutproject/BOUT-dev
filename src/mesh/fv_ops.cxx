@@ -854,7 +854,7 @@ struct SizeSplitter {
     auto start = locsize * thisproc + (left < thisproc ? left : thisproc);
     auto end = start + locsize + (left <= thisproc ? 0 : 1);
     if (thisproc + 1 == nproc) {
-      ASSERT1(end == size);
+      ASSERT1(static_cast<size_t>(end) == size);
     } else {
       if (check) {
         ASSERT1(SizeSplitter(nproc, thisproc + 1).getSplit(size, false).start == end);
