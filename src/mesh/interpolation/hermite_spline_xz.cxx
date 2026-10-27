@@ -533,6 +533,36 @@ Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(
   return f_interp;
 }
 
+#if BOUT_HAS_PETSC
+PrecomputedInterpolation::PrecomputedInterpolation(int y_offset, Mesh* mesh,
+                                                   [[maybe_unused]] Options* options)
+    : op(mesh), offset(y_offset) {}
+#else
+PrecomputedInterpolation::PrecomputedInterpolation([[maybe_unused]] int y_offset,
+                                                   [[maybe_unused]] Mesh* mesh,
+                                                   [[maybe_unused]] Options* options) {
+  throw BoutException("PrecomputedInterpolation requires PETSc");
+}
+#endif
+
+Field3D
+PrecomputedInterpolation::interpolate(const Field3D& fin,
+                                      [[maybe_unused]] const std::string& region) const {
+#if BOUT_HAS_PETSC
+  Field3D f = fin;
+  f.splitParallelSlices();
+  f.yup().allocate();
+  f.ydown().allocate();
+  if (y_offset == 1) {
+    return op.computeYup(f);
+  }
+  if (y_offset == -1) {
+    return op.computeYdown(f);
+  }
+#endif
+  throw BoutException("Offset {} not supported", offset);
+}
+
 template <bool monotonic, bout::details::implementation_type imp_type>
 Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(const Field3D& f,
                                                               const Field3D& delta_x,
