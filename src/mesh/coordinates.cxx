@@ -1235,6 +1235,13 @@ void Coordinates::_compute_cell_volume() const {
 const bout::boundary::YBoundary& Coordinates::getYBoundary(Options* options) const {
   Options* opts = (options == nullptr) ? localoptions : options;
 
+  if (opts == nullptr) {
+    if (localmesh->isFci()) {
+      return getYBoundary(true, false);
+    }
+    return getYBoundary(true, true);
+  }
+
   const bool lower_y =
       localmesh->isFci()
           ? (*opts)["outer_x"].doc("Boundary on outer x?").withDefault<bool>(true)
