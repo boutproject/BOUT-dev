@@ -27,6 +27,10 @@
 #include <math.h>
 #include <memory>
 
+#if !BOUT_HAS_PETSC
+using PetscInt = int;
+#endif
+
 namespace {
 template <class T>
 struct Slices {
