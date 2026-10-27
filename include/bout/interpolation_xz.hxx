@@ -318,7 +318,6 @@ public:
 class PrecomputedInterpolation : public XZInterpolation {
 #if BOUT_HAS_PETSC
   PetscOperators op;
-  int offset;
 #endif
 public:
   PrecomputedInterpolation(Mesh* mesh = nullptr, Options* options = nullptr)

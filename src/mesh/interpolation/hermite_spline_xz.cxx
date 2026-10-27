@@ -536,7 +536,7 @@ Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(
 #if BOUT_HAS_PETSC
 PrecomputedInterpolation::PrecomputedInterpolation(int y_offset, Mesh* mesh,
                                                    [[maybe_unused]] Options* options)
-    : op(mesh), offset(y_offset) {}
+    : op(mesh) {}
 #else
 PrecomputedInterpolation::PrecomputedInterpolation([[maybe_unused]] int y_offset,
                                                    [[maybe_unused]] Mesh* mesh,
@@ -560,7 +560,7 @@ PrecomputedInterpolation::interpolate(const Field3D& fin,
     return op.computeYdown(f);
   }
 #endif
-  throw BoutException("Offset {} not supported", offset);
+  throw BoutException("Offset {} not supported", y_offset);
 }
 
 template <bool monotonic, bout::details::implementation_type imp_type>
