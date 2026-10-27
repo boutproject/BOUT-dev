@@ -14,7 +14,15 @@
 #include "bout/region.hxx"
 #include "bout/utils.hxx"
 #include <bout/yboundary_regions.hxx>
+#if BOUT_HAS_PETSC
+#include <bout/petsclib.hxx>
+#include <petscmat.h>
+#include <petscsys.h>
+#include <petscsystypes.h>
+#include <petscvec.h>
+#endif
 
+#include <limits>
 #include <map>
 #include <math.h>
 #include <memory>
@@ -685,56 +693,63 @@ template Field3D Div_par_fvv_heating<WENO3>(const Field3D& f_in, const Field3D& 
 template Field3D Div_a_Grad_perp_limit<WENO3>(const Field3D& a, const Field3D& g,
                                               const Field3D& f);
 
-std::map<Mesh*, std::weak_ptr<Div_a_Grad_perp_FCI>> Div_a_Grad_perp_FCI::op_cache;
-std::shared_ptr<Div_a_Grad_perp_FCI> Div_a_Grad_perp_FCI::create(Mesh* mesh,
-                                                                 BoutReal rho_s0) {
-  if (auto search = Div_a_Grad_perp_FCI::op_cache.find(mesh);
-      search != Div_a_Grad_perp_FCI::op_cache.end()) {
+std::map<Mesh*, std::weak_ptr<Div_a_Grad_perp_FCI>>
+    Div_a_Grad_perp_FCI_structured::op_cache;
+std::map<Mesh*, std::weak_ptr<Div_a_Grad_perp_FCI>>
+    Div_a_Grad_perp_FCI_unstructured::op_cache;
+std::shared_ptr<Div_a_Grad_perp_FCI>
+Div_a_Grad_perp_FCI_structured::create(Mesh* mesh, BoutReal rho_s0) {
+  if (auto search = Div_a_Grad_perp_FCI_structured::op_cache.find(mesh);
+      search != Div_a_Grad_perp_FCI_structured::op_cache.end()) {
     if (std::shared_ptr<Div_a_Grad_perp_FCI> spt = search->second.lock()) {
       return spt;
     }
     output_warn.write("\tPreformance Warning: DIV_A_GRAD_PERP needs to be re-created!\n");
   }
-  auto dagp = std::make_shared<Div_a_Grad_perp_FCI>(*mesh);
+  auto dagp = std::make_shared<Div_a_Grad_perp_FCI_structured>(mesh);
   dagp->volume /= rho_s0 * rho_s0;
-  Div_a_Grad_perp_FCI::op_cache[mesh] = dagp;
+  Div_a_Grad_perp_FCI_structured::op_cache[mesh] = dagp;
   return dagp;
 }
 
-Div_a_Grad_perp_FCI::Div_a_Grad_perp_FCI(Mesh& mesh)
-    : fac_XX(&mesh), fac_XZ(&mesh), fac_ZX(&mesh), fac_ZZ(&mesh), volume(&mesh) {
-  ASSERT0(mesh.get(fac_XX, "dagp_fv_XX", 0.0, false) == 0);
-  ASSERT0(mesh.get(fac_XZ, "dagp_fv_XZ", 0.0, false) == 0);
-  ASSERT0(mesh.get(fac_ZX, "dagp_fv_ZX", 0.0, false) == 0);
-  ASSERT0(mesh.get(fac_ZZ, "dagp_fv_ZZ", 0.0, false) == 0);
+Div_a_Grad_perp_FCI_structured::Div_a_Grad_perp_FCI_structured(Mesh* mesh)
+    : fac_XX(mesh), fac_XZ(mesh), fac_ZX(mesh), fac_ZZ(mesh), volume(mesh) {
+  ASSERT0(mesh->get(fac_XX, "dagp_fv_XX", 0.0, false) == 0);
+  ASSERT0(mesh->get(fac_XZ, "dagp_fv_XZ", 0.0, false) == 0);
+  ASSERT0(mesh->get(fac_ZX, "dagp_fv_ZX", 0.0, false) == 0);
+  ASSERT0(mesh->get(fac_ZZ, "dagp_fv_ZZ", 0.0, false) == 0);
   ASSERT0(volume.hasParallelSlices() == false);
-  ASSERT0(mesh.get(volume, "dagp_fv_volume", 0.0, false) == 0);
+  ASSERT0(mesh->get(volume, "dagp_fv_volume", 0.0, false) == 0);
   ASSERT0(volume.hasParallelSlices() == false);
   volume.setRegion("RGN_NOBNDRY");
-  if (!mesh.hasRegion3D("RGN_dapg_fv_xbndry")) {
-    mesh.addRegion("RGN_dapg_fv_xbndry",
-                   Region<>(mesh.xstart - 1, mesh.xstart - 1, mesh.ystart, mesh.yend,
-                            mesh.zstart, mesh.zend, mesh.LocalNy, mesh.LocalNz));
+  if (!mesh->hasRegion3D("RGN_dapg_fv_xbndry")) {
+    mesh->addRegion("RGN_dapg_fv_xbndry",
+                    Region<>(mesh->xstart - 1, mesh->xstart - 1, mesh->ystart, mesh->yend,
+                             mesh->zstart, mesh->zend, mesh->LocalNy, mesh->LocalNz));
   }
 }
-Field3D Div_a_Grad_perp_FCI::operator()(const Field3D& a, const Field3D& f,
-                                        Field3D& flow_xlow, Field3D& flow_zlow,
-                                        bool upwinding) const {
+
+Field3D Div_a_Grad_perp_FCI_structured::operator()(const Field3D& a, const Field3D& f,
+                                                   Field3D& flow_xlow, Field3D& flow_zlow,
+                                                   bool upwinding) const {
   if (upwinding) {
     return operator()<true, true>(a, f, &flow_xlow, &flow_zlow);
   }
   return operator()<true, false>(a, f, &flow_xlow, &flow_zlow);
 }
-Field3D Div_a_Grad_perp_FCI::operator()(const Field3D& a, const Field3D& f,
-                                        bool upwinding) const {
+
+Field3D Div_a_Grad_perp_FCI_structured::operator()(const Field3D& a, const Field3D& f,
+                                                   bool upwinding) const {
   if (upwinding) {
     return operator()<false, true>(a, f, nullptr, nullptr);
   }
   return operator()<false, false>(a, f, nullptr, nullptr);
 }
+
 template <bool extra, bool upwinding>
-Field3D Div_a_Grad_perp_FCI::operator()(const Field3D& a, const Field3D& f,
-                                        Field3D* flow_xlow, Field3D* flow_zlow) const {
+Field3D Div_a_Grad_perp_FCI_structured::operator()(const Field3D& a, const Field3D& f,
+                                                   Field3D* flow_xlow,
+                                                   Field3D* flow_zlow) const {
   auto result{zeroFrom(f)};
   ASSERT1_FIELDS_COMPATIBLE(a, f);
   if constexpr (extra) {
@@ -771,9 +786,10 @@ Field3D Div_a_Grad_perp_FCI::operator()(const Field3D& a, const Field3D& f,
   }
   return result / volume;
 }
+
 template <bool upwinding>
-inline BoutReal Div_a_Grad_perp_FCI::xflux(const Field3D& a, const Field3D& f,
-                                           const Ind3D& i) const {
+inline BoutReal Div_a_Grad_perp_FCI_structured::xflux(const Field3D& a, const Field3D& f,
+                                                      const Ind3D& i) const {
   const auto ixp = i.xp();
   const auto dx = f[ixp] - f[i];
   BoutReal av = BoutNaN;
@@ -785,9 +801,10 @@ inline BoutReal Div_a_Grad_perp_FCI::xflux(const Field3D& a, const Field3D& f,
   const auto dz = 0.5 * (f[i.zp()] - f[i.zm()] + f[i.zp().xp()] - f[i.zm().xp()]);
   return -((fac_XX[i] * dx) + (fac_XZ[i] * dz)) * av;
 }
+
 template <bool upwinding>
-inline BoutReal Div_a_Grad_perp_FCI::zflux(const Field3D& a, const Field3D& f,
-                                           const Ind3D& i) const {
+inline BoutReal Div_a_Grad_perp_FCI_structured::zflux(const Field3D& a, const Field3D& f,
+                                                      const Ind3D& i) const {
   const auto izp = i.zp();
   const auto dz = f[izp] - f[i];
   BoutReal av = BoutNaN;
@@ -799,4 +816,205 @@ inline BoutReal Div_a_Grad_perp_FCI::zflux(const Field3D& a, const Field3D& f,
   const auto dx = 0.5 * (f[i.xp()] - f[i.xm()] + f[izp.xp()] - f[izp.xm()]);
   return -((fac_ZX[i] * dx) + (fac_ZZ[i] * dz)) * av;
 }
+
+namespace {
+template <typename T>
+Array<T> meshGetArray(Mesh* mesh, const std::string& name) {
+  Array<T> result;
+  if (mesh->get(result, name) != 0) {
+    throw BoutException("Div_a_Grad_perp_FCI_unstructured requires array '{}'", name);
+  }
+  ASSERT1(!result.empty());
+  return result;
+}
+PetscInt meshGetInt(Mesh* mesh, const std::string& name) {
+  int result;
+  if (mesh->get(result, name) != 0) {
+    throw BoutException("Div_a_Grad_perp_FCI_unstructured requires array '{}'", name);
+  }
+  ASSERT0(result <= std::numeric_limits<PetscInt>::max());
+  return static_cast<PetscInt>(result);
+}
+
+#if BOUT_HAS_PETSC
+
+struct StartEnd {
+  PetscInt start;
+  PetscInt end;
+};
+
+struct SizeSplitter {
+  SizeSplitter(Mesh* mesh)
+      : mesh(mesh), nproc(mesh->getNXPE() * mesh->getNYPE() * mesh->getNZPE()),
+        thisproc(mesh->getProcIndex(mesh->getXProcIndex(), mesh->getYProcIndex(),
+                                    mesh->getZProcIndex())) {};
+  StartEnd getSplit(size_t size, bool check = true) const {
+    PetscInt locsize = size / nproc;
+    PetscInt left = size % nproc;
+    auto start = locsize * thisproc + (left < thisproc ? left : thisproc);
+    auto end = start + locsize + (left <= thisproc ? 0 : 1);
+    if (thisproc + 1 == nproc) {
+      ASSERT1(end == size);
+    } else {
+      if (check) {
+        ASSERT1(SizeSplitter(nproc, thisproc + 1).getSplit(size, false).start == end);
+      }
+    }
+    if (thisproc > 0) {
+      if (check) {
+        ASSERT1(SizeSplitter(nproc, thisproc - 1).getSplit(size, false).end == start);
+      }
+    } else {
+      ASSERT1(start == 0);
+    }
+    return StartEnd{start, end};
+  }
+
+private:
+  Mesh* mesh;
+  PetscInt nproc;
+  PetscInt thisproc;
+  SizeSplitter(PetscInt nproc, PetscInt thisproc)
+      : mesh(nullptr), nproc(nproc), thisproc(thisproc) {};
+};
+
+Mat assembleParallelMatrix(Mesh* mesh, const std::string& name) {
+  const SizeSplitter splitter{mesh};
+  auto rows = meshGetArray<PetscInt>(mesh, fmt::format("{}_rows", name));
+  auto rowsplit = splitter.getSplit(rows.size() - 1);
+  ASSERT2(not rows.empty());
+  auto n_cols = meshGetInt(mesh, fmt::format("{}_ncols", name));
+  auto colsplit = splitter.getSplit(n_cols);
+  auto cols = meshGetArray<PetscInt>(mesh, fmt::format("{}_columns", name));
+  ASSERT0(cols.size() <= std::numeric_limits<PetscInt>::max());
+  auto data = meshGetArray<BoutReal>(mesh, fmt::format("{}_weights", name));
+  std::vector<PetscInt> d_nnz(rowsplit.end - rowsplit.start, 0);
+  std::vector<PetscInt> o_nnz(rowsplit.end - rowsplit.start, 0);
+  for (PetscInt i = rowsplit.start; i < rowsplit.end; ++i) {
+    for (PetscInt j = rows[i]; j < rows[i + 1]; ++j) {
+      auto jt = cols[j];
+      if (colsplit.start <= jt and jt < colsplit.end) {
+        d_nnz[i - rowsplit.start] += 1;
+      } else {
+        o_nnz[i - rowsplit.start] += 1;
+      }
+    }
+  }
+  Mat mat;
+  BOUT_DO_PETSC(MatCreateAIJ(BoutComm::get(), rowsplit.end - rowsplit.start,
+                             colsplit.end - colsplit.start, PETSC_DETERMINE,
+                             PETSC_DETERMINE, 0, d_nnz.data(), 0, o_nnz.data(), &mat));
+  PetscInt M, N;
+  BOUT_DO_PETSC(MatGetSize(mat, &M, &N));
+  PetscInt m, n;
+  BOUT_DO_PETSC(MatGetLocalSize(mat, &m, &n));
+  for (int i = rowsplit.start; i < rowsplit.end; ++i) {
+    BOUT_DO_PETSC(MatSetValues(mat, 1, &i, rows[i + 1] - rows[i], &cols[rows[i]],
+                               &data[rows[i]], INSERT_VALUES));
+  }
+  BOUT_DO_PETSC(MatAssemblyBegin(mat, MAT_FINAL_ASSEMBLY));
+  BOUT_DO_PETSC(MatAssemblyEnd(mat, MAT_FINAL_ASSEMBLY));
+  return mat;
+}
+void setVecFromField(Vec vec, Field3D f) {
+  auto mesh = f.getMesh();
+  ASSERT1(mesh->getNZPE() == 1);
+  BoutReal* ptr = nullptr;
+  BOUT_DO_PETSC(VecGetArray(vec, &ptr));
+  int j = 0;
+  BOUT_FOR(i, f.getRegion("RGN_NO_HALO")) { ptr[j++] = f[i]; }
+  BOUT_DO_PETSC(VecRestoreArray(vec, &ptr));
+}
+Field3D FieldFromVec(Vec vec, const Field3D& ref) {
+  auto ret = emptyFrom(ref);
+  int j = 0;
+  const BoutReal* ptr = nullptr;
+  BOUT_DO_PETSC(VecGetArrayRead(vec, &ptr));
+  BOUT_FOR(i, ret.getRegion("RGN_NO_HALO")) { ret[i] = ptr[j++]; }
+  BOUT_DO_PETSC(VecRestoreArrayRead(vec, &ptr));
+  return ret;
+}
+#else
+int* assembleParallelMatrix(Mesh* mesh, const std::string& name) {}
+#endif
+} // namespace
+
+std::shared_ptr<Div_a_Grad_perp_FCI>
+Div_a_Grad_perp_FCI_unstructured::create(Mesh* mesh, BoutReal rho_s0) {
+  if (auto search = Div_a_Grad_perp_FCI_unstructured::op_cache.find(mesh);
+      search != Div_a_Grad_perp_FCI_unstructured::op_cache.end()) {
+    if (std::shared_ptr<Div_a_Grad_perp_FCI> spt = search->second.lock()) {
+      return spt;
+    }
+    output_warn.write("\tPreformance Warning: DIV_A_GRAD_PERP needs to be re-created!\n");
+  }
+  auto dagp = std::make_shared<Div_a_Grad_perp_FCI_unstructured>(mesh, rho_s0);
+  Div_a_Grad_perp_FCI_unstructured::op_cache[mesh] = dagp;
+  return dagp;
+}
+
+Div_a_Grad_perp_FCI_unstructured::Div_a_Grad_perp_FCI_unstructured(Mesh* mesh,
+                                                                   BoutReal rho_s0)
+    : mesh(mesh) {
+#if not BOUT_HAS_PETSC
+  throw BoutException("Compile BOUT++ with PETSc to run on unstructured meshes!");
+#else
+  Div = assembleParallelMatrix(mesh, "dagp_us_div");
+  Grad = assembleParallelMatrix(mesh, "dagp_us_gradp");
+  Interp = assembleParallelMatrix(mesh, "dagp_us_value");
+  BOUT_DO_PETSC(MatScale(Div, SQ(rho_s0)));
+  if (not mesh->hasRegion3D("RGN_NO_HALO")) {
+    mesh->addRegion3D("RGN_NO_HALO",
+                      Region<Ind3D>(mesh->firstX() ? 0 : mesh->xstart,
+                                    mesh->lastX() ? mesh->LocalNx - 1 : mesh->xend,
+                                    mesh->ystart, mesh->yend, mesh->zstart, mesh->zend,
+                                    mesh->LocalNy, mesh->LocalNz,
+                                    mesh->maxregionblocksize));
+  }
+
+  BOUT_DO_PETSC(VecCreate(BoutComm::get(), &inField));
+  BOUT_DO_PETSC(VecCreate(BoutComm::get(), &inA));
+  BOUT_DO_PETSC(VecCreate(BoutComm::get(), &result));
+  BOUT_DO_PETSC(VecCreate(BoutComm::get(), &vecGrad));
+  BOUT_DO_PETSC(VecCreate(BoutComm::get(), &vecInterp));
+  BOUT_DO_PETSC(VecCreate(BoutComm::get(), &multiplied));
+
+  for (auto vec : {inField, inA, result, vecGrad, vecInterp, multiplied}) {
+    BOUT_DO_PETSC(VecSetType(vec, VECSTANDARD));
+  }
+  BOUT_DO_PETSC(VecSetSizes(inField, m, M));
+  BOUT_DO_PETSC(VecSetSizes(inA, m, M));
+  BOUT_DO_PETSC(VecSetSizes(result, m, M));
+  BOUT_DO_PETSC(VecSetSizes(vecGrad, n, N));
+  BOUT_DO_PETSC(VecSetSizes(vecInterp, n, N));
+  BOUT_DO_PETSC(VecSetSizes(multiplied, n, N));
+#endif
+}
+
+Field3D Div_a_Grad_perp_FCI_unstructured::operator()(const Field3D& a, const Field3D& f,
+                                                     bool upwinding) const {
+#if BOUT_HAS_PETSC
+  if (upwinding) {
+    throw BoutException("Upwinding currently not supported");
+  }
+  setVecFromField(inField, f);
+  BOUT_DO_PETSC(MatMult(Grad, inField, vecGrad));
+  setVecFromField(inA, a);
+  BOUT_DO_PETSC(MatMult(Interp, inA, vecInterp));
+  BOUT_DO_PETSC(VecPointwiseMult(multiplied, vecGrad, vecInterp));
+  BOUT_DO_PETSC(MatMult(Div, multiplied, result));
+  return FieldFromVec(result, f);
+#endif
+  throw BoutException("Needs PETSc");
+}
+
+Field3D Div_a_Grad_perp_FCI_unstructured::operator()(const Field3D& a, const Field3D& f,
+                                                     Field3D& flow_xlow,
+                                                     Field3D& flow_zlow,
+                                                     bool upwinding) const {
+  flow_xlow = zeroFrom(f);
+  flow_zlow = zeroFrom(f);
+  return (*this)(a, f, upwinding);
+}
+
 } // Namespace FV
