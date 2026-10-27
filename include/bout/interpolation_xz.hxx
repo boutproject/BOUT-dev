@@ -331,15 +331,11 @@ public:
 
   void calcWeights([[maybe_unused]] const Field3D& delta_x,
                    [[maybe_unused]] const Field3D& delta_z,
-                   [[maybe_unused]] const std::string& region = "RGN_NOBNDRY") override {
-    throw BoutException("Not Implemented!");
-  }
+                   [[maybe_unused]] const std::string& region = "RGN_NOBNDRY") override {}
   void calcWeights([[maybe_unused]] const Field3D& delta_x,
                    [[maybe_unused]] const Field3D& delta_z,
                    [[maybe_unused]] const BoutMask& mask,
-                   [[maybe_unused]] const std::string& region = "RGN_NOBNDRY") override {
-    throw BoutException("Not Implemented!");
-  }
+                   [[maybe_unused]] const std::string& region = "RGN_NOBNDRY") override {}
 
   // Use precalculated weights
   Field3D interpolate(const Field3D& f,

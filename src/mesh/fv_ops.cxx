@@ -827,6 +827,14 @@ Array<T> meshGetArray(Mesh* mesh, const std::string& name) {
   ASSERT1(!result.empty());
   return result;
 }
+PetscInt meshGetInt(Mesh* mesh, const std::string& name) {
+  int result;
+  if (mesh->get(result, name) != 0) {
+    throw BoutException("Div_a_Grad_perp_FCI_unstructured requires array '{}'", name);
+  }
+  ASSERT0(result <= std::numeric_limits<PetscInt>::max());
+  return static_cast<PetscInt>(result);
+}
 
 #if BOUT_HAS_PETSC
 
@@ -840,11 +848,25 @@ struct SizeSplitter {
       : mesh(mesh), nproc(mesh->getNXPE() * mesh->getNYPE() * mesh->getNZPE()),
         thisproc(mesh->getProcIndex(mesh->getXProcIndex(), mesh->getYProcIndex(),
                                     mesh->getZProcIndex())) {};
-  StartEnd getSplit(size_t size) const {
+  StartEnd getSplit(size_t size, bool check = true) const {
     PetscInt locsize = size / nproc;
     PetscInt left = size % nproc;
     auto start = locsize * thisproc + (left < thisproc ? left : thisproc);
-    auto end = start + locsize + (left < thisproc ? 1 : 0);
+    auto end = start + locsize + (left <= thisproc ? 0 : 1);
+    if (thisproc + 1 == nproc) {
+      ASSERT1(end == size);
+    } else {
+      if (check) {
+        ASSERT1(SizeSplitter(nproc, thisproc + 1).getSplit(size, false).start == end);
+      }
+    }
+    if (thisproc > 0) {
+      if (check) {
+        ASSERT1(SizeSplitter(nproc, thisproc - 1).getSplit(size, false).end == start);
+      }
+    } else {
+      ASSERT1(start == 0);
+    }
     return StartEnd{start, end};
   }
 
@@ -852,45 +874,77 @@ private:
   Mesh* mesh;
   PetscInt nproc;
   PetscInt thisproc;
+  SizeSplitter(PetscInt nproc, PetscInt thisproc)
+      : mesh(nullptr), nproc(nproc), thisproc(thisproc) {};
 };
 
 Mat assembleParallelMatrix(Mesh* mesh, const std::string& name) {
   const SizeSplitter splitter{mesh};
   auto rows = meshGetArray<PetscInt>(mesh, fmt::format("{}_rows", name));
-  auto rowsplit = splitter.getSplit(rows.size());
+  auto rowsplit = splitter.getSplit(rows.size() - 1);
   ASSERT2(not rows.empty());
-  size_t n_cols = rows.end()[-1];
+  auto n_cols = meshGetInt(mesh, fmt::format("{}_ncols", name));
   auto colsplit = splitter.getSplit(n_cols);
   auto cols = meshGetArray<PetscInt>(mesh, fmt::format("{}_columns", name));
   ASSERT0(cols.size() <= std::numeric_limits<PetscInt>::max());
-  auto data = meshGetArray<BoutReal>(mesh, fmt::format("{}_data", name));
+  auto data = meshGetArray<BoutReal>(mesh, fmt::format("{}_weights", name));
+  output.write("We are working locally with {} -> {}  and {} -> {}\n", rowsplit.start,
+               rowsplit.end, colsplit.start, colsplit.end);
   std::vector<PetscInt> d_nnz(rowsplit.end - rowsplit.start, 0);
   std::vector<PetscInt> o_nnz(rowsplit.end - rowsplit.start, 0);
   for (PetscInt i = rowsplit.start; i < rowsplit.end; ++i) {
     for (PetscInt j = rows[i]; j < rows[i + 1]; ++j) {
-      if (colsplit.start <= j and j < colsplit.end) {
-        d_nnz[i] += 1;
-      } else {
-        o_nnz[i] += 1;
+      auto jt = cols[j];
+      if (i < rowsplit.start + 2) {
+        output.write("DEB {} {} ({}): {} {} {} -> {}\n", i, j, jt, colsplit.start, jt,
+                     colsplit.end, colsplit.start <= jt and jt < colsplit.end);
       }
+      if (colsplit.start <= jt and jt < colsplit.end) {
+        d_nnz[i - rowsplit.start] += 1;
+      } else {
+        o_nnz[i - rowsplit.start] += 1;
+      }
+    }
+    if (i < rowsplit.start + 10) {
+      output.write("{}: {} {}\n", i - rowsplit.start,
+                   static_cast<int>(d_nnz[i - rowsplit.start]),
+                   static_cast<int>(o_nnz[i - rowsplit.start]));
     }
   }
   Mat mat;
-  BOUT_DO_PETSC(MatCreateAIJ(BoutComm::get(), rows.size(), n_cols, PETSC_DETERMINE,
+  BOUT_DO_PETSC(MatCreateAIJ(BoutComm::get(), rowsplit.end - rowsplit.start,
+                             colsplit.end - colsplit.start, PETSC_DETERMINE,
                              PETSC_DETERMINE, 0, d_nnz.data(), 0, o_nnz.data(), &mat));
+  //BOUT_DO_PETSC(MatSetOption(mat, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE));
+  PetscInt M, N;
+  BOUT_DO_PETSC(MatGetSize(mat, &M, &N));
+  PetscInt m, n;
+  BOUT_DO_PETSC(MatGetLocalSize(mat, &m, &n));
+  //output.write("\nMatrix size is {} x {} (local {} x {})\n", M, N, m, n);
   for (int i = rowsplit.start; i < rowsplit.end; ++i) {
-    BOUT_DO_PETSC(MatSetValues(mat, 1, &i, cols[i + 1] - cols[i], &cols[i],
-                               &data[cols[i]], INSERT_VALUES));
+    const PetscInt i0 = i - rowsplit.start;
+    if (i0 < 10) {
+      output.write("INS {} {} {}\n\t", i, i0, rows[i + 1] - rows[i]);
+      for (int k = rows[i]; k < rows[i + 1]; ++k) {
+        output.write(" {}", cols[k]);
+      }
+      output.write("\n");
+    }
+    BOUT_DO_PETSC(MatSetValues(mat, 1, &i, rows[i + 1] - rows[i], &cols[rows[i]],
+                               &data[rows[i]], INSERT_VALUES));
   }
+  BOUT_DO_PETSC(MatAssemblyBegin(mat, MAT_FINAL_ASSEMBLY));
+  BOUT_DO_PETSC(MatAssemblyEnd(mat, MAT_FINAL_ASSEMBLY));
   return mat;
 }
 void setVecFromField(Vec vec, Field3D f) {
   auto mesh = f.getMesh();
   ASSERT1(mesh->getNZPE() == 1);
-  int localSize = (mesh->LocalNx - (mesh->firstX() ? 0 : mesh->xstart)
-                   - (mesh->lastX() ? 0 : mesh->xstart))
-                  * (mesh->LocalNx - 2 * mesh->ystart) * mesh->LocalNz;
-  BOUT_DO_PETSC(VecSetSizes(vec, localSize, PETSC_DETERMINE));
+  // int localSize = (mesh->LocalNx - (mesh->firstX() ? 0 : mesh->xstart)
+  //                  - (mesh->lastX() ? 0 : mesh->xstart))
+  //                 * (mesh->LocalNy - 2 * mesh->ystart) * mesh->LocalNz;
+  //BOUT_DO_PETSC(VecSetSizes(vec, localSize, PETSC_DETERMINE));
+  //output.write("Set Vec size to local {}\n", localSize);
   BoutReal* ptr = nullptr;
   BOUT_DO_PETSC(VecGetArray(vec, &ptr));
   int j = 0;
@@ -934,7 +988,7 @@ Div_a_Grad_perp_FCI_unstructured::Div_a_Grad_perp_FCI_unstructured(Mesh* mesh,
   Div = assembleParallelMatrix(mesh, "dagp_us_div");
   Grad = assembleParallelMatrix(mesh, "dagp_us_gradp");
   Interp = assembleParallelMatrix(mesh, "dagp_us_value");
-  BOUT_DO_PETSC(MatScale(Div, 1 / rho_s0 / rho_s0));
+  BOUT_DO_PETSC(MatScale(Div, -SQ(rho_s0)));
   if (not mesh->hasRegion3D("RGN_NO_HALO")) {
     mesh->addRegion3D("RGN_NO_HALO",
                       Region<Ind3D>(mesh->firstX() ? 0 : mesh->xstart,
@@ -949,18 +1003,22 @@ Div_a_Grad_perp_FCI_unstructured::Div_a_Grad_perp_FCI_unstructured(Mesh* mesh,
   PetscInt m, n;
   BOUT_DO_PETSC(MatGetLocalSize(Div, &m, &n));
   output.write("\nMatrix size is {} x {} (local {} x {})\n", M, N, m, n);
+  BOUT_DO_PETSC(VecCreate(BoutComm::get(), &inField));
+  BOUT_DO_PETSC(VecCreate(BoutComm::get(), &inA));
+  BOUT_DO_PETSC(VecCreate(BoutComm::get(), &result));
+  BOUT_DO_PETSC(VecCreate(BoutComm::get(), &vecGrad));
+  BOUT_DO_PETSC(VecCreate(BoutComm::get(), &vecInterp));
+  BOUT_DO_PETSC(VecCreate(BoutComm::get(), &multiplied));
+
   for (auto vec : {inField, inA, result, vecGrad, vecInterp, multiplied}) {
-    BOUT_DO_PETSC(VecCreate(BoutComm::get(), &vec));
     BOUT_DO_PETSC(VecSetType(vec, VECSTANDARD));
   }
-  // // n
-  // Vec inField;
-  // Vec inA;
-  // Vec result;
-  // // m
-  // Vec vecGrad;
-  // Vec vecInterp;
-  // Vec multiplied;
+  BOUT_DO_PETSC(VecSetSizes(inField, m, M));
+  BOUT_DO_PETSC(VecSetSizes(inA, m, M));
+  BOUT_DO_PETSC(VecSetSizes(result, m, M));
+  BOUT_DO_PETSC(VecSetSizes(vecGrad, n, N));
+  BOUT_DO_PETSC(VecSetSizes(vecInterp, n, N));
+  BOUT_DO_PETSC(VecSetSizes(multiplied, n, N));
 #endif
 }
 
@@ -970,9 +1028,9 @@ Field3D Div_a_Grad_perp_FCI_unstructured::operator()(const Field3D& a, const Fie
   if (upwinding) {
     throw BoutException("Upwinding currently not supported");
   }
-  setVecFromField(inA, a);
   setVecFromField(inField, f);
   BOUT_DO_PETSC(MatMult(Grad, inField, vecGrad));
+  setVecFromField(inA, a);
   BOUT_DO_PETSC(MatMult(Interp, inA, vecInterp));
   BOUT_DO_PETSC(VecPointwiseMult(multiplied, vecGrad, vecInterp));
   BOUT_DO_PETSC(MatMult(Div, multiplied, result));

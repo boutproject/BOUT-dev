@@ -550,15 +550,13 @@ PrecomputedInterpolation::interpolate(const Field3D& fin,
                                       [[maybe_unused]] const std::string& region) const {
 #if BOUT_HAS_PETSC
   Field3D f = fin;
-  if (!f.hasParallelSlices()) {
-    f.splitParallelSlices();
-    f.yup().allocate();
-    f.ydown().allocate();
-  }
-  if (offset == 1) {
+  f.splitParallelSlices();
+  f.yup().allocate();
+  f.ydown().allocate();
+  if (y_offset == 1) {
     return op.computeYup(f);
   }
-  if (offset == -1) {
+  if (y_offset == -1) {
     return op.computeYdown(f);
   }
 #endif

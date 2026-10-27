@@ -277,7 +277,7 @@ inline std::shared_ptr<Div_a_Grad_perp_FCI> Div_a_Grad_perp_FCI::create(Mesh* me
                                                                         BoutReal rho_s0) {
   bool unstructured{false};
   mesh->get(unstructured, "unstructured", unstructured);
-  if (unstructured) {
+  if (mesh->sourceHasVar("dagp_us_div_weights")) {
     return Div_a_Grad_perp_FCI_unstructured::create(mesh, rho_s0);
   }
   return Div_a_Grad_perp_FCI_structured::create(mesh, rho_s0);

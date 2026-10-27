@@ -176,7 +176,7 @@ Field3D toField3D(const PetscCellVector& vec, const Field3D& prototype) {
 
 Field3D PetscOperators::meshGetField3D(Mesh* mesh, const std::string& name) {
   Field3D result;
-  if (mesh->get(result, name) != 0) {
+  if (mesh->get(result, name, 0.0, false) != 0) {
     throw BoutException("PetscOperators requires field '{}'", name);
   }
   return result;
@@ -652,7 +652,10 @@ Field3D PetscOperators::computeYup(const Field3D& f) const {
   ASSERT1(f.yup().isAllocated());
   ASSERT1(f.ydown().isAllocated());
 
-  auto leg = this->forward()(f);
+  if (!cache_forward.has_value()) {
+    cache_forward = this->forward();
+  }
+  auto leg = cache_forward.value()(f);
 
   const PetscScalar* leg_x{nullptr};
   BOUT_DO_PETSC(VecGetArrayRead(leg.raw(), &leg_x));
@@ -684,7 +687,10 @@ Field3D PetscOperators::computeYdown(const Field3D& f) const {
   ASSERT1(f.yup().isAllocated());
   ASSERT1(f.ydown().isAllocated());
 
-  auto leg = this->backward()(f);
+  if (!cache_backward.has_value()) {
+    cache_backward = this->backward();
+  }
+  auto leg = cache_backward.value()(f);
 
   const PetscScalar* leg_x{nullptr};
   BOUT_DO_PETSC(VecGetArrayRead(leg.raw(), &leg_x));

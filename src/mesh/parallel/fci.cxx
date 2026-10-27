@@ -342,23 +342,42 @@ FCITransform::FCITransform(Mesh& mesh, const Coordinates::FieldMetric& dy, bool 
   }
   const std::array bndries = {forward_boundary_xin, forward_boundary_xout,
                               backward_boundary_xin, backward_boundary_xout};
+
+  output.write("\n\n\e[34;47mFINDING DOUBLE BOUNDARIES\e[0m\n");
+  int count = 0;
   for (const auto& bndry : bndries) {
     for (const auto& bndry2 : bndries) {
       if (bndry->dir() == bndry2->dir()) {
         continue;
       }
-      for (auto point : *bndry) {
+      for (auto& point : *bndry) {
         for (auto point2 : *bndry2) {
           if (point.ind() == point2.ind()) {
             // This point has a boundary in both directions.  Calculate the
             // distance between two points, to check how many non-boundary
             // points exist.
-            point.setValid(static_cast<signed char>(
-                std::abs((point2.offset() - point.offset())) - 2));
+            auto valid =
+                static_cast<signed char>(std::abs(point2.offset() - point.offset()) - 2);
+            point.setValid(valid);
+            if (valid == 0) {
+              count += 1;
+            }
           }
         }
       }
     }
+  }
+  output.write("Found {} double boundaries.\n\n\n", count);
+  if (count > 0) {
+    int check = 0;
+    for (const auto& bndry : bndries) {
+      for (const auto& point : *bndry) {
+        if (point.valid() == 0) {
+          check += 1;
+        }
+      }
+    }
+    ASSERT0(check == count);
   }
 }
 
