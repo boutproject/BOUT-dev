@@ -992,6 +992,8 @@ public:
   Parallel getParallel() const;
 
 private:
+  mutable std::optional<PetscForwardOperator> cache_forward;
+  mutable std::optional<PetscBackwardOperator> cache_backward;
   /// @brief Read a Field3D from the mesh, throwing if the field is absent.
   ///
   /// @param mesh Non-owning mesh pointer.
