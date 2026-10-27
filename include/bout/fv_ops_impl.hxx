@@ -1170,7 +1170,7 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
           } else {
             flux_mom = (s.R * sv.R * sv.R)
                        + (BOUTMAX(wave_speed(i, j, k), std::abs(sv.c), std::abs(sv.p))
-                          * (s.R * sv.R - n_mid * v_mid));
+                          * n_mid * (sv.R - v_mid));
           }
 
           // Assume that particle flux is fixed to boundary value
@@ -1191,14 +1191,16 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
           const BoutReal amax = BOUTMAX(wave_speed(i, j, k), wave_speed(i, j + 1, k),
                                         std::abs(sv.c), std::abs(sv.p));
 
-          // Viscous heating due to relaxation of velocity towards midpoint
-          result(i, j, k) +=
-              (amax + 0.5 * sv.R) * s.R * (sv.c - sv.p) * (sv.R - v_mid) * flux_factor_rc;
+          // Use the same split particle flux as Div_par_mod and Div_par_fvv.
+          const BoutReal flux_part = s.R * 0.5 * (sv.R + amax);
+
+          // Difference between kinetic energy leaving this cell and entering
+          // the next cell, using d(n*v^2/2)/dt = v*d(n*v)/dt - v^2*dn/dt/2.
+          result(i, j, k) += flux_part * (sv.c - sv.p) * (sv.R - v_mid) * flux_factor_rc;
 
           // Kinetic energy flow into next cell.
           // Note: Different from flow out of this cell; the difference
           //       is in the viscous heating.
-          const BoutReal flux_part = s.R * 0.5 * (sv.R + amax);
           const BoutReal flux_mom = flux_part * sv.R;
 
           flow_ylow(i, j + 1, k) +=
@@ -1224,7 +1226,7 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
             // Add flux due to difference in boundary values
             flux_mom = (s.L * sv.L * sv.L)
                        - (BOUTMAX(wave_speed(i, j, k), std::abs(sv.c), std::abs(sv.m))
-                          * (s.L * sv.L - n_mid * v_mid));
+                          * n_mid * (sv.L - v_mid));
           }
 
           // Assume that density flux is fixed to boundary value
@@ -1241,17 +1243,17 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
           const BoutReal amax = BOUTMAX(wave_speed(i, j, k), wave_speed(i, j - 1, k),
                                         std::abs(sv.c), std::abs(sv.m));
 
-          // Viscous heating due to relaxation
-          result(i, j, k) +=
-              (amax - 0.5 * sv.L) * s.L * (sv.c - sv.m) * (sv.L - v_mid) * flux_factor_lc;
-
-          // Kinetic energy flow into this cell.
-          // Note: Different from flow out of left cell; the difference
-          //       is in the viscous heating.
           const BoutReal flux_part = s.L * 0.5 * (sv.L - amax);
+
+          // The left-going split flux has the opposite orientation.
+          result(i, j, k) -= flux_part * (sv.c - sv.m) * (sv.L - v_mid) * flux_factor_lc;
+
+          // Kinetic energy flow into the previous cell.
+          // Note: Different from flow out of this cell; the difference
+          //       is in the viscous heating.
           const BoutReal flux_mom = flux_part * sv.L;
 
-          flow_ylow(i, j, k) += (sv.c * flux_mom - 0.5 * SQ(sv.c) * flux_part) * area_lc;
+          flow_ylow(i, j, k) += (sv.m * flux_mom - 0.5 * SQ(sv.m) * flux_part) * area_lc;
         }
       }
     }

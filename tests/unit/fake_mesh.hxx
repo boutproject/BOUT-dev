@@ -35,20 +35,20 @@ class Options;
 /// - This is a mesh for a single process, so the global and local
 /// indices are the same.
 ///
-/// - There is a single guard cell at each of the start/end x/y grids.
+/// - There is one X guard cell and, by default, one Y guard cell at each end.
 ///
 /// - Only the **grid** information is assumed to be used -- anything
 ///   else will likely **not** work!
 class FakeMesh : public Mesh {
 public:
-  FakeMesh(int nx, int ny, int nz, MpiWrapper& mpi_in) {
+  FakeMesh(int nx, int ny, int nz, MpiWrapper& mpi_in, int myg = 1) {
     // Mesh only on one process, so global and local indices are the
     // same
     GlobalNx = nx;
     GlobalNy = ny;
     GlobalNz = nz;
     GlobalNxNoBoundaries = nx - 2;
-    GlobalNyNoBoundaries = ny - 2;
+    GlobalNyNoBoundaries = ny - 2 * myg;
     GlobalNzNoBoundaries = nz;
     LocalNx = nx;
     LocalNy = ny;
@@ -59,20 +59,20 @@ public:
 
     // These bits only for ADIOS2, also boring due to single process
     MapCountX = nx - 2;
-    MapCountY = ny - 2;
+    MapCountY = ny - 2 * myg;
     MapCountZ = nz;
     MapGlobalX = nx;
     MapGlobalY = ny;
     MapGlobalZ = nz;
     MapLocalX = nx - 2;
-    MapLocalY = ny - 2;
+    MapLocalY = ny - 2 * myg;
     MapLocalZ = nz;
 
     // Small "inner" region
     xstart = 1;
     xend = nx - 2;
-    ystart = 1;
-    yend = ny - 2;
+    ystart = myg;
+    yend = ny - myg - 1;
     zstart = 0; // no guards
     zend = nz - 1;
 
