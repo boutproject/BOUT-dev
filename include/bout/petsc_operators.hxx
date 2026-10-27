@@ -899,6 +899,22 @@ public:
   /// @returns A diagonal PetscBackwardLegOperator.
   PetscBackwardLegOperator diagonal(const PetscBackwardLegVector& v) const;
 
+  /// @brief Compute the forward parallel slice using the SOM weights.
+  ///
+  /// @param f Field whose yup() slice should be (re)computed. Must have
+  ///          parallel slices allocated.
+  /// @returns A Field3D containing the forward-interpolated values, indexed
+  ///          the same way as f.yup() (i.e. at i.yp()).
+  Field3D computeYup(const Field3D& f) const;
+
+  /// @brief Compute the backward parallel slice using the SOM weights.
+  ///
+  /// @param f Field whose ydown() slice should be (re)computed. Must have
+  ///          parallel slices allocated.
+  /// @returns A Field3D containing the forward-interpolated values, indexed
+  ///          the same way as f.yup() (i.e. at i.yp()).
+  Field3D computeYdown(const Field3D& f) const;
+
   /// @brief Collection of parallel differential operators assembled for the
   ///        Support Operator Method (SOM).
   ///
