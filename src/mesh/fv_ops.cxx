@@ -84,7 +84,11 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
     }
   }
 
-  // Y and Z fluxes require Y derivatives
+  // A singleton global Y mesh has no Y derivatives, even if guards exist.
+  const bool y_derivatives = mesh->GlobalNyNoBoundaries > 1;
+  ASSERT1(!y_derivatives || mesh->ystart > 0);
+
+  // Y fluxes and the mixed part of the Z flux require Y derivatives.
 
   // Fields containing values along the magnetic field
 
@@ -109,7 +113,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
   }
 
   // Y flux
-  if (mesh->ystart > 0) {
+  if (y_derivatives) {
     BOUT_FOR(i, yzresult.getRegion("RGN_NOBNDRY")) {
       auto ikp = i.zp();
       auto ikm = i.zm();
@@ -155,29 +159,27 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
 
         yzresult[i] -= fout / (dy.c[i] * J.c[i]);
       }
-      // Z flux
-      {
-
-        // Coefficient in front of df/dy term
-        const BoutReal coef = g_23.c[i] / (dy.up[i.yp()] + 2. * dy.c[i] + dy.down[i.ym()])
-                              / SQ(J.c[i] * Bxy.c[i]);
-
-        const BoutReal fout =
-            0.25 * (a_slice.c[i] + a_slice.c[ikp])
-            * (J.c[i] * coord->g33()[i] + J.c[ikp] * coord->g33()[ikp])
-            * ( // df/dz
-                (f_slice.c[ikp] - f_slice.c[i]) / dz.c[i]
-                // - g_yz * df/dy / SQ(J*B)
-                - coef
-                      * (f_slice.up[i.yp()] + f_slice.up[ikp.yp()] - f_slice.down[i.ym()]
-                         - f_slice.down[ikp.ym()]));
-
-        yzresult[i] += fout / (J.c[i] * dz.c[i]);
-        yzresult[ikp] -= fout / (J.c[ikp] * dz.c[ikp]);
-      }
     }
-  } else {
-    ASSERT1(mesh->yend == 0);
+  }
+
+  // Z flux exists independently of Y guards or Y derivatives.
+  BOUT_FOR(i, yzresult.getRegion("RGN_NOBNDRY")) {
+    const auto ikp = i.zp();
+    BoutReal y_correction = 0.0;
+    if (y_derivatives) {
+      const BoutReal coef = g_23.c[i] / (dy.up[i.yp()] + 2. * dy.c[i] + dy.down[i.ym()])
+                            / SQ(J.c[i] * Bxy.c[i]);
+      y_correction = coef
+                     * (f_slice.up[i.yp()] + f_slice.up[ikp.yp()] - f_slice.down[i.ym()]
+                        - f_slice.down[ikp.ym()]);
+    }
+
+    const BoutReal fout = 0.25 * (a_slice.c[i] + a_slice.c[ikp])
+                          * (J.c[i] * coord->g33()[i] + J.c[ikp] * coord->g33()[ikp])
+                          * ((f_slice.c[ikp] - f_slice.c[i]) / dz.c[i] - y_correction);
+
+    yzresult[i] += fout / (J.c[i] * dz.c[i]);
+    yzresult[ikp] -= fout / (J.c[ikp] * dz.c[ikp]);
   }
 
   // Check if we need to transform back

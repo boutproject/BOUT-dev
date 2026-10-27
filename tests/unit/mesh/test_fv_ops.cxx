@@ -37,6 +37,102 @@ TEST_F(FVOpsTest, Div_a_Grad_perp_FCI_coeffs) {
 
 namespace {
 
+template <int NY, int MYG>
+struct PerpGrid {
+  static constexpr int ny = NY;
+  static constexpr int myg = MYG;
+};
+
+// Exercise a singleton Y with and without guards, and a resolved Y mesh.
+template <typename Grid>
+class PerpDiffusionTest : public FakeMeshFixture_tmpl<5, Grid::ny, 16, false, Grid::myg> {
+public:
+  void SetUp() override {
+    auto* coord = mesh->getCoordinates();
+    // Nonzero g23 ensures the tests also exercise the mixed Y-Z terms.
+    const BoutReal cross = 0.3;
+    const BoutReal determinant = 1.0 - cross * cross;
+    coord->setMetricTensorJB(
+        ContravariantMetricTensor(1.0, 1.0, 1.0, 0.0, 0.0, cross),
+        CovariantMetricTensor(1.0, 1.0 / determinant, 1.0 / determinant, 0.0, 0.0,
+                              -cross / determinant),
+        Coordinates::FieldMetric{1.0 / sqrt(determinant)}, Coordinates::FieldMetric{1.0});
+    coord->setDy(Coordinates::FieldMetric{0.8}, false);
+    coord->setDz(Coordinates::FieldMetric{0.7}, false);
+  }
+
+  Field3D zMode(bool vary_y_guards = false) {
+    Field3D f{0.0};
+    BOUT_FOR_SERIAL(i, f.getRegion("RGN_ALL")) {
+      const BoutReal amplitude =
+          vary_y_guards ? 1.0 + 0.25 * SQ(i.y() - mesh->ystart) : 1.0;
+      f[i] = amplitude * cos(TWOPI * i.z() / mesh->LocalNz);
+    }
+    return f;
+  }
+};
+
+using PerpGrids = ::testing::Types<PerpGrid<1, 0>, PerpGrid<3, 1>, PerpGrid<6, 1>>;
+TYPED_TEST_SUITE(PerpDiffusionTest, PerpGrids);
+
+TYPED_TEST(PerpDiffusionTest, ZFourierMode) {
+  const auto f = this->zMode(mesh->GlobalNyNoBoundaries == 1);
+  const BoutReal diffusivity = 2.5;
+  const auto result = FV::Div_a_Grad_perp(Field3D{diffusivity}, f);
+  const auto* coord = mesh->getCoordinates();
+  BOUT_FOR_SERIAL(i, result.getRegion("RGN_NOBNDRY")) {
+    // The centered periodic Z Laplacian has this exact discrete eigenvalue.
+    const BoutReal eigenvalue = -4.0 * diffusivity * coord->g33()[i]
+                                * SQ(sin(PI / mesh->LocalNz)) / SQ(coord->dz()[i]);
+    EXPECT_NEAR(result[i], eigenvalue * f[i], 1e-13);
+  }
+}
+
+TYPED_TEST(PerpDiffusionTest, VariableCoefficientConservesAndDissipates) {
+  const auto f = this->zMode();
+  Field3D a{0.0};
+  Coordinates::FieldMetric jacobian{1.0};
+  BOUT_FOR_SERIAL(i, a.getRegion("RGN_ALL")) {
+    a[i] = 2.0 + 0.2 * i.x() + 0.4 * cos(TWOPI * i.z() / mesh->LocalNz);
+    jacobian(i.x(), i.y(), i.z()) = 1.0 + 0.1 * i.x();
+  }
+  auto* coord = mesh->getCoordinates();
+  coord->setJ(jacobian, false);
+  const auto result = FV::Div_a_Grad_perp(a, f);
+
+  BoutReal integral = 0.0, dissipation = 0.0, expected_dissipation = 0.0;
+  BOUT_FOR_SERIAL(i, result.getRegion("RGN_NOBNDRY")) {
+    const BoutReal volume = coord->cell_volume()[i];
+    integral += result[i] * volume;
+    dissipation += f[i] * result[i] * volume;
+    const BoutReal gradient = (f[i.zp()] - f[i]) / coord->dz()[i];
+    expected_dissipation -=
+        0.5 * (a[i] + a[i.zp()]) * coord->g33()[i] * SQ(gradient) * volume;
+  }
+  EXPECT_NEAR(integral, 0.0, 1e-12);
+  EXPECT_LT(dissipation, -1.0);
+  EXPECT_NEAR(dissipation, expected_dissipation, 1e-12);
+}
+
+using PerpResolvedYTest = PerpDiffusionTest<PerpGrid<6, 1>>;
+
+TEST_F(PerpResolvedYTest, YFourierMode) {
+  Field3D f{0.0};
+  BOUT_FOR_SERIAL(i, f.getRegion("RGN_ALL")) {
+    f[i] = cos(TWOPI * (i.y() - mesh->ystart) / mesh->GlobalNyNoBoundaries);
+  }
+  const auto result = FV::Div_a_Grad_perp(Field3D{1.0}, f);
+  const auto* coord = mesh->getCoordinates();
+  BOUT_FOR_SERIAL(i, result.getRegion("RGN_NOBNDRY")) {
+    // The perpendicular Y coefficient in this nonorthogonal metric is nonzero.
+    const BoutReal perp_yy =
+        -coord->g23()[i] * coord->g_23()[i] / SQ(coord->J()[i] * coord->Bxy()[i]);
+    const BoutReal eigenvalue =
+        -4.0 * perp_yy * SQ(sin(PI / mesh->GlobalNyNoBoundaries)) / SQ(coord->dy()[i]);
+    EXPECT_NEAR(result[i], eigenvalue * f[i], 1e-13);
+  }
+}
+
 // Two Y guards let the parallel fluxes reconstruct their neighboring guard cell.
 // Keep the existing one-guard fixture as the default for other unit tests.
 template <typename Limiter>
