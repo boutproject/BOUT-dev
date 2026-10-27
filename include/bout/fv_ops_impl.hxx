@@ -644,6 +644,7 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
 
     ASSERT1(f_in.hasParallelSlices());
     ASSERT1(v_in.hasParallelSlices());
+    ASSERT1(wave_speed_in.hasParallelSlices());
 
     const auto& f_up = f_in.yup();
     const auto& f_down = f_in.ydown();
@@ -852,6 +853,7 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
     // FCI version, using yup/down fields
     ASSERT1(f_in.hasParallelSlices());
     ASSERT1(v_in.hasParallelSlices());
+    ASSERT1(wave_speed_in.hasParallelSlices());
 
     const auto& B = coord->Bxy();
     const auto& B_up = coord->Bxy().yup();
