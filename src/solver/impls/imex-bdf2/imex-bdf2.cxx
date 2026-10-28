@@ -492,15 +492,15 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
       }
 
       // Pre-allocate
-      MatMPIAIJSetPreallocation(Jmf, 0, d_nnz, 0, o_nnz);
-      MatSetUp(Jmf);
-      MatSetOption(Jmf, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
-      PetscFree(d_nnz);
-      PetscFree(o_nnz);
+      BOUT_DO_PETSC(MatMPIAIJSetPreallocation(Jmf, 0, d_nnz, 0, o_nnz));
+      BOUT_DO_PETSC(MatSetUp(Jmf));
+      BOUT_DO_PETSC(MatSetOption(Jmf, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE));
+      BOUT_DO_PETSC(PetscFree(d_nnz));
+      BOUT_DO_PETSC(PetscFree(o_nnz));
 
       // Determine which row/columns of the matrix are locally owned
       int Istart, Iend;
-      MatGetOwnershipRange(Jmf, &Istart, &Iend);
+      BOUT_DO_PETSC(MatGetOwnershipRange(Jmf, &Istart, &Iend));
 
       // Convert local into global indices
       index += Istart;
@@ -547,7 +547,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
                 PetscInt col = ind2 + j;
 
                 // output.write("SETTING 1: {:d}, {:d}\n", row, col);
-                MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                BOUT_DO_PETSC(MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES));
               }
             }
           }
@@ -567,7 +567,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
               for (int j = 0; j < n2d; j++) {
                 PetscInt col = ind0 + j;
                 // output.write("SETTING 2: {:d}, {:d}\n", row, col);
-                MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                BOUT_DO_PETSC(MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES));
               }
 
               // 5 point star pattern
@@ -593,7 +593,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
                 for (int j = 0; j < n3d; j++) {
                   PetscInt col = ind2 + j;
                   // output.write("SETTING 3: {:d}, {:d}\n", row, col);
-                  MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                  BOUT_DO_PETSC(MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES));
                 }
               }
 
@@ -610,7 +610,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
                 for (int j = 0; j < n3d; j++) {
                   PetscInt col = ind2 + j;
                   // output.write("SETTING 4: {:d}, {:d}\n", row, col);
-                  MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                  BOUT_DO_PETSC(MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES));
                 }
 
                 int zm = (z - 1 + nz) % nz;
@@ -621,7 +621,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
                 for (int j = 0; j < n3d; j++) {
                   PetscInt col = ind2 + j;
                   // output.write("SETTING 5: {:d}, {:d}\n", row, col);
-                  MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                  BOUT_DO_PETSC(MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES));
                 }
               }
             }
@@ -631,31 +631,32 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
       // Finished marking non-zero entries
 
       // Assemble Matrix
-      MatAssemblyBegin(Jmf, MAT_FINAL_ASSEMBLY);
-      MatAssemblyEnd(Jmf, MAT_FINAL_ASSEMBLY);
+      BOUT_DO_PETSC(MatAssemblyBegin(Jmf, MAT_FINAL_ASSEMBLY));
+      BOUT_DO_PETSC(MatAssemblyEnd(Jmf, MAT_FINAL_ASSEMBLY));
 
       ISColoring iscoloring;
       MatColoring coloring; // This new in PETSc 3.5
-      MatColoringCreate(Jmf, &coloring);
-      MatColoringSetType(coloring, MATCOLORINGSL);
-      MatColoringSetFromOptions(coloring);
+      BOUT_DO_PETSC(MatColoringCreate(Jmf, &coloring));
+      BOUT_DO_PETSC(MatColoringSetType(coloring, MATCOLORINGSL));
+      BOUT_DO_PETSC(MatColoringSetFromOptions(coloring));
       // Calculate index sets
-      MatColoringApply(coloring, &iscoloring);
-      MatColoringDestroy(&coloring);
+      BOUT_DO_PETSC(MatColoringApply(coloring, &iscoloring));
+      BOUT_DO_PETSC(MatColoringDestroy(&coloring));
 
       // Create data structure for SNESComputeJacobianDefaultColor
-      MatFDColoringCreate(Jmf, iscoloring, &fdcoloring);
+      BOUT_DO_PETSC(MatFDColoringCreate(Jmf, iscoloring, &fdcoloring));
       // Set the function to difference
-      MatFDColoringSetFunction(fdcoloring,
-                               bout::cast_MatFDColoringFn(FormFunctionForColoring), this);
-      MatFDColoringSetFromOptions(fdcoloring);
-      MatFDColoringSetUp(Jmf, iscoloring, fdcoloring);
-      ISColoringDestroy(&iscoloring);
+      BOUT_DO_PETSC(MatFDColoringSetFunction(
+          fdcoloring, bout::cast_MatFDColoringFn(FormFunctionForColoring), this));
+      BOUT_DO_PETSC(MatFDColoringSetFromOptions(fdcoloring));
+      BOUT_DO_PETSC(MatFDColoringSetUp(Jmf, iscoloring, fdcoloring));
+      BOUT_DO_PETSC(ISColoringDestroy(&iscoloring));
 
-      SNESSetJacobian(*snesIn, Jmf, Jmf, SNESComputeJacobianDefaultColor, fdcoloring);
+      BOUT_DO_PETSC(SNESSetJacobian(*snesIn, Jmf, Jmf, SNESComputeJacobianDefaultColor,
+                                    fdcoloring));
 
       // Re-use Jacobian
-      SNESSetLagJacobian(*snesIn, lag_jacobian);
+      BOUT_DO_PETSC(SNESSetLagJacobian(*snesIn, lag_jacobian));
 
       // MatView(Jmf, PETSC_VIEWER_DRAW_WORLD);
       // MatView(Jmf, PETSC_VIEWER_STDOUT_WORLD);
@@ -663,40 +664,41 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
       // Brute force calculation
       // NOTE: Slow!
 
-      MatCreateAIJ(
+      BOUT_DO_PETSC(MatCreateAIJ(
           BoutComm::get(), nlocal, nlocal,  // Local sizes
           PETSC_DETERMINE, PETSC_DETERMINE, // Global sizes
           3, // Number of nonzero entries in diagonal portion of local submatrix
           nullptr,
           0, // Number of nonzeros per row in off-diagonal portion of local submatrix
-          nullptr, &Jmf);
+          nullptr, &Jmf));
 
-      SNESSetJacobian(*snesIn, Jmf, Jmf, SNESComputeJacobianDefault, this);
+      BOUT_DO_PETSC(SNESSetJacobian(*snesIn, Jmf, Jmf, SNESComputeJacobianDefault, this));
 
-      MatSetOption(Jmf, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+      BOUT_DO_PETSC(MatSetOption(Jmf, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE));
     }
   }
 
   /////////////////////////////////////////////////////
   // Set tolerances
-  SNESSetTolerances(*snesIn, atol, rtol, PETSC_DEFAULT, max_nonlinear_it, PETSC_DEFAULT);
+  BOUT_DO_PETSC(SNESSetTolerances(*snesIn, atol, rtol, PETSC_DEFAULT, max_nonlinear_it,
+                                  PETSC_DEFAULT));
 
   /////////////////////////////////////////////////////
   // Preconditioner
 
   // Get KSP context from SNES
   KSP ksp;
-  SNESGetKSP(*snesIn, &ksp);
+  BOUT_DO_PETSC(SNESGetKSP(*snesIn, &ksp));
 
   if (kspsetinitialguessnonzero) {
-    KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
+    BOUT_DO_PETSC(KSPSetInitialGuessNonzero(ksp, PETSC_TRUE));
   }
 
-  KSPSetTolerances(ksp,
-                   PETSC_DEFAULT, // rtol
-                   PETSC_DEFAULT, // abstol
-                   PETSC_DEFAULT, // dtol (divergence tolerance)
-                   maxl);         // Maximum number of iterations
+  BOUT_DO_PETSC(KSPSetTolerances(ksp,
+                                 PETSC_DEFAULT, // rtol
+                                 PETSC_DEFAULT, // abstol
+                                 PETSC_DEFAULT, // dtol (divergence tolerance)
+                                 maxl));        // Maximum number of iterations
 
   // Get PC context from KSP
   PC pc;
