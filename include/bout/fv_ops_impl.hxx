@@ -676,8 +676,8 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
                     fabs(v_in[i]));
 
         result[i] +=
-            (0.5 * amax_up * (f_in[i] - f_up[iyp]) * coord->cell_area_yhigh()[i]
-             + 0.5 * amax_down * (f_in[i] - f_down[iym]) * coord->cell_area_ylow()[i])
+            0.5 * (amax_up * (f_in[i] - f_up[iyp]) * coord->cell_area_yhigh()[i]
+             + amax_down * (f_in[i] - f_down[iym]) * coord->cell_area_ylow()[i])
             / coord->cell_volume()[i];
       }
     }
