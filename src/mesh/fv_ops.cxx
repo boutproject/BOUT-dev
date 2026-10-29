@@ -1,4 +1,7 @@
 #include "bout/fv_ops.hxx"
+#include "fmt/format.h"
+#include "bout/array.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/fv_ops_impl.hxx"
 
 #include "bout/assert.hxx"
@@ -14,6 +17,7 @@
 #include "bout/region.hxx"
 #include "bout/utils.hxx"
 #include <bout/yboundary_regions.hxx>
+
 #if BOUT_HAS_PETSC
 #include <bout/petsclib.hxx>
 #include <petscmat.h>
@@ -22,10 +26,12 @@
 #include <petscvec.h>
 #endif
 
+#include <cstddef>
 #include <limits>
 #include <map>
 #include <math.h>
 #include <memory>
+#include <vector>
 
 #if !BOUT_HAS_PETSC
 using PetscInt = int;
