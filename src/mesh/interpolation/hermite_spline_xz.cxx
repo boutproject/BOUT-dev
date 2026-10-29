@@ -536,7 +536,7 @@ Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(
 #if BOUT_HAS_PETSC
 PrecomputedInterpolation::PrecomputedInterpolation(int y_offset, Mesh* mesh,
                                                    [[maybe_unused]] Options* options)
-    : op(mesh) {}
+    : XZInterpolation(y_offset, mesh), op(mesh) {}
 #else
 PrecomputedInterpolation::PrecomputedInterpolation([[maybe_unused]] int y_offset,
                                                    [[maybe_unused]] Mesh* mesh,
