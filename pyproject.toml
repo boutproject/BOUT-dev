@@ -11,14 +11,14 @@ console_output_style = "plain"
 [dependency-groups]
 dev = [
      "cmake~=4.4",
-     "clang-format~=22.1",
+     "clang-format~=23.1",
      "clang-tidy~=22.1",
      "clangd~=22.1",
      "clangd-tidy~=1.1",
      "cmakelang~=0.6",
      "prek>=0.3.10",
      "pyyaml~=6.0",
-     "ruff~=0.16",
+     "ruff~=0.17",
      "sphinx-lint~=1.0",
      "sync-with-uv~=0.6.0",
 ]
