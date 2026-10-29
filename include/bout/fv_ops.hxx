@@ -12,6 +12,13 @@
 #include "bout/output_bout_types.hxx" // NOLINT(unused-includes, misc-include-cleaner)
 #include "bout/region.hxx"
 #include "bout/vector2d.hxx"
+#if BOUT_HAS_PETSC
+#include <bout/petsclib.hxx>
+#include <petscmat.h>
+#include <petscsys.h>
+#include <petscsystypes.h>
+#include <petscvec.h>
+#endif
 
 #include <map>
 #include <memory>
@@ -207,10 +214,20 @@ Field3D Div_a_Grad_perp_limit(const Field3D& a, const Field3D& g, const Field3D&
 
 class Div_a_Grad_perp_FCI {
 public:
+  virtual Field3D operator()(const Field3D& a, const Field3D& f, Field3D& low_xlow,
+                             Field3D& flow_zlow, bool upwinding) const = 0;
+  virtual Field3D operator()(const Field3D& a, const Field3D& f,
+                             bool upwinding) const = 0;
+
+  static std::shared_ptr<Div_a_Grad_perp_FCI> create(Mesh* mesh, BoutReal rho_s0);
+};
+
+class Div_a_Grad_perp_FCI_structured : public Div_a_Grad_perp_FCI {
+public:
   Field3D operator()(const Field3D& a, const Field3D& f, Field3D& low_xlow,
-                     Field3D& flow_zlow, bool upwinding) const;
-  Field3D operator()(const Field3D& a, const Field3D& f, bool upwinding) const;
-  Div_a_Grad_perp_FCI(Mesh& mesh);
+                     Field3D& flow_zlow, bool upwinding) const override;
+  Field3D operator()(const Field3D& a, const Field3D& f, bool upwinding) const override;
+  Div_a_Grad_perp_FCI_structured(Mesh* mesh);
 
   static std::shared_ptr<Div_a_Grad_perp_FCI> create(Mesh* mesh, BoutReal rho_s0);
 
@@ -231,5 +248,39 @@ private:
   static std::map<Mesh*, std::weak_ptr<Div_a_Grad_perp_FCI>> op_cache;
 };
 
+class Div_a_Grad_perp_FCI_unstructured : public Div_a_Grad_perp_FCI {
+public:
+  Field3D operator()(const Field3D& a, const Field3D& f, Field3D& low_xlow,
+                     Field3D& flow_zlow, bool upwinding) const override;
+  Field3D operator()(const Field3D& a, const Field3D& f, bool upwinding) const override;
+  Div_a_Grad_perp_FCI_unstructured(Mesh* mesh, BoutReal rho_s0);
+
+  static std::shared_ptr<Div_a_Grad_perp_FCI> create(Mesh* mesh, BoutReal rho_s0);
+
+private:
+  Mesh* mesh;
+  static std::map<Mesh*, std::weak_ptr<Div_a_Grad_perp_FCI>> op_cache;
+#if BOUT_HAS_PETSC
+  Mat Div;
+  Mat Grad;
+  Mat Interp;
+  Vec inField;
+  Vec inA;
+  Vec vecGrad;
+  Vec vecInterp;
+  Vec multiplied;
+  Vec result;
+#endif
+};
+
+inline std::shared_ptr<Div_a_Grad_perp_FCI> Div_a_Grad_perp_FCI::create(Mesh* mesh,
+                                                                        BoutReal rho_s0) {
+  bool unstructured{false};
+  mesh->get(unstructured, "unstructured", unstructured);
+  if (mesh->sourceHasVar("dagp_us_div_weights")) {
+    return Div_a_Grad_perp_FCI_unstructured::create(mesh, rho_s0);
+  }
+  return Div_a_Grad_perp_FCI_structured::create(mesh, rho_s0);
+}
 } // namespace FV
 #endif // BOUT_FV_OPS_H
