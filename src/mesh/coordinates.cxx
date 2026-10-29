@@ -1248,7 +1248,7 @@ std::size_t boundary_bools_to_index(bool lower, bool upper) {
 } // namespace
 
 const bout::boundary::YBoundary& Coordinates::getYBoundary(Options* options) const {
-  bool is_default = options == nullptr;
+  const bool is_default = options == nullptr;
   if (is_default and default_yboundary >= 0) {
     return *ybndrys.at(default_yboundary);
   }
