@@ -1232,10 +1232,25 @@ void Coordinates::_compute_cell_volume() const {
   }
 }
 
+namespace {
+std::size_t boundary_bools_to_index(bool lower, bool upper) {
+  if (lower and upper) {
+    return 2;
+  }
+  if (upper) {
+    return 1;
+  }
+  if (lower) {
+    return 0;
+  }
+  return 3;
+}
+} // namespace
+
 const bout::boundary::YBoundary& Coordinates::getYBoundary(Options* options) const {
   bool is_default = options == nullptr;
   if (is_default and default_yboundary >= 0) {
-    return ybndrys[default_yboundary];
+    return *ybndrys.at(default_yboundary);
   }
   Options* opts = (options == nullptr) ? localoptions : options;
 
@@ -1263,21 +1278,6 @@ const bout::boundary::YBoundary& Coordinates::getYBoundary(Options* options) con
 
   return getYBoundary(lower_y, upper_y);
 }
-
-namespace {
-std::size_t boundary_bools_to_index(bool lower, bool upper) {
-  if (lower and upper) {
-    return 2;
-  }
-  if (upper) {
-    return 1;
-  }
-  if (lower) {
-    return 0;
-  }
-  return 3;
-}
-} // namespace
 
 const bout::boundary::YBoundary& Coordinates::getYBoundary(bool lower_y,
                                                            bool upper_y) const {
