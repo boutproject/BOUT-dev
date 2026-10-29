@@ -29,6 +29,7 @@
 #include <array>
 
 #if BOUT_HAS_PETSC
+#include "bout/petsc_operators.hxx"
 #include "bout/petsclib.hxx"
 #endif
 
@@ -313,6 +314,51 @@ public:
   Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
                       const BoutMask& mask,
                       const std::string& region = "RGN_NOBNDRY") override;
+};
+class PrecomputedInterpolation : public XZInterpolation {
+#if BOUT_HAS_PETSC
+  PetscOperators op;
+#endif
+public:
+  PrecomputedInterpolation(Mesh* mesh = nullptr, Options* options = nullptr)
+      : PrecomputedInterpolation(0, mesh, options) {}
+  PrecomputedInterpolation(int y_offset = 0, Mesh* mesh = nullptr,
+                           Options* options = nullptr);
+  PrecomputedInterpolation([[maybe_unused]] const BoutMask& mask, int y_offset = 0,
+                           Mesh* mesh = nullptr, Options* options = nullptr)
+      : PrecomputedInterpolation(y_offset, mesh, options) {}
+
+  void calcWeights([[maybe_unused]] const Field3D& delta_x,
+                   [[maybe_unused]] const Field3D& delta_z,
+                   [[maybe_unused]] const std::string& region = "RGN_NOBNDRY") override {}
+  void calcWeights([[maybe_unused]] const Field3D& delta_x,
+                   [[maybe_unused]] const Field3D& delta_z,
+                   [[maybe_unused]] const BoutMask& mask,
+                   [[maybe_unused]] const std::string& region = "RGN_NOBNDRY") override {}
+
+  // Use precalculated weights
+  Field3D interpolate(const Field3D& f,
+                      const std::string& region = "RGN_NOBNDRY") const override;
+  // Calculate weights and interpolate
+  Field3D
+  interpolate([[maybe_unused]] const Field3D& f, [[maybe_unused]] const Field3D& delta_x,
+              [[maybe_unused]] const Field3D& delta_z,
+              [[maybe_unused]] const std::string& region = "RGN_NOBNDRY") override {
+    throw BoutException("Not Implemented!");
+  }
+  Field3D
+  interpolate([[maybe_unused]] const Field3D& f, [[maybe_unused]] const Field3D& delta_x,
+              [[maybe_unused]] const Field3D& delta_z,
+              [[maybe_unused]] const BoutMask& mask,
+              [[maybe_unused]] const std::string& region = "RGN_NOBNDRY") override {
+    throw BoutException("Not Implemented!");
+  }
+  std::vector<ParallelTransform::PositionsAndWeights>
+  getWeightsForYApproximation([[maybe_unused]] int i, [[maybe_unused]] int j,
+                              [[maybe_unused]] int k,
+                              [[maybe_unused]] int yoffset) override {
+    throw BoutException("NotImplemented");
+  }
 };
 
 class XZInterpolationFactory
