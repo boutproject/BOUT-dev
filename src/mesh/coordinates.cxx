@@ -1233,6 +1233,10 @@ void Coordinates::_compute_cell_volume() const {
 }
 
 const bout::boundary::YBoundary& Coordinates::getYBoundary(Options* options) const {
+  bool is_default = options == nullptr;
+  if (is_default and default_yboundary >= 0) {
+    return ybndrys[default_yboundary];
+  }
   Options* opts = (options == nullptr) ? localoptions : options;
 
   if (opts == nullptr) {
@@ -1250,6 +1254,12 @@ const bout::boundary::YBoundary& Coordinates::getYBoundary(Options* options) con
       localmesh->isFci()
           ? (*opts)["inner_x"].doc("Boundary on inner x?").withDefault<bool>(false)
           : (*opts)["upper_y"].doc("Boundary on upper y?").withDefault<bool>(true);
+
+  if (is_default) {
+    // populate cache first to avoid race condition
+    getYBoundary(lower_y, upper_y);
+    default_yboundary = boundary_bools_to_index(lower_y, upper_y);
+  }
 
   return getYBoundary(lower_y, upper_y);
 }
