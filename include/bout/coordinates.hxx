@@ -552,6 +552,7 @@ private:
   /// - both, index 2
   /// - neither, index 3 -- but note, this is not a sensible value!
   mutable std::array<std::shared_ptr<bout::boundary::YBoundary>, 4> ybndrys;
+  mutable int default_yboundary{-1};
 
   FieldMetric recalculateBxy() const;
 
