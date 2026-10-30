@@ -24,10 +24,10 @@
 
 PetscIndexMapping::~PetscIndexMapping() {
   if (mat_stored_to_petsc != nullptr) {
-    MatDestroy(&mat_stored_to_petsc);
+    BOUT_DO_PETSC(MatDestroy(&mat_stored_to_petsc));
   }
   if (mat_petsc_to_stored != nullptr) {
-    MatDestroy(&mat_petsc_to_stored);
+    BOUT_DO_PETSC(MatDestroy(&mat_petsc_to_stored));
   }
 }
 
@@ -176,7 +176,7 @@ Field3D toField3D(const PetscCellVector& vec, const Field3D& prototype) {
 
 Field3D PetscOperators::meshGetField3D(Mesh* mesh, const std::string& name) {
   Field3D result;
-  if (mesh->get(result, name) != 0) {
+  if (mesh->get(result, name, 0.0, false) != 0) {
     throw BoutException("PetscOperators requires field '{}'", name);
   }
   return result;
@@ -450,7 +450,7 @@ PetscCellOperator makeNeumannOperator(const PetscCellMappingPtr& mapping,
   bout::petsc::UniqueMat temp{new Mat{nullptr}};
   BOUT_DO_PETSC(MatCreate(BoutComm::get(), temp.get()));
   BOUT_DO_PETSC(MatSetType(*temp, MATMPIAIJ));
-  BOUT_DO_PETSC(MatSetSizes(*temp, n_local, PETSC_DECIDE, n_global, n_global));
+  BOUT_DO_PETSC(MatSetSizes(*temp, n_local, n_local, n_global, n_global));
   BOUT_DO_PETSC(MatMPIAIJSetPreallocation(*temp, 1, nullptr, 1, nullptr));
 
   const PetscScalar one = 1.0;
