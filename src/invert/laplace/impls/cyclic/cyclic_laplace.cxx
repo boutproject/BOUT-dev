@@ -42,42 +42,37 @@
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
-#if BOUT_HAS_CUDA
-#include <cuComplex.h>
-#include <cuda_runtime.h>
-#include <cufft.h>
-#include <cusparse.h>
-#endif
+#include "cyclic_gpu.hxx"
 
-#include <array>
 #include <algorithm>
+#include <array>
 #include <tuple>
 #include <vector>
 
 namespace {
-#if BOUT_HAS_CUDA
-static_assert(sizeof(dcomplex) == sizeof(cuDoubleComplex),
-              "dcomplex and cuDoubleComplex must have the same memory layout");
-static_assert(sizeof(dcomplex) == sizeof(cufftDoubleComplex),
-              "dcomplex and cufftDoubleComplex must have the same memory layout");
+#if BOUT_HAS_CUDA || BOUT_HAS_HIP
+static_assert(sizeof(dcomplex) == sizeof(gpu::Complex),
+              "dcomplex and gpu::Complex must have the same memory layout");
+static_assert(sizeof(dcomplex) == sizeof(gpu::fftDoubleComplex),
+              "dcomplex and gpu::fftDoubleComplex must have the same memory layout");
 
-void checkCuda(cudaError_t status, const char* call) {
-  if (status != cudaSuccess) {
-    throw BoutException("CUDA error in LaplaceCyclic {}: {}", call,
-                        cudaGetErrorString(status));
+void checkGpu(gpu::runtimeError_t status, const char* call) {
+  if (status != gpu::runtimeSuccess) {
+    throw BoutException("{} runtime error in LaplaceCyclic {}: {}", gpu::backend, call,
+                        gpu::runtimeGetErrorString(status));
   }
 }
 
-void checkCusparse(cusparseStatus_t status, const char* call) {
-  if (status != CUSPARSE_STATUS_SUCCESS) {
-    throw BoutException("cuSPARSE error in LaplaceCyclic {}: status {}", call,
-                        static_cast<int>(status));
+void checkSparse(gpu::sparseStatus_t status, const char* call) {
+  if (status != gpu::SPARSE_STATUS_SUCCESS) {
+    throw BoutException("{} sparse error in LaplaceCyclic {}: status {}", gpu::backend,
+                        call, static_cast<int>(status));
   }
 }
 
-void checkCufft(cufftResult status, const char* call) {
-  if (status != CUFFT_SUCCESS) {
-    throw BoutException("cuFFT error in LaplaceCyclic {}: status {}", call,
+void checkFft(gpu::fftResult status, const char* call) {
+  if (status != gpu::FFT_SUCCESS) {
+    throw BoutException("{} FFT error in LaplaceCyclic {}: status {}", gpu::backend, call,
                         static_cast<int>(status));
   }
 }
@@ -92,7 +87,7 @@ public:
 #if BOUT_HAS_UMPIRE
       umpire::ResourceManager::getInstance().deallocate(data);
 #else
-      cudaFree(data);
+      gpu::runtimeFree(data);
 #endif
     }
   }
@@ -111,7 +106,7 @@ public:
 #if BOUT_HAS_UMPIRE
       umpire::ResourceManager::getInstance().deallocate(data);
 #else
-      cudaFree(data);
+      gpu::runtimeFree(data);
 #endif
       data = nullptr;
     }
@@ -129,7 +124,7 @@ private:
         umpire::ResourceManager::getInstance().getAllocator(umpire::resource::Device);
     data = static_cast<T*>(allocator.allocate(count * sizeof(T)));
 #else
-    checkCuda(cudaMalloc(&data, count * sizeof(T)), "cudaMalloc");
+    checkGpu(gpu::runtimeMalloc(&data, count * sizeof(T)), "gpu::runtimeMalloc");
 #endif
   }
 
@@ -137,58 +132,58 @@ private:
   std::size_t capacity{0};
 };
 
-class CusparseHandle {
+class SparseHandle {
 public:
-  CusparseHandle() { checkCusparse(cusparseCreate(&handle), "cusparseCreate"); }
-  ~CusparseHandle() {
+  SparseHandle() { checkSparse(gpu::sparseCreate(&handle), "gpu::sparseCreate"); }
+  ~SparseHandle() {
     if (handle != nullptr) {
-      cusparseDestroy(handle);
+      gpu::sparseDestroy(handle);
     }
   }
 
-  CusparseHandle(const CusparseHandle&) = delete;
-  CusparseHandle& operator=(const CusparseHandle&) = delete;
+  SparseHandle(const SparseHandle&) = delete;
+  SparseHandle& operator=(const SparseHandle&) = delete;
 
-  operator cusparseHandle_t() const { return handle; }
+  operator gpu::sparseHandle_t() const { return handle; }
 
 private:
-  cusparseHandle_t handle{nullptr};
+  gpu::sparseHandle_t handle{nullptr};
 };
 
-class CufftPlan {
+class FftPlan {
 public:
-  CufftPlan() = default;
-  ~CufftPlan() {
+  FftPlan() = default;
+  ~FftPlan() {
     if (plan != 0) {
-      cufftDestroy(plan);
+      gpu::fftDestroy(plan);
     }
   }
 
-  CufftPlan(const CufftPlan&) = delete;
-  CufftPlan& operator=(const CufftPlan&) = delete;
+  FftPlan(const FftPlan&) = delete;
+  FftPlan& operator=(const FftPlan&) = delete;
 
-  cufftHandle get() const { return plan; }
+  gpu::fftHandle get() const { return plan; }
 
-  void ensure(int new_nz, int new_batch, cufftType type) {
+  void ensure(int new_nz, int new_batch, gpu::fftType type) {
     if (plan != 0 && new_nz == nz && new_batch == batch && type == plan_type) {
       return;
     }
     if (plan != 0) {
-      cufftDestroy(plan);
+      gpu::fftDestroy(plan);
       plan = 0;
     }
 
     int n[] = {new_nz};
     const int real_dist = new_nz;
     const int complex_dist = (new_nz / 2) + 1;
-    if (type == CUFFT_D2Z) {
-      checkCufft(cufftPlanMany(&plan, 1, n, nullptr, 1, real_dist, nullptr, 1,
-                               complex_dist, type, new_batch),
-                 "cufftPlanMany D2Z");
+    if (type == gpu::FFT_D2Z) {
+      checkFft(gpu::fftPlanMany(&plan, 1, n, nullptr, 1, real_dist, nullptr, 1,
+                                complex_dist, type, new_batch),
+               "gpu::fftPlanMany D2Z");
     } else {
-      checkCufft(cufftPlanMany(&plan, 1, n, nullptr, 1, complex_dist, nullptr, 1,
-                               real_dist, type, new_batch),
-                 "cufftPlanMany Z2D");
+      checkFft(gpu::fftPlanMany(&plan, 1, n, nullptr, 1, complex_dist, nullptr, 1,
+                                real_dist, type, new_batch),
+               "gpu::fftPlanMany Z2D");
     }
     nz = new_nz;
     batch = new_batch;
@@ -196,44 +191,41 @@ public:
   }
 
 private:
-  cufftHandle plan{0};
+  gpu::fftHandle plan{0};
   int nz{0};
   int batch{0};
-  cufftType plan_type{CUFFT_D2Z};
+  gpu::fftType plan_type{gpu::FFT_D2Z};
 };
 
-__device__ cuDoubleComplex cadd(cuDoubleComplex a, cuDoubleComplex b) {
-  return make_cuDoubleComplex(cuCreal(a) + cuCreal(b), cuCimag(a) + cuCimag(b));
+__device__ gpu::Complex cadd(gpu::Complex a, gpu::Complex b) {
+  return gpu::makeComplex(gpu::real(a) + gpu::real(b), gpu::imag(a) + gpu::imag(b));
 }
 
-__device__ cuDoubleComplex csub(cuDoubleComplex a, cuDoubleComplex b) {
-  return make_cuDoubleComplex(cuCreal(a) - cuCreal(b), cuCimag(a) - cuCimag(b));
+__device__ gpu::Complex csub(gpu::Complex a, gpu::Complex b) {
+  return gpu::makeComplex(gpu::real(a) - gpu::real(b), gpu::imag(a) - gpu::imag(b));
 }
 
-__device__ cuDoubleComplex cmul(cuDoubleComplex a, cuDoubleComplex b) {
-  return make_cuDoubleComplex(cuCreal(a) * cuCreal(b) - cuCimag(a) * cuCimag(b),
-                              cuCreal(a) * cuCimag(b) + cuCimag(a) * cuCreal(b));
+__device__ gpu::Complex cmul(gpu::Complex a, gpu::Complex b) {
+  return gpu::makeComplex(gpu::real(a) * gpu::real(b) - gpu::imag(a) * gpu::imag(b),
+                          gpu::real(a) * gpu::imag(b) + gpu::imag(a) * gpu::real(b));
 }
 
-__device__ cuDoubleComplex cdiv(cuDoubleComplex a, cuDoubleComplex b) {
-  const double denom = cuCreal(b) * cuCreal(b) + cuCimag(b) * cuCimag(b);
-  return make_cuDoubleComplex((cuCreal(a) * cuCreal(b) + cuCimag(a) * cuCimag(b))
-                                  / denom,
-                              (cuCimag(a) * cuCreal(b) - cuCreal(a) * cuCimag(b))
-                                  / denom);
+__device__ gpu::Complex cdiv(gpu::Complex a, gpu::Complex b) {
+  const double denom = gpu::real(b) * gpu::real(b) + gpu::imag(b) * gpu::imag(b);
+  return gpu::makeComplex(
+      (gpu::real(a) * gpu::real(b) + gpu::imag(a) * gpu::imag(b)) / denom,
+      (gpu::imag(a) * gpu::real(b) - gpu::real(a) * gpu::imag(b)) / denom);
 }
 
-__device__ cuDoubleComplex cneg(cuDoubleComplex a) {
-  return make_cuDoubleComplex(-cuCreal(a), -cuCimag(a));
+__device__ gpu::Complex cneg(gpu::Complex a) {
+  return gpu::makeComplex(-gpu::real(a), -gpu::imag(a));
 }
 
-__global__ void prepareTridiagonalBatch(const cuDoubleComplex* a,
-                                        const cuDoubleComplex* b,
-                                        const cuDoubleComplex* c,
-                                        const cuDoubleComplex* rhs,
-                                        cuDoubleComplex* dl, cuDoubleComplex* d,
-                                        cuDoubleComplex* du, cuDoubleComplex* x,
-                                        int nsys, int nx) {
+__global__ void prepareTridiagonalBatch(const gpu::Complex* a, const gpu::Complex* b,
+                                        const gpu::Complex* c, const gpu::Complex* rhs,
+                                        gpu::Complex* dl, gpu::Complex* d,
+                                        gpu::Complex* du, gpu::Complex* x, int nsys,
+                                        int nx) {
   const int id = blockIdx.x * blockDim.x + threadIdx.x;
   const int total = nsys * nx;
   if (id >= total) {
@@ -241,18 +233,16 @@ __global__ void prepareTridiagonalBatch(const cuDoubleComplex* a,
   }
 
   const int i = id % nx;
-  dl[id] = (i == 0) ? make_cuDoubleComplex(0.0, 0.0) : a[id];
+  dl[id] = (i == 0) ? gpu::makeComplex(0.0, 0.0) : a[id];
   d[id] = b[id];
-  du[id] = (i == nx - 1) ? make_cuDoubleComplex(0.0, 0.0) : c[id];
+  du[id] = (i == nx - 1) ? gpu::makeComplex(0.0, 0.0) : c[id];
   x[id] = rhs[id];
 }
 
-__global__ void prepareCyclicBatch(const cuDoubleComplex* a, const cuDoubleComplex* b,
-                                   const cuDoubleComplex* c,
-                                   const cuDoubleComplex* rhs,
-                                   cuDoubleComplex* dl, cuDoubleComplex* d,
-                                   cuDoubleComplex* du, cuDoubleComplex* x,
-                                   int nsys, int nx) {
+__global__ void prepareCyclicBatch(const gpu::Complex* a, const gpu::Complex* b,
+                                   const gpu::Complex* c, const gpu::Complex* rhs,
+                                   gpu::Complex* dl, gpu::Complex* d, gpu::Complex* du,
+                                   gpu::Complex* x, int nsys, int nx) {
   const int id = blockIdx.x * blockDim.x + threadIdx.x;
   const int total = 2 * nsys * nx;
   if (id >= total) {
@@ -265,14 +255,14 @@ __global__ void prepareCyclicBatch(const cuDoubleComplex* a, const cuDoubleCompl
   const int src = system * nx + i;
   const bool correction_rhs = batch >= nsys;
 
-  const cuDoubleComplex alpha = a[system * nx];
-  const cuDoubleComplex beta = c[system * nx + nx - 1];
-  const cuDoubleComplex gamma = cneg(b[system * nx]);
+  const gpu::Complex alpha = a[system * nx];
+  const gpu::Complex beta = c[system * nx + nx - 1];
+  const gpu::Complex gamma = cneg(b[system * nx]);
 
-  dl[id] = (i == 0) ? make_cuDoubleComplex(0.0, 0.0) : a[src];
-  du[id] = (i == nx - 1) ? make_cuDoubleComplex(0.0, 0.0) : c[src];
+  dl[id] = (i == 0) ? gpu::makeComplex(0.0, 0.0) : a[src];
+  du[id] = (i == nx - 1) ? gpu::makeComplex(0.0, 0.0) : c[src];
 
-  cuDoubleComplex diag = b[src];
+  gpu::Complex diag = b[src];
   if (i == 0) {
     diag = csub(diag, gamma);
   } else if (i == nx - 1) {
@@ -286,16 +276,16 @@ __global__ void prepareCyclicBatch(const cuDoubleComplex* a, const cuDoubleCompl
     } else if (i == nx - 1) {
       x[id] = beta;
     } else {
-      x[id] = make_cuDoubleComplex(0.0, 0.0);
+      x[id] = gpu::makeComplex(0.0, 0.0);
     }
   } else {
     x[id] = rhs[src];
   }
 }
 
-__global__ void finishCyclicBatch(const cuDoubleComplex* a, const cuDoubleComplex* b,
-                                  const cuDoubleComplex* c, cuDoubleComplex* x,
-                                  int nsys, int nx) {
+__global__ void finishCyclicBatch(const gpu::Complex* a, const gpu::Complex* b,
+                                  const gpu::Complex* c, gpu::Complex* x, int nsys,
+                                  int nx) {
   const int id = blockIdx.x * blockDim.x + threadIdx.x;
   const int total = nsys * nx;
   if (id >= total) {
@@ -306,25 +296,25 @@ __global__ void finishCyclicBatch(const cuDoubleComplex* a, const cuDoubleComple
   const int i = id % nx;
   const int correction = (system + nsys) * nx + i;
 
-  const cuDoubleComplex alpha = a[system * nx];
-  const cuDoubleComplex gamma = cneg(b[system * nx]);
+  const gpu::Complex alpha = a[system * nx];
+  const gpu::Complex gamma = cneg(b[system * nx]);
 
-  const cuDoubleComplex x0 = x[system * nx];
-  const cuDoubleComplex xn = x[system * nx + nx - 1];
-  const cuDoubleComplex z0 = x[(system + nsys) * nx];
-  const cuDoubleComplex zn = x[(system + nsys) * nx + nx - 1];
+  const gpu::Complex x0 = x[system * nx];
+  const gpu::Complex xn = x[system * nx + nx - 1];
+  const gpu::Complex z0 = x[(system + nsys) * nx];
+  const gpu::Complex zn = x[(system + nsys) * nx + nx - 1];
 
-  const cuDoubleComplex numerator = cadd(x0, cdiv(cmul(alpha, xn), gamma));
-  const cuDoubleComplex denominator =
-      cadd(make_cuDoubleComplex(1.0, 0.0), cadd(z0, cdiv(cmul(alpha, zn), gamma)));
-  const cuDoubleComplex factor = cdiv(numerator, denominator);
+  const gpu::Complex numerator = cadd(x0, cdiv(cmul(alpha, xn), gamma));
+  const gpu::Complex denominator =
+      cadd(gpu::makeComplex(1.0, 0.0), cadd(z0, cdiv(cmul(alpha, zn), gamma)));
+  const gpu::Complex factor = cdiv(numerator, denominator);
 
   x[id] = csub(x[id], cmul(factor, x[correction]));
 }
 
-__global__ void fftOutputToCusparseRhs(const cufftDoubleComplex* fft_out,
-                                       cuDoubleComplex* rhs, int nx, int ny, int nz,
-                                       int nmode, int nmodes) {
+__global__ void fftOutputToSparseRhs(const gpu::fftDoubleComplex* fft_out,
+                                     gpu::Complex* rhs, int nx, int ny, int nz, int nmode,
+                                     int nmodes) {
   const int id = blockIdx.x * blockDim.x + threadIdx.x;
   const int total = nx * ny * nmode;
   if (id >= total) {
@@ -339,13 +329,12 @@ __global__ void fftOutputToCusparseRhs(const cufftDoubleComplex* fft_out,
   const int rhs_index = (iy * nmode + kz) * nx + ix;
   const double scale = 1.0 / static_cast<double>(nz);
 
-  rhs[rhs_index] = make_cuDoubleComplex(cuCreal(fft_out[fft_index]) * scale,
-                                        cuCimag(fft_out[fft_index]) * scale);
+  rhs[rhs_index] = gpu::makeComplex(gpu::real(fft_out[fft_index]) * scale,
+                                    gpu::imag(fft_out[fft_index]) * scale);
 }
 
-__global__ void cusparseXToIfftInput(const cuDoubleComplex* x,
-                                     cufftDoubleComplex* ifft_in, int nx, int ny,
-                                     int nmode, int nmodes, bool zero_dc) {
+__global__ void sparseXToIfftInput(const gpu::Complex* x, gpu::fftDoubleComplex* ifft_in,
+                                   int nx, int ny, int nmode, int nmodes, bool zero_dc) {
   const int id = blockIdx.x * blockDim.x + threadIdx.x;
   const int total = nx * ny * nmodes;
   if (id >= total) {
@@ -357,7 +346,7 @@ __global__ void cusparseXToIfftInput(const cuDoubleComplex* x,
   const int iy = tmp % ny;
   const int ix = tmp / ny;
 
-  cufftDoubleComplex value = make_cuDoubleComplex(0.0, 0.0);
+  gpu::fftDoubleComplex value = gpu::makeComplex(0.0, 0.0);
   if (kz < nmode && !(zero_dc && kz == 0)) {
     const int x_index = (iy * nmode + kz) * nx + ix;
     value = x[x_index];
@@ -365,15 +354,14 @@ __global__ void cusparseXToIfftInput(const cuDoubleComplex* x,
   ifft_in[id] = value;
 }
 
-__global__ void subtractPeriodicXAverage(cuDoubleComplex* x, int nx, int ny,
-                                         int nmode) {
+__global__ void subtractPeriodicXAverage(gpu::Complex* x, int nx, int ny, int nmode) {
   extern __shared__ double partial[];
   const int iy = blockIdx.x;
   const int thread = threadIdx.x;
 
   double sum = 0.0;
   for (int ix = thread; ix < nx; ix += blockDim.x) {
-    sum += cuCreal(x[(iy * nmode) * nx + ix]);
+    sum += gpu::real(x[(iy * nmode) * nx + ix]);
   }
   partial[thread] = sum;
   __syncthreads();
@@ -387,24 +375,18 @@ __global__ void subtractPeriodicXAverage(cuDoubleComplex* x, int nx, int ny,
 
   const double avg = partial[0] / static_cast<double>(nx);
   for (int ix = thread; ix < nx; ix += blockDim.x) {
-    cuDoubleComplex& value = x[(iy * nmode) * nx + ix];
-    value = make_cuDoubleComplex(cuCreal(value) - avg, cuCimag(value));
+    gpu::Complex& value = x[(iy * nmode) * nx + ix];
+    value = gpu::makeComplex(gpu::real(value) - avg, gpu::imag(value));
   }
 }
 
-__global__ void buildTridagMatrices(cuDoubleComplex* a, cuDoubleComplex* b,
-                                    cuDoubleComplex* c, cuDoubleComplex* rhs,
-                                    const double* acoef, const double* c1coef,
-                                    const double* c2coef, const double* dcoef,
-                                    const double* g11, const double* g33,
-                                    const double* g13, const double* G1,
-                                    const double* G3, const double* dx,
-                                    const double* int_shift_torsion, int nx,
-                                    int ny, int nmode, int local_nx,
-                                    int local_ny, int xs, int ys,
-                                    double zlength, bool all_terms,
-                                    bool nonuniform, bool inc_int_shear,
-                                    bool pin_zero_mode) {
+__global__ void buildTridagMatrices(
+    gpu::Complex* a, gpu::Complex* b, gpu::Complex* c, gpu::Complex* rhs,
+    const double* acoef, const double* c1coef, const double* c2coef, const double* dcoef,
+    const double* g11, const double* g33, const double* g13, const double* G1,
+    const double* G3, const double* dx, const double* int_shift_torsion, int nx, int ny,
+    int nmode, int local_nx, int local_ny, int xs, int ys, double zlength, bool all_terms,
+    bool nonuniform, bool inc_int_shear, bool pin_zero_mode) {
   const int id = blockIdx.x * blockDim.x + threadIdx.x;
   const int total = nx * ny * nmode;
   if (id >= total) {
@@ -421,10 +403,10 @@ __global__ void buildTridagMatrices(cuDoubleComplex* a, cuDoubleComplex* b,
   const double kwave = kz * 2.0 * PI / zlength;
 
   if (pin_zero_mode && kz == 0 && ix_local == 0) {
-    a[id] = make_cuDoubleComplex(0.0, 0.0);
-    b[id] = make_cuDoubleComplex(1.0, 0.0);
-    c[id] = make_cuDoubleComplex(0.0, 0.0);
-    rhs[id] = make_cuDoubleComplex(0.0, 0.0);
+    a[id] = gpu::makeComplex(0.0, 0.0);
+    b[id] = gpu::makeComplex(1.0, 0.0);
+    c[id] = gpu::makeComplex(0.0, 0.0);
+    rhs[id] = gpu::makeComplex(0.0, 0.0);
     return;
   }
 
@@ -467,28 +449,28 @@ __global__ void buildTridagMatrices(cuDoubleComplex* a, cuDoubleComplex* b,
   coef3 /= 2.0 * dx_center;
   coef4 /= 2.0 * dx_center;
 
-  b[id] = make_cuDoubleComplex(-2.0 * coef1 - kwave * kwave * coef2 + acoef[field_index],
-                               kwave * coef5);
-  a[id] = make_cuDoubleComplex(coef1 - coef4, -kwave * coef3);
-  c[id] = make_cuDoubleComplex(coef1 + coef4, kwave * coef3);
+  b[id] = gpu::makeComplex(-2.0 * coef1 - kwave * kwave * coef2 + acoef[field_index],
+                           kwave * coef5);
+  a[id] = gpu::makeComplex(coef1 - coef4, -kwave * coef3);
+  c[id] = gpu::makeComplex(coef1 + coef4, kwave * coef3);
 }
 
 } // namespace
 
-class LaplaceCyclicCusparseScratch {
+class LaplaceCyclicGpuScratch {
 public:
-  CusparseHandle handle;
+  SparseHandle handle;
   Array<BoutReal> real_host;
-  DeviceBuffer<cuDoubleComplex> a;
-  DeviceBuffer<cuDoubleComplex> b;
-  DeviceBuffer<cuDoubleComplex> c;
-  DeviceBuffer<cuDoubleComplex> rhs;
-  DeviceBuffer<cuDoubleComplex> dl;
-  DeviceBuffer<cuDoubleComplex> d;
-  DeviceBuffer<cuDoubleComplex> du;
-  DeviceBuffer<cuDoubleComplex> x;
-  DeviceBuffer<cufftDoubleReal> real_device;
-  DeviceBuffer<cufftDoubleComplex> spectral_device;
+  DeviceBuffer<gpu::Complex> a;
+  DeviceBuffer<gpu::Complex> b;
+  DeviceBuffer<gpu::Complex> c;
+  DeviceBuffer<gpu::Complex> rhs;
+  DeviceBuffer<gpu::Complex> dl;
+  DeviceBuffer<gpu::Complex> d;
+  DeviceBuffer<gpu::Complex> du;
+  DeviceBuffer<gpu::Complex> x;
+  DeviceBuffer<gpu::fftDoubleReal> real_device;
+  DeviceBuffer<gpu::fftDoubleComplex> spectral_device;
   DeviceBuffer<double> acoef;
   DeviceBuffer<double> c1coef;
   DeviceBuffer<double> c2coef;
@@ -501,8 +483,8 @@ public:
   DeviceBuffer<double> dx;
   DeviceBuffer<double> int_shift_torsion;
   DeviceBuffer<char> buffer;
-  CufftPlan forward_plan;
-  CufftPlan backward_plan;
+  FftPlan forward_plan;
+  FftPlan backward_plan;
   int real_host_size{0};
   std::size_t buffer_size{0};
   const Coordinates* cached_metric_coords{nullptr};
@@ -517,8 +499,8 @@ public:
     }
     real_device.ensure(static_cast<std::size_t>(real_size));
     spectral_device.ensure(static_cast<std::size_t>(spectral_size));
-    forward_plan.ensure(nz, batch, CUFFT_D2Z);
-    backward_plan.ensure(nz, batch, CUFFT_Z2D);
+    forward_plan.ensure(nz, batch, gpu::FFT_D2Z);
+    backward_plan.ensure(nz, batch, gpu::FFT_Z2D);
   }
 
   void ensureField2D(std::size_t size) {
@@ -554,12 +536,12 @@ const double* field2DData(const Field2D& field) {
 
 void copyField2DToDevice(DeviceBuffer<double>& destination, const Field2D& source,
                          std::size_t size, const char* name) {
-  checkCuda(cudaMemcpy(destination.get(), field2DData(source), size * sizeof(double),
-                       cudaMemcpyHostToDevice),
-            name);
+  checkGpu(gpu::runtimeMemcpy(destination.get(), field2DData(source),
+                              size * sizeof(double), gpu::runtimeMemcpyHostToDevice),
+           name);
 }
 
-void copyMetricFieldsToDevice(LaplaceCyclicCusparseScratch& scratch,
+void copyMetricFieldsToDevice(LaplaceCyclicGpuScratch& scratch,
                               const Coordinates* coordinates, std::size_t size) {
   if (scratch.metricFieldsCached(coordinates, size)) {
     return;
@@ -576,8 +558,8 @@ void copyMetricFieldsToDevice(LaplaceCyclicCusparseScratch& scratch,
   scratch.markMetricFieldsCached(coordinates, size);
 }
 
-void solveWithCusparseDevice(int nsys, int nx, bool periodic,
-                             LaplaceCyclicCusparseScratch& scratch) {
+void solveWithGpuSparseDevice(int nsys, int nx, bool periodic,
+                              LaplaceCyclicGpuScratch& scratch) {
   const int solve_batches = periodic ? 2 * nsys : nsys;
   const std::size_t matrix_values = static_cast<std::size_t>(nsys) * nx;
   const std::size_t solve_values = static_cast<std::size_t>(solve_batches) * nx;
@@ -596,46 +578,42 @@ void solveWithCusparseDevice(int nsys, int nx, bool periodic,
   if (periodic) {
     prepareCyclicBatch<<<prepare_blocks, block_size>>>(
         scratch.a.get(), scratch.b.get(), scratch.c.get(), scratch.rhs.get(),
-        scratch.dl.get(), scratch.d.get(), scratch.du.get(), scratch.x.get(), nsys,
-        nx);
+        scratch.dl.get(), scratch.d.get(), scratch.du.get(), scratch.x.get(), nsys, nx);
   } else {
     prepareTridiagonalBatch<<<prepare_blocks, block_size>>>(
         scratch.a.get(), scratch.b.get(), scratch.c.get(), scratch.rhs.get(),
-        scratch.dl.get(), scratch.d.get(), scratch.du.get(), scratch.x.get(), nsys,
-        nx);
+        scratch.dl.get(), scratch.d.get(), scratch.du.get(), scratch.x.get(), nsys, nx);
   }
-  checkCuda(cudaGetLastError(), "prepare cuSPARSE batch");
+  checkGpu(gpu::runtimeGetLastError(), "prepare sparse batch");
 
   size_t buffer_size = 0;
-  checkCusparse(cusparseZgtsv2StridedBatch_bufferSizeExt(
-                    scratch.handle, nx, scratch.dl.get(), scratch.d.get(),
-                    scratch.du.get(), scratch.x.get(), solve_batches, nx,
-                    &buffer_size),
-                "cusparseZgtsv2StridedBatch_bufferSizeExt");
+  checkSparse(gpu::sparseZgtsv2StridedBatch_bufferSizeExt(
+                  scratch.handle, nx, scratch.dl.get(), scratch.d.get(), scratch.du.get(),
+                  scratch.x.get(), solve_batches, nx, &buffer_size),
+              "gpu::sparseZgtsv2StridedBatch_bufferSizeExt");
 
   if (buffer_size > scratch.buffer_size) {
     scratch.buffer.ensure(buffer_size);
     scratch.buffer_size = buffer_size;
   }
-  checkCusparse(cusparseZgtsv2StridedBatch(
-                    scratch.handle, nx, scratch.dl.get(), scratch.d.get(),
-                    scratch.du.get(), scratch.x.get(), solve_batches, nx,
-                    scratch.buffer.get()),
-                "cusparseZgtsv2StridedBatch");
+  checkSparse(gpu::sparseZgtsv2StridedBatch(
+                  scratch.handle, nx, scratch.dl.get(), scratch.d.get(), scratch.du.get(),
+                  scratch.x.get(), solve_batches, nx, scratch.buffer.get()),
+              "gpu::sparseZgtsv2StridedBatch");
 
   if (periodic) {
-    const int finish_blocks = (static_cast<int>(matrix_values) + block_size - 1)
-                              / block_size;
+    const int finish_blocks =
+        (static_cast<int>(matrix_values) + block_size - 1) / block_size;
     finishCyclicBatch<<<finish_blocks, block_size>>>(
         scratch.a.get(), scratch.b.get(), scratch.c.get(), scratch.x.get(), nsys, nx);
-    checkCuda(cudaGetLastError(), "finish cyclic cuSPARSE batch");
+    checkGpu(gpu::runtimeGetLastError(), "finish cyclic sparse batch");
   }
 }
 
-void solveWithCusparse(const Matrix<dcomplex>& a, const Matrix<dcomplex>& b,
-                       const Matrix<dcomplex>& c, const Matrix<dcomplex>& rhs,
-                       Matrix<dcomplex>& x, bool periodic,
-                       LaplaceCyclicCusparseScratch& scratch) {
+void solveWithGpuSparse(const Matrix<dcomplex>& a, const Matrix<dcomplex>& b,
+                        const Matrix<dcomplex>& c, const Matrix<dcomplex>& rhs,
+                        Matrix<dcomplex>& x, bool periodic,
+                        LaplaceCyclicGpuScratch& scratch) {
   const int nsys = std::get<0>(a.shape());
   const int nx = std::get<1>(a.shape());
   ASSERT2(std::get<0>(b.shape()) == nsys);
@@ -660,19 +638,22 @@ void solveWithCusparse(const Matrix<dcomplex>& a, const Matrix<dcomplex>& b,
   scratch.du.ensure(solve_values);
   scratch.x.ensure(solve_values);
 
-  checkCuda(cudaMemcpy(scratch.a.get(), reinterpret_cast<const cuDoubleComplex*>(a.begin()),
-                       matrix_values * sizeof(cuDoubleComplex), cudaMemcpyHostToDevice),
-            "copy a to device");
-  checkCuda(cudaMemcpy(scratch.b.get(), reinterpret_cast<const cuDoubleComplex*>(b.begin()),
-                       matrix_values * sizeof(cuDoubleComplex), cudaMemcpyHostToDevice),
-            "copy b to device");
-  checkCuda(cudaMemcpy(scratch.c.get(), reinterpret_cast<const cuDoubleComplex*>(c.begin()),
-                       matrix_values * sizeof(cuDoubleComplex), cudaMemcpyHostToDevice),
-            "copy c to device");
-  checkCuda(cudaMemcpy(scratch.rhs.get(),
-                       reinterpret_cast<const cuDoubleComplex*>(rhs.begin()),
-                       matrix_values * sizeof(cuDoubleComplex), cudaMemcpyHostToDevice),
-            "copy rhs to device");
+  checkGpu(gpu::runtimeMemcpy(
+               scratch.a.get(), reinterpret_cast<const gpu::Complex*>(a.begin()),
+               matrix_values * sizeof(gpu::Complex), gpu::runtimeMemcpyHostToDevice),
+           "copy a to device");
+  checkGpu(gpu::runtimeMemcpy(
+               scratch.b.get(), reinterpret_cast<const gpu::Complex*>(b.begin()),
+               matrix_values * sizeof(gpu::Complex), gpu::runtimeMemcpyHostToDevice),
+           "copy b to device");
+  checkGpu(gpu::runtimeMemcpy(
+               scratch.c.get(), reinterpret_cast<const gpu::Complex*>(c.begin()),
+               matrix_values * sizeof(gpu::Complex), gpu::runtimeMemcpyHostToDevice),
+           "copy c to device");
+  checkGpu(gpu::runtimeMemcpy(
+               scratch.rhs.get(), reinterpret_cast<const gpu::Complex*>(rhs.begin()),
+               matrix_values * sizeof(gpu::Complex), gpu::runtimeMemcpyHostToDevice),
+           "copy rhs to device");
 
   const int block_size = 256;
   const int prepare_blocks =
@@ -680,47 +661,44 @@ void solveWithCusparse(const Matrix<dcomplex>& a, const Matrix<dcomplex>& b,
   if (periodic) {
     prepareCyclicBatch<<<prepare_blocks, block_size>>>(
         scratch.a.get(), scratch.b.get(), scratch.c.get(), scratch.rhs.get(),
-        scratch.dl.get(), scratch.d.get(), scratch.du.get(), scratch.x.get(), nsys,
-        nx);
+        scratch.dl.get(), scratch.d.get(), scratch.du.get(), scratch.x.get(), nsys, nx);
   } else {
     prepareTridiagonalBatch<<<prepare_blocks, block_size>>>(
         scratch.a.get(), scratch.b.get(), scratch.c.get(), scratch.rhs.get(),
-        scratch.dl.get(), scratch.d.get(), scratch.du.get(), scratch.x.get(), nsys,
-        nx);
+        scratch.dl.get(), scratch.d.get(), scratch.du.get(), scratch.x.get(), nsys, nx);
   }
-  checkCuda(cudaGetLastError(), "prepare cuSPARSE batch");
+  checkGpu(gpu::runtimeGetLastError(), "prepare sparse batch");
 
   size_t buffer_size = 0;
-  checkCusparse(cusparseZgtsv2StridedBatch_bufferSizeExt(
-                    scratch.handle, nx, scratch.dl.get(), scratch.d.get(),
-                    scratch.du.get(), scratch.x.get(), solve_batches, nx,
-                    &buffer_size),
-                "cusparseZgtsv2StridedBatch_bufferSizeExt");
+  checkSparse(gpu::sparseZgtsv2StridedBatch_bufferSizeExt(
+                  scratch.handle, nx, scratch.dl.get(), scratch.d.get(), scratch.du.get(),
+                  scratch.x.get(), solve_batches, nx, &buffer_size),
+              "gpu::sparseZgtsv2StridedBatch_bufferSizeExt");
 
   if (buffer_size > scratch.buffer_size) {
     scratch.buffer.ensure(buffer_size);
     scratch.buffer_size = buffer_size;
   }
-  checkCusparse(cusparseZgtsv2StridedBatch(
-                    scratch.handle, nx, scratch.dl.get(), scratch.d.get(),
-                    scratch.du.get(), scratch.x.get(), solve_batches, nx,
-                    scratch.buffer.get()),
-                "cusparseZgtsv2StridedBatch");
+  checkSparse(gpu::sparseZgtsv2StridedBatch(
+                  scratch.handle, nx, scratch.dl.get(), scratch.d.get(), scratch.du.get(),
+                  scratch.x.get(), solve_batches, nx, scratch.buffer.get()),
+              "gpu::sparseZgtsv2StridedBatch");
 
   if (periodic) {
-    const int finish_blocks = (static_cast<int>(matrix_values) + block_size - 1)
-                              / block_size;
+    const int finish_blocks =
+        (static_cast<int>(matrix_values) + block_size - 1) / block_size;
     finishCyclicBatch<<<finish_blocks, block_size>>>(
         scratch.a.get(), scratch.b.get(), scratch.c.get(), scratch.x.get(), nsys, nx);
-    checkCuda(cudaGetLastError(), "finish cyclic cuSPARSE batch");
+    checkGpu(gpu::runtimeGetLastError(), "finish cyclic sparse batch");
   }
 
-  checkCuda(cudaMemcpy(reinterpret_cast<cuDoubleComplex*>(x.begin()), scratch.x.get(),
-                       matrix_values * sizeof(cuDoubleComplex), cudaMemcpyDeviceToHost),
-            "copy solution to host");
+  checkGpu(gpu::runtimeMemcpy(reinterpret_cast<gpu::Complex*>(x.begin()), scratch.x.get(),
+                              matrix_values * sizeof(gpu::Complex),
+                              gpu::runtimeMemcpyDeviceToHost),
+           "copy solution to host");
 }
 
-bool canUseCusparseSolve(const Mesh& mesh) { return mesh.getNXPE() == 1; }
+bool canUseGpuSolve(const Mesh& mesh) { return mesh.getNXPE() == 1; }
 
 bool canUseResidentFftSolve(const Mesh& mesh) {
   return mesh.getNXPE() == 1 && mesh.periodicX;
@@ -744,14 +722,20 @@ LaplaceCyclic::LaplaceCyclic(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   dst = (*opt)["dst"]
             .doc("Use Discrete Sine Transform in Z to enforce Dirichlet boundaries in Z")
             .withDefault<bool>(false);
-  use_cusparse = (*opt)["use_cusparse"]
-                     .doc("Use cuSPARSE batched tridiagonal solves for the cyclic "
-                          "Laplacian when CUDA is enabled and X is not distributed")
-                     .withDefault<bool>(true);
+#if BOUT_HAS_HIP
+  use_gpu_sparse =
+      (*opt)["use_hipsparse"]
+#else
+  use_gpu_sparse =
+      (*opt)["use_cusparse"]
+#endif
+          .doc("Use GPU sparse batched tridiagonal solves for the cyclic "
+               "Laplacian when CUDA or HIP is enabled and X is not distributed")
+          .withDefault<bool>(true);
   compare_device_tridag =
       (*opt)["compare_device_tridag"]
-          .doc("Compare CUDA-built cyclic Laplacian tridiagonal matrices against the "
-               "CPU tridagMatrix implementation once, when using the resident CUDA path")
+          .doc("Compare GPU-built cyclic Laplacian tridiagonal matrices against the "
+               "CPU tridagMatrix implementation once, when using the resident GPU path")
           .withDefault<bool>(true);
 
   if (dst) {
@@ -825,13 +809,13 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     auto matrices = transform.forward(*this, rhs, x0, Acoef, C1coef, C2coef, Dcoef);
 
     // Solve tridiagonal systems
-#if BOUT_HAS_CUDA
-    if (use_cusparse && canUseCusparseSolve(*localmesh)) {
-      if (!cusparse_scratch) {
-        cusparse_scratch = std::make_unique<LaplaceCyclicCusparseScratch>();
+#if BOUT_HAS_CUDA || BOUT_HAS_HIP
+    if (use_gpu_sparse && canUseGpuSolve(*localmesh)) {
+      if (!gpu_scratch) {
+        gpu_scratch = std::make_unique<LaplaceCyclicGpuScratch>();
       }
-      solveWithCusparse(matrices.a, matrices.b, matrices.c, matrices.bcmplx, xcmplx,
-                        localmesh->periodicX, *cusparse_scratch);
+      solveWithGpuSparse(matrices.a, matrices.b, matrices.c, matrices.bcmplx, xcmplx,
+                         localmesh->periodicX, *gpu_scratch);
     } else
 #endif
     {
@@ -850,13 +834,13 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
   auto matrices = transform.forward(*this, rhs, x0, Acoef, C1coef, C2coef, Dcoef);
 
   // Solve tridiagonal systems
-#if BOUT_HAS_CUDA
-  if (use_cusparse && canUseCusparseSolve(*localmesh)) {
-    if (!cusparse_scratch) {
-      cusparse_scratch = std::make_unique<LaplaceCyclicCusparseScratch>();
+#if BOUT_HAS_CUDA || BOUT_HAS_HIP
+  if (use_gpu_sparse && canUseGpuSolve(*localmesh)) {
+    if (!gpu_scratch) {
+      gpu_scratch = std::make_unique<LaplaceCyclicGpuScratch>();
     }
-    solveWithCusparse(matrices.a, matrices.b, matrices.c, matrices.bcmplx, xcmplx,
-                      localmesh->periodicX, *cusparse_scratch);
+    solveWithGpuSparse(matrices.a, matrices.b, matrices.c, matrices.bcmplx, xcmplx,
+                       localmesh->periodicX, *gpu_scratch);
   } else
 #endif
   {
@@ -950,13 +934,13 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     }();
 
     // Solve tridiagonal systems
-#if BOUT_HAS_CUDA
-    if (use_cusparse && canUseCusparseSolve(*localmesh)) {
-      if (!cusparse_scratch) {
-        cusparse_scratch = std::make_unique<LaplaceCyclicCusparseScratch>();
+#if BOUT_HAS_CUDA || BOUT_HAS_HIP
+    if (use_gpu_sparse && canUseGpuSolve(*localmesh)) {
+      if (!gpu_scratch) {
+        gpu_scratch = std::make_unique<LaplaceCyclicGpuScratch>();
       }
-      solveWithCusparse(matrices.a, matrices.b, matrices.c, matrices.bcmplx, xcmplx3D,
-                        localmesh->periodicX, *cusparse_scratch);
+      solveWithGpuSparse(matrices.a, matrices.b, matrices.c, matrices.bcmplx, xcmplx3D,
+                         localmesh->periodicX, *gpu_scratch);
     } else
 #endif
     {
@@ -972,12 +956,12 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
       return transform.backward(rhs, xcmplx3D);
     }
   }
-#if BOUT_HAS_CUDA
-  if (use_cusparse && canUseResidentFftSolve(*localmesh)) {
-    if (!cusparse_scratch) {
-      cusparse_scratch = std::make_unique<LaplaceCyclicCusparseScratch>();
+#if BOUT_HAS_CUDA || BOUT_HAS_HIP
+  if (use_gpu_sparse && canUseResidentFftSolve(*localmesh)) {
+    if (!gpu_scratch) {
+      gpu_scratch = std::make_unique<LaplaceCyclicGpuScratch>();
     }
-    auto& scratch = *cusparse_scratch;
+    auto& scratch = *gpu_scratch;
 
     {
       const int nz = localmesh->zend - localmesh->zstart + 1;
@@ -997,22 +981,22 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
         std::copy(input, input + nz, std::begin(scratch.real_host) + ind * nz);
       }
 
-      checkCuda(cudaMemcpy(scratch.real_device.get(), std::begin(scratch.real_host),
-                           static_cast<std::size_t>(nxny) * nz * sizeof(BoutReal),
-                           cudaMemcpyHostToDevice),
-                "copy resident rfft input to device");
-      checkCufft(cufftExecD2Z(scratch.forward_plan.get(), scratch.real_device.get(),
-                              scratch.spectral_device.get()),
-                 "resident cufftExecD2Z");
+      checkGpu(gpu::runtimeMemcpy(scratch.real_device.get(),
+                                  std::begin(scratch.real_host),
+                                  static_cast<std::size_t>(nxny) * nz * sizeof(BoutReal),
+                                  gpu::runtimeMemcpyHostToDevice),
+               "copy resident rfft input to device");
+      checkFft(gpu::fftExecD2Z(scratch.forward_plan.get(), scratch.real_device.get(),
+                               scratch.spectral_device.get()),
+               "resident gpu::fftExecD2Z");
 
       scratch.rhs.ensure(static_cast<std::size_t>(nsys) * nx);
       const int block_size = 256;
       const int total = nx * ny * nmode;
       const int blocks = (total + block_size - 1) / block_size;
-      fftOutputToCusparseRhs<<<blocks, block_size>>>(
-          scratch.spectral_device.get(), scratch.rhs.get(), nx, ny, nz, nmode,
-          nmodes);
-      checkCuda(cudaGetLastError(), "transpose rfft output to cuSPARSE rhs");
+      fftOutputToSparseRhs<<<blocks, block_size>>>(
+          scratch.spectral_device.get(), scratch.rhs.get(), nx, ny, nz, nmode, nmodes);
+      checkGpu(gpu::runtimeGetLastError(), "transpose rfft output to GPU sparse rhs");
     }
 
     {
@@ -1044,7 +1028,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
           scratch.int_shift_torsion.get(), nx, ny, nmode, localmesh->LocalNx,
           localmesh->LocalNy, xs, ys, zlength, all_terms, nonuniform,
           localmesh->IncIntShear, pin_zero_mode);
-      checkCuda(cudaGetLastError(), "build tridag matrices on device");
+      checkGpu(gpu::runtimeGetLastError(), "build tridag matrices on device");
 
       if (compare_device_tridag && !compared_device_tridag) {
         Matrix<dcomplex> cpu_a(nsys, nx);
@@ -1057,28 +1041,31 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
         Matrix<dcomplex> gpu_rhs(nsys, nx);
 
         const auto matrix_bytes =
-            static_cast<std::size_t>(nsys) * nx * sizeof(cuDoubleComplex);
-        checkCuda(cudaMemcpy(reinterpret_cast<cuDoubleComplex*>(gpu_a.begin()),
-                             scratch.a.get(), matrix_bytes, cudaMemcpyDeviceToHost),
-                  "copy GPU tridag a to host for comparison");
-        checkCuda(cudaMemcpy(reinterpret_cast<cuDoubleComplex*>(gpu_b.begin()),
-                             scratch.b.get(), matrix_bytes, cudaMemcpyDeviceToHost),
-                  "copy GPU tridag b to host for comparison");
-        checkCuda(cudaMemcpy(reinterpret_cast<cuDoubleComplex*>(gpu_c.begin()),
-                             scratch.c.get(), matrix_bytes, cudaMemcpyDeviceToHost),
-                  "copy GPU tridag c to host for comparison");
-        checkCuda(cudaMemcpy(reinterpret_cast<cuDoubleComplex*>(gpu_rhs.begin()),
-                             scratch.rhs.get(), matrix_bytes, cudaMemcpyDeviceToHost),
-                  "copy GPU tridag rhs to host for comparison");
+            static_cast<std::size_t>(nsys) * nx * sizeof(gpu::Complex);
+        checkGpu(gpu::runtimeMemcpy(reinterpret_cast<gpu::Complex*>(gpu_a.begin()),
+                                    scratch.a.get(), matrix_bytes,
+                                    gpu::runtimeMemcpyDeviceToHost),
+                 "copy GPU tridag a to host for comparison");
+        checkGpu(gpu::runtimeMemcpy(reinterpret_cast<gpu::Complex*>(gpu_b.begin()),
+                                    scratch.b.get(), matrix_bytes,
+                                    gpu::runtimeMemcpyDeviceToHost),
+                 "copy GPU tridag b to host for comparison");
+        checkGpu(gpu::runtimeMemcpy(reinterpret_cast<gpu::Complex*>(gpu_c.begin()),
+                                    scratch.c.get(), matrix_bytes,
+                                    gpu::runtimeMemcpyDeviceToHost),
+                 "copy GPU tridag c to host for comparison");
+        checkGpu(gpu::runtimeMemcpy(reinterpret_cast<gpu::Complex*>(gpu_rhs.begin()),
+                                    scratch.rhs.get(), matrix_bytes,
+                                    gpu::runtimeMemcpyDeviceToHost),
+                 "copy GPU tridag rhs to host for comparison");
         std::copy(gpu_rhs.begin(), gpu_rhs.end(), cpu_rhs.begin());
 
         for (int ind = 0; ind < nsys; ind++) {
           const int iy = ys + (ind / nmode);
           const int kz = ind % nmode;
           const BoutReal kwave = kz * 2.0 * PI / zlength;
-          tridagMatrix(&cpu_a(ind, 0), &cpu_b(ind, 0), &cpu_c(ind, 0),
-                       &cpu_rhs(ind, 0), iy, kz, kwave, &Acoef, &C1coef, &C2coef,
-                       &Dcoef, false);
+          tridagMatrix(&cpu_a(ind, 0), &cpu_b(ind, 0), &cpu_c(ind, 0), &cpu_rhs(ind, 0),
+                       iy, kz, kwave, &Acoef, &C1coef, &C2coef, &Dcoef, false);
         }
 
         BoutReal max_a = 0.0;
@@ -1094,8 +1081,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
           const BoutReal diff_a = std::abs(cpu_a.begin()[ind] - gpu_a.begin()[ind]);
           const BoutReal diff_b = std::abs(cpu_b.begin()[ind] - gpu_b.begin()[ind]);
           const BoutReal diff_c = std::abs(cpu_c.begin()[ind] - gpu_c.begin()[ind]);
-          const BoutReal diff_rhs =
-              std::abs(cpu_rhs.begin()[ind] - gpu_rhs.begin()[ind]);
+          const BoutReal diff_rhs = std::abs(cpu_rhs.begin()[ind] - gpu_rhs.begin()[ind]);
           if (diff_a > max_a) {
             max_a = diff_a;
             max_a_index = ind;
@@ -1131,27 +1117,26 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
         const auto [c_iy, c_kz, c_ix] = describe_index(max_c_index);
         const auto [rhs_iy, rhs_kz, rhs_ix] = describe_index(max_rhs_index);
 
-        output.write(
-            "\n\tLaplaceCyclic CUDA tridag comparison:"
-            "\n\t  max |a_cpu-a_gpu| = {:.16e} at iy={}, kz={}, ix={}"
-            "\n\t  max |b_cpu-b_gpu| = {:.16e} at iy={}, kz={}, ix={}"
-            "\n\t  max |c_cpu-c_gpu| = {:.16e} at iy={}, kz={}, ix={}"
-            "\n\t  max |rhs_cpu-rhs_gpu| = {:.16e} at iy={}, kz={}, ix={}\n",
-            max_a, a_iy, a_kz, a_ix, max_b, b_iy, b_kz, b_ix, max_c, c_iy, c_kz,
-            c_ix, max_rhs, rhs_iy, rhs_kz, rhs_ix);
+        output.write("\n\tLaplaceCyclic GPU tridag comparison:"
+                     "\n\t  max |a_cpu-a_gpu| = {:.16e} at iy={}, kz={}, ix={}"
+                     "\n\t  max |b_cpu-b_gpu| = {:.16e} at iy={}, kz={}, ix={}"
+                     "\n\t  max |c_cpu-c_gpu| = {:.16e} at iy={}, kz={}, ix={}"
+                     "\n\t  max |rhs_cpu-rhs_gpu| = {:.16e} at iy={}, kz={}, ix={}\n",
+                     max_a, a_iy, a_kz, a_ix, max_b, b_iy, b_kz, b_ix, max_c, c_iy, c_kz,
+                     c_ix, max_rhs, rhs_iy, rhs_kz, rhs_ix);
         compared_device_tridag = true;
       }
     }
 
     {
-      solveWithCusparseDevice(nsys, nx, localmesh->periodicX, scratch);
+      solveWithGpuSparseDevice(nsys, nx, localmesh->periodicX, scratch);
     }
 
     if (localmesh->periodicX) {
       const int block_size = 256;
       subtractPeriodicXAverage<<<ny, block_size, block_size * sizeof(double)>>>(
           scratch.x.get(), nx, ny, nmode);
-      checkCuda(cudaGetLastError(), "subtract periodic X average");
+      checkGpu(gpu::runtimeGetLastError(), "subtract periodic X average");
     }
 
     {
@@ -1161,18 +1146,20 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
       const int block_size = 256;
       const int total = nxny * nmodes;
       const int blocks = (total + block_size - 1) / block_size;
-      cusparseXToIfftInput<<<blocks, block_size>>>(
+      sparseXToIfftInput<<<blocks, block_size>>>(
           scratch.x.get(), scratch.spectral_device.get(), nx, ny, nmode, nmodes,
           isGlobalFlagSet(INVERT_ZERO_DC));
-      checkCuda(cudaGetLastError(), "transpose cuSPARSE solution to irfft input");
+      checkGpu(gpu::runtimeGetLastError(),
+               "transpose GPU sparse solution to irfft input");
 
-      checkCufft(cufftExecZ2D(scratch.backward_plan.get(), scratch.spectral_device.get(),
-                              scratch.real_device.get()),
-                 "resident cufftExecZ2D");
-      checkCuda(cudaMemcpy(std::begin(scratch.real_host), scratch.real_device.get(),
-                           static_cast<std::size_t>(nxny) * nz * sizeof(BoutReal),
-                           cudaMemcpyDeviceToHost),
-                "copy resident irfft output to host");
+      checkFft(gpu::fftExecZ2D(scratch.backward_plan.get(), scratch.spectral_device.get(),
+                               scratch.real_device.get()),
+               "resident gpu::fftExecZ2D");
+      checkGpu(gpu::runtimeMemcpy(std::begin(scratch.real_host),
+                                  scratch.real_device.get(),
+                                  static_cast<std::size_t>(nxny) * nz * sizeof(BoutReal),
+                                  gpu::runtimeMemcpyDeviceToHost),
+               "copy resident irfft output to host");
 
       for (int ind = 0; ind < nxny; ++ind) {
         const int ix = xs + (ind / ny);
@@ -1196,13 +1183,13 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
   }();
 
   // Solve tridiagonal systems
-#if BOUT_HAS_CUDA
-  if (use_cusparse && canUseCusparseSolve(*localmesh)) {
-    if (!cusparse_scratch) {
-      cusparse_scratch = std::make_unique<LaplaceCyclicCusparseScratch>();
+#if BOUT_HAS_CUDA || BOUT_HAS_HIP
+  if (use_gpu_sparse && canUseGpuSolve(*localmesh)) {
+    if (!gpu_scratch) {
+      gpu_scratch = std::make_unique<LaplaceCyclicGpuScratch>();
     }
-    solveWithCusparse(matrices.a, matrices.b, matrices.c, matrices.bcmplx, xcmplx3D,
-                      localmesh->periodicX, *cusparse_scratch);
+    solveWithGpuSparse(matrices.a, matrices.b, matrices.c, matrices.bcmplx, xcmplx3D,
+                       localmesh->periodicX, *gpu_scratch);
   } else
 #endif
   {

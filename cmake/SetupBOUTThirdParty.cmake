@@ -50,7 +50,9 @@ if(BOUT_HAS_HIP)
                LINKER_LANGUAGE HIP
   )
   find_package(hip REQUIRED CONFIG)
-  target_link_libraries(bout++ PUBLIC hip::host)
+  find_package(hipfft REQUIRED CONFIG)
+  find_package(hipsparse REQUIRED CONFIG)
+  target_link_libraries(bout++ PUBLIC hip::host hip::hipfft roc::hipsparse)
 endif()
 
 # Caliper

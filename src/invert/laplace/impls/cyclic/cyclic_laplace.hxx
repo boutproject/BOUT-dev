@@ -51,7 +51,7 @@ RegisterUnavailableLaplace registerlaplacecycle(LAPLACE_CYCLIC,
 
 #include <memory>
 
-class LaplaceCyclicCusparseScratch;
+class LaplaceCyclicGpuScratch;
 
 namespace {
 RegisterLaplace<LaplaceCyclic> registerlaplacecycle(LAPLACE_CYCLIC);
@@ -120,13 +120,13 @@ private:
   Matrix<dcomplex> a, b, c, bcmplx, xcmplx;
 
   bool dst;
-  bool use_cusparse{true};
+  bool use_gpu_sparse{true};
   bool compare_device_tridag{true};
   bool compared_device_tridag{false};
 
   CyclicReduce<dcomplex>* cr; ///< Tridiagonal solver
-#if BOUT_HAS_CUDA
-  std::unique_ptr<LaplaceCyclicCusparseScratch> cusparse_scratch;
+#if BOUT_HAS_CUDA || BOUT_HAS_HIP
+  std::unique_ptr<LaplaceCyclicGpuScratch> gpu_scratch;
 #endif
 };
 
