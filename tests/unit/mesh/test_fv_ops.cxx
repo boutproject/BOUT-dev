@@ -133,6 +133,38 @@ TEST_F(PerpResolvedYTest, YFourierMode) {
   }
 }
 
+TEST_F(PerpResolvedYTest, MixedYZFourierMode) {
+  const BoutReal ky = TWOPI / mesh->GlobalNyNoBoundaries;
+  const BoutReal diffusivity = 2.5;
+  const auto* coord = mesh->getCoordinates();
+  // Reversing kz reverses the mixed contribution, leaving the pure terms unchanged.
+  for (BoutReal sign : {1.0, -1.0}) {
+    SCOPED_TRACE(::testing::Message() << "Z mode sign=" << sign);
+    const BoutReal kz = sign * TWOPI / mesh->LocalNz;
+    Field3D f{0.0};
+    BOUT_FOR_SERIAL(i, f.getRegion("RGN_ALL")) {
+      // Include periodic Y guards as well as the physical cells.
+      f[i] = cos(ky * (i.y() - mesh->ystart) + kz * i.z());
+    }
+    const auto result = FV::Div_a_Grad_perp(Field3D{diffusivity}, f);
+    BOUT_FOR_SERIAL(i, result.getRegion("RGN_NOBNDRY")) {
+      const BoutReal inverse_JB_squared = 1.0 / SQ(coord->J()[i] * coord->Bxy()[i]);
+      const BoutReal perp_yy = -coord->g23()[i] * coord->g_23()[i] * inverse_JB_squared;
+      const BoutReal perp_yz =
+          0.5
+          * (coord->g23()[i] - coord->g33()[i] * coord->g_23()[i] * inverse_JB_squared);
+      // The pure terms use three-point second derivatives; the mixed term
+      // uses centered first derivatives in both Y and Z.
+      const BoutReal eigenvalue =
+          -diffusivity
+          * (4.0 * perp_yy * SQ(sin(0.5 * ky)) / SQ(coord->dy()[i])
+             + 4.0 * coord->g33()[i] * SQ(sin(0.5 * kz)) / SQ(coord->dz()[i])
+             + 2.0 * perp_yz * sin(ky) * sin(kz) / (coord->dy()[i] * coord->dz()[i]));
+      EXPECT_NEAR(result[i], eigenvalue * f[i], 1e-13);
+    }
+  }
+}
+
 // Two Y guards let the parallel fluxes reconstruct their neighboring guard cell.
 // Keep the existing one-guard fixture as the default for other unit tests.
 template <typename Limiter>

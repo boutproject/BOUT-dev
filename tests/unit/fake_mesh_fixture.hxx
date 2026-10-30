@@ -62,7 +62,8 @@ public:
     test_coords->setD1_dy(0.2);
     test_coords->setD1_dz(0.0);
 
-    if (bout::build::use_metric_3d) {
+    // Parallel slices are only allocated when Y guard cells exist.
+    if (bout::build::use_metric_3d && MYG > 0) {
       bout::FieldMetric mutable_Bxy = test_coords->Bxy();
       mutable_Bxy.splitParallelSlices();
       mutable_Bxy.yup() = test_coords->Bxy();
@@ -104,7 +105,7 @@ public:
     test_coords_staggered->setD1_dy(0.2);
     test_coords_staggered->setD1_dz(0.0);
 
-    if (bout::build::use_metric_3d) {
+    if (bout::build::use_metric_3d && MYG > 0) {
       bout::FieldMetric mutable_Bxy = test_coords_staggered->Bxy();
       mutable_Bxy.splitParallelSlices();
       test_coords_staggered->setBxy(mutable_Bxy);
