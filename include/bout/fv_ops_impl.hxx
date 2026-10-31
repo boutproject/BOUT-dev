@@ -644,12 +644,16 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
 
     ASSERT1(f_in.hasParallelSlices());
     ASSERT1(v_in.hasParallelSlices());
+    ASSERT1(wave_speed_in.hasParallelSlices());
 
     const auto& f_up = f_in.yup();
     const auto& f_down = f_in.ydown();
 
     const auto& v_up = v_in.yup();
     const auto& v_down = v_in.ydown();
+
+    const auto& wave_speed_up = wave_speed_in.yup();
+    const auto& wave_speed_down = wave_speed_in.ydown();
 
     Field3D result{emptyFrom(f_in)};
     flow_ylow = zeroFrom(f_in);
@@ -664,11 +668,18 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
                   / coord->cell_volume()[i];
 
       if (dissipative) {
-        const BoutReal amax = BOUTMAX(fabs(wave_speed_in[i]), fabs(v_in[i]),
-                                      fabs(v_up[iyp]), fabs(v_down[iym]));
-        result[i] += (0.5 * amax * (f_in[i] - f_up[iyp]) * coord->cell_area_yhigh()[i]
-                      + 0.5 * amax * (f_in[i] - f_down[iym]) * coord->cell_area_ylow()[i])
-                     / coord->cell_volume()[i];
+        const BoutReal amax_up = BOUTMAX(fabs(wave_speed_in[i]), fabs(wave_speed_up[iyp]),
+                                         fabs(v_up[iyp]), fabs(v_in[i]));
+
+        const BoutReal amax_down =
+            BOUTMAX(fabs(wave_speed_in[i]), fabs(wave_speed_down[iym]), fabs(v_down[iym]),
+                    fabs(v_in[i]));
+
+        result[i] +=
+            0.5
+            * (amax_up * (f_in[i] - f_up[iyp]) * coord->cell_area_yhigh()[i]
+               + amax_down * (f_in[i] - f_down[iym]) * coord->cell_area_ylow()[i])
+            / coord->cell_volume()[i];
       }
     }
     return result;
@@ -843,6 +854,7 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
     // FCI version, using yup/down fields
     ASSERT1(f_in.hasParallelSlices());
     ASSERT1(v_in.hasParallelSlices());
+    ASSERT1(wave_speed_in.hasParallelSlices());
 
     const auto& B = coord->Bxy();
     const auto& B_up = coord->Bxy().yup();
@@ -854,6 +866,9 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
     const auto& v_up = v_in.yup();
     const auto& v_down = v_in.ydown();
 
+    const auto& wave_speed_up = wave_speed_in.yup();
+    const auto& wave_speed_down = wave_speed_in.ydown();
+
     const auto& g_22 = coord->g_22();
     const auto& dy = coord->dy();
 
@@ -863,8 +878,12 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
       const auto iym = i.ym();
 
       // Maximum local wave speed
-      const BoutReal amax = BOUTMAX(wave_speed_in[i], std::abs(v_in[i]),
-                                    std::abs(v_up[iyp]), std::abs(v_down[iym]));
+      const BoutReal amax_up = BOUTMAX(fabs(wave_speed_in[i]), fabs(wave_speed_up[iyp]),
+                                       fabs(v_up[iyp]), fabs(v_in[i]));
+
+      const BoutReal amax_down =
+          BOUTMAX(fabs(wave_speed_in[i]), fabs(wave_speed_down[iym]), fabs(v_down[iym]),
+                  fabs(v_in[i]));
 
       result[i] =
           B[i]
@@ -872,18 +891,19 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
              - (f_down[iym] * v_down[iym] * v_down[iym] / B_down[iym])
              // Penalty terms. This implementation is very dissipative.
              // Note: This version adds a viscosity that damps gradients of velocity
-             + amax * (f_in[i] + f_up[iyp]) * (v_in[i] - v_up[iyp]) / (B[i] + B_up[iyp])
-             + amax * (f_in[i] + f_down[iym]) * (v_in[i] - v_down[iym])
+             + amax_up * (f_in[i] + f_up[iyp]) * (v_in[i] - v_up[iyp])
+                   / (B[i] + B_up[iyp])
+             + amax_down * (f_in[i] + f_down[iym]) * (v_in[i] - v_down[iym])
                    / (B[i] + B_down[iym]))
           / (2 * dy[i] * sqrt(g_22[i]));
 
 #if CHECK > 0
       if (!std::isfinite(result[i])) {
         throw BoutException("Non-finite value in Div_par_fvv at {}\n"
-                            "fup {} vup {} fdown {} vdown {} amax {}\n",
-                            "B {} Bup {} Bdown {} dy {} sqrt(g_22} {}", i, f_up[i],
-                            v_up[i], f_down[i], v_down[i], amax, B[i], B_up[i], B_down[i],
-                            dy[i], sqrt(g_22[i]));
+                            "fup {} vup {} fdown {} vdown {} amax_up {} amax_down {}\n",
+                            "B {} Bup {} Bdown {} dy {} sqrt(g_22} {}", i, f_up[iyp],
+                            v_up[iyp], f_down[iym], v_down[iym], amax_up, amax_down, B[i],
+                            B_up[iyp], B_down[iym], dy[i], sqrt(g_22[i]));
       }
 #endif
     }
