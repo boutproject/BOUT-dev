@@ -879,18 +879,26 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
     const auto& g_22 = coord->g_22();
     const auto& dy = coord->dy();
 
+    const auto yboundary = coord->getYBoundary();
+
     Field3D result{emptyFrom(f_in)};
     BOUT_FOR(i, f_in.getRegion("RGN_NOBNDRY")) {
       const auto iyp = i.yp();
       const auto iym = i.ym();
 
       // Maximum local wave speed
-      const BoutReal amax_up = BOUTMAX(fabs(wave_speed_in[i]), fabs(wave_speed_up[iyp]),
-                                       fabs(v_up[iyp]), fabs(v_in[i]));
+
+      const BoutReal amax_up =
+          ((fixflux) && (yboundary.contains<+1>(i)))
+              ? 0.0
+              : BOUTMAX(fabs(wave_speed_in[i]), fabs(wave_speed_up[iyp]), fabs(v_up[iyp]),
+                        fabs(v_in[i]));
 
       const BoutReal amax_down =
-          BOUTMAX(fabs(wave_speed_in[i]), fabs(wave_speed_down[iym]), fabs(v_down[iym]),
-                  fabs(v_in[i]));
+          ((fixflux) && (yboundary.contains<-1>(i)))
+              ? 0.0
+              : BOUTMAX(fabs(wave_speed_in[i]), fabs(wave_speed_down[iym]),
+                        fabs(v_down[iym]), fabs(v_in[i]));
 
       result[i] =
           B[i]
