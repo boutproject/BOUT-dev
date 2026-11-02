@@ -560,7 +560,7 @@ PrecomputedInterpolation::interpolate(const Field3D& fin,
     return op.computeYdown(f);
   }
 #endif
-  throw BoutException("Offset {} not supported", offset);
+  throw BoutException("Offset {} not supported", y_offset);
 }
 
 template <bool monotonic, bout::details::implementation_type imp_type>
