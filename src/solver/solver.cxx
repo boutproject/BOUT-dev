@@ -167,7 +167,11 @@ Solver::Solver(Options* opts)
               .doc("Output time step size. Overrides global 'timestep' setting.")
               .withDefault(Options::root()["timestep"]
                                .doc("Output time step size")
-                               .withDefault(1.0))) {
+                               .withDefault(1.0))),
+      max_tracking_history(
+          (*options)["max_tracking_history"]
+              .doc("How many rhs data are stored for debuging. 0 disables tracking.")
+              .withDefault(0)) {
   if (Options::root().isSet("nout")) {
     output_warn.write("Setting `nout` is deprecated. Please set `solver:nout` instead.");
   }
@@ -1519,6 +1523,12 @@ void Solver::pre_rhs(BoutReal t) {
       f.var->applyBoundary(t);
     }
   }
+
+  if (max_tracking_history > 0) {
+    ASSERT1(current_tracking == nullptr);
+    current_tracking = std::make_shared<Options>();
+    enable_tracking(current_tracking);
+  }
 }
 
 void Solver::post_rhs(BoutReal UNUSED(t)) {
@@ -1572,6 +1582,9 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
     }
   }
 #endif
+  if (max_tracking_history > 0) {
+    save_tracking_history();
+  }
 }
 
 bool Solver::varAdded(const std::string& name) {
@@ -1587,6 +1600,79 @@ int Solver::runPreconditioner(BoutReal t, BoutReal gamma, BoutReal delta) {
 
 bool Solver::hasJacobian() { return model->hasJacobian(); }
 int Solver::runJacobian(BoutReal time) { return model->runJacobian(time); }
+
+/// enable tracking of rhs evolution
+void Solver::enable_tracking(std::shared_ptr<Options> debug_ptr) {
+  for (auto& f : f3d) {
+    f.F_var->enableTracking(fmt::format("ddt_{:s}", f.name), debug_ptr);
+  }
+}
+
+/// save tracked data and disable tracking
+void Solver::save_tracking_file(std::shared_ptr<Options> debug_ptr,
+                                std::optional<int> filename_counter) {
+  auto& debug = *debug_ptr;
+  Mesh* mesh = nullptr;
+  for (auto& f : f3d) {
+    saveParallel(debug, f.name, *f.var);
+    auto tmp = *f.F_var;
+    tmp.allocate();
+    debug[fmt::format("ddt_{}", f.name)] = tmp;
+    if (mesh == nullptr) {
+      mesh = f.var->getMesh();
+    }
+  }
+  auto outname = filename_counter.has_value()
+                     ? fmt::format("BOUT.debug.{}", filename_counter.value())
+                     : "BOUT.debug";
+  bout::OptionsIO::write(outname, debug, mesh);
+  for (auto& f : f3d) {
+    f.F_var->disableTracking();
+  }
+}
+
+void Solver::save_tracking_history() {
+  ASSERT1(current_tracking != nullptr);
+  auto& debug = *current_tracking;
+  Mesh* mesh = nullptr;
+  for (auto& f : f3d) {
+    saveParallel(debug, f.name, *f.var);
+    auto tmp = *f.F_var;
+    tmp.allocate();
+    debug[fmt::format("ddt_{}", f.name)] = tmp;
+    if (mesh == nullptr) {
+      mesh = f.var->getMesh();
+    }
+  }
+  for (auto& f : f3d) {
+    f.F_var->disableTracking();
+  }
+  tracking_history.push(current_tracking);
+  ASSERT1(max_tracking_history > 0);
+  if (tracking_history.size() > static_cast<size_t>(max_tracking_history)) {
+    tracking_history.pop();
+  }
+  current_tracking.reset();
+}
+
+void Solver::tracking_history_write() {
+  int counter = -tracking_history.size();
+  Mesh* mesh = nullptr;
+  while (!tracking_history.empty()) {
+    if (mesh == nullptr) {
+      for (auto& f : f3d) {
+        if (mesh == nullptr) {
+          mesh = f.var->getMesh();
+        }
+      }
+    }
+    ASSERT1(mesh != nullptr);
+
+    auto outname = fmt::format("BOUT.tracking.{}", ++counter);
+    bout::OptionsIO::write(outname, *tracking_history.front(), mesh);
+    tracking_history.pop();
+  }
+}
 
 // Add source terms to time derivatives
 void Solver::add_mms_sources(BoutReal t) {

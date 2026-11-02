@@ -42,6 +42,7 @@
 #include <cstdint>
 #include <iterator>
 #include <memory>
+#include <queue>
 #include <vector>
 
 ///////////////////////////////////////////////////////////////////
@@ -565,6 +566,20 @@ protected:
   /// Calculate only the diffusive parts
   int run_diffusive(BoutReal t, bool linear = false);
 
+  /// enable tracking of rhs evolution
+  void enable_tracking(std::shared_ptr<Options> debug);
+  /// save tracked data to file and disable tracking
+  void save_tracking_file(std::shared_ptr<Options> debug,
+                          std::optional<int> filename_counter = {});
+  /// save tracked data to queue and disable tracking
+  void save_tracking_history();
+  /// save history of tracked data to file
+  void tracking_history_write();
+
+  /// Allow solvers to add e.g. residuum.
+  virtual void add_tracking_pre([[maybe_unused]] std::shared_ptr<Options> tracking) {};
+  virtual void add_tracking_post([[maybe_unused]] std::shared_ptr<Options> tracking) {};
+
   /// Reset the iteration counter
   void resetIterationCounter(int value = 0) { iteration = value; }
 
@@ -891,6 +906,10 @@ private:
   int number_output_steps;
   /// Requested timestep between outputs
   BoutReal output_timestep;
+  /// Queue for debugging
+  std::queue<std::shared_ptr<Options>> tracking_history;
+  std::shared_ptr<Options> current_tracking;
+  int max_tracking_history{-1};
 };
 
 #endif // SOLVER_H
