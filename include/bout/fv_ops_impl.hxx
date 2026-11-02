@@ -670,13 +670,13 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
 
       if (dissipative) {
         const BoutReal amax_up =
-            (fix_flux && yboundary.contains<+1>(i))
+            (fixflux && yboundary.contains<+1>(i))
                 ? 0.0
                 : BOUTMAX(fabs(wave_speed_in[i]), fabs(wave_speed_up[iyp]),
                           fabs(v_up[iyp]), fabs(v_in[i]));
 
         const BoutReal amax_down =
-            (fix_flux && yboundary.contains<-1>(i))
+            (fixflux && yboundary.contains<-1>(i))
                 ? 0.0
                 : BOUTMAX(fabs(wave_speed_in[i]), fabs(wave_speed_down[iym]),
                           fabs(v_down[iym]), fabs(v_in[i]));
