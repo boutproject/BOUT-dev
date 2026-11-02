@@ -657,6 +657,7 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
 
     Field3D result{emptyFrom(f_in)};
     flow_ylow = zeroFrom(f_in);
+    const auto yboundary = coord->getYBoundary();
     BOUT_FOR(i, f_in.getRegion("RGN_NOBNDRY")) {
       const auto iyp = i.yp();
       const auto iym = i.ym();
@@ -668,12 +669,17 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
                   / coord->cell_volume()[i];
 
       if (dissipative) {
-        const BoutReal amax_up = BOUTMAX(fabs(wave_speed_in[i]), fabs(wave_speed_up[iyp]),
-                                         fabs(v_up[iyp]), fabs(v_in[i]));
+        const BoutReal amax_up =
+            (fix_flux && yboundary.contains<+1>(i))
+                ? 0.0
+                : BOUTMAX(fabs(wave_speed_in[i]), fabs(wave_speed_up[iyp]),
+                          fabs(v_up[iyp]), fabs(v_in[i]));
 
         const BoutReal amax_down =
-            BOUTMAX(fabs(wave_speed_in[i]), fabs(wave_speed_down[iym]), fabs(v_down[iym]),
-                    fabs(v_in[i]));
+            (fix_flux && yboundary.contains<-1>(i))
+                ? 0.0
+                : BOUTMAX(fabs(wave_speed_in[i]), fabs(wave_speed_down[iym]),
+                          fabs(v_down[iym]), fabs(v_in[i]));
 
         result[i] +=
             0.5
