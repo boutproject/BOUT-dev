@@ -19,6 +19,7 @@
 #include "bout/region.hxx"
 #include "bout/utils.hxx"
 #include "bout/vector2d.hxx"
+#include <bout/yboundary_regions.hxx>
 
 #include <cmath>
 
