@@ -6,7 +6,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  **************************************************************************/
 
 #include "bout/build_defines.hxx"
@@ -58,6 +58,8 @@ public:
   // These functions used internally (but need to be public)
   void rhs(int N, BoutReal t, BoutReal* udata, BoutReal* dudata);
   void gloc(int N, BoutReal t, BoutReal* udata, BoutReal* dudata);
+
+  void add_tracking_post(std::shared_ptr<Options> tracking) override;
 
 private:
   /// Current internal timestep

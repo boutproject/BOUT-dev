@@ -364,46 +364,44 @@ BoutReal PvodeSolver::run(BoutReal tout) {
   if (flag != SUCCESS) {
     output_error.write("ERROR CVODE step failed, flag = {:d}\n", flag);
     if (debug_on_failure) {
-      const CVodeMemRec* cv_mem = static_cast<CVodeMem>(cvode_mem);
-      if (!(f2d.empty() and v2d.empty() and v3d.empty())) {
-        output_warn.write("debug_on_failure is currently only supported for Field3Ds");
-        return -1.0;
-      }
       auto debug_ptr = std::make_shared<Options>();
-      Options& debug = *debug_ptr;
-      using namespace std::string_literals;
-      Mesh* mesh{};
-      for (const auto& prefix : {"pre_"s, "residuum_"s}) {
-        std::vector<Field3D> list_of_fields{};
-        std::vector<bool> evolve_bndrys{};
-        for (const auto& f : f3d) {
-          mesh = f.var->getMesh();
-          Field3D to_load{0., mesh};
-          to_load.setLocation(f.location);
-          debug[fmt::format("{:s}{:s}", prefix, f.name)] = to_load;
-          list_of_fields.push_back(to_load);
-          evolve_bndrys.push_back(f.evolve_bndry);
-        }
-        pvode_load_data_f3d(evolve_bndrys, list_of_fields,
-                            prefix == "pre_"s ? udata : N_VDATA(cv_mem->cv_acor));
-      }
-
-      for (auto& f : f3d) {
-        f.F_var->enableTracking(fmt::format("ddt_{:s}", f.name), debug_ptr);
-      }
+      add_tracking_post(debug_ptr);
+      enable_tracking(debug_ptr);
       run_rhs(simtime);
-
-      for (auto& f : f3d) {
-        saveParallel(debug, f.name, *f.var);
-        debug[fmt::format("ddt_{}", f.name)] = *f.F_var;
-      }
-      bout::OptionsIO::write("BOUT.debug", debug, mesh);
+      save_tracking_file(debug_ptr);
       MPI_Barrier(BoutComm::get());
     }
+    tracking_history_write();
     return -1.0;
   }
 
   return simtime;
+}
+
+void PvodeSolver::add_tracking_post(std::shared_ptr<Options> tracking) {
+  const CVodeMemRec* cv_mem = static_cast<CVodeMem>(cvode_mem);
+  if (!(f2d.empty() and v2d.empty() and v3d.empty())) {
+    output_warn.write("add_tracking_post is currently only supported for Field3Ds");
+    return;
+  }
+  BoutReal* udata;
+  udata = N_VDATA(u);
+  load_vars(udata);
+  using namespace std::string_literals;
+  for (const auto& prefix : {"pre_"s, "residuum_"s}) {
+    std::vector<Field3D> list_of_fields{};
+    std::vector<bool> evolve_bndrys{};
+    for (const auto& f : f3d) {
+      Mesh* mesh = f.var->getMesh();
+      Field3D to_load{0., mesh};
+      to_load.setLocation(f.location);
+      (*tracking)[fmt::format("{:s}{:s}", prefix, f.name)] = to_load;
+      list_of_fields.push_back(to_load);
+      evolve_bndrys.push_back(f.evolve_bndry);
+    }
+    pvode_load_data_f3d(evolve_bndrys, list_of_fields,
+                        prefix == "post_"s ? udata : N_VDATA(cv_mem->cv_acor));
+  }
 }
 
 /**************************************************************************
