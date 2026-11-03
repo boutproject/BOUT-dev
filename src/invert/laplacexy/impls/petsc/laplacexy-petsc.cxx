@@ -90,15 +90,15 @@ LaplaceXYpetsc::LaplaceXYpetsc(Mesh* m, Options* opt, const CELL_LOC loc)
   const int localN = localSize();
 
   // Create Vectors
-  VecCreate(comm, &xs);
-  VecSetSizes(xs, localN, PETSC_DETERMINE);
-  VecSetFromOptions(xs);
-  VecDuplicate(xs, &bs);
+  BOUT_DO_PETSC(VecCreate(comm, &xs));
+  BOUT_DO_PETSC(VecSetSizes(xs, localN, PETSC_DETERMINE));
+  BOUT_DO_PETSC(VecSetFromOptions(xs));
+  BOUT_DO_PETSC(VecDuplicate(xs, &bs));
 
   // Set size of Matrix on each processor to localN x localN
-  MatCreate(comm, &MatA);
-  MatSetSizes(MatA, localN, localN, PETSC_DETERMINE, PETSC_DETERMINE);
-  MatSetFromOptions(MatA);
+  BOUT_DO_PETSC(MatCreate(comm, &MatA));
+  BOUT_DO_PETSC(MatSetSizes(MatA, localN, localN, PETSC_DETERMINE, PETSC_DETERMINE));
+  BOUT_DO_PETSC(MatSetFromOptions(MatA));
 
   //////////////////////////////////////////////////
   // Specify local indices. This creates a mapping
@@ -187,8 +187,8 @@ LaplaceXYpetsc::LaplaceXYpetsc(Mesh* m, Options* opt, const CELL_LOC loc)
     setPreallocationFiniteDifference(d_nnz, o_nnz);
   }
   // Pre-allocate
-  MatMPIAIJSetPreallocation(MatA, 0, d_nnz, 0, o_nnz);
-  MatSetUp(MatA);
+  BOUT_DO_PETSC(MatMPIAIJSetPreallocation(MatA, 0, d_nnz, 0, o_nnz));
+  BOUT_DO_PETSC(MatSetUp(MatA));
 
   BOUT_DO_PETSC(PetscFree(d_nnz));
   BOUT_DO_PETSC(PetscFree(o_nnz));
@@ -196,7 +196,7 @@ LaplaceXYpetsc::LaplaceXYpetsc(Mesh* m, Options* opt, const CELL_LOC loc)
   // Determine which row/columns of the matrix are locally owned
   int Istart = 0;
   int Iend = 0;
-  MatGetOwnershipRange(MatA, &Istart, &Iend);
+  BOUT_DO_PETSC(MatGetOwnershipRange(MatA, &Istart, &Iend));
 
   // Convert indexXY from local index to global index
   indexXY += Istart;
@@ -209,14 +209,14 @@ LaplaceXYpetsc::LaplaceXYpetsc(Mesh* m, Options* opt, const CELL_LOC loc)
   // Set up KSP
 
   // Declare KSP Context
-  KSPCreate(comm, &ksp);
+  BOUT_DO_PETSC(KSPCreate(comm, &ksp));
 
   // Configure Linear Solver
 
   const bool direct = (*opt)["direct"].doc("Use a direct LU solver").withDefault(false);
 
   if (direct) {
-    KSPGetPC(ksp, &pc);
+    BOUT_DO_PETSC(KSPGetPC(ksp, &pc));
     PCSetType(pc, PCLU);
 #if PETSC_VERSION_GE(3, 9, 0)
     PCFactorSetMatSolverType(pc, "mumps");
@@ -248,12 +248,12 @@ LaplaceXYpetsc::LaplaceXYpetsc(Mesh* m, Options* opt, const CELL_LOC loc)
     const std::string pctype =
         (*opt)["pctype"].doc("Preconditioner type").withDefault("none");
 
-    KSPSetType(ksp, ksptype.c_str());
-    KSPSetTolerances(ksp, rtol, atol, dtol, maxits);
+    BOUT_DO_PETSC(KSPSetType(ksp, ksptype.c_str()));
+    BOUT_DO_PETSC(KSPSetTolerances(ksp, rtol, atol, dtol, maxits));
 
-    KSPSetInitialGuessNonzero(ksp, static_cast<PetscBool>(true));
+    BOUT_DO_PETSC(KSPSetInitialGuessNonzero(ksp, static_cast<PetscBool>(true)));
 
-    KSPGetPC(ksp, &pc);
+    BOUT_DO_PETSC(KSPGetPC(ksp, &pc));
     PCSetType(pc, pctype.c_str());
 
     if (pctype == "shell") {
@@ -264,9 +264,9 @@ LaplaceXYpetsc::LaplaceXYpetsc(Mesh* m, Options* opt, const CELL_LOC loc)
       const bool rightprec =
           (*opt)["rightprec"].doc("Use right preconditioning?").withDefault(true);
       if (rightprec) {
-        KSPSetPCSide(ksp, PC_RIGHT); // Right preconditioning
+        BOUT_DO_PETSC(KSPSetPCSide(ksp, PC_RIGHT)); // Right preconditioning
       } else {
-        KSPSetPCSide(ksp, PC_LEFT); // Left preconditioning
+        BOUT_DO_PETSC(KSPSetPCSide(ksp, PC_LEFT)); // Left preconditioning
       }
     }
   }
@@ -578,10 +578,10 @@ void LaplaceXYpetsc::setCoefs(const Field2D& A, const Field2D& B) {
       for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
         int row = globalIndex(localmesh->xstart - 1, y);
         PetscScalar val = 0.5;
-        MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES));
 
         int col = globalIndex(localmesh->xstart, y);
-        MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
 
         // Preconditioner
         bcoef(y - localmesh->ystart, 0) = 0.5;
@@ -594,11 +594,11 @@ void LaplaceXYpetsc::setCoefs(const Field2D& A, const Field2D& B) {
       for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
         int row = globalIndex(localmesh->xstart - 1, y);
         PetscScalar val = 1.0;
-        MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES));
 
         int col = globalIndex(localmesh->xstart, y);
         val = -1.0;
-        MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
 
         // Preconditioner
         bcoef(y - localmesh->ystart, 0) = 1.0;
@@ -612,10 +612,10 @@ void LaplaceXYpetsc::setCoefs(const Field2D& A, const Field2D& B) {
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       int row = globalIndex(localmesh->xend + 1, y);
       PetscScalar val = 0.5;
-      MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES));
 
       int col = globalIndex(localmesh->xend, y);
-      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
 
       // Preconditioner
       acoef(y - localmesh->ystart, localmesh->xend + 1 - xstart) = 0.5;
@@ -632,10 +632,10 @@ void LaplaceXYpetsc::setCoefs(const Field2D& A, const Field2D& B) {
       }
       int row = globalIndex(it.ind, localmesh->ystart - 1);
       PetscScalar val = 0.5;
-      MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES));
 
       int col = globalIndex(it.ind, localmesh->ystart);
-      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
     }
 
     for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
@@ -645,10 +645,10 @@ void LaplaceXYpetsc::setCoefs(const Field2D& A, const Field2D& B) {
       }
       int row = globalIndex(it.ind, localmesh->yend + 1);
       PetscScalar val = 0.5;
-      MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES));
 
       int col = globalIndex(it.ind, localmesh->yend);
-      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
     }
   } else if (y_bndry == "neumann") {
     // Neumann on Y boundaries
@@ -659,12 +659,12 @@ void LaplaceXYpetsc::setCoefs(const Field2D& A, const Field2D& B) {
       }
       int row = globalIndex(it.ind, localmesh->ystart - 1);
       PetscScalar val = 1.0;
-      MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES));
 
       val = -1.0;
       int col = globalIndex(it.ind, localmesh->ystart);
 
-      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
     }
 
     for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
@@ -674,11 +674,11 @@ void LaplaceXYpetsc::setCoefs(const Field2D& A, const Field2D& B) {
       }
       int row = globalIndex(it.ind, localmesh->yend + 1);
       PetscScalar val = 1.0;
-      MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES));
 
       val = -1.0;
       int col = globalIndex(it.ind, localmesh->yend);
-      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
     }
   } else if (y_bndry == "free_o3") {
     // 'free_o3' extrapolating boundary condition on Y boundaries
@@ -689,19 +689,19 @@ void LaplaceXYpetsc::setCoefs(const Field2D& A, const Field2D& B) {
       }
       int row = globalIndex(it.ind, localmesh->ystart - 1);
       PetscScalar val = 1.0;
-      MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES));
 
       val = -3.0;
       int col = globalIndex(it.ind, localmesh->ystart);
-      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
 
       val = 3.0;
       col = globalIndex(it.ind, localmesh->ystart + 1);
-      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
 
       val = -1.0;
       col = globalIndex(it.ind, localmesh->ystart + 2);
-      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
     }
 
     for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
@@ -711,19 +711,19 @@ void LaplaceXYpetsc::setCoefs(const Field2D& A, const Field2D& B) {
       }
       int row = globalIndex(it.ind, localmesh->yend + 1);
       PetscScalar val = 1.0;
-      MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES));
 
       val = -3.0;
       int col = globalIndex(it.ind, localmesh->yend);
-      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
 
       val = 3.0;
       col = globalIndex(it.ind, localmesh->yend - 1);
-      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
 
       val = -1.0;
       col = globalIndex(it.ind, localmesh->yend - 2);
-      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
     }
   } else {
     throw BoutException("Unsupported option for y_bndry");
@@ -741,11 +741,11 @@ void LaplaceXYpetsc::setCoefs(const Field2D& A, const Field2D& B) {
           // f(xs-1,ys-1) = f(xs-1,ys)
           PetscScalar val = 1.0;
           int row = globalIndex(localmesh->xstart - 1, localmesh->ystart - 1);
-          MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES));
 
           val = -1.0;
           int col = globalIndex(localmesh->xstart - 1, localmesh->ystart);
-          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
         } else if (y_bndry == "free_o3" or y_bndry == "dirichlet") {
           // 'free_o3' extrapolating boundary condition on Y boundaries
           // f(xs-1,ys-1) = 3*f(xs-1,ys) - 3*f(xs-1,ys+1) + f(xs-1,ys+2)
@@ -754,19 +754,19 @@ void LaplaceXYpetsc::setCoefs(const Field2D& A, const Field2D& B) {
           // what value to pass for the corner
           PetscScalar val = 1.0;
           int row = globalIndex(localmesh->xstart - 1, localmesh->ystart - 1);
-          MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES));
 
           val = -3.0;
           int col = globalIndex(localmesh->xstart - 1, localmesh->ystart);
-          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
 
           val = 3.0;
           col = globalIndex(localmesh->xstart - 1, localmesh->ystart + 1);
-          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
 
           val = -1.0;
           col = globalIndex(localmesh->xstart - 1, localmesh->ystart + 2);
-          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
         } else {
           throw BoutException("Unsupported option for y_bndry");
         }
