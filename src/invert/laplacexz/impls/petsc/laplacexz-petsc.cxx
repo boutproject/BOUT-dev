@@ -167,10 +167,10 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh* m, Options* opt, const CELL_LOC loc)
   }
 
   // Create Vectors
-  VecCreate(comm, &xs);
-  VecSetSizes(xs, localN, PETSC_DETERMINE);
-  VecSetFromOptions(xs);
-  VecDuplicate(xs, &bs);
+  BOUT_DO_PETSC(VecCreate(comm, &xs));
+  BOUT_DO_PETSC(VecSetSizes(xs, localN, PETSC_DETERMINE));
+  BOUT_DO_PETSC(VecSetFromOptions(xs));
+  BOUT_DO_PETSC(VecDuplicate(xs, &bs));
 
   for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
     YSlice data;
@@ -725,9 +725,10 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
 
       // Note: This is a hack to force update of the preconditioner matrix
 #if PETSC_VERSION_GE(3, 5, 0)
-      KSPSetOperators(it.ksp, it.BOUT_DO_PETSC(MatA, it.MatP));
+      BOUT_DO_PETSC(KSPSetOperators(it.ksp, it.BOUT_DO_PETSC(MatA, it.MatP)));
 #else
-      KSPSetOperators(it.ksp, it.BOUT_DO_PETSC(MatA, it.MatP, SAME_NONZERO_PATTERN));
+      BOUT_DO_PETSC(
+          KSPSetOperators(it.ksp, it.BOUT_DO_PETSC(MatA, it.MatP, SAME_NONZERO_PATTERN)));
 #endif
     }
   } else {
@@ -735,9 +736,10 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
       /// Reuse the preconditioner, even if the operator changes
 
 #if PETSC_VERSION_GE(3, 5, 0)
-      KSPSetReusePreconditioner(it.ksp, PETSC_TRUE);
+      BOUT_DO_PETSC(KSPSetReusePreconditioner(it.ksp, PETSC_TRUE));
 #else
-      KSPSetOperators(it.ksp, it.BOUT_DO_PETSC(MatA, it.MatP, SAME_PRECONDITIONER));
+      BOUT_DO_PETSC(
+          KSPSetOperators(it.ksp, it.BOUT_DO_PETSC(MatA, it.MatP, SAME_PRECONDITIONER)));
 #endif
     }
   }
@@ -781,7 +783,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D& bin, const Field3D& x0in) {
     int y = it.yindex;
 
     /// Specify non-zero starting guess for solution (from input x0)
-    KSPSetInitialGuessNonzero(it.ksp, PETSC_TRUE);
+    BOUT_DO_PETSC(KSPSetInitialGuessNonzero(it.ksp, PETSC_TRUE));
 
     //////////////////////////
     // Load initial guess x0 into xs and rhs into bs
@@ -798,11 +800,11 @@ Field3D LaplaceXZpetsc::solve(const Field3D& bin, const Field3D& x0in) {
         for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
           // Setting the initial guess x0
           PetscScalar val = x0(localmesh->xstart - 1, y, z);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
           // Setting the solution b
           val = 0.0;
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
           ind++;
         }
       } else if (inner_boundary_flags & INVERT_SET) {
@@ -810,11 +812,11 @@ Field3D LaplaceXZpetsc::solve(const Field3D& bin, const Field3D& x0in) {
         for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
           // Setting the initial guess x0
           PetscScalar val = x0(localmesh->xstart - 1, y, z);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
           // Setting the solution b
           val = x0(localmesh->xstart, y, z);
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
           ind++;
         }
       } else if (inner_boundary_flags & INVERT_RHS) {
@@ -822,11 +824,11 @@ Field3D LaplaceXZpetsc::solve(const Field3D& bin, const Field3D& x0in) {
         for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
           // Setting the initial guess x0
           PetscScalar val = x0(localmesh->xstart - 1, y, z);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
           // Setting the solution b
           val = b(localmesh->xstart, y, z);
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
           ind++;
         }
       } else {
@@ -834,11 +836,11 @@ Field3D LaplaceXZpetsc::solve(const Field3D& bin, const Field3D& x0in) {
         for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
           // Setting the initial guess x0
           PetscScalar val = x0(localmesh->xstart - 1, y, z);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
           // Setting the solution b
           val = x0(localmesh->xstart - 1, y, z) - x0(localmesh->xstart, y, z);
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
           ind++;
         }
       }
@@ -848,10 +850,10 @@ Field3D LaplaceXZpetsc::solve(const Field3D& bin, const Field3D& x0in) {
     for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
       for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
         PetscScalar val = x0(x, y, z);
-        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
         val = b(x, y, z);
-        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
         ind++;
       }
     }
@@ -863,11 +865,11 @@ Field3D LaplaceXZpetsc::solve(const Field3D& bin, const Field3D& x0in) {
         for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
           // Setting the initial guess x0
           PetscScalar val = x0(localmesh->xend + 1, y, z);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
           // Setting the solution b
           val = 0.0;
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
 
           ind++;
         }
@@ -876,11 +878,11 @@ Field3D LaplaceXZpetsc::solve(const Field3D& bin, const Field3D& x0in) {
         for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
           // Setting the initial guess x0
           PetscScalar val = x0(localmesh->xend + 1, y, z);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
           // Setting the solution b
           val = x0(localmesh->xend + 1, y, z);
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
 
           ind++;
         }
@@ -889,11 +891,11 @@ Field3D LaplaceXZpetsc::solve(const Field3D& bin, const Field3D& x0in) {
         for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
           // Setting the initial guess x0
           PetscScalar val = x0(localmesh->xend + 1, y, z);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
           // Setting the solution b
           val = b(localmesh->xend + 1, y, z);
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
 
           ind++;
         }
@@ -902,11 +904,11 @@ Field3D LaplaceXZpetsc::solve(const Field3D& bin, const Field3D& x0in) {
         for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
           // Setting the initial guess x0
           PetscScalar val = x0(localmesh->xend + 1, y, z);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
           // Setting the solution b
           val = 0.5 * (x0(localmesh->xend, y, z) + x0(localmesh->xend + 1, y, z));
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
 
           ind++;
         }
@@ -916,25 +918,26 @@ Field3D LaplaceXZpetsc::solve(const Field3D& bin, const Field3D& x0in) {
     ASSERT1(ind == Iend); // Reached end of range
 
     // Assemble RHS Vector
-    VecAssemblyBegin(bs);
-    VecAssemblyEnd(bs);
+    BOUT_DO_PETSC(VecAssemblyBegin(bs));
+    BOUT_DO_PETSC(VecAssemblyEnd(bs));
 
     // Assemble Trial Solution Vector
-    VecAssemblyBegin(xs);
-    VecAssemblyEnd(xs);
+    BOUT_DO_PETSC(VecAssemblyBegin(xs));
+    BOUT_DO_PETSC(VecAssemblyEnd(xs));
 
     //////////////////////////
     // Solve the system
 
-    KSPSolve(it.ksp, bs, xs);
+    BOUT_DO_PETSC(KSPSolve(it.ksp, bs, xs));
 
     // Check if the solve converged
-    KSPConvergedReason reason;
-    KSPGetConvergedReason(it.ksp, &reason);
+    BOUT_DO_PETSC(KSPConvergedReason reason);
+    BOUT_DO_PETSC(KSPGetConvergedReason(it.ksp, &reason));
 
     if (reason <= 0) {
-      throw BoutException("LaplaceXZ failed to converge. Reason {} ({:d})",
-                          KSPConvergedReasons[reason], static_cast<int>(reason));
+      throw BoutException(
+          "LaplaceXZ failed to converge. Reason {} ({:d})",
+          BOUT_DO_PETSC(KSPConvergedReasons[reason], static_cast<int>(reason)));
     }
 
     //////////////////////////
@@ -945,7 +948,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D& bin, const Field3D& x0in) {
     if (localmesh->firstX()) {
       for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
         PetscScalar val;
-        VecGetValues(xs, 1, &ind, &val);
+        BOUT_DO_PETSC(VecGetValues(xs, 1, &ind, &val));
         for (int x = localmesh->xstart - 1; x >= 0; --x) {
           result(x, y, z) = val;
         }
@@ -956,7 +959,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D& bin, const Field3D& x0in) {
     for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
       for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
         PetscScalar val;
-        VecGetValues(xs, 1, &ind, &val);
+        BOUT_DO_PETSC(VecGetValues(xs, 1, &ind, &val));
         result(x, y, z) = val;
         ind++;
       }
@@ -966,7 +969,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D& bin, const Field3D& x0in) {
     if (localmesh->lastX()) {
       for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
         PetscScalar val;
-        VecGetValues(xs, 1, &ind, &val);
+        BOUT_DO_PETSC(VecGetValues(xs, 1, &ind, &val));
         for (int x = localmesh->xend + 1; x < localmesh->LocalNx; ++x) {
           result(x, y, z) = val;
         }

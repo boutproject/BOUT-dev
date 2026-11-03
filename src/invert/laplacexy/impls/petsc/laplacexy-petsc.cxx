@@ -777,11 +777,11 @@ void LaplaceXYpetsc::setCoefs(const Field2D& A, const Field2D& B) {
           // f(xe+1,ys-1) = f(xe+1,ys)
           PetscScalar val = 1.0;
           int row = globalIndex(localmesh->xend + 1, localmesh->ystart - 1);
-          MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES));
 
           val = -1.0;
           int col = globalIndex(localmesh->xend + 1, localmesh->ystart);
-          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
         } else if (y_bndry == "free_o3" or y_bndry == "dirichlet") {
           // 'free_o3' extrapolating boundary condition on Y boundaries
           // f(xe+1,ys-1) = 3*f(xe+1,ys) - 3*f(xe+1,ys+1) + f(xe+1,ys+2)
@@ -790,19 +790,19 @@ void LaplaceXYpetsc::setCoefs(const Field2D& A, const Field2D& B) {
           // what value to pass for the corner
           PetscScalar val = 1.0;
           int row = globalIndex(localmesh->xend + 1, localmesh->ystart - 1);
-          MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES));
 
           val = -3.0;
           int col = globalIndex(localmesh->xend + 1, localmesh->ystart);
-          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
 
           val = 3.0;
           col = globalIndex(localmesh->xend + 1, localmesh->ystart + 1);
-          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
 
           val = -1.0;
           col = globalIndex(localmesh->xend + 1, localmesh->ystart + 2);
-          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
         } else {
           throw BoutException("Unsupported option for y_bndry");
         }
@@ -815,11 +815,11 @@ void LaplaceXYpetsc::setCoefs(const Field2D& A, const Field2D& B) {
           // f(xs-1,ys-1) = f(xs-1,ys)
           PetscScalar val = 1.0;
           int row = globalIndex(localmesh->xstart - 1, localmesh->yend + 1);
-          MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES));
 
           val = -1.0;
           int col = globalIndex(localmesh->xstart - 1, localmesh->yend);
-          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
         } else if (y_bndry == "free_o3" or y_bndry == "dirichlet") {
           // 'free_o3' extrapolating boundary condition on Y boundaries
           // f(xs-1,ys-1) = 3*f(xs-1,ys) - 3*f(xs-1,ys+1) + f(xs-1,ys+2)
@@ -828,19 +828,19 @@ void LaplaceXYpetsc::setCoefs(const Field2D& A, const Field2D& B) {
           // what value to pass for the corner
           PetscScalar val = 1.0;
           int row = globalIndex(localmesh->xstart - 1, localmesh->yend + 1);
-          MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES));
 
           val = -3.0;
           int col = globalIndex(localmesh->xstart - 1, localmesh->yend);
-          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
 
           val = 3.0;
           col = globalIndex(localmesh->xstart - 1, localmesh->yend - 1);
-          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
 
           val = -1.0;
           col = globalIndex(localmesh->xstart - 1, localmesh->yend - 2);
-          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
         } else {
           throw BoutException("Unsupported option for y_bndry");
         }
@@ -851,11 +851,11 @@ void LaplaceXYpetsc::setCoefs(const Field2D& A, const Field2D& B) {
           // f(xe+1,ys-1) = f(xe+1,ys)
           PetscScalar val = 1.0;
           int row = globalIndex(localmesh->xend + 1, localmesh->yend + 1);
-          MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES));
 
           val = -1.0;
           int col = globalIndex(localmesh->xend + 1, localmesh->yend);
-          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
         } else if (y_bndry == "free_o3" or y_bndry == "dirichlet") {
           // 'free_o3' extrapolating boundary condition on Y boundaries
           // f(xe+1,ys-1) = 3*f(xe+1,ys) - 3*f(xe+1,ys+1) + f(xe+1,ys+2)
@@ -864,19 +864,19 @@ void LaplaceXYpetsc::setCoefs(const Field2D& A, const Field2D& B) {
           // what value to pass for the corner
           PetscScalar val = 1.0;
           int row = globalIndex(localmesh->xend + 1, localmesh->yend + 1);
-          MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES));
 
           val = -3.0;
           int col = globalIndex(localmesh->xend + 1, localmesh->yend);
-          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
 
           val = 3.0;
           col = globalIndex(localmesh->xend + 1, localmesh->yend - 1);
-          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
 
           val = -1.0;
           col = globalIndex(localmesh->xend + 1, localmesh->yend - 2);
-          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+          BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES));
         } else {
           throw BoutException("Unsupported option for y_bndry");
         }
@@ -885,14 +885,15 @@ void LaplaceXYpetsc::setCoefs(const Field2D& A, const Field2D& B) {
   }
 
   // Assemble Matrix
-  MatAssemblyBegin(MatA, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(MatA, MAT_FINAL_ASSEMBLY);
+  BOUT_DO_PETSC(MatAssemblyBegin(MatA, MAT_FINAL_ASSEMBLY));
+  BOUT_DO_PETSC(MatAssemblyEnd(MatA, MAT_FINAL_ASSEMBLY));
 
   // Set the operator
 #if PETSC_VERSION_GE(3, 5, 0)
-  KSPSetOperators(ksp, MatA, MatA);
+  BOUT_DO_PETSC(KSPSetOperators(ksp, BOUT_DO_PETSC(MatA, MatA)));
 #else
-  KSPSetOperators(ksp, MatA, MatA, DIFFERENT_NONZERO_PATTERN);
+  BOUT_DO_PETSC(
+      KSPSetOperators(ksp, BOUT_DO_PETSC(MatA, MatA, DIFFERENT_NONZERO_PATTERN)));
 #endif
 
   // Set coefficients for preconditioner
@@ -981,24 +982,24 @@ void LaplaceXYpetsc::setMatrixElementsFiniteVolume(const Field2D& A, const Field
       int row = globalIndex(x, y);
 
       // Set the centre (diagonal)
-      MatSetValues(MatA, 1, &row, 1, &row, &c, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &row, &c, INSERT_VALUES));
 
       // X + 1
       int col = globalIndex(x + 1, y);
-      MatSetValues(MatA, 1, &row, 1, &col, &xp, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &xp, INSERT_VALUES));
 
       // X - 1
       col = globalIndex(x - 1, y);
-      MatSetValues(MatA, 1, &row, 1, &col, &xm, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &xm, INSERT_VALUES));
 
       if (include_y_derivs) {
         // Y + 1
         col = globalIndex(x, y + 1);
-        MatSetValues(MatA, 1, &row, 1, &col, &yp, INSERT_VALUES);
+        BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &yp, INSERT_VALUES));
 
         // Y - 1
         col = globalIndex(x, y - 1);
-        MatSetValues(MatA, 1, &row, 1, &col, &ym, INSERT_VALUES);
+        BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &ym, INSERT_VALUES));
       }
     }
   }
@@ -1113,40 +1114,40 @@ void LaplaceXYpetsc::setMatrixElementsFiniteDifference(const Field2D& A,
       int row = globalIndex(x, y);
 
       // Set the centre (diagonal)
-      MatSetValues(MatA, 1, &row, 1, &row, &c, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &row, &c, INSERT_VALUES));
 
       // X + 1
       int col = globalIndex(x + 1, y);
-      MatSetValues(MatA, 1, &row, 1, &col, &xp, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &xp, INSERT_VALUES));
 
       // X - 1
       col = globalIndex(x - 1, y);
-      MatSetValues(MatA, 1, &row, 1, &col, &xm, INSERT_VALUES);
+      BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &xm, INSERT_VALUES));
 
       if (include_y_derivs) {
         // Y + 1
         col = globalIndex(x, y + 1);
-        MatSetValues(MatA, 1, &row, 1, &col, &yp, INSERT_VALUES);
+        BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &yp, INSERT_VALUES));
 
         // Y - 1
         col = globalIndex(x, y - 1);
-        MatSetValues(MatA, 1, &row, 1, &col, &ym, INSERT_VALUES);
+        BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &ym, INSERT_VALUES));
 
         // X + 1, Y + 1
         col = globalIndex(x + 1, y + 1);
-        MatSetValues(MatA, 1, &row, 1, &col, &xpyp, INSERT_VALUES);
+        BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &xpyp, INSERT_VALUES));
 
         // X + 1, Y - 1
         col = globalIndex(x + 1, y - 1);
-        MatSetValues(MatA, 1, &row, 1, &col, &xpym, INSERT_VALUES);
+        BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &xpym, INSERT_VALUES));
 
         // X - 1, Y + 1
         col = globalIndex(x - 1, y + 1);
-        MatSetValues(MatA, 1, &row, 1, &col, &xmyp, INSERT_VALUES);
+        BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &xmyp, INSERT_VALUES));
 
         // X - 1, Y - 1
         col = globalIndex(x - 1, y - 1);
-        MatSetValues(MatA, 1, &row, 1, &col, &xmym, INSERT_VALUES);
+        BOUT_DO_PETSC(MatSetValues(MatA, 1, &row, 1, &col, &xmym, INSERT_VALUES));
       }
     }
   }
@@ -1158,12 +1159,12 @@ LaplaceXYpetsc::~LaplaceXYpetsc() {
 
   if (!is_finalised) {
     // PetscFinalize may already have destroyed this object
-    KSPDestroy(&ksp);
+    BOUT_DO_PETSC(KSPDestroy(&ksp));
   }
 
-  VecDestroy(&xs);
-  VecDestroy(&bs);
-  MatDestroy(&MatA);
+  BOUT_DO_PETSC(VecDestroy(&xs));
+  BOUT_DO_PETSC(VecDestroy(&bs));
+  BOUT_DO_PETSC(MatDestroy(&MatA));
 }
 
 Field2D LaplaceXYpetsc::solve(const Field2D& rhs, const Field2D& x0) {
@@ -1181,10 +1182,10 @@ Field2D LaplaceXYpetsc::solve(const Field2D& rhs, const Field2D& x0) {
       int ind = globalIndex(x, y);
 
       PetscScalar val = x0(x, y);
-      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
       val = rhs(x, y);
-      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
     }
   }
 
@@ -1195,22 +1196,23 @@ Field2D LaplaceXYpetsc::solve(const Field2D& rhs, const Field2D& x0) {
   }
 
   // Assemble RHS Vector
-  VecAssemblyBegin(bs);
-  VecAssemblyEnd(bs);
+  BOUT_DO_PETSC(VecAssemblyBegin(bs));
+  BOUT_DO_PETSC(VecAssemblyEnd(bs));
 
   // Assemble Trial Solution Vector
-  VecAssemblyBegin(xs);
-  VecAssemblyEnd(xs);
+  BOUT_DO_PETSC(VecAssemblyBegin(xs));
+  BOUT_DO_PETSC(VecAssemblyEnd(xs));
 
   // Solve the system
-  KSPSolve(ksp, bs, xs);
+  BOUT_DO_PETSC(KSPSolve(ksp, bs, xs));
 
-  KSPConvergedReason reason;
-  KSPGetConvergedReason(ksp, &reason);
+  BOUT_DO_PETSC(KSPConvergedReason reason);
+  BOUT_DO_PETSC(KSPGetConvergedReason(ksp, &reason));
 
   if (reason <= 0) {
-    throw BoutException("LaplaceXYpetsc failed to converge. Reason {} ({:d})",
-                        KSPConvergedReasons[reason], static_cast<int>(reason));
+    throw BoutException(
+        "LaplaceXYpetsc failed to converge. Reason {} ({:d})",
+        BOUT_DO_PETSC(KSPConvergedReasons[reason], static_cast<int>(reason)));
   }
 
   if (save_performance) {
@@ -1218,7 +1220,7 @@ Field2D LaplaceXYpetsc::solve(const Field2D& rhs, const Field2D& x0) {
     n_calls++;
 
     int iterations = 0;
-    KSPGetIterationNumber(ksp, &iterations);
+    BOUT_DO_PETSC(KSPGetIterationNumber(ksp, &iterations));
 
     average_iterations = BoutReal(n_calls - 1) / BoutReal(n_calls) * average_iterations
                          + BoutReal(iterations) / BoutReal(n_calls);
@@ -1236,7 +1238,7 @@ Field2D LaplaceXYpetsc::solve(const Field2D& rhs, const Field2D& x0) {
       int ind = globalIndex(x, y);
 
       PetscScalar val;
-      VecGetValues(xs, 1, &ind, &val);
+      BOUT_DO_PETSC(VecGetValues(xs, 1, &ind, &val));
       result(x, y) = val;
     }
   }
@@ -1246,7 +1248,7 @@ Field2D LaplaceXYpetsc::solve(const Field2D& rhs, const Field2D& x0) {
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       int ind = globalIndex(localmesh->xstart - 1, y);
       PetscScalar val;
-      VecGetValues(xs, 1, &ind, &val);
+      BOUT_DO_PETSC(VecGetValues(xs, 1, &ind, &val));
       for (int x = localmesh->xstart - 1; x >= 0; x--) {
         result(x, y) = val;
       }
@@ -1258,7 +1260,7 @@ Field2D LaplaceXYpetsc::solve(const Field2D& rhs, const Field2D& x0) {
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       int ind = globalIndex(localmesh->xend + 1, y);
       PetscScalar val;
-      VecGetValues(xs, 1, &ind, &val);
+      BOUT_DO_PETSC(VecGetValues(xs, 1, &ind, &val));
       for (int x = localmesh->xend + 1; x < localmesh->LocalNx; x++) {
         result(x, y) = val;
       }
@@ -1278,7 +1280,7 @@ Field2D LaplaceXYpetsc::solve(const Field2D& rhs, const Field2D& x0) {
     }
     int ind = globalIndex(it.ind, localmesh->ystart - 1);
     PetscScalar val;
-    VecGetValues(xs, 1, &ind, &val);
+    BOUT_DO_PETSC(VecGetValues(xs, 1, &ind, &val));
     for (int y = localmesh->ystart - 1; y >= 0; y--) {
       result(it.ind, y) = val;
     }
@@ -1297,7 +1299,7 @@ Field2D LaplaceXYpetsc::solve(const Field2D& rhs, const Field2D& x0) {
     }
     int ind = globalIndex(it.ind, localmesh->yend + 1);
     PetscScalar val;
-    VecGetValues(xs, 1, &ind, &val);
+    BOUT_DO_PETSC(VecGetValues(xs, 1, &ind, &val));
     for (int y = localmesh->yend + 1; y < localmesh->LocalNy; y++) {
       result(it.ind, y) = val;
     }
@@ -1315,10 +1317,10 @@ void LaplaceXYpetsc::solveFiniteVolume(const Field2D& x0) {
         int ind = globalIndex(localmesh->xstart - 1, y);
 
         PetscScalar val = x0(localmesh->xstart - 1, y);
-        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
         val = 0.5 * (x0(localmesh->xstart - 1, y) + x0(localmesh->xstart, y));
-        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
       }
     } else {
       // Inner X boundary (Neumann)
@@ -1326,10 +1328,10 @@ void LaplaceXYpetsc::solveFiniteVolume(const Field2D& x0) {
         int ind = globalIndex(localmesh->xstart - 1, y);
 
         PetscScalar val = x0(localmesh->xstart - 1, y);
-        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
         val = 0.0; // x0(localmesh->xstart-1,y) - x0(localmesh->xstart,y);
-        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
       }
     }
   }
@@ -1340,10 +1342,10 @@ void LaplaceXYpetsc::solveFiniteVolume(const Field2D& x0) {
       int ind = globalIndex(localmesh->xend + 1, y);
 
       PetscScalar val = x0(localmesh->xend + 1, y);
-      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
       val = 0.5 * (x0(localmesh->xend, y) + x0(localmesh->xend + 1, y));
-      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
     }
   }
 
@@ -1356,10 +1358,10 @@ void LaplaceXYpetsc::solveFiniteVolume(const Field2D& x0) {
       int ind = globalIndex(it.ind, localmesh->ystart - 1);
 
       PetscScalar val = x0(it.ind, localmesh->ystart - 1);
-      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
       val = 0.5 * (x0(it.ind, localmesh->ystart - 1) + x0(it.ind, localmesh->ystart));
-      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
     }
 
     for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
@@ -1370,10 +1372,10 @@ void LaplaceXYpetsc::solveFiniteVolume(const Field2D& x0) {
       int ind = globalIndex(it.ind, localmesh->yend + 1);
 
       PetscScalar val = x0(it.ind, localmesh->yend + 1);
-      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
       val = 0.5 * (x0(it.ind, localmesh->yend + 1) + x0(it.ind, localmesh->yend));
-      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
     }
   } else if (y_bndry == "neumann" or y_bndry == "free_o3") {
     // Y boundaries Neumann
@@ -1385,10 +1387,10 @@ void LaplaceXYpetsc::solveFiniteVolume(const Field2D& x0) {
       int ind = globalIndex(it.ind, localmesh->ystart - 1);
 
       PetscScalar val = x0(it.ind, localmesh->ystart - 1);
-      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
       val = 0.0;
-      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
     }
 
     for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
@@ -1399,10 +1401,10 @@ void LaplaceXYpetsc::solveFiniteVolume(const Field2D& x0) {
       int ind = globalIndex(it.ind, localmesh->yend + 1);
 
       PetscScalar val = x0(it.ind, localmesh->yend + 1);
-      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
       val = 0.0;
-      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
     }
   } else {
     throw BoutException("Unsupported option for y_bndry");
@@ -1422,11 +1424,11 @@ void LaplaceXYpetsc::solveFiniteDifference(const Field2D& x0) {
         // For the boundary value of the initial guess, use the value that would be set by
         // applying the boundary condition to the initial guess
         PetscScalar val = 2. * x0(localmesh->xstart - 1, y) - x0(localmesh->xstart, y);
-        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
         // Pass the value from boundary cell of x0 as the boundary condition to the rhs
         val = x0(localmesh->xstart - 1, y);
-        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
       }
     } else {
       // Inner X boundary (Neumann)
@@ -1436,10 +1438,10 @@ void LaplaceXYpetsc::solveFiniteDifference(const Field2D& x0) {
         // For the boundary value of the initial guess, use the value that would be set by
         // applying the boundary condition to the initial guess
         PetscScalar val = x0(localmesh->xstart, y);
-        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
         val = 0.0;
-        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
       }
     }
   }
@@ -1452,11 +1454,11 @@ void LaplaceXYpetsc::solveFiniteDifference(const Field2D& x0) {
       // For the boundary value of the initial guess, use the value that would be set by
       // applying the boundary condition to the initial guess
       PetscScalar val = 2. * x0(localmesh->xend + 1, y) - x0(localmesh->xend, y);
-      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
       // Pass the value from boundary cell of x0 as the boundary condition to the rhs
       val = x0(localmesh->xend + 1, y);
-      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
     }
   }
 
@@ -1472,11 +1474,11 @@ void LaplaceXYpetsc::solveFiniteDifference(const Field2D& x0) {
       // applying the boundary condition to the initial guess
       PetscScalar val =
           2. * x0(it.ind, localmesh->ystart - 1) - x0(it.ind, localmesh->ystart);
-      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
       // Pass the value from boundary cell of x0 as the boundary condition to the rhs
       val = x0(it.ind, localmesh->ystart - 1);
-      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
     }
 
     for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
@@ -1490,11 +1492,11 @@ void LaplaceXYpetsc::solveFiniteDifference(const Field2D& x0) {
       // applying the boundary condition to the initial guess
       PetscScalar val =
           2. * x0(it.ind, localmesh->yend + 1) - x0(it.ind, localmesh->yend);
-      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
       // Pass the value from boundary cell of x0 as the boundary condition to the rhs
       val = x0(it.ind, localmesh->yend + 1);
-      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
     }
 
     // Use free_o3 for the corner boundary cells
@@ -1507,11 +1509,11 @@ void LaplaceXYpetsc::solveFiniteDifference(const Field2D& x0) {
         PetscScalar val = 3. * x0(localmesh->xstart - 1, localmesh->ystart)
                           - 3. * x0(localmesh->xstart - 1, localmesh->ystart + 1)
                           + x0(localmesh->xstart - 1, localmesh->ystart + 2);
-        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
         // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
-        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
       }
       if (localmesh->lastX()) {
         int ind = globalIndex(localmesh->xend + 1, localmesh->ystart - 1);
@@ -1521,11 +1523,11 @@ void LaplaceXYpetsc::solveFiniteDifference(const Field2D& x0) {
         PetscScalar val = 3. * x0(localmesh->xend + 1, localmesh->ystart)
                           - 3. * x0(localmesh->xend + 1, localmesh->ystart + 1)
                           + x0(localmesh->xend + 1, localmesh->ystart + 2);
-        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
         // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
-        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
       }
     }
     if (localmesh->hasBndryUpperY()) {
@@ -1537,11 +1539,11 @@ void LaplaceXYpetsc::solveFiniteDifference(const Field2D& x0) {
         PetscScalar val = 3. * x0(localmesh->xstart - 1, localmesh->yend)
                           - 3. * x0(localmesh->xstart - 1, localmesh->yend - 1)
                           + x0(localmesh->xstart - 1, localmesh->yend - 2);
-        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
         // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
-        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
       }
       if (localmesh->lastX()) {
         int ind = globalIndex(localmesh->xend + 1, localmesh->yend + 1);
@@ -1551,11 +1553,11 @@ void LaplaceXYpetsc::solveFiniteDifference(const Field2D& x0) {
         PetscScalar val = 3. * x0(localmesh->xend + 1, localmesh->yend)
                           - 3. * x0(localmesh->xend + 1, localmesh->yend - 1)
                           + x0(localmesh->xend + 1, localmesh->yend - 2);
-        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
         // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
-        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
       }
     }
   } else if (y_bndry == "neumann") {
@@ -1570,11 +1572,11 @@ void LaplaceXYpetsc::solveFiniteDifference(const Field2D& x0) {
       // For the boundary value of the initial guess, use the value that would be set by
       // applying the boundary condition to the initial guess
       PetscScalar val = x0(it.ind, localmesh->ystart);
-      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
       // Set the value for the rhs of the boundary condition to zero
       val = 0.0;
-      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
     }
     if (localmesh->hasBndryLowerY()) {
       if (localmesh->firstX()) {
@@ -1583,11 +1585,11 @@ void LaplaceXYpetsc::solveFiniteDifference(const Field2D& x0) {
         // For the boundary value of the initial guess, use the value that would be set by
         // applying the boundary condition to the initial guess
         PetscScalar val = x0(localmesh->xstart - 1, localmesh->ystart);
-        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
         // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
-        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
       }
       if (localmesh->lastX()) {
         int ind = globalIndex(localmesh->xend + 1, localmesh->ystart - 1);
@@ -1595,11 +1597,11 @@ void LaplaceXYpetsc::solveFiniteDifference(const Field2D& x0) {
         // For the boundary value of the initial guess, use the value that would be set by
         // applying the boundary condition to the initial guess
         PetscScalar val = x0(localmesh->xend + 1, localmesh->ystart);
-        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
         // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
-        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
       }
     }
 
@@ -1613,11 +1615,11 @@ void LaplaceXYpetsc::solveFiniteDifference(const Field2D& x0) {
       // For the boundary value of the initial guess, use the value that would be set by
       // applying the boundary condition to the initial guess
       PetscScalar val = x0(it.ind, localmesh->yend);
-      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
       // Set the value for the rhs of the boundary condition to zero
       val = 0.0;
-      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
     }
     if (localmesh->hasBndryUpperY()) {
       if (localmesh->firstX()) {
@@ -1626,11 +1628,11 @@ void LaplaceXYpetsc::solveFiniteDifference(const Field2D& x0) {
         // For the boundary value of the initial guess, use the value that would be set by
         // applying the boundary condition to the initial guess
         PetscScalar val = x0(localmesh->xstart - 1, localmesh->yend);
-        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
         // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
-        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
       }
       if (localmesh->lastX()) {
         int ind = globalIndex(localmesh->xend + 1, localmesh->yend + 1);
@@ -1638,11 +1640,11 @@ void LaplaceXYpetsc::solveFiniteDifference(const Field2D& x0) {
         // For the boundary value of the initial guess, use the value that would be set by
         // applying the boundary condition to the initial guess
         PetscScalar val = x0(localmesh->xend + 1, localmesh->yend);
-        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
         // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
-        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
       }
     }
   } else if (y_bndry == "free_o3") {
@@ -1659,11 +1661,11 @@ void LaplaceXYpetsc::solveFiniteDifference(const Field2D& x0) {
       PetscScalar val = 3. * x0(it.ind, localmesh->ystart)
                         - 3. * x0(it.ind, localmesh->ystart + 1)
                         + x0(it.ind, localmesh->ystart + 2);
-      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
       // Set the value for the rhs of the boundary condition to zero
       val = 0.0;
-      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
     }
     if (localmesh->hasBndryLowerY()) {
       if (localmesh->firstX()) {
@@ -1674,11 +1676,11 @@ void LaplaceXYpetsc::solveFiniteDifference(const Field2D& x0) {
         PetscScalar val = 3. * x0(localmesh->xstart - 1, localmesh->ystart)
                           - 3. * x0(localmesh->xstart - 1, localmesh->ystart + 1)
                           + x0(localmesh->xstart - 1, localmesh->ystart + 2);
-        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
         // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
-        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
       }
       if (localmesh->lastX()) {
         int ind = globalIndex(localmesh->xend + 1, localmesh->ystart - 1);
@@ -1688,11 +1690,11 @@ void LaplaceXYpetsc::solveFiniteDifference(const Field2D& x0) {
         PetscScalar val = 3. * x0(localmesh->xend + 1, localmesh->ystart)
                           - 3. * x0(localmesh->xend + 1, localmesh->ystart + 1)
                           + x0(localmesh->xend + 1, localmesh->ystart + 2);
-        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
         // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
-        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
       }
     }
 
@@ -1708,11 +1710,11 @@ void LaplaceXYpetsc::solveFiniteDifference(const Field2D& x0) {
       PetscScalar val = 3. * x0(it.ind, localmesh->yend)
                         - 3. * x0(it.ind, localmesh->yend - 1)
                         + x0(it.ind, localmesh->yend - 2);
-      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
       // Set the value for the rhs of the boundary condition to zero
       val = 0.0;
-      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
     }
     if (localmesh->hasBndryUpperY()) {
       if (localmesh->firstX()) {
@@ -1723,11 +1725,11 @@ void LaplaceXYpetsc::solveFiniteDifference(const Field2D& x0) {
         PetscScalar val = 3. * x0(localmesh->xstart - 1, localmesh->yend)
                           - 3. * x0(localmesh->xstart - 1, localmesh->yend - 1)
                           + x0(localmesh->xstart - 1, localmesh->yend - 2);
-        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
         // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
-        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
       }
       if (localmesh->lastX()) {
         int ind = globalIndex(localmesh->xend + 1, localmesh->yend + 1);
@@ -1737,11 +1739,11 @@ void LaplaceXYpetsc::solveFiniteDifference(const Field2D& x0) {
         PetscScalar val = 3. * x0(localmesh->xend + 1, localmesh->yend)
                           - 3. * x0(localmesh->xend + 1, localmesh->yend - 1)
                           + x0(localmesh->xend + 1, localmesh->yend - 2);
-        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(xs, 1, &ind, &val, INSERT_VALUES));
 
         // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
-        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        BOUT_DO_PETSC(VecSetValues(bs, 1, &ind, &val, INSERT_VALUES));
       }
     }
   } else {
@@ -1764,8 +1766,8 @@ int LaplaceXYpetsc::precon(Vec input, Vec result) {
     }
     const int ind = globalIndex(itdwn.ind, localmesh->ystart - 1);
     PetscScalar val;
-    VecGetValues(input, 1, &ind, &val);
-    VecSetValues(result, 1, &ind, &val, INSERT_VALUES);
+    BOUT_DO_PETSC(VecGetValues(input, 1, &ind, &val));
+    BOUT_DO_PETSC(VecSetValues(result, 1, &ind, &val, INSERT_VALUES));
   }
   for (auto itup = localmesh->iterateBndryUpperY(); !itup.isDone(); itup++) {
     // Should not go into corner cells, LaplaceXYpetsc stencil does not include them
@@ -1774,8 +1776,8 @@ int LaplaceXYpetsc::precon(Vec input, Vec result) {
     }
     const int ind = globalIndex(itup.ind, localmesh->yend + 1);
     PetscScalar val;
-    VecGetValues(input, 1, &ind, &val);
-    VecSetValues(result, 1, &ind, &val, INSERT_VALUES);
+    BOUT_DO_PETSC(VecGetValues(input, 1, &ind, &val));
+    BOUT_DO_PETSC(VecSetValues(result, 1, &ind, &val, INSERT_VALUES));
   }
 
   // Load vector x into bvals array
@@ -1783,7 +1785,7 @@ int LaplaceXYpetsc::precon(Vec input, Vec result) {
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       const int ind = globalIndex(x, y);
       PetscScalar val;
-      VecGetValues(input, 1, &ind, &val);
+      BOUT_DO_PETSC(VecGetValues(input, 1, &ind, &val));
       bvals(y - localmesh->ystart, x - xstart) = val;
     }
   }
@@ -1796,11 +1798,11 @@ int LaplaceXYpetsc::precon(Vec input, Vec result) {
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       const int ind = globalIndex(x, y);
       PetscScalar val = xvals(y - localmesh->ystart, x - xstart);
-      VecSetValues(result, 1, &ind, &val, INSERT_VALUES);
+      BOUT_DO_PETSC(VecSetValues(result, 1, &ind, &val, INSERT_VALUES));
     }
   }
-  VecAssemblyBegin(result);
-  VecAssemblyEnd(result);
+  BOUT_DO_PETSC(VecAssemblyBegin(result));
+  BOUT_DO_PETSC(VecAssemblyEnd(result));
   return 0;
 }
 
