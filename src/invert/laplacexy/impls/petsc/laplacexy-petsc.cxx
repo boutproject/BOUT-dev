@@ -890,10 +890,9 @@ void LaplaceXYpetsc::setCoefs(const Field2D& A, const Field2D& B) {
 
   // Set the operator
 #if PETSC_VERSION_GE(3, 5, 0)
-  BOUT_DO_PETSC(KSPSetOperators(ksp, BOUT_DO_PETSC(MatA, MatA)));
+  BOUT_DO_PETSC(KSPSetOperators(ksp, MatA, MatA));
 #else
-  BOUT_DO_PETSC(
-      KSPSetOperators(ksp, BOUT_DO_PETSC(MatA, MatA, DIFFERENT_NONZERO_PATTERN)));
+  BOUT_DO_PETSC(KSPSetOperators(ksp, MatA, MatA, DIFFERENT_NONZERO_PATTERN));
 #endif
 
   // Set coefficients for preconditioner
@@ -1206,13 +1205,12 @@ Field2D LaplaceXYpetsc::solve(const Field2D& rhs, const Field2D& x0) {
   // Solve the system
   BOUT_DO_PETSC(KSPSolve(ksp, bs, xs));
 
-  BOUT_DO_PETSC(KSPConvergedReason reason);
+  KSPConvergedReason reason;
   BOUT_DO_PETSC(KSPGetConvergedReason(ksp, &reason));
 
   if (reason <= 0) {
-    throw BoutException(
-        "LaplaceXYpetsc failed to converge. Reason {} ({:d})",
-        BOUT_DO_PETSC(KSPConvergedReasons[reason], static_cast<int>(reason)));
+    throw BoutException("LaplaceXYpetsc failed to converge. Reason {} ({:d})",
+                        KSPConvergedReasons[reason], static_cast<int>(reason));
   }
 
   if (save_performance) {

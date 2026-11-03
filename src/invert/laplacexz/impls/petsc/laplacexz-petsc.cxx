@@ -725,10 +725,9 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
 
       // Note: This is a hack to force update of the preconditioner matrix
 #if PETSC_VERSION_GE(3, 5, 0)
-      BOUT_DO_PETSC(KSPSetOperators(it.ksp, it.BOUT_DO_PETSC(MatA, it.MatP)));
+      BOUT_DO_PETSC(KSPSetOperators(it.ksp, it.MatA, it.MatP));
 #else
-      BOUT_DO_PETSC(
-          KSPSetOperators(it.ksp, it.BOUT_DO_PETSC(MatA, it.MatP, SAME_NONZERO_PATTERN)));
+      BOUT_DO_PETSC(KSPSetOperators(it.ksp, it.MatA, it.MatP, SAME_NONZERO_PATTERN));
 #endif
     }
   } else {
@@ -738,8 +737,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
 #if PETSC_VERSION_GE(3, 5, 0)
       BOUT_DO_PETSC(KSPSetReusePreconditioner(it.ksp, PETSC_TRUE));
 #else
-      BOUT_DO_PETSC(
-          KSPSetOperators(it.ksp, it.BOUT_DO_PETSC(MatA, it.MatP, SAME_PRECONDITIONER)));
+      BOUT_DO_PETSC(KSPSetOperators(it.ksp, it.MatA, it.MatP, SAME_PRECONDITIONER));
 #endif
     }
   }
@@ -931,13 +929,12 @@ Field3D LaplaceXZpetsc::solve(const Field3D& bin, const Field3D& x0in) {
     BOUT_DO_PETSC(KSPSolve(it.ksp, bs, xs));
 
     // Check if the solve converged
-    BOUT_DO_PETSC(KSPConvergedReason reason);
+    KSPConvergedReason reason;
     BOUT_DO_PETSC(KSPGetConvergedReason(it.ksp, &reason));
 
     if (reason <= 0) {
-      throw BoutException(
-          "LaplaceXZ failed to converge. Reason {} ({:d})",
-          BOUT_DO_PETSC(KSPConvergedReasons[reason], static_cast<int>(reason)));
+      throw BoutException("LaplaceXZ failed to converge. Reason {} ({:d})",
+                          KSPConvergedReasons[reason], static_cast<int>(reason));
     }
 
     //////////////////////////
