@@ -66,11 +66,8 @@ int main(int argc, char** argv) {
       "div_par_K_grad_par_mod_Original", dump, input,
       Div_par_K_Grad_par_mod(K, input, flow_ylow, true, ConductionMethod::Original));
   fci_op_test(
-      "div_par_K_grad_par_mod_ProductJK", dump, input,
-      Div_par_K_Grad_par_mod(K, input, flow_ylow, true, ConductionMethod::ProductJK));
-  fci_op_test(
-      "div_par_K_grad_par_mod_Harmonic", dump, input,
-      Div_par_K_Grad_par_mod(K, input, flow_ylow, true, ConductionMethod::Harmonic));
+      "div_par_K_grad_par_mod_PetscOperator", dump, input,
+      Div_par_K_Grad_par_mod(K, input, flow_ylow, true, ConductionMethod::PetscOperator));
   fci_op_test("laplace_par", dump, input, Laplace_par(input));
 
   // Finite volume methods

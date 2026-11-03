@@ -23,6 +23,7 @@
 #include <petscvec.h>
 
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -974,6 +975,16 @@ public:
   ///
   /// @returns A @ref Parallel struct containing all assembled operators.
   Parallel getParallel() const;
+
+  class Cache {
+  public:
+    static std::shared_ptr<PetscOperators> get(Mesh* mesh);
+    static std::shared_ptr<PetscOperators::Parallel> getParallel(Mesh* mesh);
+
+  private:
+    static std::map<Mesh*, std::weak_ptr<PetscOperators>> petscOp;
+    static std::map<Mesh*, std::weak_ptr<PetscOperators::Parallel>> parOp;
+  };
 
 private:
   /// @brief Read a Field3D from the mesh, throwing if the field is absent.

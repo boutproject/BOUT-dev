@@ -25,8 +25,7 @@ OPERATORS = (
     "div_par",
     "div_par_K_grad_par",
     "div_par_K_grad_par_mod_Original",
-    "div_par_K_grad_par_mod_ProductJK",
-    "div_par_K_grad_par_mod_Harmonic",
+    "div_par_K_grad_par_mod_PetscOperator",
     "laplace_par",
     "FV_div_par_mod",
     "FV_div_par_fvv",
@@ -102,6 +101,7 @@ def make_grid(nz: int):
     # Create the grid
     grid = zb.grid.Grid(poloidal_grid, ycoords, ylength, yperiodic=True)
     maps = zb.make_maps(grid, field, nslice=1, quiet=True, MXG=1)
+    zb.weights.modify_maps(maps, partial_boundaries=False)
     zb.write_maps(
         grid,
         field,
