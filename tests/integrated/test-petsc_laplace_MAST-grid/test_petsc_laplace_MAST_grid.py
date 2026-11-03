@@ -5,8 +5,8 @@
 #
 
 import pytest
-from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
+from boututils.run_wrapper import launch_safe, shell
 
 # Variables to compare
 vars = [
@@ -31,9 +31,9 @@ def test_petsc_laplace_MAST_grid(nproc, jy):
 
     cmd = f"./test_petsc_laplace_MAST_grid mesh:file=grids/grid_MAST_SOL_jyis{jy}.nc"
 
-    shell(["rm -f data/BOUT.dmp.*.nc"])
+    shell(["rm -rf data/BOUT.dmp.*"])
 
-    s, out = launch_safe(cmd, nproc=nproc, pipe=True)
+    _s, out = launch_safe(cmd, nproc=nproc, pipe=True)
 
     with open(f"run.log.{nproc}.jy_{jy}", "w") as f:
         f.write(out)

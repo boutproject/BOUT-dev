@@ -2,23 +2,14 @@
 
 # Python script to run and analyse MMS test
 
-from __future__ import division
-from __future__ import print_function
-
-try:
-    from builtins import zip
-    from builtins import str
-except:
-    pass
-
-from boututils.run_wrapper import shell, build_and_log, launch_safe
-from boutdata.collect import collect
 
 import pickle
-
+import sys
 from sys import stdout
 
-from numpy import sqrt, max, abs, mean, array, log, concatenate, pi
+from boutdata.collect import collect
+from boututils.run_wrapper import build_and_log, launch_safe, shell
+from numpy import abs, array, log, max, mean, pi, sqrt
 
 build_and_log("Making MMS wave test")
 
@@ -51,6 +42,7 @@ for ny in nylist:
         + str(nout)
         + " timestep="
         + str(timestep)
+        + " replace"
     )
 
     print("Running with " + args)
@@ -80,7 +72,7 @@ for ny in nylist:
         error_2[var].append(l2)
         error_inf[var].append(linf)
 
-        print("Error norm %s: l-2 %f l-inf %f" % (var, l2, linf))
+        print(f"Error norm {var}: l-2 {l2} l-inf {linf}")
 
 # Save data
 with open("wave.pkl", "wb") as output:
@@ -95,7 +87,7 @@ dy = 1.0 / array(nylist)
 success = True
 for var in varlist:
     order = log(error_2[var][-1] / error_2[var][-2]) / log(dy[-1] / dy[-2])
-    stdout.write("%s Convergence order = %f" % (var, order))
+    stdout.write(f"{var} Convergence order = {order}")
 
     if 1.8 < order < 2.2:  # Should be second order accurate
         print("............ PASS")
@@ -108,7 +100,7 @@ try:
     import matplotlib.pyplot as plt
 
     for var, mark, label in zip(varlist, markers, labels):
-        plt.plot(dy, error_2[var], "-" + mark, label="%s order=%.2f" % (label, order))
+        plt.plot(dy, error_2[var], "-" + mark, label=f"{label} order={order}")
         plt.plot(dy, error_inf[var], "--" + mark)
 
     plt.legend(loc="upper left")
@@ -124,15 +116,15 @@ try:
 
     # plt.show()
     plt.close()
-except:
+except Exception as e:  # noqa: BLE001
     # Plotting could fail for any number of reasons, and the actual
     # error raised may depend on, among other things, the current
     # matplotlib backend, so catch everything
-    pass
+    print(f"Plotting: Caught exception {e}")
 
 if success:
     print(" => Test passed")
-    exit(0)
+    sys.exit(0)
 else:
     print(" => Test failed")
-    exit(1)
+    sys.exit(1)

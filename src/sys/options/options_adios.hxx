@@ -67,6 +67,7 @@ private:
   std::string filename;
   /// How to open the file for writing
   adios2::Mode file_mode{adios2::Mode::Write};
+  bool replace_existing_file; ///< Replace existing file if it exists?
   bool singleWriteFile = false;
 };
 

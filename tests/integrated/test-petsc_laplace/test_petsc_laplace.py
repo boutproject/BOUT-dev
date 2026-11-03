@@ -5,9 +5,10 @@
 #
 
 import pathlib
+
 import pytest
-from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect, create_cache
+from boututils.run_wrapper import launch_safe, shell
 
 errors = [
     "max_error1",
@@ -24,10 +25,10 @@ tol = 2e-4  # Absolute (?) tolerance
 def test_petsc_laplace(nproc):
     cmd = "./test_petsc_laplace"
 
-    shell(["rm data/BOUT.dmp.*.nc"])
+    shell(["rm -rf data/BOUT.dmp.*"])
 
     print(f"   {nproc} processors....")
-    s, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
+    _s, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
 
     pathlib.Path(f"run.log.{nproc}").write_text(out)
     cache = create_cache(path="data", prefix="BOUT.dmp")

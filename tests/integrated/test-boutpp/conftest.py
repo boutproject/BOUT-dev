@@ -1,7 +1,18 @@
-import pytest
 import os
-import sys
+import shutil
 import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+
+def remove_bout_dmp_files(path: Path) -> None:
+    for entry in path.rglob("BOUT.dmp.*"):
+        if entry.is_dir():
+            shutil.rmtree(entry)
+        elif entry.exists() or entry.is_symlink():
+            entry.unlink()
 
 
 @pytest.fixture(autouse=True, scope="function")
@@ -11,6 +22,11 @@ def unique_xdist_group(request):
         f"boutpp_isolated_{request.node.nodeid.replace('/', '_').replace('::', '_')}"
     )
     request.node.add_marker(pytest.mark.xdist_group(name=group_name))
+
+
+@pytest.fixture(autouse=True, scope="function")
+def remove_boutpp_outputs():
+    remove_bout_dmp_files(Path("."))
 
 
 @pytest.fixture(scope="function")
@@ -52,7 +68,14 @@ def run_isolated(request):
         str(request.config.inifile or root_dir),  # Point to actual config if it exists
     ]
 
-    result = subprocess.run(cmd, env=env, cwd=root_dir, capture_output=True, text=True)
+    result = subprocess.run(
+        cmd,
+        env=env,
+        cwd=root_dir,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
     if result.returncode != 0:
         pytest.fail(

@@ -2,10 +2,14 @@
 #include "bout/bout.hxx"
 #include "bout/globals.hxx"
 #include "bout/mesh.hxx"
+#include "bout/options.hxx"
 #include "bout/version.hxx"
 
 #include "options_adios.hxx"
 #include "options_netcdf.hxx"
+
+#include <memory>
+#include <string>
 
 namespace bout {
 std::unique_ptr<OptionsIO> OptionsIO::create(const std::string& file) {
@@ -25,6 +29,7 @@ OptionsIOFactory::ReturnType OptionsIOFactory::createRestart(Options* optionsptr
       Options::root()["datadir"].withDefault<std::string>("data"));
   options["prefix"].overrideDefault("BOUT.restart");
   options["append"].overrideDefault(false);
+  options["replace"].overrideDefault(true); // Restart files are overwritten each output
   options["singleWriteFile"].overrideDefault(true);
   return create(getType(&options), options);
 }
@@ -39,11 +44,15 @@ OptionsIOFactory::ReturnType OptionsIOFactory::createOutput(Options* optionsptr)
   options["append"].overrideDefault(Options::root()["append"]
                                         .doc("Add output data to existing (dump) files?")
                                         .withDefault<bool>(false));
+  options["replace"].overrideDefault(
+      Options::root()["replace"]
+          .doc("Replace output (dump) files if they exist and not appending?")
+          .withDefault<bool>(false));
   return create(getType(&options), options);
 }
 
 OptionsIOFactory::ReturnType OptionsIOFactory::createFile(const std::string& file) const {
-  Options options{{"file", file}};
+  Options options{{"file", file}, {"replace", true}};
   return create(getDefaultType(), options);
 }
 

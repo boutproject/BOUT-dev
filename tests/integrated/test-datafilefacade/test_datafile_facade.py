@@ -3,11 +3,10 @@
 # Test the DataFileFacade interface by writing to dump files using the SAVE_ONCE macro
 #
 
-import pytest
 import numpy
+import pytest
 from boutdata.collect import collect
-from boututils.run_wrapper import shell, launch_safe
-
+from boututils.run_wrapper import launch_safe, shell
 
 testvars = {
     "f2d": 0.1,
@@ -36,12 +35,12 @@ testvars = {
 def test_datafile_facade(nproc):
 
     # delete any existing output
-    shell(["rm -f data/BOUT.dmp.*.nc data/BOUT.restart.*.nc"])
+    shell(["rm -rf data/BOUT.dmp.* data/BOUT.restart.*.nc"])
 
     print(f"   {nproc} processor(s)....")
 
     # run the test executable
-    s, out = launch_safe("./test-datafile-facade", nproc=nproc, pipe=True)
+    _s, out = launch_safe("./test-datafile-facade", nproc=nproc, pipe=True)
     with open(f"run.log.{nproc}", "w") as f:
         f.write(out)
 
@@ -52,7 +51,7 @@ def test_datafile_facade(nproc):
 
         if result.dtype.kind in ("S", "U"):
             assert str(result) == expected, (
-                f"{name} is different: got '{str(result)}', expected '{expected}'"
+                f"{name} is different: got '{result!s}', expected '{expected}'"
             )
         else:
             diff = numpy.max(numpy.abs(expected - result))

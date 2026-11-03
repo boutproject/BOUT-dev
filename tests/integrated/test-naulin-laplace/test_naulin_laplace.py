@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import pytest
-from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
+from boututils.run_wrapper import launch_safe, shell
 
 tol = 2e-7  # Absolute tolerance
 numTests = 4  # We test 4 different boundary conditions (with slightly different inputs for each)
@@ -17,10 +17,10 @@ def test_naulin_laplace(nproc):
     # set nxpe on the command line as we only use solution from one point in y, so splitting in y-direction is redundant (and also doesn't help test the solver)
     cmd = f"./test_naulin_laplace NXPE={nproc}"
 
-    shell(["rm -f data/BOUT.dmp.*.nc"])
+    shell(["rm -rf data/BOUT.dmp.*"])
 
     print(f"Running LaplaceNaulin inversion test: {nproc} procs, {mthread} thread(s)")
-    s, out = launch_safe(cmd, nproc=nproc, mthread=mthread, pipe=True)
+    _s, out = launch_safe(cmd, nproc=nproc, mthread=mthread, pipe=True)
 
     with open(f"run.log.{nproc}", "w") as f:
         f.write(out)

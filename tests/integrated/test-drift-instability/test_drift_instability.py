@@ -4,16 +4,15 @@
 # Run the test, compare results against the benchmark
 #
 
-import pytest
-import numpy as np
+from math import isnan
 
-from boututils.run_wrapper import shell, launch_safe
+import numpy as np
+import pytest
+from boutdata.collect import collect
 from boututils.calculus import deriv
 from boututils.datafile import DataFile
 from boututils.linear_regression import linear_regression
-
-from boutdata.collect import collect
-from math import isnan
+from boututils.run_wrapper import launch_safe, shell
 
 nthreads = 1
 nproc = 2  # Number of processors to run on
@@ -65,13 +64,13 @@ def run_zeff_case(zeff):
         timestep = 1e3
 
     # Delete old output files
-    shell(["rm -f data/BOUT.dmp.*.nc"])
+    shell(["rm -rf data/BOUT.dmp.*"])
 
     print("Running drift instability test, zeff = ", zeff)
 
     # Run the case
-    s, out = launch_safe(
-        "./2fluid 2fluid:Zeff={} solver:output_step={}".format(zeff, timestep),
+    _s, out = launch_safe(
+        f"./2fluid 2fluid:Zeff={zeff} solver:output_step={timestep}",
         nproc=nproc,
         mthread=nthreads,
         pipe=True,
@@ -93,7 +92,7 @@ def run_zeff_case(zeff):
     nz = dims[3]
 
     with DataFile("uedge.grd_std.cdl") as f:
-        grid = {v: f.read(v) for v in f.keys()}
+        grid = {v: f.read(v) for v in f}
 
     # Calculate geometric and physical quantities
     lZeta = 1e2 * zmax * 2 * np.pi * grid["R0"]  # toroidal range [cm]

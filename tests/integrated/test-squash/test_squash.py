@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 
 import itertools
-import time
-import numpy as np
 import re
+import time
+from pathlib import Path
+
+import numpy as np
 from boututils.datafile import DataFile
 from boututils.run_wrapper import launch_safe, shell_safe
-from pathlib import Path
 
 IGNORED_VARS_PATTERN = re.compile(
     "(wtime|ncalls|arkode|cvode|run_id|run_restart_from|M.?SUB|N.?PE|iteration|wall_time|has_legacy_netcdf|hist_hi|openmp_threads).*"
 )
 
 
-class timer(object):
+class timer:
     """Context manager for printing how long a command took"""
 
     def __init__(self, msg):
@@ -24,7 +25,7 @@ class timer(object):
 
     def __exit__(self, exc_type, exc_value, traceback):
         end = time.time()
-        print("{:12.8f}s {}".format(end - self.start, self.msg))
+        print(f"{end - self.start:12.8f}s {self.msg}")
 
 
 def timed_shell_safe(cmd, *args, **kwargs):
@@ -41,17 +42,15 @@ def timed_launch_safe(cmd, *args, **kwargs):
 
 def verify(f1, f2):
     """Verifies that two BOUT++ files are identical"""
-    with timer("verify %s %s" % (f1, f2)):
+    with timer(f"verify {f1} {f2}"):
         d1 = DataFile(f1)
         d2 = DataFile(f2)
-        for v in d1.keys():
+        for v in d1:
             if IGNORED_VARS_PATTERN.match(v):
                 continue
 
             if d1[v].shape != d2[v].shape:
-                raise RuntimeError(
-                    "shape mismatch in '{}': {} vs {}".format(v, d1[v], d2[v])
-                )
+                raise RuntimeError(f"shape mismatch in '{v}': {d1[v]} vs {d2[v]}")
 
             v1 = d1[v]
             v2 = d2[v]
@@ -70,7 +69,7 @@ def verify(f1, f2):
                     dimensions = [range(x) for x in v1.shape]
                     for i in itertools.product(*dimensions):
                         if v1[i] != v2[i]:
-                            err += "{}: {} != {}\n".format(i, v1[i], v2[i])
+                            err += f"{i}: {v1[i]} != {v2[i]}\n"
                     raise RuntimeError("data mismatch in ", v, err, v1, v2)
 
 
@@ -81,39 +80,44 @@ def test_squash():
         bout_squashoutput = "bout-squashoutput"
 
     print("Run once to get normal data")
+    timed_shell_safe("rm -rf data/BOUT.dmp.*")
     timed_shell_safe("./squash -q -q -q solver:nout=2")
     timed_shell_safe("mv data/BOUT.dmp.0.nc f1.nc")
 
     print("Parallel test")
     timed_shell_safe("rm -f f2.nc")
+    timed_shell_safe("rm -rf data/BOUT.dmp.*")
     timed_launch_safe("./squash -q -q -q solver:nout=2", nproc=4, mthread=1)
-    timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))
+    timed_shell_safe(f"{bout_squashoutput} -qdcl 9 data --outputname ../f2.nc")
 
     verify("f1.nc", "f2.nc")
 
     print("Parallel and in two pieces")
     timed_shell_safe("rm -f f2.nc")
+    timed_shell_safe("rm -rf data/BOUT.dmp.*")
     timed_launch_safe("./squash -q -q -q", nproc=4, mthread=1)
-    timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))
+    timed_shell_safe(f"{bout_squashoutput} -qdcl 9 data --outputname ../f2.nc")
     timed_launch_safe("./squash -q -q -q restart", nproc=4, mthread=1)
-    timed_shell_safe("{} -qdcal 9 data --outputname ../f2.nc".format(bout_squashoutput))
+    timed_shell_safe(f"{bout_squashoutput} -qdcal 9 data --outputname ../f2.nc")
 
     verify("f1.nc", "f2.nc")
 
     print("Parallel and in two pieces without dump_on_restart")
     timed_shell_safe("rm -f f2.nc")
+    timed_shell_safe("rm -rf data/BOUT.dmp.*")
     timed_launch_safe("./squash -q -q -q", nproc=4, mthread=1)
-    timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))
+    timed_shell_safe(f"{bout_squashoutput} -qdcl 9 data --outputname ../f2.nc")
     timed_launch_safe(
         "./squash -q -q -q restart dump_on_restart=false", nproc=4, mthread=1
     )
-    timed_shell_safe("{} -qdcal 9 data --outputname ../f2.nc".format(bout_squashoutput))
+    timed_shell_safe(f"{bout_squashoutput} -qdcal 9 data --outputname ../f2.nc")
 
     verify("f1.nc", "f2.nc")
 
     print("Sequential test")
     timed_shell_safe("rm -f f2.nc")
+    timed_shell_safe("rm -rf data/BOUT.dmp.*")
     timed_shell_safe("./squash -q -q -q solver:nout=2")
-    timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))
+    timed_shell_safe(f"{bout_squashoutput} -qdcl 9 data --outputname ../f2.nc")
 
     verify("f1.nc", "f2.nc")

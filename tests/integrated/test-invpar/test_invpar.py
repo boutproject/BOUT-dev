@@ -4,19 +4,18 @@
 # Run the test, check it completed successfully
 #
 
-from boututils.run_wrapper import shell, launch
-
+from boututils.run_wrapper import launch, shell
 
 flags_src = [
-    dict(acoef=1, bcoef=0, ccoef=0, dcoef=0, ecoef=0),
-    dict(acoef=1.5, bcoef="'2.*sin(2*y)'"),
-    dict(acoef=1),
-    dict(acoef=1, bcoef=2),
-    dict(ccoef=1.793),
-    dict(ccoef=3, bcoef=0),
-    dict(dcoef=3.5),
-    dict(ecoef=-1),
-    dict(input_field="'ballooning(exp(-y*y)*cos(z)*gauss(x,0.2))'"),
+    {"acoef": 1, "bcoef": 0, "ccoef": 0, "dcoef": 0, "ecoef": 0},
+    {"acoef": 1.5, "bcoef": "'2.*sin(2*y)'"},
+    {"acoef": 1},
+    {"acoef": 1, "bcoef": 2},
+    {"ccoef": 1.793},
+    {"ccoef": 3, "bcoef": 0},
+    {"dcoef": 3.5},
+    {"ecoef": -1},
+    {"input_field": "'ballooning(exp(-y*y)*cos(z)*gauss(x,0.2))'"},
 ]
 
 
@@ -36,10 +35,10 @@ def test_invpar():
     for nproc in [1, 2, 4]:
         cmd = "./test_invpar"
 
-        print("   %d processors...." % (nproc))
+        print(f"   {nproc} processors....")
         r = 0
         for f in flags:
-            shell(["rm data/BOUT.dmp.* 2> err.log"])
+            shell(["rm -rf data/BOUT.dmp.* 2> err.log"])
 
             # Run the case
             s, _ = launch(cmd + " -q -q -q " + f, nproc=nproc, mthread=1)

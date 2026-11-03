@@ -1,3 +1,4 @@
+import subprocess
 from pathlib import Path
 
 import numpy as np
@@ -7,7 +8,12 @@ from read_jacobian import extract_block, load_jacobian, to_numpy_dense
 TEST_DIR = Path(".")
 
 
+def remove_bout_dmp_files():
+    subprocess.run("rm -rf data/BOUT.dmp.*", shell=True, check=False)
+
+
 def test_rhs_jacobian_output_trigger(assert_success_in_shell):
+    remove_bout_dmp_files()
     assert_success_in_shell("./test_cvode_save_jacobian")
 
     data_dir = TEST_DIR / "data"
@@ -44,6 +50,7 @@ def test_rhs_jacobian_output_trigger(assert_success_in_shell):
 
 
 def test_system_jacobian_linear_setup_trigger(assert_success_in_shell):
+    remove_bout_dmp_files()
     assert_success_in_shell(
         "./test_cvode_save_jacobian "
         "solver:cvode_precon_method=petsc "

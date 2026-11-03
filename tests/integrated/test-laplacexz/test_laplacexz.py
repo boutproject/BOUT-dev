@@ -6,9 +6,8 @@
 
 import numpy as np
 import pytest
-
 from boutdata.collect import collect
-from boututils.run_wrapper import shell, launch_safe, getmpirun
+from boututils.run_wrapper import getmpirun, launch_safe, shell
 
 
 @pytest.mark.parametrize("nproc", [1, 2, 4])
@@ -23,10 +22,10 @@ def test_laplacexz(nproc):
     # Unique data directory per processor configuration
     cmd = f"./test-laplacexz nxpe={nproc}"
 
-    shell(["rm -f data/BOUT.dmp.*.nc"])
+    shell(["rm -rf data/BOUT.dmp.*"])
 
     print(f"   {nproc} processors (nxpe = {nproc})....")
-    s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, mthread=1, pipe=True)
+    _s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, mthread=1, pipe=True)
     with open(f"run.log.{nproc}", "w") as f:
         f.write(out)
 

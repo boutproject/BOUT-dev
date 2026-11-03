@@ -24,8 +24,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
-#include <stdexcept>
+#include <filesystem>
 #include <string>
+
+namespace fs = std::filesystem;
 
 namespace {
 std::size_t getLocalNDims(adios2::IO& io, const std::string& name,
@@ -233,6 +235,9 @@ OptionsADIOS::OptionsADIOS(Options& options) : OptionsIO(options) {
                   ? adios2::Mode::Append
                   : adios2::Mode::Write;
 
+  replace_existing_file =
+      options["replace"].doc("Replace existing file?").withDefault<bool>(false);
+
   singleWriteFile = options["singleWriteFile"].withDefault<bool>(false);
 }
 
@@ -403,6 +408,17 @@ namespace bout {
 /// Write options to file
 void OptionsADIOS::write(const Options& options, const std::string& time_dim) {
   const Timer timer("io");
+
+  if (file_mode == adios2::Mode::Write and fs::exists(filename)
+      and !replace_existing_file) {
+    throw BoutException(
+        "Output file '{:s}' already exists. Aborting rather than overwriting data.\n"
+        "Set 'append=true' to append, or 'replace=true' to overwrite.",
+        filename);
+  }
+  // Write gets called multiple times.
+  // Only prevent overwrite the first time.
+  replace_existing_file = true;
 
   // ADIOSStream is just a BOUT++ object, it does not create anything inside ADIOS
   ADIOSStream& stream = ADIOSStream::ADIOSGetStream(filename, file_mode);
