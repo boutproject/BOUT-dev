@@ -371,10 +371,10 @@ protected:
   // These are protected so we can make them public in the test suite
   // for testing
 
-  MeshTopology mesh_topology;
+  MeshTopology mesh_topology{MeshTopology::closed_field_line};
 
-  SnowflakeType snowflake_type;
-
+  SnowflakeType snowflake_type{SnowflakeType::SF};
+  
   std::string IngridTopology;
 
   // Processor number, local <-> global translation
