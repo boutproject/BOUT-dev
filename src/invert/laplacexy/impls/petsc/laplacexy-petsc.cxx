@@ -190,8 +190,8 @@ LaplaceXYpetsc::LaplaceXYpetsc(Mesh* m, Options* opt, const CELL_LOC loc)
   MatMPIAIJSetPreallocation(MatA, 0, d_nnz, 0, o_nnz);
   MatSetUp(MatA);
 
-  PetscFree(d_nnz);
-  PetscFree(o_nnz);
+  BOUT_DO_PETSC(PetscFree(d_nnz));
+  BOUT_DO_PETSC(PetscFree(o_nnz));
 
   // Determine which row/columns of the matrix are locally owned
   int Istart = 0;
