@@ -563,6 +563,8 @@ set(CONFIG_CFLAGS
     "${CONFIG_CFLAGS} -I\${BOUT_INCLUDE_PATH} -I${CMAKE_CURRENT_BINARY_DIR}/include ${CMAKE_CXX_FLAGS} -std=c++${BOUT_CXX_STANDARD}"
 )
 
+# Publish the C++ minimum to consumers; the helper sets this target's required
+# C++, CUDA, and HIP dialects without lowering a newer caller-selected standard.
 target_compile_features(bout++ PUBLIC cxx_std_${BOUT_CXX_STANDARD})
 bout_target_set_language_standards(bout++)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)

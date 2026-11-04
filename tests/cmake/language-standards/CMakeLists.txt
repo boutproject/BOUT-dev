@@ -13,7 +13,9 @@ endfunction()
 
 # GPU properties can be checked without a GPU compiler. This is a configuration
 # regression test, not a CUDA/HIP compilation or runtime test.
-add_library(defaults INTERFACE)
+# Imported targets accept these properties on CMake 3.17 without generating
+# build rules for the synthetic GPU dialects or newer standards.
+add_library(defaults STATIC IMPORTED)
 bout_target_set_language_standards(defaults)
 foreach(language IN ITEMS CXX CUDA HIP)
   expect_property(defaults ${language}_STANDARD 20)
@@ -24,7 +26,7 @@ foreach(language IN ITEMS CXX CUDA HIP)
   set(CMAKE_${language}_STANDARD 23)
 endforeach()
 
-add_library(newer INTERFACE)
+add_library(newer STATIC IMPORTED)
 # Model an explicitly chosen target standard independently of CMake defaults.
 foreach(language IN ITEMS CXX CUDA HIP)
   set_property(TARGET newer PROPERTY ${language}_STANDARD 23)
@@ -38,7 +40,7 @@ foreach(language IN ITEMS CXX CUDA HIP)
 endforeach()
 
 foreach(old_standard IN ITEMS 98 17)
-  add_library(older_${old_standard} INTERFACE)
+  add_library(older_${old_standard} STATIC IMPORTED)
   foreach(language IN ITEMS CXX CUDA HIP)
     set_property(
       TARGET older_${old_standard} PROPERTY ${language}_STANDARD
@@ -51,7 +53,7 @@ foreach(old_standard IN ITEMS 98 17)
   endforeach()
 endforeach()
 
-add_library(unrelated INTERFACE)
+add_library(unrelated STATIC IMPORTED)
 foreach(language IN ITEMS CXX CUDA HIP)
   set_property(TARGET unrelated PROPERTY ${language}_STANDARD 17)
   expect_property(unrelated ${language}_STANDARD 17)
@@ -67,29 +69,32 @@ expect_property(defaults HIP_STANDARD 20)
 
 # Exercise SetupCompilers' HIP branch without requiring a ROCm installation.
 # Only language detection is stubbed; the production configuration runs.
-function(enable_language language)
-  if(NOT language STREQUAL "HIP")
-    message(FATAL_ERROR "Unexpected language detection: ${language}")
-  endif()
-  set(hip_detection_requested
-      ON
-      PARENT_SCOPE
+# The HIP option requires CMake 3.21, independently of the project's minimum.
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.21)
+  function(enable_language language)
+    if(NOT language STREQUAL "HIP")
+      message(FATAL_ERROR "Unexpected language detection: ${language}")
+    endif()
+    set(hip_detection_requested
+        ON
+        PARENT_SCOPE
+    )
+  endfunction()
+  set(BOUT_ENABLE_MPI OFF)
+  set(BOUT_ENABLE_HIP ON)
+  set(BOUT_ENABLE_CUDA OFF)
+  set(BOUT_ENABLE_RAJA ON)
+  set(BOUT_ENABLE_UMPIRE ON)
+  set(CMAKE_HIP_STANDARD_REQUIRED OFF)
+  set(CMAKE_HIP_EXTENSIONS ON)
+  include("${BOUT_SOURCE_DIR}/cmake/SetupCompilers.cmake")
+  if(NOT hip_detection_requested
+     OR NOT CMAKE_HIP_STANDARD EQUAL 23
+     OR CMAKE_HIP_STANDARD_REQUIRED
+     OR NOT CMAKE_HIP_EXTENSIONS
   )
-endfunction()
-set(BOUT_ENABLE_MPI OFF)
-set(BOUT_ENABLE_HIP ON)
-set(BOUT_ENABLE_CUDA OFF)
-set(BOUT_ENABLE_RAJA ON)
-set(BOUT_ENABLE_UMPIRE ON)
-set(CMAKE_HIP_STANDARD_REQUIRED OFF)
-set(CMAKE_HIP_EXTENSIONS ON)
-include("${BOUT_SOURCE_DIR}/cmake/SetupCompilers.cmake")
-if(NOT hip_detection_requested
-   OR NOT CMAKE_HIP_STANDARD EQUAL 23
-   OR CMAKE_HIP_STANDARD_REQUIRED
-   OR NOT CMAKE_HIP_EXTENSIONS
-)
-  message(FATAL_ERROR "HIP setup changed caller's directory defaults")
+    message(FATAL_ERROR "HIP setup changed caller's directory defaults")
+  endif()
 endif()
 
 # Do not raise the project's supported compiler minimum just for this probe.
