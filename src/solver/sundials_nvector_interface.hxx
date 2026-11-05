@@ -113,6 +113,12 @@ public:
       if (!local) {
         throw BoutException("SUNDIALS CUDA vector allocation failed");
       }
+      try {
+        cuda_packing->bind(local);
+      } catch (...) {
+        N_VDestroy(local);
+        throw;
+      }
       auto* vec = callWithSUNContext(N_VMake_MPIPlusX, ctx, BoutComm::get(), local);
       if (!vec) {
         N_VDestroy(local);
@@ -227,6 +233,47 @@ public:
     solver.save_derivs(N_VGetArrayPointer(du));
   }
 
+  /// Save callback outputs together. Prepare both sets of fields before any
+  /// asynchronous reads, since vector conversion may replace component storage.
+  void copy_state_and_deriv_to_vectors(N_Vector u, N_Vector du) const {
+    ensure_manyvector_available();
+#if BOUT_HAS_SUNDIALS_CUDA
+    if (use_cuda() && cuda_packing->async_transfers) {
+      const bout::profiling::ProfileRange range(
+          "SundialsNVectorInterface::save_cuda_pair");
+      cuda_packing->wait_for_fields();
+      // User RHS/preconditioner/Jacobian functions may use arbitrary streams.
+      // Keep one producer fence for the pair rather than one per transfer.
+      SundialsCudaPacking::check(cudaDeviceSynchronize());
+      prepare_cuda_fields(false, false);
+      prepare_cuda_fields(true, false);
+      if (!solver.v2d.empty() || !solver.v3d.empty()) {
+        SundialsCudaPacking::check(cudaDeviceSynchronize());
+      }
+      try {
+        queue_cuda_transfer(u, false, false, true);
+        queue_cuda_transfer(du, true, false, true);
+        cuda_packing->record_field_reads();
+      } catch (...) {
+        cuda_packing->synchronize_noexcept();
+        throw;
+      }
+      return;
+    }
+#endif
+    copy_state_to_vector(u);
+    copy_deriv_to_vector(du);
+  }
+
+  /// Finish pending field reads before monitors or other host field mutations.
+  void wait_for_cuda_fields() const {
+#if BOUT_HAS_SUNDIALS_CUDA
+    if (use_cuda()) {
+      cuda_packing->wait_for_fields();
+    }
+#endif
+  }
+
   /// Fill every evolved entry in ``vec`` with per-field constants, respecting
   /// whether each field evolves boundary cells.
   void fill_vector_values(N_Vector vec, const std::vector<BoutReal>& f2d_values,
@@ -259,9 +306,12 @@ public:
       for (const auto& i : bout::globals::mesh->getRegion2D("RGN_NOBNDRY")) {
         fill_vector_values_op(i, data, p, f2d_values, f3d_values, false);
       }
-      SundialsCudaPacking::check(cudaMemcpy(N_VGetDeviceArrayPointer_Cuda(local), data,
-                                            p * sizeof(BoutReal),
-                                            cudaMemcpyHostToDevice));
+      cuda_packing->check_stream(local);
+      SundialsCudaPacking::check(cudaMemcpyAsync(
+          N_VGetDeviceArrayPointer_Cuda(local), data, p * sizeof(BoutReal),
+          cudaMemcpyHostToDevice, cuda_packing->stream));
+      // Setup vectors may be destroyed immediately by the caller.
+      cuda_packing->synchronize();
       return;
     }
 #endif
@@ -377,8 +427,7 @@ private:
     cuda_packing->ready = true;
   }
 
-  void transfer_cuda(N_Vector vec, bool derivatives, bool load) const {
-    SundialsCudaPacking::check(cudaDeviceSynchronize());
+  void prepare_cuda_fields(bool derivatives, bool load) const {
     // Preserve the same vector basis and field preparation as Solver::load/save_*.
     const auto prepare_vectors = [&](auto& vectors) {
       for (const auto& v : vectors) {
@@ -394,10 +443,43 @@ private:
     };
     prepare_vectors(solver.v2d);
     prepare_vectors(solver.v3d);
-    auto* data = N_VGetDeviceArrayPointer_Cuda(N_VGetLocalVector_MPIPlusX(vec));
-    // BOUT++ and SUNDIALS may use different streams. Establish ordering before
-    // accessing shared field storage, and finish before callbacks/host code resume.
-    SundialsCudaPacking::check(cudaDeviceSynchronize());
+  }
+
+  void transfer_cuda(N_Vector vec, bool derivatives, bool load) const {
+    const bout::profiling::ProfileRange range(
+        load ? "SundialsNVectorInterface::load_cuda"
+             : "SundialsNVectorInterface::save_cuda");
+    cuda_packing->wait_for_fields();
+    // Loads consume vectors on our shared stream. They do not need a device-wide
+    // fence before preparation, which only sets vector metadata when loading.
+    if (!cuda_packing->async_transfers || !load) {
+      SundialsCudaPacking::check(cudaDeviceSynchronize());
+    }
+    prepare_cuda_fields(derivatives, load);
+    if (!cuda_packing->async_transfers
+        || (!load && (!solver.v2d.empty() || !solver.v3d.empty()))) {
+      SundialsCudaPacking::check(cudaDeviceSynchronize());
+    }
+    try {
+      queue_cuda_transfer(vec, derivatives, load);
+      if (cuda_packing->async_transfers) {
+        // Keep standalone saves synchronous too: callers may mutate fields as
+        // soon as this method returns. Only paired callback saves defer the wait.
+        cuda_packing->synchronize();
+      } else {
+        SundialsCudaPacking::check(cudaDeviceSynchronize());
+      }
+    } catch (...) {
+      cuda_packing->synchronize_noexcept();
+      throw;
+    }
+  }
+
+  void queue_cuda_transfer(N_Vector vec, bool derivatives, bool load,
+                           bool retain_fields = false) const {
+    auto* local = N_VGetLocalVector_MPIPlusX(vec);
+    cuda_packing->check_stream(local);
+    auto* data = N_VGetDeviceArrayPointer_Cuda(local);
     std::size_t f = 0;
     for (auto& v : solver.f2d) {
       auto* field = derivatives ? v.F_var : v.var;
@@ -407,7 +489,11 @@ private:
       if (!field->isAllocated()) {
         throw BoutException("Unallocated CUDA solver field");
       }
-      cuda_packing->fields[f++].transfer(&(*field)(0, 0), data, load);
+      if (retain_fields) {
+        cuda_packing->retained_2d.push_back(*field);
+      }
+      cuda_packing->fields[f++].transfer(&(*field)(0, 0), data, load,
+                                         cuda_packing->stream);
     }
     for (auto& v : solver.f3d) {
       auto* field = derivatives ? v.F_var : v.var;
@@ -421,9 +507,12 @@ private:
       if (derivatives && !load && field->getLocation() != v.var->getLocation()) {
         throw BoutException("CUDA solver derivative at wrong cell location");
       }
-      cuda_packing->fields[f++].transfer(&(*field)(0, 0, 0), data, load);
+      if (retain_fields) {
+        cuda_packing->retained_3d.push_back(*field);
+      }
+      cuda_packing->fields[f++].transfer(&(*field)(0, 0, 0), data, load,
+                                         cuda_packing->stream);
     }
-    SundialsCudaPacking::check(cudaDeviceSynchronize());
   }
 #endif
 

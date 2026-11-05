@@ -93,11 +93,23 @@ export are rejected. User callbacks operate on BOUT++ fields as before.
 CVODE's vector data live in CUDA device memory. GPU packing/unpacking kernels
 connect them to BOUT++ fields with the same ordering and evolved boundary cells
 as the CPU backend. BOUT++ field allocation is unchanged (currently Umpire pinned
-memory); this does not move all model storage to GPU HBM. Packing synchronizes
-with SUNDIALS and BOUT++ streams for correctness. Per-field tolerance and
-constraint arrays are uploaded during setup; RHS state transfers do not stage
-through a host solution vector. MPIPlusX performs inter-rank reductions without
-requiring CUDA-aware MPI. Each rank must have its intended CUDA device selected
+memory); this does not move all model storage to GPU HBM. Packing and all
+SUNDIALS vector operations (including reductions and cloned vectors) share a
+nonblocking CUDA stream. State loads wait for unpacking before host boundary
+conditions or user callbacks access fields. Callback state/derivative saves are
+queued together without waiting for completion on the CPU; an event protects
+field storage until the next load, timestep monitor, or teardown. Shallow field
+references keep input allocations alive while packing reads them. Standalone
+saves, including initialization and reset, remain synchronous.
+
+One device-wide producer fence remains per callback save pair because user RHS,
+preconditioner, and Jacobian code may use arbitrary streams. Vector basis
+conversion retains an additional producer fence; scalar-only models skip it.
+Set `solver:cuda_async_transfers=false` to compare against three device-wide
+waits per transfer. Both modes use the same SUNDIALS stream and reduction policy.
+Per-field tolerance and constraint arrays are uploaded during setup on that
+stream; RHS state transfers do not stage through a host solution vector.
+MPIPlusX performs inter-rank reductions without requiring CUDA-aware MPI. Each rank must have its intended CUDA device selected
 by the job environment (for example, `CUDA_VISIBLE_DEVICES`).
 
 Profile a short run on a GPU allocation:
@@ -113,9 +125,23 @@ Look for SUNDIALS CUDA vector arithmetic and reduction kernels in addition to
 HW3D's RAJA and Laplacian kernels. `sundials_cuda_pack` kernels perform field/vector
 transfers. NVTX host ranges alone do not demonstrate vector offload.
 
+Compare runs with `solver:cuda_async_transfers=true` and `false`, keeping all other
+options fixed. For scalar-only callbacks, the optimized transfers reduce nine
+device-wide waits per RHS callback to one producer fence, plus a stream wait for
+state loading and a field-read event before host storage reuse. The Laplacian's
+input and output waits are unchanged. Inspect `SundialsNVectorInterface::load_cuda`,
+`SundialsNVectorInterface::save_cuda_pair`, `SundialsCudaPacking::wait_for_fields`,
+and `SundialsCudaPacking::wait_stream` ranges alongside the CUDA timeline. Compare
+final fields and solver evaluation counts as well as elapsed time; removed waits
+may move useful GPU execution into a later range.
+
 An analytic regression covers mixed 2D/3D fields, different evolved boundaries,
-per-field tolerances, positivity constraints, and one/two MPI ranks. On a GPU
-allocation, with tests enabled (`BOUT_TESTS=ON`), build target `test-cvode-cuda`, then run:
+per-field tolerances, positivity constraints, scalar and vector basis conversion,
+output/timestep monitor boundaries, synchronous/asynchronous transfers, user
+preconditioner/Jacobian callbacks, and one/two MPI ranks. Direct ordering checks exercise nondefault-stream packing,
+cloned vector policies, reductions, field-read events, and rejection of mismatched
+streams. On a GPU allocation, with tests enabled (`BOUT_TESTS=ON`), build target
+`test-cvode-cuda`, then run:
 
 ```sh
 ctest --test-dir build_release_RAJA_CUDA_SUNGPU -R '^test-cvode-cuda$' --output-on-failure

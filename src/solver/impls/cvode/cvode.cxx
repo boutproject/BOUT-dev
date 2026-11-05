@@ -219,6 +219,10 @@ CvodeSolver::CvodeSolver(Options* opts)
 }
 
 CvodeSolver::~CvodeSolver() {
+#if BOUT_HAS_SUNDIALS_CUDA
+  // Finish asynchronous callback saves before releasing any vector or field data.
+  cuda_packing->synchronize_noexcept();
+#endif
   if (cvode_initialised) {
     N_VDestroy(uvec);
     CVodeFree(&cvode_mem);
@@ -364,6 +368,18 @@ int CvodeSolver::init() {
   output_info.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
                     n3Dvars(), n2Dvars(), neq, local_N);
   output_info.write("\tUsing {} N_Vector backend\n", backend.backend_name());
+
+#if BOUT_HAS_SUNDIALS_CUDA
+  if (backend.use_cuda()) {
+    cuda_packing->async_transfers =
+        (*options)["cuda_async_transfers"]
+            .doc("Queue paired callback saves on the SUNDIALS stream. Disable for "
+                 "a synchronous transfer comparison.")
+            .withDefault(true);
+    output_info.write("\tCUDA callback transfers: {}\n",
+                      cuda_packing->async_transfers ? "asynchronous" : "synchronous");
+  }
+#endif
 
   // Allocate memory
   uvec = backend.create_state_vector(local_N, neq);
@@ -872,6 +888,8 @@ BoutReal CvodeSolver::run(BoutReal tout) {
                             internal_time, flag);
       }
 
+      // Monitors may mutate or replace fields read by queued callback saves.
+      backend.wait_for_cuda_fields();
       // Call timestep monitor
       call_timestep_monitors(internal_time, internal_time - last_time);
     }
@@ -918,8 +936,7 @@ void CvodeSolver::rhs(BoutReal t, N_Vector u, N_Vector du, bool linear) {
   run_rhs(t, linear);
 
   // Save derivatives to dudata
-  backend.copy_state_to_vector(u);
-  backend.copy_deriv_to_vector(du);
+  backend.copy_state_and_deriv_to_vectors(u, du);
 }
 
 void CvodeSolver::rhs(BoutReal t, BoutReal* u, BoutReal* du, bool linear) {
@@ -967,8 +984,7 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, N_Vector u,
   runPreconditioner(t, gamma, delta);
 
   // Save the solution from F_vars
-  backend.copy_state_to_vector(u);
-  backend.copy_deriv_to_vector(zvec);
+  backend.copy_state_and_deriv_to_vectors(u, zvec);
 
   pre_Wtime += bout::globals::mpi->MPI_Wtime() - tstart;
   pre_ncalls++;
@@ -997,8 +1013,7 @@ void CvodeSolver::jac(BoutReal t, N_Vector y, N_Vector v, N_Vector Jv) {
   runJacobian(t);
 
   // Save Jv from vars
-  backend.copy_state_to_vector(y);
-  backend.copy_deriv_to_vector(Jv);
+  backend.copy_state_and_deriv_to_vectors(y, Jv);
 }
 
 /**************************************************************************

@@ -10,6 +10,10 @@
 #if BOUT_HAS_SUNDIALS_CUDA
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/profiling.hxx"
+#include <memory>
 #include <nvector/nvector_cuda.h>
 #include <nvector/nvector_mpiplusx.h>
 #include <type_traits>
@@ -40,6 +44,85 @@ struct SundialsCudaPacking {
   static void check(cudaError_t error) {
     if (error != cudaSuccess) {
       throw BoutException("SUNDIALS CUDA packing: {}", cudaGetErrorString(error));
+    }
+  }
+
+  SundialsCudaPacking() = default;
+  SundialsCudaPacking(const SundialsCudaPacking&) = delete;
+  SundialsCudaPacking& operator=(const SundialsCudaPacking&) = delete;
+
+  ~SundialsCudaPacking() {
+    synchronize_noexcept();
+    if (fields_read) {
+      cudaEventDestroy(fields_read);
+    }
+    if (stream) {
+      cudaStreamDestroy(stream);
+    }
+  }
+
+  // All SUNDIALS streaming/reduction operations and packing use this stream.
+  // N_VClone_Cuda clones both policies, so CVODE's internal vectors inherit it.
+  void bind(N_Vector local) {
+    if (!stream) {
+      check(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking));
+    }
+    if (!fields_read) {
+      check(cudaEventCreateWithFlags(&fields_read, cudaEventDisableTiming));
+    }
+    auto* content = static_cast<N_VectorContent_Cuda>(local->content);
+    std::unique_ptr<SUNCudaExecPolicy> streaming(
+        content->stream_exec_policy->clone_new_stream(stream));
+    std::unique_ptr<SUNCudaExecPolicy> reduction(
+        content->reduce_exec_policy->clone_new_stream(stream));
+    if (N_VSetKernelExecPolicy_Cuda(local, streaming.get(), reduction.get()) != 0) {
+      throw BoutException("SUNDIALS CUDA execution policy setup failed");
+    }
+  }
+
+  void check_stream(N_Vector local) const {
+    const auto* content = static_cast<N_VectorContent_Cuda>(local->content);
+    if (*content->stream_exec_policy->stream() != stream
+        || *content->reduce_exec_policy->stream() != stream) {
+      throw BoutException("SUNDIALS CUDA vector does not use the packing stream");
+    }
+  }
+
+  // An event covers field reads only. Subsequent SUNDIALS vector operations may
+  // keep running while the host prepares fields for the next callback.
+  void record_field_reads() {
+    check(cudaEventRecord(fields_read, stream));
+    pending_field_reads = true;
+  }
+
+  void wait_for_fields() {
+    if (pending_field_reads) {
+      const bout::profiling::ProfileRange range("SundialsCudaPacking::wait_for_fields");
+      check(cudaEventSynchronize(fields_read));
+      pending_field_reads = false;
+      retained_2d.clear();
+      retained_3d.clear();
+    }
+  }
+
+  void synchronize() {
+    if (stream) {
+      const bout::profiling::ProfileRange range("SundialsCudaPacking::wait_stream");
+      check(cudaStreamSynchronize(stream));
+      pending_field_reads = false;
+      retained_2d.clear();
+      retained_3d.clear();
+    }
+  }
+
+  // Destruction and exception cleanup must finish queued accesses before field
+  // storage, packing maps, or SUNDIALS vectors can be released.
+  void synchronize_noexcept() noexcept {
+    if (stream) {
+      static_cast<void>(cudaStreamSynchronize(stream));
+      pending_field_reads = false;
+      retained_2d.clear();
+      retained_3d.clear();
     }
   }
 
@@ -76,7 +159,8 @@ struct SundialsCudaPacking {
       std::vector<int>().swap(host);
     }
 
-    void transfer(BoutReal* field, BoutReal* vector, bool load) const {
+    void transfer(BoutReal* field, BoutReal* vector, bool load,
+                  cudaStream_t stream) const {
       if (count == 0) {
         return;
       }
@@ -89,13 +173,21 @@ struct SundialsCudaPacking {
             "SUNDIALS CUDA packing requires GPU-accessible field storage");
       }
       auto* device_field = static_cast<BoutReal*>(attributes.devicePointer);
-      bout::detail::sundials_cuda_pack<<<(count + 255) / 256, 256>>>(device_field, vector,
-                                                                     device, count, load);
+      bout::detail::sundials_cuda_pack<<<(count + 255) / 256, 256, 0, stream>>>(
+          device_field, vector, device, count, load);
       check(cudaGetLastError());
     }
   };
 
   bool ready = false;
+  bool async_transfers = true;
+  cudaStream_t stream = nullptr;
+  cudaEvent_t fields_read = nullptr;
+  bool pending_field_reads = false;
+  // Shallow field copies keep allocations alive until the queued reads finish,
+  // including when a model or solver is destroyed after a failed integration.
+  std::vector<Field2D> retained_2d;
+  std::vector<Field3D> retained_3d;
   std::vector<FieldMap> fields;
 };
 #else
