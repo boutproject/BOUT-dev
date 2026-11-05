@@ -67,7 +67,7 @@
 #include <cstdlib>
 #include <mpi.h>
 
-using namespace std;
+using std::min;
 
 LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in, Solver* UNUSED(solver))
     : Laplacian(opt, loc, mesh_in), Acoef(0.0, localmesh), C1coef(1.0, localmesh),

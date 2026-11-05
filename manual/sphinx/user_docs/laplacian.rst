@@ -780,6 +780,19 @@ Cyclic algorithm
 This is now the default solver in both serial and parallel. It is an FFT-based
 solver using a cyclic reduction algorithm.
 
+With ``BOUT_ENABLE_CUDA=ON`` or ``BOUT_ENABLE_HIP=ON``, this solver uses
+cuSPARSE or hipSPARSE batched tridiagonal solves when X is not distributed
+(``NXPE=1``). HIP builds require ROCm hipSPARSE and hipFFT in addition to the
+existing HIP, RAJA and Umpire dependencies. Set ``CMAKE_HIP_ARCHITECTURES``
+to the architecture of the target AMD GPU when configuring the build.
+
+In the Laplacian options section, ``use_cusparse`` (CUDA) or ``use_hipsparse``
+(HIP) defaults to ``true``; set it to ``false`` to use CPU cyclic reduction.
+For periodic X and a ``Field3D`` solve, the GPU path also runs FFTs and matrix
+assembly on the device. ``compare_device_tridag=true`` compares those matrices
+with CPU assembly once. Distributed X continues to use CPU cyclic reduction.
+
+
 .. _sec-multigrid:
 
 Multigrid solver

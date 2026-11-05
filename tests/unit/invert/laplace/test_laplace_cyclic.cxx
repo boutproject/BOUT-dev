@@ -135,4 +135,44 @@ TEST_P(CyclicTest, DummyTest) {
   // No test yet
 }
 
+#if BOUT_HAS_CUDA || BOUT_HAS_HIP
+// Compare both the host-assembled and resident FFT paths against cyclic reduction.
+class CyclicGpuTest : public FakeMeshFixture_tmpl<12, 5, 8>,
+                      public testing::WithParamInterface<bool> {};
+
+INSTANTIATE_TEST_SUITE_P(PeriodicAndNonPeriodic, CyclicGpuTest,
+                         testing::Values(false, true));
+
+TEST_P(CyclicGpuTest, MatchesCpuAndRefreshesCoefficients) {
+  mesh->periodicX = GetParam();
+  static_cast<FakeMesh*>(mesh)->setGridDataSource(
+      new GridFromOptions(Options::getRoot()));
+  Options gpu_options, cpu_options;
+#if BOUT_HAS_HIP
+  const char* sparse_option = "use_hipsparse";
+#else
+  const char* sparse_option = "use_cusparse";
+#endif
+  gpu_options[sparse_option] = true;
+  cpu_options[sparse_option] = false;
+  LaplaceCyclic gpu_solver(&gpu_options), cpu_solver(&cpu_options);
+  Field3D rhs(0.0);
+  BOUT_FOR_SERIAL(i, mesh->getRegion3D("RGN_ALL")) {
+    rhs[i] =
+        1.0 + 0.1 * i.x() + sin(2.0 * 3.14159265358979323846 * i.z() / mesh->LocalNz);
+  }
+  for (int pass = 0; pass < 2; ++pass) {
+    // A negative shift keeps the periodic zero Fourier mode nonsingular.
+    Field2D acoef(-1.0 - pass);
+    gpu_solver.setCoefA(acoef);
+    cpu_solver.setCoefA(acoef);
+    const auto expected = cpu_solver.solve(rhs);
+    const auto actual = gpu_solver.solve(rhs);
+    BOUT_FOR_SERIAL(i, mesh->getRegion3D("RGN_NOBNDRY")) {
+      EXPECT_NEAR(actual[i], expected[i], 1e-9) << "coefficient update " << pass;
+    }
+  }
+}
+#endif
+
 #endif // BOUT_USE_METRIC_3D

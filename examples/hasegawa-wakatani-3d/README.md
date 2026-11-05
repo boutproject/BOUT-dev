@@ -120,3 +120,24 @@ allocation, with tests enabled (`BOUT_TESTS=ON`), build target `test-cvode-cuda`
 ```sh
 ctest --test-dir build_release_RAJA_CUDA_SUNGPU -R '^test-cvode-cuda$' --output-on-failure
 ```
+
+GPU Laplacian inversion
+-----------------------
+
+The resident GPU FFT path also handles nonperiodic X with second-order Dirichlet
+boundaries (`inner_boundary_flags`/`outer_boundary_flags` containing only
+`INVERT_BNDRY_ONE`, `INVERT_SET`, or `INVERT_RHS`, or zero). X must have one MPI
+partition. Other boundary operators retain CPU matrix construction. Coefficients and metrics
+remain in device buffers; content comparisons avoid redundant uploads while
+detecting changes to A/C/D and in-place metric edits. Mapped CUDA fields use GPU
+packing and unpacking to avoid host staging of the RHS and solution. Both spectral
+transposes and matrix construction stay on the GPU. The optional first-call
+comparison checks against CPU matrix and boundary-RHS construction.
+
+A single-GPU regression compares the existing Laplacian test's coefficient and
+boundary cases against CPU construction/solve, including gradient fallback:
+
+```sh
+python tests/integrated/test-laplace/check_resident_gpu.py \
+  build_release_RAJA_CUDA_SUNGPU/tests/integrated/test-laplace/test_laplace
+```
