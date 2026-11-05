@@ -568,6 +568,8 @@ set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 
 # Optional compiler features
 include(cmake/SetupCompilers.cmake)
+include(cmake/SetupProfiling.cmake)
+bout_enable_profiling(bout++)
 
 # Optional dependencies
 include(cmake/SetupBOUTThirdParty.cmake)

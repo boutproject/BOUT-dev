@@ -1,0 +1,100 @@
+/// 3D simulations of HW
+///
+/// This version uses indexed operators
+/// which reduce the number of loops over the domain
+///
+/// GPU processing is enabled if BOUT_HAS_CUDA is defined
+/// Host profiling ranges are enabled with -DUSE_NVTX=ON
+/// Based on Ben Dudson, Steven Glenn code, Yining Qin update 0521-2020
+
+#include <iostream>
+
+#include <bout/invert_laplace.hxx>
+#include <bout/physicsmodel.hxx>
+#include <bout/single_index_ops.hxx>
+
+#define DISABLE_RAJA 0
+#include <bout/rajalib.hxx>
+
+#include "nvtx.hxx"
+
+class HW3D : public PhysicsModel {
+private:
+  Field3D n, vort; // Evolving density and vorticity
+  Field3D phi;     // Electrostatic potential
+
+  // Model parameters
+  BoutReal alpha;                       // Adiabaticity (~conductivity)
+  BoutReal kappa;                       // Density gradient drive
+  BoutReal Dvort, Dn;                   // Diffusion
+  std::unique_ptr<Laplacian> phiSolver; // Laplacian solver for vort -> phi
+
+public:
+  // Note: rhs() function must be public, so that RAJA can use CUDA
+
+  int init(bool UNUSED(restart)) override {
+    const bout::profiling::ProfileRange init_range("HW3D::init");
+
+    auto& options = Options::root()["hw"];
+    alpha = options["alpha"].withDefault(1.0);
+    kappa = options["kappa"].withDefault(0.1);
+    Dvort = options["Dvort"].doc("Vorticity diffusion (normalised)").withDefault(1e-2);
+    Dn = options["Dn"].doc("Density diffusion (normalised)").withDefault(1e-2);
+
+    SOLVE_FOR(n, vort);
+    SAVE_REPEAT(phi);
+    phiSolver = Laplacian::create(nullptr, CELL_CENTRE, mesh, solver);
+
+    phi = 0.; // Starting phi
+
+    return 0;
+  }
+
+  int rhs(BoutReal UNUSED(time)) override {
+    const bout::profiling::ProfileRange rhs_range("HW3D::rhs");
+    // Solve for potential
+    {
+      const bout::profiling::ProfileRange range("HW3D::solve_phi");
+      phi = phiSolver->solve(vort, phi);
+    }
+    Field3D phi_minus_n = [&]() {
+      const bout::profiling::ProfileRange range("HW3D::phi_minus_n");
+      return phi - n;
+    }();
+    // Communicate variables
+    {
+      const bout::profiling::ProfileRange range("HW3D::communicate");
+      mesh->communicate(n, vort, phi, phi_minus_n);
+    }
+
+    const bout::profiling::ProfileRange evaluate_range("HW3D::evaluate_rhs");
+
+    // Create accessors which enable fast access
+    auto n_acc = FieldAccessor<>(n);
+    auto vort_acc = FieldAccessor<>(vort);
+    auto phi_acc = FieldAccessor<>(phi);
+    auto phi_minus_n_acc = FieldAccessor<>(phi_minus_n);
+
+    // Note: Capture class members, otherwise if accessed via `this` pointer
+    //       an illegal memory access error may occur on a GPU
+    {
+      const bout::profiling::ProfileRange range("HW3D::rhs_kernel");
+      BOUT_FOR_RAJA(i, n.getRegion("RGN_NOBNDRY"), CAPTURE(alpha, kappa, Dn, Dvort)) {
+
+        BoutReal div_current = alpha * Div_par_Grad_par(phi_minus_n_acc, i);
+
+        ddt(n_acc)[i] = -bracket(phi_acc, n_acc, i) - div_current - kappa * DDZ(phi_acc, i)
+                        + Dn * Delp2(n_acc, i);
+
+        ddt(vort_acc)[i] =
+            -bracket(phi_acc, vort_acc, i) - div_current + Dvort * Delp2(vort_acc, i);
+      };
+    }
+
+    return 0;
+  }
+};
+
+// Define a main() function
+BOUTMAIN(HW3D);
+

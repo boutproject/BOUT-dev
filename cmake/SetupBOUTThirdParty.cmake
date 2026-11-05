@@ -197,6 +197,7 @@ target_link_libraries(bout++ PUBLIC fmt::fmt)
 option(BOUT_USE_PVODE "Enable support for bundled PVODE" ON)
 if(BOUT_USE_PVODE)
   add_subdirectory(externalpackages/PVODE)
+  bout_enable_profiling(pvode)
   target_link_libraries(bout++ PUBLIC pvode pvpre)
   # Build the libraries in <build dir>/lib: this makes updating the
   # path for bout-config much easier

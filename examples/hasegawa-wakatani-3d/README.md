@@ -13,7 +13,7 @@ ROCTx is ROCm's equivalent of NVTX. Enable the optional host-side ranges in
 an existing BOUT++ build (with examples enabled):
 
 ```sh
-cmake -S . -B build_release_RAJA_HIP -DHW3D_USE_ROCTX=ON \
+cmake -S . -B build_release_RAJA_HIP -DUSE_ROCTX=ON \
   -Drocprofiler-sdk-roctx_ROOT=/path/to/rocm
 cmake --build build_release_RAJA_HIP --target hw3d -j
 cd build_release_RAJA_HIP/examples/hasegawa-wakatani-3d
@@ -33,3 +33,28 @@ actual device execution times.
 
 See the [ROCTx documentation](https://rocm.docs.amd.com/projects/rocprofiler-sdk/en/latest/how-to/using-rocprofiler-sdk-roctx.html)
 for the annotation API.
+
+Profiling the solver
+--------------------
+
+Configure and rebuild BOUT++ itself with `-DUSE_NVTX=ON` (or `-DUSE_ROCTX=ON`)
+to trace work between model RHS calls. Enabling profiling only in a standalone
+example does not instrument an already installed library.
+
+PVODE and CVODE ranges enclose integration and RHS callbacks. Nested ranges
+identify solution/derivative vector copies and `Solver::pre_rhs`/`post_rhs`
+boundary processing. Time inside integration but outside callbacks belongs to
+the integrator; inspect CUDA and CPU tracks to distinguish GPU work and waits.
+
+NVTX ranges use a repeating depth palette from `nvtxColor`: Blue, Cyan, Green,
+Yellow, Orange, Magenta, Purple. Sibling scopes use the same color. Existing
+`HW3D::` region names are unchanged. ROCTX records the same scopes without custom
+colors. Profiling adds no GPU synchronization.
+
+PVODE internals are also instrumented: `PVODE::CVStep`/`StepAttempt` enclose
+step attempts; `CVPredict`, `CVEwtSet`, `CVRescale`, `CVDoErrorTest`, and
+`CVCompleteStep` identify prediction, weighting, error checks, and history
+updates. Nonlinear and GMRES iteration ranges enclose their solver operations.
+`PVODE::N_V*` ranges measure CPU vector operations, with a nested
+`PVODE::PVecAllReduce` range for MPI reductions. These scopes use the same
+depth-based colors as the model and solver wrappers.
