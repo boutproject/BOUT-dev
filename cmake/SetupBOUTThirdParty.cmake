@@ -194,10 +194,40 @@ else()
 endif()
 target_link_libraries(bout++ PUBLIC fmt::fmt)
 
+# Enable the same NVTX API and depth counter in the library and its consumers.
+option(USE_NVTX "Enable nested NVTX host profiling ranges" OFF)
+if(USE_NVTX)
+  if(USE_ROCTX)
+    message(FATAL_ERROR "Enable only one of USE_NVTX and USE_ROCTX")
+  endif()
+  find_path(
+    NVTX3_INCLUDE_DIR nvtx3/nvToolsExt.h
+    HINTS ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
+          ${CUDA_INCLUDE_DIRS}
+          ${CUDAToolkit_INCLUDE_DIRS}
+          ENV
+          CUDA_HOME
+          ENV
+          CUDA_PATH
+    PATH_SUFFIXES include
+  )
+  if(NOT NVTX3_INCLUDE_DIR)
+    message(FATAL_ERROR "NVTX3 headers not found. Set NVTX3_INCLUDE_DIR")
+  endif()
+  target_compile_definitions(bout++ PUBLIC USE_NVTX=1)
+  target_include_directories(bout++ SYSTEM PUBLIC ${NVTX3_INCLUDE_DIR})
+  target_link_libraries(bout++ PUBLIC ${CMAKE_DL_LIBS})
+endif()
+
 option(BOUT_USE_PVODE "Enable support for bundled PVODE" ON)
 if(BOUT_USE_PVODE)
   add_subdirectory(externalpackages/PVODE)
-  bout_enable_profiling(pvode)
+  target_include_directories(pvode PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  if(USE_NVTX)
+    target_compile_definitions(pvode PRIVATE USE_NVTX=1)
+    target_include_directories(pvode SYSTEM PRIVATE ${NVTX3_INCLUDE_DIR})
+    target_link_libraries(pvode PRIVATE ${CMAKE_DL_LIBS})
+  endif()
   target_link_libraries(bout++ PUBLIC pvode pvpre)
   # Build the libraries in <build dir>/lib: this makes updating the
   # path for bout-config much easier
@@ -372,6 +402,7 @@ cmake_dependent_option(
   "NOT BOUT_DOWNLOAD_SUNDIALS" ON
 )
 set(BOUT_HAS_SUNDIALS_MANYVECTOR OFF)
+set(BOUT_HAS_SUNDIALS_CUDA OFF)
 if(BOUT_USE_SUNDIALS)
   enable_language(C)
   if(BOUT_DOWNLOAD_SUNDIALS)
@@ -432,6 +463,17 @@ if(BOUT_USE_SUNDIALS)
     message(
       STATUS "SUNDIALS ManyVector support not found; custom N_Vector disabled"
     )
+  endif()
+  if(BOUT_HAS_CUDA
+     AND BOUT_HAS_UMPIRE
+     AND TARGET SUNDIALS::nveccuda
+     AND TARGET SUNDIALS::nvecmpiplusx
+  )
+    target_link_libraries(
+      bout++ PUBLIC SUNDIALS::nveccuda SUNDIALS::nvecmpiplusx
+    )
+    set(BOUT_HAS_SUNDIALS_CUDA ON)
+    message(STATUS "SUNDIALS CUDA/MPIPlusX vector backend enabled for CVODE")
   endif()
   target_link_libraries(bout++ PUBLIC SUNDIALS::cvode)
   target_link_libraries(bout++ PUBLIC SUNDIALS::ida)

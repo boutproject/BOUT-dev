@@ -4,7 +4,9 @@
 Inputs may be rocprof directories (searched recursively), nsys stats text files,
 nsys nvtx_sum CSV files, or directories containing nsys text reports. MPI ranks are combined with
 a call-weighted mean: sum(TotalDurationNs) / sum(Calls). Speedup is the first
-input's mean divided by the compared input's mean. Nested ranges overlap.
+input's mean divided by the compared input's mean. Regions are sorted by the
+first input's average duration, longest first; regions missing from that input
+appear last. Total call counts can be shown for each profile with --calls. Nested ranges overlap.
 """
 
 import argparse
@@ -14,12 +16,6 @@ import re
 import sys
 from collections import defaultdict
 from pathlib import Path
-
-
-REGIONS = [
-    "HW3D::init", "HW3D::rhs", "HW3D::solve_phi", "HW3D::evaluate_rhs",
-    "HW3D::rhs_kernel", "HW3D::communicate", "HW3D::phi_minus_n",
-]
 
 
 def add(totals, name, duration, calls, path):
@@ -52,8 +48,13 @@ def read_csv(path, totals):
             )
         for row in reader:
             name, duration, calls = (row[key] for key in keys)
-            add(totals, region_name(name), duration.replace(",", ""),
-                calls.replace(",", ""), path)
+            add(
+                totals,
+                region_name(name),
+                duration.replace(",", ""),
+                calls.replace(",", ""),
+                path,
+            )
 
 
 def read_text(path, totals):
@@ -79,9 +80,17 @@ def read_text(path, totals):
             if len(fields) != 9 or not re.fullmatch(r"[\d.,]+", fields[0]):
                 continue
             style_and_name = fields[8].split(None, 1)
-            if len(style_and_name) == 2 and style_and_name[0] in {"PushPop", "StartEnd"}:
-                add(totals, region_name(style_and_name[1].strip()),
-                    fields[1].replace(",", ""), fields[2].replace(",", ""), path)
+            if len(style_and_name) == 2 and style_and_name[0] in {
+                "PushPop",
+                "StartEnd",
+            }:
+                add(
+                    totals,
+                    region_name(style_and_name[1].strip()),
+                    fields[1].replace(",", ""),
+                    fields[2].replace(",", ""),
+                    path,
+                )
 
 
 def extract(path):
@@ -93,20 +102,27 @@ def extract(path):
         if not files:
             files = sorted(path.rglob("*nvtx_sum*.csv"))
         if not files:
-            files = sorted(p for p in path.rglob("*")
-                           if p.is_file() and (p.suffix.lower() in {".txt", ".log"}
-                                               or p.name.startswith("HW3D-")))
+            files = sorted(
+                p
+                for p in path.rglob("*")
+                if p.is_file()
+                and (p.suffix.lower() in {".txt", ".log"} or p.name.startswith("HW3D-"))
+            )
     else:
         raise ValueError(f"input does not exist: {path}")
     if not files:
-        raise ValueError(f"{path}: no marker statistics, nvtx_sum CSV, or text reports found")
+        raise ValueError(
+            f"{path}: no marker statistics, nvtx_sum CSV, or text reports found"
+        )
     for file in files:
         if file.suffix.lower() == ".csv":
             read_csv(file, totals)
         else:
             read_text(file, totals)
     if not any(calls for _, calls in totals.values()):
-        raise ValueError(f"{path}: no NVTX/ROCTX region statistics found (use nsys nvtx_sum or rocprofv3 marker statistics)")
+        raise ValueError(
+            f"{path}: no NVTX/ROCTX region statistics found (use nsys nvtx_sum or rocprofv3 marker statistics)"
+        )
     return totals
 
 
@@ -121,7 +137,12 @@ def make_table(paths, profiles, labels=None, show_calls=False):
         if i:
             headers.append(f"{label} speedup vs {labels[0]}")
     names = set().union(*(profile.keys() for profile in profiles))
-    ordered = [name for name in REGIONS if name in names] + sorted(names - set(REGIONS))
+
+    def sort_key(name):
+        duration, calls = profiles[0].get(name, (0, 0))
+        return (not calls, -duration / calls if calls else 0, name)
+
+    ordered = sorted(names, key=sort_key)
     rows = []
     for name in ordered:
         row = [name]
@@ -134,17 +155,36 @@ def make_table(paths, profiles, labels=None, show_calls=False):
                 row.append(str(calls) if calls else "N/A")
             row.append(f"{mean / 1e6:.6f}" if mean is not None else "N/A")
             if i:
-                row.append(f"{base / mean:.3f}x" if base is not None and mean else "N/A")
+                row.append(
+                    f"{base / mean:.3f}x" if base is not None and mean else "N/A"
+                )
         rows.append(row)
     return headers, rows
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("profiles", nargs="+", type=Path, help="run directories, rocprofv3 marker CSV, or nsys nvtx_sum text/CSV; first is baseline")
-    parser.add_argument("--csv", action="store_true", help="emit CSV instead of Markdown")
-    parser.add_argument("--calls", action="store_true", help="include call counts (hidden by default)")
-    parser.add_argument("--labels", nargs="+", metavar="LABEL", help="dataset labels in input order; one per profile")
+    parser.add_argument(
+        "profiles",
+        nargs="+",
+        type=Path,
+        help="run directories, rocprofv3 marker CSV, or nsys nvtx_sum text/CSV; first is baseline",
+    )
+    parser.add_argument(
+        "--csv", action="store_true", help="emit CSV instead of Markdown"
+    )
+    parser.add_argument(
+        "--calls",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="include total call counts per profile (default: disabled)",
+    )
+    parser.add_argument(
+        "--labels",
+        nargs="+",
+        metavar="LABEL",
+        help="dataset labels in input order; one per profile",
+    )
     args = parser.parse_args()
     if args.labels is not None and len(args.labels) != len(args.profiles):
         parser.error("--labels requires exactly one label per profile")
@@ -159,18 +199,27 @@ def main():
         writer.writerow(headers)
         writer.writerows(rows)
     else:
-        table = [[str(cell).replace("|", "\\|").replace("\n", " ").replace("\r", " ")
-                  for cell in row] for row in [headers] + rows]
+        table = [
+            [
+                str(cell).replace("|", "\\|").replace("\n", " ").replace("\r", " ")
+                for cell in row
+            ]
+            for row in [headers] + rows
+        ]
         widths = [max(len(row[i]) for row in table) for i in range(len(headers))]
+
         def format_row(row):
-            return "| " + " | ".join(cell.ljust(width) for cell, width in zip(row, widths)) + " |"
+            return (
+                "| "
+                + " | ".join(cell.ljust(width) for cell, width in zip(row, widths))
+                + " |"
+            )
+
         print(format_row(table[0]))
         print("| " + " | ".join("-" * max(3, width) for width in widths) + " |")
         for row in table[1:]:
             print(format_row(row))
 
 
-
 if __name__ == "__main__":
     main()
-

@@ -34,30 +34,92 @@ actual device execution times.
 See the [ROCTx documentation](https://rocm.docs.amd.com/projects/rocprofiler-sdk/en/latest/how-to/using-rocprofiler-sdk-roctx.html)
 for the annotation API.
 
-Profiling the solver
---------------------
+Profiling with NVIDIA NVTX
+--------------------------
 
-Configure and rebuild BOUT++ itself with `-DUSE_NVTX=ON` (or `-DUSE_ROCTX=ON`)
-to trace work between model RHS calls. Enabling profiling only in a standalone
-example does not instrument an already installed library.
+Rebuild BOUT++ and the example together to capture the full PVODE hierarchy:
 
-PVODE and CVODE ranges enclose integration and RHS callbacks. Nested ranges
-identify solution/derivative vector copies and `Solver::pre_rhs`/`post_rhs`
-boundary processing. Time inside integration but outside callbacks belongs to
-the integrator; inspect CUDA and CPU tracks to distinguish GPU work and waits.
+```sh
+cmake -S . -B build -DUSE_NVTX=ON -DBOUT_USE_PVODE=ON \
+  -DNVTX3_INCLUDE_DIR=/path/to/nvtx/include
+cmake --build build --target hw3d -j
+cd build/examples/hasegawa-wakatani-3d
+nsys profile --trace=nvtx,cuda,mpi -o hw3d ./hw3d -d data
+```
 
-NVTX ranges use a repeating depth palette from `nvtxColor`: Blue, Cyan, Green,
-Yellow, Orange, Magenta, Purple. Sibling scopes use the same color. Existing
-`HW3D::` region names are unchanged. ROCTX records the same scopes without custom
-colors. Profiling adds no GPU synchronization.
+Set `type = pvode` in the `[solver]` section of `data/BOUT.inp`.
+Ranges follow `PvodeSolver::run` → `PvodeSolver::integrate` → `PVODE::CVode`
+→ `CVStep` → `StepAttempt` → `CVnls` → `CVnlsNewton` → `CVNewtonIteration`
+→ `NewtonIteration` → `CVSpgmrSolve` → `SpgmrSolve` → `GMRESIteration`.
+Matrix-vector callbacks nest `PvodeSolver::rhs`, `Solver::run_rhs`, and the
+HW3D model ranges beneath these levels. Colors cycle automatically with nesting
+depth: blue, cyan, green, yellow, orange, magenta, purple, then blue again.
+Depth is tracked separately for each host thread. Scopes close automatically on
+returns and exceptions, and introduce no GPU synchronization.
 
-PVODE internals are also instrumented: `PVODE::CVStep`/`StepAttempt` enclose
-step attempts; `CVPredict`, `CVEwtSet`, `CVRescale`, `CVDoErrorTest`, and
-`CVCompleteStep` identify prediction, weighting, error checks, and history
-updates. Nonlinear and GMRES iteration ranges enclose their solver operations.
-`PVODE::N_V*` ranges measure CPU vector operations, with a nested
-`PVODE::PVecAllReduce` range for MPI reductions. These scopes use the same
-depth-based colors as the model and solver wrappers.
+`USE_NVTX` defaults to OFF. A standalone example built against an existing
+uninstrumented BOUT++ installation records only the model ranges; rebuild the
+library with this option for the solver levels.
+
+
+CVODE CUDA vector operations
+----------------------------
+
+With BOUT++ CUDA and Umpire enabled, and a SUNDIALS installation exporting both
+`SUNDIALS::nveccuda` and `SUNDIALS::nvecmpiplusx`, configure reports
+`SUNDIALS CUDA/MPIPlusX vector backend enabled for CVODE`.
+Reconfigure and rebuild on the GPU build host in the original module/Spack environment:
+
+```sh
+cmake -S . -B build_release_RAJA_CUDA_SUNGPU
+cmake --build build_release_RAJA_CUDA_SUNGPU --target hw3d -j 8
+```
+
+In `data/BOUT.inp`, select the new backend explicitly:
+
+```ini
+[solver]
+type = cvode
+nvector = cuda
+cvode_precon_method = none
+```
+
+The startup log must say
+`Using SUNDIALS CUDA + MPIPlusX (GPU vector operations) N_Vector backend`.
+`nvector=sundials` continues to select CPU parallel vectors. `nvector=cuda` is
+currently implemented only for CVODE; PETSc/BBD preconditioners and Jacobian
+export are rejected. User callbacks operate on BOUT++ fields as before.
+
+CVODE's vector data live in CUDA device memory. GPU packing/unpacking kernels
+connect them to BOUT++ fields with the same ordering and evolved boundary cells
+as the CPU backend. BOUT++ field allocation is unchanged (currently Umpire pinned
+memory); this does not move all model storage to GPU HBM. Packing synchronizes
+with SUNDIALS and BOUT++ streams for correctness. Per-field tolerance and
+constraint arrays are uploaded during setup; RHS state transfers do not stage
+through a host solution vector. MPIPlusX performs inter-rank reductions without
+requiring CUDA-aware MPI. Each rank must have its intended CUDA device selected
+by the job environment (for example, `CUDA_VISIBLE_DEVICES`).
+
+Profile a short run on a GPU allocation:
+
+```sh
+cd build_release_RAJA_CUDA_SUNGPU/examples/hasegawa-wakatani-3d
+nsys profile --trace=cuda,nvtx -o hw3d-cvode-cuda \
+  ./hw3d -d data solver:type=cvode solver:nvector=cuda solver:nout=1
+nsys stats --report cuda_gpu_kern_sum hw3d-cvode-cuda.nsys-rep
+```
+
+Look for SUNDIALS CUDA vector arithmetic and reduction kernels in addition to
+HW3D's RAJA and Laplacian kernels. `sundials_cuda_pack` kernels perform field/vector
+transfers. NVTX host ranges alone do not demonstrate vector offload.
+
+An analytic regression covers mixed 2D/3D fields, different evolved boundaries,
+per-field tolerances, positivity constraints, and one/two MPI ranks. On a GPU
+allocation, with tests enabled (`BOUT_TESTS=ON`), build target `test-cvode-cuda`, then run:
+
+```sh
+ctest --test-dir build_release_RAJA_CUDA_SUNGPU -R '^test-cvode-cuda$' --output-on-failure
+```
 
 GPU Laplacian inversion
 -----------------------

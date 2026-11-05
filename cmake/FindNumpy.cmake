@@ -50,13 +50,17 @@ endif()
 # declarations, which must match the headers used to compile the generated code.
 if(_numpy_version_result STREQUAL "0"
    AND _numpy_include_result STREQUAL "0"
-   AND EXISTS "${_numpy_include_dirs}/numpy/arrayobject.h")
+   AND EXISTS "${_numpy_include_dirs}/numpy/arrayobject.h"
+)
   set(Numpy_INCLUDE_DIR "${_numpy_include_dirs}")
 else()
   set(Numpy_INCLUDE_DIR "Numpy_INCLUDE_DIR-NOTFOUND")
   unset(Numpy_VERSION)
 endif()
-set(Numpy_INCLUDE_DIR "${Numpy_INCLUDE_DIR}" CACHE PATH "NumPy include directory" FORCE)
+set(Numpy_INCLUDE_DIR
+    "${Numpy_INCLUDE_DIR}"
+    CACHE PATH "NumPy include directory" FORCE
+)
 
 if(NOT Numpy_INCLUDE_DIR)
   message(

@@ -21,6 +21,7 @@
  **************************************************************************/
 
 #include "bout/build_defines.hxx"
+#include <bout/profiling.hxx>
 
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
@@ -81,6 +82,20 @@
 
 int* Solver::pargc = nullptr;
 char*** Solver::pargv = nullptr;
+
+// The separately built SUNDIALS C library imports these optional ELF symbols.
+// Keeping the bridge here shares one depth counter with every BOUT++ range.
+#if defined(USE_NVTX)
+extern "C"
+    __attribute__((visibility("default"))) void bout_nvtx_range_push(const char* name) {
+  bout::profiling::nvtxPushColor(
+      name, bout::profiling::depthColor(bout::profiling::rangeDepth()));
+}
+
+extern "C" __attribute__((visibility("default"))) void bout_nvtx_range_pop() {
+  bout::profiling::nvtxPop();
+}
+#endif
 
 namespace {
 std::string jsonEscape(const std::string& input) {
@@ -1399,6 +1414,7 @@ std::string Solver::getJacobianMatrixFilename(const std::string& jacobian_export
  **************************************************************************/
 
 int Solver::run_rhs(BoutReal t, bool linear) {
+  const bout::profiling::ProfileRange profile_range("Solver::run_rhs");
   int status;
 
   Timer timer("rhs");

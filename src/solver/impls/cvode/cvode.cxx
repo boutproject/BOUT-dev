@@ -25,6 +25,7 @@
  **************************************************************************/
 
 #include "bout/build_defines.hxx"
+#include <bout/profiling.hxx>
 #include <cstddef>
 
 #include "cvode.hxx"
@@ -32,6 +33,11 @@
 #if BOUT_HAS_CVODE
 
 #include "../../sundials_nvector_interface.hxx"
+
+#if defined(USE_NVTX)
+// Present only in SUNDIALS built with tools/profiling/instrument_sundials.py.
+extern "C" int SUNBoutNVTXInstrumented(void) __attribute__((weak));
+#endif
 
 #include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
@@ -158,7 +164,8 @@ CvodeSolver::CvodeSolver(Options* opts)
                    "then bbd.")
               .withDefault(CvodePreconMethod::none)),
       nvector_type((*options)["nvector"]
-                       .doc("N_Vector backend to use: sundials or manyvector")
+                       .doc("N_Vector backend to use: sundials, manyvector, or cuda "
+                            "(CUDA + MPIPlusX)")
                        .withDefault(NVectorType::Sundials)),
       cvode_nonlinear_convergence_coef(
           (*options)["cvode_nonlinear_convergence_coef"]
@@ -335,6 +342,13 @@ int CvodeSolver::init() {
   backend.ensure_manyvector_available();
 
   output_progress.write("Initialising SUNDIALS' CVODE solver\n");
+#if defined(USE_NVTX)
+  output_progress.write(
+      "\tNVTX: CVODE wrapper ranges enabled; SUNDIALS internal ranges {}\n",
+      SUNBoutNVTXInstrumented && SUNBoutNVTXInstrumented()
+          ? "enabled"
+          : "unavailable (rebuild patched SUNDIALS)");
+#endif
 
   // Calculate number of variables (in generic_solver)
   const int local_N = getLocalN();
@@ -491,6 +505,13 @@ int CvodeSolver::init() {
     } else {
       selected_precon = CvodePreconMethod::bbd;
     }
+  }
+
+  if (backend.use_cuda()
+      && (selected_precon == CvodePreconMethod::petsc
+          || selected_precon == CvodePreconMethod::bbd || save_jacobian)) {
+    throw BoutException("solver:nvector=cuda does not support PETSc/BBD preconditioners "
+                        "or Jacobian export; use cvode_precon_method=none or user");
   }
 
   if (save_jacobian) {
@@ -743,6 +764,7 @@ CvodeSolver::create_constraints(const std::vector<VarStr<FieldType>>& fields) {
  **************************************************************************/
 
 int CvodeSolver::run() {
+  const bout::profiling::ProfileRange profile_range("CvodeSolver::run");
 
   if (!cvode_initialised) {
     throw BoutException("CvodeSolver not initialised\n");
@@ -823,6 +845,7 @@ int CvodeSolver::run() {
 }
 
 BoutReal CvodeSolver::run(BoutReal tout) {
+  const bout::profiling::ProfileRange profile_range("CvodeSolver::integrate");
   TRACE("Running solver: solver::run({})", tout);
   const auto backend = nvector_backend();
 
@@ -880,6 +903,7 @@ BoutReal CvodeSolver::run(BoutReal tout) {
  **************************************************************************/
 
 void CvodeSolver::rhs(BoutReal t, N_Vector u, N_Vector du, bool linear) {
+  const bout::profiling::ProfileRange profile_range("CvodeSolver::rhs");
   TRACE("Running RHS: CvodeSolver::res({})", t);
   const auto backend = nvector_backend();
 
@@ -899,6 +923,7 @@ void CvodeSolver::rhs(BoutReal t, N_Vector u, N_Vector du, bool linear) {
 }
 
 void CvodeSolver::rhs(BoutReal t, BoutReal* u, BoutReal* du, bool linear) {
+  const bout::profiling::ProfileRange profile_range("CvodeSolver::rhs");
   TRACE("Running RHS: CvodeSolver::res({})", t);
 
   // Load state
@@ -921,6 +946,7 @@ void CvodeSolver::rhs(BoutReal t, BoutReal* u, BoutReal* du, bool linear) {
 
 void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, N_Vector u,
                       N_Vector rvec, N_Vector zvec) {
+  const bout::profiling::ProfileRange profile_range("CvodeSolver::preconditioner");
   TRACE("Running preconditioner: CvodeSolver::pre({})", t);
   const auto backend = nvector_backend();
 
@@ -953,6 +979,7 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, N_Vector u,
  **************************************************************************/
 
 void CvodeSolver::jac(BoutReal t, N_Vector y, N_Vector v, N_Vector Jv) {
+  const bout::profiling::ProfileRange profile_range("CvodeSolver::JacobianVector");
   TRACE("Running Jacobian: CvodeSolver::jac({})", t);
   const auto backend = nvector_backend();
 

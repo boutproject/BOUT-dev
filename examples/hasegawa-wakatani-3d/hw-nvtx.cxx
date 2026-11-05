@@ -83,8 +83,8 @@ public:
 
         BoutReal div_current = alpha * Div_par_Grad_par(phi_minus_n_acc, i);
 
-        ddt(n_acc)[i] = -bracket(phi_acc, n_acc, i) - div_current - kappa * DDZ(phi_acc, i)
-                        + Dn * Delp2(n_acc, i);
+        ddt(n_acc)[i] = -bracket(phi_acc, n_acc, i) - div_current
+                        - kappa * DDZ(phi_acc, i) + Dn * Delp2(n_acc, i);
 
         ddt(vort_acc)[i] =
             -bracket(phi_acc, vort_acc, i) - div_current + Dvort * Delp2(vort_acc, i);
@@ -97,4 +97,3 @@ public:
 
 // Define a main() function
 BOUTMAIN(HW3D);
-

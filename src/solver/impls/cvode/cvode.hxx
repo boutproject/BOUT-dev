@@ -197,8 +197,11 @@ private:
   template <class FieldType>
   std::vector<BoutReal> create_constraints(const std::vector<VarStr<FieldType>>& fields);
 
+  std::shared_ptr<SundialsCudaPacking> cuda_packing =
+      std::make_shared<SundialsCudaPacking>();
+
   SundialsNVectorInterface nvector_backend() {
-    return SundialsNVectorInterface(*this, suncontext, nvector_type);
+    return SundialsNVectorInterface(*this, suncontext, nvector_type, cuda_packing);
   }
 
   /// SPGMR solver structure
