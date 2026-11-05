@@ -559,4 +559,73 @@ PetscCellOperator makeNeumannOperator(const PetscCellMappingPtr& mapping,
   return PetscCellOperator(mapping, mapping, std::move(out));
 }
 
+Field3D PetscOperators::computeYup(const Field3D& f) const {
+  ASSERT1(f.hasParallelSlices());
+  ASSERT1(f.yup().isAllocated());
+  ASSERT1(f.ydown().isAllocated());
+
+  if (!cache_forward.has_value()) {
+    cache_forward = this->forward();
+  }
+  auto leg = cache_forward.value()(f);
+
+  const PetscScalar* leg_x{nullptr};
+  BOUT_DO_PETSC(VecGetArrayRead(leg.raw(), &leg_x));
+
+  Field3D result{emptyFrom(f)};
+
+  const PetscInt leg_row_start = forward_leg_mapping->rowStart();
+
+  cell_mapping->mapOwnedInteriorCells([&](PetscInt /*cell_row*/, const Ind3D& i, int) {
+    const int interior = ROUND(forward_leg_interior_number[i]);
+
+    BoutReal value = 0.0;
+    if (interior >= 0) {
+      const PetscInt row = forward_leg_mapping->storedToPetsc(interior) - leg_row_start;
+      value = leg_x[row];
+    } else {
+      value = BoutNaN;
+    }
+    result[i.yp()] = value;
+  });
+
+  BOUT_DO_PETSC(VecRestoreArrayRead(leg.raw(), &leg_x));
+
+  return result;
+}
+
+Field3D PetscOperators::computeYdown(const Field3D& f) const {
+  ASSERT1(f.hasParallelSlices());
+  ASSERT1(f.yup().isAllocated());
+  ASSERT1(f.ydown().isAllocated());
+
+  if (!cache_backward.has_value()) {
+    cache_backward = this->backward();
+  }
+  auto leg = cache_backward.value()(f);
+
+  const PetscScalar* leg_x{nullptr};
+  BOUT_DO_PETSC(VecGetArrayRead(leg.raw(), &leg_x));
+
+  Field3D result{emptyFrom(f)};
+
+  const PetscInt leg_row_start = backward_leg_mapping->rowStart();
+
+  cell_mapping->mapOwnedInteriorCells([&](PetscInt /*cell_row*/, const Ind3D& i, int) {
+    const int interior = ROUND(backward_leg_interior_number[i]);
+
+    BoutReal value = 0.0;
+    if (interior >= 0) {
+      const PetscInt row = backward_leg_mapping->storedToPetsc(interior) - leg_row_start;
+      value = leg_x[row];
+    } else {
+      value = BoutNaN;
+    }
+    result[i.ym()] = value;
+  });
+
+  BOUT_DO_PETSC(VecRestoreArrayRead(leg.raw(), &leg_x));
+
+  return result;
+}
 #endif
