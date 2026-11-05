@@ -1258,8 +1258,12 @@ int SNESSolver::run() {
         }
 
         if (snes_failures == max_snes_failures) {
-          output.write("Too many SNES failures ({}). Aborting.", snes_failures);
-          return 1;
+          // Log the number of failures before aborting
+          output.write("Too many SNES failures ({}). Aborting.\n", snes_failures);
+          // Throw with a useful error message when ierr != 0
+          BOUT_DO_PETSC(ierr);
+          // If ierr==0 use this instead to throw with a message that describes the non-convergence reason
+          throw PetscLib::SNESFailure(snes);
         }
 
         if (equation_form == bout::SnesEquationForm::pseudo_transient) {
