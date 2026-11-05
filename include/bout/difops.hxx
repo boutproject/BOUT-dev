@@ -61,7 +61,7 @@ bout::FieldMetric Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
                            const std::string& method = "DEFAULT");
 inline bout::FieldMetric Grad_par(const Field2D& var, CELL_LOC outloc,
                                   DIFF_METHOD method) {
-  return Grad_par(var, outloc, toString(method));
+  return Grad_par(var, outloc, fmt::to_string(method));
 }
 
 Field3D Grad_par(const Field3DParallel& var, CELL_LOC outloc = CELL_DEFAULT,
@@ -99,7 +99,7 @@ bout::FieldMetric Vpar_Grad_par(const Field2D& v, const Field2D& f,
 
 inline bout::FieldMetric Vpar_Grad_par(const Field2D& v, const Field2D& f,
                                        CELL_LOC outloc, DIFF_METHOD method) {
-  return Vpar_Grad_par(v, f, outloc, toString(method));
+  return Vpar_Grad_par(v, f, outloc, fmt::to_string(method));
 }
 
 Field3D Vpar_Grad_par(const Field3DParallel& v, const Field3DParallel& f,
@@ -108,7 +108,7 @@ Field3D Vpar_Grad_par(const Field3DParallel& v, const Field3DParallel& f,
 
 inline Field3D Vpar_Grad_par(const Field3DParallel& v, const Field3DParallel& f,
                              CELL_LOC outloc, DIFF_METHOD method) {
-  return Vpar_Grad_par(v, f, outloc, toString(method));
+  return Vpar_Grad_par(v, f, outloc, fmt::to_string(method));
 }
 
 /*!
@@ -127,14 +127,14 @@ bout::FieldMetric Div_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                           const std::string& method = "DEFAULT");
 
 inline bout::FieldMetric Div_par(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method) {
-  return Div_par(f, outloc, toString(method));
+  return Div_par(f, outloc, fmt::to_string(method));
 }
 
 Field3D Div_par(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
                 const std::string& method = "DEFAULT");
 
 inline Field3D Div_par(const Field3DParallel& f, CELL_LOC outloc, DIFF_METHOD method) {
-  return Div_par(f, outloc, toString(method));
+  return Div_par(f, outloc, fmt::to_string(method));
 }
 
 // Divergence of a parallel flow: Div(f*v)
@@ -151,7 +151,7 @@ Field3D Div_par_flux(const Field3DParallel& v, const Field3DParallel& f,
 
 inline Field3D Div_par_flux(const Field3DParallel& v, const Field3DParallel& f,
                             CELL_LOC outloc, DIFF_METHOD method) {
-  return Div_par_flux(v, f, outloc, toString(method));
+  return Div_par_flux(v, f, outloc, fmt::to_string(method));
 }
 
 /*!
@@ -169,13 +169,13 @@ bout::FieldMetric Grad2_par2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                              const std::string& method = "DEFAULT");
 inline bout::FieldMetric Grad2_par2(const Field2D& f, CELL_LOC outloc,
                                     DIFF_METHOD method) {
-  return Grad2_par2(f, outloc, toString(method));
+  return Grad2_par2(f, outloc, fmt::to_string(method));
 }
 
 Field3D Grad2_par2(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
                    const std::string& method = "DEFAULT");
 inline Field3D Grad2_par2(const Field3DParallel& f, CELL_LOC outloc, DIFF_METHOD method) {
-  return Grad2_par2(f, outloc, toString(method));
+  return Grad2_par2(f, outloc, fmt::to_string(method));
 }
 
 /*!
@@ -218,10 +218,6 @@ Field3D Div_par_K_Grad_par(const Field3DParallel& kY, const Field3DParallel& f,
 /// interpretation of two adjacent half-cells and can give noticeably
 /// different results when coefficients or cell sizes vary strongly.
 BOUT_ENUM_CLASS_NS(bout, ConductionMethod, Original, ProductJK, Harmonic);
-
-namespace bout {
-inline std::string format_as(const ConductionMethod& method) { return toString(method); }
-} // namespace bout
 
 /// Version with energy flow diagnostic
 /// For FCI fields, `flow_ylow` is currently returned as zero.

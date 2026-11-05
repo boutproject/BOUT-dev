@@ -1,3 +1,4 @@
+#include "fmt/format.h"
 #include <gtest/gtest.h>
 
 #include "bout/bout_enum_class.hxx"
@@ -10,13 +11,13 @@ BOUT_ENUM_CLASS_NS(bout, TestEnum, foo, bar);
 BOUT_ENUM_CLASS_NS(bout::test, TestEnum, foo, bar);
 
 TEST(BoutEnumClassNS, toString) {
-  EXPECT_EQ(toString(bout::TestEnum::foo), "foo");
-  EXPECT_EQ(toString(bout::TestEnum::bar), "bar");
+  EXPECT_EQ(fmt::to_string(bout::TestEnum::foo), "foo");
+  EXPECT_EQ(fmt::to_string(bout::TestEnum::bar), "bar");
 }
 
 TEST(BoutEnumClass, toString) {
-  EXPECT_EQ(toString(TestEnum::foo), "foo");
-  EXPECT_EQ(toString(TestEnum::bar), "bar");
+  EXPECT_EQ(fmt::to_string(TestEnum::foo), "foo");
+  EXPECT_EQ(fmt::to_string(TestEnum::bar), "bar");
 }
 
 TEST(BoutEnumClassNS, fromString) {
