@@ -39,6 +39,7 @@
 #include <bout/globals.hxx>
 #include <bout/mesh.hxx>
 #include <bout/output.hxx>
+#include <bout/profiling.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
@@ -46,6 +47,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstring>
 #include <tuple>
 #include <vector>
 
@@ -62,6 +64,51 @@ void checkGpu(gpu::runtimeError_t status, const char* call) {
                         gpu::runtimeGetErrorString(status));
   }
 }
+
+#if BOUT_HAS_CUDA && !BOUT_HAS_HIP
+// Resolve mapped pinned storage without assuming identical host/device addresses.
+template <class T>
+T* fieldDeviceAlias(T* pointer) {
+  cudaPointerAttributes attributes{};
+  const auto status = cudaPointerGetAttributes(&attributes, pointer);
+  if (status == cudaErrorInvalidValue) {
+    // Ordinary host allocations in CUDA builds still use the staging path.
+    cudaGetLastError();
+    return nullptr;
+  }
+  checkGpu(status, "cudaPointerGetAttributes(field)");
+  return static_cast<T*>(attributes.devicePointer);
+}
+
+__global__ void packFieldForFft(const BoutReal* rhs, const BoutReal* x0, BoutReal* packed,
+                                int nx, int ny, int nz, int local_nx, int local_ny,
+                                int local_nz, int xs, int ys, int zs, int inbndry,
+                                int outbndry, bool inner_set, bool outer_set) {
+  const int id = blockIdx.x * blockDim.x + threadIdx.x;
+  if (id >= nx * ny * nz) {
+    return;
+  }
+  const int ix = xs + id / (ny * nz);
+  const int iy = ys + (id / nz) % ny;
+  const int iz = zs + id % nz;
+  const bool boundary =
+      (ix < inbndry && inner_set) || (local_nx - ix - 1 < outbndry && outer_set);
+  packed[id] = (boundary ? x0 : rhs)[(ix * local_ny + iy) * local_nz + iz];
+}
+
+__global__ void unpackFieldFromFft(const BoutReal* packed, BoutReal* field, int nx,
+                                   int ny, int nz, int local_ny, int local_nz, int xs,
+                                   int ys, int zs) {
+  const int id = blockIdx.x * blockDim.x + threadIdx.x;
+  if (id >= nx * ny * nz) {
+    return;
+  }
+  const int ix = xs + id / (ny * nz);
+  const int iy = ys + (id / nz) % ny;
+  const int iz = zs + id % nz;
+  field[(ix * local_ny + iy) * local_nz + iz] = packed[id];
+}
+#endif
 
 void checkSparse(gpu::sparseStatus_t status, const char* call) {
   if (status != gpu::SPARSE_STATUS_SUCCESS) {
@@ -386,7 +433,8 @@ __global__ void buildTridagMatrices(
     const double* g11, const double* g33, const double* g13, const double* G1,
     const double* G3, const double* dx, const double* int_shift_torsion, int nx, int ny,
     int nmode, int local_nx, int local_ny, int xs, int ys, double zlength, bool all_terms,
-    bool nonuniform, bool inc_int_shear, bool pin_zero_mode) {
+    bool nonuniform, bool inc_int_shear, bool pin_zero_mode, bool periodic, int inbndry,
+    int outbndry, bool inner_rhs, bool outer_rhs) {
   const int id = blockIdx.x * blockDim.x + threadIdx.x;
   const int total = nx * ny * nmode;
   if (id >= total) {
@@ -401,6 +449,19 @@ __global__ void buildTridagMatrices(
   const int jy = ys + iy_local;
   const int field_index = jx * local_ny + jy;
   const double kwave = kz * 2.0 * PI / zlength;
+
+  // Match tridagMatrix's half-cell Dirichlet rows, including all boundary
+  // guard cells. No metric/coefficient evaluation is needed for these rows.
+  if (!periodic && (ix_local < inbndry || ix_local >= nx - outbndry)) {
+    const bool inner = ix_local < inbndry;
+    a[id] = gpu::makeComplex(inner ? 0.0 : 0.5, 0.0);
+    b[id] = gpu::makeComplex(0.5, 0.0);
+    c[id] = gpu::makeComplex(inner ? 0.5 : 0.0, 0.0);
+    if (!(inner ? inner_rhs : outer_rhs)) {
+      rhs[id] = gpu::makeComplex(0.0, 0.0);
+    }
+    return;
+  }
 
   if (pin_zero_mode && kz == 0 && ix_local == 0) {
     a[id] = gpu::makeComplex(0.0, 0.0);
@@ -487,43 +548,16 @@ public:
   FftPlan backward_plan;
   int real_host_size{0};
   std::size_t buffer_size{0};
-  const Coordinates* cached_metric_coords{nullptr};
-  std::size_t cached_metric_size{0};
+  // Content snapshots detect in-place edits as well as coefficient replacement.
+  std::array<std::vector<double>, 11> cached_field_values;
 
   void ensureFft(int nz, int batch) {
     const auto real_size = batch * nz;
     const auto spectral_size = batch * ((nz / 2) + 1);
-    if (real_size > real_host_size) {
-      real_host.reallocate(real_size);
-      real_host_size = real_size;
-    }
     real_device.ensure(static_cast<std::size_t>(real_size));
     spectral_device.ensure(static_cast<std::size_t>(spectral_size));
     forward_plan.ensure(nz, batch, gpu::FFT_D2Z);
     backward_plan.ensure(nz, batch, gpu::FFT_Z2D);
-  }
-
-  void ensureField2D(std::size_t size) {
-    acoef.ensure(size);
-    c1coef.ensure(size);
-    c2coef.ensure(size);
-    dcoef.ensure(size);
-    g11.ensure(size);
-    g33.ensure(size);
-    g13.ensure(size);
-    G1.ensure(size);
-    G3.ensure(size);
-    dx.ensure(size);
-    int_shift_torsion.ensure(size);
-  }
-
-  bool metricFieldsCached(const Coordinates* coordinates, std::size_t size) const {
-    return cached_metric_coords == coordinates && cached_metric_size == size;
-  }
-
-  void markMetricFieldsCached(const Coordinates* coordinates, std::size_t size) {
-    cached_metric_coords = coordinates;
-    cached_metric_size = size;
   }
 };
 
@@ -534,74 +568,85 @@ const double* field2DData(const Field2D& field) {
   return view.data;
 }
 
-void copyField2DToDevice(DeviceBuffer<double>& destination, const Field2D& source,
-                         std::size_t size, const char* name) {
-  checkGpu(gpu::runtimeMemcpy(destination.get(), field2DData(source),
-                              size * sizeof(double), gpu::runtimeMemcpyHostToDevice),
-           name);
-}
-
-void copyMetricFieldsToDevice(LaplaceCyclicGpuScratch& scratch,
-                              const Coordinates* coordinates, std::size_t size) {
-  if (scratch.metricFieldsCached(coordinates, size)) {
-    return;
+// Keep repeatedly accessed coefficients in device memory. Compare host contents
+// rather than addresses: fields and metrics can be modified in place.
+const double* field2DDeviceData(DeviceBuffer<double>& destination, const Field2D& field,
+                                std::size_t size, const char* name,
+                                std::vector<double>& cached_values) {
+  const auto* host = field2DData(field);
+  const auto bytes = size * sizeof(double);
+  if (cached_values.size() != size
+      || std::memcmp(cached_values.data(), host, bytes) != 0) {
+    destination.ensure(size);
+    checkGpu(gpu::runtimeMemcpy(destination.get(), host, bytes,
+                                gpu::runtimeMemcpyHostToDevice),
+             name);
+    // Update only after a successful upload so failures cannot validate stale data.
+    cached_values.assign(host, host + size);
   }
-
-  copyField2DToDevice(scratch.g11, coordinates->g11(), size, "copy g11 to device");
-  copyField2DToDevice(scratch.g33, coordinates->g33(), size, "copy g33 to device");
-  copyField2DToDevice(scratch.g13, coordinates->g13(), size, "copy g13 to device");
-  copyField2DToDevice(scratch.G1, coordinates->G1(), size, "copy G1 to device");
-  copyField2DToDevice(scratch.G3, coordinates->G3(), size, "copy G3 to device");
-  copyField2DToDevice(scratch.dx, coordinates->dx(), size, "copy dx to device");
-  copyField2DToDevice(scratch.int_shift_torsion, coordinates->IntShiftTorsion(), size,
-                      "copy IntShiftTorsion to device");
-  scratch.markMetricFieldsCached(coordinates, size);
+  return destination.get();
 }
 
 void solveWithGpuSparseDevice(int nsys, int nx, bool periodic,
                               LaplaceCyclicGpuScratch& scratch) {
+  const bout::profiling::ProfileRange solve_range("LaplaceCyclic::gpu_sparse");
   const int solve_batches = periodic ? 2 * nsys : nsys;
   const std::size_t matrix_values = static_cast<std::size_t>(nsys) * nx;
   const std::size_t solve_values = static_cast<std::size_t>(solve_batches) * nx;
 
-  scratch.a.ensure(matrix_values);
-  scratch.b.ensure(matrix_values);
-  scratch.c.ensure(matrix_values);
-  scratch.dl.ensure(solve_values);
-  scratch.d.ensure(solve_values);
-  scratch.du.ensure(solve_values);
-  scratch.x.ensure(solve_values);
-
-  const int block_size = 256;
-  const int prepare_blocks =
-      (static_cast<int>(solve_values) + block_size - 1) / block_size;
-  if (periodic) {
-    prepareCyclicBatch<<<prepare_blocks, block_size>>>(
-        scratch.a.get(), scratch.b.get(), scratch.c.get(), scratch.rhs.get(),
-        scratch.dl.get(), scratch.d.get(), scratch.du.get(), scratch.x.get(), nsys, nx);
-  } else {
-    prepareTridiagonalBatch<<<prepare_blocks, block_size>>>(
-        scratch.a.get(), scratch.b.get(), scratch.c.get(), scratch.rhs.get(),
-        scratch.dl.get(), scratch.d.get(), scratch.du.get(), scratch.x.get(), nsys, nx);
+  {
+    const bout::profiling::ProfileRange range("LaplaceCyclic::sparse_buffers");
+    scratch.a.ensure(matrix_values);
+    scratch.b.ensure(matrix_values);
+    scratch.c.ensure(matrix_values);
+    scratch.dl.ensure(solve_values);
+    scratch.d.ensure(solve_values);
+    scratch.du.ensure(solve_values);
+    scratch.x.ensure(solve_values);
   }
-  checkGpu(gpu::runtimeGetLastError(), "prepare sparse batch");
+
+  {
+    const bout::profiling::ProfileRange range("LaplaceCyclic::sparse_prepare");
+    const int block_size = 256;
+    const int prepare_blocks =
+        (static_cast<int>(solve_values) + block_size - 1) / block_size;
+    if (periodic) {
+      prepareCyclicBatch<<<prepare_blocks, block_size>>>(
+          scratch.a.get(), scratch.b.get(), scratch.c.get(), scratch.rhs.get(),
+          scratch.dl.get(), scratch.d.get(), scratch.du.get(), scratch.x.get(), nsys, nx);
+    } else {
+      prepareTridiagonalBatch<<<prepare_blocks, block_size>>>(
+          scratch.a.get(), scratch.b.get(), scratch.c.get(), scratch.rhs.get(),
+          scratch.dl.get(), scratch.d.get(), scratch.du.get(), scratch.x.get(), nsys, nx);
+    }
+    checkGpu(gpu::runtimeGetLastError(), "prepare sparse batch");
+  }
 
   size_t buffer_size = 0;
-  checkSparse(gpu::sparseZgtsv2StridedBatch_bufferSizeExt(
-                  scratch.handle, nx, scratch.dl.get(), scratch.d.get(), scratch.du.get(),
-                  scratch.x.get(), solve_batches, nx, &buffer_size),
-              "gpu::sparseZgtsv2StridedBatch_bufferSizeExt");
+  {
+    const bout::profiling::ProfileRange range("LaplaceCyclic::sparse_workspace");
+    checkSparse(gpu::sparseZgtsv2StridedBatch_bufferSizeExt(
+                    scratch.handle, nx, scratch.dl.get(), scratch.d.get(),
+                    scratch.du.get(), scratch.x.get(), solve_batches, nx, &buffer_size),
+                "gpu::sparseZgtsv2StridedBatch_bufferSizeExt");
 
-  if (buffer_size > scratch.buffer_size) {
-    scratch.buffer.ensure(buffer_size);
-    scratch.buffer_size = buffer_size;
+    if (buffer_size > scratch.buffer_size) {
+      scratch.buffer.ensure(buffer_size);
+      scratch.buffer_size = buffer_size;
+    }
   }
-  checkSparse(gpu::sparseZgtsv2StridedBatch(
-                  scratch.handle, nx, scratch.dl.get(), scratch.d.get(), scratch.du.get(),
-                  scratch.x.get(), solve_batches, nx, scratch.buffer.get()),
-              "gpu::sparseZgtsv2StridedBatch");
+  {
+    const bout::profiling::ProfileRange range("LaplaceCyclic::sparse_execute");
+    checkSparse(gpu::sparseZgtsv2StridedBatch(scratch.handle, nx, scratch.dl.get(),
+                                              scratch.d.get(), scratch.du.get(),
+                                              scratch.x.get(), solve_batches, nx,
+                                              scratch.buffer.get()),
+                "gpu::sparseZgtsv2StridedBatch");
+  }
 
   if (periodic) {
+    const bout::profiling::ProfileRange range("LaplaceCyclic::sparse_finish_cyclic");
+    const int block_size = 256;
     const int finish_blocks =
         (static_cast<int>(matrix_values) + block_size - 1) / block_size;
     finishCyclicBatch<<<finish_blocks, block_size>>>(
@@ -614,6 +659,7 @@ void solveWithGpuSparse(const Matrix<dcomplex>& a, const Matrix<dcomplex>& b,
                         const Matrix<dcomplex>& c, const Matrix<dcomplex>& rhs,
                         Matrix<dcomplex>& x, bool periodic,
                         LaplaceCyclicGpuScratch& scratch) {
+  const bout::profiling::ProfileRange solve_range("LaplaceCyclic::gpu_sparse");
   const int nsys = std::get<0>(a.shape());
   const int nx = std::get<1>(a.shape());
   ASSERT2(std::get<0>(b.shape()) == nsys);
@@ -629,62 +675,80 @@ void solveWithGpuSparse(const Matrix<dcomplex>& a, const Matrix<dcomplex>& b,
   const std::size_t matrix_values = static_cast<std::size_t>(nsys) * nx;
   const std::size_t solve_values = static_cast<std::size_t>(solve_batches) * nx;
 
-  scratch.a.ensure(matrix_values);
-  scratch.b.ensure(matrix_values);
-  scratch.c.ensure(matrix_values);
-  scratch.rhs.ensure(matrix_values);
-  scratch.dl.ensure(solve_values);
-  scratch.d.ensure(solve_values);
-  scratch.du.ensure(solve_values);
-  scratch.x.ensure(solve_values);
-
-  checkGpu(gpu::runtimeMemcpy(
-               scratch.a.get(), reinterpret_cast<const gpu::Complex*>(a.begin()),
-               matrix_values * sizeof(gpu::Complex), gpu::runtimeMemcpyHostToDevice),
-           "copy a to device");
-  checkGpu(gpu::runtimeMemcpy(
-               scratch.b.get(), reinterpret_cast<const gpu::Complex*>(b.begin()),
-               matrix_values * sizeof(gpu::Complex), gpu::runtimeMemcpyHostToDevice),
-           "copy b to device");
-  checkGpu(gpu::runtimeMemcpy(
-               scratch.c.get(), reinterpret_cast<const gpu::Complex*>(c.begin()),
-               matrix_values * sizeof(gpu::Complex), gpu::runtimeMemcpyHostToDevice),
-           "copy c to device");
-  checkGpu(gpu::runtimeMemcpy(
-               scratch.rhs.get(), reinterpret_cast<const gpu::Complex*>(rhs.begin()),
-               matrix_values * sizeof(gpu::Complex), gpu::runtimeMemcpyHostToDevice),
-           "copy rhs to device");
-
-  const int block_size = 256;
-  const int prepare_blocks =
-      (static_cast<int>(solve_values) + block_size - 1) / block_size;
-  if (periodic) {
-    prepareCyclicBatch<<<prepare_blocks, block_size>>>(
-        scratch.a.get(), scratch.b.get(), scratch.c.get(), scratch.rhs.get(),
-        scratch.dl.get(), scratch.d.get(), scratch.du.get(), scratch.x.get(), nsys, nx);
-  } else {
-    prepareTridiagonalBatch<<<prepare_blocks, block_size>>>(
-        scratch.a.get(), scratch.b.get(), scratch.c.get(), scratch.rhs.get(),
-        scratch.dl.get(), scratch.d.get(), scratch.du.get(), scratch.x.get(), nsys, nx);
+  {
+    const bout::profiling::ProfileRange range("LaplaceCyclic::sparse_buffers");
+    scratch.a.ensure(matrix_values);
+    scratch.b.ensure(matrix_values);
+    scratch.c.ensure(matrix_values);
+    scratch.rhs.ensure(matrix_values);
+    scratch.dl.ensure(solve_values);
+    scratch.d.ensure(solve_values);
+    scratch.du.ensure(solve_values);
+    scratch.x.ensure(solve_values);
   }
-  checkGpu(gpu::runtimeGetLastError(), "prepare sparse batch");
+
+  {
+    const bout::profiling::ProfileRange range("LaplaceCyclic::sparse_upload");
+    checkGpu(gpu::runtimeMemcpy(
+                 scratch.a.get(), reinterpret_cast<const gpu::Complex*>(a.begin()),
+                 matrix_values * sizeof(gpu::Complex), gpu::runtimeMemcpyHostToDevice),
+             "copy a to device");
+    checkGpu(gpu::runtimeMemcpy(
+                 scratch.b.get(), reinterpret_cast<const gpu::Complex*>(b.begin()),
+                 matrix_values * sizeof(gpu::Complex), gpu::runtimeMemcpyHostToDevice),
+             "copy b to device");
+    checkGpu(gpu::runtimeMemcpy(
+                 scratch.c.get(), reinterpret_cast<const gpu::Complex*>(c.begin()),
+                 matrix_values * sizeof(gpu::Complex), gpu::runtimeMemcpyHostToDevice),
+             "copy c to device");
+    checkGpu(gpu::runtimeMemcpy(
+                 scratch.rhs.get(), reinterpret_cast<const gpu::Complex*>(rhs.begin()),
+                 matrix_values * sizeof(gpu::Complex), gpu::runtimeMemcpyHostToDevice),
+             "copy rhs to device");
+  }
+
+  {
+    const bout::profiling::ProfileRange range("LaplaceCyclic::sparse_prepare");
+    const int block_size = 256;
+    const int prepare_blocks =
+        (static_cast<int>(solve_values) + block_size - 1) / block_size;
+    if (periodic) {
+      prepareCyclicBatch<<<prepare_blocks, block_size>>>(
+          scratch.a.get(), scratch.b.get(), scratch.c.get(), scratch.rhs.get(),
+          scratch.dl.get(), scratch.d.get(), scratch.du.get(), scratch.x.get(), nsys, nx);
+    } else {
+      prepareTridiagonalBatch<<<prepare_blocks, block_size>>>(
+          scratch.a.get(), scratch.b.get(), scratch.c.get(), scratch.rhs.get(),
+          scratch.dl.get(), scratch.d.get(), scratch.du.get(), scratch.x.get(), nsys, nx);
+    }
+    checkGpu(gpu::runtimeGetLastError(), "prepare sparse batch");
+  }
 
   size_t buffer_size = 0;
-  checkSparse(gpu::sparseZgtsv2StridedBatch_bufferSizeExt(
-                  scratch.handle, nx, scratch.dl.get(), scratch.d.get(), scratch.du.get(),
-                  scratch.x.get(), solve_batches, nx, &buffer_size),
-              "gpu::sparseZgtsv2StridedBatch_bufferSizeExt");
+  {
+    const bout::profiling::ProfileRange range("LaplaceCyclic::sparse_workspace");
+    checkSparse(gpu::sparseZgtsv2StridedBatch_bufferSizeExt(
+                    scratch.handle, nx, scratch.dl.get(), scratch.d.get(),
+                    scratch.du.get(), scratch.x.get(), solve_batches, nx, &buffer_size),
+                "gpu::sparseZgtsv2StridedBatch_bufferSizeExt");
 
-  if (buffer_size > scratch.buffer_size) {
-    scratch.buffer.ensure(buffer_size);
-    scratch.buffer_size = buffer_size;
+    if (buffer_size > scratch.buffer_size) {
+      scratch.buffer.ensure(buffer_size);
+      scratch.buffer_size = buffer_size;
+    }
   }
-  checkSparse(gpu::sparseZgtsv2StridedBatch(
-                  scratch.handle, nx, scratch.dl.get(), scratch.d.get(), scratch.du.get(),
-                  scratch.x.get(), solve_batches, nx, scratch.buffer.get()),
-              "gpu::sparseZgtsv2StridedBatch");
+  {
+    const bout::profiling::ProfileRange range("LaplaceCyclic::sparse_execute");
+    checkSparse(gpu::sparseZgtsv2StridedBatch(scratch.handle, nx, scratch.dl.get(),
+                                              scratch.d.get(), scratch.du.get(),
+                                              scratch.x.get(), solve_batches, nx,
+                                              scratch.buffer.get()),
+                "gpu::sparseZgtsv2StridedBatch");
+  }
 
   if (periodic) {
+    const bout::profiling::ProfileRange range("LaplaceCyclic::sparse_finish_cyclic");
+    const int block_size = 256;
     const int finish_blocks =
         (static_cast<int>(matrix_values) + block_size - 1) / block_size;
     finishCyclicBatch<<<finish_blocks, block_size>>>(
@@ -692,16 +756,24 @@ void solveWithGpuSparse(const Matrix<dcomplex>& a, const Matrix<dcomplex>& b,
     checkGpu(gpu::runtimeGetLastError(), "finish cyclic sparse batch");
   }
 
-  checkGpu(gpu::runtimeMemcpy(reinterpret_cast<gpu::Complex*>(x.begin()), scratch.x.get(),
-                              matrix_values * sizeof(gpu::Complex),
-                              gpu::runtimeMemcpyDeviceToHost),
-           "copy solution to host");
+  {
+    const bout::profiling::ProfileRange range("LaplaceCyclic::sparse_download");
+    checkGpu(gpu::runtimeMemcpy(reinterpret_cast<gpu::Complex*>(x.begin()),
+                                scratch.x.get(), matrix_values * sizeof(gpu::Complex),
+                                gpu::runtimeMemcpyDeviceToHost),
+             "copy solution to host");
+  }
 }
 
 bool canUseGpuSolve(const Mesh& mesh) { return mesh.getNXPE() == 1; }
 
-bool canUseResidentFftSolve(const Mesh& mesh) {
-  return mesh.getNXPE() == 1 && mesh.periodicX;
+bool canUseResidentFftSolve(const Mesh& mesh, int inner_flags, int outer_flags) {
+  // The device boundary rows below implement second-order Dirichlet conditions.
+  // Other boundary operators retain the general CPU construction path.
+  constexpr int supported = INVERT_BNDRY_ONE | INVERT_SET | INVERT_RHS;
+  return mesh.getNXPE() == 1
+         && (mesh.periodicX
+             || ((inner_flags & ~supported) == 0 && (outer_flags & ~supported) == 0));
 }
 #endif
 } // namespace
@@ -871,6 +943,8 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 
 Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
+  const bout::profiling::ProfileRange solve_range("LaplaceCyclic::solve3D");
+
   ASSERT1(rhs.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
   ASSERT1(localmesh == rhs.getMesh() && localmesh == x0.getMesh());
@@ -921,7 +995,10 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
   // This is just to silence static analysis
   ASSERT0(ny > 0);
 
-  auto xcmplx3D = Matrix<dcomplex>(nsys, nx);
+  auto xcmplx3D = [&]() {
+    const bout::profiling::ProfileRange range("LaplaceCyclic::host_matrix_allocate");
+    return Matrix<dcomplex>(nsys, nx);
+  }();
 
   if (dst) {
     const DSTTransform transform(
@@ -930,6 +1007,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
         isOuterBoundaryFlagSetOnLastX(INVERT_SET), isGlobalFlagSet(INVERT_ZERO_DC));
 
     auto matrices = [&]() {
+      const bout::profiling::ProfileRange range("LaplaceCyclic::transform_forward");
       return transform.forward(*this, rhs, x0, Acoef, C1coef, C2coef, Dcoef);
     }();
 
@@ -945,19 +1023,25 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 #endif
     {
       {
+        const bout::profiling::ProfileRange range("LaplaceCyclic::cpu_set_coefficients");
         cr->setCoefs(matrices.a, matrices.b, matrices.c);
       }
       {
+        const bout::profiling::ProfileRange range("LaplaceCyclic::cpu_solve");
         cr->solve(matrices.bcmplx, xcmplx3D);
       }
     }
 
     {
+      const bout::profiling::ProfileRange range("LaplaceCyclic::transform_backward");
       return transform.backward(rhs, xcmplx3D);
     }
   }
 #if BOUT_HAS_CUDA || BOUT_HAS_HIP
-  if (use_gpu_sparse && canUseResidentFftSolve(*localmesh)) {
+  if (use_gpu_sparse
+      && canUseResidentFftSolve(*localmesh, getInnerBoundaryFlags(),
+                                getOuterBoundaryFlags())) {
+    const bout::profiling::ProfileRange resident_range("LaplaceCyclic::resident_fft");
     if (!gpu_scratch) {
       gpu_scratch = std::make_unique<LaplaceCyclicGpuScratch>();
     }
@@ -967,70 +1051,146 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
       const int nz = localmesh->zend - localmesh->zstart + 1;
       const int nxny = nx * ny;
       const int nmodes = (nz / 2) + 1;
-      scratch.ensureFft(nz, nxny);
-
-      for (int ind = 0; ind < nxny; ++ind) {
-        const int ix = xs + (ind / ny);
-        const int iy = ys + (ind % ny);
-        const BoutReal* input =
-            (((ix < inbndry) and isInnerBoundaryFlagSetOnFirstX(INVERT_SET))
-             || ((localmesh->LocalNx - ix - 1 < outbndry)
-                 and isOuterBoundaryFlagSetOnLastX(INVERT_SET)))
-                ? &(x0(ix, iy, localmesh->zstart))
-                : &(rhs(ix, iy, localmesh->zstart));
-        std::copy(input, input + nz, std::begin(scratch.real_host) + ind * nz);
+      {
+        const bout::profiling::ProfileRange range("LaplaceCyclic::fft_setup");
+        scratch.ensureFft(nz, nxny);
       }
 
-      checkGpu(gpu::runtimeMemcpy(scratch.real_device.get(),
-                                  std::begin(scratch.real_host),
-                                  static_cast<std::size_t>(nxny) * nz * sizeof(BoutReal),
-                                  gpu::runtimeMemcpyHostToDevice),
-               "copy resident rfft input to device");
-      checkFft(gpu::fftExecD2Z(scratch.forward_plan.get(), scratch.real_device.get(),
-                               scratch.spectral_device.get()),
-               "resident gpu::fftExecD2Z");
+#if BOUT_HAS_CUDA && !BOUT_HAS_HIP
+      const auto* rhs_device = fieldDeviceAlias(&rhs(0, 0, 0));
+      const bool inner_set = isInnerBoundaryFlagSetOnFirstX(INVERT_SET);
+      const bool outer_set = isOuterBoundaryFlagSetOnLastX(INVERT_SET);
+      const auto* x0_device =
+          (inner_set || outer_set) ? fieldDeviceAlias(&x0(0, 0, 0)) : rhs_device;
+      if (rhs_device && x0_device) {
+        const bout::profiling::ProfileRange range("LaplaceCyclic::pack_rhs_device");
+        // Field producers may use other streams; preserve host-path ordering.
+        checkGpu(cudaDeviceSynchronize(), "wait for FFT input fields");
+        const int total = nxny * nz;
+        packFieldForFft<<<(total + 255) / 256, 256>>>(
+            rhs_device, x0_device, scratch.real_device.get(), nx, ny, nz,
+            localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz, xs, ys,
+            localmesh->zstart, inbndry, outbndry, inner_set, outer_set);
+        checkGpu(cudaGetLastError(), "pack FFT input from mapped fields");
+      } else
+#endif
+      {
+        if (nxny * nz > scratch.real_host_size) {
+          scratch.real_host.reallocate(nxny * nz);
+          scratch.real_host_size = nxny * nz;
+        }
+        {
+          const bout::profiling::ProfileRange range("LaplaceCyclic::pack_rhs_host");
+          for (int ind = 0; ind < nxny; ++ind) {
+            const int ix = xs + (ind / ny);
+            const int iy = ys + (ind % ny);
+            const BoutReal* input =
+                (((ix < inbndry) and isInnerBoundaryFlagSetOnFirstX(INVERT_SET))
+                 || ((localmesh->LocalNx - ix - 1 < outbndry)
+                     and isOuterBoundaryFlagSetOnLastX(INVERT_SET)))
+                    ? &(x0(ix, iy, localmesh->zstart))
+                    : &(rhs(ix, iy, localmesh->zstart));
+            std::copy(input, input + nz, std::begin(scratch.real_host) + ind * nz);
+          }
+        }
 
-      scratch.rhs.ensure(static_cast<std::size_t>(nsys) * nx);
-      const int block_size = 256;
-      const int total = nx * ny * nmode;
-      const int blocks = (total + block_size - 1) / block_size;
-      fftOutputToSparseRhs<<<blocks, block_size>>>(
-          scratch.spectral_device.get(), scratch.rhs.get(), nx, ny, nz, nmode, nmodes);
-      checkGpu(gpu::runtimeGetLastError(), "transpose rfft output to GPU sparse rhs");
+        {
+          const bout::profiling::ProfileRange range("LaplaceCyclic::fft_upload");
+          checkGpu(
+              gpu::runtimeMemcpy(scratch.real_device.get(), std::begin(scratch.real_host),
+                                 static_cast<std::size_t>(nxny) * nz * sizeof(BoutReal),
+                                 gpu::runtimeMemcpyHostToDevice),
+              "copy resident rfft input to device");
+        }
+      } // Host staging fallback
+      {
+        const bout::profiling::ProfileRange range("LaplaceCyclic::fft_forward");
+        checkFft(gpu::fftExecD2Z(scratch.forward_plan.get(), scratch.real_device.get(),
+                                 scratch.spectral_device.get()),
+                 "resident gpu::fftExecD2Z");
+      }
+
+      {
+        const bout::profiling::ProfileRange range("LaplaceCyclic::fft_to_sparse");
+        scratch.rhs.ensure(static_cast<std::size_t>(nsys) * nx);
+        const int block_size = 256;
+        const int total = nx * ny * nmode;
+        const int blocks = (total + block_size - 1) / block_size;
+        fftOutputToSparseRhs<<<blocks, block_size>>>(
+            scratch.spectral_device.get(), scratch.rhs.get(), nx, ny, nz, nmode, nmodes);
+        checkGpu(gpu::runtimeGetLastError(), "transpose rfft output to GPU sparse rhs");
+      }
     }
 
     {
-      const std::size_t field_size =
-          static_cast<std::size_t>(localmesh->LocalNx) * localmesh->LocalNy;
-      scratch.ensureField2D(field_size);
-      copyField2DToDevice(scratch.acoef, Acoef, field_size, "copy Acoef to device");
-      copyField2DToDevice(scratch.c1coef, C1coef, field_size, "copy C1coef to device");
-      copyField2DToDevice(scratch.c2coef, C2coef, field_size, "copy C2coef to device");
-      copyField2DToDevice(scratch.dcoef, Dcoef, field_size, "copy Dcoef to device");
-
       const Coordinates* localcoords = localmesh->getCoordinates(location);
-      copyMetricFieldsToDevice(scratch, localcoords, field_size);
+      std::array<const double*, 11> coefficient_data{};
+      {
+        const bout::profiling::ProfileRange range("LaplaceCyclic::coefficients_access");
+        const std::size_t field_size =
+            static_cast<std::size_t>(localmesh->LocalNx) * localmesh->LocalNy;
+        coefficient_data[0] =
+            field2DDeviceData(scratch.acoef, Acoef, field_size, "copy acoef to device",
+                              scratch.cached_field_values[0]);
+        coefficient_data[1] =
+            field2DDeviceData(scratch.c1coef, C1coef, field_size, "copy c1coef to device",
+                              scratch.cached_field_values[1]);
+        coefficient_data[2] =
+            field2DDeviceData(scratch.c2coef, C2coef, field_size, "copy c2coef to device",
+                              scratch.cached_field_values[2]);
+        coefficient_data[3] =
+            field2DDeviceData(scratch.dcoef, Dcoef, field_size, "copy dcoef to device",
+                              scratch.cached_field_values[3]);
+        coefficient_data[4] =
+            field2DDeviceData(scratch.g11, localcoords->g11(), field_size,
+                              "copy g11 to device", scratch.cached_field_values[4]);
+        coefficient_data[5] =
+            field2DDeviceData(scratch.g33, localcoords->g33(), field_size,
+                              "copy g33 to device", scratch.cached_field_values[5]);
+        coefficient_data[6] =
+            field2DDeviceData(scratch.g13, localcoords->g13(), field_size,
+                              "copy g13 to device", scratch.cached_field_values[6]);
+        coefficient_data[7] =
+            field2DDeviceData(scratch.G1, localcoords->G1(), field_size,
+                              "copy G1 to device", scratch.cached_field_values[7]);
+        coefficient_data[8] =
+            field2DDeviceData(scratch.G3, localcoords->G3(), field_size,
+                              "copy G3 to device", scratch.cached_field_values[8]);
+        coefficient_data[9] =
+            field2DDeviceData(scratch.dx, localcoords->dx(), field_size,
+                              "copy dx to device", scratch.cached_field_values[9]);
+        coefficient_data[10] = field2DDeviceData(
+            scratch.int_shift_torsion, localcoords->IntShiftTorsion(), field_size,
+            "copy IntShiftTorsion to device", scratch.cached_field_values[10]);
 
-      scratch.a.ensure(static_cast<std::size_t>(nsys) * nx);
-      scratch.b.ensure(static_cast<std::size_t>(nsys) * nx);
-      scratch.c.ensure(static_cast<std::size_t>(nsys) * nx);
+        scratch.a.ensure(static_cast<std::size_t>(nsys) * nx);
+        scratch.b.ensure(static_cast<std::size_t>(nsys) * nx);
+        scratch.c.ensure(static_cast<std::size_t>(nsys) * nx);
+      }
 
       const BoutReal zlength = getUniform(localcoords->zlength());
-      const int block_size = 256;
-      const int total = nx * ny * nmode;
-      const int blocks = (total + block_size - 1) / block_size;
-      const bool pin_zero_mode = localmesh->periodicX && localmesh->firstX();
-      buildTridagMatrices<<<blocks, block_size>>>(
-          scratch.a.get(), scratch.b.get(), scratch.c.get(), scratch.rhs.get(),
-          scratch.acoef.get(), scratch.c1coef.get(), scratch.c2coef.get(),
-          scratch.dcoef.get(), scratch.g11.get(), scratch.g33.get(), scratch.g13.get(),
-          scratch.G1.get(), scratch.G3.get(), scratch.dx.get(),
-          scratch.int_shift_torsion.get(), nx, ny, nmode, localmesh->LocalNx,
-          localmesh->LocalNy, xs, ys, zlength, all_terms, nonuniform,
-          localmesh->IncIntShear, pin_zero_mode);
-      checkGpu(gpu::runtimeGetLastError(), "build tridag matrices on device");
+      {
+        const bout::profiling::ProfileRange range("LaplaceCyclic::build_matrices");
+        const int block_size = 256;
+        const int total = nx * ny * nmode;
+        const int blocks = (total + block_size - 1) / block_size;
+        const bool pin_zero_mode = localmesh->periodicX && localmesh->firstX();
+        buildTridagMatrices<<<blocks, block_size>>>(
+            scratch.a.get(), scratch.b.get(), scratch.c.get(), scratch.rhs.get(),
+            coefficient_data[0], coefficient_data[1], coefficient_data[2],
+            coefficient_data[3], coefficient_data[4], coefficient_data[5],
+            coefficient_data[6], coefficient_data[7], coefficient_data[8],
+            coefficient_data[9], coefficient_data[10], nx, ny, nmode, localmesh->LocalNx,
+            localmesh->LocalNy, xs, ys, zlength, all_terms, nonuniform,
+            localmesh->IncIntShear, pin_zero_mode, localmesh->periodicX, inbndry,
+            outbndry, isInnerBoundaryFlagSet(INVERT_RHS | INVERT_SET),
+            isOuterBoundaryFlagSet(INVERT_RHS | INVERT_SET));
+        checkGpu(gpu::runtimeGetLastError(), "build tridag matrices on device");
+      }
 
       if (compare_device_tridag && !compared_device_tridag) {
+        const bout::profiling::ProfileRange range(
+            "LaplaceCyclic::compare_device_tridag_once");
         Matrix<dcomplex> cpu_a(nsys, nx);
         Matrix<dcomplex> cpu_b(nsys, nx);
         Matrix<dcomplex> cpu_c(nsys, nx);
@@ -1058,7 +1218,17 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
                                     scratch.rhs.get(), matrix_bytes,
                                     gpu::runtimeMemcpyDeviceToHost),
                  "copy GPU tridag rhs to host for comparison");
-        std::copy(gpu_rhs.begin(), gpu_rhs.end(), cpu_rhs.begin());
+        if (localmesh->periodicX) {
+          std::copy(gpu_rhs.begin(), gpu_rhs.end(), cpu_rhs.begin());
+        } else {
+          const FFTTransform reference_transform(
+              *localmesh, nmode, xs, xe, ys, ye, localmesh->zstart, localmesh->zend,
+              inbndry, outbndry, isInnerBoundaryFlagSetOnFirstX(INVERT_SET),
+              isOuterBoundaryFlagSetOnLastX(INVERT_SET), isGlobalFlagSet(INVERT_ZERO_DC));
+          auto reference =
+              reference_transform.forward(*this, rhs, x0, Acoef, C1coef, C2coef, Dcoef);
+          std::copy(reference.bcmplx.begin(), reference.bcmplx.end(), cpu_rhs.begin());
+        }
 
         for (int ind = 0; ind < nsys; ind++) {
           const int iy = ys + (ind / nmode);
@@ -1133,6 +1303,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     }
 
     if (localmesh->periodicX) {
+      const bout::profiling::ProfileRange range("LaplaceCyclic::subtract_x_average");
       const int block_size = 256;
       subtractPeriodicXAverage<<<ny, block_size, block_size * sizeof(double)>>>(
           scratch.x.get(), nx, ny, nmode);
@@ -1143,31 +1314,64 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
       const int nz = localmesh->zend - localmesh->zstart + 1;
       const int nxny = nx * ny;
       const int nmodes = (nz / 2) + 1;
-      const int block_size = 256;
-      const int total = nxny * nmodes;
-      const int blocks = (total + block_size - 1) / block_size;
-      sparseXToIfftInput<<<blocks, block_size>>>(
-          scratch.x.get(), scratch.spectral_device.get(), nx, ny, nmode, nmodes,
-          isGlobalFlagSet(INVERT_ZERO_DC));
-      checkGpu(gpu::runtimeGetLastError(),
-               "transpose GPU sparse solution to irfft input");
-
-      checkFft(gpu::fftExecZ2D(scratch.backward_plan.get(), scratch.spectral_device.get(),
-                               scratch.real_device.get()),
-               "resident gpu::fftExecZ2D");
-      checkGpu(gpu::runtimeMemcpy(std::begin(scratch.real_host),
-                                  scratch.real_device.get(),
-                                  static_cast<std::size_t>(nxny) * nz * sizeof(BoutReal),
-                                  gpu::runtimeMemcpyDeviceToHost),
-               "copy resident irfft output to host");
-
-      for (int ind = 0; ind < nxny; ++ind) {
-        const int ix = xs + (ind / ny);
-        const int iy = ys + (ind % ny);
-        std::copy(std::begin(scratch.real_host) + ind * nz,
-                  std::begin(scratch.real_host) + (ind + 1) * nz,
-                  &(x(ix, iy, localmesh->zstart)));
+      {
+        const bout::profiling::ProfileRange range("LaplaceCyclic::sparse_to_fft");
+        const int block_size = 256;
+        const int total = nxny * nmodes;
+        const int blocks = (total + block_size - 1) / block_size;
+        sparseXToIfftInput<<<blocks, block_size>>>(
+            scratch.x.get(), scratch.spectral_device.get(), nx, ny, nmode, nmodes,
+            isGlobalFlagSet(INVERT_ZERO_DC));
+        checkGpu(gpu::runtimeGetLastError(),
+                 "transpose GPU sparse solution to irfft input");
       }
+
+      {
+        const bout::profiling::ProfileRange range("LaplaceCyclic::fft_backward");
+        checkFft(gpu::fftExecZ2D(scratch.backward_plan.get(),
+                                 scratch.spectral_device.get(),
+                                 scratch.real_device.get()),
+                 "resident gpu::fftExecZ2D");
+      }
+#if BOUT_HAS_CUDA && !BOUT_HAS_HIP
+      if (auto* x_device = fieldDeviceAlias(&x(0, 0, 0))) {
+        const bout::profiling::ProfileRange range(
+            "LaplaceCyclic::unpack_solution_device");
+        const int total = nxny * nz;
+        unpackFieldFromFft<<<(total + 255) / 256, 256>>>(
+            scratch.real_device.get(), x_device, nx, ny, nz, localmesh->LocalNy,
+            localmesh->LocalNz, xs, ys, localmesh->zstart);
+        checkGpu(cudaGetLastError(), "unpack FFT output to mapped field");
+        // The returned field is immediately accessible to host boundary/comm code.
+        checkGpu(cudaStreamSynchronize(0), "wait for mapped FFT output");
+      } else
+#endif
+      {
+        if (nxny * nz > scratch.real_host_size) {
+          scratch.real_host.reallocate(nxny * nz);
+          scratch.real_host_size = nxny * nz;
+        }
+        {
+          const bout::profiling::ProfileRange range("LaplaceCyclic::fft_download");
+          checkGpu(
+              gpu::runtimeMemcpy(std::begin(scratch.real_host), scratch.real_device.get(),
+                                 static_cast<std::size_t>(nxny) * nz * sizeof(BoutReal),
+                                 gpu::runtimeMemcpyDeviceToHost),
+              "copy resident irfft output to host");
+        }
+
+        {
+          const bout::profiling::ProfileRange range(
+              "LaplaceCyclic::unpack_solution_host");
+          for (int ind = 0; ind < nxny; ++ind) {
+            const int ix = xs + (ind / ny);
+            const int iy = ys + (ind % ny);
+            std::copy(std::begin(scratch.real_host) + ind * nz,
+                      std::begin(scratch.real_host) + (ind + 1) * nz,
+                      &(x(ix, iy, localmesh->zstart)));
+          }
+        }
+      } // Host staging fallback
     }
 
     return x;
@@ -1179,6 +1383,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
       isOuterBoundaryFlagSetOnLastX(INVERT_SET), isGlobalFlagSet(INVERT_ZERO_DC));
 
   auto matrices = [&]() {
+    const bout::profiling::ProfileRange range("LaplaceCyclic::transform_forward");
     return transform.forward(*this, rhs, x0, Acoef, C1coef, C2coef, Dcoef);
   }();
 
@@ -1194,9 +1399,11 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 #endif
   {
     {
+      const bout::profiling::ProfileRange range("LaplaceCyclic::cpu_set_coefficients");
       cr->setCoefs(matrices.a, matrices.b, matrices.c);
     }
     {
+      const bout::profiling::ProfileRange range("LaplaceCyclic::cpu_solve");
       cr->solve(matrices.bcmplx, xcmplx3D);
     }
   }
@@ -1225,6 +1432,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
   }
 
   {
+    const bout::profiling::ProfileRange range("LaplaceCyclic::transform_backward");
     return transform.backward(rhs, xcmplx3D);
   }
 }

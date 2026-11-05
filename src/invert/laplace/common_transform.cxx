@@ -1,4 +1,5 @@
 #include "common_transform.hxx"
+#include <bout/profiling.hxx>
 
 #include "bout/array.hxx"
 #include "bout/bout_types.hxx"
@@ -189,100 +190,132 @@ auto FFTTransform::forward(const Laplacian& laplacian, const Field3D& rhs,
                            const Field2D& C2coef, const Field2D& Dcoef) const
     -> Matrices {
 
-  Matrices result(nsys, nx);
+  auto result = [&]() {
+    const bout::profiling::ProfileRange range("FFTTransform::forward::allocate_matrices");
+    return Matrices(nsys, nx);
+  }();
 
 #if BOUT_HAS_CUDA
   {
-    auto& scratch = cufftScratch();
+    auto& scratch = [&]() -> auto& {
+      const bout::profiling::ProfileRange range("FFTTransform::forward::scratch_access");
+      return cufftScratch();
+    }();
     const int nmodes = (nz / 2) + 1;
-    scratch.ensure(nz, nxny);
-
-    for (int ind = 0; ind < nxny; ++ind) {
-      const int ix = xs + (ind / ny);
-      const int iy = ys + (ind % ny);
-      const BoutReal* input =
-          (((ix < inbndry) and inner_boundary_set_on_first_x)
-           || ((localmesh->LocalNx - ix - 1 < outbndry)
-               and outer_boundary_set_on_last_x))
-              ? &(x0(ix, iy, zs))
-              : &(rhs(ix, iy, zs));
-      std::copy(input, input + nz, std::begin(scratch.real_host) + ind * nz);
+    {
+      const bout::profiling::ProfileRange range("FFTTransform::forward::fft_setup");
+      scratch.ensure(nz, nxny);
     }
 
-    checkCuda(cudaMemcpy(scratch.real_device.get(), std::begin(scratch.real_host),
-                         static_cast<std::size_t>(nxny) * nz * sizeof(BoutReal),
-                         cudaMemcpyHostToDevice),
-              "copy rfft input to device");
-    checkCufft(cufftExecD2Z(scratch.forward_plan.get(), scratch.real_device.get(),
-                            scratch.complex_device.get()),
-               "cufftExecD2Z");
-    checkCuda(cudaMemcpy(reinterpret_cast<cufftDoubleComplex*>(
-                             std::begin(scratch.complex_host)),
-                         scratch.complex_device.get(),
-                         static_cast<std::size_t>(nxny) * nmodes
-                             * sizeof(cufftDoubleComplex),
-                         cudaMemcpyDeviceToHost),
-              "copy rfft output to host");
+    {
+      const bout::profiling::ProfileRange range("FFTTransform::forward::pack_rhs_host");
+      for (int ind = 0; ind < nxny; ++ind) {
+        const int ix = xs + (ind / ny);
+        const int iy = ys + (ind % ny);
+        const BoutReal* input = (((ix < inbndry) and inner_boundary_set_on_first_x)
+                                 || ((localmesh->LocalNx - ix - 1 < outbndry)
+                                     and outer_boundary_set_on_last_x))
+                                    ? &(x0(ix, iy, zs))
+                                    : &(rhs(ix, iy, zs));
+        std::copy(input, input + nz, std::begin(scratch.real_host) + ind * nz);
+      }
+    }
 
-    const BoutReal fac = 1.0 / nz;
-    for (int ind = 0; ind < nxny; ++ind) {
-      const int ix = xs + (ind / ny);
-      const int iy = ys + (ind % ny);
-      for (int kz = 0; kz < nmode; kz++) {
-        result.bcmplx(((iy - ys) * nmode) + kz, ix - xs) =
-            scratch.complex_host[ind * nmodes + kz] * fac;
+    {
+      const bout::profiling::ProfileRange range("FFTTransform::forward::upload_rhs");
+      checkCuda(cudaMemcpy(scratch.real_device.get(), std::begin(scratch.real_host),
+                           static_cast<std::size_t>(nxny) * nz * sizeof(BoutReal),
+                           cudaMemcpyHostToDevice),
+                "copy rfft input to device");
+    }
+    {
+      const bout::profiling::ProfileRange range("FFTTransform::forward::fft_execute");
+      checkCufft(cufftExecD2Z(scratch.forward_plan.get(), scratch.real_device.get(),
+                              scratch.complex_device.get()),
+                 "cufftExecD2Z");
+    }
+    {
+      const bout::profiling::ProfileRange range(
+          "FFTTransform::forward::download_spectrum");
+      checkCuda(
+          cudaMemcpy(
+              reinterpret_cast<cufftDoubleComplex*>(std::begin(scratch.complex_host)),
+              scratch.complex_device.get(),
+              static_cast<std::size_t>(nxny) * nmodes * sizeof(cufftDoubleComplex),
+              cudaMemcpyDeviceToHost),
+          "copy rfft output to host");
+    }
+
+    {
+      const bout::profiling::ProfileRange range(
+          "FFTTransform::forward::transpose_normalize_host");
+      const BoutReal fac = 1.0 / nz;
+      for (int ind = 0; ind < nxny; ++ind) {
+        const int ix = xs + (ind / ny);
+        const int iy = ys + (ind % ny);
+        for (int kz = 0; kz < nmode; kz++) {
+          result.bcmplx(((iy - ys) * nmode) + kz, ix - xs) =
+              scratch.complex_host[ind * nmodes + kz] * fac;
+        }
       }
     }
   }
 #else
-  BOUT_OMP_PERF(parallel)
   {
-    /// Create a local thread-scope working array
-    // ZFFT routine expects input of this length
-    auto k1d = Array<dcomplex>((nz / 2) + 1);
-
-    // Loop over X and Y indices, including boundaries but not guard cells
-    // (unless periodic in x)
+    const bout::profiling::ProfileRange range("FFTTransform::forward::cpu_fft_transpose");
+    BOUT_OMP_PERF(parallel)
     {
-      BOUT_OMP_PERF(for)
-      for (int ind = 0; ind < nxny; ++ind) {
-        const int ix = xs + (ind / ny);
-        const int iy = ys + (ind % ny);
+      /// Create a local thread-scope working array
+      // ZFFT routine expects input of this length
+      auto k1d = Array<dcomplex>((nz / 2) + 1);
 
-        // Take FFT in Z direction, apply shift, and put result in k1d
+      // Loop over X and Y indices, including boundaries but not guard cells
+      // (unless periodic in x)
+      {
+        BOUT_OMP_PERF(for)
+        for (int ind = 0; ind < nxny; ++ind) {
+          const int ix = xs + (ind / ny);
+          const int iy = ys + (ind % ny);
 
-        if (((ix < inbndry) and inner_boundary_set_on_first_x)
-            || ((localmesh->LocalNx - ix - 1 < outbndry)
-                and outer_boundary_set_on_last_x)) {
-          // Use the values in x0 in the boundary
-          rfft(&(x0(ix, iy, zs)), nz, std::begin(k1d));
-        } else {
-          rfft(&(rhs(ix, iy, zs)), nz, std::begin(k1d));
-        }
+          // Take FFT in Z direction, apply shift, and put result in k1d
 
-        // Copy into array, transposing so kz is first index
-        for (int kz = 0; kz < nmode; kz++) {
-          result.bcmplx(((iy - ys) * nmode) + kz, ix - xs) = k1d[kz];
+          if (((ix < inbndry) and inner_boundary_set_on_first_x)
+              || ((localmesh->LocalNx - ix - 1 < outbndry)
+                  and outer_boundary_set_on_last_x)) {
+            // Use the values in x0 in the boundary
+            rfft(&(x0(ix, iy, zs)), nz, std::begin(k1d));
+          } else {
+            rfft(&(rhs(ix, iy, zs)), nz, std::begin(k1d));
+          }
+
+          // Copy into array, transposing so kz is first index
+          for (int kz = 0; kz < nmode; kz++) {
+            result.bcmplx(((iy - ys) * nmode) + kz, ix - xs) = k1d[kz];
+          }
         }
       }
     }
   }
 #endif
 
-    // Get elements of the tridiagonal matrix
-    // including boundary conditions
-  BOUT_OMP_PERF(parallel)
+  // Get elements of the tridiagonal matrix
+  // including boundary conditions
   {
+    const bout::profiling::ProfileRange range(
+        "FFTTransform::forward::build_matrices_cpu");
+    BOUT_OMP_PERF(parallel)
     {
-      BOUT_OMP_PERF(for nowait)
-      for (int ind = 0; ind < nsys; ind++) {
-        const int iy = ys + (ind / nmode);
-        const int kz = ind % nmode;
+      {
+        BOUT_OMP_PERF(for nowait)
+        for (int ind = 0; ind < nsys; ind++) {
+          const int iy = ys + (ind / nmode);
+          const int kz = ind % nmode;
 
-        const BoutReal kwave = kz * 2.0 * PI / zlength; // wave number is 1/[rad]
-        laplacian.tridagMatrix(&result.a(ind, 0), &result.b(ind, 0),
-                               &result.c(ind, 0), &result.bcmplx(ind, 0), iy, kz,
-                               kwave, &Acoef, &C1coef, &C2coef, &Dcoef, false);
+          const BoutReal kwave = kz * 2.0 * PI / zlength; // wave number is 1/[rad]
+          laplacian.tridagMatrix(&result.a(ind, 0), &result.b(ind, 0), &result.c(ind, 0),
+                                 &result.bcmplx(ind, 0), iy, kz, kwave, &Acoef, &C1coef,
+                                 &C2coef, &Dcoef, false);
+        }
       }
     }
   }
@@ -314,12 +347,11 @@ auto FFTTransform::backward(const Field3D& rhs, const Matrix<dcomplex>& xcmplx3D
       }
     }
 
-    checkCuda(cudaMemcpy(scratch.complex_device.get(),
-                         reinterpret_cast<cufftDoubleComplex*>(
-                             std::begin(scratch.complex_host)),
-                         static_cast<std::size_t>(nxny) * nmodes
-                             * sizeof(cufftDoubleComplex),
-                         cudaMemcpyHostToDevice),
+    checkCuda(cudaMemcpy(
+                  scratch.complex_device.get(),
+                  reinterpret_cast<cufftDoubleComplex*>(std::begin(scratch.complex_host)),
+                  static_cast<std::size_t>(nxny) * nmodes * sizeof(cufftDoubleComplex),
+                  cudaMemcpyHostToDevice),
               "copy irfft input to device");
     checkCufft(cufftExecZ2D(scratch.backward_plan.get(), scratch.complex_device.get(),
                             scratch.real_device.get()),
