@@ -1232,21 +1232,6 @@ void Coordinates::_compute_cell_volume() const {
   }
 }
 
-const bout::boundary::YBoundary& Coordinates::getYBoundary(Options* options) const {
-  Options* opts = (options == nullptr) ? localoptions : options;
-
-  const bool lower_y =
-      localmesh->isFci()
-          ? (*opts)["outer_x"].doc("Boundary on outer x?").withDefault<bool>(true)
-          : (*opts)["lower_y"].doc("Boundary on lower y?").withDefault<bool>(true);
-  const bool upper_y =
-      localmesh->isFci()
-          ? (*opts)["inner_x"].doc("Boundary on inner x?").withDefault<bool>(false)
-          : (*opts)["upper_y"].doc("Boundary on upper y?").withDefault<bool>(true);
-
-  return getYBoundary(lower_y, upper_y);
-}
-
 namespace {
 std::size_t boundary_bools_to_index(bool lower, bool upper) {
   if (lower and upper) {
@@ -1261,6 +1246,38 @@ std::size_t boundary_bools_to_index(bool lower, bool upper) {
   return 3;
 }
 } // namespace
+
+const bout::boundary::YBoundary& Coordinates::getYBoundary(Options* options) const {
+  const bool is_default = options == nullptr;
+  if (is_default and default_yboundary >= 0) {
+    return *ybndrys.at(default_yboundary);
+  }
+  Options* opts = (options == nullptr) ? localoptions : options;
+
+  if (opts == nullptr) {
+    if (localmesh->isFci()) {
+      return getYBoundary(true, false);
+    }
+    return getYBoundary(true, true);
+  }
+
+  const bool lower_y =
+      localmesh->isFci()
+          ? (*opts)["outer_x"].doc("Boundary on outer x?").withDefault<bool>(true)
+          : (*opts)["lower_y"].doc("Boundary on lower y?").withDefault<bool>(true);
+  const bool upper_y =
+      localmesh->isFci()
+          ? (*opts)["inner_x"].doc("Boundary on inner x?").withDefault<bool>(false)
+          : (*opts)["upper_y"].doc("Boundary on upper y?").withDefault<bool>(true);
+
+  if (is_default) {
+    // populate cache first to avoid race condition
+    getYBoundary(lower_y, upper_y);
+    default_yboundary = boundary_bools_to_index(lower_y, upper_y);
+  }
+
+  return getYBoundary(lower_y, upper_y);
+}
 
 const bout::boundary::YBoundary& Coordinates::getYBoundary(bool lower_y,
                                                            bool upper_y) const {
