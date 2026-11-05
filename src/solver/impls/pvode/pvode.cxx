@@ -24,6 +24,7 @@
  **************************************************************************/
 
 #include "bout/build_defines.hxx"
+#include <bout/profiling.hxx>
 
 #include "pvode.hxx"
 
@@ -289,6 +290,7 @@ int PvodeSolver::init() {
  **************************************************************************/
 
 int PvodeSolver::run() {
+  const bout::profiling::ProfileRange profile_range("PvodeSolver::run");
 
   if (!pvode_initialised) {
     throw BoutException("PvodeSolver not initialised\n");
@@ -319,6 +321,7 @@ int PvodeSolver::run() {
 }
 
 BoutReal PvodeSolver::run(BoutReal tout) {
+  const bout::profiling::ProfileRange profile_range("PvodeSolver::integrate");
   TRACE("Running solver: solver::run({})", tout);
 
   BoutReal* udata;
@@ -411,6 +414,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
 
 void PvodeSolver::rhs([[maybe_unused]] int N, BoutReal t, BoutReal* udata,
                       BoutReal* dudata) {
+  const bout::profiling::ProfileRange profile_range("PvodeSolver::rhs");
   TRACE("Running RHS: PvodeSolver::rhs({})", t);
 
   // Get current timestep

@@ -1,0 +1,44 @@
+[mesh]
+nx = 12
+ny = 8
+nz = 8
+ixseps1 = nx
+ixseps2 = nx
+
+[solver]
+type = cvode
+nvector = cuda
+cvode_precon_method = none
+nout = 3
+output_step = 0.1
+rtol = 1e-9
+atol = 1e-11
+use_vector_abstol = true
+apply_positivity_constraints = true
+
+[output]
+enabled = false
+
+[restart_files]
+enabled = false
+
+[all]
+bndry_all = none
+
+[a]
+positivity_constraint = positive
+atol = 1e-11
+
+[b]
+evolve_bndry = true
+positivity_constraint = positive
+atol = 2e-11
+
+[c]
+positivity_constraint = positive
+atol = 3e-11
+
+[d]
+evolve_bndry = true
+positivity_constraint = positive
+atol = 4e-11

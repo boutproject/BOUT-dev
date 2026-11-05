@@ -41,32 +41,51 @@
 #include "nvector.hxx"
 #endif
 
+#include "sundials_cuda_packing.hxx"
+
 #include <algorithm>
 #include <iterator>
+#include <memory>
 #include <vector>
 
 /// Supported SUNDIALS ``N_Vector`` backends that can be selected at runtime.
-BOUT_ENUM_CLASS(NVectorType, Sundials, ManyVector);
+BOUT_ENUM_CLASS(NVectorType, Sundials, ManyVector, Cuda);
 
 /// Helper for moving solver state between BOUT++ fields and a chosen ``N_Vector``
 /// backend without exposing backend-specific details in each solver wrapper.
 class SundialsNVectorInterface {
 public:
   SundialsNVectorInterface(Solver& solver_in, const sundials::Context& ctx_in,
-                           NVectorType nvector_type_in)
-      : solver(solver_in), ctx(ctx_in), nvector_type(nvector_type_in) {}
+                           NVectorType nvector_type_in,
+                           std::shared_ptr<SundialsCudaPacking> cuda_packing_in = {})
+      : solver(solver_in), ctx(ctx_in), nvector_type(nvector_type_in),
+        cuda_packing(std::move(cuda_packing_in)) {}
 
   /// Return ``true`` when using the field-backed ManyVector implementation.
   bool use_manyvector() const { return nvector_type == NVectorType::ManyVector; }
 
+  bool use_cuda() const { return nvector_type == NVectorType::Cuda; }
+
   /// Human-readable backend name for logs and error messages.
   const char* backend_name() const {
+    if (use_cuda()) {
+      return "SUNDIALS CUDA + MPIPlusX (GPU vector operations)";
+    }
     return use_manyvector() ? "SUNDIALS ManyVector-backed custom" : "SUNDIALS parallel";
   }
 
-  /// Throw if the selected backend requires SUNDIALS ManyVector support that was
-  /// not enabled when BOUT++ was built.
+  /// Reject backends unavailable in this build or solver wrapper.
   void ensure_manyvector_available() const {
+    if (use_cuda()) {
+#if BOUT_HAS_SUNDIALS_CUDA
+      if (!cuda_packing) {
+        throw BoutException("solver:nvector=cuda is currently supported only by CVODE");
+      }
+#else
+      throw BoutException("solver:nvector=cuda requires BOUT++ CUDA/Umpire support and "
+                          "SUNDIALS CUDA and MPIPlusX imported targets");
+#endif
+    }
     if (use_manyvector() and not BOUT_HAS_SUNDIALS_MANYVECTOR) {
       throw BoutException("SUNDIALS ManyVector backend requested, but BOUT++ was "
                           "built without SUNDIALS ManyVector support");
@@ -86,6 +105,30 @@ public:
       return vec;
 #endif
     }
+
+#if BOUT_HAS_SUNDIALS_CUDA
+    if (use_cuda()) {
+      initialise_cuda_packing(local_N);
+      auto* local = callWithSUNContext(N_VNew_Cuda, ctx, local_N);
+      if (!local) {
+        throw BoutException("SUNDIALS CUDA vector allocation failed");
+      }
+      auto* vec = callWithSUNContext(N_VMake_MPIPlusX, ctx, BoutComm::get(), local);
+      if (!vec) {
+        N_VDestroy(local);
+        throw BoutException("SUNDIALS MPIPlusX vector allocation failed");
+      }
+      // N_VMake_MPIPlusX borrows X; transfer ownership so N_VDestroy frees it.
+      static_cast<N_VectorContent_MPIPlusX>(vec->content)->own_data = SUNTRUE;
+      try {
+        copy_state_to_vector(vec);
+      } catch (...) {
+        N_VDestroy(vec);
+        throw;
+      }
+      return vec;
+    }
+#endif
 
     auto* vec = callWithSUNContext(N_VNew_Parallel, ctx, BoutComm::get(), local_N, neq);
     if (vec == nullptr) {
@@ -107,6 +150,12 @@ public:
   /// Copy the current solution state from ``u`` into the solver fields.
   void copy_state_from_vector(N_Vector u) const {
     ensure_manyvector_available();
+#if BOUT_HAS_SUNDIALS_CUDA
+    if (use_cuda()) {
+      transfer_cuda(u, false, true);
+      return;
+    }
+#endif
 
     if (use_manyvector()) {
 #if BOUT_HAS_SUNDIALS_MANYVECTOR
@@ -121,6 +170,12 @@ public:
   /// Copy the solver fields into the solution vector ``u``.
   void copy_state_to_vector(N_Vector u) const {
     ensure_manyvector_available();
+#if BOUT_HAS_SUNDIALS_CUDA
+    if (use_cuda()) {
+      transfer_cuda(u, false, false);
+      return;
+    }
+#endif
 
     if (use_manyvector()) {
 #if BOUT_HAS_SUNDIALS_MANYVECTOR
@@ -135,6 +190,12 @@ public:
   /// Copy time-derivative values from ``du`` into the solver derivative fields.
   void copy_deriv_from_vector(N_Vector du) const {
     ensure_manyvector_available();
+#if BOUT_HAS_SUNDIALS_CUDA
+    if (use_cuda()) {
+      transfer_cuda(du, true, true);
+      return;
+    }
+#endif
 
     if (use_manyvector()) {
 #if BOUT_HAS_SUNDIALS_MANYVECTOR
@@ -149,6 +210,12 @@ public:
   /// Copy the solver derivative fields into ``du``.
   void copy_deriv_to_vector(N_Vector du) const {
     ensure_manyvector_available();
+#if BOUT_HAS_SUNDIALS_CUDA
+    if (use_cuda()) {
+      transfer_cuda(du, true, false);
+      return;
+    }
+#endif
 
     if (use_manyvector()) {
 #if BOUT_HAS_SUNDIALS_MANYVECTOR
@@ -180,6 +247,24 @@ public:
       return;
 #endif
     }
+
+#if BOUT_HAS_SUNDIALS_CUDA
+    if (use_cuda()) {
+      auto* local = N_VGetLocalVector_MPIPlusX(vec);
+      auto* data = N_VGetHostArrayPointer_Cuda(local);
+      int p = 0;
+      for (const auto& i : bout::globals::mesh->getRegion2D("RGN_BNDRY")) {
+        fill_vector_values_op(i, data, p, f2d_values, f3d_values, true);
+      }
+      for (const auto& i : bout::globals::mesh->getRegion2D("RGN_NOBNDRY")) {
+        fill_vector_values_op(i, data, p, f2d_values, f3d_values, false);
+      }
+      SundialsCudaPacking::check(cudaMemcpy(N_VGetDeviceArrayPointer_Cuda(local), data,
+                                            p * sizeof(BoutReal),
+                                            cudaMemcpyHostToDevice));
+      return;
+    }
+#endif
 
     BoutReal* option_data = N_VGetArrayPointer(vec);
     int p = 0;
@@ -255,6 +340,92 @@ private:
   Solver& solver;
   const sundials::Context& ctx;
   NVectorType nvector_type;
+  std::shared_ptr<SundialsCudaPacking> cuda_packing;
+
+#if BOUT_HAS_SUNDIALS_CUDA
+  void initialise_cuda_packing(int local_N) const {
+    if (cuda_packing->ready) {
+      return;
+    }
+    cuda_packing->fields.resize(solver.f2d.size() + solver.f3d.size());
+    int slot = 0;
+    const auto append = [&](const auto& region, bool boundary) {
+      for (const auto& i : region) {
+        for (std::size_t f = 0; f < solver.f2d.size(); ++f) {
+          if (!boundary || solver.f2d[f].evolve_bndry) {
+            cuda_packing->fields[f].append(i.ind, slot++);
+          }
+        }
+        for (int z = 0; z < bout::globals::mesh->LocalNz; ++z) {
+          for (std::size_t f = 0; f < solver.f3d.size(); ++f) {
+            if (!boundary || solver.f3d[f].evolve_bndry) {
+              const auto index = solver.f3d[f].var->getMesh()->ind2Dto3D(i, z);
+              cuda_packing->fields[solver.f2d.size() + f].append(index.ind, slot++);
+            }
+          }
+        }
+      }
+    };
+    append(bout::globals::mesh->getRegion2D("RGN_BNDRY"), true);
+    append(bout::globals::mesh->getRegion2D("RGN_NOBNDRY"), false);
+    if (slot != local_N) {
+      throw BoutException("SUNDIALS CUDA packing length mismatch");
+    }
+    for (auto& field : cuda_packing->fields) {
+      field.upload();
+    }
+    cuda_packing->ready = true;
+  }
+
+  void transfer_cuda(N_Vector vec, bool derivatives, bool load) const {
+    SundialsCudaPacking::check(cudaDeviceSynchronize());
+    // Preserve the same vector basis and field preparation as Solver::load/save_*.
+    const auto prepare_vectors = [&](auto& vectors) {
+      for (const auto& v : vectors) {
+        auto* field = derivatives ? v.F_var : v.var;
+        if (load) {
+          field->covariant = v.covariant;
+        } else if (v.covariant) {
+          field->toCovariant();
+        } else {
+          field->toContravariant();
+        }
+      }
+    };
+    prepare_vectors(solver.v2d);
+    prepare_vectors(solver.v3d);
+    auto* data = N_VGetDeviceArrayPointer_Cuda(N_VGetLocalVector_MPIPlusX(vec));
+    // BOUT++ and SUNDIALS may use different streams. Establish ordering before
+    // accessing shared field storage, and finish before callbacks/host code resume.
+    SundialsCudaPacking::check(cudaDeviceSynchronize());
+    std::size_t f = 0;
+    for (auto& v : solver.f2d) {
+      auto* field = derivatives ? v.F_var : v.var;
+      if (load) {
+        field->allocate();
+      }
+      if (!field->isAllocated()) {
+        throw BoutException("Unallocated CUDA solver field");
+      }
+      cuda_packing->fields[f++].transfer(&(*field)(0, 0), data, load);
+    }
+    for (auto& v : solver.f3d) {
+      auto* field = derivatives ? v.F_var : v.var;
+      if (load) {
+        field->allocate();
+        field->setLocation(v.location);
+      }
+      if (!field->isAllocated()) {
+        throw BoutException("Unallocated CUDA solver field");
+      }
+      if (derivatives && !load && field->getLocation() != v.var->getLocation()) {
+        throw BoutException("CUDA solver derivative at wrong cell location");
+      }
+      cuda_packing->fields[f++].transfer(&(*field)(0, 0, 0), data, load);
+    }
+    SundialsCudaPacking::check(cudaDeviceSynchronize());
+  }
+#endif
 
   void fill_vector_values_op(Ind2D UNUSED(i2d), BoutReal* option_data, int& p,
                              const std::vector<BoutReal>& f2d_values,
