@@ -427,6 +427,7 @@ private:
  */
 #define BOUTMAIN(ModelClass)                                       \
   int main(int argc, char** argv) {                                \
+    int solver_retcode = 0;                                        \
     try {                                                          \
       int init_err = BoutInitialise(argc, argv);                   \
       if (init_err < 0) {                                          \
@@ -440,14 +441,14 @@ private:
       solver->setModel(model.get());                               \
       auto bout_monitor = bout::utils::make_unique<BoutMonitor>(); \
       solver->addMonitor(bout_monitor.get(), Solver::BACK);        \
-      solver->solve();                                             \
+      solver_retcode = solver->solve();                            \
     } catch (const BoutException& e) {                             \
       output.write("Error encountered: {}\n", e.what());           \
       std::this_thread::sleep_for(std::chrono::milliseconds(100)); \
       MPI_Abort(BoutComm::get(), 1);                               \
     }                                                              \
     BoutFinalise();                                                \
-    return 0;                                                      \
+    return solver_retcode;                                         \
   }
 
 /// Macro to replace solver->add, passing variable name
