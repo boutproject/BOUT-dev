@@ -722,7 +722,7 @@ private:
     const UniqueMat temp{new Mat{nullptr}};
     BOUT_DO_PETSC(MatCreate(BoutComm::get(), temp.get()));
     BOUT_DO_PETSC(MatSetType(*temp, MATMPIAIJ));
-    BOUT_DO_PETSC(MatSetSizes(*temp, out_mapping->localSize(), PETSC_DECIDE,
+    BOUT_DO_PETSC(MatSetSizes(*temp, out_mapping->localSize(), in_mapping->localSize(),
                               out_mapping->globalSize(), in_mapping->globalSize()));
 
     PetscInt col_start{0};
