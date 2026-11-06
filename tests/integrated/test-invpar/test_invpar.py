@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
+# Test `InvertPar`. Each BOUT++ run tests each case in `flags_src` below
 
-#
-# Run the test, check it completed successfully
-#
-
-from boututils.run_wrapper import launch_safe, shell
+import pytest
+from boututils.run_wrapper import launch_safe
 
 flags_src = [
     {"acoef": 1, "bcoef": 0, "ccoef": 0, "dcoef": 0, "ecoef": 0},
@@ -17,25 +15,17 @@ flags_src = [
     {"ecoef": -1},
     {"input_field": "'ballooning(exp(-y*y)*cos(z)*gauss(x,0.2))'"},
 ]
+flags = ""
+# Construct variables with unique names
+for i, f in enumerate(flags_src):
+    fl = {"acoef": 1}
+    fl.update(f)
+    for k, v in fl.items():
+        flags += f" {k}_{i}={v}"
 
 
-def test_invpar():
-    flags = ""
-    for i, f in enumerate(flags_src):
-        fl = {"acoef": 1}
-        fl.update(f)
-        for k, v in fl.items():
-            flags += f" {k}_{i}={v}"
-
-    regions = ["", " mesh:ixseps1=0 mesh:ixseps2=0"]
-    flags = [flags + r for r in regions]
-
-    for nproc in [1, 2, 4]:
-        cmd = "./test_invpar"
-
-        print(f"   {nproc} processors....")
-        for f in flags:
-            shell(["rm data/BOUT.dmp.* 2> err.log"])
-
-            # Run the case
-            launch_safe(cmd + " -q -q -q " + f, nproc=nproc, mthread=1)
+@pytest.mark.parametrize("region", ["", "mesh:ixseps1=0 mesh:ixseps2=0"])
+@pytest.mark.parametrize("nproc", [1, 2, 4])
+def test_invpar(region, nproc):
+    cmd = f"./test_invpar -q -q -q {flags} {region}"
+    launch_safe(cmd, nproc=nproc, mthread=1)
