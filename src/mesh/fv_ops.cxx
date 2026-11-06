@@ -737,29 +737,56 @@ Field3D Div_a_Grad_perp_FCI::operator()(const Field3D& a, const Field3D& f,
                                         Field3D* flow_xlow, Field3D* flow_zlow) const {
   auto result{zeroFrom(f)};
   ASSERT1_FIELDS_COMPATIBLE(a, f);
+#if BOUT_HAS_OPENMP
+  bool parallel = omp_get_max_threads() > 1;
+#else
+  bool parallel = false;
+#endif
   if constexpr (extra) {
     flow_xlow->allocate();
     flow_zlow->allocate();
   }
-  BOUT_FOR(i, f.getRegion("RGN_dapg_fv_xbndry")) {
-    const auto xf = xflux<upwinding>(a, f, i);
-    result[i.xp()] = xf;
-    if constexpr (extra) {
-      (*flow_xlow)[i.xp()] = xf;
-    }
+  Field3D xtmp, ztmp;
+  if (parallel and not extra) {
+    xtmp = emptyFrom(f);
+    flow_xlow = &xtmp;
+    ztmp = emptyFrom(f);
+    flow_zlow = &ztmp;
   }
-  BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
-    const auto xf = xflux<upwinding>(a, f, i);
-    result[i.xp()] = xf;
-    result[i] -= xf;
-    if constexpr (extra) {
-      (*flow_xlow)[i.xp()] = xf;
+  if (not parallel) {
+    BOUT_FOR(i, f.getRegion("RGN_dapg_fv_xbndry")) {
+      const auto xf = xflux<upwinding>(a, f, i);
+      result[i.xp()] = xf;
+      if constexpr (extra) {
+        (*flow_xlow)[i.xp()] = xf;
+      }
     }
-    const auto zf = zflux<upwinding>(a, f, i);
-    result[i.zp()] += zf;
-    result[i] -= zf;
-    if constexpr (extra) {
-      (*flow_zlow)[i.zp()] = zf;
+    BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
+      const auto xf = xflux<upwinding>(a, f, i);
+      result[i.xp()] = xf;
+      result[i] -= xf;
+      if constexpr (extra) {
+        (*flow_xlow)[i.xp()] = xf;
+      }
+      const auto zf = zflux<upwinding>(a, f, i);
+      result[i.zp()] += zf;
+      result[i] -= zf;
+      if constexpr (extra) {
+        (*flow_zlow)[i.zp()] = zf;
+      }
+    }
+  } else {
+    BOUT_FOR(i, f.getRegion("RGN_dapg_fv_xbndry")) {
+      (*flow_xlow)[i] = xflux<upwinding>(a, f, i.xm());
+      ;
+    }
+    BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
+      (*flow_xlow)[i] = xflux<upwinding>(a, f, i.xm());
+      (*flow_zlow)[i] = zflux<upwinding>(a, f, i.zm());
+    }
+    BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
+      result[i] =
+          (*flow_xlow)[i] - (*flow_xlow)[i.xm()] + (*flow_zlow)[i] - (*flow_zlow)[i.zm()];
     }
   }
   result.setRegion("RGN_NOBNDRY");
