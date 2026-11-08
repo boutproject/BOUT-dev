@@ -1,13 +1,19 @@
 #include "gtest/gtest.h"
 #include <cmath>
 
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/constants.hxx"
 #include "bout/coordinates.hxx"
+#include "bout/field.hxx"
+#include "bout/field3d.hxx"
 #include "bout/fv_ops.hxx"
 #include "bout/fv_ops_impl.hxx"
+#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
-#include "bout/output.hxx"
+#include "bout/region.hxx"
+#include "bout/utils.hxx"
 
 #include "fake_mesh.hxx"
 #include "fake_mesh_fixture.hxx"
@@ -30,7 +36,7 @@ TEST_F(FVOpsTest, Div_a_Grad_perp_FCI_coeffs) {
                                                   {"dagp_fv_volume", 1.0}}));
 
   auto op = FV::Div_a_Grad_perp_FCI::create(mesh, 1);
-  Field3D a{1.0}, f{1.0};
+  const Field3D a{1.0}, f{1.0};
   (*op)(a, f, true);
   (*op)(a, f, false);
 }
@@ -51,7 +57,7 @@ public:
     auto* coord = mesh->getCoordinates();
     // Nonzero g23 ensures the tests also exercise the mixed Y-Z terms.
     const BoutReal cross = 0.3;
-    const BoutReal determinant = 1.0 - cross * cross;
+    const BoutReal determinant = 1.0 - (cross * cross);
     coord->setMetricTensorJB(
         ContravariantMetricTensor(1.0, 1.0, 1.0, 0.0, 0.0, cross),
         CovariantMetricTensor(1.0, 1.0 / determinant, 1.0 / determinant, 0.0, 0.0,
@@ -65,7 +71,7 @@ public:
     Field3D f{0.0};
     BOUT_FOR_SERIAL(i, f.getRegion("RGN_ALL")) {
       const BoutReal amplitude =
-          vary_y_guards ? 1.0 + 0.25 * SQ(i.y() - mesh->ystart) : 1.0;
+          vary_y_guards ? 1.0 + (0.25 * SQ(i.y() - mesh->ystart)) : 1.0;
       f[i] = amplitude * cos(TWOPI * i.z() / mesh->LocalNz);
     }
     return f;
@@ -76,7 +82,7 @@ using PerpGrids = ::testing::Types<PerpGrid<1, 0>, PerpGrid<3, 1>, PerpGrid<6, 1
 TYPED_TEST_SUITE(PerpDiffusionTest, PerpGrids);
 
 TYPED_TEST(PerpDiffusionTest, ZFourierMode) {
-  const auto f = this->zMode(mesh->GlobalNyNoBoundaries == 1);
+  const auto f = this->zMode(mesh->GlobalNy == 1);
   const BoutReal diffusivity = 2.5;
   const auto result = FV::Div_a_Grad_perp(Field3D{diffusivity}, f);
   const auto* coord = mesh->getCoordinates();
@@ -93,8 +99,8 @@ TYPED_TEST(PerpDiffusionTest, VariableCoefficientConservesAndDissipates) {
   Field3D a{0.0};
   Coordinates::FieldMetric jacobian{1.0};
   BOUT_FOR_SERIAL(i, a.getRegion("RGN_ALL")) {
-    a[i] = 2.0 + 0.2 * i.x() + 0.4 * cos(TWOPI * i.z() / mesh->LocalNz);
-    jacobian(i.x(), i.y(), i.z()) = 1.0 + 0.1 * i.x();
+    a[i] = 2.0 + (0.2 * i.x()) + (0.4 * cos(TWOPI * i.z() / mesh->LocalNz));
+    jacobian(i.x(), i.y(), i.z()) = 1.0 + (0.1 * i.x());
   }
   auto* coord = mesh->getCoordinates();
   coord->setJ(jacobian, false);
@@ -138,13 +144,13 @@ TEST_F(PerpResolvedYTest, MixedYZFourierMode) {
   const BoutReal diffusivity = 2.5;
   const auto* coord = mesh->getCoordinates();
   // Reversing kz reverses the mixed contribution, leaving the pure terms unchanged.
-  for (BoutReal sign : {1.0, -1.0}) {
+  for (const BoutReal sign : {1.0, -1.0}) {
     SCOPED_TRACE(::testing::Message() << "Z mode sign=" << sign);
     const BoutReal kz = sign * TWOPI / mesh->LocalNz;
     Field3D f{0.0};
     BOUT_FOR_SERIAL(i, f.getRegion("RGN_ALL")) {
       // Include periodic Y guards as well as the physical cells.
-      f[i] = cos(ky * (i.y() - mesh->ystart) + kz * i.z());
+      f[i] = cos(ky * (i.y() - mesh->ystart) + (kz * i.z()));
     }
     const auto result = FV::Div_a_Grad_perp(Field3D{diffusivity}, f);
     BOUT_FOR_SERIAL(i, result.getRegion("RGN_NOBNDRY")) {
@@ -182,13 +188,13 @@ public:
       for (int y = 0; y < mesh->LocalNy; ++y) {
         const BoutReal theta = TWOPI * (y - mesh->ystart) / ny_physical;
         for (int z = 0; z < mesh->LocalNz; ++z) {
-          const BoutReal phase = theta + 0.2 * x + 0.3 * z;
-          result.density(x, y, z) = 1.0 + 0.3 * cos(phase);
+          const BoutReal phase = theta + (0.2 * x) + (0.3 * z);
+          result.density(x, y, z) = 1.0 + (0.3 * cos(phase));
           result.velocity(x, y, z) =
               uniform_velocity ? 0.6 : flow_sign * (0.4 + 0.6 * sin(2.0 * phase));
-          result.wave(x, y, z) = 0.8 + 0.1 * cos(phase + 0.2);
-          jacobian(x, y, z) = 1.0 + 0.2 * cos(theta);
-          dy(x, y, z) = 0.7 + 0.1 * sin(theta);
+          result.wave(x, y, z) = 0.8 + (0.1 * cos(phase + 0.2));
+          jacobian(x, y, z) = 1.0 + (0.2 * cos(theta));
+          dy(x, y, z) = 0.7 + (0.1 * sin(theta));
         }
       }
     }
