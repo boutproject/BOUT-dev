@@ -160,7 +160,8 @@ XZHermiteSplineBase<monotonic, imp_type>::XZHermiteSplineBase(int y_offset, Mesh
         &Options::root()["mesh:paralleltransform:xzinterpolation:hermitespline"]);
     const int m = localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz;
     const int M = m * localmesh->getNXPE() * localmesh->getNYPE() * localmesh->getNZPE();
-    MatCreateAIJ(BoutComm::get(), m, m, M, M, 16, nullptr, 16, nullptr, &petscWeights);
+    BOUT_DO_PETSC(MatCreateAIJ(BoutComm::get(), m, m, M, M, 16, nullptr, 16, nullptr,
+                               &petscWeights));
 #endif
   }
   if constexpr (monotonic) {
@@ -333,7 +334,8 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
                                             k_corner(x, y, z) - 1 + k);
             vals[k] = newWeights[(j * 4) + k][i];
           }
-          MatSetValues(petscWeights, 1, idxn, 4, idxm, vals, INSERT_VALUES);
+          BOUT_DO_PETSC(
+              MatSetValues(petscWeights, 1, idxn, 4, idxm, vals, INSERT_VALUES));
         }
 #endif
       }
@@ -350,10 +352,10 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
   }
   if constexpr (imp_type == bout::details::implementation_type::petsc) {
 #if BOUT_HAS_PETSC
-    MatAssemblyBegin(petscWeights, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(petscWeights, MAT_FINAL_ASSEMBLY);
+    BOUT_DO_PETSC(MatAssemblyBegin(petscWeights, MAT_FINAL_ASSEMBLY));
+    BOUT_DO_PETSC(MatAssemblyEnd(petscWeights, MAT_FINAL_ASSEMBLY));
     if (!isInit) {
-      MatCreateVecs(petscWeights, &rhs, &result);
+      BOUT_DO_PETSC(MatCreateVecs(petscWeights, &rhs, &result));
     }
     isInit = true;
 #endif
@@ -423,11 +425,11 @@ Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(
 #if BOUT_HAS_PETSC
     BoutReal* ptr = nullptr;
     const BoutReal* cptr = nullptr;
-    VecGetArray(rhs, &ptr);
+    BOUT_DO_PETSC(VecGetArray(rhs, &ptr));
     BOUT_FOR(i, f.getRegion("RGN_NOY")) { ptr[int(i)] = f[i]; }
-    VecRestoreArray(rhs, &ptr);
-    MatMult(petscWeights, rhs, result);
-    VecGetArrayRead(result, &cptr);
+    BOUT_DO_PETSC(VecRestoreArray(rhs, &ptr));
+    BOUT_DO_PETSC(MatMult(petscWeights, rhs, result));
+    BOUT_DO_PETSC(VecGetArrayRead(result, &cptr));
     BOUT_FOR(i, f.getRegion(region2)) {
       f_interp[i] = cptr[int(i)];
       if constexpr (monotonic) {
@@ -443,7 +445,7 @@ Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(
       }
       ASSERT2(std::isfinite(cptr[int(i)]));
     }
-    VecRestoreArrayRead(result, &cptr);
+    BOUT_DO_PETSC(VecRestoreArrayRead(result, &cptr));
 #endif
   }
 
@@ -529,6 +531,36 @@ Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(
   f_interp.setRegion(region2);
   ASSERT2(f_interp.getRegionID());
   return f_interp;
+}
+
+#if BOUT_HAS_PETSC
+PrecomputedInterpolation::PrecomputedInterpolation(int y_offset, Mesh* mesh,
+                                                   [[maybe_unused]] Options* options)
+    : XZInterpolation(y_offset, mesh), op(mesh) {}
+#else
+PrecomputedInterpolation::PrecomputedInterpolation([[maybe_unused]] int y_offset,
+                                                   [[maybe_unused]] Mesh* mesh,
+                                                   [[maybe_unused]] Options* options) {
+  throw BoutException("PrecomputedInterpolation requires PETSc");
+}
+#endif
+
+Field3D
+PrecomputedInterpolation::interpolate(const Field3D& fin,
+                                      [[maybe_unused]] const std::string& region) const {
+#if BOUT_HAS_PETSC
+  Field3D f = fin;
+  f.splitParallelSlices();
+  f.yup().allocate();
+  f.ydown().allocate();
+  if (y_offset == 1) {
+    return op.computeYup(f);
+  }
+  if (y_offset == -1) {
+    return op.computeYdown(f);
+  }
+#endif
+  throw BoutException("Offset {} not supported", y_offset);
 }
 
 template <bool monotonic, bout::details::implementation_type imp_type>
