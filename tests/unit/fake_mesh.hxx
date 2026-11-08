@@ -48,7 +48,7 @@ public:
     GlobalNy = ny;
     GlobalNz = nz;
     GlobalNxNoBoundaries = nx - 2;
-    GlobalNyNoBoundaries = ny - 2 * myg;
+    GlobalNyNoBoundaries = ny - (2 * myg);
     GlobalNzNoBoundaries = nz;
     LocalNx = nx;
     LocalNy = ny;
@@ -59,13 +59,13 @@ public:
 
     // These bits only for ADIOS2, also boring due to single process
     MapCountX = nx - 2;
-    MapCountY = ny - 2 * myg;
+    MapCountY = ny - (2 * myg);
     MapCountZ = nz;
     MapGlobalX = nx;
     MapGlobalY = ny;
     MapGlobalZ = nz;
     MapLocalX = nx - 2;
-    MapLocalY = ny - 2 * myg;
+    MapLocalY = ny - (2 * myg);
     MapLocalZ = nz;
 
     // Small "inner" region

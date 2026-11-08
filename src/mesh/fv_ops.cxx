@@ -85,7 +85,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
   }
 
   // A singleton global Y mesh has no Y derivatives, even if guards exist.
-  const bool y_derivatives = mesh->GlobalNyNoBoundaries > 1;
+  const bool y_derivatives = mesh->GlobalNy > 1;
   ASSERT1(!y_derivatives || mesh->ystart > 0);
 
   // Y fluxes and the mixed part of the Z flux require Y derivatives.
