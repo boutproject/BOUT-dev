@@ -66,7 +66,6 @@ constexpr auto LAPLACE_PETSCAMG = "petscamg";
 constexpr auto LAPLACE_PETSC3DAMG = "petsc3damg";
 constexpr auto LAPLACE_HYPRE3D = "hypre3d";
 constexpr auto LAPLACE_CYCLIC = "cyclic";
-constexpr auto LAPLACE_MULTIGRID = "multigrid";
 constexpr auto LAPLACE_NAULIN = "naulin";
 constexpr auto LAPLACE_IPT = "ipt";
 constexpr auto LAPLACE_PCR = "pcr";
