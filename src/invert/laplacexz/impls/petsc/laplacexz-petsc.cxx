@@ -9,6 +9,7 @@
  */
 
 #include "bout/build_defines.hxx"
+#include "bout/petsclib.hxx"
 
 #include "laplacexz-petsc.hxx"
 

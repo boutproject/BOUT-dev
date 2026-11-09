@@ -12,6 +12,7 @@
 #include <bout/mesh.hxx>
 #include <bout/options.hxx>
 #include <bout/petsc_interface.hxx>
+#include <bout/petsclib.hxx>
 #include <bout/solver.hxx>
 #include <bout/utils.hxx>
 
