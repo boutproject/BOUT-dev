@@ -1,39 +1,44 @@
 import subprocess
 import sys
-import numpy as np
 
-from boututils.run_wrapper import build_and_log, launch_safe
-from boutdata import collect
+import numpy as np
+from boutdata.collect import collect, create_cache
+from boututils.run_wrapper import launch_safe
 
 
 def analyse_path(path, plot=False, tol=1e-12):
 
-    forward_op = collect("forward_op", path=path)
-    forward = collect("forward", path=path)
+    cache = create_cache("data", "BOUT.dmp")
 
-    grad_par_op = collect("grad_par_op", path=path)
-    grad_par_yud = collect("grad_par_yud", path=path)
+    def _collect(var):
+        return collect(var, path=path, datafile_cache=cache, xguards=False, info=False)
 
-    div_par_op = collect("div_par_op", path=path)
-    div_par_yud = collect("div_par_yud", path=path)
+    forward_op = _collect("forward_op")
+    forward = _collect("forward")
 
-    dV = collect("dV", path=path)  # Cell volume
+    grad_par_op = _collect("grad_par_op")
+    grad_par_yud = _collect("grad_par_yud")
+
+    div_par_op = _collect("div_par_op")
+    div_par_yud = _collect("div_par_yud")
+
+    dV = _collect("dV")
 
     # Integrate divergence
-    op_div_int = np.sum((dV * div_par_op)[2:-2, :, :])
-    yud_div_int = np.sum((dV * div_par_yud)[2:-2, :, :])
+    op_div_int = np.sum(dV * div_par_op)
+    yud_div_int = np.sum(dV * div_par_yud)
 
     if np.abs(op_div_int) > tol:
         raise ValueError(f"Div_par operator has integral {op_div_int} > {tol}")
 
     print(f"Div_par volume integral Op: {op_div_int} Yup/down: {yud_div_int}")
 
-    div_par_grad_par_op = collect("div_par_grad_par_op", path=path)
-    div_par_grad_par_yud = collect("div_par_grad_par_yud", path=path)
+    div_par_grad_par_op = _collect("div_par_grad_par_op")
+    div_par_grad_par_yud = _collect("div_par_grad_par_yud")
 
     # Integrate divergence
-    op_div2_int = np.sum((dV * div_par_grad_par_op)[2:-2, :, :])
-    yud_div2_int = np.sum((dV * div_par_grad_par_yud)[2:-2, :, :])
+    op_div2_int = np.sum(dV * div_par_grad_par_op)
+    yud_div2_int = np.sum(dV * div_par_grad_par_yud)
 
     if np.abs(op_div2_int) > tol:
         raise ValueError(
@@ -62,13 +67,13 @@ def analyse_path(path, plot=False, tol=1e-12):
             return fig
 
         fig = plot_comparison(
-            forward_op[2:-2, 2, :], "Operator", forward[2:-2, 2, :], "Yup/down"
+            forward_op[:, 2, :], "Operator", forward[:, 2, :], "Yup/down"
         )
         fig.suptitle("Forward")
         fig.tight_layout()
 
         fig = plot_comparison(
-            grad_par_op[2:-2, 2, :], "Operator", grad_par_yud[2:-2, 2, :], "Yup/down"
+            grad_par_op[:, 2, :], "Operator", grad_par_yud[:, 2, :], "Yup/down"
         )
         fig.suptitle("Parallel Gradient")
         fig.tight_layout()
@@ -76,9 +81,9 @@ def analyse_path(path, plot=False, tol=1e-12):
         fig.savefig("gradient.png")
 
         fig = plot_comparison(
-            div_par_op[2:-2, 2, :],
+            div_par_op[:, 2, :],
             f"Operator [integral {op_div_int:.2e}]",
-            div_par_yud[2:-2, 2, :],
+            div_par_yud[:, 2, :],
             f"Yup/down [integral {yud_div_int:.2e}]",
         )
         fig.suptitle("Parallel Divergence")
@@ -87,9 +92,9 @@ def analyse_path(path, plot=False, tol=1e-12):
         fig.savefig("divergence.png")
 
         fig = plot_comparison(
-            div_par_grad_par_op[2:-2, 2, :],
+            div_par_grad_par_op[:, 2, :],
             f"Operator [integral {op_div2_int:.2e}]",
-            div_par_grad_par_yud[2:-2, 2, :],
+            div_par_grad_par_yud[:, 2, :],
             f"Yup/down [integral {yud_div2_int:.2e}]",
         )
         fig.suptitle("Parallel diffusion")
@@ -103,9 +108,6 @@ def test_petsc_operators():
 
     # Generate grid file and store in temporary path
     subprocess.check_call([sys.executable, "rotating-ellipse.py", "-o", grid_path])
-
-    # Build executable
-    build_and_log("test_petsc_operators")
 
     nproc = 1
 
