@@ -21,6 +21,7 @@
 #include "bout/vector2d.hxx"
 #include <bout/yboundary_regions.hxx>
 
+#include <algorithm>
 #include <cmath>
 
 namespace FV {
@@ -212,6 +213,72 @@ struct VanAlbada {
 
     n.L = n.c - (0.5 * slope);
     n.R = n.c + (0.5 * slope);
+  }
+};
+
+/*!
+   * Smooth symmetric Van Albada second order slope limiter
+   *
+   * Uses the averaging formula (Eq. 37) of van Albada, van Leer and Roberts
+   * (1982), A&A 108, 76, multiplied by a smooth clip that sets the slope to
+   * zero at sharp extrema:
+   *
+   *   slope = clip(dl*dr) * ((dr^2 + e2)*dl + (dl^2 + e2)*dr) / (dl^2 + dr^2 + 2*e2)
+   *
+   * where `dl = c - m`, `dr = p - c` and `e2 = (rel_eps * RMS(m, c, p))^2`.
+   * When both differences are small compared to sqrt(e2) the slope tends to
+   * the central difference, so the limiter is differentiable everywhere.
+   * This helps nonlinear solvers.
+   *
+   * Unlike the paper, e2 does not scale with the grid spacing, and it depends
+   * on any constant offset in the field. The limiter is not TVD at small
+   * extrema, where it can overshoot by about rel_eps * RMS.
+   */
+// NB: The templates need to be explicitly instantiated in fv_ops.cxx
+struct VanAlbadaSmooth {
+  explicit VanAlbadaSmooth(BoutReal rel_eps = 1e-3) : rel_eps(rel_eps) {}
+
+  BoutReal rel_eps;
+
+  void operator()(Stencil1D& n) const {
+    const BoutReal dl = n.c - n.m;
+    const BoutReal dr = n.p - n.c;
+
+    const BoutReal e2 = tolerance2(rel_eps, n.m, n.c, n.p);
+    const BoutReal slope = smoothClip(dl, dr, e2) * average(dl, dr, e2);
+
+    n.L = n.c - (0.5 * slope);
+    n.R = n.c + (0.5 * slope);
+  }
+
+private:
+  /// Eq. 37 of van Albada et al. (1982). Tends to (a + b)/2 when a and b
+  /// are small compared to sqrt(e2)
+  static BoutReal average(BoutReal a, BoutReal b, BoutReal e2) {
+    return ((((b * b) + e2) * a) + (((a * a) + e2) * b))
+           / ((a * a) + (b * b) + (2.0 * e2) + 1e-30);
+  }
+
+  /// Smooth clip: 1 if a*b >= 0, 1/2 if a*b = -e2, and tends to 0 for
+  /// a*b << -e2. The ratio is squared, rather than a*b and e2 separately,
+  /// to avoid overflow. The 1e-150 avoids division by zero if e2 = 0
+  static BoutReal smoothClip(BoutReal a, BoutReal b, BoutReal e2) {
+    const BoutReal ratio = std::min(a * b, 0.0) / (e2 + 1e-150);
+    return 1.0 / (1.0 + (ratio * ratio));
+  }
+
+  /// (rel_eps * RMS(m, c, p))^2, normalised by the largest absolute value
+  /// to avoid overflow
+  static BoutReal tolerance2(BoutReal rel_eps, BoutReal m, BoutReal c, BoutReal p) {
+    const BoutReal scale = std::max({std::abs(m), std::abs(c), std::abs(p)});
+    if (rel_eps == 0.0 or scale == 0.0) {
+      return 0.0;
+    }
+    const BoutReal mean_square =
+        (((m / scale) * (m / scale)) + ((c / scale) * (c / scale))
+         + ((p / scale) * (p / scale)))
+        / 3.0;
+    return (rel_eps * scale) * (rel_eps * scale) * mean_square;
   }
 };
 

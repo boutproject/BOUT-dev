@@ -90,6 +90,7 @@ struct MinMod;
 struct MC;
 struct Superbee;
 struct VanAlbada;
+struct VanAlbadaSmooth;
 struct WENO3;
 
 /*!

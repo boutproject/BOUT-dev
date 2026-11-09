@@ -671,6 +671,24 @@ template Field3D Div_par_fvv_heating<VanAlbada>(const Field3D& f_in, const Field
 template Field3D Div_a_Grad_perp_limit<VanAlbada>(const Field3D& a, const Field3D& g,
                                                   const Field3D& f);
 
+template Field3D Div_par_fvv<VanAlbadaSmooth>(const Field3D& f_in, const Field3D& v_in,
+                                              const Field3D& wave_speed_in, bool fixflux);
+template Field3D Div_par<VanAlbadaSmooth>(const Field3D& f_in, const Field3D& v_in,
+                                          const Field3D& wave_speed_in, bool fixflux);
+template Field3D Div_f_v<VanAlbadaSmooth>(const Field3D& n_in, const Vector3D& v,
+                                          bool bndry_flux);
+template Field3D Div_par_mod<VanAlbadaSmooth>(const Field3D& f_in, const Field3D& v_in,
+                                              const Field3D& wave_speed_in,
+                                              Field3D& flow_ylow, bool fixflux,
+                                              bool dissipative);
+template Field3D Div_par_fvv_heating<VanAlbadaSmooth>(const Field3D& f_in,
+                                                      const Field3D& v_in,
+                                                      const Field3D& wave_speed_in,
+                                                      Field3D& flow_ylow, bool fixflux);
+template Field3D Div_a_Grad_perp_limit<VanAlbadaSmooth>(const Field3D& a,
+                                                        const Field3D& g,
+                                                        const Field3D& f);
+
 template Field3D Div_par_fvv<WENO3>(const Field3D& f_in, const Field3D& v_in,
                                     const Field3D& wave_speed_in, bool fixflux);
 template Field3D Div_par<WENO3>(const Field3D& f_in, const Field3D& v_in,
