@@ -800,6 +800,17 @@ values. Several slope limiters are defined in ``fv_ops.hxx``:
   avoids piecewise branches at extrema. This can be useful for nonlinear
   solvers and finite-difference Jacobian calculations.
 
+* ``VanAlbadaSmooth`` - An improved version of the VanAlbada limiter which 
+  smoothly disables itself (i.e. smoothly tends to second order) when cell
+  differences are very small to prevent non-differentiable chatter due to 
+  Newton noise. Based on Eq. 37 of van Albada, van Leer and
+  Roberts (1982), A&A 108, 76, but with an addition of a smooth clipping 
+  function which smoothly disables the limiter also at small peaks and dips.
+  Both the reconstruction and clip tolerance is controlled by the constructor
+  argument ``rel_eps`` (default ``1e-3``) times the RMS of the three cell 
+  values. The tolerance is not grid dependent and so the limiter
+  will tend towards second-order at extremely fine grids.
+   
 * ``WENO3`` - A third-order smooth WENO (Jiang-Shu) cell-face reconstruction
   using a three-point stencil. This is typically less dissipative than TVD
   slope limiters, but is not strictly monotonicity-preserving.
