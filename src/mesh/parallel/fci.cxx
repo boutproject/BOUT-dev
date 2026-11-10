@@ -347,7 +347,7 @@ FCITransform::FCITransform(Mesh& mesh, const Coordinates::FieldMetric& dy, bool 
       if (bndry->dir() == bndry2->dir()) {
         continue;
       }
-      for (auto point : *bndry) {
+      for (auto& point : *bndry) {
         for (auto point2 : *bndry2) {
           if (point.ind() == point2.ind()) {
             // This point has a boundary in both directions.  Calculate the

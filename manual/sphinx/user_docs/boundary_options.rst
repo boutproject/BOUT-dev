@@ -499,31 +499,28 @@ geometries, as flux coordinate independent (FCI) method::
     class yboundary_example {
     public:
       yboundary_example(Options* opt, const Field3D& N, const Field3D& V) :
-      N(N), V(V) {}
+         boundary(mesh->getCoordinates()->getYBoundary(opt), N(N), V(V) {}
 
       void rhs() {
         BoutReal totalFlux = 0;
-        mesh->getCoordinates()->getYBoundary()->iter([&](auto& point) {
-          BoutReal flux = point.interpolate_boundary_o2(N) * point.interpolate_boundary_o2(V);
-          totalFlux += flux;
+        boundary.iter([&](auto& point) {
+          totalFlux += interpolate_boundary_o2(point, N) * interpolate_boundary_o2(point, V);
         });
       }
 
     private:
+      YBoundary boundary;
       const Field3D& N;
       const Field3D& V;
     };
 
 
 
-There are several member functions of ``point``. ``point`` is of type
-`BoundaryRegionParIterBase` and `BoundaryRegionIter`, and both should provide
-the same interface. If they don't that is a bug, as the above code is a
-template, that gets instantiated for both types, and thus requires both
-classes to provide the same interface, one for FCI-like boundaries and one for
-field aligned boundaries.
+The loop element ``point`` is a `BoundaryRegionIterBase`, which generalises over
+the different kinds of meshes. Conceptually, ``point`` is the interior mesh point
+adjacent to the boundary and points towards the boundary.
 
-Here is a short summary of some members of ``point``, where ``f`` is a :
+Here is a short summary of some members of ``point``, where ``f`` is a `Field`:
 
 .. list-table:: Members for boundary operation
    :widths: 15 70
@@ -532,31 +529,59 @@ Here is a short summary of some members of ``point``, where ``f`` is a :
    * - Function
      - Description
    * - ``point.current(f)``
-     - Returns the value at the last point in the domain
+     - Returns the value at the last point in the interior domain
    * - ``point.next(f)``
-     - Returns the value at the first point in the boundary, i.e. one beyond the domain.
+     - Returns the value at the first point inside the boundary
    * - ``point.prev(f)``
-     - Returns the value at the second to last point in the domain, if it is
-       valid. NB: this point may not be valid.
-   * - ``point.interpolate_boundary_o2(f)``
+     - Returns the value at the second to last point in the interior domain, if
+       it is valid. Note that this point may not be valid if there aren't enough
+       interior points.
+   * - ``point.dir()``
+     - The direction of the boundary, either ``+/-1``
+   * - ``point.is_lower()``
+     - True if this is the lower boundary (that is, ``point.dir() < 0``)
+   * - ``point.ind()``
+     - The index at ``point.current()``
+
+You can think of ``point.next()`` as ``point.ind() + point.dir()``, and
+``point.prev()`` as ``point.ind() - point.dir()``.
+
+.. code-block:: text
+                      prev
+               current |
+    <-- dir        v   v
+           |---|-:-|---|--> interior points
+    offset -1  0   1   2
+               |
+             next
+           \___/
+             boundary points
+
+There are also several free functions for setting common boundary conditions:
+
+.. list-table:: Boundary operation free-functions
+   :widths: 15 70
+   :header-rows: 1
+
+   * - Function
+     - Description
+   * - ``interpolate_boundary_o2(point, f)``
      - Returns the value at the boundary, assuming the bounday value has been set
-   * - ``point.extrapolate_boundary_o1(f)``
+   * - ``extrapolate_boundary_o1(point, f)``
      - Returns the value at the boundary, extrapolating from the bulk, first order
-   * - ``point.extrapolate_boundary_o2(f)``
+   * - ``extrapolate_boundary_o2(point, f)``
      - Returns the value at the boundary, extrapolating from the bulk, second order
-   * - ``point.extrapolate_next_o{1,2}(f)``
+   * - ``extrapolate_next_o{1,2}(point, f)``
      - Extrapolate into the boundary from the bulk, first or second order
-   * - ``point.extrapolate_grad_o{1,2}(f)``
+   * - ``extrapolate_grad_o{1,2}(point, f)``
      - Extrapolate the gradient into the boundary, first or second order
-   * - ``point.dirichlet_o{1,2,3}(f, v)``
+   * - ``dirichlet_o{1,2,3}(f, point, v)``
      - Apply dirichlet boundary conditions with value ``v`` and given order
-   * - ``point.neumann_o{1,2,3}(f, v)``
+   * - ``neumann_o{1,2,3}(f, point, v)``
      - Applies a gradient of ``v / dy`` boundary condition.
-   * - ``point.limitFree(f)``
+   * - ``limitFree(point, f)``
      - Extrapolate into the boundary using only monotonic decreasing values.
        ``f`` needs to be positive.
-   * - ``point.dir()``
-     - The direction of the boundary.
 
 
 
