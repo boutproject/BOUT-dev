@@ -4,7 +4,8 @@
 ### Breaking changes and changes to results
 <!-- Does this PR require changes to existing input files, scripts, or workflows?
      Does it change physics results for existing inputs?
-     Describe the changes, their rationale and any migration steps needed. -->
+     Describe the changes, their rationale and any migration steps needed.
+     Are there any API or ABI breaking changes? -->
 
 ### Change Summary
 <!-- Briefly describe what was changed. -->
