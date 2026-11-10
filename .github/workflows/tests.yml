@@ -137,7 +137,7 @@ jobs:
           echo CMake options: ${{ matrix.config.cmake_options }}
 
       - name: Install dependencies
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@v3
         with:
           timeout_minutes: 5
           max_attempts: 2
