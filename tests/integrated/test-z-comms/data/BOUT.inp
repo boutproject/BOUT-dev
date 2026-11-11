@@ -1,0 +1,14 @@
+# Grid for the Z communication test: 2D in X-Z, Z split between processors
+MXG = 2
+MYG = 1
+
+[mesh]
+nx = 8   # 4 interior points
+ny = 1
+nz = 12
+
+[output]
+enabled = false
+
+[restart_files]
+enabled = false

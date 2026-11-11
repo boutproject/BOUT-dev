@@ -43,6 +43,7 @@ public:
   using BoutMesh::default_connections;
   using BoutMesh::findProcessorSplit;
   using BoutMesh::getConnectionInfo;
+  using BoutMesh::getZConnections;
   using BoutMesh::PROC_NUM;
   using BoutMesh::set_connection;
   using BoutMesh::setShiftAngle;
@@ -91,9 +92,10 @@ struct BoutMeshParameters {
 /// Now we've got the definition of `BoutMeshParameters`, we can
 /// actually make a `BoutMeshExposer`
 BoutMeshExposer::BoutMeshExposer(const BoutMeshParameters& inputs, bool periodicX_)
-    : BoutMesh(inputs.grid.total_nx, inputs.grid.total_ny, 1, inputs.grid.num_x_guards,
-               inputs.grid.num_y_guards, inputs.grid.nxpe, inputs.grid.nype,
-               inputs.grid.pe_xind, inputs.grid.pe_yind, inputs.grid.symmetric_X,
+    : BoutMesh({inputs.grid.total_nx, inputs.grid.total_ny, 1},
+               {inputs.grid.num_x_guards, inputs.grid.num_y_guards, 0},
+               {inputs.grid.nxpe, inputs.grid.nype, 1},
+               {inputs.grid.pe_xind, inputs.grid.pe_yind, 0}, inputs.grid.symmetric_X,
                inputs.grid.symmetric_Y, periodicX_, inputs.x_indices.ixseps1,
                inputs.x_indices.ixseps2, inputs.y_indices.jyseps1_1,
                inputs.y_indices.jyseps2_1, inputs.y_indices.jyseps1_2,
@@ -1522,6 +1524,58 @@ TEST_F(BoutMeshTest, GetLocalZIndexNoBoundaries) {
   EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(4), 2);
   EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(5), 3);
   EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(6), 4);
+}
+
+TEST_F(BoutMeshTest, ZConnectionsNoZGuards) {
+  // Without Z guard cells, Z periodicity is handled by wrapping the index, so
+  // there are no Z neighbours and there is no Z communication
+  BoutMeshExposer mesh({5, 3, 4}, {1, 1, 0}, {1, 1, 1}, {0, 0, 0}, false);
+  mesh.default_connections();
+
+  EXPECT_EQ(mesh.getZConnections(), std::make_pair(-1, -1));
+  EXPECT_EQ(mesh.zstart, 0);
+  EXPECT_EQ(mesh.zend, 3);
+  EXPECT_EQ(mesh.getNguard(DIRECTION::Z), 2);
+}
+
+TEST_F(BoutMeshTest, ZConnectionsSelf) {
+  // One processor in Z with Z guard cells: this processor is its own neighbour
+  BoutMeshExposer mesh({5, 3, 4}, {1, 1, 2}, {1, 1, 1}, {0, 0, 0}, false);
+  mesh.default_connections();
+
+  EXPECT_EQ(mesh.getZConnections(), std::make_pair(0, 0));
+  EXPECT_EQ(mesh.zstart, 2);
+  EXPECT_EQ(mesh.zend, 5);
+  EXPECT_EQ(mesh.LocalNz, 8);
+  EXPECT_EQ(mesh.getNguard(DIRECTION::Z), 2);
+}
+
+TEST_F(BoutMeshTest, ZConnectionsPeriodic) {
+  // 3x3x3 processors: PROC_NUM(x, y, z) = (((z * 3) + y) * 3) + x
+  auto mesh0 = SmallCubeMesh({1, 2, 0});
+  mesh0.default_connections();
+  EXPECT_EQ(mesh0.getZConnections(), std::make_pair(25, 16));
+
+  auto mesh1 = SmallCubeMesh({1, 2, 1});
+  mesh1.default_connections();
+  EXPECT_EQ(mesh1.getZConnections(), std::make_pair(7, 25));
+
+  auto mesh2 = SmallCubeMesh({1, 2, 2});
+  mesh2.default_connections();
+  EXPECT_EQ(mesh2.getZConnections(), std::make_pair(16, 7));
+}
+
+TEST_F(BoutMeshTest, ZOffsets) {
+  // 2x2x2 processors, 3 points in Z on each processor, 1 Z guard cell
+  const auto mesh = BasicCubeMesh({1, 0, 1});
+
+  EXPECT_EQ(mesh.LocalNz, 5);
+  EXPECT_EQ(mesh.GlobalNz, 6);
+  EXPECT_EQ(mesh.OffsetZ, 3);
+  EXPECT_EQ(mesh.MapGlobalZ, 3);
+  EXPECT_EQ(mesh.MapLocalZ, 1);
+  EXPECT_EQ(mesh.MapCountZ, 3);
+  EXPECT_EQ(mesh.getNguard(DIRECTION::Z), 1);
 }
 
 TEST_F(BoutMeshTest, FirstX) {
