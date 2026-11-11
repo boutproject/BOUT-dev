@@ -1,16 +1,22 @@
-/// Test communication of Z guard cells, including the X-Z corner cells
+/// Test communication of Z guard cells, including the X-Z corner cells, and
+/// reading 3D variables from a grid file with a Z decomposition
 ///
 /// Every cell of a Field3D is given a value that depends only on its global
 /// (x, z) index. X boundary cells are set only for the interior Z points, as the
 /// boundary conditions do. After `communicate`, every cell including the Z guard
 /// cells and the X-Z corners must hold the value of the periodic image of that
 /// cell. Run with different NXPE, NZPE and MZG.
+///
+/// With `check_gridfile = true`, the 3D variable `f3d` (values 1000 * x + z, no
+/// guard cells in Z) is read from the grid file, and every cell including the Z
+/// guard cells must hold the value of its periodic image.
 
 #include "bout/bout.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field3d.hxx"
 #include "bout/globals.hxx"
 #include "bout/mesh.hxx"
+#include "bout/options.hxx"
 #include "bout/output.hxx"
 
 #include <cmath>
@@ -64,6 +70,27 @@ int main(int argc, char** argv) {
                          BoutComm::rank(), x, y, z, field(x, y, z), want);
           }
           ++failures;
+        }
+      }
+    }
+  }
+
+  if (Options::root()["check_gridfile"].withDefault(false)) {
+    Field3D from_file{mesh};
+    if (mesh->get(from_file, "f3d", 0.0, false) != 0) {
+      throw BoutException("Could not read f3d from the grid file");
+    }
+    for (int x = 0; x < mesh->LocalNx; ++x) {
+      for (int y = mesh->ystart; y <= mesh->yend; ++y) {
+        for (int z = 0; z < mesh->LocalNz; ++z) {
+          const BoutReal want = (1000. * mesh->getGlobalXIndex(x)) + globalZ(*mesh, z);
+          if (from_file(x, y, z) != want) {
+            if (failures < 20) {
+              output.write("Rank {}: grid file ({}, {}, {}) is {} but expected {}\n",
+                           BoutComm::rank(), x, y, z, from_file(x, y, z), want);
+            }
+            ++failures;
+          }
         }
       }
     }

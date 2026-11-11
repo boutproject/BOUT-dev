@@ -389,10 +389,11 @@ void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd, int n
 
   // Check whether "nz" is defined
   if (hasVar("nz")) {
-    // Check the array is the right size
-    if (size[2] != m->LocalNz) {
+    // Check the array is the right size. Grid files contain all Z points, without
+    // guard cells
+    if (size[2] != m->GlobalNz) {
       throw BoutException("3D variable '{:s}' has incorrect size {:d} (expecting {:d})",
-                          name, size[2], m->LocalNz);
+                          name, size[2], m->GlobalNz);
     }
 
     if (!readgrid_3dvar_real(name,
@@ -408,6 +409,11 @@ void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd, int n
     }
   } else {
     // No Z size specified in file. Assume FFT format
+    if (m->zstart > 0) {
+      throw BoutException("Reading 3D variable '{:s}' in FFT format is not implemented "
+                          "with guard cells in Z (MZG > 0)",
+                          name);
+    }
     if (!readgrid_3dvar_fft(m, name,
                             ys,         // Start reading at global y-index
                             yd,         // Insert data starting from y=yd
@@ -427,6 +433,12 @@ void GridFile::readField(Mesh* m, const std::string& name, int UNUSED(ys), int U
                          const std::vector<int>& size, FieldPerp& var) {
 
   readFieldAttributes(data[name], var);
+
+  if (m->zstart > 0) {
+    throw BoutException("Reading FieldPerp '{:s}' is not implemented with guard cells "
+                        "in Z (MZG > 0)",
+                        name);
+  }
 
   int yindex = var.getIndex();
 
@@ -658,13 +670,24 @@ bool GridFile::readgrid_3dvar_real(const std::string& name, int yread, int ydest
     return false;
   }
 
+  // Z index in the file of each local Z index. The file contains all Z points and
+  // no Z guard cells. Z is periodic, so guard cells are filled with their
+  // periodic image. Without Z guard cells and Z decomposition this is the identity
+  const Mesh* mesh = var.getMesh();
+  const int nz_file = size[2];
+  std::vector<int> zread(var.getNz());
+  for (int jz = 0; jz < var.getNz(); ++jz) {
+    const int zglobal = mesh->OffsetZ - mesh->zstart + jz;
+    zread[jz] = ((zglobal % nz_file) + nz_file) % nz_file;
+  }
+
   if (not option.is_loaded()) {
     const auto& chunk = option.doLazyLoad(xread, xread + xsize - 1, yread,
                                           yread + ysize - 1, 0, size[2] - 1);
     for (int jx = 0; jx < xsize; jx++) {
       for (int jy = 0; jy < ysize; jy++) {
-        for (int jz = 0; jz < size[2]; ++jz) {
-          var(jx + xdest, jy + ydest, jz) = chunk(jx, jy, jz);
+        for (int jz = 0; jz < var.getNz(); ++jz) {
+          var(jx + xdest, jy + ydest, jz) = chunk(jx, jy, zread[jz]);
         }
       }
     }
@@ -676,8 +699,8 @@ bool GridFile::readgrid_3dvar_real(const std::string& name, int yread, int ydest
       // jx is global x-index to start from
       for (int jy = yread; jy < yread + ysize; jy++) {
         // jy is global y-index to start from
-        for (int jz = 0; jz < size[2]; ++jz) {
-          var(jx - xread + xdest, jy - yread + ydest, jz) = full_var(jx, jy, jz);
+        for (int jz = 0; jz < var.getNz(); ++jz) {
+          var(jx - xread + xdest, jy - yread + ydest, jz) = full_var(jx, jy, zread[jz]);
         }
       }
     }
