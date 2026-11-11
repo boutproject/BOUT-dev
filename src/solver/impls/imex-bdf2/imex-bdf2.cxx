@@ -1197,8 +1197,7 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
   }
   }
 
-  ierr = VecRestoreArray(snes_x, &xdata);
-  CHKERRQ(ierr);
+  BOUT_DO_PETSC(VecRestoreArray(snes_x, &xdata));
 
   SNESSolve(snesUse, nullptr, snes_x);
 
@@ -1238,14 +1237,12 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
   }
 
   // Put the result into u
-  ierr = VecGetArray(snes_x, &xdata);
-  CHKERRQ(ierr);
+  BOUT_DO_PETSC(VecGetArray(snes_x, &xdata));
 
   for (int i = 0; i < nlocal; i++) {
     u[i] = xdata[i];
   }
-  ierr = VecRestoreArray(snes_x, &xdata);
-  CHKERRQ(ierr);
+  BOUT_DO_PETSC(VecRestoreArray(snes_x, &xdata));
 
   return 0;
 }
@@ -1257,8 +1254,7 @@ PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f, bool linear) {
   int ierr;
 
   // Get data from PETSc into BOUT++ fields
-  ierr = VecGetArrayRead(x, &xdata);
-  CHKERRQ(ierr);
+  BOUT_DO_PETSC(VecGetArrayRead(x, &xdata));
 
   // Hacky
   loadVars(const_cast<BoutReal*>(xdata));
@@ -1267,8 +1263,7 @@ PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f, bool linear) {
   run_diffusive(implicit_curtime, linear);
 
   // Copy derivatives back
-  ierr = VecGetArray(f, &fdata);
-  CHKERRQ(ierr);
+  BOUT_DO_PETSC(VecGetArray(f, &fdata));
   saveDerivs(fdata);
 
   // G(x) now in fdata
@@ -1290,10 +1285,8 @@ PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f, bool linear) {
   }
 
   // Restore data arrays to PETSc
-  ierr = VecRestoreArray(f, &fdata);
-  CHKERRQ(ierr);
-  ierr = VecRestoreArrayRead(x, &xdata);
-  CHKERRQ(ierr);
+  BOUT_DO_PETSC(VecRestoreArray(f, &fdata));
+  BOUT_DO_PETSC(VecRestoreArrayRead(x, &xdata));
 
   return 0;
 }
