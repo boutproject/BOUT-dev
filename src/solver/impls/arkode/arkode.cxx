@@ -232,7 +232,7 @@ int ArkodeSolver::init() {
         callWithSUNContext(ARKStepCreate, suncontext, nullptr, arkode_rhs, simtime, uvec);
     break;
   default:
-    throw BoutException("Invalid treatment: {}\n", toString(treatment));
+    throw BoutException("Invalid treatment: {}\n", treatment);
   }
   if (arkode_mem == nullptr) {
     throw BoutException("ARKStepCreate failed\n");

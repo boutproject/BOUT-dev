@@ -3,6 +3,7 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "gtest/gtest.h"
 
+#include "fmt/format.h"
 #include "test_extras.hxx"
 #include "bout/array.hxx"
 #include "bout/boutexception.hxx"

@@ -364,16 +364,16 @@ using IndPerp = SpecificInd<IND_TYPE::IND_PERP>;
 using IndG3D = SpecificInd<IND_TYPE::IND_GLOBAL_3D>;
 
 /// Get string representation of Ind3D
-inline std::string toString(const Ind3D& i) {
+inline std::string format_as(const Ind3D& i) {
   return "(" + std::to_string(i.x()) + ", " + std::to_string(i.y()) + ", "
          + std::to_string(i.z()) + ")";
 }
 /// Get string representation of Ind2D
-inline std::string toString(const Ind2D& i) {
+inline std::string format_as(const Ind2D& i) {
   return "(" + std::to_string(i.x()) + ", " + std::to_string(i.y()) + ")";
 }
 /// Get string representation of IndPerp
-inline std::string toString(const IndPerp& i) {
+inline std::string format_as(const IndPerp& i) {
   return "(" + std::to_string(i.x()) + ", " + std::to_string(i.z()) + ")";
 }
 

@@ -37,6 +37,8 @@
 #include "bout/region.hxx"
 #include "bout/unused.hxx"
 
+#include <fmt/ranges.h>
+
 #include <algorithm>
 #include <cmath>
 #include <ctime>
@@ -530,11 +532,6 @@ std::string toString(const T& val) {
   return ss.str();
 }
 
-/// Simple case where input is already a string
-/// This is so that toString can be used in templates
-/// where the type may be std::string.
-inline std::string toString(const std::string& val) { return val; }
-
 template <typename T>
 inline std::string toString(const Array<T>& UNUSED(val)) {
   return "<Array>";
@@ -550,6 +547,22 @@ inline std::string toString(const Tensor<T>& UNUSED(val)) {
   return "<Tensor>";
 }
 
+// Tell {fmt} not to treat these as ranges so it uses format_as() instead
+template <typename T, typename Char>
+struct fmt::range_format_kind<Array<T>, Char> {
+  static constexpr auto value = fmt::range_format::disabled;
+};
+
+template <typename T, typename Char>
+struct fmt::range_format_kind<Matrix<T>, Char> {
+  static constexpr auto value = fmt::range_format::disabled;
+};
+
+template <typename T, typename Char>
+struct fmt::range_format_kind<Tensor<T>, Char> {
+  static constexpr auto value = fmt::range_format::disabled;
+};
+
 /// Convert a bool to "true" or "false"
 inline std::string toString(const bool& val) {
   if (val) {
@@ -557,10 +570,6 @@ inline std::string toString(const bool& val) {
   }
   return "false";
 }
-
-/// Convert a time stamp to a string
-/// This uses std::localtime and std::put_time
-std::string toString(const time_t& time);
 
 /*!
  * Convert a string to lower case

@@ -667,7 +667,7 @@ TEST(FunctionTraitsTest, SecondArg) {
 #ifndef __cpp_lib_erase_if
 TEST(StdLibBackPorts, EraseIfMultiset) {
   std::multiset<int> data{3, 3, 4, 5, 5, 6, 6, 7, 2, 1, 0};
-  auto divisible_by_3 = [](auto const& x) { return (x % 3) == 0; };
+  auto divisible_by_3 = [](const auto& x) { return (x % 3) == 0; };
 
   bout::utils::erase_if(data, divisible_by_3);
 
@@ -678,7 +678,7 @@ TEST(StdLibBackPorts, EraseIfMultiset) {
 
 TEST(StdLibBackPorts, EraseIfSet) {
   std::set<int> data{3, 4, 5, 6, 7, 2, 1, 0};
-  auto divisible_by_3 = [](auto const& x) { return (x % 3) == 0; };
+  auto divisible_by_3 = [](const auto& x) { return (x % 3) == 0; };
 
   bout::utils::erase_if(data, divisible_by_3);
 
@@ -696,7 +696,7 @@ TEST(StdLibBackPorts, EraseVector) {
 
 TEST(StdLibBackPorts, EraseIfVector) {
   std::vector<int> data{3, 3, 4, 5, 5, 6, 6, 7, 2, 1, 0};
-  auto divisible_by_3 = [](auto const& x) { return (x % 3) == 0; };
+  auto divisible_by_3 = [](const auto& x) { return (x % 3) == 0; };
 
   bout::utils::erase_if(data, divisible_by_3);
 
