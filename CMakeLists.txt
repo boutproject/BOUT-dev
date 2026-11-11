@@ -248,10 +248,6 @@ set(BOUT_SOURCES
     ./src/invert/laplace/impls/hypre3d/hypre3d_laplace.hxx
     ./src/invert/laplace/impls/iterative_parallel_tri/iterative_parallel_tri.cxx
     ./src/invert/laplace/impls/iterative_parallel_tri/iterative_parallel_tri.hxx
-    ./src/invert/laplace/impls/multigrid/multigrid_alg.cxx
-    ./src/invert/laplace/impls/multigrid/multigrid_laplace.cxx
-    ./src/invert/laplace/impls/multigrid/multigrid_laplace.hxx
-    ./src/invert/laplace/impls/multigrid/multigrid_solver.cxx
     ./src/invert/laplace/impls/naulin/naulin_laplace.cxx
     ./src/invert/laplace/impls/naulin/naulin_laplace.hxx
     ./src/invert/laplace/impls/pcr/pcr.cxx
