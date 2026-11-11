@@ -213,6 +213,13 @@ void Solver::add(Field2D& v, const std::string& name, const std::string& descrip
     throw BoutException("Error: Cannot add to solver after initialisation\n");
   }
 
+  if (v.getMesh()->getNZPE() > 1) {
+    // Each processor in Z would hold a copy, counted NZPE times by the solver
+    throw BoutException("Evolving Field2D '{:s}' is not implemented with more than "
+                        "one processor in Z",
+                        name);
+  }
+
   // Set boundary conditions
   v.setBoundary(name);
   ddt(v).copyBoundary(v); // Set boundary to be the same as v
@@ -254,6 +261,12 @@ void Solver::add(Field2D& v, const std::string& name, const std::string& descrip
   // then use that as default for specific section
   d.evolve_bndry = Options::root()["all"]["evolve_bndry"].withDefault(false);
   d.evolve_bndry = Options::root()[name]["evolve_bndry"].withDefault(d.evolve_bndry);
+  if (d.evolve_bndry and (v.getMesh()->zstart > 0)) {
+    // The boundary regions include the Z guard cells
+    throw BoutException("evolve_bndry is not implemented with guard cells in Z "
+                        "(variable '{:s}')",
+                        name);
+  }
 
   v.applyBoundary(true);
 
@@ -316,6 +329,12 @@ void Solver::add(Field3D& v, const std::string& name, const std::string& descrip
   // then use that as default for specific section
   d.evolve_bndry = Options::root()["all"]["evolve_bndry"].withDefault(false);
   d.evolve_bndry = Options::root()[name]["evolve_bndry"].withDefault(d.evolve_bndry);
+  if (d.evolve_bndry and (v.getMesh()->zstart > 0)) {
+    // The boundary regions include the Z guard cells
+    throw BoutException("evolve_bndry is not implemented with guard cells in Z "
+                        "(variable '{:s}')",
+                        name);
+  }
 
   v.applyBoundary(true);     // Make sure initial profile obeys boundary conditions
   v.setLocation(d.location); // Restore location if changed
@@ -1215,8 +1234,6 @@ Field3D Solver::globalIndex(int localStart) {
 
   int ind = localStart;
 
-  int nz = mesh->LocalNz;
-
   // Find how many boundary cells are evolving
   int n2dbndry = 0;
   for (const auto& f : f2d) {
@@ -1235,11 +1252,11 @@ Field3D Solver::globalIndex(int localStart) {
     // Some boundary points evolving
 
     for (const auto& i2d : mesh->getRegion2D("RGN_BNDRY")) {
-      // Zero index contains 2D and 3D variables
-      index[mesh->ind2Dto3D(i2d, 0)] = ind;
+      // First interior Z index contains 2D and 3D variables
+      index[mesh->ind2Dto3D(i2d, mesh->zstart)] = ind;
       ind += n2dbndry + n3dbndry;
 
-      for (int jz = 1; jz < nz; jz++) {
+      for (int jz = mesh->zstart + 1; jz <= mesh->zend; jz++) {
         index[mesh->ind2Dto3D(i2d, jz)] = ind;
         ind += n3dbndry;
       }
@@ -1248,11 +1265,11 @@ Field3D Solver::globalIndex(int localStart) {
 
   // Bulk of points
   for (const auto& i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
-    // Zero index contains 2D and 3D variables
-    index[mesh->ind2Dto3D(i2d, 0)] = ind;
+    // First interior Z index contains 2D and 3D variables
+    index[mesh->ind2Dto3D(i2d, mesh->zstart)] = ind;
     ind += n2d + n3d;
 
-    for (int jz = 1; jz < nz; jz++) {
+    for (int jz = mesh->zstart + 1; jz <= mesh->zend; jz++) {
       index[mesh->ind2Dto3D(i2d, jz)] = ind;
       ind += n3d;
     }

@@ -194,6 +194,11 @@ ArkodeSolver::~ArkodeSolver() {
 
 int ArkodeSolver::init() {
 
+  if (bout::globals::mesh->zstart > 0) {
+    // Tolerance vectors are filled over all Z points (set_abstol_values)
+    throw BoutException("The ARKODE solver is not implemented with guard cells in Z");
+  }
+
   Solver::init();
   const auto backend = nvector_backend();
 
