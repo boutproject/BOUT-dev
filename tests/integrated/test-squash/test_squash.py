@@ -97,7 +97,7 @@ def test_squash():
     timed_shell_safe("rm -rf data/BOUT.dmp.*")
     timed_launch_safe("./squash -q -q -q", nproc=4, mthread=1)
     timed_shell_safe(f"{bout_squashoutput} -qdcl 9 data --outputname ../f2.nc")
-    timed_launch_safe("./squash -q -q -q restart", nproc=4, mthread=1)
+    timed_launch_safe("./squash -q -q -q restart replace", nproc=4, mthread=1)
     timed_shell_safe(f"{bout_squashoutput} -qdcal 9 data --outputname ../f2.nc")
 
     verify("f1.nc", "f2.nc")
@@ -108,7 +108,7 @@ def test_squash():
     timed_launch_safe("./squash -q -q -q", nproc=4, mthread=1)
     timed_shell_safe(f"{bout_squashoutput} -qdcl 9 data --outputname ../f2.nc")
     timed_launch_safe(
-        "./squash -q -q -q restart dump_on_restart=false", nproc=4, mthread=1
+        "./squash -q -q -q restart replace dump_on_restart=false", nproc=4, mthread=1
     )
     timed_shell_safe(f"{bout_squashoutput} -qdcal 9 data --outputname ../f2.nc")
 

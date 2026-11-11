@@ -19,7 +19,10 @@ shell(["rm -rf data/BOUT.dmp.*"])
 def run(path, nproc, log=False):
     pipe = bool(log)
     _s, out = launch_safe(
-        "./invertable_operator -d " + path, nproc=nproc, mthread=nthreads, pipe=pipe
+        "./invertable_operator -d " + path + " replace",
+        nproc=nproc,
+        mthread=nthreads,
+        pipe=pipe,
     )
     if pipe:
         with open(log, "w") as f:

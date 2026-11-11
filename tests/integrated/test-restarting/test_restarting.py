@@ -56,7 +56,7 @@ def test_restarting():
     shell(["rm -rf data/BOUT.dmp.*"])
     _s, _out = launch_safe("./test_restarting solver:nout=5", nproc=1, pipe=True)
     _s, _out = launch_safe(
-        "./test_restarting solver:nout=5 restart", nproc=1, pipe=True
+        "./test_restarting solver:nout=5 restart replace", nproc=1, pipe=True
     )
 
     f3d_1 = collect("f3d", path="data", info=False)

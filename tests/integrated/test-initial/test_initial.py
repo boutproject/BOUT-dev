@@ -10,6 +10,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import scipy.special as sp
 from boutdata.collect import collect
 from boututils.run_wrapper import launch_safe, shell
 
@@ -136,6 +137,7 @@ asin = np.arcsin
 acos = np.arccos
 cos = np.cos
 cosh = np.cosh
+erf = sp.erf
 exp = np.exp
 tanh = np.tanh
 H = heaviside
