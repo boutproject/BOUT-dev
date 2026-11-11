@@ -1052,5 +1052,6 @@ Field3DParallel& Field3DParallel::allocate() {
       }
     }
   }
+  resetRegionParallel();
   return *this;
 }
