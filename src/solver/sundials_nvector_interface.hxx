@@ -267,7 +267,8 @@ private:
       ++p;
     }
 
-    for (int jz = 0; jz < bout::globals::mesh->LocalNz; ++jz) {
+    // Only the interior Z points are evolved, not the Z guard cells
+    for (int jz = bout::globals::mesh->zstart; jz <= bout::globals::mesh->zend; ++jz) {
       for (std::size_t i = 0; i < f3d_values.size(); ++i) {
         if (bndry && !solver.f3d[i].evolve_bndry) {
           continue;

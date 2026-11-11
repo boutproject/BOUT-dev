@@ -136,6 +136,11 @@ static PetscErrorCode imexbdf2PCapply(PC pc, Vec x, Vec y) {
  */
 int IMEXBDF2::init() {
 
+  if (bout::globals::mesh->zstart > 0) {
+    // Data is loaded over all Z points
+    throw BoutException("The IMEX-BDF2 solver is not implemented with guard cells in Z");
+  }
+
   Solver::init();
   output << "\n\tIMEX-BDF2 time-integration solver\n";
 
