@@ -469,7 +469,7 @@ TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPENotDivisible_0) {
   WithQuietOutput info{output_info};
   Options options{{"NXPE", 5}};
 
-  BoutMeshExposer mesh(5, 24, 1, 1, 1, 8);
+  BoutMeshExposer mesh({5, 24, 1}, {1, 1, 0}, 8);
 
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
@@ -478,7 +478,7 @@ TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisible_0) {
   WithQuietOutput info{output_info};
   Options options{{"NYPE", 5}};
 
-  BoutMeshExposer mesh(5, 5, 1, 1, 1, 8);
+  BoutMeshExposer mesh({5, 5, 1}, {1, 1, 0}, 8);
 
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
@@ -487,7 +487,7 @@ TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPENotDivisible_1) {
   WithQuietOutput info{output_info};
   Options options{{"NXPE", 5}};
 
-  BoutMeshExposer mesh(5, 24, 1, 1, 1, 8);
+  BoutMeshExposer mesh({5, 24, 1}, {1, 1, 0}, 8);
 
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
@@ -496,7 +496,7 @@ TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisible_1) {
   WithQuietOutput info{output_info};
   Options options{{"NYPE", 5}};
 
-  BoutMeshExposer mesh(5, 5, 1, 1, 1, 8);
+  BoutMeshExposer mesh({5, 5, 1}, {1, 1, 0}, 8);
 
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
