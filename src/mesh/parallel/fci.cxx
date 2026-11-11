@@ -171,7 +171,8 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
     interp->calcWeights(xt_prime, zt_prime);
   }
 
-  const int ncz = map_mesh->LocalNz;
+  // zt_prime is a global Z index, without guard cells
+  const int ncz = map_mesh->GlobalNzNoBoundaries;
 
   BoutMask to_remove(map_mesh);
   const int xend = map_mesh->xstart
@@ -260,6 +261,11 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
 }
 
 Field3D FCIMap::integrate(Field3D& f) const {
+
+  if (map_mesh->zstart > 0) {
+    // Corner values and the boundary mask are read in the Z guard cells
+    throw BoutException("FCIMap::integrate is not implemented with guard cells in Z");
+  }
 
   ASSERT1(f.getDirectionY() == YDirectionType::Standard);
   ASSERT1(map_mesh == f.getMesh());
