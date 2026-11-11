@@ -3,8 +3,8 @@
 
 ### Breaking changes and changes to results
 <!-- Does this PR require changes to existing input files, scripts, or workflows?
-     Does it change the BOUT++ API or ABI, i.e. will it need require downstream 
-     changes in BOUT++ applications or 
+     Does it change the BOUT++ API or ABI, i.e. will it need require downstream
+     changes in BOUT++ applications or
      Does it change physics results for existing inputs?
      Describe the changes, their rationale and any migration steps needed.
      Are there any API or ABI breaking changes? -->
