@@ -92,7 +92,7 @@ def run_zeff_case(zeff):
     nz = dims[3]
 
     with DataFile("uedge.grd_std.cdl") as f:
-        grid = {v: f.read(v) for v in f}
+        grid = {v: f.read(v) for v in f.list()}
 
     # Calculate geometric and physical quantities
     lZeta = 1e2 * zmax * 2 * np.pi * grid["R0"]  # toroidal range [cm]

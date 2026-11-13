@@ -45,7 +45,7 @@ def verify(f1, f2):
     with timer(f"verify {f1} {f2}"):
         d1 = DataFile(f1)
         d2 = DataFile(f2)
-        for v in d1:
+        for v in d1.list():
             if IGNORED_VARS_PATTERN.match(v):
                 continue
 
