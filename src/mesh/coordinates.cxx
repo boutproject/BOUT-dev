@@ -64,8 +64,10 @@ void fillGuards_impl(T& result, CELL_LOC location, const T& f, bool extrapolate_
                      bool extrapolate_y, bool no_extra_interpolate = false) {
   const auto* localmesh = result.getMesh();
 
-  const auto zstart = bout::build::use_metric_3d ? localmesh->zstart : 0;
-  const auto zend = bout::build::use_metric_3d ? localmesh->zend : 0;
+  // Include the Z guard cells, so that the corners of X/Y boundaries and Z guards
+  // are set consistently
+  const auto zstart = 0;
+  const auto zend = bout::build::use_metric_3d ? localmesh->LocalNz - 1 : 0;
 
   for (auto& newbndry : localmesh->getBoundaries()) {
     auto* bndry = newbndry->getLegacyPointer();
@@ -269,7 +271,7 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
                          FieldMetric g_33, FieldMetric g_12, FieldMetric g_13,
                          FieldMetric g_23, FieldMetric ShiftTorsion,
                          FieldMetric IntShiftTorsion)
-    : nz(mesh->LocalNz), localmesh(mesh), location(CELL_CENTRE), dx_(std::move(dx)),
+    : nz(mesh->GlobalNzNoBoundaries), localmesh(mesh), location(CELL_CENTRE), dx_(std::move(dx)),
       dy_(std::move(dy)), dz_(std::move(dz)), ShiftTorsion_(std::move(ShiftTorsion)),
       IntShiftTorsion_(std::move(IntShiftTorsion)),
       transform(bout::utils::make_unique<ParallelTransformIdentity>(*localmesh)),
@@ -280,7 +282,7 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
       jacobian_cache(std::make_unique<FieldMetric>(std::move(J))), Bxy_(std::move(Bxy)) {}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options)
-    : nz(mesh->LocalNz), localmesh(mesh), localoptions(options), location(CELL_CENTRE),
+    : nz(mesh->GlobalNzNoBoundaries), localmesh(mesh), localoptions(options), location(CELL_CENTRE),
       dx_(1., mesh), dy_(1., mesh), dz_(1., mesh), d1_dx_(mesh), d1_dy_(mesh),
       d1_dz_(mesh), ShiftTorsion_(0.0, mesh), IntShiftTorsion_(0.0, mesh),
       contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
@@ -296,7 +298,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
-    : nz(mesh->LocalNz), localmesh(mesh), localoptions(options), location(loc),
+    : nz(mesh->GlobalNzNoBoundaries), localmesh(mesh), localoptions(options), location(loc),
       dx_(1., mesh), dy_(1., mesh), dz_(1., mesh), d1_dx_(mesh), d1_dy_(mesh),
       d1_dz_(mesh), ShiftTorsion_(0.0, mesh), IntShiftTorsion_(0.0, mesh),
       contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
@@ -667,7 +669,12 @@ const Field2D& Coordinates::zlength() const {
     zlength_cache = std::make_unique<Field2D>(0., localmesh);
 
 #if BOUT_USE_METRIC_3D
-    BOUT_FOR_SERIAL(i, dz().getRegion("RGN_ALL")) { (*zlength_cache)[i] += dz()[i]; }
+    if (localmesh->getNZPE() > 1) {
+      // Would need a sum over the processors in Z
+      throw BoutException("Coordinates::zlength is not implemented with a 3D metric and "
+                          "more than one processor in Z");
+    }
+    BOUT_FOR_SERIAL(i, dz().getRegion("RGN_NOZ")) { (*zlength_cache)[i] += dz()[i]; }
 #else
     (*zlength_cache) = dz_ * nz;
 #endif
@@ -1216,6 +1223,10 @@ void Coordinates::_compute_cell_area_z() const {
       BOUT_FOR(i, area_centre.getRegion("RGN_NOZ")) {
         tmp_zlow[i] = 0.5 * (area_centre[i] + area_centre[i.zm()]);
         tmp_zhigh[i] = 0.5 * (area_centre[i] + area_centre[i.zp()]);
+      }
+      if (localmesh->zstart > 0) {
+        // Fill the Z guard cells
+        localmesh->communicate_no_slices(tmp_zlow, tmp_zhigh);
       }
       _cell_area_zlow.emplace(std::move(tmp_zlow));
       _cell_area_zhigh.emplace(std::move(tmp_zhigh));

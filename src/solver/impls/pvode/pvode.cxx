@@ -126,6 +126,11 @@ PvodeSolver::~PvodeSolver() {
 
 int PvodeSolver::init() {
 
+  if (bout::globals::mesh->zstart > 0) {
+    // Data is loaded over all Z points (pvode_load_data_f3d)
+    throw BoutException("The PVODE solver is not implemented with guard cells in Z");
+  }
+
   int mudq, mldq, mukeep, mlkeep;
   boole optIn;
   int i;

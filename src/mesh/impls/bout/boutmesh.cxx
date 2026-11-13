@@ -67,6 +67,8 @@
 #include <utility>
 #include <vector>
 
+#include "fmt/ranges.h"
+
 /// MPI type of BoutReal for communications
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
@@ -355,9 +357,10 @@ void BoutMesh::setDerivedGridSizes() {
   }
 
   GlobalNx = nx;
-  GlobalNy =
-      ny
-      + 2 * MYG; // Note: For double null this should be be 4 * MYG if boundary cells are stored
+  // Note: For double null this should be be 4 * MYG if boundary cells are stored
+  GlobalNy = ny + (2 * MYG);
+  // Z is periodic: it has guard cells but no boundary cells, so these are not
+  // included in GlobalNz
   GlobalNz = nz;
 
   // If we've got a second pair of diverator legs, we need an extra
@@ -401,7 +404,7 @@ void BoutMesh::setDerivedGridSizes() {
   // Note: These don't properly include guard/boundary cells
   OffsetX = PE_XIND * MXSUB;
   OffsetY = PE_YIND * MYSUB;
-  OffsetZ = 0;
+  OffsetZ = PE_ZIND * MZSUB;
 
   // Number of grid cells on this processor is ng* = M*SUB + guard/boundary cells
   LocalNx = MXSUB + 2 * MXG;
@@ -456,7 +459,8 @@ void BoutMesh::setDerivedGridSizes() {
     MapCountY += MYG;
   }
 
-  MapGlobalZ = 0;
+  // TODO(peter): double check these
+  MapGlobalZ = PE_ZIND * MZSUB;
   MapLocalZ = MZG; // Omit boundary cells
   MapCountZ = MZSUB;
 }
@@ -471,8 +475,10 @@ int BoutMesh::load() {
   //////////////
   // Number of processors
 
-  MPI_Comm_size(BoutComm::get(), &NPES);
+  MPI_Comm_size(BoutComm::get(), &total_processors);
   MPI_Comm_rank(BoutComm::get(), &MYPE);
+  // NPES is now just for the X-Y plane
+  NPES = total_processors;
 
   //////////////
   // Grid sizes
@@ -530,15 +536,7 @@ int BoutMesh::load() {
   }
   ASSERT0(MYG >= 0);
 
-  // For now only support no z-guard cells
-  MZG = 0;
-  ASSERT0(MZG >= 0);
-
-  // For now don't parallelise z
-  NZPE = 1;
-
-  output_info << _("\tGuard cells (x,y,z): ") << MXG << ", " << MYG << ", " << MZG
-              << std::endl;
+  output_info << _("\tGuard cells (x,y): ") << MXG << ", " << MYG << std::endl;
 
   // separatrix location
   Mesh::get(ixseps1, "ixseps1", nx);
@@ -552,6 +550,42 @@ int BoutMesh::load() {
   // Check inputs
   setYDecompositionIndices(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
 
+  // We decompose in Z first, just according to what the user sets
+  NZPE = options["NZPE"].doc("Decomposition in the Z direction").withDefault(1);
+  if ((NZPE < 1) or ((total_processors % NZPE) != 0)) {
+    throw BoutException(
+        _f("Number of processors ({:d}) not divisible by NPs in z direction ({:d})\n"),
+        total_processors, NZPE);
+  }
+  // This then sets how processors we have left available for the more
+  // complicated X-Y decomposition
+  NPES = total_processors / NZPE;
+  if (NZPE > 1) {
+    output_info.write(_f("Using {} processors in Z, {} left for X-Y plane\n"), NZPE,
+                      NPES);
+  }
+
+  // Z guard cells. Without a Z decomposition the default is no guard cells: Z is
+  // periodic, and the periodicity is handled by wrapping the index
+  // (see `SpecificInd::zp/zm`)
+  if (Mesh::get(MZG, "MZG") != 0) {
+    MZG = options["MZG"]
+              .doc("Number of guard cells on each side in Z. Default is 0 if NZPE = 1, "
+                   "otherwise 2")
+              .withDefault(NZPE > 1 ? 2 : 0);
+  }
+  if (MZG < 0) {
+    throw BoutException(_f("Number of guard cells in Z must be >= 0, got MZG = {:d}"),
+                        MZG);
+  }
+  if ((NZPE > 1) and (MZG < 2)) {
+    throw BoutException(
+        _f("Splitting Z between processors (NZPE = {:d}) requires at least 2 guard "
+           "cells in Z, but MZG = {:d}"),
+        NZPE, MZG);
+  }
+  output_info << _("\tGuard cells (z): ") << MZG << std::endl;
+
   if (options.isSet("NXPE") or options.isSet("NYPE")) {
     chooseProcessorSplit(options);
   } else {
@@ -559,14 +593,26 @@ int BoutMesh::load() {
   }
 
   // Get X, Y, Z processor indices
-  PE_YIND = MYPE / NXPE;
   PE_XIND = MYPE % NXPE;
-  PE_ZIND = 0;
+  PE_YIND = (MYPE / NXPE) % NYPE;
+  PE_ZIND = MYPE / (NXPE * NYPE);
+
+  if (NXPE * NYPE * NZPE != total_processors) {
+    throw BoutException(_f("Number of processors ({:d}) does not match NXPE * NYPE * "
+                           "NZPE = {:d} * {:d} * {:d}"),
+                        total_processors, NXPE, NYPE, NZPE);
+  }
 
   ASSERT2(MYPE == getProcIndex(PE_XIND, PE_YIND, PE_ZIND));
 
   // Set the other grid sizes from nx, ny, nz
   setDerivedGridSizes();
+
+  if (MZSUB < MZG) {
+    throw BoutException(_f("Number of Z points per processor (MZSUB = {:d}) must be at "
+                           "least the number of Z guard cells (MZG = {:d})"),
+                        MZSUB, MZG);
+  }
 
   /// Get mesh options
   OPTION(options, IncIntShear, false);
@@ -723,35 +769,39 @@ void BoutMesh::createCommunicators() {
 
   int proc[3]; // Processor range
 
-  for (int yp = 0; yp < NYPE; yp++) {
-    proc[0] = PROC_NUM(0, yp);        // First
-    proc[1] = PROC_NUM(NXPE - 1, yp); // Last
-    proc[2] = 1;                      // stride
+  for (int yp = 0; yp < NYPE; ++yp) {
+    for (int zp = 0; zp < NZPE; ++zp) {
+      proc[0] = PROC_NUM(0, yp, zp);        // First
+      proc[1] = PROC_NUM(NXPE - 1, yp, zp); // Last
+      proc[2] = 1;                          // stride
 
-    output_debug << "XCOMM " << proc[0] << ", " << proc[1] << endl;
+      output_debug.write("XCOMM {}\n", fmt::join(proc, ", "));
 
-    if (MPI_Group_range_incl(group_world, 1, &proc, &group) != MPI_SUCCESS) {
-      throw BoutException(
-          "Could not create X communication group for yp={:d} (xind={:d},yind={:d})\n",
-          yp, PE_XIND, PE_YIND);
-    }
-    if (MPI_Comm_create(BoutComm::get(), group, &comm_tmp) != MPI_SUCCESS) {
-      throw BoutException(
-          "Could not create X communicator for yp={:d} (xind={:d},yind={:d})\n", yp,
-          PE_XIND, PE_YIND);
-    }
-    MPI_Group_free(&group);
-
-    if (yp == PE_YIND) {
-      // Should be in this group
-      if (comm_tmp == MPI_COMM_NULL) {
-        throw BoutException("X communicator null");
+      if (MPI_Group_range_incl(group_world, 1, &proc, &group) != MPI_SUCCESS) {
+        throw BoutException("Could not create X communication group for yp={} zp={} "
+                            "(xind={}, yind={}, zind={})",
+                            yp, zp, PE_XIND, PE_YIND, PE_ZIND);
       }
+      if (MPI_Comm_create(BoutComm::get(), group, &comm_tmp) != MPI_SUCCESS) {
+        throw BoutException(
+            "Could not create X communicator for yp={} zp={} (xind={}, yind={}, zind={})",
+            yp, zp, PE_XIND, PE_YIND, PE_ZIND);
+      }
+      MPI_Group_free(&group);
 
-      comm_x = comm_tmp;
-    } else {
-      if (comm_tmp != MPI_COMM_NULL) {
-        throw BoutException("X communicator should be null");
+      if (yp == PE_YIND and zp == PE_ZIND) {
+        // Should be in this group
+        if (comm_tmp == MPI_COMM_NULL) {
+          throw BoutException(
+              "X communicator null for yp={} zp={} (xind={}, yind={}, zind={})", yp, zp,
+              PE_XIND, PE_YIND, PE_ZIND);
+        }
+
+        comm_x = comm_tmp;
+      } else if (comm_tmp != MPI_COMM_NULL) {
+        throw BoutException("X communicator should be null for yp={} zp={} (xind={}, "
+                            "yind={}, zind={}) for group {}",
+                            yp, zp, PE_XIND, PE_YIND, PE_ZIND, fmt::join(proc, ", "));
       }
     }
   }
@@ -769,90 +819,204 @@ void BoutMesh::createCommunicators() {
     // Single-null. All processors with same PE_XIND
     TRACE("Creating Outer SOL communicators for Single Null operation");
 
-    for (int i = 0; i < NXPE; i++) {
-      proc[0] = PROC_NUM(i, 0);
-      proc[1] = PROC_NUM(i, NYPE - 1);
+    for (int xp = 0; xp < NXPE; ++xp) {
+      for (int zp = 0; zp < NZPE; ++zp) {
+        proc[0] = PROC_NUM(xp, 0, zp);
+        proc[1] = PROC_NUM(xp, NYPE - 1, zp);
 
-      output_debug << "Outer SOL " << proc[0] << ", " << proc[1] << endl;
+        output_debug.write("Outer SOL {}\n", fmt::join(proc, ", "));
 
-      MPI_Group_range_incl(group_world, 1, &proc, &group);
-      MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
-      if (i == PE_XIND) {
-        // Should be part of this communicator
-        if (comm_tmp == MPI_COMM_NULL) {
-          // error
+        MPI_Group_range_incl(group_world, 1, &proc, &group);
+        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+        if (xp == PE_XIND and zp == PE_ZIND) {
+          // Should be part of this communicator
+          if (comm_tmp == MPI_COMM_NULL) {
+            throw BoutException("Single null outer SOL not correct\n");
+          }
+          comm_outer = comm_tmp;
+        } else if (comm_tmp != MPI_COMM_NULL) {
+          // Not part of this communicator so should be NULL
           throw BoutException("Single null outer SOL not correct\n");
         }
-        comm_outer = comm_tmp;
-      } else if (comm_tmp != MPI_COMM_NULL) {
-        // Not part of this communicator so should be NULL
-        throw BoutException("Single null outer SOL not correct\n");
+        MPI_Group_free(&group);
       }
-      MPI_Group_free(&group);
     }
   } else {
     // Double null
     TRACE("Creating Outer SOL communicators for Double Null operation");
 
-    for (int i = 0; i < NXPE; i++) {
-      // Inner SOL
-      proc[0] = PROC_NUM(i, 0);
-      proc[1] = PROC_NUM(i, YPROC(ny_inner - 1));
+    for (int xp = 0; xp < NXPE; xp++) {
+      for (int zp = 0; zp < NZPE; ++zp) {
+        // Inner SOL
+        proc[0] = PROC_NUM(xp, 0, zp);
+        proc[1] = PROC_NUM(xp, YPROC(ny_inner - 1), zp);
 
-      output_debug << "Double Null inner SOL " << proc[0] << ", " << proc[1] << endl;
+        output_debug.write("Double Null inner SOL {}\n", fmt::join(proc, ", "));
 
-      if (MPI_Group_range_incl(group_world, 1, &proc, &group) != MPI_SUCCESS) {
-        throw BoutException("MPI_Group_range_incl failed for xp = {:d}", NXPE);
+        if (MPI_Group_range_incl(group_world, 1, &proc, &group) != MPI_SUCCESS) {
+          throw BoutException("MPI_Group_range_incl failed for xp = {:d}", NXPE);
+        }
+        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+        if (comm_tmp != MPI_COMM_NULL) {
+          comm_outer = comm_tmp;
+        }
+        MPI_Group_free(&group);
+
+        // Outer SOL
+        proc[0] = PROC_NUM(xp, YPROC(ny_inner), zp);
+        proc[1] = PROC_NUM(xp, NYPE - 1, zp);
+
+        output_debug.write("Double Null outer SOL {}\n", fmt::join(proc, ", "));
+
+        MPI_Group_range_incl(group_world, 1, &proc, &group);
+        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+        if (comm_tmp != MPI_COMM_NULL) {
+          comm_outer = comm_tmp;
+        }
+        MPI_Group_free(&group);
       }
-      MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
-      if (comm_tmp != MPI_COMM_NULL) {
-        comm_outer = comm_tmp;
-      }
-      MPI_Group_free(&group);
-
-      // Outer SOL
-      proc[0] = PROC_NUM(i, YPROC(ny_inner));
-      proc[1] = PROC_NUM(i, NYPE - 1);
-
-      output_debug << "Double Null outer SOL " << proc[0] << ", " << proc[1] << endl;
-
-      MPI_Group_range_incl(group_world, 1, &proc, &group);
-      MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
-      if (comm_tmp != MPI_COMM_NULL) {
-        comm_outer = comm_tmp;
-      }
-      MPI_Group_free(&group);
     }
   }
 
-  for (int i = 0; i < NXPE; i++) {
-    // Lower PF region
+  for (int xp = 0; xp < NXPE; ++xp) {
+    for (int zp = 0; zp < NZPE; ++zp) {
+      // Lower PF region
 
-    if ((jyseps1_1 >= 0) || (jyseps2_2 + 1 < ny)) {
-      // A lower PF region exists
-      TRACE("Creating lower PF communicators for xp={:d}", i);
+      if ((jyseps1_1 >= 0) || (jyseps2_2 + 1 < ny)) {
+        // A lower PF region exists
+        TRACE("Creating lower PF communicators for xp={:d}", xp);
 
-      output_debug << "Creating lower PF communicators for xp = " << i << endl;
+        output_debug.write("Creating lower PF communicators for xp={}, zp={}\n", xp, zp);
 
-      if (jyseps1_1 >= 0) {
-        proc[0] = PROC_NUM(i, 0);
-        proc[1] = PROC_NUM(i, YPROC(jyseps1_1));
+        if (jyseps1_1 >= 0) {
+          proc[0] = PROC_NUM(xp, 0, zp);
+          proc[1] = PROC_NUM(xp, YPROC(jyseps1_1), zp);
 
-        output_debug << "PF1 " << proc[0] << ", " << proc[1] << endl;
+          output_debug.write("PF1 {}\n", fmt::join(proc, ", "));
+
+          MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+        } else {
+          group_tmp1 = MPI_GROUP_EMPTY;
+        }
+
+        if (jyseps2_2 + 1 < ny) {
+          proc[0] = PROC_NUM(xp, YPROC(jyseps2_2 + 1), zp);
+          proc[1] = PROC_NUM(xp, NYPE - 1, zp);
+
+          output_debug.write("PF2 {}\n", fmt::join(proc, ", "));
+
+          MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+        } else {
+          group_tmp2 = MPI_GROUP_EMPTY;
+        }
+
+        MPI_Group_union(group_tmp1, group_tmp2, &group);
+        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+        if (comm_tmp != MPI_COMM_NULL) {
+          comm_inner = comm_tmp;
+          if (ixseps_lower == ixseps_outer) {
+            // Between the separatrices is still in the PF region
+            output_debug.write("-> Inner and middle\n");
+
+            comm_middle = comm_inner;
+          } else {
+            output_debug.write("-> Outer and middle\n");
+
+            comm_middle = comm_outer;
+          }
+        }
+
+        output_debug.write("Freeing\n");
+
+        MPI_Group_free(&group);
+        if (group_tmp1 != MPI_GROUP_EMPTY) {
+          MPI_Group_free(&group_tmp1);
+        }
+        if (group_tmp2 != MPI_GROUP_EMPTY) {
+          MPI_Group_free(&group_tmp2);
+        }
+
+        output_debug.write("done lower PF\n");
+      }
+
+      if (jyseps2_1 != jyseps1_2) {
+        // Upper PF region
+        // Note need to order processors so that a continuous surface is formed
+        TRACE("Creating upper PF communicators for xp={:d}", xp);
+
+        output_debug.write("Creating upper PF communicators for xp={}, zp={}\n", xp, zp);
+
+        proc[0] = PROC_NUM(xp, YPROC(ny_inner), zp);
+        proc[1] = PROC_NUM(xp, YPROC(jyseps1_2), zp);
+
+        output_debug.write("PF3 {}\n", fmt::join(proc, ", "));
 
         MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+        proc[0] = PROC_NUM(xp, YPROC(jyseps2_1 + 1), zp);
+        proc[1] = PROC_NUM(xp, YPROC(ny_inner - 1), zp);
+
+        output_debug.write("PF4 {}\n", fmt::join(proc, ", "));
+
+        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+        MPI_Group_union(group_tmp1, group_tmp2, &group);
+        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+        if (comm_tmp != MPI_COMM_NULL) {
+          comm_inner = comm_tmp;
+          if (ixseps_upper == ixseps_outer) {
+            output_debug.write("-> Inner and middle\n");
+
+            comm_middle = comm_inner;
+          } else {
+            output_debug.write("-> Outer and middle\n");
+
+            comm_middle = comm_outer;
+            // MPI_Comm_dup(comm_outer, &comm_middle);
+          }
+        }
+
+        output_debug.write("Freeing\n");
+
+        MPI_Group_free(&group);
+        if (group_tmp1 != MPI_GROUP_EMPTY) {
+          MPI_Group_free(&group_tmp1);
+        }
+        if (group_tmp2 != MPI_GROUP_EMPTY) {
+          MPI_Group_free(&group_tmp2);
+        }
+
+        output_debug.write("done upper PF\n");
+      }
+
+      // Core region
+      TRACE("Creating core communicators");
+      if (jyseps2_1 > jyseps1_1) {
+        proc[0] = PROC_NUM(xp, YPROC(jyseps1_1 + 1), zp);
+        proc[1] = PROC_NUM(xp, YPROC(jyseps2_1), zp);
+
+        output_debug.write("CORE1 {}\n", fmt::join(proc, ", "));
+
+        if ((proc[0] < 0) || (proc[1] < 0)) {
+          throw BoutException("Invalid processor range for core processors");
+        }
+        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
       } else {
+        // no core region between jyseps1_1 and jyseps2_1
         group_tmp1 = MPI_GROUP_EMPTY;
       }
 
-      if (jyseps2_2 + 1 < ny) {
-        proc[0] = PROC_NUM(i, YPROC(jyseps2_2 + 1));
-        proc[1] = PROC_NUM(i, NYPE - 1);
+      if (jyseps2_2 > jyseps1_2) {
+        proc[0] = PROC_NUM(xp, YPROC(jyseps1_2 + 1), zp);
+        proc[1] = PROC_NUM(xp, YPROC(jyseps2_2), zp);
 
-        output_debug << "PF2 " << proc[0] << ", " << proc[1] << endl;
+        output_debug.write("CORE2 {}\n", fmt::join(proc, ", "));
 
-        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+        if ((proc[0] < 0) || (proc[1] < 0)) {
+          group_tmp2 = MPI_GROUP_EMPTY;
+        } else {
+          MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+        }
       } else {
+        // no core region between jyseps1_2 and jyseps2_2
         group_tmp2 = MPI_GROUP_EMPTY;
       }
 
@@ -860,133 +1024,20 @@ void BoutMesh::createCommunicators() {
       MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
       if (comm_tmp != MPI_COMM_NULL) {
         comm_inner = comm_tmp;
-        if (ixseps_lower == ixseps_outer) {
-          // Between the separatrices is still in the PF region
 
-          output_debug << "-> Inner and middle\n";
-
-          comm_middle = comm_inner;
-        } else {
-
-          output_debug << "-> Outer and middle\n";
-
-          comm_middle = comm_outer;
+        if (ixseps_inner == ixseps_outer) {
+          MPI_Comm_dup(comm_inner, &comm_middle);
         }
       }
 
-      output_debug << "Freeing\n";
-
-      MPI_Group_free(&group);
       if (group_tmp1 != MPI_GROUP_EMPTY) {
         MPI_Group_free(&group_tmp1);
       }
       if (group_tmp2 != MPI_GROUP_EMPTY) {
         MPI_Group_free(&group_tmp2);
       }
-
-      output_debug << "done lower PF\n";
-    }
-
-    if (jyseps2_1 != jyseps1_2) {
-      // Upper PF region
-      // Note need to order processors so that a continuous surface is formed
-      TRACE("Creating upper PF communicators for xp={:d}", i);
-
-      output_debug << "Creating upper PF communicators for xp = " << i << endl;
-
-      proc[0] = PROC_NUM(i, YPROC(ny_inner));
-      proc[1] = PROC_NUM(i, YPROC(jyseps1_2));
-
-      output_debug << "PF3 " << proc[0] << ", " << proc[1] << endl;
-
-      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
-      proc[0] = PROC_NUM(i, YPROC(jyseps2_1 + 1));
-      proc[1] = PROC_NUM(i, YPROC(ny_inner - 1));
-
-      output_debug << "PF4 " << proc[0] << ", " << proc[1] << endl;
-
-      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
-      MPI_Group_union(group_tmp1, group_tmp2, &group);
-      MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
-      if (comm_tmp != MPI_COMM_NULL) {
-        comm_inner = comm_tmp;
-        if (ixseps_upper == ixseps_outer) {
-
-          output_debug << "-> Inner and middle\n";
-
-          comm_middle = comm_inner;
-        } else {
-
-          output_debug << "-> Outer and middle\n";
-
-          comm_middle = comm_outer;
-          // MPI_Comm_dup(comm_outer, &comm_middle);
-        }
-      }
-
-      output_debug << "Freeing\n";
-
       MPI_Group_free(&group);
-      if (group_tmp1 != MPI_GROUP_EMPTY) {
-        MPI_Group_free(&group_tmp1);
-      }
-      if (group_tmp2 != MPI_GROUP_EMPTY) {
-        MPI_Group_free(&group_tmp2);
-      }
-
-      output_debug << "done upper PF\n";
     }
-
-    // Core region
-    TRACE("Creating core communicators");
-    if (jyseps2_1 > jyseps1_1) {
-      proc[0] = PROC_NUM(i, YPROC(jyseps1_1 + 1));
-      proc[1] = PROC_NUM(i, YPROC(jyseps2_1));
-
-      output_debug << "CORE1 " << proc[0] << ", " << proc[1] << endl;
-
-      if ((proc[0] < 0) || (proc[1] < 0)) {
-        throw BoutException("Invalid processor range for core processors");
-      }
-      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
-    } else {
-      // no core region between jyseps1_1 and jyseps2_1
-      group_tmp1 = MPI_GROUP_EMPTY;
-    }
-
-    if (jyseps2_2 > jyseps1_2) {
-      proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
-      proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
-
-      output_debug << "CORE2 " << proc[0] << ", " << proc[1] << endl;
-
-      if ((proc[0] < 0) || (proc[1] < 0)) {
-        group_tmp2 = MPI_GROUP_EMPTY;
-      } else {
-        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
-      }
-    } else {
-      // no core region between jyseps1_2 and jyseps2_2
-      group_tmp2 = MPI_GROUP_EMPTY;
-    }
-
-    MPI_Group_union(group_tmp1, group_tmp2, &group);
-    MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
-    if (comm_tmp != MPI_COMM_NULL) {
-      comm_inner = comm_tmp;
-
-      if (ixseps_inner == ixseps_outer) {
-        MPI_Comm_dup(comm_inner, &comm_middle);
-      }
-    }
-
-    if (group_tmp1 != MPI_GROUP_EMPTY) {
-      MPI_Group_free(&group_tmp1);
-    }
-    if (group_tmp2 != MPI_GROUP_EMPTY) {
-      MPI_Group_free(&group_tmp2);
-    }
-    MPI_Group_free(&group);
   }
 
   if (ixseps_inner == ixseps_outer) {
@@ -995,57 +1046,73 @@ void BoutMesh::createCommunicators() {
   } else {
     // Need to handle unbalanced double-null case
 
-    output_debug << "Unbalanced " << endl;
+    output_debug.write("Unbalanced\n");
 
     if (ixseps_upper > ixseps_lower) {
       // middle is connected to the bottom
       TRACE("Creating unbalanced lower communicators");
 
-      for (int i = 0; i < NXPE; i++) {
-        proc[0] = PROC_NUM(i, 0);
-        proc[1] = PROC_NUM(i, YPROC(jyseps2_1));
-        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
-        proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
-        proc[1] = PROC_NUM(i, NYPE - 1);
-        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
-        MPI_Group_union(group_tmp1, group_tmp2, &group);
-        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
-        if (comm_tmp != MPI_COMM_NULL) {
-          comm_middle = comm_tmp;
-        }
+      for (int xp = 0; xp < NXPE; xp++) {
+        for (int zp = 0; zp < NZPE; ++zp) {
+          proc[0] = PROC_NUM(xp, 0, zp);
+          proc[1] = PROC_NUM(xp, YPROC(jyseps2_1), zp);
+          output_debug.write("Unbalanced lower 1 {}\n", fmt::join(proc, ", "));
 
-        if (group_tmp1 != MPI_GROUP_EMPTY) {
-          MPI_Group_free(&group_tmp1);
+          MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+
+          proc[0] = PROC_NUM(xp, YPROC(jyseps1_2 + 1), zp);
+          proc[1] = PROC_NUM(xp, NYPE - 1, zp);
+
+          output_debug.write("Unbalanced lower 2 {}\n", fmt::join(proc, ", "));
+
+          MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+          MPI_Group_union(group_tmp1, group_tmp2, &group);
+          MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+          if (comm_tmp != MPI_COMM_NULL) {
+            comm_middle = comm_tmp;
+          }
+
+          if (group_tmp1 != MPI_GROUP_EMPTY) {
+            MPI_Group_free(&group_tmp1);
+          }
+          if (group_tmp2 != MPI_GROUP_EMPTY) {
+            MPI_Group_free(&group_tmp2);
+          }
+          MPI_Group_free(&group);
         }
-        if (group_tmp2 != MPI_GROUP_EMPTY) {
-          MPI_Group_free(&group_tmp2);
-        }
-        MPI_Group_free(&group);
       }
     } else {
       // middle is connected to the top
       TRACE("Creating unbalanced upper communicators");
 
-      for (int i = 0; i < NXPE; i++) {
-        proc[0] = PROC_NUM(i, YPROC(ny_inner));
-        proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
-        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
-        proc[0] = PROC_NUM(i, YPROC(jyseps1_1 + 1));
-        proc[1] = PROC_NUM(i, YPROC(ny_inner - 1));
-        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
-        MPI_Group_union(group_tmp1, group_tmp2, &group);
-        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
-        if (comm_tmp != MPI_COMM_NULL) {
-          comm_middle = comm_tmp;
-        }
+      for (int xp = 0; xp < NXPE; ++xp) {
+        for (int zp = 0; zp < NZPE; ++zp) {
+          proc[0] = PROC_NUM(xp, YPROC(ny_inner), zp);
+          proc[1] = PROC_NUM(xp, YPROC(jyseps2_2), zp);
 
-        if (group_tmp1 != MPI_GROUP_EMPTY) {
-          MPI_Group_free(&group_tmp1);
+          output_debug.write("Unbalanced upper 1 {}\n", fmt::join(proc, ", "));
+
+          MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+          proc[0] = PROC_NUM(xp, YPROC(jyseps1_1 + 1), zp);
+          proc[1] = PROC_NUM(xp, YPROC(ny_inner - 1), zp);
+
+          output_debug.write("Unbalanced upper 2 {}\n", fmt::join(proc, ", "));
+
+          MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+          MPI_Group_union(group_tmp1, group_tmp2, &group);
+          MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+          if (comm_tmp != MPI_COMM_NULL) {
+            comm_middle = comm_tmp;
+          }
+
+          if (group_tmp1 != MPI_GROUP_EMPTY) {
+            MPI_Group_free(&group_tmp1);
+          }
+          if (group_tmp2 != MPI_GROUP_EMPTY) {
+            MPI_Group_free(&group_tmp2);
+          }
+          MPI_Group_free(&group);
         }
-        if (group_tmp2 != MPI_GROUP_EMPTY) {
-          MPI_Group_free(&group_tmp2);
-        }
-        MPI_Group_free(&group);
       }
     }
   }
@@ -1144,26 +1211,22 @@ std::set<std::string> BoutMesh::getPossibleBoundaries() const {
         }
 
         // Make a copy of this mesh, EXCEPT we change the (X, Y) rank of the processor
-        BoutMesh mesh_copy{mesh->GlobalNx,
-                           mesh->GlobalNyNoBoundaries,
-                           mesh->GlobalNz,
-                           mesh->MXG,
-                           mesh->MYG,
-                           mesh->NXPE,
-                           mesh->NYPE,
-                           x_rank,
-                           y_rank,
-                           mesh->symmetricGlobalX,
-                           mesh->symmetricGlobalY,
-                           mesh->periodicX,
-                           mesh->ixseps1,
-                           mesh->ixseps2,
-                           mesh->jyseps1_1,
-                           mesh->jyseps2_1,
-                           mesh->jyseps1_2,
-                           mesh->jyseps2_2,
-                           mesh->ny_inner,
-                           false};
+        BoutMesh mesh_copy{
+            {mesh->GlobalNx, mesh->GlobalNyNoBoundaries, mesh->GlobalNzNoBoundaries},
+            {mesh->MXG, mesh->MYG, mesh->MZG},
+            {mesh->NXPE, mesh->NYPE, mesh->NZPE},
+            {x_rank, y_rank, 0},
+            mesh->symmetricGlobalX,
+            mesh->symmetricGlobalY,
+            mesh->periodicX,
+            mesh->ixseps1,
+            mesh->ixseps2,
+            mesh->jyseps1_1,
+            mesh->jyseps2_1,
+            mesh->jyseps1_2,
+            mesh->jyseps2_2,
+            mesh->ny_inner,
+            false};
         // We need to create the boundaries
         mesh_copy.createXBoundaries();
         mesh_copy.createYBoundaries();
@@ -1205,13 +1268,24 @@ void BoutMesh::setShiftAngle(const std::vector<BoutReal>& shift_angle) {
  *                 COMMUNICATIONS
  ****************************************************************/
 
-const int IN_SENT_UP = 0;    ///< Data lower in X than branch-cut, at upper boundary in Y
-const int OUT_SENT_UP = 1;   ///< Data higher in X than branch-cut, at upper boundary in Y
-const int IN_SENT_DOWN = 2;  ///< Data lower in X than branch-cut, at lower boundary in Y
-const int OUT_SENT_DOWN = 3; ///< Data higher in X than branch-cut, at lower boundary in Y
+/// Data lower in X than branch-cut, at upper boundary in Y
+constexpr int IN_SENT_UP = 0;
+/// Data higher in X than branch-cut, at upper boundary in Y
+constexpr int OUT_SENT_UP = 1;
+/// Data lower in X than branch-cut, at lower boundary in Y
+constexpr int IN_SENT_DOWN = 2;
+/// Data higher in X than branch-cut, at lower boundary in Y
+constexpr int OUT_SENT_DOWN = 3;
 // X communication signals
-const int IN_SENT_OUT = 4; ///< Data going in positive X direction (in to out)
-const int OUT_SENT_IN = 5; ///< Data going in negative X direction (out to in)
+/// Data going in positive X direction (in to out)
+constexpr int IN_SENT_OUT = 4;
+/// Data going in negative X direction (out to in)
+constexpr int OUT_SENT_IN = 5;
+// Z communication signals
+/// Data sent from -z to +z
+constexpr int Z_SENT_NEGATIVE = 6;
+/// Data sent from +z to -z
+constexpr int Z_SENT_POSITIVE = 7;
 
 void BoutMesh::post_receiveX(CommHandle& ch) {
   /// Post receive data from left (x-1)
@@ -1219,7 +1293,8 @@ void BoutMesh::post_receiveX(CommHandle& ch) {
   if (IDATA_DEST != -1) {
     mpi->MPI_Irecv(
         std::begin(ch.imsg_recvbuff),
-        msg_len(ch.var_list.get(), 0, MXG, 0, ch.include_x_corners ? LocalNy : MYSUB),
+        msg_len(ch.var_list.get(), 0, MXG, 0, ch.include_x_corners ? LocalNy : MYSUB, 0,
+                ch.include_x_corners ? LocalNz : MZSUB),
         PVEC_REAL_MPI_TYPE, IDATA_DEST, OUT_SENT_IN, BoutComm::get(), &ch.request[4]);
   }
 
@@ -1228,7 +1303,8 @@ void BoutMesh::post_receiveX(CommHandle& ch) {
   if (ODATA_DEST != -1) {
     mpi->MPI_Irecv(
         std::begin(ch.omsg_recvbuff),
-        msg_len(ch.var_list.get(), 0, MXG, 0, ch.include_x_corners ? LocalNy : MYSUB),
+        msg_len(ch.var_list.get(), 0, MXG, 0, ch.include_x_corners ? LocalNy : MYSUB, 0,
+                ch.include_x_corners ? LocalNz : MZSUB),
         PVEC_REAL_MPI_TYPE, ODATA_DEST, IN_SENT_OUT, BoutComm::get(), &ch.request[5]);
   }
 }
@@ -1241,13 +1317,14 @@ void BoutMesh::post_receiveY(CommHandle& ch) {
 
   len = 0;
   if (UDATA_INDEST != -1) {
-    len = msg_len(ch.var_list.get(), 0, UDATA_XSPLIT, 0, MYG);
+    len = msg_len(ch.var_list.get(), 0, UDATA_XSPLIT, 0, MYG, 0, MZSUB);
     mpi->MPI_Irecv(std::begin(ch.umsg_recvbuff), len, PVEC_REAL_MPI_TYPE, UDATA_INDEST,
                    IN_SENT_DOWN, BoutComm::get(), &ch.request[0]);
   }
   if (UDATA_OUTDEST != -1) {
     inbuff = &ch.umsg_recvbuff[len]; // pointer to second half of the buffer
-    mpi->MPI_Irecv(inbuff, msg_len(ch.var_list.get(), UDATA_XSPLIT, LocalNx, 0, MYG),
+    mpi->MPI_Irecv(inbuff,
+                   msg_len(ch.var_list.get(), UDATA_XSPLIT, LocalNx, 0, MYG, 0, MZSUB),
                    PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_DOWN, BoutComm::get(),
                    &ch.request[1]);
   }
@@ -1257,15 +1334,35 @@ void BoutMesh::post_receiveY(CommHandle& ch) {
   len = 0;
 
   if (DDATA_INDEST != -1) { // If sending & recieving data from a processor
-    len = msg_len(ch.var_list.get(), 0, DDATA_XSPLIT, 0, MYG);
+    len = msg_len(ch.var_list.get(), 0, DDATA_XSPLIT, 0, MYG, 0, MZSUB);
     mpi->MPI_Irecv(std::begin(ch.dmsg_recvbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
                    IN_SENT_UP, BoutComm::get(), &ch.request[2]);
   }
   if (DDATA_OUTDEST != -1) {
     inbuff = &ch.dmsg_recvbuff[len];
-    mpi->MPI_Irecv(inbuff, msg_len(ch.var_list.get(), DDATA_XSPLIT, LocalNx, 0, MYG),
-                   PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_UP, BoutComm::get(),
-                   &ch.request[3]);
+    mpi->MPI_Irecv(
+        inbuff, msg_len(ch.var_list.get(), DDATA_XSPLIT, LocalNx, 0, MYG, 0, MZSUB),
+        PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_UP, BoutComm::get(), &ch.request[3]);
+  }
+}
+
+void BoutMesh::post_receiveZ(CommHandle& ch) {
+  /// Post receive data from left (z-1)
+
+  if (z_minus_dest != -1) {
+    mpi->MPI_Irecv(std::begin(ch.zminus_recvbuff),
+                   msg_len(ch.var_list.get(), 0, LocalNx, 0, LocalNy, 0, MZG),
+                   PVEC_REAL_MPI_TYPE, z_minus_dest, Z_SENT_POSITIVE, BoutComm::get(),
+                   &ch.request[Z_SENT_NEGATIVE]);
+  }
+
+  // Post receive data from right (z+1)
+
+  if (z_plus_dest != -1) {
+    mpi->MPI_Irecv(std::begin(ch.zplus_recvbuff),
+                   msg_len(ch.var_list.get(), 0, LocalNx, 0, LocalNy, 0, MZG),
+                   PVEC_REAL_MPI_TYPE, z_plus_dest, Z_SENT_NEGATIVE, BoutComm::get(),
+                   &ch.request[Z_SENT_POSITIVE]);
   }
 }
 
@@ -1278,17 +1375,25 @@ comm_handle BoutMesh::send(FieldGroup& g) {
                         "in x- and y-directions simultaneously. Use sendX() and sendY() "
                         "instead.");
   }
+  if (MZG > 0) {
+    throw BoutException("Cannot use send() with guard cells in Z (MZG = {:d}): corner "
+                        "cells would not be communicated. Set "
+                        "mesh:include_corner_cells = true",
+                        MZG);
+  }
 
   /// Work out length of buffer needed
-  int xlen = msg_len(g.get(), 0, MXG, 0, MYSUB);
-  int ylen = msg_len(g.get(), 0, LocalNx, 0, MYG);
+  const int xlen = msg_len(g.get(), 0, MXG, 0, MYSUB, 0, MZSUB);
+  const int ylen = msg_len(g.get(), 0, LocalNx, 0, MYG, 0, MZSUB);
+  const int zlen = msg_len(g.get(), 0, MXSUB, 0, MYSUB, 0, MZG);
 
   /// Get a communications handle of (at least) the needed size
-  CommHandle* ch = get_handle(xlen, ylen);
+  CommHandle* ch = get_handle(xlen, ylen, zlen);
   ch->var_list = g; // Group of fields to send
 
   sendX(g, ch, true);
   sendY(g, ch);
+  sendZ(g, ch);
 
   return static_cast<void*>(ch);
 }
@@ -1302,10 +1407,11 @@ comm_handle BoutMesh::sendX(FieldGroup& g, comm_handle handle, bool disable_corn
   CommHandle* ch = nullptr;
   if (handle == nullptr) {
     /// Work out length of buffer needed
-    int xlen = msg_len(g.get(), 0, MXG, 0, with_corners ? LocalNy : MYSUB);
+    int xlen = msg_len(g.get(), 0, MXG, 0, with_corners ? LocalNy : MYSUB, 0,
+                       with_corners ? LocalNz : MZSUB);
 
     /// Get a communications handle of (at least) the needed size
-    ch = get_handle(xlen, 0);
+    ch = get_handle(xlen, 0, 0);
     ch->var_list = g; // Group of fields to send
   } else {
     ch = static_cast<CommHandle*>(handle);
@@ -1321,9 +1427,10 @@ comm_handle BoutMesh::sendX(FieldGroup& g, comm_handle handle, bool disable_corn
   /// Send to the left (x-1)
 
   if (IDATA_DEST != -1) {
-    int len = pack_data(ch->var_list.get(), MXG, 2 * MXG, ch->include_x_corners ? 0 : MYG,
-                        ch->include_x_corners ? LocalNy : MYG + MYSUB,
-                        std::begin(ch->imsg_sendbuff));
+    int len = pack_data(
+        ch->var_list.get(), MXG, 2 * MXG, ch->include_x_corners ? 0 : MYG,
+        ch->include_x_corners ? LocalNy : MYG + MYSUB, ch->include_x_corners ? 0 : MZG,
+        ch->include_x_corners ? LocalNz : MZG + MZSUB, std::begin(ch->imsg_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
                      IN_SENT_OUT, BoutComm::get(), &(ch->sendreq[4]));
@@ -1338,7 +1445,8 @@ comm_handle BoutMesh::sendX(FieldGroup& g, comm_handle handle, bool disable_corn
   if (ODATA_DEST != -1) {
     int len = pack_data(
         ch->var_list.get(), MXSUB, MXSUB + MXG, ch->include_x_corners ? 0 : MYG,
-        ch->include_x_corners ? LocalNy : MYG + MYSUB, std::begin(ch->omsg_sendbuff));
+        ch->include_x_corners ? LocalNy : MYG + MYSUB, ch->include_x_corners ? 0 : MZG,
+        ch->include_x_corners ? LocalNz : MZG + MZSUB, std::begin(ch->omsg_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
                      OUT_SENT_IN, BoutComm::get(), &(ch->sendreq[5]));
@@ -1361,10 +1469,10 @@ comm_handle BoutMesh::sendY(FieldGroup& g, comm_handle handle) {
   CommHandle* ch;
   if (handle == nullptr) {
     /// Work out length of buffer needed
-    int ylen = msg_len(g.get(), 0, LocalNx, 0, MYG);
+    int ylen = msg_len(g.get(), 0, LocalNx, 0, MYG, 0, LocalNz);
 
     /// Get a communications handle of (at least) the needed size
-    ch = get_handle(0, ylen);
+    ch = get_handle(0, ylen, 0);
     ch->var_list = g; // Group of fields to send
   } else {
     ch = static_cast<CommHandle*>(handle);
@@ -1381,8 +1489,8 @@ comm_handle BoutMesh::sendY(FieldGroup& g, comm_handle handle) {
   BoutReal* outbuff = nullptr;
 
   if (UDATA_INDEST != -1) { // If there is a destination for inner x data
-    len = pack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB, MYSUB + MYG,
-                    std::begin(ch->umsg_sendbuff));
+    len = pack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB, MYSUB + MYG, MZG,
+                    MZG + MZSUB, std::begin(ch->umsg_sendbuff));
     // Send the data to processor UDATA_INDEST
 
     if (async_send) {
@@ -1400,8 +1508,8 @@ comm_handle BoutMesh::sendY(FieldGroup& g, comm_handle handle) {
   if (UDATA_OUTDEST != -1) {             // if destination for outer x data
     outbuff = &(ch->umsg_sendbuff[len]); // A pointer to the start of the second part
                                          // of the buffer
-    len =
-        pack_data(ch->var_list.get(), UDATA_XSPLIT, LocalNx, MYSUB, MYSUB + MYG, outbuff);
+    len = pack_data(ch->var_list.get(), UDATA_XSPLIT, LocalNx, MYSUB, MYSUB + MYG, MZG,
+                    MZG + MZSUB, outbuff);
     // Send the data to processor UDATA_OUTDEST
     if (async_send) {
       mpi->MPI_Isend(outbuff, len, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_UP,
@@ -1416,7 +1524,7 @@ comm_handle BoutMesh::sendY(FieldGroup& g, comm_handle handle) {
 
   len = 0;
   if (DDATA_INDEST != -1) { // If there is a destination for inner x data
-    len = pack_data(ch->var_list.get(), 0, DDATA_XSPLIT, MYG, 2 * MYG,
+    len = pack_data(ch->var_list.get(), 0, DDATA_XSPLIT, MYG, 2 * MYG, MZG, MZG + MZSUB,
                     std::begin(ch->dmsg_sendbuff));
     // Send the data to processor DDATA_INDEST
     if (async_send) {
@@ -1430,7 +1538,8 @@ comm_handle BoutMesh::sendY(FieldGroup& g, comm_handle handle) {
   if (DDATA_OUTDEST != -1) {             // if destination for outer x data
     outbuff = &(ch->dmsg_sendbuff[len]); // A pointer to the start of the second part
                                          // of the buffer
-    len = pack_data(ch->var_list.get(), DDATA_XSPLIT, LocalNx, MYG, 2 * MYG, outbuff);
+    len = pack_data(ch->var_list.get(), DDATA_XSPLIT, LocalNx, MYG, 2 * MYG, MZG,
+                    MZG + MZSUB, outbuff);
     // Send the data to processor DDATA_OUTDEST
 
     if (async_send) {
@@ -1447,6 +1556,62 @@ comm_handle BoutMesh::sendY(FieldGroup& g, comm_handle handle) {
 
   /// Mark as y-communication
   ch->has_y_communication = true;
+
+  return static_cast<void*>(ch);
+}
+
+comm_handle BoutMesh::sendZ(FieldGroup& g, comm_handle handle) {
+  /// Start timer
+  Timer timer("comms");
+
+  CommHandle* ch = nullptr;
+  if (handle == nullptr) {
+    /// Work out length of buffer needed
+    const int zlen = msg_len(g.get(), 0, LocalNx, 0, LocalNy, 0, MZG);
+
+    /// Get a communications handle of (at least) the needed size
+    ch = get_handle(0, 0, zlen);
+    ch->var_list = g; // Group of fields to send
+  } else {
+    ch = static_cast<CommHandle*>(handle);
+  }
+
+  /// Post receives
+  post_receiveZ(*ch);
+
+  //////////////////////////////////////////////////
+
+  /// Send to the left (z-1)
+
+  if (z_minus_dest != -1) {
+    int len = pack_data(ch->var_list.get(), 0, LocalNx, 0, LocalNy, MZG, 2 * MZG,
+                        std::begin(ch->zminus_sendbuff));
+    if (async_send) {
+      mpi->MPI_Isend(std::begin(ch->zminus_sendbuff), len, PVEC_REAL_MPI_TYPE,
+                     z_minus_dest, Z_SENT_NEGATIVE, BoutComm::get(),
+                     &(ch->sendreq[Z_SENT_NEGATIVE]));
+    } else {
+      mpi->MPI_Send(std::begin(ch->zminus_sendbuff), len, PVEC_REAL_MPI_TYPE,
+                    z_minus_dest, Z_SENT_NEGATIVE, BoutComm::get());
+    }
+  }
+
+  /// Send to the right (z+1)
+
+  if (z_plus_dest != -1) {
+    int len = pack_data(ch->var_list.get(), 0, LocalNx, 0, LocalNy, MZSUB, MZSUB + MZG,
+                        std::begin(ch->zplus_sendbuff));
+    if (async_send) {
+      mpi->MPI_Isend(std::begin(ch->zplus_sendbuff), len, PVEC_REAL_MPI_TYPE, z_plus_dest,
+                     Z_SENT_POSITIVE, BoutComm::get(), &(ch->sendreq[Z_SENT_POSITIVE]));
+    } else {
+      mpi->MPI_Send(std::begin(ch->zplus_sendbuff), len, PVEC_REAL_MPI_TYPE, z_plus_dest,
+                    Z_SENT_POSITIVE, BoutComm::get());
+    }
+  }
+
+  /// Mark communication handle as in progress
+  ch->in_progress = true;
 
   return static_cast<void*>(ch);
 }
@@ -1474,48 +1639,60 @@ int BoutMesh::wait(comm_handle handle) {
   if (ch->var_list.empty()) {
 
     // Just waiting for a single MPI request
-    mpi->MPI_Wait(ch->request, &status);
+    mpi->MPI_Wait(ch->request.data(), &status);
     free_handle(ch);
 
     return 0;
   }
 
   do {
-    mpi->MPI_Waitany(6, ch->request, &ind, &status);
+    mpi->MPI_Waitany(CommHandle::num_requests, ch->request.data(), &ind, &status);
     switch (ind) {
     case 0: { // Up, inner
-      unpack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB + MYG, MYSUB + 2 * MYG,
-                  std::begin(ch->umsg_recvbuff));
+      unpack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB + MYG, MYSUB + (2 * MYG),
+                  MZG, MZG + MZSUB, std::begin(ch->umsg_recvbuff));
       break;
     }
     case 1: { // Up, outer
-      len = msg_len(ch->var_list.get(), 0, UDATA_XSPLIT, 0, MYG);
-      unpack_data(ch->var_list.get(), UDATA_XSPLIT, LocalNx, MYSUB + MYG, MYSUB + 2 * MYG,
-                  &(ch->umsg_recvbuff[len]));
+      len = msg_len(ch->var_list.get(), 0, UDATA_XSPLIT, 0, MYG, 0, MZSUB);
+      unpack_data(ch->var_list.get(), UDATA_XSPLIT, LocalNx, MYSUB + MYG,
+                  MYSUB + (2 * MYG), MZG, MZG + MZSUB, &(ch->umsg_recvbuff[len]));
       break;
     }
     case 2: { // Down, inner
-      unpack_data(ch->var_list.get(), 0, DDATA_XSPLIT, 0, MYG,
+      unpack_data(ch->var_list.get(), 0, DDATA_XSPLIT, 0, MYG, MZG, MZG + MZSUB,
                   std::begin(ch->dmsg_recvbuff));
       break;
     }
     case 3: { // Down, outer
-      len = msg_len(ch->var_list.get(), 0, DDATA_XSPLIT, 0, MYG);
-      unpack_data(ch->var_list.get(), DDATA_XSPLIT, LocalNx, 0, MYG,
+      len = msg_len(ch->var_list.get(), 0, DDATA_XSPLIT, 0, MYG, 0, MZSUB);
+      unpack_data(ch->var_list.get(), DDATA_XSPLIT, LocalNx, 0, MYG, MZG, MZG + MZSUB,
                   &(ch->dmsg_recvbuff[len]));
       break;
     }
     case 4: { // inner
-      unpack_data(ch->var_list.get(), 0, MXG, ch->include_x_corners ? 0 : MYG,
-                  ch->include_x_corners ? LocalNy : MYG + MYSUB,
-                  std::begin(ch->imsg_recvbuff));
+      unpack_data(
+          ch->var_list.get(), 0, MXG, ch->include_x_corners ? 0 : MYG,
+          ch->include_x_corners ? LocalNy : MYG + MYSUB, ch->include_x_corners ? 0 : MZG,
+          ch->include_x_corners ? LocalNz : MZG + MZSUB, std::begin(ch->imsg_recvbuff));
       break;
     }
     case 5: { // outer
-      unpack_data(ch->var_list.get(), MXSUB + MXG, MXSUB + 2 * MXG,
-                  ch->include_x_corners ? 0 : MYG,
-                  ch->include_x_corners ? LocalNy : MYG + MYSUB,
-                  std::begin(ch->omsg_recvbuff));
+      unpack_data(
+          ch->var_list.get(), MXSUB + MXG, MXSUB + (2 * MXG),
+          ch->include_x_corners ? 0 : MYG, ch->include_x_corners ? LocalNy : MYG + MYSUB,
+          ch->include_x_corners ? 0 : MZG, ch->include_x_corners ? LocalNz : MZG + MZSUB,
+          std::begin(ch->omsg_recvbuff));
+      break;
+    }
+    case Z_SENT_NEGATIVE: {
+      unpack_data(ch->var_list.get(), 0, LocalNx, 0, LocalNy, 0, MZG,
+                  std::begin(ch->zminus_recvbuff));
+      break;
+    }
+    case Z_SENT_POSITIVE: {
+      unpack_data(ch->var_list.get(), 0, LocalNx, 0, LocalNy, MZSUB + MZG,
+                  MZSUB + (2 * MZG), std::begin(ch->zplus_recvbuff));
       break;
     }
     }
@@ -1529,22 +1706,28 @@ int BoutMesh::wait(comm_handle handle) {
     MPI_Status async_status;
 
     if (UDATA_INDEST != -1) {
-      mpi->MPI_Wait(ch->sendreq, &async_status);
+      mpi->MPI_Wait(&ch->sendreq[0], &async_status);
     }
     if (UDATA_OUTDEST != -1) {
-      mpi->MPI_Wait(ch->sendreq + 1, &async_status);
+      mpi->MPI_Wait(&ch->sendreq[1], &async_status);
     }
     if (DDATA_INDEST != -1) {
-      mpi->MPI_Wait(ch->sendreq + 2, &async_status);
+      mpi->MPI_Wait(&ch->sendreq[2], &async_status);
     }
     if (DDATA_OUTDEST != -1) {
-      mpi->MPI_Wait(ch->sendreq + 3, &async_status);
+      mpi->MPI_Wait(&ch->sendreq[3], &async_status);
     }
     if (IDATA_DEST != -1) {
-      mpi->MPI_Wait(ch->sendreq + 4, &async_status);
+      mpi->MPI_Wait(&ch->sendreq[4], &async_status);
     }
     if (ODATA_DEST != -1) {
-      mpi->MPI_Wait(ch->sendreq + 5, &async_status);
+      mpi->MPI_Wait(&ch->sendreq[5], &async_status);
+    }
+    if (z_minus_dest != -1) {
+      mpi->MPI_Wait(&ch->sendreq[Z_SENT_NEGATIVE], &async_status);
+    }
+    if (z_plus_dest != -1) {
+      mpi->MPI_Wait(&ch->sendreq[Z_SENT_POSITIVE], &async_status);
     }
   }
 
@@ -1638,12 +1821,12 @@ int BoutMesh::sendXOut(BoutReal* buffer, int size, int tag) {
   if (PE_XIND == NXPE - 1) {
     if (periodicX) {
       // Wrap around to first processor in X
-      proc = PROC_NUM(0, PE_YIND);
+      proc = PROC_NUM(0, PE_YIND, PE_ZIND);
     } else {
       return 1;
     }
   } else {
-    proc = PROC_NUM(PE_XIND + 1, PE_YIND);
+    proc = PROC_NUM(PE_XIND + 1, PE_YIND, PE_ZIND);
   }
 
   mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag, BoutComm::get());
@@ -1658,12 +1841,12 @@ int BoutMesh::sendXIn(BoutReal* buffer, int size, int tag) {
   if (PE_XIND == 0) {
     if (periodicX) {
       // Wrap around to last processor in X
-      proc = PROC_NUM(NXPE - 1, PE_YIND);
+      proc = PROC_NUM(NXPE - 1, PE_YIND, PE_ZIND);
     } else {
       return 1;
     }
   } else {
-    proc = PROC_NUM(PE_XIND - 1, PE_YIND);
+    proc = PROC_NUM(PE_XIND - 1, PE_YIND, PE_ZIND);
   }
 
   mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag, BoutComm::get());
@@ -1678,19 +1861,19 @@ comm_handle BoutMesh::irecvXOut(BoutReal* buffer, int size, int tag) {
   if (PE_XIND == NXPE - 1) {
     if (periodicX) {
       // Wrap around to first processor in X
-      proc = PROC_NUM(0, PE_YIND);
+      proc = PROC_NUM(0, PE_YIND, PE_ZIND);
     } else {
       return nullptr;
     }
   } else {
-    proc = PROC_NUM(PE_XIND + 1, PE_YIND);
+    proc = PROC_NUM(PE_XIND + 1, PE_YIND, PE_ZIND);
   }
 
   // Get a communications handle. Not fussy about size of arrays
-  CommHandle* ch = get_handle(0, 0);
+  CommHandle* ch = get_handle(0, 0, 0);
 
   mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag, BoutComm::get(),
-                 ch->request);
+                 ch->request.data());
 
   ch->in_progress = true;
 
@@ -1704,19 +1887,19 @@ comm_handle BoutMesh::irecvXIn(BoutReal* buffer, int size, int tag) {
   if (PE_XIND == 0) {
     if (periodicX) {
       // Wrap around to last processor in X
-      proc = PROC_NUM(NXPE - 1, PE_YIND);
+      proc = PROC_NUM(NXPE - 1, PE_YIND, PE_ZIND);
     } else {
       return nullptr;
     }
   } else {
-    proc = PROC_NUM(PE_XIND - 1, PE_YIND);
+    proc = PROC_NUM(PE_XIND - 1, PE_YIND, PE_ZIND);
   }
 
   // Get a communications handle. Not fussy about size of arrays
-  CommHandle* ch = get_handle(0, 0);
+  CommHandle* ch = get_handle(0, 0, 0);
 
   mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag, BoutComm::get(),
-                 ch->request);
+                 ch->request.data());
 
   ch->in_progress = true;
 
@@ -1773,15 +1956,18 @@ bool BoutMesh::lastY(int xpos) const {
  * can be implemented later (maybe)
  ****************************************************************/
 
-int BoutMesh::PROC_NUM(int xind, int yind) const {
+int BoutMesh::PROC_NUM(int xind, int yind, int zind) const {
   if ((xind >= NXPE) || (xind < 0)) {
     return -1;
   }
   if ((yind >= NYPE) || (yind < 0)) {
     return -1;
   }
+  if ((zind >= NZPE) || (zind < 0)) {
+    return -1;
+  }
 
-  return (yind * NXPE) + xind;
+  return (((zind * NYPE) + yind) * NXPE) + xind;
 }
 
 BoutReal BoutMesh::getGlobalXIndex(BoutReal xloc) const {
@@ -1840,13 +2026,15 @@ int BoutMesh::getGlobalZIndexNoBoundaries(int zlocal) const {
   return zlocal + (PE_ZIND * MZSUB) - MZG;
 }
 
-int BoutMesh::getLocalZIndex(int zglobal) const { return zglobal; }
+int BoutMesh::getLocalZIndex(int zglobal) const { return zglobal - (PE_ZIND * MZSUB); }
 
 BoutReal BoutMesh::getGlobalZIndex(BoutReal zloc) const {
-  return zloc + (PE_ZIND * MZSUB);
+  return zloc + (PE_ZIND * MZSUB) - MZG;
 }
 
-int BoutMesh::getLocalZIndexNoBoundaries(int zglobal) const { return zglobal; }
+int BoutMesh::getLocalZIndexNoBoundaries(int zglobal) const {
+  return zglobal - (PE_ZIND * MZSUB) + MZG;
+}
 
 int BoutMesh::YPROC(int yind) const {
   if ((yind < 0) || (yind >= ny)) {
@@ -1861,39 +2049,21 @@ int BoutMesh::XPROC(int xind) const { return (xind >= MXG) ? (xind - MXG) / MXSU
  *                     TESTING UTILITIES
  ****************************************************************/
 
-BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe,
-                   int nype, int pe_xind, int pe_yind, bool create_topology,
-                   bool symmetric_X, bool symmetric_Y)
-    : nx(input_nx), ny(input_ny), nz(input_nz), symmetricGlobalX(symmetric_X),
-      symmetricGlobalY(symmetric_Y), MXG(mxg), MYG(myg), MZG(0) {
-  maxregionblocksize = MAXREGIONBLOCKSIZE;
-
-  PE_XIND = pe_xind;
-  PE_YIND = pe_yind;
-  NPES = nxpe * nype;
-  MYPE = nxpe * pe_yind + pe_xind;
-
-  ixseps1 = nx;
-  ixseps2 = nx;
-  jyseps1_1 = -1;
-  jyseps1_2 = ny / 2;
-  jyseps2_1 = jyseps1_2;
-  jyseps2_2 = ny - 1;
-  ny_inner = jyseps2_1;
-  numberOfXPoints = 0;
-
-  NXPE = nxpe;
-  NYPE = nype;
-  NZPE = 1;
+BoutMesh::BoutMesh(ProcSizes grid, ProcSizes guards, ProcSizes num_procs,
+                   ProcSizes proc_index, bool create_topology, bool symmetric_X,
+                   bool symmetric_Y)
+    : nx(grid.x), ny(grid.y), nz(grid.z),
+      total_processors(num_procs.x * num_procs.y * num_procs.z),
+      NPES(num_procs.x * num_procs.y),
+      MYPE((((proc_index.z * num_procs.y) + proc_index.y) * num_procs.x) + proc_index.x),
+      PE_XIND(proc_index.x), NXPE(num_procs.x), PE_YIND(proc_index.y), NYPE(num_procs.y),
+      PE_ZIND(proc_index.z), NZPE(num_procs.z), ixseps1(nx), ixseps2(nx), jyseps1_1(-1),
+      jyseps2_1(ny / 2), jyseps1_2(jyseps2_1), jyseps2_2(ny - 1), ny_inner(jyseps2_1),
+      symmetricGlobalX(symmetric_X), symmetricGlobalY(symmetric_Y), MXG(guards.x),
+      MYG(guards.y), MZG(guards.z) {
 
   // Set the other grid sizes from nx, ny, nz
   setDerivedGridSizes();
-
-  periodicX = false;
-
-  ZMIN = 0.0;
-  ZMAX = 1.0;
-  zperiod = 1.0;
 
   if (not create_topology) {
     return;
@@ -1902,24 +2072,26 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
   // Call topology to set layout of grid
   topology();
 
-  TwistShift = false;
   ShiftAngle.resize(LocalNx);
-
   ShiftAngle.clear();
 
   createDefaultRegions();
   addBoundaryRegions();
 }
 
-BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe,
-                   int nype, int pe_xind, int pe_yind, bool symmetric_X, bool symmetric_Y,
+BoutMesh::BoutMesh(ProcSizes input_n, ProcSizes guards, ProcSizes num_procs,
+                   ProcSizes proc_index, bool symmetric_X, bool symmetric_Y,
                    bool periodic_X_, int ixseps1_, int ixseps2_, int jyseps1_1_,
                    int jyseps2_1_, int jyseps1_2_, int jyseps2_2_, int ny_inner_,
                    bool create_regions)
-    : nx(input_nx), ny(input_ny), nz(input_nz), NPES(nxpe * nype),
-      MYPE((nxpe * pe_yind) + pe_xind), PE_XIND(pe_xind), NXPE(nxpe), PE_YIND(pe_yind),
-      NYPE(nype), ixseps1(ixseps1_), ixseps2(ixseps2_), symmetricGlobalX(symmetric_X),
-      symmetricGlobalY(symmetric_Y), MXG(mxg), MYG(myg), MZG(0) {
+    : nx(input_n.x), ny(input_n.y), nz(input_n.z),
+      total_processors(num_procs.x * num_procs.y * num_procs.z),
+      NPES(num_procs.x * num_procs.y),
+      MYPE((((proc_index.z * num_procs.y) + proc_index.y) * num_procs.x) + proc_index.x),
+      PE_XIND(proc_index.x), NXPE(num_procs.x), PE_YIND(proc_index.y), NYPE(num_procs.y),
+      PE_ZIND(proc_index.z), NZPE(num_procs.z), ixseps1(ixseps1_), ixseps2(ixseps2_),
+      symmetricGlobalX(symmetric_X), symmetricGlobalY(symmetric_Y), MXG(guards.x),
+      MYG(guards.y), MZG(guards.z) {
 
   periodicX = periodic_X_;
   setYDecompositionIndices(jyseps1_1_, jyseps2_1_, jyseps1_2_, jyseps2_2_, ny_inner_);
@@ -1935,26 +2107,34 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
  ****************************************************************/
 
 void BoutMesh::default_connections() {
-  DDATA_XSPLIT = UDATA_XSPLIT = 0;  // everything by default outside (arb. choice)
-  DDATA_INDEST = UDATA_INDEST = -1; // since nothing inside
+  DDATA_OUTDEST = PROC_NUM(PE_XIND, PE_YIND - 1, PE_ZIND);
+  UDATA_OUTDEST = PROC_NUM(PE_XIND, PE_YIND + 1, PE_ZIND);
 
-  DDATA_OUTDEST = PROC_NUM(PE_XIND, PE_YIND - 1);
-  UDATA_OUTDEST = PROC_NUM(PE_XIND, PE_YIND + 1);
-
-  IDATA_DEST = PROC_NUM(PE_XIND - 1, PE_YIND);
-  ODATA_DEST = PROC_NUM(PE_XIND + 1, PE_YIND);
-
-  TS_up_in = TS_up_out = TS_down_in = TS_down_out = false; // No twist-shifts
+  IDATA_DEST = PROC_NUM(PE_XIND - 1, PE_YIND, PE_ZIND);
+  ODATA_DEST = PROC_NUM(PE_XIND + 1, PE_YIND, PE_ZIND);
 
   /// Check if X is periodic
   if (periodicX) {
     if (PE_XIND == (NXPE - 1)) {
-      ODATA_DEST = PROC_NUM(0, PE_YIND);
+      ODATA_DEST = PROC_NUM(0, PE_YIND, PE_ZIND);
     }
 
     if (PE_XIND == 0) {
-      IDATA_DEST = PROC_NUM(NXPE - 1, PE_YIND);
+      IDATA_DEST = PROC_NUM(NXPE - 1, PE_YIND, PE_ZIND);
     }
+  }
+
+  // Z is always periodic. Neighbours are only needed if there are Z guard cells:
+  // without them the periodicity is handled by index wrapping. With NZPE = 1 and
+  // Z guard cells, this processor sends to itself.
+  if (MZG > 0) {
+    const auto z_minus_proc = PE_ZIND == 0 ? NZPE - 1 : PE_ZIND - 1;
+    z_minus_dest = PROC_NUM(PE_XIND, PE_YIND, z_minus_proc);
+    const auto z_plus_proc = PE_ZIND == (NZPE - 1) ? 0 : PE_ZIND + 1;
+    z_plus_dest = PROC_NUM(PE_XIND, PE_YIND, z_plus_proc);
+  } else {
+    z_minus_dest = -1;
+    z_plus_dest = -1;
   }
 }
 
@@ -2023,12 +2203,12 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
     xlt = LocalNx;
   }
 
-  if (MYPE == PROC_NUM(PE_XIND, ypeup)) { /* PROCESSOR SENDING +VE Y */
+  if (MYPE == PROC_NUM(PE_XIND, ypeup, PE_ZIND)) { /* PROCESSOR SENDING +VE Y */
     /* Set the branch cut x position */
     if (xge <= MXG) {
       /* Connect on the inside */
       UDATA_XSPLIT = xlt;
-      UDATA_INDEST = PROC_NUM(PE_XIND, ypedown);
+      UDATA_INDEST = PROC_NUM(PE_XIND, ypedown, PE_ZIND);
       if (UDATA_XSPLIT == LocalNx) {
         UDATA_OUTDEST = -1;
       }
@@ -2042,7 +2222,7 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
         UDATA_INDEST = UDATA_OUTDEST;
       }
       UDATA_XSPLIT = xge;
-      UDATA_OUTDEST = PROC_NUM(PE_XIND, ypedown);
+      UDATA_OUTDEST = PROC_NUM(PE_XIND, ypedown, PE_ZIND);
       if (UDATA_XSPLIT <= 0) {
         UDATA_INDEST = -1;
       }
@@ -2052,12 +2232,12 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
     }
   }
 
-  if (MYPE == PROC_NUM(PE_XIND, ypedown)) { /* PROCESSOR SENDING -VE Y */
+  if (MYPE == PROC_NUM(PE_XIND, ypedown, PE_ZIND)) { /* PROCESSOR SENDING -VE Y */
     /* Set the branch cut x position */
     if (xge <= MXG) {
       /* Connect on the inside */
       DDATA_XSPLIT = xlt;
-      DDATA_INDEST = PROC_NUM(PE_XIND, ypeup);
+      DDATA_INDEST = PROC_NUM(PE_XIND, ypeup, PE_ZIND);
       if (DDATA_XSPLIT == LocalNx) {
         DDATA_OUTDEST = -1;
       }
@@ -2071,7 +2251,7 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
         DDATA_INDEST = DDATA_OUTDEST;
       }
       DDATA_XSPLIT = xge;
-      DDATA_OUTDEST = PROC_NUM(PE_XIND, ypeup);
+      DDATA_OUTDEST = PROC_NUM(PE_XIND, ypeup, PE_ZIND);
       if (DDATA_XSPLIT == 0) {
         DDATA_INDEST = -1;
       }
@@ -2111,7 +2291,7 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
     return; // Not in this x domain
   }
 
-  if (MYPE == PROC_NUM(PE_XIND, ypeup)) {
+  if (MYPE == PROC_NUM(PE_XIND, ypeup, PE_ZIND)) {
     // Target on upper processor boundary
     if (xge <= MXG) {
       // Target on inside
@@ -2134,7 +2314,7 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
       output_info.write("=> This processor has target upper outer\n");
     }
   }
-  if (MYPE == PROC_NUM(PE_XIND, ypedown)) {
+  if (MYPE == PROC_NUM(PE_XIND, ypedown, PE_ZIND)) {
     // Target on upper processor boundary
     if (xge <= MXG) {
       // Target on inside
@@ -2319,7 +2499,7 @@ void BoutMesh::topology() {
  *                     Communication handles
  ****************************************************************/
 
-BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen) {
+BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen, int zlen) {
   if (comm_list.empty()) {
     // Allocate a new CommHandle
 
@@ -2342,8 +2522,16 @@ BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen) {
       ch->omsg_recvbuff.reallocate(xlen);
     }
 
+    if (zlen > 0) {
+      ch->zminus_sendbuff.reallocate(zlen);
+      ch->zplus_sendbuff.reallocate(zlen);
+      ch->zminus_recvbuff.reallocate(zlen);
+      ch->zplus_recvbuff.reallocate(zlen);
+    }
+
     ch->xbufflen = xlen;
     ch->ybufflen = ylen;
+    ch->zbufflen = zlen;
 
     ch->in_progress = false;
 
@@ -2370,6 +2558,14 @@ BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen) {
     ch->omsg_recvbuff.reallocate(xlen);
 
     ch->xbufflen = xlen;
+  }
+  if (ch->zbufflen < zlen) {
+    ch->zminus_sendbuff.reallocate(zlen);
+    ch->zplus_sendbuff.reallocate(zlen);
+    ch->zminus_recvbuff.reallocate(zlen);
+    ch->zplus_recvbuff.reallocate(zlen);
+
+    ch->zbufflen = zlen;
   }
 
   ch->in_progress = false;
@@ -2402,11 +2598,13 @@ void BoutMesh::clear_handles() {
 /// different processors.
 void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin,
                                    BoutMesh* xout) {
-  const int xlen = LocalNy * LocalNz * MXG * 5, ylen = LocalNx * LocalNz * MYG * 5;
+  const int xlen = LocalNy * LocalNz * MXG * 5;
+  const int ylen = LocalNx * LocalNz * MYG * 5;
+  const int zlen = LocalNx * LocalNy * MZG * 5;
 
-  CommHandle* ch = get_handle(xlen, ylen);
+  CommHandle* ch = get_handle(xlen, ylen, zlen);
   if (yup != nullptr) {
-    CommHandle* other = (yup == this) ? ch : yup->get_handle(xlen, ylen);
+    CommHandle* other = (yup == this) ? ch : yup->get_handle(xlen, ylen, zlen);
     if (other->dmsg_sendbuff.unique()) {
       ch->umsg_recvbuff = other->dmsg_sendbuff;
     }
@@ -2415,7 +2613,7 @@ void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin
     }
   }
   if (ydown != nullptr) {
-    CommHandle* other = (ydown == this) ? ch : ydown->get_handle(xlen, ylen);
+    CommHandle* other = (ydown == this) ? ch : ydown->get_handle(xlen, ylen, zlen);
     if (other->umsg_sendbuff.unique()) {
       ch->dmsg_recvbuff = other->umsg_sendbuff;
     }
@@ -2424,7 +2622,7 @@ void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin
     }
   }
   if (xin != nullptr) {
-    CommHandle* other = (xin == this) ? ch : xin->get_handle(xlen, ylen);
+    CommHandle* other = (xin == this) ? ch : xin->get_handle(xlen, ylen, zlen);
     if (other->omsg_sendbuff.unique()) {
       ch->imsg_recvbuff = other->omsg_sendbuff;
     }
@@ -2433,7 +2631,7 @@ void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin
     }
   }
   if (xout != nullptr) {
-    CommHandle* other = (xout == this) ? ch : xout->get_handle(xlen, ylen);
+    CommHandle* other = (xout == this) ? ch : xout->get_handle(xlen, ylen, zlen);
     if (other->imsg_sendbuff.unique()) {
       ch->omsg_recvbuff = other->imsg_sendbuff;
     }
@@ -2449,12 +2647,10 @@ void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin
  ****************************************************************/
 
 int BoutMesh::pack_data(const std::vector<Field*>& var_list, int xge, int xlt, int yge,
-                        int ylt, BoutReal* buffer) const {
+                        int ylt, int zge, int zlt, BoutReal* buffer) const {
 
   using enum Field::FieldType;
   int len = 0;
-  const int zge = 0;
-  const int zlt = LocalNz;
 
   for (const auto& var : var_list) {
     switch (var->field_type()) {
@@ -2503,12 +2699,10 @@ int BoutMesh::pack_data(const std::vector<Field*>& var_list, int xge, int xlt, i
 }
 
 int BoutMesh::unpack_data(const std::vector<Field*>& var_list, int xge, int xlt, int yge,
-                          int ylt, const BoutReal* buffer) const {
+                          int ylt, int zge, int zlt, BoutReal* buffer) const {
 
   using enum Field::FieldType;
   int len = 0;
-  const int zge = 0;
-  const int zlt = LocalNz;
 
   for (const auto& var : var_list) {
     switch (var->field_type()) {
@@ -2699,7 +2893,7 @@ void BoutMesh::addBoundaryRegions() {
     }
   }
 
-  addRegion3D("RGN_LOWER_INNER_Y", Region<Ind3D>(xs, xe, 0, ystart - 1, 0, LocalNz - 1,
+  addRegion3D("RGN_LOWER_INNER_Y", Region<Ind3D>(xs, xe, 0, ystart - 1, zstart, zend,
                                                  LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_LOWER_INNER_Y",
               Region<Ind2D>(xs, xe, 0, ystart - 1, 0, 0, LocalNy, 1, maxregionblocksize));
@@ -2738,7 +2932,7 @@ void BoutMesh::addBoundaryRegions() {
     xe = -2;
   }
 
-  addRegion3D("RGN_LOWER_OUTER_Y", Region<Ind3D>(xs, xe, 0, ystart - 1, 0, LocalNz - 1,
+  addRegion3D("RGN_LOWER_OUTER_Y", Region<Ind3D>(xs, xe, 0, ystart - 1, zstart, zend,
                                                  LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_LOWER_OUTER_Y",
               Region<Ind2D>(xs, xe, 0, ystart - 1, 0, 0, LocalNy, 1, maxregionblocksize));
@@ -2771,7 +2965,7 @@ void BoutMesh::addBoundaryRegions() {
     xe = LocalNx - 1;
   }
 
-  addRegion3D("RGN_LOWER_Y", Region<Ind3D>(xs, xe, 0, ystart - 1, 0, LocalNz - 1, LocalNy,
+  addRegion3D("RGN_LOWER_Y", Region<Ind3D>(xs, xe, 0, ystart - 1, zstart, zend, LocalNy,
                                            LocalNz, maxregionblocksize));
   addRegion2D("RGN_LOWER_Y",
               Region<Ind2D>(xs, xe, 0, ystart - 1, 0, 0, LocalNy, 1, maxregionblocksize));
@@ -2811,8 +3005,8 @@ void BoutMesh::addBoundaryRegions() {
   }
 
   addRegion3D("RGN_UPPER_INNER_Y",
-              Region<Ind3D>(xs, xe, yend + 1, LocalNy - 1, 0, LocalNz - 1, LocalNy,
-                            LocalNz, maxregionblocksize));
+              Region<Ind3D>(xs, xe, yend + 1, LocalNy - 1, zstart, zend, LocalNy, LocalNz,
+                            maxregionblocksize));
   addRegion2D("RGN_UPPER_INNER_Y", Region<Ind2D>(xs, xe, yend + 1, LocalNy - 1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_UPPER_INNER_Y");
@@ -2851,8 +3045,8 @@ void BoutMesh::addBoundaryRegions() {
   }
 
   addRegion3D("RGN_UPPER_OUTER_Y",
-              Region<Ind3D>(xs, xe, yend + 1, LocalNy - 1, 0, LocalNz - 1, LocalNy,
-                            LocalNz, maxregionblocksize));
+              Region<Ind3D>(xs, xe, yend + 1, LocalNy - 1, zstart, zend, LocalNy, LocalNz,
+                            maxregionblocksize));
   addRegion2D("RGN_UPPER_OUTER_Y", Region<Ind2D>(xs, xe, yend + 1, LocalNy - 1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_UPPER_OUTER_Y");
@@ -2884,7 +3078,7 @@ void BoutMesh::addBoundaryRegions() {
     xe = LocalNx - 1;
   }
 
-  addRegion3D("RGN_UPPER_Y", Region<Ind3D>(xs, xe, yend + 1, LocalNy - 1, 0, LocalNz - 1,
+  addRegion3D("RGN_UPPER_Y", Region<Ind3D>(xs, xe, yend + 1, LocalNy - 1, zstart, zend,
                                            LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_UPPER_Y", Region<Ind2D>(xs, xe, yend + 1, LocalNy - 1, 0, 0, LocalNy,
                                            1, maxregionblocksize));
@@ -2893,18 +3087,18 @@ void BoutMesh::addBoundaryRegions() {
   // Inner X
   if (firstX() && !periodicX) {
     addRegion3D("RGN_INNER_X_THIN",
-                Region<Ind3D>(xstart - 1, xstart - 1, ystart, yend, 0, LocalNz - 1,
-                              LocalNy, LocalNz, maxregionblocksize));
+                Region<Ind3D>(xstart - 1, xstart - 1, ystart, yend, zstart, zend, LocalNy,
+                              LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X_THIN", Region<Ind2D>(xstart - 1, xstart - 1, ystart, yend, 0,
                                                   0, LocalNy, 1, maxregionblocksize));
     addRegionPerp("RGN_INNER_X_THIN",
-                  Region<IndPerp>(xstart - 1, xstart - 1, 0, 0, 0, LocalNz - 1, 1,
-                                  LocalNz, maxregionblocksize));
-    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart - 1, ystart, yend, 0, LocalNz - 1,
+                  Region<IndPerp>(xstart - 1, xstart - 1, 0, 0, zstart, zend, 1, LocalNz,
+                                  maxregionblocksize));
+    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart - 1, ystart, yend, zstart, zend,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X", Region<Ind2D>(0, xstart - 1, ystart, yend, 0, 0, LocalNy,
                                              1, maxregionblocksize));
-    addRegionPerp("RGN_INNER_X", Region<IndPerp>(0, xstart - 1, 0, 0, 0, LocalNz - 1, 1,
+    addRegionPerp("RGN_INNER_X", Region<IndPerp>(0, xstart - 1, 0, 0, zstart, zend, 1,
                                                  LocalNz, maxregionblocksize));
     all_boundaries.emplace_back("RGN_INNER_X");
 
@@ -2928,21 +3122,19 @@ void BoutMesh::addBoundaryRegions() {
   // Outer X
   if (lastX() && !periodicX) {
     addRegion3D("RGN_OUTER_X_THIN",
-                Region<Ind3D>(xend + 1, xend + 1, ystart, yend, 0, LocalNz - 1, LocalNy,
+                Region<Ind3D>(xend + 1, xend + 1, ystart, yend, zstart, zend, LocalNy,
                               LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X_THIN", Region<Ind2D>(xend + 1, xend + 1, ystart, yend, 0, 0,
                                                   LocalNy, 1, maxregionblocksize));
     addRegionPerp("RGN_OUTER_X_THIN",
-                  Region<IndPerp>(xend + 1, xend + 1, 0, 0, 0, LocalNz - 1, 1, LocalNz,
+                  Region<IndPerp>(xend + 1, xend + 1, 0, 0, zstart, zend, 1, LocalNz,
                                   maxregionblocksize));
-    addRegion3D("RGN_OUTER_X",
-                Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, 0, LocalNz - 1,
-                              LocalNy, LocalNz, maxregionblocksize));
+    addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, zstart,
+                                             zend, LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X", Region<Ind2D>(xend + 1, LocalNx - 1, ystart, yend, 0, 0,
                                              LocalNy, 1, maxregionblocksize));
-    addRegionPerp("RGN_OUTER_X",
-                  Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1, LocalNz,
-                                  maxregionblocksize));
+    addRegionPerp("RGN_OUTER_X", Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, zstart,
+                                                 zend, 1, LocalNz, maxregionblocksize));
     all_boundaries.emplace_back("RGN_OUTER_X");
 
     output_info.write("\tBoundary region outer X\n");
@@ -3419,6 +3611,8 @@ void BoutMesh::outputVars(Options& output_options) {
   output_options["MZSUB"].force(MZSUB, "BoutMesh");
   output_options["PE_XIND"].force(PE_XIND, "BoutMesh");
   output_options["PE_YIND"].force(PE_YIND, "BoutMesh");
+  output_options["PE_ZIND"].force(PE_ZIND, "BoutMesh");
+  output_options["PE_ZIND"].force(PE_ZIND, "BoutMesh");
   output_options["MYPE"].force(MYPE, "BoutMesh");
   output_options["MXG"].force(MXG, "BoutMesh");
   output_options["MYG"].force(MYG, "BoutMesh");

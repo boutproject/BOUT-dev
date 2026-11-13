@@ -8,6 +8,15 @@
 namespace bout {
 namespace generator {
 
+// Z index of global Z index 0 on this processor (0 without a Z decomposition), so
+// that z is the same on all processors
+Context::Context(const Ind2D& i, CELL_LOC loc, Mesh* msh, BoutReal t)
+    : Context(i.x(), i.y(), msh->getLocalZIndexNoBoundaries(0),
+              (loc == CELL_ZLOW) ? CELL_CENTRE : loc, msh, t) {}
+
+Context::Context(const BoundaryRegion* bndry, CELL_LOC loc, BoutReal t, Mesh* msh)
+    : Context(bndry, msh->getLocalZIndexNoBoundaries(0), loc, t, msh) {}
+
 Context::Context(int ix, int iy, int iz, CELL_LOC loc, Mesh* msh, BoutReal t)
     : ix_(ix), jy_(iy), kz_(iz), localmesh(msh) {
 

@@ -14,6 +14,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 class Field;
@@ -55,6 +56,8 @@ public:
 
   /// Send only in the y-direction
   comm_handle sendY(FieldGroup& g, comm_handle handle = nullptr) override;
+
+  comm_handle sendZ(FieldGroup& g, comm_handle handle = nullptr) override;
 
   /// Wait for a send operation to complete
   /// @param[in] handle  The handle returned by send()
@@ -205,27 +208,42 @@ public:
   int getLocalZIndexNoBoundaries(int zglobal) const override;
 
 protected:
+  /// Helper type for constructing meshs for testing.
+  ///
+  /// Mostly just lets us break up long lists of ints into sets of 3
+  struct ProcSizes {
+    int x;
+    int y;
+    int z;
+  };
+
   /// A constructor used when making fake meshes for testing. This
   /// will make a mesh which thinks it corresponds to the subdomain on
   /// one processor, even though it's actually being run in serial.
   ///
   /// Pass \p create_topology = false to not set up topology, regions etc.
-  BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
-           int pe_xind, int pe_yind, bool create_topology = true, bool symmetric_X = true,
-           bool symmetric_Y = true);
+  BoutMesh(ProcSizes grid, ProcSizes guards, ProcSizes num_procs, ProcSizes proc_index,
+           bool create_topology = true, bool symmetric_X = true, bool symmetric_Y = true);
+
   /// Another constructor useful for testing, and used in
   /// `getPossibleBoundaries`. \p create_regions controls whether or
   /// not the various `Region`s are created on the new mesh
-  BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
-           int pe_xind, int pe_yind, bool symmetric_X, bool symmetric_Y, bool periodic_X_,
-           int ixseps1_, int ixseps2_, int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
-           int jyseps2_2_, int ny_inner_, bool create_regions = true);
+  BoutMesh(ProcSizes input_n, ProcSizes guards, ProcSizes num_procs, ProcSizes proc_index,
+           bool symmetric_X, bool symmetric_Y, bool periodic_X_, int ixseps1_,
+           int ixseps2_, int jyseps1_1_, int jyseps2_1_, int jyseps1_2_, int jyseps2_2_,
+           int ny_inner_, bool create_regions = true);
 
   /// Very basic initialisation, only suitable for testing
-  BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int input_npes)
-      : nx(input_nx), ny(input_ny), nz(input_nz), NPES(input_npes), ixseps1(nx),
-        ixseps2(nx), jyseps1_1(-1), jyseps2_1(ny / 2), jyseps1_2(jyseps2_1),
-        jyseps2_2(ny - 1), ny_inner(jyseps2_1), MXG(mxg), MYG(myg), MZG(0) {}
+  BoutMesh(ProcSizes grid, ProcSizes guards, int input_npes)
+      : nx(grid.x), ny(grid.y), nz(grid.z), NPES(input_npes), ixseps1(nx), ixseps2(nx),
+        jyseps1_1(-1), jyseps2_1(ny / 2), jyseps1_2(jyseps2_1), jyseps2_2(ny - 1),
+        ny_inner(jyseps2_1), MXG(guards.x), MYG(guards.y), MZG(guards.z) {}
+  /// Also only for testing, but specify processor decomposition
+  BoutMesh(ProcSizes grid, ProcSizes guards, ProcSizes num_procs)
+      : nx(grid.x), ny(grid.y), nz(grid.z), NPES(num_procs.x * num_procs.y),
+        NXPE(num_procs.x), NYPE(num_procs.y), NZPE(num_procs.z), ixseps1(nx), ixseps2(nx),
+        jyseps1_1(-1), jyseps2_1(ny / 2), jyseps1_2(jyseps2_1), jyseps2_2(ny - 1),
+        ny_inner(jyseps2_1), MXG(guards.x), MYG(guards.y), MZG(guards.z) {}
 
   /// For debugging purposes (when creating fake parallel meshes), make
   /// the send and receive buffers share memory. This allows for
@@ -305,8 +323,9 @@ private:
 
   int MYSUB, MXSUB, MZSUB; ///< Size of the grid on this processor
 
-  int NPES; ///< Number of processors
-  int MYPE; ///< Rank of this processor
+  int total_processors; ///< Total number of processors
+  int NPES;             ///< Number of processors in X-Y plane
+  int MYPE;             ///< Rank of this processor
 
   int PE_XIND; ///< X index of this processor
   int NXPE;    ///< Number of processors in the X direction
@@ -339,9 +358,9 @@ protected:
   // for testing
 
   // Processor number, local <-> global translation
-  /// Returns the processor number, given X (\p xind) and Y (\p yind)
+  /// Returns the processor number, given X (\p xind), Y (\p yind), Z (\p zind)
   /// processor indices. Returns -1 if out of range (no processor)
-  int PROC_NUM(int xind, int yind) const;
+  int PROC_NUM(int xind, int yind, int zind) const;
   int YGLOBAL(int yloc, int yproc) const;
   int YLOCAL(int yglo, int yproc) const;
   /// Return the Y processor number given a global Y index
@@ -366,33 +385,50 @@ protected:
             DDATA_OUTDEST, DDATA_XSPLIT,  IDATA_DEST,   ODATA_DEST};
   }
 
+  /// Return the processors in the -z and +z directions as calculated by
+  /// `default_connections`. -1 if there are no Z guard cells
+  std::pair<int, int> getZConnections() const { return {z_minus_dest, z_plus_dest}; }
+
 private:
   // Twist-shift switches
-  bool TS_up_in, TS_up_out, TS_down_in, TS_down_out;
+  bool TS_up_in = false;
+  bool TS_up_out = false;
+  bool TS_down_in = false;
+  bool TS_down_out = false;
 
   // Communication parameters calculated by topology
-  int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
-  int DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT;
-  int IDATA_DEST, ODATA_DEST; // X inner and outer destinations
+  int UDATA_INDEST = -1;  ///< Processor in +y, lower side of branch cut
+  int UDATA_OUTDEST = -1; ///< Processor in +y, upper side of branch cut
+  int UDATA_XSPLIT = 0;   ///< X index of branch cut on +y side
+  int DDATA_INDEST = -1;  ///< Processor in -y, lower side of branch cut
+  int DDATA_OUTDEST = -1; ///< Processor in -y, upper side of branch cut
+  int DDATA_XSPLIT = 0;   ///< X index of branch cut on -y side
+  int IDATA_DEST = -1;    ///< Processor in -x
+  int ODATA_DEST = -1;    ///< Processor in +x
+  int z_minus_dest = -1;  ///< Processor in -z
+  int z_plus_dest = -1;   ///< Processor in +z
 
   // Settings
-  bool TwistShift; // Use a twist-shift condition in core?
+  bool TwistShift{false}; ///< Use a twist-shift condition in core?
 
   bool symmetricGlobalX;        ///< Use a symmetric definition in `GlobalX()` function
   bool symmetricGlobalY;        ///< Use a symmetric definition in `GlobalY()` function
   bool symmetricGlobalZ{false}; ///< Use a symmetric definition in `GlobalZ()` function
 
-  int zperiod;
-  BoutReal ZMIN, ZMAX; // Range of the Z domain (in fractions of 2pi)
+  int zperiod = 1.0;   ///< Number of 2pi periods in Z
+  BoutReal ZMIN = 0.0; ///< Minimum of the Z domain (in fractions of 2pi)
+  BoutReal ZMAX = 1.0; ///< Maximum of the Z domain (in fractions of 2pi)
 
-  int MXG, MYG, MZG; // Boundary sizes
+  int MXG = 2; ///< Number of X guard cells
+  int MYG = 2; ///< Number of Y guard cells
+  int MZG = 0; ///< Number of Z guard cells
 
   // Grid file provenance tracking info
-  std::string grid_id = "";
-  std::string hypnotoad_version = "";
-  std::string hypnotoad_git_hash = "";
-  std::string hypnotoad_git_diff = "";
-  std::string hypnotoad_geqdsk_filename = "";
+  std::string grid_id;
+  std::string hypnotoad_version;
+  std::string hypnotoad_git_hash;
+  std::string hypnotoad_git_diff;
+  std::string hypnotoad_geqdsk_filename;
 
 protected:
   // These are protected so we can make them public in the test suite
@@ -435,18 +471,22 @@ private:
   /// Communication handle
   /// Used to keep track of communications between send and receive
   struct CommHandle {
+    static constexpr int num_requests = 8;
     /// Array of receive requests. One for each possible neighbour; one each way in X, two
-    /// each way in Y
-    MPI_Request request[6];
+    /// each way in Y, one each way in Z
+    std::array<MPI_Request, num_requests> request;
     /// Array of send requests (for non-blocking send). One for each possible neighbour;
-    /// one each way in X, two each way in Y
-    MPI_Request sendreq[6];
+    /// one each way in X, two each way in Y, one each way in Z
+    std::array<MPI_Request, num_requests> sendreq;
     /// Length of the buffers used to send/receive (in BoutReals)
-    int xbufflen, ybufflen;
+    int xbufflen, ybufflen, zbufflen;
     /// Sending buffers
     Array<BoutReal> umsg_sendbuff, dmsg_sendbuff, imsg_sendbuff, omsg_sendbuff;
     /// Receiving buffers
     Array<BoutReal> umsg_recvbuff, dmsg_recvbuff, imsg_recvbuff, omsg_recvbuff;
+    /// Z communication buffers
+    Array<BoutReal> zplus_sendbuff, zminus_sendbuff;
+    Array<BoutReal> zplus_recvbuff, zminus_recvbuff;
     /// Is the communication still going?
     bool in_progress;
     /// Are corner cells included in x-communication?
@@ -457,7 +497,7 @@ private:
     FieldGroup var_list;
   };
   void free_handle(CommHandle* h);
-  CommHandle* get_handle(int xlen, int ylen);
+  CommHandle* get_handle(int xlen, int ylen, int zlen);
   void clear_handles();
   std::list<CommHandle*> comm_list; // List of allocated communication handles
 
@@ -488,12 +528,16 @@ private:
   /// Create the MPI requests to receive data in the y-direction. Non-blocking call.
   void post_receiveY(CommHandle& ch);
 
+  /// Create the MPI requests to receive data in the z-direction. Non-blocking call.
+  void post_receiveZ(CommHandle& ch);
+
   /// Take data from objects and put into a buffer
   int pack_data(const std::vector<Field*>& var_list, int xge, int xlt, int yge, int ylt,
-                BoutReal* buffer) const;
+                int zge, int zlt, BoutReal* buffer) const;
   /// Copy data from a buffer back into the fields
+
   int unpack_data(const std::vector<Field*>& var_list, int xge, int xlt, int yge, int ylt,
-                  const BoutReal* buffer) const;
+                  int zge, int zlt, BoutReal* buffer) const;
 };
 
 namespace {

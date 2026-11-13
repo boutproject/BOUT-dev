@@ -771,7 +771,9 @@ private:
     // Use global mesh: FIX THIS!
     const Mesh* mesh = bout::globals::mesh;
 
-    const int nz = mesh->LocalNz;
+    // Only the interior Z points are evolved, not the Z guard cells
+    const int zstart = mesh->zstart;
+    const int zend = mesh->zend;
 
     switch (op) {
     case SOLVER_VAR_OP::LOAD: {
@@ -789,7 +791,7 @@ private:
         p++;
       }
 
-      for (int jz = 0; jz < nz; jz++) {
+      for (int jz = zstart; jz <= zend; jz++) {
 
         auto metadata_it = f3d.begin();
         // Loop over 3D variables
@@ -821,7 +823,7 @@ private:
         p++;
       }
 
-      for (int jz = 0; jz < nz; jz++) {
+      for (int jz = zstart; jz <= zend; jz++) {
 
         // Loop over 3D variables
         for (const auto& metadata : f3d) {
@@ -854,7 +856,7 @@ private:
         p++;
       }
 
-      for (int jz = 0; jz < nz; jz++) {
+      for (int jz = zstart; jz <= zend; jz++) {
 
         auto metadata_it = f3d.begin();
         // Loop over 3D variables

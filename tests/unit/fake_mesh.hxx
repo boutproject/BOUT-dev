@@ -114,6 +114,10 @@ public:
                     comm_handle UNUSED(handle) = nullptr) override {
     return nullptr;
   }
+  comm_handle sendZ(FieldGroup& UNUSED(g),
+                    comm_handle UNUSED(handle) = nullptr) override {
+    return nullptr;
+  }
   int wait(comm_handle UNUSED(handle)) override { return 0; }
   int getNXPE() const override { return 1; }
   int getNYPE() const override { return 1; }
