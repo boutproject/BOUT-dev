@@ -40,8 +40,10 @@ OPERATORS = {
     "FV_Div_par_fvv_VanAlbada": 1.5,
     "FV_Div_par_mod_stagnation_VanAlbada": 1.5,
     "FV_Div_par_fvv_stagnation_VanAlbada": 1.5,
-    # VanAlbadaSmooth is smooth at extrema, so reaches 2nd order
-    # once the grid resolves them (above about 128 cells)
+    # VanAlbadaSmooth smoothly transitions to central difference
+    # when cell differences as small, making it go towards 2nd order.
+    # Transition starts around N=128 and it's fully 2nd order
+    # between 512 and 1024.
     "FV_Div_par_VanAlbadaSmooth": 2,
     "FV_Div_par_mod_VanAlbadaSmooth": 2,
     "FV_Div_par_fvv_VanAlbadaSmooth": 2,
@@ -51,7 +53,7 @@ OPERATORS = {
     "FV_Div_par_K_Grad_par_mod": 2,
 }
 # Resolution in y and z. The order is measured between the last two.
-NLIST = [8, 16, 32, 64, 128, 256, 512, 1024]
+NLIST = [512, 1024]
 dx = 1.0 / array(NLIST)
 
 
@@ -202,6 +204,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     NLIST = args.nlist
+    assert len(NLIST) > 1, "Need at least two points to run test"
     dx = 1.0 / array(NLIST)
 
     error2, failures = test_fv_operators()
