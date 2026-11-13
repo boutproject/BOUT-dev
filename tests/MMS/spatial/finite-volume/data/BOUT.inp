@@ -5,6 +5,10 @@ FV_Div_par_solution = -0.188495559215388*sin(3.0*y)
 FV_Div_par_K_Grad_par_solution = 0.125663706143592*(-0.188495559215388*sin(3.0*y)/(0.1*sin(2.0*y) + 1) - 0.125663706143592*(0.1*cos(3.0*y) + 1)*cos(2.0*y)/(0.1*sin(2.0*y) + 1)^2)*cos(2.0*y) - 0.15791367041743*(0.1*cos(3.0*y) + 1)*sin(2.0*y)/(0.1*sin(2.0*y) + 1)
 FV_Div_par_K_Grad_par_mod_solution = 0.125663706143592*(-0.188495559215388*sin(3.0*y)/(0.1*sin(2.0*y) + 1) - 0.125663706143592*(0.1*cos(3.0*y) + 1)*cos(2.0*y)/(0.1*sin(2.0*y) + 1)^2)*cos(2.0*y) - 0.15791367041743*(0.1*cos(3.0*y) + 1)*sin(2.0*y)/(0.1*sin(2.0*y) + 1)
 v = (0.1*cos(3.0*y) + 1)/(0.1*sin(2.0*y) + 1)
+wave_speed = 2
+v_stagnation = 0.5*sin(y)
+FV_Div_par_mod_stagnation_solution = 0.314159265358979*(0.1*sin(2.0*y) + 1)*cos(y) + 0.0628318530717959*sin(y)*cos(2.0*y)
+FV_Div_par_fvv_stagnation_solution = 0.314159265358979*(0.1*sin(2.0*y) + 1)*sin(y)*cos(y) + 0.0314159265358979*sin(y)^2*cos(2.0*y)
 
 [mesh]
 MXG = 0

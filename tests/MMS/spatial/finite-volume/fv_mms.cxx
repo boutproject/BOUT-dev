@@ -39,9 +39,14 @@ int main(int argc, char** argv) {
 
   Field3D input{FieldFactory::get()->create3D("input_field", Options::getRoot(), mesh)};
   Field3D v{FieldFactory::get()->create3D("v", Options::getRoot(), mesh)};
+  // Velocity profile with stagnation points at 0 and pi
+  Field3D v_stagnation{
+      FieldFactory::get()->create3D("v_stagnation", Options::getRoot(), mesh)};
+
+  Field3D wave{FieldFactory::get()->create3D("wave_speed", Options::getRoot(), mesh)};
 
   // Communicate to calculate parallel transform.
-  mesh->communicate(input, v);
+  mesh->communicate(input, v, v_stagnation, wave);
 
   Options dump;
   // Add mesh geometry variables
@@ -80,6 +85,32 @@ int main(int argc, char** argv) {
              FV::Div_par_mod<FV::Superbee>(input, v, v, flow_ylow), "_Superbee");
   fv_op_test("FV_Div_par_fvv", dump, input, FV::Div_par_fvv<FV::Superbee>(input, v, v),
              "_Superbee");
+
+  fv_op_test("FV_Div_par", dump, input, FV::Div_par<FV::VanAlbada>(input, v, v),
+             "_VanAlbada");
+  fv_op_test("FV_Div_par_mod", dump, input,
+             FV::Div_par_mod<FV::VanAlbada>(input, v, v, flow_ylow), "_VanAlbada");
+  fv_op_test("FV_Div_par_fvv", dump, input, FV::Div_par_fvv<FV::VanAlbada>(input, v, v),
+             "_VanAlbada");
+  fv_op_test("FV_Div_par_mod_stagnation", dump, input,
+             FV::Div_par_mod<FV::VanAlbada>(input, v_stagnation, wave, flow_ylow),
+             "_VanAlbada");
+  fv_op_test("FV_Div_par_fvv_stagnation", dump, input,
+             FV::Div_par_fvv<FV::VanAlbada>(input, v_stagnation, wave), "_VanAlbada");
+
+  fv_op_test("FV_Div_par", dump, input, FV::Div_par<FV::VanAlbadaSmooth>(input, v, v),
+             "_VanAlbadaSmooth");
+  fv_op_test("FV_Div_par_mod", dump, input,
+             FV::Div_par_mod<FV::VanAlbadaSmooth>(input, v, v, flow_ylow),
+             "_VanAlbadaSmooth");
+  fv_op_test("FV_Div_par_fvv", dump, input,
+             FV::Div_par_fvv<FV::VanAlbadaSmooth>(input, v, v), "_VanAlbadaSmooth");
+  fv_op_test("FV_Div_par_mod_stagnation", dump, input,
+             FV::Div_par_mod<FV::VanAlbadaSmooth>(input, v_stagnation, wave, flow_ylow),
+             "_VanAlbadaSmooth");
+  fv_op_test("FV_Div_par_fvv_stagnation", dump, input,
+             FV::Div_par_fvv<FV::VanAlbadaSmooth>(input, v_stagnation, wave),
+             "_VanAlbadaSmooth");
 
   fv_op_test("FV_Div_par_K_Grad_par", dump, input, FV::Div_par_K_Grad_par(v, input));
   fv_op_test("FV_Div_par_K_Grad_par_mod", dump, input,

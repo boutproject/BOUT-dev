@@ -54,6 +54,77 @@ TEST(FVOpsLimiterTest, VanAlbadaLimitsToSmallerGradient) {
   EXPECT_NEAR(s.L, 0.7, 1e-12);
   EXPECT_NEAR(s.R, 1.3, 1e-12);
 }
+// Flat profile gives zero slope
+TEST(FVOpsLimiterTest, VanAlbadaSmoothConstant) {
+  FV::Stencil1D s{};
+  s.m = 1.0;
+  s.c = 1.0;
+  s.p = 1.0;
+
+  FV::VanAlbadaSmooth limiter{1e-3};
+  limiter(s);
+
+  EXPECT_DOUBLE_EQ(s.L, 1.0);
+  EXPECT_DOUBLE_EQ(s.R, 1.0);
+}
+
+// Linear profile gives no limitation
+TEST(FVOpsLimiterTest, VanAlbadaSmoothLinear) {
+  FV::Stencil1D s{};
+  s.m = 0.0;
+  s.c = 1.0;
+  s.p = 2.0;
+
+  FV::VanAlbadaSmooth limiter{1e-3};
+  limiter(s);
+
+  EXPECT_NEAR(s.L, 0.5, 1e-12);
+  EXPECT_NEAR(s.R, 1.5, 1e-12);
+}
+
+// A sharp peak gets clipped to zero slope
+TEST(FVOpsLimiterTest, VanAlbadaSmoothSharpExtremumGivesZeroSlope) {
+  FV::Stencil1D s{};
+  s.m = 0.0;
+  s.c = 1.0;
+  s.p = 0.5;
+
+  FV::VanAlbadaSmooth limiter{1e-3};
+  limiter(s);
+
+  EXPECT_NEAR(s.L, 1.0, 1e-12);
+  EXPECT_NEAR(s.R, 1.0, 1e-12);
+}
+
+// A very small peak below the tolerance tends towards central
+// slope (preserving 2nd order but causing small overshoot).
+// Note: this makes it not TVD when differences are very small.
+TEST(FVOpsLimiterTest, VanAlbadaSmoothSmallExtremumTendsToCentralSlope) {
+  FV::Stencil1D s{};
+  s.m = 1.0;
+  s.c = 1.0 + 1e-5;
+  s.p = 1.0 + 0.5e-5;
+
+  FV::VanAlbadaSmooth limiter{1e-3};
+  limiter(s);
+
+  EXPECT_NEAR(s.R - s.L, 2.5e-6, 1e-9);
+  EXPECT_GT(s.R, s.c);
+}
+
+// Very large values: a sharp peak still gets zero slope, with no overflow
+TEST(FVOpsLimiterTest, VanAlbadaSmoothLargeValues) {
+  FV::Stencil1D s{};
+  s.m = 1e100;
+  s.c = 2e100;
+  s.p = 1e100;
+
+  FV::VanAlbadaSmooth limiter{1e-3};
+  limiter(s);
+
+  EXPECT_DOUBLE_EQ(s.L, 2e100);
+  EXPECT_DOUBLE_EQ(s.R, 2e100);
+}
 
 TEST(FVOpsLimiterTest, WENO3Constant) {
   FV::Stencil1D s{};
