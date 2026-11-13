@@ -3,13 +3,13 @@
 # Generate manufactured solution and sources for FCI test
 #
 
-from math import pi
 import warnings
+from math import pi
 
-from boututils.boutwarnings import AlwaysWarning
 from boutdata.data import BoutOptionsFile
-from boutdata.mms import exprToStr, y, Grad_par, Div_par, Metric
-from sympy import sin, cos, Expr, Integer
+from boutdata.mms import Div_par, Grad_par, Metric, exprToStr, y
+from boututils.boutwarnings import AlwaysWarning
+from sympy import Expr, Integer, cos, sin
 
 warnings.simplefilter("ignore", AlwaysWarning)
 
