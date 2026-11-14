@@ -30,4 +30,5 @@ rm -rf build
 cd ../examples/conduction
 cmake . -B build -DCMAKE_PREFIX_PATH=../../installed
 cmake --build build
-./build/conduction
+# Replacing outputs from previous run
+./build/conduction replace
