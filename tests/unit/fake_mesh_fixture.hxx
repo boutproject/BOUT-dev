@@ -34,11 +34,15 @@
 /// Use this template class directly to use different sized grid:
 ///
 ///     using MyTest = FakeMeshFixture_tmpl<7, 9, 11>;
-template <int NX, int NY, int NZ, bool FCI = false>
+///
+/// Use the final template argument to retain two Y guards for reconstruction:
+///
+///     using ParallelTest = FakeMeshFixture_tmpl<5, 20, 3, false, 2>;
+template <int NX, int NY, int NZ, bool FCI = false, int MYG = 1>
 class FakeMeshFixture_tmpl : public ::testing::Test {
 public:
   FakeMeshFixture_tmpl()
-      : mesh_m(NX, NY, NZ, mpi), mesh_staggered_m(NX, NY, NZ, mpi),
+      : mesh_m(NX, NY, NZ, mpi, MYG), mesh_staggered_m(NX, NY, NZ, mpi, MYG),
         mesh_staggered(&mesh_staggered_m) {
 
     bout::globals::mpi = &mpi;
@@ -58,7 +62,8 @@ public:
     test_coords->setD1_dy(0.2);
     test_coords->setD1_dz(0.0);
 
-    if (bout::build::use_metric_3d) {
+    // Parallel slices are only allocated when Y guard cells exist.
+    if (bout::build::use_metric_3d && MYG > 0) {
       bout::FieldMetric mutable_Bxy = test_coords->Bxy();
       mutable_Bxy.splitParallelSlices();
       mutable_Bxy.yup() = test_coords->Bxy();
@@ -100,7 +105,7 @@ public:
     test_coords_staggered->setD1_dy(0.2);
     test_coords_staggered->setD1_dz(0.0);
 
-    if (bout::build::use_metric_3d) {
+    if (bout::build::use_metric_3d && MYG > 0) {
       bout::FieldMetric mutable_Bxy = test_coords_staggered->Bxy();
       mutable_Bxy.splitParallelSlices();
       test_coords_staggered->setBxy(mutable_Bxy);
