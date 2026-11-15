@@ -113,8 +113,8 @@ def make_grid(nz: int):
 
 def run_fci_operators(nslice: int, nz: int, name: str) -> dict[str, float]:
 
-    # Command to run
-    args = f"MYG={nslice} {name} mesh:file=mesh.{nz}.fci.nc"
+    # Command to run. Replace output files
+    args = f"MYG={nslice} {name} mesh:file=mesh.{nz}.fci.nc replace"
     cmd = f"./fci_mms {args}"
     print(f"Running command: {cmd}", end="")
 
