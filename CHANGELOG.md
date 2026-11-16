@@ -15,6 +15,7 @@
   ```console
   $ bout-upgrader v6 v6_upgrader file/to/update.cxx
   ````
+- Removed `multigrid` Laplacian inversion solver
 
 ## [v5.2.0](https://github.com/boutproject/BOUT-dev/tree/v5.2.0
 

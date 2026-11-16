@@ -19,6 +19,7 @@
 #include "bout/region.hxx"
 #include "bout/utils.hxx"
 #include "bout/vector2d.hxx"
+#include <bout/yboundary_regions.hxx>
 
 #include <cmath>
 
@@ -644,6 +645,7 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
 
     ASSERT1(f_in.hasParallelSlices());
     ASSERT1(v_in.hasParallelSlices());
+    ASSERT1(wave_speed_in.hasParallelSlices());
 
     const auto& f_up = f_in.yup();
     const auto& f_down = f_in.ydown();
@@ -651,8 +653,12 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
     const auto& v_up = v_in.yup();
     const auto& v_down = v_in.ydown();
 
+    const auto& wave_speed_up = wave_speed_in.yup();
+    const auto& wave_speed_down = wave_speed_in.ydown();
+
     Field3D result{emptyFrom(f_in)};
     flow_ylow = zeroFrom(f_in);
+    const auto yboundary = coord->getYBoundary();
     BOUT_FOR(i, f_in.getRegion("RGN_NOBNDRY")) {
       const auto iyp = i.yp();
       const auto iym = i.ym();
@@ -664,11 +670,23 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
                   / coord->cell_volume()[i];
 
       if (dissipative) {
-        const BoutReal amax = BOUTMAX(fabs(wave_speed_in[i]), fabs(v_in[i]),
-                                      fabs(v_up[iyp]), fabs(v_down[iym]));
-        result[i] += (0.5 * amax * (f_in[i] - f_up[iyp]) * coord->cell_area_yhigh()[i]
-                      + 0.5 * amax * (f_in[i] - f_down[iym]) * coord->cell_area_ylow()[i])
-                     / coord->cell_volume()[i];
+        const BoutReal amax_up =
+            ((fixflux) && (yboundary.contains<+1>(i)))
+                ? 0.0
+                : BOUTMAX(fabs(wave_speed_in[i]), fabs(wave_speed_up[iyp]),
+                          fabs(v_up[iyp]), fabs(v_in[i]));
+
+        const BoutReal amax_down =
+            ((fixflux) && (yboundary.contains<-1>(i)))
+                ? 0.0
+                : BOUTMAX(fabs(wave_speed_in[i]), fabs(wave_speed_down[iym]),
+                          fabs(v_down[iym]), fabs(v_in[i]));
+
+        result[i] +=
+            0.5
+            * (amax_up * (f_in[i] - f_up[iyp]) * coord->cell_area_yhigh()[i]
+               + amax_down * (f_in[i] - f_down[iym]) * coord->cell_area_ylow()[i])
+            / coord->cell_volume()[i];
       }
     }
     return result;
@@ -843,6 +861,7 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
     // FCI version, using yup/down fields
     ASSERT1(f_in.hasParallelSlices());
     ASSERT1(v_in.hasParallelSlices());
+    ASSERT1(wave_speed_in.hasParallelSlices());
 
     const auto& B = coord->Bxy();
     const auto& B_up = coord->Bxy().yup();
@@ -854,8 +873,13 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
     const auto& v_up = v_in.yup();
     const auto& v_down = v_in.ydown();
 
+    const auto& wave_speed_up = wave_speed_in.yup();
+    const auto& wave_speed_down = wave_speed_in.ydown();
+
     const auto& g_22 = coord->g_22();
     const auto& dy = coord->dy();
+
+    const auto yboundary = coord->getYBoundary();
 
     Field3D result{emptyFrom(f_in)};
     BOUT_FOR(i, f_in.getRegion("RGN_NOBNDRY")) {
@@ -863,35 +887,38 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
       const auto iym = i.ym();
 
       // Maximum local wave speed
-      const BoutReal amax = BOUTMAX(wave_speed_in[i], std::abs(v_in[i]),
-                                    std::abs(v_up[iyp]), std::abs(v_down[iym]));
 
-      const BoutReal term = (f_up[iyp] * v_up[iyp] * v_up[iyp] / B_up[iyp])
-                            - (f_down[iym] * v_down[iym] * v_down[iym] / B_down[iym]);
+      const BoutReal amax_up =
+          ((fixflux) && (yboundary.contains<+1>(i)))
+              ? 0.0
+              : BOUTMAX(fabs(wave_speed_in[i]), fabs(wave_speed_up[iyp]), fabs(v_up[iyp]),
+                        fabs(v_in[i]));
 
-      // Penalty terms. This implementation is very dissipative.
-      BoutReal penalty =
-          (amax * (f_in[i] * v_in[i] - f_up[iyp] * v_up[iyp]) / (B[i] + B_up[iyp]))
-          + (amax * (f_in[i] * v_in[i] - f_down[iym] * v_down[iym])
-             / (B[i] + B_down[iym]));
+      const BoutReal amax_down =
+          ((fixflux) && (yboundary.contains<-1>(i)))
+              ? 0.0
+              : BOUTMAX(fabs(wave_speed_in[i]), fabs(wave_speed_down[iym]),
+                        fabs(v_down[iym]), fabs(v_in[i]));
 
-      if (std::abs(penalty) > std::abs(term) and penalty * v_in[i] > 0) {
-        if (term * penalty > 0) {
-          penalty = term;
-        } else {
-          penalty = -term;
-        }
-      }
-
-      result[i] = B[i] * (term + penalty) / (2 * dy[i] * sqrt(g_22[i]));
+      result[i] =
+          B[i]
+          * ((f_up[iyp] * v_up[iyp] * v_up[iyp] / B_up[iyp])
+             - (f_down[iym] * v_down[iym] * v_down[iym] / B_down[iym])
+             // Penalty terms. This implementation is very dissipative.
+             // Note: This version adds a viscosity that damps gradients of velocity
+             + amax_up * (f_in[i] + f_up[iyp]) * (v_in[i] - v_up[iyp])
+                   / (B[i] + B_up[iyp])
+             + amax_down * (f_in[i] + f_down[iym]) * (v_in[i] - v_down[iym])
+                   / (B[i] + B_down[iym]))
+          / (2 * dy[i] * sqrt(g_22[i]));
 
 #if CHECK > 0
       if (!std::isfinite(result[i])) {
         throw BoutException("Non-finite value in Div_par_fvv at {}\n"
-                            "fup {} vup {} fdown {} vdown {} amax {}\n",
-                            "B {} Bup {} Bdown {} dy {} sqrt(g_22} {}", i, f_up[i],
-                            v_up[i], f_down[i], v_down[i], amax, B[i], B_up[i], B_down[i],
-                            dy[i], sqrt(g_22[i]));
+                            "fup {} vup {} fdown {} vdown {} amax_up {} amax_down {}\n",
+                            "B {} Bup {} Bdown {} dy {} sqrt(g_22} {}", i, f_up[iyp],
+                            v_up[iyp], f_down[iym], v_down[iym], amax_up, amax_down, B[i],
+                            B_up[iyp], B_down[iym], dy[i], sqrt(g_22[i]));
       }
 #endif
     }
@@ -1178,7 +1205,7 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
           } else {
             flux_mom = (s.R * sv.R * sv.R)
                        + (BOUTMAX(wave_speed(i, j, k), std::abs(sv.c), std::abs(sv.p))
-                          * (s.R * sv.R - n_mid * v_mid));
+                          * n_mid * (sv.R - v_mid));
           }
 
           // Assume that particle flux is fixed to boundary value
@@ -1199,14 +1226,16 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
           const BoutReal amax = BOUTMAX(wave_speed(i, j, k), wave_speed(i, j + 1, k),
                                         std::abs(sv.c), std::abs(sv.p));
 
-          // Viscous heating due to relaxation of velocity towards midpoint
-          result(i, j, k) +=
-              (amax + 0.5 * sv.R) * s.R * (sv.c - sv.p) * (sv.R - v_mid) * flux_factor_rc;
+          // Use the same split particle flux as Div_par_mod and Div_par_fvv.
+          const BoutReal flux_part = s.R * 0.5 * (sv.R + amax);
+
+          // Difference between kinetic energy leaving this cell and entering
+          // the next cell, using d(n*v^2/2)/dt = v*d(n*v)/dt - v^2*dn/dt/2.
+          result(i, j, k) += flux_part * (sv.c - sv.p) * (sv.R - v_mid) * flux_factor_rc;
 
           // Kinetic energy flow into next cell.
           // Note: Different from flow out of this cell; the difference
           //       is in the viscous heating.
-          const BoutReal flux_part = s.R * 0.5 * (sv.R + amax);
           const BoutReal flux_mom = flux_part * sv.R;
 
           flow_ylow(i, j + 1, k) +=
@@ -1232,7 +1261,7 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
             // Add flux due to difference in boundary values
             flux_mom = (s.L * sv.L * sv.L)
                        - (BOUTMAX(wave_speed(i, j, k), std::abs(sv.c), std::abs(sv.m))
-                          * (s.L * sv.L - n_mid * v_mid));
+                          * n_mid * (sv.L - v_mid));
           }
 
           // Assume that density flux is fixed to boundary value
@@ -1249,17 +1278,17 @@ Field3D Div_par_fvv_heating(const Field3D& f_in, const Field3D& v_in,
           const BoutReal amax = BOUTMAX(wave_speed(i, j, k), wave_speed(i, j - 1, k),
                                         std::abs(sv.c), std::abs(sv.m));
 
-          // Viscous heating due to relaxation
-          result(i, j, k) +=
-              (amax - 0.5 * sv.L) * s.L * (sv.c - sv.m) * (sv.L - v_mid) * flux_factor_lc;
-
-          // Kinetic energy flow into this cell.
-          // Note: Different from flow out of left cell; the difference
-          //       is in the viscous heating.
           const BoutReal flux_part = s.L * 0.5 * (sv.L - amax);
+
+          // The left-going split flux has the opposite orientation.
+          result(i, j, k) -= flux_part * (sv.c - sv.m) * (sv.L - v_mid) * flux_factor_lc;
+
+          // Kinetic energy flow into the previous cell.
+          // Note: Different from flow out of this cell; the difference
+          //       is in the viscous heating.
           const BoutReal flux_mom = flux_part * sv.L;
 
-          flow_ylow(i, j, k) += (sv.c * flux_mom - 0.5 * SQ(sv.c) * flux_part) * area_lc;
+          flow_ylow(i, j, k) += (sv.m * flux_mom - 0.5 * SQ(sv.m) * flux_part) * area_lc;
         }
       }
     }

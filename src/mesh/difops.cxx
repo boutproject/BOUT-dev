@@ -525,6 +525,10 @@ Field3D Div_par_K_Grad_par_mod_impl(const Field3DParallel& Kin,
   result = fromFieldAligned(result, "RGN_NOBNDRY");
   flow_ylow = fromFieldAligned(flow_ylow);
 
+#if CHECK > 2
+  bout::checkFinite(result);
+#endif
+
   return result;
 }
 } // namespace
@@ -543,8 +547,7 @@ Field3D Div_par_K_Grad_par_mod(const Field3DParallel& Kin, const Field3DParallel
     return Div_par_K_Grad_par_mod_impl<Harmonic>(Kin, fin, flow_ylow, bndry_flux);
   }
   throw BoutException(
-      "Unknown method `{}` - choose from `Original`, `ProductJK` or `Harmonic`.",
-      toString(method));
+      "Unknown method `{}` - choose from `Original`, `ProductJK` or `Harmonic`.", method);
 }
 /*******************************************************************************
 * Delp2

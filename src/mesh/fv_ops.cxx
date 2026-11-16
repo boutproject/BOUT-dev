@@ -84,7 +84,11 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
     }
   }
 
-  // Y and Z fluxes require Y derivatives
+  // A singleton global Y mesh has no Y derivatives, even if guards exist.
+  const bool y_derivatives = mesh->GlobalNy > 1;
+  ASSERT1(!y_derivatives || mesh->ystart > 0);
+
+  // Y fluxes and the mixed part of the Z flux require Y derivatives.
 
   // Fields containing values along the magnetic field
 
@@ -109,7 +113,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
   }
 
   // Y flux
-  if (mesh->ystart > 0) {
+  if (y_derivatives) {
     BOUT_FOR(i, yzresult.getRegion("RGN_NOBNDRY")) {
       auto ikp = i.zp();
       auto ikm = i.zm();
@@ -155,29 +159,27 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
 
         yzresult[i] -= fout / (dy.c[i] * J.c[i]);
       }
-      // Z flux
-      {
-
-        // Coefficient in front of df/dy term
-        const BoutReal coef = g_23.c[i] / (dy.up[i.yp()] + 2. * dy.c[i] + dy.down[i.ym()])
-                              / SQ(J.c[i] * Bxy.c[i]);
-
-        const BoutReal fout =
-            0.25 * (a_slice.c[i] + a_slice.c[ikp])
-            * (J.c[i] * coord->g33()[i] + J.c[ikp] * coord->g33()[ikp])
-            * ( // df/dz
-                (f_slice.c[ikp] - f_slice.c[i]) / dz.c[i]
-                // - g_yz * df/dy / SQ(J*B)
-                - coef
-                      * (f_slice.up[i.yp()] + f_slice.up[ikp.yp()] - f_slice.down[i.ym()]
-                         - f_slice.down[ikp.ym()]));
-
-        yzresult[i] += fout / (J.c[i] * dz.c[i]);
-        yzresult[ikp] -= fout / (J.c[ikp] * dz.c[ikp]);
-      }
     }
-  } else {
-    ASSERT1(mesh->yend == 0);
+  }
+
+  // Z flux exists independently of Y guards or Y derivatives.
+  BOUT_FOR(i, yzresult.getRegion("RGN_NOBNDRY")) {
+    const auto ikp = i.zp();
+    BoutReal y_correction = 0.0;
+    if (y_derivatives) {
+      const BoutReal coef = g_23.c[i] / (dy.up[i.yp()] + 2. * dy.c[i] + dy.down[i.ym()])
+                            / SQ(J.c[i] * Bxy.c[i]);
+      y_correction = coef
+                     * (f_slice.up[i.yp()] + f_slice.up[ikp.yp()] - f_slice.down[i.ym()]
+                        - f_slice.down[ikp.ym()]);
+    }
+
+    const BoutReal fout = 0.25 * (a_slice.c[i] + a_slice.c[ikp])
+                          * (J.c[i] * coord->g33()[i] + J.c[ikp] * coord->g33()[ikp])
+                          * ((f_slice.c[ikp] - f_slice.c[i]) / dz.c[i] - y_correction);
+
+    yzresult[i] += fout / (J.c[i] * dz.c[i]);
+    yzresult[ikp] -= fout / (J.c[ikp] * dz.c[ikp]);
   }
 
   // Check if we need to transform back
@@ -210,21 +212,17 @@ Field3D Div_par_K_Grad_par(const Field3DParallel& Kin, const Field3DParallel& fi
   const auto& fup = use_parallel_slices ? fin.yup() : f;
   const auto& fdown = use_parallel_slices ? fin.ydown() : f;
 
-  Coordinates* coord = fin.getCoordinates();
+  const Coordinates* coord = fin.getCoordinates();
+  const auto& yboundary = coord->getYBoundary();
 
   BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
     // Calculate flux at upper surface
-
-    const auto iyp = i.yp();
-    const auto iym = i.ym();
-
-    const auto yboundary = coord->getYBoundary();
 
     if (bndry_flux
         || (not K.isFci()
             and (mesh->periodicY(i.x()) || !mesh->lastY(i.x()) || (i.y() != mesh->yend)))
         or (K.isFci() and yboundary.contains<+1>(i))) {
-
+      const auto iyp = i.yp();
       const BoutReal c = 0.5 * (K[i] + Kup[iyp]); // K at the upper boundary
       const BoutReal J = 0.5 * (coord->J()[i] + coord->J()[iyp]); // Jacobian at boundary
       const BoutReal g_22 = 0.5 * (coord->g_22()[i] + coord->g_22()[iyp]);
@@ -243,6 +241,7 @@ Field3D Div_par_K_Grad_par(const Field3DParallel& Kin, const Field3DParallel& fi
             and (mesh->periodicY(i.x()) || !mesh->firstY(i.x())
                  || (i.y() != mesh->ystart)))
         or (K.isFci() and yboundary.contains<-1>(i))) {
+      const auto iym = i.ym();
       const BoutReal c = 0.5 * (K[i] + Kdown[iym]); // K at the lower boundary
       const BoutReal J = 0.5 * (coord->J()[i] + coord->J()[iym]); // Jacobian at boundary
 

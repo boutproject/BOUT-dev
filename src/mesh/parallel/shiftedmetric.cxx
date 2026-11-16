@@ -169,7 +169,7 @@ Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
 
   Field3D result{emptyFrom(f).setDirectionY(y_direction_out)};
 
-  BOUT_FOR(i, mesh.getRegion2D(toString(region))) {
+  BOUT_FOR(i, mesh.getRegion2D(region)) {
     shiftZ(&f(i, 0), &phs(i.x(), i.y(), 0), &result(i, 0));
   }
 
@@ -440,7 +440,6 @@ static void shiftZ_block_fft(const int Nz, const BoutReal** in, BoutReal** out,
 
     fft_block_cooperative<32, FFTS_PER_BLOCK>
         <<<grid, block, 0, stream>>>(in, out, phs, nbatches, nblocks);
-
   } else if (Nz == 64) {
     constexpr int FFTS_PER_BLOCK = 4;
     constexpr int THREADS_PER_FFT = 64;

@@ -279,7 +279,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
   if (location != CELL_DEFAULT and var.getLocation() != location) {
     throw BoutException("Incorrect location of field {:s} in grid file, expected {:s}, "
                         "got {:s}.",
-                        name, toString(location), toString(var.getLocation()));
+                        name, location, var.getLocation());
   }
 
   if (var.isAllocated()) {
