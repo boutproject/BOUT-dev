@@ -212,21 +212,17 @@ Field3D Div_par_K_Grad_par(const Field3DParallel& Kin, const Field3DParallel& fi
   const auto& fup = use_parallel_slices ? fin.yup() : f;
   const auto& fdown = use_parallel_slices ? fin.ydown() : f;
 
-  Coordinates* coord = fin.getCoordinates();
+  const Coordinates* coord = fin.getCoordinates();
+  const auto& yboundary = coord->getYBoundary();
 
   BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
     // Calculate flux at upper surface
-
-    const auto iyp = i.yp();
-    const auto iym = i.ym();
-
-    const auto yboundary = coord->getYBoundary();
 
     if (bndry_flux
         || (not K.isFci()
             and (mesh->periodicY(i.x()) || !mesh->lastY(i.x()) || (i.y() != mesh->yend)))
         or (K.isFci() and yboundary.contains<+1>(i))) {
-
+      const auto iyp = i.yp();
       const BoutReal c = 0.5 * (K[i] + Kup[iyp]); // K at the upper boundary
       const BoutReal J = 0.5 * (coord->J()[i] + coord->J()[iyp]); // Jacobian at boundary
       const BoutReal g_22 = 0.5 * (coord->g_22()[i] + coord->g_22()[iyp]);
@@ -245,6 +241,7 @@ Field3D Div_par_K_Grad_par(const Field3DParallel& Kin, const Field3DParallel& fi
             and (mesh->periodicY(i.x()) || !mesh->firstY(i.x())
                  || (i.y() != mesh->ystart)))
         or (K.isFci() and yboundary.contains<-1>(i))) {
+      const auto iym = i.ym();
       const BoutReal c = 0.5 * (K[i] + Kdown[iym]); // K at the lower boundary
       const BoutReal J = 0.5 * (coord->J()[i] + coord->J()[iym]); // Jacobian at boundary
 
