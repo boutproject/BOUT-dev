@@ -210,8 +210,7 @@ Field3D Div_par_K_Grad_par(const Field3DParallel& Kin, const Field3DParallel& fi
   const auto& fup = use_parallel_slices ? fin.yup() : f;
   const auto& fdown = use_parallel_slices ? fin.ydown() : f;
 
-  Coordinates* coord = fin.getCoordinates();
-
+  const Coordinates* coord = fin.getCoordinates();
   const auto& yboundary = coord->getYBoundary();
 
   BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
