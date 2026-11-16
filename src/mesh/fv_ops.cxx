@@ -212,13 +212,13 @@ Field3D Div_par_K_Grad_par(const Field3DParallel& Kin, const Field3DParallel& fi
 
   Coordinates* coord = fin.getCoordinates();
 
+  const auto& yboundary = coord->getYBoundary();
+
   BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
     // Calculate flux at upper surface
 
     const auto iyp = i.yp();
     const auto iym = i.ym();
-
-    const auto yboundary = coord->getYBoundary();
 
     if (bndry_flux
         || (not K.isFci()
