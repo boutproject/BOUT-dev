@@ -1,6 +1,7 @@
 
 MXG = 1
 MYG = 0
+MZG = 0
 dump_on_restart = false
 
 [mesh]

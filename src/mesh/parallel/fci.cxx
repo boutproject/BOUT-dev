@@ -129,6 +129,13 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
                         parallelSliceFieldName("Z", offset));
   }
 
+  // Grid does not include Z guards in index numbering, so we must add it on
+  // TODO: if zoidberg adds this, check zoidberg version instead?
+  const bool has_zguards = map_mesh->sourceHasVar("MZG");
+  if (not has_zguards) {
+    zt_prime += map_mesh->zstart;
+  }
+
   // Cell corners
   Field3D xt_prime_corner{emptyFrom(xt_prime)};
   Field3D zt_prime_corner{emptyFrom(zt_prime)};
@@ -171,7 +178,7 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
     interp->calcWeights(xt_prime, zt_prime);
   }
 
-  const int ncz = map_mesh->LocalNz;
+  const int ncz = map_mesh->GlobalNzNoBoundaries;
 
   BoutMask to_remove(map_mesh);
   const int xend = map_mesh->xstart

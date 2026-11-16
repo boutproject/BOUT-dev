@@ -64,13 +64,14 @@ def test_interpolate(method):
 
         # Collect output data
         for var in varlist:
-            interp = collect(var + "_interp", path="data", xguards=False, info=False)
+            interp = collect(
+                f"{var}_interp", path="data", xguards=False, info=False
+            ).squeeze()
             solution = collect(
-                var + "_solution", path="data", xguards=False, info=False
-            )
+                f"{var}_solution", path="data", xguards=False, info=False
+            ).squeeze()
 
-            # Don't include Z guard cells
-            E = (interp - solution).squeeze()[:, 2:-2]
+            E = interp - solution
 
             if False:
                 import matplotlib.pyplot as plt

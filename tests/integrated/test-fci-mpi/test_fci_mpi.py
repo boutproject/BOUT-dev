@@ -10,7 +10,13 @@ from boututils.run_wrapper import launch_safe
 MAXCORES = 8
 NSLICES = [1]
 IMPLEMENTATIONS = ["hermitespline", "monotonichermitespline"]
-COLLECT_KW = {"info": False, "xguards": False, "yguards": False, "path": "data"}
+COLLECT_KW = {
+    "info": False,
+    "xguards": False,
+    "yguards": False,
+    "zguards": False,
+    "path": "data",
+}
 
 
 def run_case(
