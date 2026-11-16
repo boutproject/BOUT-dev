@@ -1283,8 +1283,11 @@ const bout::boundary::YBoundary& Coordinates::getYBoundary(bool lower_y,
                                                            bool upper_y) const {
   const auto index = boundary_bools_to_index(lower_y, upper_y);
   if (ybndrys.at(index) == nullptr) {
-    ybndrys.at(index) =
-        std::make_shared<bout::boundary::YBoundary>(*localmesh, lower_y, upper_y);
+    BOUT_OMP(critical)
+    if (ybndrys.at(index) == nullptr) {
+      ybndrys.at(index) =
+          std::make_shared<bout::boundary::YBoundary>(*localmesh, lower_y, upper_y);
+    }
   }
 
   return *ybndrys.at(index);
