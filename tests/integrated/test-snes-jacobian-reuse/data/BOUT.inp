@@ -1,0 +1,16 @@
+nout = 5
+timestep = 10
+
+MXG = 0
+
+[mesh]
+nx = 1
+ny = 16
+nz = 1
+
+[solver]
+type = snes
+snes_type = newtonls
+timestep = 0.01   # Initial timestep, increased by the adaptive controller
+atol = 1e-10
+rtol = 1e-10
