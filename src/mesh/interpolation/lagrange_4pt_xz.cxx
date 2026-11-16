@@ -21,11 +21,14 @@
  **************************************************************************/
 
 #include "fmt/format.h"
+#include "interp_utils.hxx"
 #include "bout/globals.hxx"
 #include "bout/interpolation_xz.hxx"
 #include "bout/mesh.hxx"
 
 #include <vector>
+
+using bout::details::mod;
 
 XZLagrange4pt::XZLagrange4pt(int y_offset, Mesh* mesh)
     : XZInterpolation(y_offset, mesh), t_x(localmesh), t_z(localmesh) {
@@ -103,14 +106,13 @@ Field3D XZLagrange4pt::interpolate(const Field3D& f, const std::string& region) 
     const int jxpnew = jx + 1;
     const int jx2pnew = (jx == (localmesh->LocalNx - 2)) ? jxpnew : (jxpnew + 1);
 
-    const int ncz = localmesh->LocalNz;
+    const int ncz = localmesh->GlobalNz;
 
     // Get the 4 Z points
-    const int jz = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
-
-    const int jzpnew = (jz + 1) % ncz;
-    const int jz2pnew = (jz + 2) % ncz;
-    const int jz2mnew = (jz - 1 + ncz) % ncz;
+    const int jz = mod(k_corner(x, y, z), ncz);
+    const int jzpnew = mod(jz + 1, ncz);
+    const int jz2pnew = mod(jz + 2, ncz);
+    const int jz2mnew = mod(jz - 1, ncz);
 
     // Interpolate in Z first
     BoutReal xvals[4];
