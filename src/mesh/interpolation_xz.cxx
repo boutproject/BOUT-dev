@@ -101,4 +101,5 @@ RegisterXZInterpolation<XZMonotonicHermiteSplineLegacy>
     registerinterpmonotonichermitesplinel{"monotonichermitesplinelegacy"};
 RegisterXZInterpolation<XZLagrange4pt> registerinterplagrange4pt{"lagrange4pt"};
 RegisterXZInterpolation<XZBilinear> registerinterpbilinear{"bilinear"};
+RegisterXZInterpolation<PrecomputedInterpolation> registerinterpprecomp{"precomputed"};
 } // namespace

@@ -24,10 +24,10 @@
 
 PetscIndexMapping::~PetscIndexMapping() {
   if (mat_stored_to_petsc != nullptr) {
-    MatDestroy(&mat_stored_to_petsc);
+    BOUT_DO_PETSC(MatDestroy(&mat_stored_to_petsc));
   }
   if (mat_petsc_to_stored != nullptr) {
-    MatDestroy(&mat_petsc_to_stored);
+    BOUT_DO_PETSC(MatDestroy(&mat_petsc_to_stored));
   }
 }
 
@@ -176,7 +176,7 @@ Field3D toField3D(const PetscCellVector& vec, const Field3D& prototype) {
 
 Field3D PetscOperators::meshGetField3D(Mesh* mesh, const std::string& name) {
   Field3D result;
-  if (mesh->get(result, name) != 0) {
+  if (mesh->get(result, name, 0.0, false) != 0) {
     throw BoutException("PetscOperators requires field '{}'", name);
   }
   return result;
@@ -450,7 +450,7 @@ PetscCellOperator makeNeumannOperator(const PetscCellMappingPtr& mapping,
   bout::petsc::UniqueMat temp{new Mat{nullptr}};
   BOUT_DO_PETSC(MatCreate(BoutComm::get(), temp.get()));
   BOUT_DO_PETSC(MatSetType(*temp, MATMPIAIJ));
-  BOUT_DO_PETSC(MatSetSizes(*temp, n_local, PETSC_DECIDE, n_global, n_global));
+  BOUT_DO_PETSC(MatSetSizes(*temp, n_local, n_local, n_global, n_global));
   BOUT_DO_PETSC(MatMPIAIJSetPreallocation(*temp, 1, nullptr, 1, nullptr));
 
   const PetscScalar one = 1.0;
@@ -559,4 +559,73 @@ PetscCellOperator makeNeumannOperator(const PetscCellMappingPtr& mapping,
   return PetscCellOperator(mapping, mapping, std::move(out));
 }
 
+Field3D PetscOperators::computeYup(const Field3D& f) const {
+  ASSERT1(f.hasParallelSlices());
+  ASSERT1(f.yup().isAllocated());
+  ASSERT1(f.ydown().isAllocated());
+
+  if (!cache_forward.has_value()) {
+    cache_forward = this->forward();
+  }
+  auto leg = cache_forward.value()(f);
+
+  const PetscScalar* leg_x{nullptr};
+  BOUT_DO_PETSC(VecGetArrayRead(leg.raw(), &leg_x));
+
+  Field3D result{emptyFrom(f)};
+
+  const PetscInt leg_row_start = forward_leg_mapping->rowStart();
+
+  cell_mapping->mapOwnedInteriorCells([&](PetscInt /*cell_row*/, const Ind3D& i, int) {
+    const int interior = ROUND(forward_leg_interior_number[i]);
+
+    BoutReal value = 0.0;
+    if (interior >= 0) {
+      const PetscInt row = forward_leg_mapping->storedToPetsc(interior) - leg_row_start;
+      value = leg_x[row];
+    } else {
+      value = BoutNaN;
+    }
+    result[i.yp()] = value;
+  });
+
+  BOUT_DO_PETSC(VecRestoreArrayRead(leg.raw(), &leg_x));
+
+  return result;
+}
+
+Field3D PetscOperators::computeYdown(const Field3D& f) const {
+  ASSERT1(f.hasParallelSlices());
+  ASSERT1(f.yup().isAllocated());
+  ASSERT1(f.ydown().isAllocated());
+
+  if (!cache_backward.has_value()) {
+    cache_backward = this->backward();
+  }
+  auto leg = cache_backward.value()(f);
+
+  const PetscScalar* leg_x{nullptr};
+  BOUT_DO_PETSC(VecGetArrayRead(leg.raw(), &leg_x));
+
+  Field3D result{emptyFrom(f)};
+
+  const PetscInt leg_row_start = backward_leg_mapping->rowStart();
+
+  cell_mapping->mapOwnedInteriorCells([&](PetscInt /*cell_row*/, const Ind3D& i, int) {
+    const int interior = ROUND(backward_leg_interior_number[i]);
+
+    BoutReal value = 0.0;
+    if (interior >= 0) {
+      const PetscInt row = backward_leg_mapping->storedToPetsc(interior) - leg_row_start;
+      value = leg_x[row];
+    } else {
+      value = BoutNaN;
+    }
+    result[i.ym()] = value;
+  });
+
+  BOUT_DO_PETSC(VecRestoreArrayRead(leg.raw(), &leg_x));
+
+  return result;
+}
 #endif

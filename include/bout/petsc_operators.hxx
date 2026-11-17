@@ -24,6 +24,7 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -722,7 +723,7 @@ private:
     const UniqueMat temp{new Mat{nullptr}};
     BOUT_DO_PETSC(MatCreate(BoutComm::get(), temp.get()));
     BOUT_DO_PETSC(MatSetType(*temp, MATMPIAIJ));
-    BOUT_DO_PETSC(MatSetSizes(*temp, out_mapping->localSize(), PETSC_DECIDE,
+    BOUT_DO_PETSC(MatSetSizes(*temp, out_mapping->localSize(), in_mapping->localSize(),
                               out_mapping->globalSize(), in_mapping->globalSize()));
 
     PetscInt col_start{0};
@@ -899,6 +900,22 @@ public:
   /// @returns A diagonal PetscBackwardLegOperator.
   PetscBackwardLegOperator diagonal(const PetscBackwardLegVector& v) const;
 
+  /// @brief Compute the forward parallel slice using the SOM weights.
+  ///
+  /// @param f Field whose yup() slice should be (re)computed. Must have
+  ///          parallel slices allocated.
+  /// @returns A Field3D containing the forward-interpolated values, indexed
+  ///          the same way as f.yup() (i.e. at i.yp()).
+  Field3D computeYup(const Field3D& f) const;
+
+  /// @brief Compute the backward parallel slice using the SOM weights.
+  ///
+  /// @param f Field whose ydown() slice should be (re)computed. Must have
+  ///          parallel slices allocated.
+  /// @returns A Field3D containing the forward-interpolated values, indexed
+  ///          the same way as f.yup() (i.e. at i.yp()).
+  Field3D computeYdown(const Field3D& f) const;
+
   /// @brief Collection of parallel differential operators assembled for the
   ///        Support Operator Method (SOM).
   ///
@@ -976,6 +993,8 @@ public:
   Parallel getParallel() const;
 
 private:
+  mutable std::optional<PetscForwardOperator> cache_forward;
+  mutable std::optional<PetscBackwardOperator> cache_backward;
   /// @brief Read a Field3D from the mesh, throwing if the field is absent.
   ///
   /// @param mesh Non-owning mesh pointer.

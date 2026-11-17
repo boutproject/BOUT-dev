@@ -51,7 +51,6 @@
 #include "impls/cyclic/cyclic_laplace.hxx"
 #include "impls/hypre3d/hypre3d_laplace.hxx"
 #include "impls/iterative_parallel_tri/iterative_parallel_tri.hxx"
-#include "impls/multigrid/multigrid_laplace.hxx"
 #include "impls/naulin/naulin_laplace.hxx"
 #include "impls/pcr/pcr.hxx"
 #include "impls/pcr_thomas/pcr_thomas.hxx"

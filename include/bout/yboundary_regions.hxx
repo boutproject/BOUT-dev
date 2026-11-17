@@ -11,8 +11,6 @@
 #include <memory>
 #include <vector>
 
-class Options;
-
 namespace bout {
 namespace boundary {
 /// This class allows to simplify iterating over y-boundaries.
@@ -24,7 +22,15 @@ namespace boundary {
 /// ../../manual/sphinx/user_docs/boundary_options.rst
 class YBoundary {
 public:
-  YBoundary(YBndryType type, Options* options_ptr, const Mesh& mesh);
+  YBoundary() = default;
+  YBoundary(const YBoundary&) = default;
+  YBoundary(YBoundary&&) = default;
+  YBoundary& operator=(const YBoundary&) = default;
+  YBoundary& operator=(YBoundary&&) = default;
+  ~YBoundary() = default;
+
+  /// Create a Y boundary on the \p lower and/or \p upper sides
+  YBoundary(const Mesh& mesh, bool lower, bool upper);
 
   /// Iterate over the boundary.
   /// This function takes a lamda / templated function, that applies the boundary on the given point.
@@ -47,19 +53,19 @@ public:
   }
 
   /// Return true if this boundary in the lower direction contains point \p ind
-  bool contains_low(const Ind3D& ind) const { return _contains_low[ind]; }
+  bool containsLower(const Ind3D& ind) const { return _contains_lower[ind]; }
   /// Return true if this boundary in the upper direction contains point \p ind
-  bool contains_high(const Ind3D& ind) const { return _contains_high[ind]; }
+  bool containsUpper(const Ind3D& ind) const { return _contains_upper[ind]; }
 
   /// Return true if this boundary in direction \p dir contains point \p ind
   template <int dir>
   bool contains(const Ind3D& ind) const {
     static_assert(dir == 1 || dir == -1);
     if constexpr (dir == 1) {
-      return _contains_high[ind];
+      return _contains_upper[ind];
     }
     if constexpr (dir == -1) {
-      return _contains_low[ind];
+      return _contains_lower[ind];
     }
   }
 
@@ -78,8 +84,8 @@ private:
   std::vector<std::shared_ptr<BoundaryRegionFCI>> boundary_regions_par;
   std::vector<std::shared_ptr<BoundaryRegionY>> boundary_regions;
 
-  BoutMask _contains_low;
-  BoutMask _contains_high;
+  BoutMask _contains_lower;
+  BoutMask _contains_upper;
 };
 
 } // namespace boundary

@@ -41,8 +41,6 @@ implementations are listed in table :numref:`tab-laplacetypes`.
    | petsc3damg             | Serial/parallel. Solves full 3D operator (with               | PETSc (section :ref:`sec-PETSc-install`) |
    |                        | y-derivatives) with algebraic multigrid.                     |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
-   | multigrid              | Serial/parallel. Geometric multigrid, no Boussinesq          |                                          |
-   +------------------------+--------------------------------------------------------------+------------------------------------------+
    | `naulin                | Serial/parallel. Iterative treatment of non-Boussinesq terms |                                          |
    | <sec-naulin_>`__       |                                                              |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
@@ -87,11 +85,10 @@ and :math:`n_z` are the number of grid-points in the :math:`x` and
 :math:`z` directions respectively.
 
 
-In the second approach, the full :math:`2`\ -D system is solved. The
-available solvers for this approach are 'multigrid' using a multigrid
-algorithm; 'naulin' using an iterative scheme to correct the FFT-based
-approach; or 'petsc' using KSP linear solvers from the PETSc library
-(this requires PETSc to be built with BOUT++).
+In the second approach, the full :math:`2`\ -D system is solved. The available
+solvers for this approach are ``naulin`` using an iterative scheme to correct
+the FFT-based approach; or ``petsc`` using KSP linear solvers from the PETSc
+library (this requires PETSc to be built with BOUT++).
 
 
 The `Laplacian` class is defined in ``invert_laplace.hxx`` and solves
@@ -779,14 +776,6 @@ Cyclic algorithm
 
 This is now the default solver in both serial and parallel. It is an FFT-based
 solver using a cyclic reduction algorithm.
-
-.. _sec-multigrid:
-
-Multigrid solver
-~~~~~~~~~~~~~~~~
-
-A solver using a geometric multigrid algorithm was introduced by projects in
-2015 and 2016 of CCFE and the EUROfusion HLST.
 
 .. _sec-naulin:
 
