@@ -34,6 +34,7 @@
 
 #include "bout/build_defines.hxx"
 
+#include "bout/region.hxx"
 #include <bout/bout_types.hxx>
 #include <bout/globals.hxx>
 #include <bout/mesh.hxx>
@@ -54,7 +55,7 @@ const Field3D smooth_x(const Field3D& f) {
   // Smooth using simple 1-2-1 filter
 
   BOUT_FOR(i, result.getRegion("RGN_XINTERIOR")) {
-    result[i] = 0.5 * f[i] + 0.25 * (f[i.xm()] + f[i.xp()]);
+    result[i] = (0.5 * f[i]) + (0.25 * (f[i.xm()] + f[i.xp()]));
   }
 
   // Need to communicate boundaries
@@ -73,7 +74,7 @@ const Field3D smooth_y(const Field3D& f) {
   // Smooth using simple 1-2-1 filter
 
   BOUT_FOR(i, result.getRegion("RGN_YINTERIOR")) {
-    result[i] = 0.5 * f[i] + 0.25 * (f.ydown()[i.ym()] + f.yup()[i.yp()]);
+    result[i] = (0.5 * f[i]) + (0.25 * (f.ydown()[i.ym()] + f.yup()[i.yp()]));
   }
 
   // Need to communicate boundaries
@@ -308,16 +309,16 @@ const Field3D smoothXY(const Field3D& f) {
   Field3D result{emptyFrom(f)};
 
   BOUT_FOR(i, result.getRegion("RGN_XYINTERIOR2")) {
-    result[i] = 0.5 * f[i]
-                + 0.125
-                      * (0.5 * f[i.xp()]
-                         + 0.125 * (f[i.xp(2)] + f[i] + f[i.xp().ym()] + f[i.xp().yp()])
-                         + 0.5 * f[i.xm()]
-                         + 0.125 * (f[i] + f[i.xm(2)] + f[i.xm().ym()] + f[i.xm().yp()])
-                         + 0.5 * f[i.ym()]
-                         + 0.125 * (f[i.xp().ym()] + f[i.xm().ym()] + f[i.ym(2)] + f[i])
-                         + 0.5 * f[i.yp()]
-                         + 0.125 * (f[i.xp().yp()] + f[i.xm().yp()] + f[i] + f[i.yp(2)]));
+    result[i] = (0.5 * f[i])
+                + (0.125
+                   * (0.5 * f[i.xp()]
+                      + 0.125 * (f[i.xp(2)] + f[i] + f[i.xp().ym()] + f[i.xp().yp()])
+                      + 0.5 * f[i.xm()]
+                      + 0.125 * (f[i] + f[i.xm(2)] + f[i.xm().ym()] + f[i.xm().yp()])
+                      + 0.5 * f[i.ym()]
+                      + 0.125 * (f[i.xp().ym()] + f[i.xm().ym()] + f[i.ym(2)] + f[i])
+                      + 0.5 * f[i.yp()]
+                      + 0.125 * (f[i.xp().yp()] + f[i.xm().yp()] + f[i] + f[i.yp(2)])));
   }
 
   return result;

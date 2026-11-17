@@ -20,10 +20,12 @@
  *
  **************************************************************************/
 
+#include "bout/bout_types.hxx"
 #include "bout/globals.hxx"
 #include "bout/interpolation_xz.hxx"
 #include "bout/mesh.hxx"
 
+#include <cmath>
 #include <string>
 #include <vector>
 

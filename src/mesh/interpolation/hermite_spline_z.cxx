@@ -20,12 +20,14 @@
  *
  **************************************************************************/
 
+#include "bout/bout_types.hxx"
 #include "bout/globals.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/interpolation_z.hxx"
 #include "bout/mesh.hxx"
 
 #include <algorithm>
+#include <cmath>
 #include <vector>
 
 ZHermiteSpline::ZHermiteSpline(int y_offset, Mesh* mesh, Region<Ind3D> region_in)
