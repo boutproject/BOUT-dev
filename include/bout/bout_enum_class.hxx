@@ -114,7 +114,7 @@
   namespace ns {                                                               \
   enum class enumname : std::uint8_t { __VA_ARGS__ };                          \
                                                                                \
-  inline std::string format_as(const enumname& e) {                            \
+  inline std::string format_as(enumname e) {                                   \
                                                                                \
     const static std::map<enumname, std::string> toString_map = {              \
         BOUT_ENUM_CLASS_MAP_ARGS(BOUT_ENUM_CLASS_STR, enumname, __VA_ARGS__)}; \
