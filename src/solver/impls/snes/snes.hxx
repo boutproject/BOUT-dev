@@ -287,6 +287,12 @@ public:
   /// finite difference approximated Jacobian.
   PetscErrorCode scaleJacobian(Mat Jac_new);
 
+  /// Try to re-use the stored finite-difference Jacobian, updating only the
+  /// (exactly known) 1/dt diagonal term. Sets `reused` to true on success.
+  PetscErrorCode reuseJacobian(Mat Jac_new, bool& reused);
+  /// Record that the Jacobian has just been computed by finite differences
+  PetscErrorCode jacobianComputed();
+
   /// Convert solver coordinates into the physical variables used by the model.
   ///
   /// This applies any active solver-space transforms, for example variable
@@ -467,6 +473,17 @@ private:
   bool use_coloring;      ///< Use matrix coloring
 
   bool jacobian_recalculated; ///< Flag set when Jacobian is recalculated
+
+  // Re-use of the finite-difference Jacobian across timesteps (jacobian_reuse > 0).
+  // The Jacobian of F = (x0 - x)/dt + f(x) is -I/dt + df/dx, so when only dt
+  // changes the stored matrix is updated exactly with a diagonal shift.
+  int jacobian_reuse;              ///< Max. timesteps a Jacobian is kept (0 = off)
+  BoutReal jacobian_reuse_max_lin; ///< Recompute above this linear/nonlinear its ratio
+  bool jac_valid{false};           ///< Is there a stored Jacobian?
+  bool jac_force{true};            ///< Recompute at the start of the next solve
+  BoutReal jac_dt{0.0};            ///< Timestep in the stored Jacobian's diagonal
+  int jac_age{0};                  ///< Solves started since the Jacobian was computed
+  int jac_last_it{0};              ///< Newton iteration of the last computation
   bool prune_jacobian;        ///< Remove small elements in the Jacobian?
   BoutReal prune_abstol;      ///< Prune values with absolute values smaller than this
   BoutReal prune_fraction;    ///< Prune if fraction of small elements is larger than this
