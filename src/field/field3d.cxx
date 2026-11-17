@@ -327,11 +327,7 @@ Field3D& Field3D::operator=(const Field2D& rhs) {
   ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
   /// Copy data
-  BOUT_FOR(i, rhs.getRegion("RGN_ALL")) {
-    for (int iz = 0; iz < nz; iz++) {
-      (*this)(i, iz) = rhs[i];
-    }
-  }
+  BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = rhs[i]; }
 
   return *this;
 }
