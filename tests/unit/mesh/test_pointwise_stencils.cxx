@@ -74,4 +74,39 @@ TYPED_TEST(PointwiseStencilsTest, AveragingBroadcastsIncludeGuards) {
   }
 }
 
+TYPED_TEST(PointwiseStencilsTest, ArakawaLinearXFourierZWithNonuniformSpacing) {
+  Field3D f{0.0}, g{0.0};
+  const BoutReal theta = TWOPI / TypeParam::nz;
+  for (const auto& i : f.getRegion("RGN_ALL")) {
+    f[i] = i.x();
+    g[i] = sin(theta * i.z());
+  }
+  auto* coords = bout::globals::mesh->getCoordinates();
+  bout::FieldMetric dx{1.0}, dz{1.0};
+  for (const auto& i : dx.getRegion("RGN_ALL")) {
+    dx[i] = 1.0 + 0.1 * i.x();
+    dz[i] = 0.7 + 0.05 * i.y();
+    if constexpr (bout::build::use_metric_3d) {
+      dz[i] += 0.02 * i.z();
+    }
+  }
+  coords->setDx(dx, false);
+  coords->setDz(dz, false);
+  const auto result = bracket(f, g, BRACKET_ARAKAWA);
+  for (const auto& i : result.getRegion("RGN_NOXY")) {
+    const BoutReal expected = -sin(theta) * cos(theta * i.z()) / (dx[i] * dz[i]);
+    EXPECT_NEAR(result[i], expected, 2e-15);
+  }
+}
+
+TYPED_TEST(PointwiseStencilsTest, PerpendicularLaplacianQuadraticX) {
+  Field3D f{0.0};
+  for (const auto& i : f.getRegion("RGN_ALL")) {
+    f[i] = i.x() * i.x();
+  }
+  const auto result = FV::Div_Perp_Lap(Field3D{2.0}, f);
+  for (const auto& i : result.getRegion("RGN_NOXY")) {
+    EXPECT_DOUBLE_EQ(result[i], 4.0);
+  }
+}
 } // namespace

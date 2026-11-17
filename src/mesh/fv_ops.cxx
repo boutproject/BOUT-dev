@@ -517,67 +517,47 @@ Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc) {
   //     o --- gD --- o
   //
   Coordinates* coords = a.getCoordinates(outloc);
-  const Mesh* mesh = f.getMesh();
+  BOUT_FOR(i, result.getRegion("RGN_NOXY")) {
+    // Calculate gradients on cell faces -- assumes constant grid spacing
 
-  for (int i = mesh->xstart; i <= mesh->xend; i++) {
-    for (int j = mesh->ystart; j <= mesh->yend; j++) {
-      for (int k = 0; k < mesh->LocalNz; k++) {
+    const BoutReal gR = ((coords->g11()[i] + coords->g11()[i.xp()]) * (f[i.xp()] - f[i])
+                         / (coords->dx()[i.xp()] + coords->dx()[i]))
+                        + (0.5 * (coords->g13()[i] + coords->g13()[i.xp()])
+                           * (f[i.xp().zp()] - f[i.xp().zm()] + f[i.zp()] - f[i.zm()])
+                           / (4. * coords->dz()[i]));
 
-        // wrap k-index around as Z is (currently) periodic.
-        const int kp = (k + 1) % (mesh->LocalNz);
-        const int km = (k - 1 + mesh->LocalNz) % (mesh->LocalNz);
+    const BoutReal gL = ((coords->g11()[i.xm()] + coords->g11()[i]) * (f[i] - f[i.xm()])
+                         / (coords->dx()[i.xm()] + coords->dx()[i]))
+                        + (0.5 * (coords->g13()[i.xm()] + coords->g13()[i])
+                           * (f[i.xm().zp()] - f[i.xm().zm()] + f[i.zp()] - f[i.zm()])
+                           / (4 * coords->dz()[i]));
 
-        // Calculate gradients on cell faces -- assumes constant grid spacing
+    const BoutReal gD =
+        (coords->g13()[i] * (f[i.xp().zm()] - f[i.xm().zm()] + f[i.xp()] - f[i.xm()])
+         / (4. * coords->dx()[i]))
+        + (coords->g33()[i] * (f[i] - f[i.zm()]) / coords->dz()[i]);
 
-        const BoutReal gR =
-            ((coords->g11(i, j, k) + coords->g11(i + 1, j, k))
-             * (f(i + 1, j, k) - f(i, j, k))
-             / (coords->dx(i + 1, j, k) + coords->dx(i, j, k)))
-            + (0.5 * (coords->g13(i, j, k) + coords->g13(i + 1, j, k))
-               * (f(i + 1, j, kp) - f(i + 1, j, km) + f(i, j, kp) - f(i, j, km))
-               / (4. * coords->dz(i, j, k)));
+    const BoutReal gU =
+        (coords->g13()[i] * (f[i.xp().zp()] - f[i.xm().zp()] + f[i.xp()] - f[i.xm()])
+         / (4. * coords->dx()[i]))
+        + (coords->g33()[i] * (f[i.zp()] - f[i]) / coords->dz()[i]);
 
-        const BoutReal gL =
-            ((coords->g11(i - 1, j, k) + coords->g11(i, j, k))
-             * (f(i, j, k) - f(i - 1, j, k))
-             / (coords->dx(i - 1, j, k) + coords->dx(i, j, k)))
-            + (0.5 * (coords->g13(i - 1, j, k) + coords->g13(i, j, k))
-               * (f(i - 1, j, kp) - f(i - 1, j, km) + f(i, j, kp) - f(i, j, km))
-               / (4 * coords->dz(i, j, k)));
+    // Flow right
+    BoutReal flux =
+        gR * 0.25 * (coords->J()[i.xp()] + coords->J()[i]) * (a[i.xp()] + a[i]);
+    result[i] += flux / (coords->dx()[i] * coords->J()[i]);
 
-        const BoutReal gD =
-            (coords->g13(i, j, k)
-             * (f(i + 1, j, km) - f(i - 1, j, km) + f(i + 1, j, k) - f(i - 1, j, k))
-             / (4. * coords->dx(i, j, k)))
-            + (coords->g33(i, j, k) * (f(i, j, k) - f(i, j, km)) / coords->dz(i, j, k));
+    // Flow left
+    flux = gL * 0.25 * (coords->J()[i.xm()] + coords->J()[i]) * (a[i.xm()] + a[i]);
+    result[i] -= flux / (coords->dx()[i] * coords->J()[i]);
 
-        const BoutReal gU =
-            (coords->g13(i, j, k)
-             * (f(i + 1, j, kp) - f(i - 1, j, kp) + f(i + 1, j, k) - f(i - 1, j, k))
-             / (4. * coords->dx(i, j, k)))
-            + (coords->g33(i, j, k) * (f(i, j, kp) - f(i, j, k)) / coords->dz(i, j, k));
+    // Flow up
+    flux = gU * 0.25 * (coords->J()[i] + coords->J()[i.zp()]) * (a[i] + a[i.zp()]);
+    result[i] += flux / (coords->dz()[i] * coords->J()[i]);
 
-        // Flow right
-        BoutReal flux = gR * 0.25 * (coords->J(i + 1, j, k) + coords->J(i, j, k))
-                        * (a(i + 1, j, k) + a(i, j, k));
-        result(i, j, k) += flux / (coords->dx(i, j, k) * coords->J(i, j, k));
-
-        // Flow left
-        flux = gL * 0.25 * (coords->J(i - 1, j, k) + coords->J(i, j, k))
-               * (a(i - 1, j, k) + a(i, j, k));
-        result(i, j, k) -= flux / (coords->dx(i, j, k) * coords->J(i, j, k));
-
-        // Flow up
-        flux = gU * 0.25 * (coords->J(i, j, k) + coords->J(i, j, kp))
-               * (a(i, j, k) + a(i, j, kp));
-        result(i, j, k) += flux / (coords->dz(i, j, k) * coords->J(i, j, k));
-
-        // Flow down
-        flux = gD * 0.25 * (coords->J(i, j, km) + coords->J(i, j, k))
-               * (a(i, j, km) + a(i, j, k));
-        result(i, j, k) += flux / (coords->dz(i, j, k) * coords->J(i, j, k));
-      }
-    }
+    // Flow down
+    flux = gD * 0.25 * (coords->J()[i.zm()] + coords->J()[i]) * (a[i.zm()] + a[i]);
+    result[i] += flux / (coords->dz()[i] * coords->J()[i]);
   }
 
   return result;
