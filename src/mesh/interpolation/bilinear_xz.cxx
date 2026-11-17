@@ -1,7 +1,7 @@
 /**************************************************************************
- * Copyright 2015 B.D.Dudson, P. Hill
+ * Copyright 2015 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -20,14 +20,17 @@
  *
  **************************************************************************/
 
+#include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/field3d.hxx"
 #include "bout/globals.hxx"
 #include "bout/interpolation_xz.hxx"
 #include "bout/mesh.hxx"
+#include "bout/region.hxx"
 
 #include <cmath>
 #include <string>
-#include <vector>
 
 XZBilinear::XZBilinear(int y_offset, Mesh* mesh)
     : XZInterpolation(y_offset, mesh), w0(localmesh), w1(localmesh), w2(localmesh),
@@ -53,19 +56,15 @@ void XZBilinear::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
 
   const auto curregion{getRegion(region)};
   BOUT_FOR(i, curregion) {
-    const int x = i.x();
-    const int y = i.y();
-    const int z = i.z();
-
     // The integer part of xt_prime, zt_prime are the indices of the cell
     // containing the field line end-point
-    i_corner(x, y, z) = static_cast<int>(floor(delta_x[i]));
-    k_corner(x, y, z) = static_cast<int>(floor(delta_z[i]));
+    i_corner[i] = static_cast<int>(floor(delta_x[i]));
+    k_corner[i] = static_cast<int>(floor(delta_z[i]));
 
     // t_x, t_z are the normalised coordinates \in [0,1) within the cell
     // calculated by taking the remainder of the floating point index
-    const BoutReal t_x = delta_x[i] - static_cast<BoutReal>(i_corner(x, y, z));
-    const BoutReal t_z = delta_z[i] - static_cast<BoutReal>(k_corner(x, y, z));
+    const BoutReal t_x = delta_x[i] - static_cast<BoutReal>(i_corner[i]);
+    const BoutReal t_z = delta_z[i] - static_cast<BoutReal>(k_corner[i]);
     const BoutReal t_x1 = 1.0 - t_x;
     const BoutReal t_z1 = 1.0 - t_z;
 
@@ -73,13 +72,13 @@ void XZBilinear::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
     if ((t_x < 0.0) || (t_x > 1.0)) {
       throw BoutException(
           "t_x={:e} out of range at ({:d},{:d},{:d}) (delta_x={:e}, i_corner={:d})", t_x,
-          x, y, z, delta_x[i], i_corner(x, y, z));
+          i.x(), i.y(), i.z(), delta_x[i], i_corner[i]);
     }
 
     if ((t_z < 0.0) || (t_z > 1.0)) {
       throw BoutException(
           "t_z={:e} out of range at ({:d},{:d},{:d}) (delta_z={:e}, k_corner={:d})", t_z,
-          x, y, z, delta_z[i], k_corner(x, y, z));
+          i.x(), i.y(), i.z(), delta_z[i], k_corner[i]);
     }
 
     w0[i] = t_x1 * t_z1;
@@ -100,22 +99,21 @@ Field3D XZBilinear::interpolate(const Field3D& f, const std::string& region) con
   Field3D f_interp{emptyFrom(f)};
 
   const auto curregion{getRegion(region)};
+  const int ncz = localmesh->LocalNz;
   BOUT_FOR(i, curregion) {
-    const int x = i.x();
-    const int y = i.y();
-    const int z = i.z();
+    const auto iyp = i.yp(y_offset);
+    // The stored corner coordinates define the structured source mapping.
+    // Wrap Z over the full storage line, including any Z guards.
+    const int z_mod = ((k_corner[i] % ncz) + ncz) % ncz;
+    const int x_corner = i_corner[i];
+    ASSERT3(x_corner >= 0 && x_corner < localmesh->LocalNx - 1);
+    const auto source = f.indexAt(x_corner, iyp.y(), z_mod);
+    const auto source_xp = source.xp();
+    const auto source_zp = source.zp();
+    const auto source_xpzp = source_xp.zp();
 
-    const int y_next = y + y_offset;
-    // Due to lack of guard cells in z-direction, we need to ensure z-index
-    // wraps around
-    const int ncz = localmesh->LocalNz;
-    const int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
-    const int z_mod_p1 = (z_mod + 1) % ncz;
-
-    f_interp(x, y_next, z) = f(i_corner(x, y, z), y_next, z_mod) * w0(x, y, z)
-                             + f(i_corner(x, y, z) + 1, y_next, z_mod) * w1(x, y, z)
-                             + f(i_corner(x, y, z), y_next, z_mod_p1) * w2(x, y, z)
-                             + f(i_corner(x, y, z) + 1, y_next, z_mod_p1) * w3(x, y, z);
+    f_interp[iyp] = (f[source] * w0[i]) + (f[source_xp] * w1[i]) + (f[source_zp] * w2[i])
+                    + (f[source_xpzp] * w3[i]);
   }
   return f_interp;
 }

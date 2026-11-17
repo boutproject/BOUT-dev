@@ -13,14 +13,14 @@
 
 // Ind3D: i.zp():
 BOUT_HOST_DEVICE inline int i_zp(const int id, const int nz) {
-  int jz = id % nz;
-  int jzmax = nz - 1;
+  const int jz = id % nz;
+  const int jzmax = nz - 1;
   return (jz < jzmax) ? (id + 1) : (id - jzmax);
 }
 // Ind3D: i.zm():
 BOUT_HOST_DEVICE inline int i_zm(const int id, const int nz) {
-  int jz = id % nz;
-  int jzmax = nz - 1;
+  const int jz = id % nz;
+  const int jzmax = nz - 1;
   return (jz > 0) ? (id - 1) : (id + jzmax);
 }
 
@@ -32,12 +32,12 @@ BOUT_HOST_DEVICE inline int i_ym(const int id, const int nz) { return id - nz; }
 
 // Ind3D: i.xp();
 BOUT_HOST_DEVICE inline int i_xp(const int id, const int ny, const int nz) {
-  return id + ny * nz;
+  return id + (ny * nz);
 }
 
 // Ind3D: i.xm();
 BOUT_HOST_DEVICE inline int i_xm(const int id, const int ny, const int nz) {
-  return id - ny * nz;
+  return id - (ny * nz);
 }
 
 //////////////////////////////////////////////////////////////////////////////

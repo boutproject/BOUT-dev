@@ -24,9 +24,19 @@
 #define BOUT_INTERP_XZ_H
 
 #include <bout/bout_types.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/build_defines.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
 #include <bout/generic_factory.hxx>
+#include <bout/globals.hxx>
 #include <bout/mask.hxx>
+#include <bout/region.hxx>
+#include <bout/utils.hxx>
+
 #include <array>
+#include <string>
+#include <vector>
 
 #if BOUT_HAS_PETSC
 #include "bout/petsc_operators.hxx"
