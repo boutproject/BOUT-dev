@@ -102,6 +102,7 @@ set(serial_tests_source
     ./mesh/test_interpolation.cxx
     ./mesh/test_invert3x3.cxx
     ./mesh/test_mesh.cxx
+    ./mesh/test_pointwise_stencils.cxx
     ./mesh/test_paralleltransform.cxx
     ./mesh/test_petsc_operators.cxx
     ./solver/test_fakesolver.cxx

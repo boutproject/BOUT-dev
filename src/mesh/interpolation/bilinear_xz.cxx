@@ -20,10 +20,12 @@
  *
  **************************************************************************/
 
+#include "bout/bout_types.hxx"
 #include "bout/globals.hxx"
 #include "bout/interpolation_xz.hxx"
 #include "bout/mesh.hxx"
 
+#include <cmath>
 #include <string>
 #include <vector>
 
@@ -57,13 +59,13 @@ void XZBilinear::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
 
     // The integer part of xt_prime, zt_prime are the indices of the cell
     // containing the field line end-point
-    i_corner(x, y, z) = static_cast<int>(floor(delta_x(x, y, z)));
-    k_corner(x, y, z) = static_cast<int>(floor(delta_z(x, y, z)));
+    i_corner(x, y, z) = static_cast<int>(floor(delta_x[i]));
+    k_corner(x, y, z) = static_cast<int>(floor(delta_z[i]));
 
     // t_x, t_z are the normalised coordinates \in [0,1) within the cell
     // calculated by taking the remainder of the floating point index
-    const BoutReal t_x = delta_x(x, y, z) - static_cast<BoutReal>(i_corner(x, y, z));
-    const BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
+    const BoutReal t_x = delta_x[i] - static_cast<BoutReal>(i_corner(x, y, z));
+    const BoutReal t_z = delta_z[i] - static_cast<BoutReal>(k_corner(x, y, z));
     const BoutReal t_x1 = 1.0 - t_x;
     const BoutReal t_z1 = 1.0 - t_z;
 
@@ -71,19 +73,19 @@ void XZBilinear::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
     if ((t_x < 0.0) || (t_x > 1.0)) {
       throw BoutException(
           "t_x={:e} out of range at ({:d},{:d},{:d}) (delta_x={:e}, i_corner={:d})", t_x,
-          x, y, z, delta_x(x, y, z), i_corner(x, y, z));
+          x, y, z, delta_x[i], i_corner(x, y, z));
     }
 
     if ((t_z < 0.0) || (t_z > 1.0)) {
       throw BoutException(
           "t_z={:e} out of range at ({:d},{:d},{:d}) (delta_z={:e}, k_corner={:d})", t_z,
-          x, y, z, delta_z(x, y, z), k_corner(x, y, z));
+          x, y, z, delta_z[i], k_corner(x, y, z));
     }
 
-    w0(x, y, z) = t_x1 * t_z1;
-    w1(x, y, z) = t_x * t_z1;
-    w2(x, y, z) = t_x1 * t_z;
-    w3(x, y, z) = t_x * t_z;
+    w0[i] = t_x1 * t_z1;
+    w1[i] = t_x * t_z1;
+    w2[i] = t_x1 * t_z;
+    w3[i] = t_x * t_z;
   }
 }
 

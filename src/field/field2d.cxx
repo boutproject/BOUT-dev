@@ -238,22 +238,7 @@ void Field2D::applyBoundary(const std::string& condition) {
   }
 
   // Set the corners to zero
-  for (int jx = 0; jx < fieldmesh->xstart; jx++) {
-    for (int jy = 0; jy < fieldmesh->ystart; jy++) {
-      operator()(jx, jy) = 0.;
-    }
-    for (int jy = fieldmesh->yend + 1; jy < fieldmesh->LocalNy; jy++) {
-      operator()(jx, jy) = 0.;
-    }
-  }
-  for (int jx = fieldmesh->xend + 1; jx < fieldmesh->LocalNx; jx++) {
-    for (int jy = 0; jy < fieldmesh->ystart; jy++) {
-      operator()(jx, jy) = 0.;
-    }
-    for (int jy = fieldmesh->yend + 1; jy < fieldmesh->LocalNy; jy++) {
-      operator()(jx, jy) = 0.;
-    }
-  }
+  BOUT_FOR(i, getRegion("RGN_CORNERS")) { (*this)[i] = 0.; }
 }
 
 void Field2D::applyBoundary(const std::string& region, const std::string& condition) {
@@ -280,22 +265,7 @@ void Field2D::applyBoundary(const std::string& region, const std::string& condit
   }
 
   // Set the corners to zero
-  for (int jx = 0; jx < fieldmesh->xstart; jx++) {
-    for (int jy = 0; jy < fieldmesh->ystart; jy++) {
-      operator()(jx, jy) = 0.;
-    }
-    for (int jy = fieldmesh->yend + 1; jy < fieldmesh->LocalNy; jy++) {
-      operator()(jx, jy) = 0.;
-    }
-  }
-  for (int jx = fieldmesh->xend + 1; jx < fieldmesh->LocalNx; jx++) {
-    for (int jy = 0; jy < fieldmesh->ystart; jy++) {
-      operator()(jx, jy) = 0.;
-    }
-    for (int jy = fieldmesh->yend + 1; jy < fieldmesh->LocalNy; jy++) {
-      operator()(jx, jy) = 0.;
-    }
-  }
+  BOUT_FOR(i, getRegion("RGN_CORNERS")) { (*this)[i] = 0.; }
 }
 
 void Field2D::applyTDerivBoundary() {

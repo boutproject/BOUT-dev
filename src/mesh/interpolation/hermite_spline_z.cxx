@@ -20,12 +20,14 @@
  *
  **************************************************************************/
 
+#include "bout/bout_types.hxx"
 #include "bout/globals.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/interpolation_z.hxx"
 #include "bout/mesh.hxx"
 
 #include <algorithm>
+#include <cmath>
 #include <vector>
 
 ZHermiteSpline::ZHermiteSpline(int y_offset, Mesh* mesh, Region<Ind3D> region_in)
@@ -73,11 +75,11 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z) {
 
     // The integer part of zt_prime are the indices of the cell
     // containing the field line end-point
-    int corner_zind = floor(delta_z(x, y, z));
+    int corner_zind = floor(delta_z[i]);
 
     // t_z is the normalised coordinate \in [0,1) within the cell
     // calculated by taking the remainder of the floating point index
-    const BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(corner_zind);
+    const BoutReal t_z = delta_z[i] - static_cast<BoutReal>(corner_zind);
 
     // Make corner_zind be in the range 0<=corner_zind<nz
     // This needs to be done after calculating t_z (the coordinate within the
@@ -91,13 +93,13 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z) {
     if ((t_z < 0.0) || (t_z > 1.0)) {
       throw BoutException(
           "t_z={:e} out of range at ({:d},{:d},{:d}) (delta_z={:e}, k_corner={:d})", t_z,
-          x, y, z, delta_z(x, y, z), k_corner[i.ind].ind);
+          x, y, z, delta_z[i], k_corner[i.ind].ind);
     }
 
-    h00(x, y, z) = (2. * t_z * t_z * t_z) - (3. * t_z * t_z) + 1.;
-    h01(x, y, z) = (-2. * t_z * t_z * t_z) + (3. * t_z * t_z);
-    h10(x, y, z) = t_z * (1. - t_z) * (1. - t_z);
-    h11(x, y, z) = (t_z * t_z * t_z) - (t_z * t_z);
+    h00[i] = (2. * t_z * t_z * t_z) - (3. * t_z * t_z) + 1.;
+    h01[i] = (-2. * t_z * t_z * t_z) + (3. * t_z * t_z);
+    h10[i] = t_z * (1. - t_z) * (1. - t_z);
+    h11[i] = (t_z * t_z * t_z) - (t_z * t_z);
   }
 
 #if CHECK > 2

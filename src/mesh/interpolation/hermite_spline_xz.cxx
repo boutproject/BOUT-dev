@@ -23,6 +23,7 @@
 #include "../impls/bout/boutmesh.hxx"
 #include "../parallel/fci_comm.hxx"
 #include "bout/bout.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/globals.hxx"
@@ -200,13 +201,13 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
 
     // The integer part of xt_prime, zt_prime are the indices of the cell
     // containing the field line end-point
-    int i_corn = static_cast<int>(floor(delta_x(x, y, z)));
-    k_corner(x, y, z) = static_cast<int>(floor(delta_z(x, y, z)));
+    int i_corn = static_cast<int>(floor(delta_x[i]));
+    k_corner(x, y, z) = static_cast<int>(floor(delta_z[i]));
 
     // t_x, t_z are the normalised coordinates \in [0,1) within the cell
     // calculated by taking the remainder of the floating point index
-    BoutReal t_x = delta_x(x, y, z) - static_cast<BoutReal>(i_corn);
-    BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
+    BoutReal t_x = delta_x[i] - static_cast<BoutReal>(i_corn);
+    BoutReal t_z = delta_z[i] - static_cast<BoutReal>(k_corner(x, y, z));
 
     // NOTE: A (small) hack to avoid one-sided differences. We need at
     // least 2 interior points due to an awkwardness with the
@@ -236,13 +237,13 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
     if ((t_x < 0.0) || (t_x > 1.0)) {
       throw BoutException(
           "t_x={:e} out of range at ({:d},{:d},{:d}) (delta_x={:e}, i_corn={:d})", t_x, x,
-          y, z, delta_x(x, y, z), i_corn);
+          y, z, delta_x[i], i_corn);
     }
 
     if ((t_z < 0.0) || (t_z > 1.0)) {
       throw BoutException(
           "t_z={:e} out of range at ({:d},{:d},{:d}) (delta_z={:e}, k_corner={:d})", t_z,
-          x, y, z, delta_z(x, y, z), k_corner(x, y, z));
+          x, y, z, delta_z[i], k_corner(x, y, z));
     }
 
     i_corner[i] = SpecificInd<IND_TYPE::IND_3D>(
