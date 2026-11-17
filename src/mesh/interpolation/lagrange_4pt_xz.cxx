@@ -53,30 +53,30 @@ void XZLagrange4pt::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
 
     // The integer part of xt_prime, zt_prime are the indices of the cell
     // containing the field line end-point
-    i_corner(x, y, z) = static_cast<int>(floor(delta_x(x, y, z)));
-    k_corner(x, y, z) = static_cast<int>(floor(delta_z(x, y, z)));
+    i_corner(x, y, z) = static_cast<int>(floor(delta_x[i]));
+    k_corner(x, y, z) = static_cast<int>(floor(delta_z[i]));
 
     // t_x, t_z are the normalised coordinates \in [0,1) within the cell
     // calculated by taking the remainder of the floating point index
-    t_x(x, y, z) = delta_x(x, y, z) - static_cast<BoutReal>(i_corner(x, y, z));
-    t_z(x, y, z) = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
+    t_x[i] = delta_x[i] - static_cast<BoutReal>(i_corner(x, y, z));
+    t_z[i] = delta_z[i] - static_cast<BoutReal>(k_corner(x, y, z));
 
     // NOTE: A (small) hack to avoid one-sided differences
     if (i_corner(x, y, z) == localmesh->xend) {
       i_corner(x, y, z) -= 1;
-      t_x(x, y, z) = 1.0;
+      t_x[i] = 1.0;
     }
 
     // Check that t_x and t_z are in range
-    if ((t_x(x, y, z) < 0.0) || (t_x(x, y, z) > 1.0)) {
+    if ((t_x[i] < 0.0) || (t_x[i] > 1.0)) {
       throw BoutException(
           "t_x={:e} out of range at ({:d},{:d},{:d}) (delta_x={:e}, i_corner={:d})",
-          t_x(x, y, z), x, y, z, delta_x(x, y, z), i_corner(x, y, z));
+          t_x[i], x, y, z, delta_x[i], i_corner(x, y, z));
     }
-    if ((t_z(x, y, z) < 0.0) || (t_z(x, y, z) > 1.0)) {
+    if ((t_z[i] < 0.0) || (t_z[i] > 1.0)) {
       throw BoutException(
           "t_z={:e} out of range at ({:d},{:d},{:d}) (delta_z={:e}, k_corner={:d})",
-          t_z(x, y, z), x, y, z, delta_z(x, y, z), k_corner(x, y, z));
+          t_z[i], x, y, z, delta_z[i], k_corner(x, y, z));
     }
   }
 }
