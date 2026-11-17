@@ -109,4 +109,23 @@ TYPED_TEST(PointwiseStencilsTest, PerpendicularLaplacianQuadraticX) {
     EXPECT_DOUBLE_EQ(result[i], 4.0);
   }
 }
+
+#if not(BOUT_USE_METRIC_3D)
+using SingleZArakawaTest = FakeMeshFixture_tmpl<5, 5, 1>;
+
+TEST_F(SingleZArakawaTest, MixedBracketHasNoZDerivative) {
+  Field3D f{0.0};
+  Field2D g{0.0};
+  for (const auto& i : f.getRegion("RGN_ALL")) {
+    f[i] = i.x() * i.x() + i.y();
+  }
+  for (const auto& i : g.getRegion("RGN_ALL")) {
+    g[i] = i.x() + i.y() * i.y();
+  }
+  const auto result = bracket(f, g, BRACKET_ARAKAWA);
+  for (const auto& i : result.getRegion("RGN_NOXY")) {
+    EXPECT_DOUBLE_EQ(result[i], 0.0);
+  }
+}
+#endif
 } // namespace
