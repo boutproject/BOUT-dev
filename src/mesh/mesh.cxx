@@ -715,8 +715,23 @@ void Mesh::createDefaultRegions() {
                                        LocalNy, LocalNz, maxregionblocksize));
   addRegion3D("RGN_NOY", Region<Ind3D>(0, LocalNx - 1, ystart, yend, 0, LocalNz - 1,
                                        LocalNy, LocalNz, maxregionblocksize));
+  addRegion3D("RGN_NOXY", intersection(getRegion3D("RGN_NOX"), getRegion3D("RGN_NOY")));
   addRegion3D("RGN_NOZ", Region<Ind3D>(0, LocalNx - 1, 0, LocalNy - 1, zstart, zend,
                                        LocalNy, LocalNz, maxregionblocksize));
+  // Fixed storage bounds for stencils, independent of the number of guard cells.
+  addRegion3D("RGN_XINTERIOR",
+              Region<Ind3D>(1, LocalNx - 2, 0, LocalNy - 1, 0, LocalNz - 1, LocalNy,
+                            LocalNz, maxregionblocksize));
+  addRegion3D("RGN_YINTERIOR",
+              Region<Ind3D>(0, LocalNx - 1, 1, LocalNy - 2, 0, LocalNz - 1, LocalNy,
+                            LocalNz, maxregionblocksize));
+  addRegion3D("RGN_XYINTERIOR",
+              intersection(getRegion3D("RGN_XINTERIOR"), getRegion3D("RGN_YINTERIOR")));
+  addRegion3D("RGN_XYINTERIOR2",
+              Region<Ind3D>(2, LocalNx - 3, 2, LocalNy - 3, 0, LocalNz - 1, LocalNy,
+                            LocalNz, maxregionblocksize));
+  addRegion3D("RGN_XEDGES", mask(getRegion3D("RGN_ALL"), getRegion3D("RGN_XINTERIOR")));
+  addRegion3D("RGN_YEDGES", mask(getRegion3D("RGN_ALL"), getRegion3D("RGN_YINTERIOR")));
   addRegion3D("RGN_GUARDS", mask(getRegion3D("RGN_ALL"), getRegion3D("RGN_NOBNDRY")));
   addRegion3D("RGN_XGUARDS_IN", Region<Ind3D>(0, xstart - 1, ystart, yend, zstart, zend,
                                               LocalNy, LocalNz, maxregionblocksize));
@@ -776,6 +791,7 @@ void Mesh::createDefaultRegions() {
   addRegion2D("RGN_NOCORNERS", (getRegion2D("RGN_NOBNDRY") + getRegion2D("RGN_XGUARDS")
                                 + getRegion2D("RGN_YGUARDS") + getRegion2D("RGN_ZGUARDS"))
                                    .unique());
+  addRegion2D("RGN_CORNERS", mask(getRegion2D("RGN_ALL"), getRegion2D("RGN_NOCORNERS")));
 
   // Perp regions
   addRegionPerp("RGN_ALL", Region<IndPerp>(0, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1,

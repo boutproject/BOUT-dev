@@ -51,6 +51,66 @@ TEST_F(MeshTest, CreateDefaultRegions) {
   EXPECT_THROW(localmesh.createDefaultRegions(), BoutException);
 }
 
+TEST_F(MeshTest, StorageStencilRegionsWithTwoGuards) {
+  FakeMesh stencilmesh(7, 8, 5);
+  stencilmesh.xstart = 2;
+  stencilmesh.xend = 4;
+  stencilmesh.ystart = 2;
+  stencilmesh.yend = 5;
+  stencilmesh.zstart = 1;
+  stencilmesh.zend = 3;
+  stencilmesh.createDefaultRegions();
+
+  // Check the actual iteration blocks, including uniqueness and excluded cells.
+  const auto check = [&](const std::string& name, auto contains) {
+    std::vector<int> visits(7 * 8 * 5, 0);
+    BOUT_FOR_SERIAL(i, stencilmesh.getRegion3D(name)) { ++visits[i.ind]; }
+    for (const auto& i : stencilmesh.getRegion3D("RGN_ALL")) {
+      EXPECT_EQ(visits[i.ind], contains(i) ? 1 : 0) << name << " at " << i.ind;
+    }
+  };
+  check("RGN_XINTERIOR", [](auto i) { return i.x() >= 1 && i.x() <= 5; });
+  check("RGN_YINTERIOR", [](auto i) { return i.y() >= 1 && i.y() <= 6; });
+  check("RGN_XYINTERIOR",
+        [](auto i) { return i.x() >= 1 && i.x() <= 5 && i.y() >= 1 && i.y() <= 6; });
+  check("RGN_XYINTERIOR2",
+        [](auto i) { return i.x() >= 2 && i.x() <= 4 && i.y() >= 2 && i.y() <= 5; });
+  check("RGN_XEDGES", [](auto i) { return i.x() == 0 || i.x() == 6; });
+  check("RGN_YEDGES", [](auto i) { return i.y() == 0 || i.y() == 7; });
+  check("RGN_NOXY",
+        [](auto i) { return i.x() >= 2 && i.x() <= 4 && i.y() >= 2 && i.y() <= 5; });
+
+  std::vector<int> corners(7 * 8, 0);
+  BOUT_FOR_SERIAL(i, stencilmesh.getRegion2D("RGN_CORNERS")) { ++corners[i.ind]; }
+  for (const auto& i : stencilmesh.getRegion2D("RGN_ALL")) {
+    const bool is_corner = (i.x() < 2 || i.x() > 4) && (i.y() < 2 || i.y() > 5);
+    EXPECT_EQ(corners[i.ind], is_corner ? 1 : 0);
+  }
+}
+
+TEST_F(MeshTest, StorageStencilRegionsOnSmallMeshes) {
+  for (int size = 1; size <= 5; ++size) {
+    SCOPED_TRACE(size);
+    FakeMesh smallmesh(size, size, 1);
+    smallmesh.xstart = smallmesh.ystart = 0;
+    smallmesh.xend = smallmesh.yend = size - 1;
+    smallmesh.createDefaultRegions();
+    const int interior = std::max(0, size - 2);
+    const int interior2 = std::max(0, size - 4);
+    EXPECT_EQ(smallmesh.getRegion3D("RGN_XINTERIOR").size(), interior * size);
+    EXPECT_EQ(smallmesh.getRegion3D("RGN_YINTERIOR").size(), interior * size);
+    EXPECT_EQ(smallmesh.getRegion3D("RGN_XYINTERIOR").size(), interior * interior);
+    EXPECT_EQ(smallmesh.getRegion3D("RGN_XYINTERIOR2").size(), interior2 * interior2);
+    EXPECT_EQ(smallmesh.getRegion2D("RGN_CORNERS").size(), 0);
+    for (const auto& axis : {"X", "Y"}) {
+      const auto& edges = smallmesh.getRegion3D(std::string("RGN_") + axis + "EDGES");
+      const auto& inside = smallmesh.getRegion3D(std::string("RGN_") + axis + "INTERIOR");
+      EXPECT_EQ(intersection(edges, inside).size(), 0);
+      EXPECT_EQ((edges + inside).unique(), smallmesh.getRegion3D("RGN_ALL"));
+    }
+  }
+}
+
 TEST_F(MeshTest, GetRegionFromMesh) {
   localmesh.createDefaultRegions();
   EXPECT_NO_THROW(localmesh.getRegion("RGN_ALL"));
