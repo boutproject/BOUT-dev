@@ -3,14 +3,15 @@
 # Test file I/O by loading from restart files and writing to dump files
 #
 
+import uuid
+from pathlib import Path
+
+import numpy
 from boutdata import restart
 from boutdata.collect import collect
 from boututils.boutarray import BoutArray
 from boututils.datafile import DataFile
-from boututils.run_wrapper import shell, launch_safe
-import numpy
-import uuid
-from pathlib import Path
+from boututils.run_wrapper import launch_safe, shell
 
 nx = 8
 ny = 16
@@ -93,25 +94,24 @@ def test_restart_io():
     # y-processor-indices, and collect() cannot handle this.
     for nproc in [1, 2, 4]:
         # delete any existing output
-        shell("rm -f data/BOUT.dmp.*.nc data/BOUT.restart.*.nc")
+        shell("rm -rf data/BOUT.dmp.* data/BOUT.restart.*.nc")
 
         # create restart files for the run
         restart.redistribute(nproc, path=restartdir, output="data")
 
-        print("   %d processor...." % (nproc))
+        print(f"   {nproc} processor....")
 
         # run the test executable
-        s, out = launch_safe("./test-restart-io", nproc=nproc, pipe=True)
+        _s, out = launch_safe("./test-restart-io", nproc=nproc, pipe=True)
         with open("run.log." + str(nproc), "w") as f:
             f.write(out)
 
         # check the results
-        for name in testvars.keys():
+        for name, testvar in testvars.items():
             # check non-evolving version
             result = collect(
                 name + "_once", path="data", xguards=True, yguards=True, info=False
             )
-            testvar = testvars[name]
 
             if not numpy.allclose(testvar, result):
                 success = False
@@ -126,7 +126,7 @@ def test_restart_io():
             if name == "fperp_lower" or name == "fperp_upper":
                 yindex_result = result.attributes["yindex_global"]
                 yindex_test = testvar.attributes["yindex_global"]
-                if not yindex_result == yindex_test:
+                if yindex_result != yindex_test:
                     success = False
                     print(
                         "Fail: yindex_global of "
@@ -149,7 +149,7 @@ def test_restart_io():
                 if name == "fperp_lower" or name == "fperp_upper":
                     yindex_result = result.attributes["yindex_global"]
                     yindex_test = testvar.attributes["yindex_global"]
-                    if not yindex_result == yindex_test:
+                    if yindex_result != yindex_test:
                         success = False
                         print(
                             "Fail: yindex_global of "
@@ -169,7 +169,7 @@ def test_restart_io():
             success = False
             print(f"run_id='{run_id}' is not a valid UUID")
         run_restart_from = str(collect("run_restart_from", path="data", info=False))
-        if not run_restart_from == run_id_string:
+        if run_restart_from != run_id_string:
             success = False
             print(
                 f"incorrect run_restart_from='{run_restart_from}'. Expected '{run_id_string}'"
@@ -179,5 +179,5 @@ def test_restart_io():
 
     # clean up binary files
     shell(
-        "rm -f data/BOUT.dmp.*.nc data/BOUT.restart.*.nc data/restart/BOUT.restart.0.nc"
+        "rm -rf data/BOUT.dmp.* data/BOUT.restart.*.nc data/restart/BOUT.restart.0.nc"
     )

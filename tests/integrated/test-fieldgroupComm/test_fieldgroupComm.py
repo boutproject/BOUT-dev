@@ -5,8 +5,8 @@
 #
 
 import pytest
-from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
+from boututils.run_wrapper import launch_safe, shell
 from numpy import abs, seterr
 
 
@@ -23,7 +23,7 @@ def test_fieldgroupcomm(nproc):
 
     cmd = f"./{exe_name}"
 
-    shell(["rm -f data/BOUT.dmp.*.nc"])
+    shell(["rm -rf data/BOUT.dmp.*"])
 
     print(f"Running FieldGroup comm test on {nproc} processor(s)...")
     _, out = launch_safe(cmd, nproc=nproc, pipe=True)

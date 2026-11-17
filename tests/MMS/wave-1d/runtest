@@ -2,18 +2,11 @@
 
 # Python script to run and analyse MMS test
 
-from __future__ import division
-from __future__ import print_function
+import sys
 
-try:
-    from builtins import str
-except:
-    pass
-
-from boututils.run_wrapper import shell, build_and_log, launch_safe
 from boutdata.collect import collect
-
-from numpy import sqrt, max, abs, mean, array, log, concatenate
+from boututils.run_wrapper import build_and_log, launch_safe, shell
+from numpy import abs, array, concatenate, log, max, mean, sqrt
 
 build_and_log("Making MMS wave test")
 
@@ -29,7 +22,16 @@ error_2 = []  # The L2 error (RMS)
 error_inf = []  # The maximum error
 
 for nx in nxlist:
-    args = "mesh:nx=" + str(nx) + " nout=" + str(nout) + " timestep=" + str(timestep)
+    # Set mesh size and outputs. Replace previous outputs if present.
+    args = (
+        "mesh:nx="
+        + str(nx)
+        + " nout="
+        + str(nout)
+        + " timestep="
+        + str(timestep)
+        + " replace"
+    )
 
     print("Running with " + args)
 
@@ -42,9 +44,8 @@ for nx in nxlist:
     s, out = launch_safe(cmd, nproc=nproc, pipe=True)
 
     # Save output to log file
-    f = open("run.log." + str(nx), "w")
-    f.write(out)
-    f.close()
+    with open("run.log." + str(nx), "w") as f:
+        f.write(out)
 
     # Collect data
     E_f = collect("E_f", tind=[nout, nout], path="data", info=False)
@@ -62,13 +63,13 @@ for nx in nxlist:
     error_2.append(l2)
     error_inf.append(linf)
 
-    print("Error norm: l-2 %f l-inf %f" % (l2, linf))
+    print(f"Error norm: l-2 {l2} l-inf {linf}")
 
 # Calculate grid spacing
 dx = 1.0 / (array(nxlist) - 2.0)
 
 order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
-print("Convergence order = %f" % (order))
+print(f"Convergence order = {order}")
 
 # plot errors
 try:
@@ -76,9 +77,7 @@ try:
 
     plt.plot(dx, error_2, "-o", label=r"$l^2$")
     plt.plot(dx, error_inf, "-x", label=r"$l^\infty$")
-    plt.plot(
-        dx, error_2[-1] * (dx / dx[-1]) ** order, "--", label="Order %.1f" % (order)
-    )
+    plt.plot(dx, error_2[-1] * (dx / dx[-1]) ** order, "--", label=f"Order {order:.1f}")
 
     plt.legend(loc="upper left")
     plt.grid()
@@ -93,16 +92,16 @@ try:
 
     # plt.show()
     plt.close()
-except:
+except Exception as e:  # noqa: BLE001
     # Plotting could fail for any number of reasons, and the actual
     # error raised may depend on, among other things, the current
     # matplotlib backend, so catch everything
-    pass
+    print(f"Plotting: Caught exception {e}")
 
 if 2.2 > order > 1.8:
     # test for success
     print(" => Test passed")
-    exit(0)
+    sys.exit(0)
 else:
     print(" => Test failed")
-    exit(1)
+    sys.exit(1)

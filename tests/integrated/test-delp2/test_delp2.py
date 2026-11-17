@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
-import pytest
-import numpy as np
 from sys import stdout
-from boututils.run_wrapper import shell, launch_safe
+
+import numpy as np
+import pytest
 from boutdata.collect import collect
+from boututils.run_wrapper import launch_safe, shell
 
 tol = 1e-10  # Absolute tolerance
 
@@ -28,7 +29,9 @@ def test_delp2(setting):
     print("Args: " + setting)
     cmd = exefile + " " + setting
 
-    s, out = launch_safe(cmd, nproc=1, pipe=True)
+    shell(["rm -rf data/BOUT.dmp.*"])
+
+    _s, out = launch_safe(cmd, nproc=1, pipe=True)
     file_suffix = ".".join([x.split("=")[-1] for x in setting.split()])
     with open("run.log." + str(file_suffix) + ".1", "w") as f:
         f.write(out)
@@ -36,10 +39,10 @@ def test_delp2(setting):
     n0 = collect("n", path="data", info=False)
 
     for nproc in [2, 4]:
-        shell(["rm data/BOUT.dmp.*.nc"])
+        shell(["rm -rf data/BOUT.dmp.*"])
 
-        stdout.write("   %d processor...." % (nproc))
-        s, out = launch_safe(cmd, nproc=nproc, mthread=1, pipe=True)
+        stdout.write(f"   {nproc} processor....")
+        _s, out = launch_safe(cmd, nproc=nproc, mthread=1, pipe=True)
         with open("run.log." + str(file_suffix) + "." + str(nproc), "w") as f:
             f.write(out)
 

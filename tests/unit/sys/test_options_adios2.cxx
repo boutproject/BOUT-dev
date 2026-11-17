@@ -9,7 +9,9 @@
 #include "test_extras.hxx"
 #include "test_tmpfiles.hxx"
 #include "bout/adios_object.hxx"
+#include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
+#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
 #include "bout/options_io.hxx"
 #include "bout/utils.hxx"
@@ -85,6 +87,9 @@ TEST_F(OptionsAdios2Test, ReadThenOverwriteSameFileTwice) {
     OptionsIO::create(file_options)->write(options);
   }
 
+  Options file_options_replace = file_options.copy();
+  file_options_replace["replace"] = true;
+
   for (int expected = 1; expected <= 2; ++expected) {
     Options data = OptionsIO::create(file_options)->read();
 
@@ -95,7 +100,7 @@ TEST_F(OptionsAdios2Test, ReadThenOverwriteSameFileTwice) {
     data["scalar"].force(expected + 1);
     data["field"] = Field3D(expected + 2.0);
 
-    OptionsIO::create(file_options)->write(data);
+    OptionsIO::create(file_options_replace)->write(data);
   }
 
   Options data = OptionsIO::create(file_options)->read();
@@ -362,10 +367,13 @@ TEST_F(OptionsAdios2Test, WriteMultipleTimeDimensions) {
     options["thing3_t2"].assignRepeat(2.0, "t2"); // non-default
     options["thing4_t2"].assignRepeat(2.0, "t2"); // non-default
 
+    Options no_write_options_append = no_write_options.copy();
+    no_write_options_append["append"] = true;
+
     // Write the non-default time dim twice
     OptionsIO::create(no_write_options)->write(options, "t2");
-    OptionsIO::create(no_write_options)->write(options, "t2");
-    OptionsIO::create(no_write_options)->write(options, "t");
+    OptionsIO::create(no_write_options_append)->write(options, "t2");
+    OptionsIO::create(no_write_options_append)->write(options, "t");
   }
 
   EXPECT_NO_THROW(OptionsIO::create(no_write_options)->verifyTimesteps());

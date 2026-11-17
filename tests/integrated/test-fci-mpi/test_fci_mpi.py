@@ -2,11 +2,11 @@
 #
 # Python script to run and analyse MPI test
 
-from boututils.run_wrapper import launch_safe
-from boutdata.collect import collect
 import itertools
 
 import numpy.testing as npt
+from boutdata.collect import collect
+from boututils.run_wrapper import launch_safe, shell
 
 # Resolution in x and y
 NLIST = [1, 2, 4]
@@ -16,12 +16,14 @@ NSLICES = [1]
 
 def test_fci_mpi():
 
-    COLLECT_KW = dict(info=False, xguards=False, yguards=False, path="data")
+    COLLECT_KW = {"info": False, "xguards": False, "yguards": False, "path": "data"}
 
     def run_case(nxpe: int, nype: int, mthread: int):
 
         cmd = f"./fci_mpi NXPE={nxpe} NYPE={nype} mesh:paralleltransform:xzinterpolation:type={implementation}"
         print(f"Running command: {cmd}")
+
+        shell(["rm -rf data/BOUT.dmp.*"])
 
         _, out = launch_safe(cmd, nproc=nxpe * nype, mthread=mthread, pipe=True)
 

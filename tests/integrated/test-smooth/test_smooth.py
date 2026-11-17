@@ -4,12 +4,13 @@
 # Run the test, compare results against the benchmark
 #
 
-import pytest
-import numpy as np
 import itertools
 from pathlib import Path
-from boututils.run_wrapper import shell, launch_safe
+
+import numpy as np
+import pytest
 from boutdata.collect import collect
+from boututils.run_wrapper import launch_safe, shell
 
 # Variables to compare
 vars = ["yavg2d", "yavg3d", "sm3d"]
@@ -37,10 +38,10 @@ def test_smooth(benchmark_data, nxpe, nype):
     cmd = "./test_smooth"
 
     # Clean up old data
-    shell(["rm -f data/BOUT.dmp.*.nc"])
+    shell(["rm -rf data/BOUT.dmp.*"])
 
     # Run the executable
-    s, out = launch_safe(f"{cmd} NXPE={nxpe}", nproc=nproc, pipe=True)
+    _s, out = launch_safe(f"{cmd} NXPE={nxpe}", nproc=nproc, pipe=True)
 
     # Save log
     with open(f"run.log.{nproc}", "w") as f:

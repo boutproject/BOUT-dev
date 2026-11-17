@@ -34,6 +34,10 @@ or on the BOUT++ command line set ``output:type=adios``. The default
 prefix is "BOUT.dmp" so the ADIOS file will be called "BOUT.dmp.bp". To change this,
 set the ``output:prefix`` option.
 
+As with NetCDF output, BOUT++ will by default refuse to overwrite an
+existing dump file. Use ``append`` to add new output to an existing
+ADIOS dataset, or ``replace`` to overwrite it.
+
 Restart files
 -------------
 
@@ -43,3 +47,4 @@ so to read and write restarts from an ADIOS dataset, put in BOUT.inp::
   [restart_files]
   type = adios
 
+Restart files still overwrite existing files by default.

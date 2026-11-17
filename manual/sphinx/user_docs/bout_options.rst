@@ -568,7 +568,9 @@ in table :numref:`tab-outputopts`.
    | Option               | Description                             | Default value  |
    +======================+=========================================+================+
    | ``append``           | Append to existing file if true,        | ``false``      |
-   |                      | otherwise overwrite                     |                |
+   |                      | otherwise create a new file             |                |
+   +----------------------+-----------------------------------------+----------------+
+   | ``replace``          | Overwrite an existing dump file if true | ``false``      |
    +----------------------+-----------------------------------------+----------------+
    | ``enabled``          | Writing is enabled                      | ``true``       |
    +----------------------+-----------------------------------------+----------------+
@@ -587,6 +589,9 @@ in table :numref:`tab-outputopts`.
 
 - ``enabled`` is useful mainly for doing performance or scaling tests, where you
   want to exclude I/O from the timings.
+- By default BOUT++ will not overwrite existing dump files. Set ``append=true``
+  to add new time points to an existing file, or ``replace=true`` to overwrite it.
+  Restart files still overwrite existing files by default.
 - If you find that IO is taking more and more time as your simulation goes on,
   try setting ``flush_frequency`` to a larger value such as ``10``. This can
   workaround an issue with NetCDF where subsequent writes take longer and
@@ -882,6 +887,10 @@ NetCDF file::
 
   bout::OptionsIO::create("settings.nc")->write(Options::root());
 
+This form creates or overwrites ``settings.nc`` if it already exists.
+To prevent overwriting, pass ``replace=false`` explicitly when creating
+the file.
+
 and to read it in again::
 
   Options data = bout::OptionsIO::create("settings.nc")->read();
@@ -953,6 +962,11 @@ automatically set the ``"time_dimension"`` attribute::
 
   // Append data to file
   bout::OptionsIO::create({{"file", "time.nc"}, {"append", true}})->write(data);
+
+If you want to overwrite an existing file instead of appending, use
+``replace=true``. If neither ``append`` nor ``replace`` is set, then
+writing to an existing dump/output file will fail with an error rather
+than silently overwriting data.
 
 .. note:: By default, `bout::OptionsIO::write` will only write variables
           with a ``"time_dimension"`` of ``"t"``. You can write

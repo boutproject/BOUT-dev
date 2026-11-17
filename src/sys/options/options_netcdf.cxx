@@ -4,17 +4,30 @@
 
 #include "options_netcdf.hxx"
 
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
 #include "bout/bout.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/mesh.hxx"
+#include "bout/options_io.hxx"
 #include "bout/sys/timer.hxx"
+#include "bout/sys/variant.hxx"
 #include "bout/traits.hxx"
+#include "bout/unused.hxx"
+#include "bout/utils.hxx"
 
 #include <fmt/format.h>
 
 #include <climits>
 #include <exception>
+#include <fstream>
+#include <functional>
+#include <map>
+#include <memory>
 #include <netcdf>
+#include <string>
+#include <utility>
 #include <vector>
 
 using namespace netCDF;
@@ -206,7 +219,7 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
 namespace bout {
 
 Options OptionsNetCDF::read(bool lazy) {
-  Timer timer("io");
+  const Timer timer("io");
 
   // Open file
   auto read_file = std::make_shared<netCDF::NcFile>(filename, NcFile::read);
@@ -399,7 +412,7 @@ private:
 
 template <>
 void NcPutVarVisitor::operator()<bool>(const bool& value) {
-  int int_val = value ? 1 : 0;
+  const int int_val = value ? 1 : 0;
   var.putVar(&int_val);
 }
 
@@ -494,7 +507,7 @@ private:
 
 template <>
 void NcPutAttVisitor::operator()(const bool& value) {
-  int ival = value ? 1 : 0;
+  const int ival = value ? 1 : 0;
   var.putAtt(name, ncInt, ival);
 }
 template <>
@@ -751,9 +764,17 @@ OptionsNetCDF::OptionsNetCDF(Options& options) : OptionsIO(options) {
                            options["prefix"].as<std::string>(), BoutComm::rank());
   }
 
-  file_mode = (options["append"].doc("Append to existing file?").withDefault<bool>(false))
-                  ? FileMode::append
-                  : FileMode::replace;
+  const bool appending =
+      options["append"].doc("Append to existing file?").withDefault<bool>(false);
+  const bool replacing =
+      options["replace"].doc("Replace existing file?").withDefault<bool>(false);
+  if (appending) {
+    file_mode = FileMode::append;
+  } else if (replacing) {
+    file_mode = FileMode::replace;
+  } else {
+    file_mode = FileMode::newFile;
+  }
 }
 
 void OptionsNetCDF::verifyTimesteps() const {
@@ -778,19 +799,39 @@ void OptionsNetCDF::verifyTimesteps() const {
 
 /// Write options to file
 void OptionsNetCDF::write(const Options& options, const std::string& time_dim) {
-  Timer timer("io");
-
-  // Check the file mode to use
-  auto ncmode = NcFile::replace;
-  if (file_mode == FileMode::append) {
-    // NetCDF doesn't have a "read-write, create if exists" mode, so
-    // we need to check ourselves if the file already exists; if it
-    // doesn't, tell NetCDF to create it
-    std::ifstream file(filename);
-    ncmode = file.good() ? NcFile::FileMode::write : NcFile::FileMode::newFile;
-  }
+  const Timer timer("io");
 
   if (not data_file) {
+    // Check the file mode to use when opening the file for the first time.
+    // A single output timestep can call write() multiple times, so only
+    // guard against overwriting on the initial open.
+    auto ncmode = NcFile::replace;
+    switch (file_mode) {
+    case FileMode::append: {
+      // NetCDF doesn't have a "read-write, create if exists" mode, so
+      // we need to check ourselves if the file already exists; if it
+      // doesn't, tell NetCDF to create it
+      const std::ifstream file(filename);
+      ncmode = file.good() ? NcFile::FileMode::write : NcFile::FileMode::newFile;
+      break;
+    }
+    case FileMode::replace: {
+      // Replacing the file if it exists
+      break;
+    }
+    case FileMode::newFile: {
+      // Creating a new file. Don't overwrite existing data.
+      const std::ifstream file(filename);
+      if (file.good()) {
+        throw BoutException(
+            "Output file '{:s}' already exists. Aborting rather than overwriting data.\n"
+            "Set 'append=true' to append, or 'replace=true' to overwrite.",
+            filename);
+      }
+      break;
+    }
+    };
+
     data_file = std::make_unique<netCDF::NcFile>(filename, ncmode);
   }
 

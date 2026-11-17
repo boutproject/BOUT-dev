@@ -27,5 +27,5 @@ for i, f in enumerate(flags_src):
 @pytest.mark.parametrize("region", ["", "mesh:ixseps1=0 mesh:ixseps2=0"])
 @pytest.mark.parametrize("nproc", [1, 2, 4])
 def test_invpar(region, nproc):
-    cmd = f"./test_invpar -q -q -q {flags} {region}"
+    cmd = f"./test_invpar -q -q -q {flags} {region} replace"
     launch_safe(cmd, nproc=nproc, mthread=1)
