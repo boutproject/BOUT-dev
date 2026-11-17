@@ -80,6 +80,9 @@
     return found->second;                                                      \
   }                                                                            \
                                                                                \
+  [[deprecated("Use fmt::to_string(e) or fmt::format instead.")]]              \
+  inline std::string toString(enumname e) { return fmt::to_string(e); }        \
+                                                                               \
   inline enumname BOUT_MAKE_FROMSTRING_NAME(enumname)(const std::string& s) {  \
                                                                                \
     const static std::map<std::string, enumname> fromString_map = {            \
@@ -121,6 +124,9 @@
     }                                                                          \
     return found->second;                                                      \
   }                                                                            \
+                                                                               \
+  [[deprecated("Use fmt::to_string(e) or fmt::format instead.")]]              \
+  inline std::string toString(enumname e) { return fmt::to_string(e); }        \
                                                                                \
   inline enumname BOUT_MAKE_FROMSTRING_NAME(enumname)(const std::string& s) {  \
     const static std::map<std::string, enumname> fromString_map = {            \
