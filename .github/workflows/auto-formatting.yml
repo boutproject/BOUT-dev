@@ -12,7 +12,8 @@ jobs:
       # Checkout the pull request branch, also include all history
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.head_ref }}
+          # Use the PR ref in the base repository so fork branches are resolved.
+          ref: refs/pull/${{ github.event.pull_request.number }}/head
           fetch-depth: 0
 
       - name: "Set up Python"
