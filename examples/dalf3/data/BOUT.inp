@@ -90,7 +90,7 @@ nonlinear = true
 
 filter_z = false # Keep only lowest harmonic
 
-bracket_method = 2  # 0 = std, 2 = arakawa, 3 = ctu
+bracket_method = 2  # 0 = std, 2 = arakawa
 
 viscosity = 0.01
 viscosity_par = 1.0

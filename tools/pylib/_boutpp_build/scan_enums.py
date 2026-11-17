@@ -1,4 +1,4 @@
-class Enum(object):
+class Enum:
     def __init__(self, name, vals, source):
         self.name = name.strip()
         self.vals = [x.strip() for x in vals.split(",")]
@@ -76,8 +76,6 @@ enums["BRACKET_METHOD"].extra = {
     "SIMPLE": "simple",
     "BRACKET_ARAKAWA": "arakawa",
     "ARAKAWA": "arakawa",
-    "BRACKET_CTU": "ctu",
-    "CTU": "ctu",
 }
 enums["CELL_LOC"].extra = {
     "CELL_DEFAULT": "deflt",

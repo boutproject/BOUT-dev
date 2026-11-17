@@ -41,7 +41,6 @@
 #include <bout/invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 #include <bout/mesh.hxx>
 #include <bout/region.hxx>
-#include <bout/solver.hxx>
 #include <bout/unused.hxx>
 #include <bout/utils.hxx>
 #include <bout/yboundary_regions.hxx>
@@ -1001,7 +1000,7 @@ bout::FieldMetric bracket(const Field2D& f, const Field2D& g, BRACKET_METHOD met
 }
 
 Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
-                CELL_LOC outloc, Solver* solver) {
+                CELL_LOC outloc, [[maybe_unused]] Solver* solver) {
 
   ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
@@ -1016,53 +1015,6 @@ Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
   const Coordinates* metric = f.getCoordinates(outloc);
 
   switch (method) {
-  case BRACKET_CTU: {
-    // First order Corner Transport Upwind method
-    // P.Collela JCP 87, 171-200 (1990)
-
-    if (solver == nullptr) {
-      throw BoutException("CTU method requires access to the solver");
-    }
-
-#if not(BOUT_USE_METRIC_3D)
-    const int ncz = mesh->LocalNz;
-
-    for (int x = mesh->xstart; x <= mesh->xend; x++) {
-      for (int y = mesh->ystart; y <= mesh->yend; y++) {
-        for (int z = 0; z < ncz; z++) {
-          const int zm = (z - 1 + ncz) % ncz;
-          const int zp = (z + 1) % ncz;
-
-          BoutReal gp;
-          BoutReal gm;
-
-          // Vx = DDZ(f)
-          const BoutReal vx = (f(x, y, zp) - f(x, y, zm)) / (2. * metric->dz(x, y, z));
-
-          // Set stability condition
-          solver->setMaxTimestep(metric->dx(x, y, z) / (fabs(vx) + 1e-16));
-
-          // X differencing
-          if (vx > 0.0) {
-            gp = g(x, y);
-
-            gm = g(x - 1, y);
-
-          } else {
-            gp = g(x + 1, y);
-
-            gm = g(x, y);
-          }
-
-          result(x, y, z) = vx * (gp - gm) / metric->dx(x, y, z);
-        }
-      }
-    }
-#else
-    throw BoutException("BRACKET_CTU not valid with 3D metrics yet.");
-#endif
-    break;
-  }
   case BRACKET_ARAKAWA: {
     // Arakawa scheme for perpendicular flow. Here as a test
 
@@ -1168,9 +1120,6 @@ Field3D bracket(const Field2D& f, const Field3D& g, BRACKET_METHOD method,
   Field3D result(mesh);
 
   switch (method) {
-  case BRACKET_CTU:
-    throw BoutException("Bracket method CTU is not yet implemented for [2d,3d] fields.");
-    break;
   case BRACKET_ARAKAWA:
     // It is symmetric, therefore we can return -[3d,2d]
     return -bracket(g, f, method, outloc, solver);
@@ -1211,112 +1160,6 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
   }
 
   switch (method) {
-  case BRACKET_CTU: {
-    // First order Corner Transport Upwind method
-    // P.Collela JCP 87, 171-200 (1990)
-#if not(BOUT_USE_METRIC_3D)
-    if (solver == nullptr) {
-      throw BoutException("CTU method requires access to the solver");
-    }
-
-    // Get current timestep
-    const BoutReal dt = solver->getCurrentTimestep();
-
-    FieldPerp vx(mesh);
-    FieldPerp vz(mesh);
-    vx.allocate();
-    vx.setLocation(outloc);
-    vz.allocate();
-    vz.setLocation(outloc);
-
-    const int ncz = mesh->LocalNz;
-    for (int y = mesh->ystart; y <= mesh->yend; y++) {
-      for (int x = 1; x <= mesh->LocalNx - 2; x++) {
-        for (int z = mesh->zstart; z <= mesh->zend; z++) {
-          const int zm = (z - 1 + ncz) % ncz;
-          const int zp = (z + 1) % ncz;
-
-          // Vx = DDZ(f)
-          vx(x, z) = (f(x, y, zp) - f(x, y, zm)) / (2. * metric->dz(x, y, z));
-          // Vz = -DDX(f)
-          vz(x, z) = (f(x - 1, y, z) - f(x + 1, y, z))
-                     / ((0.5 * metric->dx(x - 1, y)) + metric->dx(x, y)
-                        + (0.5 * metric->dx(x + 1, y)));
-
-          // Set stability condition
-          solver->setMaxTimestep(fabs(metric->dx(x, y)) / (fabs(vx(x, z)) + 1e-16));
-          solver->setMaxTimestep(metric->dz(x, y) / (fabs(vz(x, z)) + 1e-16));
-        }
-      }
-
-      // Simplest form: use cell-centered velocities (no divergence included so not flux conservative)
-
-      for (int x = mesh->xstart; x <= mesh->xend; x++) {
-        for (int z = 0; z < ncz; z++) {
-          const int zm = (z - 1 + ncz) % ncz;
-          const int zp = (z + 1) % ncz;
-
-          BoutReal gp;
-          BoutReal gm;
-
-          // X differencing
-          if (vx(x, z) > 0.0) {
-            gp = g(x, y, z)
-                 + ((0.5 * dt / metric->dz(x, y))
-                    * ((vz(x, z) > 0) ? vz(x, z) * (g(x, y, zm) - g(x, y, z))
-                                      : vz(x, z) * (g(x, y, z) - g(x, y, zp))));
-
-            gm = g(x - 1, y, z)
-                 + ((0.5 * dt / metric->dz(x, y))
-                    * ((vz(x, z) > 0) ? vz(x, z) * (g(x - 1, y, zm) - g(x - 1, y, z))
-                                      : vz(x, z) * (g(x - 1, y, z) - g(x - 1, y, zp))));
-
-          } else {
-            gp = g(x + 1, y, z)
-                 + ((0.5 * dt / metric->dz(x, y))
-                    * ((vz(x, z) > 0) ? vz(x, z) * (g(x + 1, y, zm) - g(x + 1, y, z))
-                                      : vz[x][z] * (g(x + 1, y, z) - g(x + 1, y, zp))));
-
-            gm = g(x, y, z)
-                 + ((0.5 * dt / metric->dz(x, y))
-                    * ((vz(x, z) > 0) ? vz(x, z) * (g(x, y, zm) - g(x, y, z))
-                                      : vz(x, z) * (g(x, y, z) - g(x, y, zp))));
-          }
-
-          result(x, y, z) = vx(x, z) * (gp - gm) / metric->dx(x, y);
-
-          // Z differencing
-          if (vz(x, z) > 0.0) {
-            gp = g(x, y, z)
-                 + ((0.5 * dt / metric->dx(x, y))
-                    * ((vx[x][z] > 0) ? vx[x][z] * (g(x - 1, y, z) - g(x, y, z))
-                                      : vx[x][z] * (g(x, y, z) - g(x + 1, y, z))));
-
-            gm = g(x, y, zm)
-                 + ((0.5 * dt / metric->dx(x, y))
-                    * ((vx(x, z) > 0) ? vx(x, z) * (g(x - 1, y, zm) - g(x, y, zm))
-                                      : vx(x, z) * (g(x, y, zm) - g(x + 1, y, zm))));
-          } else {
-            gp = g(x, y, zp)
-                 + ((0.5 * dt / metric->dx(x, y))
-                    * ((vx(x, z) > 0) ? vx(x, z) * (g(x - 1, y, zp) - g(x, y, zp))
-                                      : vx(x, z) * (g(x, y, zp) - g(x + 1, y, zp))));
-
-            gm = g(x, y, z)
-                 + ((0.5 * dt / metric->dx(x, y))
-                    * ((vx(x, z) > 0) ? vx(x, z) * (g(x - 1, y, z) - g(x, y, z))
-                                      : vx(x, z) * (g(x, y, z) - g(x + 1, y, z))));
-          }
-
-          result(x, y, z) += vz(x, z) * (gp - gm) / metric->dz(x, y);
-        }
-      }
-    }
-#else
-    throw BoutException("BRACKET_CTU not valid with 3D metrics yet.");
-#endif
-    break;
-  }
   case BRACKET_ARAKAWA: {
     // Arakawa scheme for perpendicular flow
 #if not(BOUT_USE_METRIC_3D)

@@ -70,13 +70,8 @@ protected:
       output << "\tBrackets: Arakawa scheme\n";
       break;
     }
-    case 3: {
-      bm = BRACKET_CTU;
-      output << "\tBrackets: Corner Transport Upwind method\n";
-      break;
-    }
     default:
-      output << "ERROR: Invalid choice of bracket method. Must be 0 - 3\n";
+      output << "ERROR: Invalid choice of bracket method. Must be 0 - 2\n";
       return 1;
     }
 

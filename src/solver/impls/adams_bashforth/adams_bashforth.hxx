@@ -44,7 +44,7 @@ public:
 
   void resetInternalFields() override;
 
-  // Utilities only used by the CTU bracket approach
+  // Timestep control
   void setMaxTimestep(BoutReal dt) override;
   BoutReal getCurrentTimestep() override { return timestep; }
 

@@ -194,7 +194,6 @@ private:
    * BRACKET_STD      - Same as b0xGrad_dot_Grad, methods in BOUT.inp
    * BRACKET_SIMPLE   - Subset of terms, used in BOUT-06
    * BRACKET_ARAKAWA  - Arakawa central differencing (2nd order)
-   * BRACKET_CTU      - 1st order upwind method
    *
    */
 
@@ -441,13 +440,8 @@ public:
       output << "\tBrackets for ExB: Arakawa scheme\n";
       break;
     }
-    case 3: {
-      bm_exb = BRACKET_CTU;
-      output << "\tBrackets for ExB: Corner Transport Upwind method\n";
-      break;
-    }
     default:
-      throw BoutException("Invalid choice of bracket method. Must be 0 - 3\n");
+      throw BoutException("Invalid choice of bracket method. Must be 0 - 2\n");
     }
 
     bm_mag_flag =
@@ -468,13 +462,8 @@ public:
       output << "\tBrackets: Arakawa scheme\n";
       break;
     }
-    case 3: {
-      bm_mag = BRACKET_CTU;
-      output << "\tBrackets: Corner Transport Upwind method\n";
-      break;
-    }
     default:
-      throw BoutException("Invalid choice of bracket method. Must be 0 - 3\n");
+      throw BoutException("Invalid choice of bracket method. Must be 0 - 2\n");
     }
 
     eHall = options["eHall"]

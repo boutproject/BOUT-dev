@@ -48,12 +48,11 @@ private:
   // Bracket method for advection terms // Poisson brackets: b0 x Grad(f) dot Grad(g) / B = [f, g]
   // Method to use: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
   /*
-   * Bracket method 
+   * Bracket method
    *
    * BRACKET_STD      - Same as b0xGrad_dot_Grad, methods in BOUT.inp
    * BRACKET_SIMPLE   - Subset of terms, used in BOUT-06
    * BRACKET_ARAKAWA  - Arakawa central differencing (2nd order)
-   * BRACKET_CTU      - 1st order upwind method
    *
    */
   BRACKET_METHOD bm_exb;

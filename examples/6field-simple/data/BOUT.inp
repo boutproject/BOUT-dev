@@ -134,7 +134,7 @@ AA = 2.0          # ion mass in units of proton mass
 # BRACKET_METHOD flags:
 # 0:BRACKET_STD; derivative methods will be determined
 #   by the choices C or W in this input file
-# 1:BRACKET_SIMPLE; 2:BRACKET_ARAKAWA; 3:BRACKET_CTU.
+# 1:BRACKET_SIMPLE; 2:BRACKET_ARAKAWA.
 
 bracket_method_exb = 2   #differencing schemes for ExB
 bracket_method_mag = 2   #differencing schemes for magnetic flutter

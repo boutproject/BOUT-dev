@@ -310,13 +310,10 @@ enum class BRACKET_METHOD {
   standard, ///< Use b0xGrad_dot_Grad
   simple,   ///< Keep only terms in X-Z
   arakawa,  ///< Arakawa method in X-Z
-  ctu,      ///< Corner Transport Upwind (CTU) method. Explicit method only, needs the
-            ///  timestep from the solver
 };
 constexpr BRACKET_METHOD BRACKET_STD = BRACKET_METHOD::standard;
 constexpr BRACKET_METHOD BRACKET_SIMPLE = BRACKET_METHOD::simple;
 constexpr BRACKET_METHOD BRACKET_ARAKAWA = BRACKET_METHOD::arakawa;
-constexpr BRACKET_METHOD BRACKET_CTU = BRACKET_METHOD::ctu;
 
 /*!
  * Compute advection operator terms, which can be cast as
@@ -330,7 +327,7 @@ constexpr BRACKET_METHOD BRACKET_CTU = BRACKET_METHOD::ctu;
  * @param[in] g  The field being advected
  * @param[in] method   The method to use
  * @param[in] outloc   The cell location where the result is defined. Default is the same as g
- * @param[in] solver   Pointer to the time integration solver
+ * @param[in] solver   Unused; retained for source compatibility
  *
  */
 bout::FieldMetric bracket(const Field2D& f, const Field2D& g,

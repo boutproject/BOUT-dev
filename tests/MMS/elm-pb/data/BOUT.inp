@@ -96,7 +96,7 @@ diamag_phi0 = false    # Balance ExB against Vd for stationary equilibrium
 # BRACKET_METHOD flags:
 # 0:BRACKET_STD; derivative methods will be determined
 #   by the choices C or W in this input file
-# 1:BRACKET_SIMPLE; 2:BRACKET_ARAKAWA; 3:BRACKET_CTU.
+# 1:BRACKET_SIMPLE; 2:BRACKET_ARAKAWA.
 
 bm_exb_flag = 0
 bm_mag_flag = 2
