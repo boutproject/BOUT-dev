@@ -115,46 +115,47 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
   // Y flux
   if (y_derivatives) {
     BOUT_FOR(i, yzresult.getRegion("RGN_NOBNDRY")) {
-      auto ikp = i.zp();
-      auto ikm = i.zm();
+      const auto ikp = i.zp();
+      const auto ikm = i.zm();
+      const auto iyp = i.yp();
+      const auto iym = i.ym();
       {
         const BoutReal coef = 0.5
                               * (g_23.c[i] / SQ(J.c[i] * Bxy.c[i])
-                                 + g_23.up[i.yp()] / SQ(J.up[i.yp()] * Bxy.up[i.yp()]));
+                                 + g_23.up[iyp] / SQ(J.up[iyp] * Bxy.up[iyp]));
 
         // Calculate Z derivative at y boundary
         const BoutReal dfdz = 0.5
                               * (f_slice.c[ikp] - f_slice.c[ikm] + f_slice.up[ikp.yp()]
                                  - f_slice.up[ikm.yp()])
-                              / (dz.c[i] + dz.up[i.yp()]);
+                              / (dz.c[i] + dz.up[iyp]);
 
         // Y derivative
         const BoutReal dfdy =
-            2. * (f_slice.up[i.yp()] - f_slice.c[i]) / (dy.up[i.yp()] + dy.c[i]);
+            2. * (f_slice.up[iyp] - f_slice.c[i]) / (dy.up[iyp] + dy.c[i]);
 
-        const BoutReal fout = 0.25 * (a_slice.c[i] + a_slice.up[i.yp()])
-                              * (J.c[i] * g23.c[i] + J.up[i.yp()] * g23.up[i.yp()])
+        const BoutReal fout = 0.25 * (a_slice.c[i] + a_slice.up[iyp])
+                              * (J.c[i] * g23.c[i] + J.up[iyp] * g23.up[iyp])
                               * (dfdz - coef * dfdy);
 
         yzresult[i] += fout / (dy.c[i] * J.c[i]);
       }
       {
         // Calculate flux between j and j-1
-        const BoutReal coef =
-            0.5
-            * (g_23.c[i] / SQ(J.c[i] * Bxy.c[i])
-               + g_23.down[i.ym()] / SQ(J.down[i.ym()] * Bxy.down[i.ym()]));
+        const BoutReal coef = 0.5
+                              * (g_23.c[i] / SQ(J.c[i] * Bxy.c[i])
+                                 + g_23.down[iym] / SQ(J.down[iym] * Bxy.down[iym]));
 
         const BoutReal dfdz = 0.5
                               * (f_slice.c[ikp] - f_slice.c[ikm] + f_slice.down[ikp.ym()]
                                  - f_slice.down[ikm.ym()])
-                              / (dz.c[i] + dz.down[i.ym()]);
+                              / (dz.c[i] + dz.down[iym]);
 
         const BoutReal dfdy =
-            2. * (f_slice.c[i] - f_slice.down[i.ym()]) / (dy.c[i] + dy.down[i.ym()]);
+            2. * (f_slice.c[i] - f_slice.down[iym]) / (dy.c[i] + dy.down[iym]);
 
-        const BoutReal fout = 0.25 * (a_slice.c[i] + a_slice.down[i.ym()])
-                              * (J.c[i] * g23.c[i] + J.down[i.ym()] * g23.down[i.ym()])
+        const BoutReal fout = 0.25 * (a_slice.c[i] + a_slice.down[iym])
+                              * (J.c[i] * g23.c[i] + J.down[iym] * g23.down[iym])
                               * (dfdz - coef * dfdy);
 
         yzresult[i] -= fout / (dy.c[i] * J.c[i]);
@@ -167,10 +168,12 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
     const auto ikp = i.zp();
     BoutReal y_correction = 0.0;
     if (y_derivatives) {
-      const BoutReal coef = g_23.c[i] / (dy.up[i.yp()] + 2. * dy.c[i] + dy.down[i.ym()])
-                            / SQ(J.c[i] * Bxy.c[i]);
+      const auto iyp = i.yp();
+      const auto iym = i.ym();
+      const BoutReal coef =
+          g_23.c[i] / (dy.up[iyp] + 2. * dy.c[i] + dy.down[iym]) / SQ(J.c[i] * Bxy.c[i]);
       y_correction = coef
-                     * (f_slice.up[i.yp()] + f_slice.up[ikp.yp()] - f_slice.down[i.ym()]
+                     * (f_slice.up[iyp] + f_slice.up[ikp.yp()] - f_slice.down[iym]
                         - f_slice.down[ikp.ym()]);
     }
 
@@ -518,45 +521,50 @@ Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc) {
   //
   Coordinates* coords = a.getCoordinates(outloc);
   BOUT_FOR(i, result.getRegion("RGN_NOXY")) {
+    const auto ixp = i.xp();
+    const auto ixm = i.xm();
+    const auto izp = i.zp();
+    const auto izm = i.zm();
+    const auto ixpzp = ixp.zp();
+    const auto ixpzm = ixp.zm();
+    const auto ixmzp = ixm.zp();
+    const auto ixmzm = ixm.zm();
     // Calculate gradients on cell faces -- assumes constant grid spacing
 
-    const BoutReal gR = ((coords->g11()[i] + coords->g11()[i.xp()]) * (f[i.xp()] - f[i])
-                         / (coords->dx()[i.xp()] + coords->dx()[i]))
-                        + (0.5 * (coords->g13()[i] + coords->g13()[i.xp()])
-                           * (f[i.xp().zp()] - f[i.xp().zm()] + f[i.zp()] - f[i.zm()])
-                           / (4. * coords->dz()[i]));
+    const BoutReal gR =
+        ((coords->g11()[i] + coords->g11()[ixp]) * (f[ixp] - f[i])
+         / (coords->dx()[ixp] + coords->dx()[i]))
+        + (0.5 * (coords->g13()[i] + coords->g13()[ixp])
+           * (f[ixpzp] - f[ixpzm] + f[izp] - f[izm]) / (4. * coords->dz()[i]));
 
-    const BoutReal gL = ((coords->g11()[i.xm()] + coords->g11()[i]) * (f[i] - f[i.xm()])
-                         / (coords->dx()[i.xm()] + coords->dx()[i]))
-                        + (0.5 * (coords->g13()[i.xm()] + coords->g13()[i])
-                           * (f[i.xm().zp()] - f[i.xm().zm()] + f[i.zp()] - f[i.zm()])
-                           / (4 * coords->dz()[i]));
+    const BoutReal gL =
+        ((coords->g11()[ixm] + coords->g11()[i]) * (f[i] - f[ixm])
+         / (coords->dx()[ixm] + coords->dx()[i]))
+        + (0.5 * (coords->g13()[ixm] + coords->g13()[i])
+           * (f[ixmzp] - f[ixmzm] + f[izp] - f[izm]) / (4 * coords->dz()[i]));
 
-    const BoutReal gD =
-        (coords->g13()[i] * (f[i.xp().zm()] - f[i.xm().zm()] + f[i.xp()] - f[i.xm()])
-         / (4. * coords->dx()[i]))
-        + (coords->g33()[i] * (f[i] - f[i.zm()]) / coords->dz()[i]);
+    const BoutReal gD = (coords->g13()[i] * (f[ixpzm] - f[ixmzm] + f[ixp] - f[ixm])
+                         / (4. * coords->dx()[i]))
+                        + (coords->g33()[i] * (f[i] - f[izm]) / coords->dz()[i]);
 
-    const BoutReal gU =
-        (coords->g13()[i] * (f[i.xp().zp()] - f[i.xm().zp()] + f[i.xp()] - f[i.xm()])
-         / (4. * coords->dx()[i]))
-        + (coords->g33()[i] * (f[i.zp()] - f[i]) / coords->dz()[i]);
+    const BoutReal gU = (coords->g13()[i] * (f[ixpzp] - f[ixmzp] + f[ixp] - f[ixm])
+                         / (4. * coords->dx()[i]))
+                        + (coords->g33()[i] * (f[izp] - f[i]) / coords->dz()[i]);
 
     // Flow right
-    BoutReal flux =
-        gR * 0.25 * (coords->J()[i.xp()] + coords->J()[i]) * (a[i.xp()] + a[i]);
+    BoutReal flux = gR * 0.25 * (coords->J()[ixp] + coords->J()[i]) * (a[ixp] + a[i]);
     result[i] += flux / (coords->dx()[i] * coords->J()[i]);
 
     // Flow left
-    flux = gL * 0.25 * (coords->J()[i.xm()] + coords->J()[i]) * (a[i.xm()] + a[i]);
+    flux = gL * 0.25 * (coords->J()[ixm] + coords->J()[i]) * (a[ixm] + a[i]);
     result[i] -= flux / (coords->dx()[i] * coords->J()[i]);
 
     // Flow up
-    flux = gU * 0.25 * (coords->J()[i] + coords->J()[i.zp()]) * (a[i] + a[i.zp()]);
+    flux = gU * 0.25 * (coords->J()[i] + coords->J()[izp]) * (a[i] + a[izp]);
     result[i] += flux / (coords->dz()[i] * coords->J()[i]);
 
     // Flow down
-    flux = gD * 0.25 * (coords->J()[i.zm()] + coords->J()[i]) * (a[i.zm()] + a[i]);
+    flux = gD * 0.25 * (coords->J()[izm] + coords->J()[i]) * (a[izm] + a[i]);
     result[i] += flux / (coords->dz()[i] * coords->J()[i]);
   }
 
@@ -722,23 +730,26 @@ Field3D Div_a_Grad_perp_FCI::operator()(const Field3D& a, const Field3D& f,
   }
   BOUT_FOR(i, f.getRegion("RGN_dapg_fv_xbndry")) {
     const auto xf = xflux<upwinding>(a, f, i);
-    result[i.xp()] = xf;
+    const auto ixp = i.xp();
+    result[ixp] = xf;
     if constexpr (extra) {
-      (*flow_xlow)[i.xp()] = xf;
+      (*flow_xlow)[ixp] = xf;
     }
   }
   BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
     const auto xf = xflux<upwinding>(a, f, i);
-    result[i.xp()] = xf;
+    const auto ixp = i.xp();
+    result[ixp] = xf;
     result[i] -= xf;
     if constexpr (extra) {
-      (*flow_xlow)[i.xp()] = xf;
+      (*flow_xlow)[ixp] = xf;
     }
     const auto zf = zflux<upwinding>(a, f, i);
-    result[i.zp()] += zf;
+    const auto izp = i.zp();
+    result[izp] += zf;
     result[i] -= zf;
     if constexpr (extra) {
-      (*flow_zlow)[i.zp()] = zf;
+      (*flow_zlow)[izp] = zf;
     }
   }
   result.setRegion("RGN_NOBNDRY");
@@ -761,7 +772,9 @@ inline BoutReal Div_a_Grad_perp_FCI::xflux(const Field3D& a, const Field3D& f,
   } else {
     av = 0.5 * (a[i] + a[ixp]);
   };
-  const auto dz = 0.5 * (f[i.zp()] - f[i.zm()] + f[i.zp().xp()] - f[i.zm().xp()]);
+  const auto izp = i.zp();
+  const auto izm = i.zm();
+  const auto dz = 0.5 * (f[izp] - f[izm] + f[izp.xp()] - f[izm.xp()]);
   return -((fac_XX[i] * dx) + (fac_XZ[i] * dz)) * av;
 }
 template <bool upwinding>
