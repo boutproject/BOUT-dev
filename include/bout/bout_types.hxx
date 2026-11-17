@@ -23,6 +23,7 @@
 #define BOUT_TYPES_H
 
 #include "bout/build_config.hxx"
+#include "fmt/format.h"
 
 #include <limits>
 #include <optional>
