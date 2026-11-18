@@ -406,32 +406,20 @@ struct fmt::formatter<SpecificInd<N>> {
 };
 
 /// Get string representation of Ind3D
-inline std::string format_as(const Ind3D& i) {
+[[deprecated("Use fmt::to_string(i), or pass to fmt::format")]]
+inline std::string toString(const Ind3D& i) {
   return "(" + std::to_string(i.x()) + ", " + std::to_string(i.y()) + ", "
          + std::to_string(i.z()) + ")";
 }
 /// Get string representation of Ind2D
-inline std::string format_as(const Ind2D& i) {
+[[deprecated("Use fmt::to_string(i), or pass to fmt::format")]]
+inline std::string toString(const Ind2D& i) {
   return "(" + std::to_string(i.x()) + ", " + std::to_string(i.y()) + ")";
 }
 /// Get string representation of IndPerp
-inline std::string format_as(const IndPerp& i) {
+[[deprecated("Use fmt::to_string(i), or pass to fmt::format")]]
+inline std::string toString(const IndPerp& i) {
   return "(" + std::to_string(i.x()) + ", " + std::to_string(i.z()) + ")";
-}
-
-[[deprecated("Use fmt::to_string(i), or pass to fmt::format")]]
-inline std::string toString(Ind3D i) {
-  return fmt::to_string(i);
-}
-
-[[deprecated("Use fmt::to_string(i), or pass to fmt::format")]]
-inline std::string toString(Ind2D i) {
-  return fmt::to_string(i);
-}
-
-[[deprecated("Use fmt::to_string(i), or pass to fmt::format")]]
-inline std::string toString(IndPerp i) {
-  return fmt::to_string(i);
 }
 
 /// Structure to hold various derived "statistics" from a particular region
