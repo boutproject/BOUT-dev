@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
   for (int i = 0; i < fields.size(); i++) {
     fields[i].allocate();
     const auto boundary = static_cast<BoundaryParType>(i);
-    const auto boundary_name = toString(boundary);
+    const auto boundary_name = fmt::to_string(boundary);
     mesh->communicate(fields[i]);
     for (auto& bndry_par : mesh->getBoundariesPar(boundary)) {
       output.write("{:s} region\n", boundary_name);
