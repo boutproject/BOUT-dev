@@ -285,7 +285,7 @@ struct SpecificInd {
   /// The index one point +1 in y
   SpecificInd yp(int dy = 1) const {
 #if CHECK >= 4
-    if (y() + dy < 0 or y() + dy >= ny) {
+    if (const auto diff = y() + dy; diff < 0 or diff >= ny) {
       throw BoutException("Offset in y ({:d}) would go out of bounds at {:d}", dy, ind);
     }
 #endif
@@ -301,6 +301,12 @@ struct SpecificInd {
     if constexpr (N == IND_TYPE::IND_2D) {
       return *this;
     }
+#if CHECK >= 4
+    if (const auto diff = z() + dz; diff < 0 or diff >= nz) {
+      throw BoutException("Offset in z ({:d}) would go out of bounds at {:d}", dz, ind);
+    }
+#endif
+    ASSERT3(std::abs(dz) < nz);
     return {ind + dz, ny, nz};
   }
 
