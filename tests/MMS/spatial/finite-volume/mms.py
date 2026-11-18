@@ -3,13 +3,13 @@
 # Generate manufactured solution and sources for FCI test
 #
 
-from math import pi
 import warnings
+from math import pi
 
-from boututils.boutwarnings import AlwaysWarning
 from boutdata.data import BoutOptionsFile
-from boutdata.mms import exprToStr, y, Grad_par, Div_par, Metric
-from sympy import sin, cos, Expr
+from boutdata.mms import Div_par, Grad_par, Metric, exprToStr, y
+from boututils.boutwarnings import AlwaysWarning
+from sympy import Expr, Integer, cos, sin
 
 warnings.simplefilter("ignore", AlwaysWarning)
 
@@ -23,13 +23,28 @@ metric = Metric()
 f = 1 + 0.1 * sin(2 * y)
 fv = 1 + 0.1 * cos(3 * y)
 
+# Smaller amplitude version to demonstrate
+# that Van Albada Smooth converges to 2nd order/Fromm
+# when differences are small. Note that Fromm
+# isn't exactly 2nd order here due to the grid being coarse.
+small_amplitude = 1e-4
+f_small = 1 + small_amplitude * sin(2 * y)
+fv_small = 1 + small_amplitude * cos(3 * y)
+
 
 # Turn solution into real x and z coordinates
 replace = [(y, metric.y * 2 * pi / Ly)]
 
+# Velocity profile with stagnation points at y = 0 and y = pi
+v_stagnation = 0.5 * sin(y)
+
 f = f.subs(replace)
 fv = fv.subs(replace)
 v = fv / f
+f_small = f_small.subs(replace)
+fv_small = fv_small.subs(replace)
+v_small = fv_small / f_small
+v_stagnation = v_stagnation.subs(replace)
 
 # Substitute back to get input y coordinates
 replace = [(metric.y, y * Ly / (2 * pi))]
@@ -56,6 +71,16 @@ for name, expr in (
     ("FV_Div_par_K_Grad_par_mod_solution", Div_par_K_Grad_par(f, v)),
     ("FV_Div_par_mod_solution", Div_par(f * v)),
     ("FV_Div_par_fvv_solution", Div_par(f * v * v)),
+    ("v_stagnation", v_stagnation),
+    # Constant wave speed for the stagnation tests, larger than |v| and |v_stagnation|
+    ("wave_speed", Integer(2)),
+    ("FV_Div_par_mod_stagnation_solution", Div_par(f * v_stagnation)),
+    ("FV_Div_par_fvv_stagnation_solution", Div_par(f * v_stagnation * v_stagnation)),
+    ("input_field_small", f_small),
+    ("v_small", v_small),
+    ("FV_Div_par_small_solution", Div_par(f_small * v_small)),
+    ("FV_Div_par_mod_small_solution", Div_par(f_small * v_small)),
+    ("FV_Div_par_fvv_small_solution", Div_par(f_small * v_small * v_small)),
 ):
     expr_str = exprToStr(expr.subs(replace))
     print(f"{name} = {expr_str}")

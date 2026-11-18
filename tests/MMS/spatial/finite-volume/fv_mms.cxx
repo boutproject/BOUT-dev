@@ -39,9 +39,18 @@ int main(int argc, char** argv) {
 
   Field3D input{FieldFactory::get()->create3D("input_field", Options::getRoot(), mesh)};
   Field3D v{FieldFactory::get()->create3D("v", Options::getRoot(), mesh)};
+  // Small amplitude profile
+  Field3D input_small{
+      FieldFactory::get()->create3D("input_field_small", Options::getRoot(), mesh)};
+  Field3D v_small{FieldFactory::get()->create3D("v_small", Options::getRoot(), mesh)};
+  // Velocity profile with stagnation points at 0 and pi
+  Field3D v_stagnation{
+      FieldFactory::get()->create3D("v_stagnation", Options::getRoot(), mesh)};
+
+  Field3D wave{FieldFactory::get()->create3D("wave_speed", Options::getRoot(), mesh)};
 
   // Communicate to calculate parallel transform.
-  mesh->communicate(input, v);
+  mesh->communicate(input, v, v_stagnation, wave, input_small, v_small);
 
   Options dump;
   // Add mesh geometry variables
@@ -80,6 +89,61 @@ int main(int argc, char** argv) {
              FV::Div_par_mod<FV::Superbee>(input, v, v, flow_ylow), "_Superbee");
   fv_op_test("FV_Div_par_fvv", dump, input, FV::Div_par_fvv<FV::Superbee>(input, v, v),
              "_Superbee");
+
+  fv_op_test("FV_Div_par", dump, input, FV::Div_par<FV::VanAlbada>(input, v, v),
+             "_VanAlbada");
+  fv_op_test("FV_Div_par_mod", dump, input,
+             FV::Div_par_mod<FV::VanAlbada>(input, v, v, flow_ylow), "_VanAlbada");
+  fv_op_test("FV_Div_par_fvv", dump, input, FV::Div_par_fvv<FV::VanAlbada>(input, v, v),
+             "_VanAlbada");
+  fv_op_test("FV_Div_par_mod_stagnation", dump, input,
+             FV::Div_par_mod<FV::VanAlbada>(input, v_stagnation, wave, flow_ylow),
+             "_VanAlbada");
+  fv_op_test("FV_Div_par_fvv_stagnation", dump, input,
+             FV::Div_par_fvv<FV::VanAlbada>(input, v_stagnation, wave), "_VanAlbada");
+
+  fv_op_test("FV_Div_par", dump, input, FV::Div_par<FV::VanAlbadaSmooth>(input, v, v),
+             "_VanAlbadaSmooth");
+  fv_op_test("FV_Div_par_mod", dump, input,
+             FV::Div_par_mod<FV::VanAlbadaSmooth>(input, v, v, flow_ylow),
+             "_VanAlbadaSmooth");
+  fv_op_test("FV_Div_par_fvv", dump, input,
+             FV::Div_par_fvv<FV::VanAlbadaSmooth>(input, v, v), "_VanAlbadaSmooth");
+  fv_op_test("FV_Div_par_mod_stagnation", dump, input,
+             FV::Div_par_mod<FV::VanAlbadaSmooth>(input, v_stagnation, wave, flow_ylow),
+             "_VanAlbadaSmooth");
+  fv_op_test("FV_Div_par_fvv_stagnation", dump, input,
+             FV::Div_par_fvv<FV::VanAlbadaSmooth>(input, v_stagnation, wave),
+             "_VanAlbadaSmooth");
+
+  // Small amplitude: VanAlbadaSmooth should match the central slope (Fromm),
+  // while VanAlbada stays limited at extrema
+  fv_op_test("FV_Div_par_small", dump, input_small,
+             FV::Div_par<FV::Fromm>(input_small, v_small, v_small), "_Fromm");
+  fv_op_test("FV_Div_par_mod_small", dump, input_small,
+             FV::Div_par_mod<FV::Fromm>(input_small, v_small, v_small, flow_ylow),
+             "_Fromm");
+  fv_op_test("FV_Div_par_fvv_small", dump, input_small,
+             FV::Div_par_fvv<FV::Fromm>(input_small, v_small, v_small), "_Fromm");
+
+  fv_op_test("FV_Div_par_small", dump, input_small,
+             FV::Div_par<FV::VanAlbada>(input_small, v_small, v_small), "_VanAlbada");
+  fv_op_test("FV_Div_par_mod_small", dump, input_small,
+             FV::Div_par_mod<FV::VanAlbada>(input_small, v_small, v_small, flow_ylow),
+             "_VanAlbada");
+  fv_op_test("FV_Div_par_fvv_small", dump, input_small,
+             FV::Div_par_fvv<FV::VanAlbada>(input_small, v_small, v_small), "_VanAlbada");
+
+  fv_op_test("FV_Div_par_small", dump, input_small,
+             FV::Div_par<FV::VanAlbadaSmooth>(input_small, v_small, v_small),
+             "_VanAlbadaSmooth");
+  fv_op_test(
+      "FV_Div_par_mod_small", dump, input_small,
+      FV::Div_par_mod<FV::VanAlbadaSmooth>(input_small, v_small, v_small, flow_ylow),
+      "_VanAlbadaSmooth");
+  fv_op_test("FV_Div_par_fvv_small", dump, input_small,
+             FV::Div_par_fvv<FV::VanAlbadaSmooth>(input_small, v_small, v_small),
+             "_VanAlbadaSmooth");
 
   fv_op_test("FV_Div_par_K_Grad_par", dump, input, FV::Div_par_K_Grad_par(v, input));
   fv_op_test("FV_Div_par_K_Grad_par_mod", dump, input,
