@@ -49,6 +49,7 @@
 #include <utility>
 #include <vector>
 
+#include "fmt/format.h"
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
@@ -56,7 +57,6 @@
 #include "bout/build_config.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/openmpwrap.hxx" // IWYU pragma: keep
-#include "fmt/format.h"
 
 class BoutMask;
 
@@ -379,13 +379,19 @@ inline std::string format_as(const IndPerp& i) {
 }
 
 [[deprecated("Use fmt::to_string(i), or pass to fmt::format")]]
-inline std::string toString(Ind3D i) { return fmt::to_string(i); }
+inline std::string toString(Ind3D i) {
+  return fmt::to_string(i);
+}
 
 [[deprecated("Use fmt::to_string(i), or pass to fmt::format")]]
-inline std::string toString(Ind2D i) { return fmt::to_string(i); }
+inline std::string toString(Ind2D i) {
+  return fmt::to_string(i);
+}
 
 [[deprecated("Use fmt::to_string(i), or pass to fmt::format")]]
-inline std::string toString(IndPerp i) { return fmt::to_string(i); }
+inline std::string toString(IndPerp i) {
+  return fmt::to_string(i);
+}
 
 /// Structure to hold various derived "statistics" from a particular region
 struct RegionStats {

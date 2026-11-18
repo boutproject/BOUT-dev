@@ -22,8 +22,8 @@
 #ifndef BOUT_TYPES_H
 #define BOUT_TYPES_H
 
-#include "bout/build_config.hxx"
 #include "fmt/format.h"
+#include "bout/build_config.hxx"
 
 #include <limits>
 #include <optional>
@@ -53,7 +53,9 @@ constexpr CELL_LOC CELL_VSHIFT = CELL_LOC::vshift;
 std::string format_as(const CELL_LOC& location);
 
 [[deprecated("Use fmt::to_string(location), or pass to fmt::format")]]
-inline std::string toString(CELL_LOC location) { return fmt::to_string(location); }
+inline std::string toString(CELL_LOC location) {
+  return fmt::to_string(location);
+}
 
 CELL_LOC CELL_LOCFromString(const std::string& location_string);
 
@@ -74,7 +76,9 @@ constexpr DIFF_METHOD DIFF_S2 = DIFF_METHOD::s2;
 std::string format_as(const DIFF_METHOD& method);
 
 [[deprecated("Use fmt::to_string(method), or pass to fmt::format")]]
-inline std::string toString(DIFF_METHOD method) { return fmt::to_string(method); }
+inline std::string toString(DIFF_METHOD method) {
+  return fmt::to_string(method);
+}
 
 /// Specify grid region for looping
 enum class REGION { all, nobndry, nox, noy, noz };
@@ -87,7 +91,9 @@ constexpr REGION RGN_NOZ = REGION::noz;
 std::string format_as(const REGION& region);
 
 [[deprecated("Use fmt::to_string(region), or pass to fmt::format")]]
-inline std::string toString(REGION region) { return fmt::to_string(region); }
+inline std::string toString(REGION region) {
+  return fmt::to_string(region);
+}
 
 /// To identify particular directions (in index space):
 ///   - X, Y, Z are the coordinate directions
@@ -101,7 +107,9 @@ enum class DIRECTION { X, Y, Z, YAligned, YOrthogonal };
 std::string format_as(const DIRECTION& dir);
 
 [[deprecated("Use fmt::to_string(dir), or pass to fmt::format")]]
-inline std::string toString(DIRECTION dir) { return fmt::to_string(dir); }
+inline std::string toString(DIRECTION dir) {
+  return fmt::to_string(dir);
+}
 
 /// Identify kind of a field's y-direction
 /// - Standard is the default for the Mesh/Coordinates/ParallelTransform
@@ -112,7 +120,9 @@ enum class YDirectionType { Standard, Aligned };
 std::string format_as(const YDirectionType& d);
 
 [[deprecated("Use fmt::to_string(d), or pass to fmt::format")]]
-inline std::string toString(YDirectionType d) { return fmt::to_string(d); }
+inline std::string toString(YDirectionType d) {
+  return fmt::to_string(d);
+}
 
 YDirectionType YDirectionTypeFromString(const std::string& y_direction_string);
 
@@ -126,7 +136,9 @@ enum class ZDirectionType { Standard, Average };
 std::string format_as(const ZDirectionType& d);
 
 [[deprecated("Use fmt::to_string(d), or pass to fmt::format")]]
-inline std::string toString(ZDirectionType d) { return fmt::to_string(d); }
+inline std::string toString(ZDirectionType d) {
+  return fmt::to_string(d);
+}
 
 ZDirectionType ZDirectionTypeFromString(const std::string& z_direction_string);
 
@@ -139,7 +151,9 @@ struct DirectionTypes {
 std::string format_as(const DirectionTypes& dir);
 
 [[deprecated("Use fmt::to_string(dir), or pass to fmt::format")]]
-inline std::string toString(DirectionTypes dir) { return fmt::to_string(dir); }
+inline std::string toString(DirectionTypes dir) {
+  return fmt::to_string(dir);
+}
 
 /// Check whether direction types are compatible, so two fields with attributes
 /// d1 and d2 respectively can be added, subtracted, etc.
@@ -153,7 +167,9 @@ enum class STAGGER { None, C2L, L2C };
 std::string format_as(const STAGGER& stagger);
 
 [[deprecated("Use fmt::to_string(stagger), or pass to fmt::format")]]
-inline std::string toString(STAGGER stagger) { return fmt::to_string(stagger); }
+inline std::string toString(STAGGER stagger) {
+  return fmt::to_string(stagger);
+}
 
 /// To identify types of derivative method combinations
 enum class DERIV { Standard, StandardSecond, StandardFourth, Upwind, Flux };
@@ -161,7 +177,9 @@ enum class DERIV { Standard, StandardSecond, StandardFourth, Upwind, Flux };
 std::string format_as(const DERIV& deriv);
 
 [[deprecated("Use fmt::to_string(deriv), or pass to fmt::format")]]
-inline std::string toString(DERIV deriv) { return fmt::to_string(deriv); }
+inline std::string toString(DERIV deriv) {
+  return fmt::to_string(deriv);
+}
 
 // A small struct that can be used to wrap a specific enum value, giving
 // it a unique type that can be passed as a valid type to templates and
