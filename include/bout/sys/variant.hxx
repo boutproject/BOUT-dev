@@ -15,7 +15,6 @@
 
 #pragma once
 
-#include <string>
 #ifndef __VARIANT_HXX__
 #define __VARIANT_HXX__
 
