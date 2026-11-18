@@ -49,6 +49,7 @@
 #include <utility>
 #include <vector>
 
+#include "fmt/base.h"
 #include "fmt/format.h"
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
