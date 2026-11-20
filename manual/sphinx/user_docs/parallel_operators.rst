@@ -292,6 +292,86 @@ Current limitations include:
 - PETSc and 3D metrics are required
 - The grid metadata must be generated ahead of time
 
+Using operator stencils in solver Jacobians
+-------------------------------------------
+
+The ``PetscCellOperator`` objects can also be used to augment the Jacobian
+pattern of PETSc-backed implicit solvers. This is useful when the default
+solver stencil is too small for the operators used in the model, but the
+coupling still has a sparse cell-to-cell structure.
+
+At a high level:
+
+- Build or reuse a ``PetscCellOperator``
+- Get solver variable references with ``solver->getVarRef(...)``
+- Register the operator with ``solver->addJacobianPattern(...)`` before
+  ``solver->init()``
+
+For example:
+
+.. code-block:: C++
+
+   #if BOUT_HAS_PETSC
+   PetscOperators ops(mesh);
+   auto parallel = ops.getParallel();
+
+   auto n = solver->getVarRef("n");
+   auto T = solver->getVarRef("T");
+
+   // Apply the operator stencil to every Jacobian block
+   solver->addJacobianPattern(parallel.Div_par_Grad_par);
+
+   // Apply the same cell stencil only to dF_n / dT
+   solver->addJacobianPattern(parallel.Grad_par, n, T);
+   #endif
+
+The one-argument overload is equivalent to:
+
+.. code-block:: C++
+
+   solver->addJacobianPattern(op, Solver::VarRef::All(), Solver::VarRef::All());
+
+The ``VarRef::All()`` sentinel expands when the solver Jacobian is created:
+
+- ``(All, All)`` inserts the stencil into every variable block
+- ``(out, All)`` inserts it into one output-variable row block against all inputs
+- ``(All, in)`` inserts it into all output-variable row blocks against one input
+- ``(out, in)`` inserts it into a single block
+
+This interface is only available when BOUT++ is built with PETSc. Even then,
+``addJacobianPattern(...)`` may return ``false`` if the chosen solver does not
+use the PETSc preconditioner/Jacobian path. See :ref:`sec-time-integration` and
+:ref:`sec-preconditioning` for the solver-side behavior.
+
+
+How solver registration works
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``PetscOperator`` tracks its row and column mappings, and exposes them through
+the operator API. For Jacobian-pattern registration, BOUT++ uses the operator's
+cell mapping to restrict the full cell-space matrix to the evolving subset of
+cells that actually appear in the solver state vector.
+
+The resulting evolving-cell submatrix is then inserted into one or more
+Jacobian variable blocks using the helper documented in
+``bout/petsc_jacobian.hxx``. This means the operator contributes only sparsity
+information here; the Jacobian entries are still computed later by the solver's
+finite-difference machinery.
+
+Current limitations
+~~~~~~~~~~~~~~~~~~~
+
+This solver-Jacobian path currently assumes the Jacobian uses a uniform
+per-cell interleaving of the evolving variables. In practice that means it is
+currently intended for the same cases documented in
+``bout/petsc_jacobian.hxx``:
+
+- Evolving ``Field3D`` variables only
+- No evolving boundary cells in the solver state
+- No solver layouts with mixed or non-uniform cell-to-row mappings
+
+If those assumptions do not hold, use the standard solver coloring stencil or a
+different Jacobian/preconditioning strategy instead.
 
 See also
 --------
@@ -299,4 +379,6 @@ See also
 - :ref:`sec-diffops`
 - :ref:`sec-fci`
 - :ref:`sec-parallel-bc-fci`
+- :ref:`sec-time-integration`
+- :ref:`sec-preconditioning`
 - :ref:`sec-petsc`
