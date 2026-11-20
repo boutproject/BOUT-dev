@@ -19,6 +19,8 @@
 #include <bout/options_io.hxx>
 #include <bout/output.hxx>
 
+using bout::globals::mesh;
+
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
