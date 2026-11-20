@@ -9,7 +9,7 @@ namespace bout {
 namespace generator {
 
 Context::Context(int ix, int iy, int iz, CELL_LOC loc, Mesh* msh, BoutReal t)
-    : ix_(ix), jy_(iy), kz_(iz), localmesh(msh) {
+    : ix_(ix), jy_(iy), kz_(iz), location_(loc), localmesh(msh) {
 
   parameters["x"] = (loc == CELL_XLOW) ? 0.5 * (msh->GlobalX(ix) + msh->GlobalX(ix - 1))
                                        : msh->GlobalX(ix);
@@ -26,7 +26,8 @@ Context::Context(int ix, int iy, int iz, CELL_LOC loc, Mesh* msh, BoutReal t)
 Context::Context(const BoundaryRegion* bndry, int iz, CELL_LOC loc, BoutReal t, Mesh* msh)
     : // Add one to X index if boundary is in -x direction, so that XLOW is on the boundary
       ix_((bndry->bx < 0) ? bndry->x + 1 : bndry->x),
-      jy_((bndry->by < 0) ? bndry->y + 1 : bndry->y), kz_(iz), localmesh(msh) {
+      jy_((bndry->by < 0) ? bndry->y + 1 : bndry->y), kz_(iz), location_(loc),
+      localmesh(msh) {
 
   parameters["x"] = ((loc == CELL_XLOW) || (bndry->bx != 0))
                         ? 0.5 * (msh->GlobalX(ix_) + msh->GlobalX(ix_ - 1))
