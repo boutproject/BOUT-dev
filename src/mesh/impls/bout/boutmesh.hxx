@@ -22,6 +22,13 @@ class Field;
 ///
 /// Topology and communications compatible with BOUT
 /// conventions.
+
+BOUT_ENUM_CLASS(MeshTopology,
+                closed_field_line,       // Closed field line
+                single_null,             // Single null
+                unconnected_double_null, // Unconnected double null
+                connected_double_null);  // Connected double null
+
 class BoutMesh : public Mesh {
 public:
   BoutMesh(GridDataSource* s, Options* options = nullptr);
@@ -29,6 +36,9 @@ public:
 
   /// Read in the mesh from data sources
   int load() override;
+
+  MeshTopology getMeshTopology(int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
+                               int jyseps2_2_, int ny_inner_, int ixseps1_, int ixseps2_);
 
   /////////////////////////////////////////////
   // Communicate variables
@@ -334,6 +344,8 @@ private:
 
   std::vector<BoutReal> ShiftAngle; ///< Angle for twist-shift location
 
+  MeshTopology mesh_topology;
+
 protected:
   // These are protected so we can make them public in the test suite
   // for testing
@@ -515,6 +527,20 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
                                             int num_y_guards, int jyseps1_1,
                                             int jyseps2_1, int jyseps1_2, int jyseps2_2,
                                             int ny_inner);
+
+// New topology-aware
+CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
+                                            int num_y_guards, int jyseps1_1,
+                                            int jyseps2_1, int jyseps1_2, int jyseps2_2,
+                                            int ny_inner, MeshTopology mesh_topology);
+
+CheckMeshResult findValidProcessorNum(int ny, int nx, int NPES, int NYPE = 1,
+                                      int NXPE = 1);
+
+CheckMeshResult findValidYDecomposition(int ny, int num_y_processors, int num_y_guards,
+                                        int jyseps1_1, int jyseps2_1, int jyseps1_2,
+                                        int jyseps2_2, int ny_inner,
+                                        MeshTopology mesh_topology);
 } // namespace bout
 
 #endif // BOUT_BOUTMESH_H
