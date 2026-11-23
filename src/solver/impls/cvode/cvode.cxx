@@ -88,6 +88,8 @@ int cvode_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec, N_Vector zvec
 
 int cvode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector fy,
               void* user_data, N_Vector tmp);
+int cvode_jtimes_scaled(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector fy,
+                        void* user_data, N_Vector tmp);
 } // namespace
 // NOLINTEND(readability-identifier-length)
 
@@ -180,6 +182,14 @@ CvodeSolver::CvodeSolver(Options* opts)
           (*options)["jacobian_export_trigger"]
               .doc("When to save CVODE Jacobians: output or linear_setup")
               .withDefault(bout::CvodeJacobianExportTrigger::linear_setup)),
+      jtimes_sigma_factor(
+          (*options)["cvode_jtimes_sigma_factor"]
+              .doc("Factor on the increment of CVODE's difference-quotient "
+                   "Jacobian-vector product, sigma = factor / ||v||_WRMS. 1 uses "
+                   "CVODE's own product. With right preconditioning (rightprec or "
+                   "fgmres) a smaller factor such as 0.01 can avoid products made "
+                   "inaccurate by non-smooth terms in the rhs.")
+              .withDefault(1.0)),
       suncontext(createSUNContext(BoutComm::get())) {
   supports_constraints = false; // This solver doesn't have constraints
   canReset = true;
@@ -214,6 +224,9 @@ CvodeSolver::CvodeSolver(Options* opts)
 CvodeSolver::~CvodeSolver() {
   if (cvode_initialised) {
     N_VDestroy(uvec);
+    if (jtimes_ewt != nullptr) {
+      N_VDestroy(jtimes_ewt);
+    }
     CVodeFree(&cvode_mem);
     SUNLinSolFree(sun_solver);
     SUNNonlinSolFree(nonlinear_solver);
@@ -673,8 +686,23 @@ int CvodeSolver::init() {
     /// Set Jacobian-vector multiplication function
     if (use_jacobian and hasJacobian()) {
       output_info.write("\tUsing user-supplied Jacobian function\n");
+      if (jtimes_sigma_factor != 1.0) {
+        output_warn.write("\tsolver:cvode_jtimes_sigma_factor has no effect with a "
+                          "user-supplied Jacobian (use_jacobian = true)\n");
+      }
 
       if (CVodeSetJacTimes(cvode_mem, nullptr, cvode_jac) != CVLS_SUCCESS) {
+        throw BoutException("CVodeSetJacTimes failed\n");
+      }
+    } else if (jtimes_sigma_factor != 1.0) {
+      if (jtimes_sigma_factor <= 0.0) {
+        throw BoutException("solver:cvode_jtimes_sigma_factor must be positive");
+      }
+      output_info.write("\tUsing difference quotient approximation for Jacobian, "
+                        "increment factor {:e}\n",
+                        jtimes_sigma_factor);
+      jtimes_ewt = N_VClone(uvec);
+      if (CVodeSetJacTimes(cvode_mem, nullptr, cvode_jtimes_scaled) != CVLS_SUCCESS) {
         throw BoutException("CVodeSetJacTimes failed\n");
       }
     } else {
@@ -974,6 +1002,33 @@ void CvodeSolver::jac(BoutReal t, N_Vector y, N_Vector v, N_Vector Jv) {
   backend.copy_deriv_to_vector(Jv);
 }
 
+int CvodeSolver::jtimesScaled(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y,
+                              N_Vector fy, N_Vector tmp) {
+  // As CVODE's cvLsDQJtimes, with the increment scaled by jtimes_sigma_factor:
+  // Jv = (f(t, y + sigma v) - f(t, y)) / sigma, sigma = factor / ||v||_WRMS,
+  // shrinking sigma on a recoverable rhs failure
+  CVodeGetErrWeights(cvode_mem, jtimes_ewt);
+  const BoutReal norm = N_VWrmsNorm(v, jtimes_ewt);
+  if (norm <= 0.0) {
+    N_VConst(0.0, Jv);
+    return 0;
+  }
+  BoutReal sig = jtimes_sigma_factor / norm;
+  int retval = 1;
+  for (int attempt = 0; attempt < 3 and retval > 0; attempt++) {
+    N_VLinearSum(sig, v, 1.0, y, tmp);
+    retval = cvode_linear_rhs(t, tmp, Jv, this);
+    if (retval > 0) {
+      sig *= 0.25;
+    }
+  }
+  if (retval != 0) {
+    return retval;
+  }
+  N_VLinearSum(1.0 / sig, Jv, -1.0 / sig, fy, Jv);
+  return 0;
+}
+
 /**************************************************************************
  * CVODE RHS functions
  **************************************************************************/
@@ -1029,6 +1084,12 @@ int cvode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector UNUSED(f
   s->jac(t, y, v, Jv);
 
   return 0;
+}
+
+int cvode_jtimes_scaled(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector fy,
+                        void* user_data, N_Vector tmp) {
+  auto* s = static_cast<CvodeSolver*>(user_data);
+  return s->jtimesScaled(v, Jv, t, y, fy, tmp);
 }
 } // namespace
 // NOLINTEND(readability-identifier-length)

@@ -97,6 +97,10 @@ public:
   void pre(BoutReal t, BoutReal gamma, BoutReal delta, N_Vector u, N_Vector rvec,
            N_Vector zvec);
   void jac(BoutReal t, N_Vector y, N_Vector v, N_Vector Jv);
+  /// Difference-quotient Jacobian-vector product with increment
+  /// sigma = jtimes_sigma_factor / ||v||_WRMS (CVODE's own uses factor 1)
+  int jtimesScaled(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector fy,
+                   N_Vector tmp);
 
 private:
 #if BOUT_HAS_PETSC
@@ -179,6 +183,11 @@ private:
       jacobian_export_kind; ///< Export ``system`` or ``rhs`` Jacobian
   bout::CvodeJacobianExportTrigger
       jacobian_export_trigger; ///< Export on ``output`` or ``linear_setup``
+  /// Factor on CVODE's difference-quotient increment for Jacobian-vector
+  /// products; 1 uses CVODE's own product
+  BoutReal jtimes_sigma_factor;
+  /// Error weights for jtimesScaled
+  N_Vector jtimes_ewt{nullptr};
 
   // Diagnostics from CVODE
   int nsteps{0};
