@@ -56,12 +56,16 @@ cdef extern from "bout/mesh.hxx":
         void communicate(FieldGroup&) except +raise_bout_py_error
         int getNXPE()
         int getNYPE()
+        int getNZPE()
         int getXProcIndex()
         int getYProcIndex()
+        int getZProcIndex()
         int xstart
         int ystart
+        int zstart
         int LocalNx
         int LocalNy
+        int LocalNz
         Coordinates * getCoordinates() except +raise_bout_py_error
         int get(Field3D, const string) except +raise_bout_py_error
 

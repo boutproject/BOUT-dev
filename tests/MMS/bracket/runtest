@@ -27,9 +27,9 @@ prec = 0.2
 def genMesh(nx, ny, nz, **kwargs):
     bc.setOption("mesh:MXG", str(2 if nx > 1 else 0), force=True)
     bc.setOption("mesh:MYG", str(2 if ny > 1 else 0), force=True)
+    bc.setOption("mesh:MZG", str(2 if nz > 1 else 0), force=True)
     bc.setOption("mesh:nx", str(nx + 4 if nx > 1 else nx), force=True)
     bc.setOption("mesh:ny", str(ny), force=True)
-    bc.setOption("mz", str(nz), force=True)
     bc.setOption("mesh:nz", str(nz), force=True)
     bc.setOption("mesh:dx", "2*pi/(%d)" % (nx), force=True)
     bc.setOption("mesh:dy", "1/(%d)" % (ny), force=True)
@@ -60,7 +60,7 @@ for in1, in2, outfunc in funcs:
             inf = bc.bracket(inf1, inf2, method=name)
             outf = bc.create3D(outfunc, mesh)
             err = inf - outf
-            slize = (slice(2, -2), 0, slice(None))
+            slize = (slice(2, -2), 0, slice(2, -2))
             err = err[slize]
             err = np.sqrt(np.mean(err**2))
             errors.append(err)
@@ -70,14 +70,7 @@ for in1, in2, outfunc in funcs:
         if order - prec < conv < order + prec:
             pass
         else:
-            err = "{%s,%s} -> %s failed (conv: %f - expected: %f)\n" % (
-                in1,
-                in2,
-                outfunc,
-                conv,
-                order,
-            )
-            errlist += err
+            errlist += f"{name}: {in1}, {in2} -> {outfunc} failed ({conv=} - expected={order})\n"
 
 if errlist:
     print(errlist)

@@ -11,11 +11,14 @@ passlist = []
 boutpp.init("-d data -q -q -q".split(" "))
 
 
-def runtests(functions, derivatives, directions, stag, msg):
+def runtests(functions: list[list[str]], derivatives, directions, stag, msg):
     global errorlist
     global passlist
+
+    guards = 2
+
     for direction in directions:
-        direction, fac, guards, diff_func = direction
+        direction, fac, diff_func = direction
         locations = ["centre"]
         if stag:
             locations.append(direction.lower() + "low")
@@ -28,72 +31,46 @@ def runtests(functions, derivatives, directions, stag, msg):
             errors = []
             for nz in nzs:
                 boutpp.setOption(
-                    "meshD:nD".replace("D", direction),
-                    "%d" % (nz + (2 * guards if direction == "x" else 0)),
+                    f"mesh{direction}:n{direction}",
+                    str(nz + (2 * guards if direction == "x" else 0)),
                     force=True,
                 )
                 boutpp.setOption(
-                    "meshD:dD".replace(
-                        "D",
-                        direction,
-                    ),
-                    "2*pi/(%d)" % (nz),
+                    f"mesh{direction}:d{direction}",
+                    f"2*pi/({nz})",
                     force=True,
                 )
-                dirnfac = direction + "*" + fac
+                dirnfac = f"{direction}*{fac}"
                 mesh = boutpp.Mesh(section="mesh" + direction)
-                f = boutpp.create3D(ffunc.replace("%s", dirnfac), mesh, outloc=floc)
-                v = boutpp.create3D(vfunc.replace("%s", dirnfac), mesh, outloc=vloc)
+                f = boutpp.create3D(ffunc.format(dirnfac), mesh, outloc=floc)
+                v = boutpp.create3D(vfunc.format(dirnfac), mesh, outloc=vloc)
                 sim = diff_func(v, f, method=diff, outloc=floc)
                 if sim.getLocation() != floc:
                     if floc == "centre" and sim.getLocation() == "centre":
                         pass
                     else:
                         errorlist.append(
-                            "Location does not match - expected %s but got %s"
-                            % (floc, sim.getLocation())
+                            f"Location does not match - expected {floc} but got {sim.getLocation()}"
                         )
-                ana = boutpp.create3D(outfunc.replace("%s", dirnfac), mesh, outloc=floc)
+                ana = boutpp.create3D(outfunc.format(dirnfac), mesh, outloc=floc)
                 err = sim - ana
-                err = err.getAll().flatten()
-                if guards:
-                    err = err[guards:-guards]
+                err = err.getAll().flatten()[2:-2]
                 err = np.max(np.abs(err))
                 errors.append(err)
             errc = np.log(errors[-2] / errors[-1])
             difc = np.log(nzs[-1] / nzs[-2])
             conv = errc / difc
+
+            vfunc = vfunc.format(direction)
+            ffunc = ffunc.format(direction)
+
             if order - 0.1 < conv < order + 0.1:
-                info = "%s - %s - %s - %s - %s -> %s " % (
-                    vfunc,
-                    ffunc,
-                    diff,
-                    direction,
-                    floc,
-                    vloc,
-                )
-                passMsg = "%s: %s is working. Expected %f got %f" % (
-                    msg,
-                    info,
-                    order,
-                    conv,
-                )
+                info = f"{vfunc} - {ffunc} - {diff} - {direction} - {floc} -> {vloc} "
+                passMsg = f"{msg}{direction.upper()}: {info} is working. Expected {order:f} got {conv:f}"
                 passlist.append(passMsg)
             else:
-                info = "%s - %s - %s - %s - %s -> %s " % (
-                    vfunc,
-                    ffunc,
-                    diff,
-                    direction,
-                    floc,
-                    vloc,
-                )
-                error = "%s: %s is not working. Expected %f got %f" % (
-                    msg,
-                    info,
-                    order,
-                    conv,
-                )
+                info = f"{vfunc} - {ffunc} - {diff} - {direction} - {floc} -> {vloc} "
+                error = f"{msg}{direction.upper()}: {info} is not working. Expected {order:f} got {conv:f}"
                 errorlist.append(error)
                 if doPlot:
                     from matplotlib import pyplot as plt
@@ -109,8 +86,8 @@ doPlot = False
 nzs = np.logspace(start, mmax, num=mmax - start + 1, base=2)
 
 functions = [
-    ["sin(%s)", "sin(%s)", "sin(%s)*cos(%s)"],
-    ["sin(%s)", "cos(%s)", "-sin(%s)*sin(%s)"],
+    ["sin({0})", "sin({0})", "sin({0})*cos({0})"],
+    ["sin({0})", "cos({0})", "-sin({0})*sin({0})"],
 ]
 
 derivatives = [
@@ -122,9 +99,9 @@ derivatives = [
 ]
 
 directions = [
-    ["x", "2*pi", 2, boutpp.VDDX],
-    ["y", "1", 2, boutpp.VDDY],
-    ["z", "1", 0, boutpp.VDDZ],
+    ["x", "2*pi", boutpp.VDDX],
+    ["y", "1", boutpp.VDDY],
+    ["z", "1", boutpp.VDDZ],
 ]
 
 runtests(functions, derivatives, directions, stag=False, msg="DD")
@@ -144,9 +121,6 @@ boutpp.finalise()
 if errorlist:
     for error in errorlist:
         print(error)
-    if passlist:
-        for passMsg in passlist:
-            print(passMsg)
     exit(1)
 else:
     print("Pass")

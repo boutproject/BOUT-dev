@@ -13,8 +13,9 @@ boutpp.init("-d data -q -q -q")
 
 
 def runtests(functions, derivatives, direction, stag, msg, errorlist, ordertol=0.1):
-    direction, fac, guards, diff_func = direction
+    direction, fac, diff_func = direction
     locations = ["centre"]
+    guards = 2
     if stag:
         locations.append(direction.upper() + "low")
     for funcs, derivative, inloc, outloc in itertools.product(
@@ -27,16 +28,16 @@ def runtests(functions, derivatives, direction, stag, msg, errorlist, ordertol=0
         for nz in nzs:
             boutpp.setOption(
                 "mesh:ny",
-                "%d" % (nz + (2 * guards if direction == "x" else 0)),
+                str(nz + (2 * guards if direction == "x" else 0)),
                 force=True,
             )
-            boutpp.setOption("mesh:dy", "2*pi/(%d)" % (nz), force=True)
+            boutpp.setOption("mesh:dy", f"2*pi/({nz})", force=True)
             boutpp.setOption(
                 "mesh:nz",
-                "%d" % (nz + (2 * guards if direction == "x" else 0)),
+                str(nz),
                 force=True,
             )
-            boutpp.setOption("mesh:dz", "2*pi/(%d)" % (nz), force=True)
+            boutpp.setOption("mesh:dz", f"2*pi/({nz})", force=True)
             dirnfac = direction + "*" + fac
             mesh = boutpp.Mesh(section="mesh")
 
@@ -64,17 +65,14 @@ def runtests(functions, derivatives, direction, stag, msg, errorlist, ordertol=0
             sim = diff_func(f, method=diff, outloc=outloc)
             if sim.getLocation() != outloc:
                 errorlist.append(
-                    "Location does not match - expected %s but got %s"
-                    % (outloc, sim.getLocation())
+                    f"Location does not match - expected {outloc} but got {sim.getLocation()}"
                 )
             opt["mms"]["ana"] = outfunc.replace("%s", dirnfac) + "+0.*x*y*z"
             ana_array = opt.evaluate("mms:ana")
             ana = boutpp.Field3D.fromMesh(mesh)
             ana.set(ana_array)
             err = sim - ana
-            err = err.getAll()
-            if guards:
-                err = err[1:-1, guards:-guards, :]
+            err = err.getAll()[1:-1, guards:-guards, guards:-guards]
             err = np.max(np.abs(err))
             print("this iteration " + str(nz) + "\t" + str(err))
             errors.append(err)
@@ -84,13 +82,8 @@ def runtests(functions, derivatives, direction, stag, msg, errorlist, ordertol=0
         if order - ordertol < conv < order + ordertol:
             pass
         else:
-            info = "%s - %s - %s - %s -> %s " % (infunc, diff, direction, inloc, outloc)
-            error = "%s: %s is not working. Expected %f got %f" % (
-                msg,
-                info,
-                order,
-                conv,
-            )
+            info = f"{infunc} - {diff} - {direction} - {inloc} -> {outloc} "
+            error = f"{msg}{direction.upper()}: {info} is not working. Expected {order:f} got {conv:f}"
             errorlist.append(error)
         if doPlot:
             from matplotlib import pyplot as plt
@@ -126,7 +119,7 @@ derivatives = [
     [2, "C2"],
 ]
 
-direction = ["y", "1", 2, boutpp.DDY]
+direction = ["y", "1", boutpp.DDY]
 
 runtests(functions, derivatives, direction, stag=False, msg="DD", errorlist=errorlist)
 
@@ -140,7 +133,7 @@ functions = [
     ["cos(%s + (z-mesh:zShift))", "-cos(%s + (z-mesh:zShift))"],
 ]
 
-direction = ["y", "1", 2, boutpp.D2DY2]
+direction = ["y", "1", boutpp.D2DY2]
 
 runtests(functions, derivatives, direction, False, "D2D2", errorlist, ordertol=0.2)
 
