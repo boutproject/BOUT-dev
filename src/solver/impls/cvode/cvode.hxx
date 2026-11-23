@@ -46,6 +46,8 @@ RegisterUnavailableSolver
 #include "bout/region.hxx"
 #include "bout/sundials_backports.hxx"
 
+#include "cvode_step_limit.hxx"
+
 #if BOUT_HAS_PETSC
 #include "bout/petsclib.hxx"
 
@@ -189,6 +191,31 @@ private:
   /// Error weights for jtimesScaled
   N_Vector jtimes_ewt{nullptr};
 
+  /// Learn a maximum step from the Krylov solves (cvode_linear_step_control)
+  bool linear_step_control;
+  /// Its tuning parameters (cvode_lsc_*)
+  bout::cvode::StepLimitParams lsc_params;
+  /// Narrow CVODE's fixed-step band while the step is above the limit
+  bool lsc_enforce;
+  bout::cvode::StepLimiter step_limiter;
+  /// Linear solves since the last internal step, recorded by the solve wrapper
+  std::vector<bout::cvode::LinearSolveRecord> lsc_solves;
+  /// Is CVODE's fixed-step band currently narrowed?
+  bool lsc_band_narrow{false};
+  /// The linear solver's own solve, called by the wrapper
+  int (*lsc_inner_solve)(SUNLinearSolver, SUNMatrix, N_Vector, N_Vector,
+                         sundials_real_type){nullptr};
+  /// Is the stop norm of the linear solver |s1 r| (right or no preconditioning)?
+  bool lsc_right{false};
+  /// Update the step limit after an internal step
+  void linearStepControl();
+
+public:
+  /// Called by the linear-solve wrapper: run the solve and record it
+  int recordLinearSolve(SUNLinearSolver S, SUNMatrix A, N_Vector x, N_Vector b,
+                        sundials_real_type tol);
+
+private:
   // Diagnostics from CVODE
   int nsteps{0};
   int nfevals{0};
