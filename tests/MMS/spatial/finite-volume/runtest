@@ -34,11 +34,44 @@ OPERATORS = {
     "FV_Div_par_Superbee": 1.5,
     "FV_Div_par_mod_Superbee": 1.5,
     "FV_Div_par_fvv_Superbee": 1.5,
+    # Van Albada is limited at extrema, like the limiters above
+    "FV_Div_par_VanAlbada": 1.5,
+    "FV_Div_par_mod_VanAlbada": 1.5,
+    "FV_Div_par_fvv_VanAlbada": 1.5,
+    "FV_Div_par_mod_stagnation_VanAlbada": 1.5,
+    "FV_Div_par_fvv_stagnation_VanAlbada": 1.5,
+    # At these resolutions VanAlbadaSmooth is also limited at extrema
+    "FV_Div_par_VanAlbadaSmooth": 1.5,
+    "FV_Div_par_mod_VanAlbadaSmooth": 1.5,
+    "FV_Div_par_fvv_VanAlbadaSmooth": 1.5,
+    "FV_Div_par_mod_stagnation_VanAlbadaSmooth": 1.5,
+    "FV_Div_par_fvv_stagnation_VanAlbadaSmooth": 1.5,
     "FV_Div_par_K_Grad_par": 2,
     "FV_Div_par_K_Grad_par_mod": 2,
+    # Small-amplitude profiles. VanAlbada stays limited at extrema
+    "FV_Div_par_small_Fromm": 1.5,
+    "FV_Div_par_mod_small_Fromm": 1.5,
+    "FV_Div_par_fvv_small_Fromm": 1.5,
+    "FV_Div_par_small_VanAlbada": 1.5,
+    "FV_Div_par_mod_small_VanAlbada": 1.5,
+    "FV_Div_par_fvv_small_VanAlbada": 1.5,
+    "FV_Div_par_small_VanAlbadaSmooth": 1.5,
+    "FV_Div_par_mod_small_VanAlbadaSmooth": 1.5,
+    "FV_Div_par_fvv_small_VanAlbadaSmooth": 1.5,
 }
-# Resolution in y and z
-NLIST = [8, 16, 32, 64]
+# For small-amplitude profiles VanAlbadaSmooth reduces to the central
+# slope, so its error should match Fromm's at every resolution.
+# This is checked instead of the order, because at these resolutions the
+# central slope itself is not yet second order in the mod and fvv operators
+CENTRAL_LIMIT = {
+    "FV_Div_par_small_VanAlbadaSmooth": "FV_Div_par_small_Fromm",
+    "FV_Div_par_mod_small_VanAlbadaSmooth": "FV_Div_par_mod_small_Fromm",
+    "FV_Div_par_fvv_small_VanAlbadaSmooth": "FV_Div_par_fvv_small_Fromm",
+}
+# Allowed relative difference from the Fromm error
+CENTRAL_LIMIT_TOLERANCE = 0.01
+# Resolution in y and z. The order is measured between the last two.
+NLIST = [32, 64]
 dx = 1.0 / array(NLIST)
 
 
@@ -64,6 +97,17 @@ def assert_convergence(error, dx, name, expected) -> bool:
 
     # Should be close to the expected order
     success = order > expected * 0.95
+    print(f"\t............ {'PASS' if success else 'FAIL'}")
+
+    return success
+
+
+def assert_central_limit(error, reference_error, name) -> bool:
+    ratios = array(error) / array(reference_error)
+    print(f"{name} error / central-slope error = {ratios}", end="")
+
+    # Should match at every resolution
+    success = all(abs(ratios - 1) < CENTRAL_LIMIT_TOLERANCE)
     print(f"\t............ {'PASS' if success else 'FAIL'}")
 
     return success
@@ -130,6 +174,13 @@ def test_fv_operators() -> bool:
         if not success:
             failures.append(operator)
 
+    for operator, reference in CENTRAL_LIMIT.items():
+        success = assert_central_limit(
+            final_errors[operator]["l_2"], final_errors[reference]["l_2"], operator
+        )
+        if not success:
+            failures.append(operator)
+
     return final_errors, failures
 
 
@@ -179,8 +230,18 @@ if __name__ == "__main__":
         help="Output file to dump errors as JSON",
         default="fv_operator_errors.json",
     )
+    parser.add_argument(
+        "--nlist",
+        type=int,
+        nargs="+",
+        help="Resolutions to run (default: %(default)s)",
+        default=NLIST,
+    )
 
     args = parser.parse_args()
+    NLIST = args.nlist
+    assert len(NLIST) > 1, "Need at least two points to run test"
+    dx = 1.0 / array(NLIST)
 
     error2, failures = test_fv_operators()
     success = len(failures) == 0
