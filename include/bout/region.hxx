@@ -50,7 +50,6 @@
 #include <vector>
 
 #include "fmt/base.h"
-#include "fmt/format.h"
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
@@ -380,7 +379,7 @@ struct fmt::formatter<SpecificInd<N>> {
 
     // Check if reached the end of the range:
     if (it != end && *it != '}') {
-      throw format_error("invalid format");
+      report_error("invalid format");
     }
 
     // Return an iterator past the end of the parsed range:
