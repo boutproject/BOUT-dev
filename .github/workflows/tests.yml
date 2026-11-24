@@ -137,25 +137,21 @@ jobs:
           echo CMake options: ${{ matrix.config.cmake_options }}
 
       - name: Install dependencies
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 5
-          max_attempts: 2
-          command: |
-            sudo apt update
-            sudo apt install -y \
-                libfftw3-dev \
-                libnetcdf-dev \
-                libnetcdf-c++4-dev \
-                netcdf-bin \
-                lcov \
-                openmpi-bin \
-                libopenmpi-dev \
-                petsc-dev \
-                slepc-dev \
-                liblapack-dev \
-                libparpack2-dev \
-                libhypre-dev
+        run: |
+          sudo apt update
+          sudo apt install -y \
+              libfftw3-dev \
+              libnetcdf-dev \
+              libnetcdf-c++4-dev \
+              netcdf-bin \
+              lcov \
+              openmpi-bin \
+              libopenmpi-dev \
+              petsc-dev \
+              slepc-dev \
+              liblapack-dev \
+              libparpack2-dev \
+              libhypre-dev
 
       - uses: actions/checkout@v7
         with:

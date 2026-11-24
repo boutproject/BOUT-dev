@@ -84,7 +84,11 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
     }
   }
 
-  // Y and Z fluxes require Y derivatives
+  // A singleton global Y mesh has no Y derivatives, even if guards exist.
+  const bool y_derivatives = mesh->GlobalNy > 1;
+  ASSERT1(!y_derivatives || mesh->ystart > 0);
+
+  // Y fluxes and the mixed part of the Z flux require Y derivatives.
 
   // Fields containing values along the magnetic field
 
@@ -109,7 +113,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
   }
 
   // Y flux
-  if (mesh->ystart > 0) {
+  if (y_derivatives) {
     BOUT_FOR(i, yzresult.getRegion("RGN_NOBNDRY")) {
       auto ikp = i.zp();
       auto ikm = i.zm();
@@ -155,29 +159,27 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
 
         yzresult[i] -= fout / (dy.c[i] * J.c[i]);
       }
-      // Z flux
-      {
-
-        // Coefficient in front of df/dy term
-        const BoutReal coef = g_23.c[i] / (dy.up[i.yp()] + 2. * dy.c[i] + dy.down[i.ym()])
-                              / SQ(J.c[i] * Bxy.c[i]);
-
-        const BoutReal fout =
-            0.25 * (a_slice.c[i] + a_slice.c[ikp])
-            * (J.c[i] * coord->g33()[i] + J.c[ikp] * coord->g33()[ikp])
-            * ( // df/dz
-                (f_slice.c[ikp] - f_slice.c[i]) / dz.c[i]
-                // - g_yz * df/dy / SQ(J*B)
-                - coef
-                      * (f_slice.up[i.yp()] + f_slice.up[ikp.yp()] - f_slice.down[i.ym()]
-                         - f_slice.down[ikp.ym()]));
-
-        yzresult[i] += fout / (J.c[i] * dz.c[i]);
-        yzresult[ikp] -= fout / (J.c[ikp] * dz.c[ikp]);
-      }
     }
-  } else {
-    ASSERT1(mesh->yend == 0);
+  }
+
+  // Z flux exists independently of Y guards or Y derivatives.
+  BOUT_FOR(i, yzresult.getRegion("RGN_NOBNDRY")) {
+    const auto ikp = i.zp();
+    BoutReal y_correction = 0.0;
+    if (y_derivatives) {
+      const BoutReal coef = g_23.c[i] / (dy.up[i.yp()] + 2. * dy.c[i] + dy.down[i.ym()])
+                            / SQ(J.c[i] * Bxy.c[i]);
+      y_correction = coef
+                     * (f_slice.up[i.yp()] + f_slice.up[ikp.yp()] - f_slice.down[i.ym()]
+                        - f_slice.down[ikp.ym()]);
+    }
+
+    const BoutReal fout = 0.25 * (a_slice.c[i] + a_slice.c[ikp])
+                          * (J.c[i] * coord->g33()[i] + J.c[ikp] * coord->g33()[ikp])
+                          * ((f_slice.c[ikp] - f_slice.c[i]) / dz.c[i] - y_correction);
+
+    yzresult[i] += fout / (J.c[i] * dz.c[i]);
+    yzresult[ikp] -= fout / (J.c[ikp] * dz.c[ikp]);
   }
 
   // Check if we need to transform back
@@ -752,29 +754,56 @@ Field3D Div_a_Grad_perp_FCI::operator()(const Field3D& a, const Field3D& f,
                                         Field3D* flow_xlow, Field3D* flow_zlow) const {
   auto result{zeroFrom(f)};
   ASSERT1_FIELDS_COMPATIBLE(a, f);
+#if BOUT_HAS_OPENMP
+  bool parallel = omp_get_max_threads() > 1;
+#else
+  bool parallel = false;
+#endif
   if constexpr (extra) {
     flow_xlow->allocate();
     flow_zlow->allocate();
   }
-  BOUT_FOR(i, f.getRegion("RGN_dapg_fv_xbndry")) {
-    const auto xf = xflux<upwinding>(a, f, i);
-    result[i.xp()] = xf;
-    if constexpr (extra) {
-      (*flow_xlow)[i.xp()] = xf;
-    }
+  Field3D xtmp, ztmp;
+  if (parallel and not extra) {
+    xtmp = emptyFrom(f);
+    flow_xlow = &xtmp;
+    ztmp = emptyFrom(f);
+    flow_zlow = &ztmp;
   }
-  BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
-    const auto xf = xflux<upwinding>(a, f, i);
-    result[i.xp()] = xf;
-    result[i] -= xf;
-    if constexpr (extra) {
-      (*flow_xlow)[i.xp()] = xf;
+  if (not parallel) {
+    BOUT_FOR(i, f.getRegion("RGN_dapg_fv_xbndry")) {
+      const auto xf = xflux<upwinding>(a, f, i);
+      result[i.xp()] = xf;
+      if constexpr (extra) {
+        (*flow_xlow)[i.xp()] = xf;
+      }
     }
-    const auto zf = zflux<upwinding>(a, f, i);
-    result[i.zp()] += zf;
-    result[i] -= zf;
-    if constexpr (extra) {
-      (*flow_zlow)[i.zp()] = zf;
+    BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
+      const auto xf = xflux<upwinding>(a, f, i);
+      result[i.xp()] = xf;
+      result[i] -= xf;
+      if constexpr (extra) {
+        (*flow_xlow)[i.xp()] = xf;
+      }
+      const auto zf = zflux<upwinding>(a, f, i);
+      result[i.zp()] += zf;
+      result[i] -= zf;
+      if constexpr (extra) {
+        (*flow_zlow)[i.zp()] = zf;
+      }
+    }
+  } else {
+    BOUT_FOR(i, f.getRegion("RGN_dapg_fv_xbndry")) {
+      (*flow_xlow)[i] = xflux<upwinding>(a, f, i.xm());
+      ;
+    }
+    BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
+      (*flow_xlow)[i] = xflux<upwinding>(a, f, i.xm());
+      (*flow_zlow)[i] = zflux<upwinding>(a, f, i.zm());
+    }
+    BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
+      result[i] =
+          (*flow_xlow)[i] - (*flow_xlow)[i.xm()] + (*flow_zlow)[i] - (*flow_zlow)[i.zm()];
     }
   }
   result.setRegion("RGN_NOBNDRY");
