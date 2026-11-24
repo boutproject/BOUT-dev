@@ -608,9 +608,8 @@ public:
     if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
       // Check that the default values are the same
       if (!similar(val, def)) {
-        throw BoutException("Inconsistent default values for '{:s}': '{:s}' then '{:s}'",
-                            full_name, bout::utils::variantToString(value),
-                            toString(def));
+        throw BoutException("Inconsistent default values for '{}': '{}' then '{}'",
+                            full_name, bout::utils::variantToString(value), def);
       }
     }
     return val;
@@ -665,9 +664,8 @@ public:
     if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
       // Check that the default values are the same
       if (!similar(val, def)) {
-        throw BoutException("Inconsistent default values for '{:s}': '{:s}' then '{:s}'",
-                            full_name, bout::utils::variantToString(value),
-                            toString(def));
+        throw BoutException("Inconsistent default values for '{}': '{}' then '{}'",
+                            full_name, bout::utils::variantToString(value), def);
       }
     }
     return val;
@@ -913,13 +911,13 @@ private:
                       << bout::utils::variantToString(value) << " ("
                       << bout::utils::variantToString(attributes["source"])
                       << _(") overwritten with:") << "\n"
-                      << "\t\t" << full_name << " = " << toString(val) << " (" << source
-                      << ")\n";
+                      << "\t\t" << full_name << " = " << fmt::to_string(val) << " ("
+                      << source << ")\n";
         } else {
           throw BoutException(
-              _f("Options: Setting a value from same source ({:s}) to new value "
-                 "'{:s}' - old value was '{:s}'."),
-              source, toString(val), bout::utils::variantToString(value));
+              _f("Options: Setting a value from same source ({}) to new value "
+                 "'{}' - old value was '{:s}'."),
+              source, val, bout::utils::variantToString(value));
         }
       }
     }
@@ -1018,19 +1016,16 @@ auto Options::as(const Tensor<BoutReal>& similar_to) const -> Tensor<BoutReal>;
 template <>
 auto Options::as(const Tensor<int>& similar_to) const -> Tensor<int>;
 
-/// Convert \p value to string
-std::string toString(const Options& value);
-
 /// Save the parallel fields
 void saveParallel(Options& opt, const std::string& name, const Field3D& tosave);
 
 /// Output a stringified \p value to a stream
 ///
-/// This is templated to avoid implict casting: anything is
+/// This is templated to avoid implicit casting: anything is
 /// convertible to an `Options`, and we want _exactly_ `Options`
 template <class T, typename = bout::utils::EnableIfOptions<T>>
 inline std::ostream& operator<<(std::ostream& out, const T& value) {
-  return out << toString(value);
+  return out << fmt::to_string(value);
 }
 
 namespace bout {

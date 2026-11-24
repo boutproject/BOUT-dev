@@ -312,25 +312,25 @@ bool Options::isSection(const std::string& name) const {
 
 template <>
 Options& Options::assign<>(Field2D val, std::string source) {
-  attributes["cell_location"] = toString(val.getLocation());
-  attributes["direction_y"] = toString(val.getDirectionY());
-  attributes["direction_z"] = toString(val.getDirectionZ());
+  attributes["cell_location"] = fmt::to_string(val.getLocation());
+  attributes["direction_y"] = fmt::to_string(val.getDirectionY());
+  attributes["direction_z"] = fmt::to_string(val.getDirectionZ());
   _set_no_check(std::move(val), std::move(source));
   return *this;
 }
 template <>
 Options& Options::assign<>(Field3D val, std::string source) {
-  attributes["cell_location"] = toString(val.getLocation());
-  attributes["direction_y"] = toString(val.getDirectionY());
-  attributes["direction_z"] = toString(val.getDirectionZ());
+  attributes["cell_location"] = fmt::to_string(val.getLocation());
+  attributes["direction_y"] = fmt::to_string(val.getDirectionY());
+  attributes["direction_z"] = fmt::to_string(val.getDirectionZ());
   _set_no_check(std::move(val), std::move(source));
   return *this;
 }
 template <>
 Options& Options::assign<>(FieldPerp val, std::string source) {
-  attributes["cell_location"] = toString(val.getLocation());
-  attributes["direction_y"] = toString(val.getDirectionY());
-  attributes["direction_z"] = toString(val.getDirectionZ());
+  attributes["cell_location"] = fmt::to_string(val.getLocation());
+  attributes["direction_y"] = fmt::to_string(val.getDirectionY());
+  attributes["direction_z"] = fmt::to_string(val.getDirectionZ());
   attributes["yindex_global"] = val.getGlobalIndex();
   _set_no_check(std::move(val), std::move(source));
   return *this;
@@ -542,7 +542,7 @@ bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
 
   value_used = true;
 
-  printNameValueSourceLine(*this, toString(result));
+  printNameValueSourceLine(*this, fmt::to_string(result));
 
   return result;
 }
@@ -1196,8 +1196,6 @@ bout::details::OptionsFormatterBase::format(const Options& options,
 
   return ctx.out();
 }
-
-std::string toString(const Options& value) { return fmt::format("{}", value); }
 
 namespace bout {
 void checkForUnusedOptions() {

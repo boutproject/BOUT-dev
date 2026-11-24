@@ -24,11 +24,14 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-#include "bout/utils.hxx"
-#include <optional>
-class Field2D;
 
 #pragma once
+
+#include "bout/utils.hxx"
+#include <optional>
+
+class Field2D;
+
 #ifndef BOUT_FIELD2D_H
 #define BOUT_FIELD2D_H
 
@@ -42,6 +45,11 @@ class Field2D;
 #include "bout/field_data.hxx"
 #include "bout/fieldperp.hxx"
 #include "bout/region.hxx"
+
+#include "fmt/format.h"
+#include <fmt/base.h>
+#include <fmt/core.h>
+#include <fmt/ranges.h>
 
 #include <cstddef>
 #include <iostream>
@@ -616,5 +624,9 @@ inline std::string toString<>([[maybe_unused]] const Field2D& val) {
 bool operator==(const Field2D& a, const Field2D& b);
 
 std::ostream& operator<<(std::ostream& out, const Field2D& value);
+
+// Tell {fmt} not to treat these as ranges so it uses format_as() instead
+template <>
+struct fmt::is_range<Field2D, char> : std::false_type {};
 
 #endif /* BOUT_FIELD2D_H */
