@@ -191,7 +191,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: /home/runner/local
-          key: bout-sundials-${{ matrix.config.os }}${{ matrix.config.build_petsc }}
+          key: bout-sundials-${{ matrix.config.os }}${{ matrix.config.build_petsc }}-${{ hashFiles('.build_sundials_for_ci.sh') }}
 
       - name: Build SUNDIALS
         run: ./.build_sundials_for_ci.sh
