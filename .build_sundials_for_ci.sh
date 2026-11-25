@@ -28,7 +28,6 @@ if [[ ! -d $HOME/local/include/sundials ]]; then
           -DMPIEXEC_EXECUTABLE="$(command -v mpiexec)" \
           ..
     make && make install
-    cd "${TRAVIS_BUILD_DIR}"
     echo "****************************************"
     echo "Finished building SUNDIALS"
     echo "****************************************"
