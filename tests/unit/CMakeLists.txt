@@ -104,6 +104,7 @@ set(serial_tests_source
     ./mesh/test_mesh.cxx
     ./mesh/test_paralleltransform.cxx
     ./mesh/test_petsc_operators.cxx
+    ./solver/test_cvode_failure_counters.cxx
     ./solver/test_fakesolver.cxx
     ./solver/test_fakesolver.hxx
     ./solver/test_nvector.cxx

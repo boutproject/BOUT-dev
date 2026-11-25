@@ -77,6 +77,21 @@ using CvodeBool = sunbooleantype;
 using CvodeBool = booleantype;
 #endif
 
+namespace bout {
+/// What CVODE does with the return flag of a Krylov solve (as in cvLsSolve,
+/// SUNDIALS cvode_ls.c). Used by solver:cvode_failure_counters
+enum class CvodeKrylovOutcome {
+  converged,      ///< SUN_SUCCESS
+  accepted,       ///< SUNLS_RES_REDUCED in the first Newton iteration
+  newton_failure, ///< Other recoverable flags: the Newton iteration fails
+  unrecoverable   ///< CVODE stops with an error
+};
+
+/// Classify the return flag \p flag of a Krylov solve in Newton iteration
+/// \p newton_iteration (0 is the first)
+CvodeKrylovOutcome classifyCvodeKrylovFlag(int flag, int newton_iteration);
+} // namespace bout
+
 class CvodeSolver : public Solver {
 public:
   explicit CvodeSolver(Options* opts = nullptr);
@@ -97,6 +112,17 @@ public:
   void pre(BoutReal t, BoutReal gamma, BoutReal delta, N_Vector u, N_Vector rvec,
            N_Vector zvec);
   void jac(BoutReal t, N_Vector y, N_Vector v, N_Vector Jv);
+
+  /// Failure counters (solver:cvode_failure_counters): count the return flag of one
+  /// Krylov solve, classified by bout::classifyCvodeKrylovFlag with the iteration
+  /// index of the Newton solver
+  void countKrylovFlag(int flag);
+  /// Failure counters: one call of the Newton solver failed
+  void countNewtonSolveFailure();
+  /// Failure counters: a recoverable RHS failure (BoutRhsFail) in the linear RHS
+  /// (Jacobian-vector products, BBD preconditioner) or in the nonlinear RHS
+  /// (Newton residual)
+  void countRhsFailure(bool linear);
 
 private:
 #if BOUT_HAS_PETSC
@@ -179,6 +205,8 @@ private:
       jacobian_export_kind; ///< Export ``system`` or ``rhs`` Jacobian
   bout::CvodeJacobianExportTrigger
       jacobian_export_trigger; ///< Export on ``output`` or ``linear_setup``
+  /// Count the causes of CVODE step failures (solver:cvode_failure_counters)
+  bool failure_counters;
 
   // Diagnostics from CVODE
   int nsteps{0};
@@ -191,6 +219,29 @@ private:
   int num_fails{0};
   int nonlin_fails{0};
   int stab_lims{0};
+
+  // Failure counters (only with failure_counters), cumulative like the
+  // diagnostics above
+  int fc_krylov_solves{0};       ///< Krylov solves (SUNLinSolSolve calls)
+  int fc_krylov_accepted{0};     ///< SUNLS_RES_REDUCED in Newton iteration 0 (accepted)
+  int fc_krylov_fail_newton{0};  ///< Krylov solves that failed a Newton iteration
+  int fc_krylov_resred_later{0}; ///< of these: SUNLS_RES_REDUCED in a later iteration
+  int fc_krylov_convfail{0};     ///< of these: SUNLS_CONV_FAIL
+  int fc_rhs_fail_newton{0};     ///< recoverable failures of the nonlinear RHS
+  int fc_rhs_fail_linear{0};     ///< recoverable failures of the linear RHS
+  int fc_newton_notconv{0};      ///< other Newton failures (divergence, ...)
+  int fc_newton_solve_fails{0};  ///< failed calls of the Newton solver
+  int fc_step_solve_fails{0};    ///< CVodeGetNumStepSolveFails
+  int fc_constraint_fails{0};    ///< steps rejected by the inequality constraints
+  int fc_lin_conv_fails{0};      ///< CVodeGetNumLinConvFails
+  int fc_jtimes{0};              ///< CVodeGetNumJtimesEvals
+  int fc_lin_rhs{0};             ///< CVodeGetNumLinRhsEvals
+  int fc_prec_setups{0};         ///< CVodeGetNumPrecEvals
+  BoutReal fc_pre_wtime{0.0};    ///< preconditioner wall time, last output interval
+  /// Cumulative values at the previous output, for the values per output interval
+  std::vector<long> fc_previous;
+  /// Update the failure counters from CVODE and print them (called from run())
+  void updateFailureCounters();
 
   bool cvode_initialised{false};
 
