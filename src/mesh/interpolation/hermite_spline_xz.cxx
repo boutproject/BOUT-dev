@@ -33,13 +33,14 @@
 #include "bout/index_derivs_interface.hxx"
 #include "bout/interpolation_xz.hxx"
 #include "bout/mask.hxx"
+#include "bout/output_bout_types.hxx"
 #include "bout/paralleltransform.hxx"
 #include "bout/region.hxx"
 
 #include "fmt/format.h"
-#include "fmt/ranges.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <memory>
 #include <string>
@@ -142,7 +143,12 @@ XZHermiteSplineBase<monotonic, imp_type>::XZHermiteSplineBase(int y_offset, Mesh
                                                               Options* options)
     : XZInterpolation(y_offset, meshin), h00_x(localmesh), h01_x(localmesh),
       h10_x(localmesh), h11_x(localmesh), h00_z(localmesh), h01_z(localmesh),
-      h10_z(localmesh), h11_z(localmesh) {
+      h10_z(localmesh), h11_z(localmesh),
+      petsclib(
+          PetscLib(options != nullptr
+                       ? options
+                       : &Options::root()
+                             ["mesh:paralleltransform:xzinterpolation:hermitespline"])) {
 
   if constexpr (monotonic) {
     if (options == nullptr) {
@@ -184,7 +190,7 @@ XZHermiteSplineBase<monotonic, imp_type>::XZHermiteSplineBase(int y_offset, Mesh
   }
   if constexpr (imp_type == bout::details::implementation_type::petsc) {
 #if BOUT_HAS_PETSC
-    petsclib = new PetscLib(
+    petsclib = PetscLib(
         &Options::root()["mesh:paralleltransform:xzinterpolation:hermitespline"]);
     const int m = localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz;
     const int M = m * localmesh->getNXPE() * localmesh->getNYPE() * localmesh->getNZPE();
@@ -209,8 +215,6 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
     const Field3D& delta_x, const Field3D& delta_z,
     [[maybe_unused]] const std::string& region) {
 
-  const int ny = localmesh->LocalNy;
-  const int nz = localmesh->LocalNz;
   // Global grid size including the boundary guard cells (which are actually
   // periodic, but we still need to count them), because we need to enforce the
   // interpolating indices to be in [0, zend]. This means that delta_x/z need to
@@ -228,19 +232,15 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
 #else
   BOUT_FOR(i, getRegion(region)) {
 #endif
-    const int x = i.x();
-    const int y = i.y();
-    const int z = i.z();
-
     // The integer part of xt_prime, zt_prime are the indices of the cell
     // containing the field line end-point
-    int i_corn = static_cast<int>(floor(delta_x(x, y, z)));
-    k_corner(x, y, z) = static_cast<int>(floor(delta_z(x, y, z)));
+    int i_corn = static_cast<int>(floor(delta_x[i]));
+    k_corner[i] = static_cast<int>(floor(delta_z[i]));
 
     // t_x, t_z are the normalised coordinates \in [0,1) within the cell
     // calculated by taking the remainder of the floating point index
-    BoutReal t_x = delta_x(x, y, z) - static_cast<BoutReal>(i_corn);
-    BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
+    BoutReal t_x = delta_x[i] - static_cast<BoutReal>(i_corn);
+    BoutReal t_z = delta_z[i] - static_cast<BoutReal>(k_corner[i]);
 
     // NOTE: A (small) hack to avoid one-sided differences. We need at
     // least 2 interior points due to an awkwardness with the
@@ -268,19 +268,17 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
 
     // Check that t_x and t_z are in range
     if ((t_x < 0.0) || (t_x > 1.0)) {
-      throw BoutException(
-          "t_x={:e} out of range at ({:d},{:d},{:d}) (delta_x={:e}, i_corn={:d})", t_x, x,
-          y, z, delta_x(x, y, z), i_corn);
+      throw BoutException("t_x={:e} out of range at ({:c}) (delta_x={:e}, i_corn={:d})",
+                          t_x, i, delta_x[i], i_corn);
     }
 
     if ((t_z < 0.0) || (t_z > 1.0)) {
-      throw BoutException(
-          "t_z={:e} out of range at ({:d},{:d},{:d}) (delta_z={:e}, k_corner={:d})", t_z,
-          x, y, z, delta_z(x, y, z), k_corner(x, y, z));
+      throw BoutException("t_z={:e} out of range at ({:c}) (delta_z={:e}, k_corner={:d})",
+                          t_z, i, delta_z[i], k_corner[i]);
     }
 
-    i_corner[i] = SpecificInd<IND_TYPE::IND_3D>(
-        (((i_corn * ny) + (y + y_offset)) * nz + k_corner(x, y, z)), ny, nz);
+    const int y = i.y();
+    i_corner[i] = delta_x.indexAt(i_corn, y + y_offset, k_corner[i]);
 
     h00_x[i] = (2. * t_x * t_x * t_x) - (3. * t_x * t_x) + 1.;
     h00_z[i] = (2. * t_z * t_z * t_z) - (3. * t_z * t_z) + 1.;
@@ -354,25 +352,26 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
       newWeights[5][i] += h11_x[i] * h11_z[i] / 4;
       if (imp_type == bout::details::implementation_type::petsc) {
 #if BOUT_HAS_PETSC
-        PetscInt idxn[1] = {conv.fromLocalToGlobal(x, y + y_offset, z)};
+        std::array<PetscInt, 1> idxn = {
+            conv.fromLocalToGlobal(i.x(), y + y_offset, i.z())};
 
         for (int j = 0; j < 4; ++j) {
-          PetscInt idxm[4];
-          PetscScalar vals[4];
+          std::array<PetscInt, 4> idxm{};
+          std::array<PetscScalar, 4> vals{};
           for (int k = 0; k < 4; ++k) {
-            idxm[k] = conv.fromMeshToGlobal(i_corn - 1 + j, y + y_offset,
-                                            k_corner(x, y, z) - 1 + k);
+            idxm[k] =
+                conv.fromMeshToGlobal(i_corn - 1 + j, y + y_offset, k_corner[i] - 1 + k);
             vals[k] = newWeights[(j * 4) + k][i];
           }
-          BOUT_DO_PETSC(
-              MatSetValues(petscWeights, 1, idxn, 4, idxm, vals, INSERT_VALUES));
+          BOUT_DO_PETSC(MatSetValues(petscWeights, 1, idxn.data(), 4, idxm.data(),
+                                     vals.data(), INSERT_VALUES));
         }
 #endif
       }
     }
     if constexpr (monotonic) {
-      const auto gind = gf3daccess->xyzglobal(i_corn, y + y_offset + y_global_offset,
-                                              k_corner(x, y, z));
+      const auto gind =
+          gf3daccess->xyzglobal(i_corn, y + y_offset + y_global_offset, k_corner[i]);
       gf3daccess->request(gind);
       gf3daccess->request(gind.xp(1));
       gf3daccess->request(gind.zp(1));

@@ -21,12 +21,21 @@
  **************************************************************************/
 
 #include "interp_utils.hxx"
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/field3d.hxx"
 #include "bout/globals.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/interpolation_z.hxx"
 #include "bout/mesh.hxx"
+#include "bout/output.hxx"
+#include "bout/paralleltransform.hxx"
+#include "bout/region.hxx"
 
 #include <algorithm>
+#include <cmath>
+#include <string>
 #include <vector>
 
 ZHermiteSpline::ZHermiteSpline(int y_offset, Mesh* mesh, Region<Ind3D> region_in)
