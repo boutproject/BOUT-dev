@@ -119,5 +119,5 @@ int main(int argc, char** argv) {
 
   bout::checkForUnusedOptions();
   BoutFinalise();
-  return allpassed == 0;
+  return static_cast<int>(allpassed == 0);
 }
