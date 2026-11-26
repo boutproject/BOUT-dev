@@ -4,9 +4,9 @@
 # Run the test, check it completed successfully
 #
 
-from boututils.run_wrapper import shell, launch
 from sys import stdout
 
+from boututils.run_wrapper import launch, shell
 
 flags = ["", "nsys=2", "nsys=5 periodic", "nsys=7 n=10"]
 
@@ -17,7 +17,7 @@ def test_cyclic():
     for nproc in [1, 2, 4]:
         cmd = "./test_cyclic"
 
-        print("   %d processors...." % (nproc))
+        print(f"   {nproc} processors....")
         r = 0
         for f in flags:
             stdout.write("\tflags '" + f + "' ... ")
@@ -32,12 +32,12 @@ def test_cyclic():
             r = r + 1
 
             # Find out if it worked
-            if status:
+            if status == 0:
                 print("PASSED")
             else:
                 print("FAILED")
                 code = 1
-            assert status, f"Test failed for flag={f}"
+            assert status == 0, f"Test failed for flag={f}"
 
     if code == 0:
         print(" => All cyclic reduction tests passed")
