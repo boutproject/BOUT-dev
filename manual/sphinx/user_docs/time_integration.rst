@@ -708,6 +708,41 @@ or equal to `output_residual_ratio` times the last output global
 residual. This provides a way of measuring progress to steady state
 that is independent of time integration accuracy.
 
+Output times
+~~~~~~~~~~~~
+
+With the default ``output_trigger = fixed_time_interval``, the solver
+takes the largest timestep it can and does not adjust it to reach the
+desired output time. Instead, it steps past it and the output state
+is constructed using linear interpolation. This allows many output timesteps
+to be achieved with a single solver timestep, and avoids unnecessarily changing
+the timestep which reduces the accuracy of the Jacobian. However, it also
+introduces interpolation error.
+
+Setting ``interpolate_outputs = false`` adjust the timestep so that there is
+a solve at each output time:
+
+.. code-block:: ini
+
+   [solver]
+   interpolate_outputs = false   # Default true
+
+It is set to ``true`` by default if ``matrix_free = false``, and ``false``
+by default otherwise.
+
+This enables an algorithm which slightly reduces the timestep so that
+the output time can be reached in the fewest equal timesteps no longer
+than the current fastest available timestep. This ensures that the final
+timestep snaps to exactly fill the remaining output time.
+
+This system works on top of the adaptive timestepper, and has the benefit
+of eliminating interpolation error at the cost of potentially poorer performance
+due to shorter timesteps.
+
+With ``equation_form = pseudo_transient`` the solver does not land on
+output times, and ``interpolate_outputs = false`` saves the state at the
+end of the last step, which may be past the output time.
+
 Pseudo-Transient Continuation and Switched Evolution Relaxation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1143,6 +1178,9 @@ Summary of solver options
 | matrix_free               | false         | Matrix-free preconditioning?                       |
 +---------------------------+---------------+----------------------------------------------------+
 | matrix_free_operator      | false         | Use matrix free Jacobian-vector product?           |
++---------------------------+---------------+----------------------------------------------------+
+| interpolate_outputs       | true          | Step past each output time and interpolate the     |
+|                           |               | output state. If false, land on output times       |
 +---------------------------+---------------+----------------------------------------------------+
 | use_coloring              | true          | If ``matrix_free=false``, use coloring to speed up |
 |                           |               | calculation of the Jacobian elements.              |
