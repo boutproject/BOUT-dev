@@ -25,6 +25,7 @@ dev = [
 pytest = [
      "pytest~=9.1",
      "pytest-xdist~=3.8",
+     "pytest-timeout~=2.3",
 ]
 maint = [
       "pygithub~=2.10",

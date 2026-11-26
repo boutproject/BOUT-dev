@@ -14,6 +14,10 @@ else
     TEST_FLAGS="-q"
 fi
 
+if "@Python3_EXECUTABLE@" -m pytest --help|grep -q -- --timeout=TIMEOUT ; then
+    TEST_FLAGS="$TEST_FLAGS --timeout=300"
+fi
+
 # Use the Python executable that CMake discovered during configuration
 "@Python3_EXECUTABLE@" -m pytest -m "not serial" --cache-clear -n auto --dist=loadgroup $TEST_FLAGS "$PROJECT_ROOT/tests/integrated" "${PYTEST_ARGS[@]}"
 "@Python3_EXECUTABLE@" -m pytest -m serial $TEST_FLAGS "$PROJECT_ROOT/tests/integrated" "${PYTEST_ARGS[@]}"
