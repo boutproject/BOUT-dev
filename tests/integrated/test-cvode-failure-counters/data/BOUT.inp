@@ -1,0 +1,24 @@
+# Stiff, forced, nonlinear diffusion problem for solver:cvode_failure_counters
+
+nout = 10
+timestep = 1.0
+
+MXG = 0
+
+[mesh]
+nx = 1
+ny = 32
+nz = 1
+
+[solver]
+type = cvode
+# Small Krylov subspace (and no preconditioner by default), so that Krylov
+# solves fail
+maxl = 2
+
+[model]
+diffusion = 100.0
+inject_rhs_failures = 2
+
+[f]
+function = sin(y)

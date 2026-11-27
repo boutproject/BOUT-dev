@@ -236,6 +236,54 @@ nonlinear solvers:
 The linear solver type can be set using the ``linear_solver`` option.
 Valid choices include ``gmres`` (the default), ``fgmres``, ``tfqmr``, ``bcgs``.
 
+CVODE failure counters
+~~~~~~~~~~~~~~~~~~~~~~
+
+The CVODE diagnostics ``cvode_nonlin_fails`` and ``cvode_num_fails`` (also
+printed with ``solver:diagnose=true``) count nonlinear (Newton) convergence
+failures and local error test failures, but not why a Newton iteration
+failed. Setting ``solver:cvode_failure_counters=true`` counts the causes of
+CVODE step failures. Each failed Newton iteration is attributed to one of:
+
+- a Krylov solve that did not converge (``SUNLS_RES_REDUCED`` after the
+  first Newton iteration, ``SUNLS_CONV_FAIL``, or another recoverable
+  failure of the linear solver);
+- a recoverable failure of the RHS function in the Newton residual, that
+  is a ``BoutRhsFail`` exception;
+- another cause: divergence, the iteration limit
+  (``max_nonlinear_iterations``), or a failed preconditioner setup.
+
+Steps rejected because of a failed Newton solve and steps rejected by the
+inequality constraints (``apply_positivity_constraints``) are counted
+separately. A Newton solve can contain more than one failed Newton
+iteration, because CVODE can retry a failed solve once after a new
+preconditioner setup. Krylov solves that only reduced the residual in the
+first Newton iteration, which CVODE accepts, are counted as well. After
+each output a block like the following is printed, with the values for
+the last output interval and, in brackets, the cumulative values:
+
+.. code-block:: bash
+
+    -> Failure counters, this output interval (cumulative):
+       steps 52 (531), err-test-fails 0 (3), step-solve-fails 14 (91) = newton-solve-fails 14 (91) + constraint-rejects 0 (0)
+       newton-failures 14 (91) = krylov-not-converged 12 (71) [res-reduced 12, conv-fail 0, other 0] + rhs-recoverable 2 (20) + newton-not-converged 0 (0)
+       krylov-solves 78 (704), krylov-failures-all 51 (443), krylov-accepted-reduced 39 (372)
+       psolve 0 (0), psolve-wall 0.000 s, jtimes 145 (1297), rhs-for-jtimes 145 (1297), rhs-linear-recoverable 0 (0), prec-setups 0 (0)
+
+The counters are also saved in the output files as ``cvode_krylov_solves``,
+``cvode_krylov_accepted``, ``cvode_krylov_fail_newton``,
+``cvode_rhs_fail_newton``, ``cvode_newton_notconv``,
+``cvode_step_solve_fails``, ``cvode_constraint_fails``,
+``cvode_lin_conv_fails`` and ``cvode_jtimes``, together with
+``cvode_precon_wtime``, the wall time spent in the user preconditioner
+during the last output interval on each processor.
+
+The option requires SUNDIALS 7 or later and Newton iteration
+(``solver:func_iter=false``). It replaces the default Newton solver of
+CVODE by an identical one, so that the Newton iteration index can be read
+and failed solves can be counted, and wraps the Krylov solver to record
+the result of each solve. The solution is not changed.
+
 CVODE Jacobian diagnostics
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 

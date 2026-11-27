@@ -88,6 +88,19 @@ int cvode_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec, N_Vector zvec
 
 int cvode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector fy,
               void* user_data, N_Vector tmp);
+
+#if SUNDIALS_VERSION_MAJOR >= 7
+// Used by solver:cvode_failure_counters
+/// Wrap a Krylov solver in a SUNLinearSolver that delegates every operation and
+/// reports the return flag of each solve to CvodeSolver::countKrylovFlag. Takes
+/// ownership of \p inner.
+SUNLinearSolver makeCountingLinearSolver(SUNLinearSolver inner, CvodeSolver* owner,
+                                         SUNContext ctx);
+/// Solve function of the Newton solver: calls SUNNonlinSolSolve_Newton and reports
+/// a failed solve to CvodeSolver::countNewtonSolveFailure
+int countingNewtonSolve(SUNNonlinearSolver nls, N_Vector y0, N_Vector ycor, N_Vector w,
+                        sunrealtype tol, sunbooleantype call_lsetup, void* mem);
+#endif
 } // namespace
 // NOLINTEND(readability-identifier-length)
 
@@ -180,6 +193,13 @@ CvodeSolver::CvodeSolver(Options* opts)
           (*options)["jacobian_export_trigger"]
               .doc("When to save CVODE Jacobians: output or linear_setup")
               .withDefault(bout::CvodeJacobianExportTrigger::linear_setup)),
+      failure_counters(
+          (*options)["cvode_failure_counters"]
+              .doc("Count the causes of CVODE step failures (Newton failures caused by "
+                   "Krylov solves, RHS failures or other causes; constraint "
+                   "rejections) and print them after each output. Requires SUNDIALS "
+                   ">= 7 and Newton iteration. Does not change the solution.")
+              .withDefault(false)),
       suncontext(createSUNContext(BoutComm::get())) {
   supports_constraints = false; // This solver doesn't have constraints
   canReset = true;
@@ -209,6 +229,32 @@ CvodeSolver::CvodeSolver(Options* opts)
                      "No. of nonlinear convergence failures");
   add_int_diagnostic(stab_lims, "cvode_stab_lims",
                      "No. of order reductions due to stability limit detection");
+  if (failure_counters) {
+    add_int_diagnostic(fc_krylov_solves, "cvode_krylov_solves", "No. of Krylov solves");
+    add_int_diagnostic(fc_krylov_accepted, "cvode_krylov_accepted",
+                       "No. of Krylov solves that only reduced the residual in the "
+                       "first Newton iteration (accepted by CVODE)");
+    add_int_diagnostic(fc_krylov_fail_newton, "cvode_krylov_fail_newton",
+                       "No. of Newton failures caused by a Krylov solve that did not "
+                       "converge or failed recoverably");
+    add_int_diagnostic(fc_rhs_fail_newton, "cvode_rhs_fail_newton",
+                       "No. of Newton failures caused by a recoverable RHS failure");
+    add_int_diagnostic(fc_newton_notconv, "cvode_newton_notconv",
+                       "No. of other Newton failures (divergence, iteration limit or "
+                       "failed preconditioner setup)");
+    add_int_diagnostic(fc_step_solve_fails, "cvode_step_solve_fails",
+                       "No. of steps rejected by a failed Newton solve or by the "
+                       "inequality constraints");
+    add_int_diagnostic(fc_constraint_fails, "cvode_constraint_fails",
+                       "No. of steps rejected by the inequality constraints");
+    add_int_diagnostic(fc_lin_conv_fails, "cvode_lin_conv_fails",
+                       "No. of Krylov solves that did not converge, including the "
+                       "accepted ones");
+    add_int_diagnostic(fc_jtimes, "cvode_jtimes", "No. of Jacobian-vector products");
+    add_BoutReal_diagnostic(fc_pre_wtime, "cvode_precon_wtime",
+                            "Wall time in the preconditioner during the last output "
+                            "interval (this processor) [s]");
+  }
 }
 
 CvodeSolver::~CvodeSolver() {
@@ -384,6 +430,30 @@ int CvodeSolver::init() {
     throw BoutException("CVodeInit failed\n");
   }
 #endif
+
+  if (failure_counters) {
+#if SUNDIALS_VERSION_MAJOR < 7
+    throw BoutException("solver:cvode_failure_counters requires SUNDIALS >= 7");
+#else
+    if (func_iter) {
+      throw BoutException("solver:cvode_failure_counters requires Newton iteration "
+                          "(solver:func_iter = false)");
+    }
+    // Replace the default Newton solver of CVODE by one created in the same way as
+    // in CVodeInit, so that the Krylov wrapper can read the Newton iteration index
+    // and failed solves are counted. Attached before CVodeSetMaxNonlinIters,
+    // because CVodeSetNonlinearSolver resets the iteration limit.
+    nonlinear_solver = callWithSUNContext(SUNNonlinSol_Newton, suncontext, uvec);
+    if (nonlinear_solver == nullptr) {
+      throw BoutException("SUNNonlinSol_Newton failed\n");
+    }
+    nonlinear_solver->ops->solve = countingNewtonSolve;
+    if (CVodeSetNonlinearSolver(cvode_mem, nonlinear_solver) != CV_SUCCESS) {
+      throw BoutException("CVodeSetNonlinearSolver failed\n");
+    }
+    output_info.write("\tCounting CVODE failures (solver:cvode_failure_counters)\n");
+#endif
+  }
 
   if (mxorder > 0) {
     output_warn << "WARNING: Option 'mxorder' is deprecated. Please use "
@@ -576,6 +646,11 @@ int CvodeSolver::init() {
     if (sun_solver == nullptr) {
       throw BoutException("Creating SUNDIALS linear solver failed\n");
     }
+#if SUNDIALS_VERSION_MAJOR >= 7
+    if (failure_counters) {
+      sun_solver = makeCountingLinearSolver(sun_solver, this, suncontext);
+    }
+#endif
     if (CVodeSetLinearSolver(cvode_mem, sun_solver, nullptr) != CVLS_SUCCESS) {
       throw BoutException("CVodeSetLinearSolver failed\n");
     }
@@ -811,6 +886,10 @@ int CvodeSolver::run() {
       output.write("    -> Stability limit order reductions: {:d}\n", stab_lims);
     }
 
+    if (failure_counters) {
+      updateFailureCounters();
+    }
+
     /// Call the monitor function
 
     if (call_monitors(simtime, i, getNumberOutputSteps()) != 0) {
@@ -987,6 +1066,7 @@ int cvode_linear_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
   try {
     s->rhs(t, u, du, true);
   } catch (BoutRhsFail& error) {
+    s->countRhsFailure(true);
     return 1;
   }
   return 0;
@@ -999,6 +1079,7 @@ int cvode_nonlinear_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
   try {
     s->rhs(t, u, du, false);
   } catch (BoutRhsFail& error) {
+    s->countRhsFailure(false);
     return 1;
   }
   return 0;
@@ -1195,6 +1276,155 @@ int CvodeSolver::petscPSolve(BoutReal UNUSED(t), N_Vector UNUSED(yy), N_Vector U
 }
 #endif
 
+/**************************************************************************
+ * Failure counters (solver:cvode_failure_counters)
+ **************************************************************************/
+
+bout::CvodeKrylovOutcome bout::classifyCvodeKrylovFlag(int flag, int newton_iteration) {
+  // Same classification as in cvLsSolve (SUNDIALS cvode_ls.c): a reduced residual
+  // is accepted in the first Newton iteration; every other recoverable flag fails
+  // the Newton iteration
+  switch (flag) {
+  case 0: // SUN_SUCCESS
+    return CvodeKrylovOutcome::converged;
+  case SUNLS_RES_REDUCED:
+    return (newton_iteration == 0) ? CvodeKrylovOutcome::accepted
+                                   : CvodeKrylovOutcome::newton_failure;
+  case SUNLS_CONV_FAIL:
+  case SUNLS_ATIMES_FAIL_REC:
+  case SUNLS_PSOLVE_FAIL_REC:
+  case SUNLS_PACKAGE_FAIL_REC:
+  case SUNLS_QRFACT_FAIL:
+  case SUNLS_LUFACT_FAIL:
+    return CvodeKrylovOutcome::newton_failure;
+  default:
+    return CvodeKrylovOutcome::unrecoverable;
+  }
+}
+
+void CvodeSolver::countKrylovFlag(int flag) {
+  if (!failure_counters) {
+    return;
+  }
+  ++fc_krylov_solves;
+  int curiter = 0;
+  if (flag != 0 and nonlinear_solver != nullptr) {
+    SUNNonlinSolGetCurIter(nonlinear_solver, &curiter);
+  }
+  switch (bout::classifyCvodeKrylovFlag(flag, curiter)) {
+  case bout::CvodeKrylovOutcome::accepted:
+    ++fc_krylov_accepted;
+    break;
+  case bout::CvodeKrylovOutcome::newton_failure:
+    ++fc_krylov_fail_newton;
+    if (flag == SUNLS_RES_REDUCED) {
+      ++fc_krylov_resred_later;
+    } else if (flag == SUNLS_CONV_FAIL) {
+      ++fc_krylov_convfail;
+    }
+    break;
+  case bout::CvodeKrylovOutcome::converged:
+  case bout::CvodeKrylovOutcome::unrecoverable:
+    break;
+  }
+}
+
+void CvodeSolver::countNewtonSolveFailure() {
+  if (failure_counters) {
+    ++fc_newton_solve_fails;
+  }
+}
+
+void CvodeSolver::countRhsFailure(bool linear) {
+  if (!failure_counters) {
+    return;
+  }
+  if (linear) {
+    ++fc_rhs_fail_linear;
+  } else {
+    ++fc_rhs_fail_newton;
+  }
+}
+
+void CvodeSolver::updateFailureCounters() {
+  long int temp_long_int = 0;
+#if SUNDIALS_VERSION_AT_LEAST(6, 2, 0)
+  CVodeGetNumStepSolveFails(cvode_mem, &temp_long_int);
+  fc_step_solve_fails = static_cast<int>(temp_long_int);
+#endif
+  CVodeGetNumLinConvFails(cvode_mem, &temp_long_int);
+  fc_lin_conv_fails = static_cast<int>(temp_long_int);
+  CVodeGetNumJtimesEvals(cvode_mem, &temp_long_int);
+  fc_jtimes = static_cast<int>(temp_long_int);
+  CVodeGetNumLinRhsEvals(cvode_mem, &temp_long_int);
+  fc_lin_rhs = static_cast<int>(temp_long_int);
+  CVodeGetNumPrecEvals(cvode_mem, &temp_long_int);
+  fc_prec_setups = static_cast<int>(temp_long_int);
+
+  // A Newton iteration (failures counted by CVODE in nonlin_fails) stops at its
+  // first failure: in the residual (RHS), in the linear solve (Krylov), in the
+  // convergence test (divergence), at the iteration limit, or in the
+  // preconditioner setup. The last three are not visible here and are counted
+  // together as the remainder.
+  fc_newton_notconv = nonlin_fails - fc_krylov_fail_newton - fc_rhs_fail_newton;
+  // A step is rejected by a failed Newton solve or by the constraints. One Newton
+  // solve can contain more than one failed Newton iteration (a retry after a new
+  // preconditioner setup), so nonlin_fails cannot be used here.
+  fc_constraint_fails = fc_step_solve_fails - fc_newton_solve_fails;
+  // pre_Wtime is reset at the start of each output interval
+  fc_pre_wtime = pre_Wtime;
+
+  // Cumulative values, and the values in this output interval (differences to the
+  // previous output; a counter below its previous value was reset by CVodeReInit)
+  const std::vector<long> now{nsteps,
+                              num_fails,
+                              fc_step_solve_fails,
+                              fc_newton_solve_fails,
+                              fc_constraint_fails,
+                              nonlin_fails,
+                              fc_krylov_fail_newton,
+                              fc_krylov_resred_later,
+                              fc_krylov_convfail,
+                              fc_rhs_fail_newton,
+                              fc_newton_notconv,
+                              fc_krylov_solves,
+                              fc_lin_conv_fails,
+                              fc_krylov_accepted,
+                              npevals,
+                              fc_jtimes,
+                              fc_lin_rhs,
+                              fc_rhs_fail_linear,
+                              fc_prec_setups};
+  if (fc_previous.size() != now.size()) {
+    fc_previous.assign(now.size(), 0);
+  }
+  std::vector<long> interval(now.size());
+  for (std::size_t k = 0; k < now.size(); ++k) {
+    interval[k] = (now[k] >= fc_previous[k]) ? now[k] - fc_previous[k] : now[k];
+  }
+  fc_previous = now;
+  // "<value in this interval> (<cumulative value>)"
+  const auto both = [&](std::size_t k) {
+    return fmt::format("{:d} ({:d})", interval[k], now[k]);
+  };
+
+  output.write("    -> Failure counters, this output interval (cumulative):\n");
+  output.write("       steps {}, err-test-fails {}, step-solve-fails {} = "
+               "newton-solve-fails {} + constraint-rejects {}\n",
+               both(0), both(1), both(2), both(3), both(4));
+  output.write("       newton-failures {} = krylov-not-converged {} [res-reduced {:d}, "
+               "conv-fail {:d}, other {:d}] + rhs-recoverable {} + "
+               "newton-not-converged {}\n",
+               both(5), both(6), interval[7], interval[8],
+               interval[6] - interval[7] - interval[8], both(9), both(10));
+  output.write("       krylov-solves {}, krylov-failures-all {}, "
+               "krylov-accepted-reduced {}\n",
+               both(11), both(12), both(13));
+  output.write("       psolve {}, psolve-wall {:.3f} s, jtimes {}, rhs-for-jtimes {}, "
+               "rhs-linear-recoverable {}, prec-setups {}\n",
+               both(14), fc_pre_wtime, both(15), both(16), both(17), both(18));
+}
+
 void CvodeSolver::resetInternalFields() {
   const auto backend = nvector_backend();
 
@@ -1203,5 +1433,127 @@ void CvodeSolver::resetInternalFields() {
   if (CVodeReInit(cvode_mem, simtime, uvec) != CV_SUCCESS) {
     throw BoutException("CVodeReInit failed\n");
   }
+  if (failure_counters) {
+    // CVodeReInit resets the CVODE counters; reset the own counters as well
+    fc_krylov_solves = fc_krylov_accepted = fc_krylov_fail_newton = 0;
+    fc_krylov_resred_later = fc_krylov_convfail = 0;
+    fc_rhs_fail_newton = fc_rhs_fail_linear = fc_newton_solve_fails = 0;
+    fc_previous.clear();
+  }
 }
+
+#if SUNDIALS_VERSION_MAJOR >= 7
+// NOLINTBEGIN(readability-identifier-length)
+namespace {
+int countingNewtonSolve(SUNNonlinearSolver nls, N_Vector y0, N_Vector ycor, N_Vector w,
+                        sunrealtype tol, sunbooleantype call_lsetup, void* mem) {
+  const int flag = SUNNonlinSolSolve_Newton(nls, y0, ycor, w, tol, call_lsetup, mem);
+  if (flag != SUN_SUCCESS) {
+    // CVODE passes its memory block, which holds the solver as user data
+    void* user_data = nullptr;
+    if (CVodeGetUserData(mem, &user_data) == CV_SUCCESS and user_data != nullptr) {
+      static_cast<CvodeSolver*>(user_data)->countNewtonSolveFailure();
+    }
+  }
+  return flag;
+}
+
+struct CountingLinearSolverContent {
+  SUNLinearSolver inner;
+  CvodeSolver* owner;
+};
+
+SUNLinearSolver innerSolver(SUNLinearSolver S) {
+  return static_cast<CountingLinearSolverContent*>(S->content)->inner;
+}
+
+SUNLinearSolver_Type countingGetType(SUNLinearSolver S) {
+  return SUNLinSolGetType(innerSolver(S));
+}
+SUNLinearSolver_ID countingGetID(SUNLinearSolver S) {
+  return SUNLinSolGetID(innerSolver(S));
+}
+SUNErrCode countingSetATimes(SUNLinearSolver S, void* A_data, SUNATimesFn ATimes) {
+  return SUNLinSolSetATimes(innerSolver(S), A_data, ATimes);
+}
+SUNErrCode countingSetPreconditioner(SUNLinearSolver S, void* P_data, SUNPSetupFn Pset,
+                                     SUNPSolveFn Psol) {
+  return SUNLinSolSetPreconditioner(innerSolver(S), P_data, Pset, Psol);
+}
+SUNErrCode countingSetScalingVectors(SUNLinearSolver S, N_Vector s1, N_Vector s2) {
+  return SUNLinSolSetScalingVectors(innerSolver(S), s1, s2);
+}
+SUNErrCode countingSetZeroGuess(SUNLinearSolver S, sunbooleantype onoff) {
+  return SUNLinSolSetZeroGuess(innerSolver(S), onoff);
+}
+SUNErrCode countingInitialize(SUNLinearSolver S) {
+  return SUNLinSolInitialize(innerSolver(S));
+}
+int countingSetup(SUNLinearSolver S, SUNMatrix A) {
+  return SUNLinSolSetup(innerSolver(S), A);
+}
+int countingSolve(SUNLinearSolver S, SUNMatrix A, N_Vector x, N_Vector b,
+                  sunrealtype tol) {
+  auto* content = static_cast<CountingLinearSolverContent*>(S->content);
+  const int flag = SUNLinSolSolve(content->inner, A, x, b, tol);
+  content->owner->countKrylovFlag(flag);
+  return flag;
+}
+int countingNumIters(SUNLinearSolver S) { return SUNLinSolNumIters(innerSolver(S)); }
+sunrealtype countingResNorm(SUNLinearSolver S) {
+  return SUNLinSolResNorm(innerSolver(S));
+}
+sunindextype countingLastFlag(SUNLinearSolver S) {
+  return SUNLinSolLastFlag(innerSolver(S));
+}
+SUNErrCode countingSpace(SUNLinearSolver S, long int* lenrwLS, long int* leniwLS) {
+  return SUNLinSolSpace(innerSolver(S), lenrwLS, leniwLS);
+}
+N_Vector countingResid(SUNLinearSolver S) { return SUNLinSolResid(innerSolver(S)); }
+SUNErrCode countingFree(SUNLinearSolver S) {
+  if (S == nullptr) {
+    return SUN_SUCCESS;
+  }
+  auto* content = static_cast<CountingLinearSolverContent*>(S->content);
+  if (content != nullptr) {
+    SUNLinSolFree(content->inner);
+    delete content;
+    S->content = nullptr;
+  }
+  SUNLinSolFreeEmpty(S);
+  return SUN_SUCCESS;
+}
+
+SUNLinearSolver makeCountingLinearSolver(SUNLinearSolver inner, CvodeSolver* owner,
+                                         SUNContext ctx) {
+  SUNLinearSolver S = SUNLinSolNewEmpty(ctx);
+  if (S == nullptr) {
+    throw BoutException("SUNLinSolNewEmpty failed\n");
+  }
+  S->content = new CountingLinearSolverContent{inner, owner};
+  // Offer exactly the operations of the wrapped solver (all operations of
+  // SUNLinearSolver in SUNDIALS 7.2), because CVODE checks which ones exist
+  const auto* ops = inner->ops;
+  S->ops->gettype = (ops->gettype != nullptr) ? countingGetType : nullptr;
+  S->ops->getid = (ops->getid != nullptr) ? countingGetID : nullptr;
+  S->ops->setatimes = (ops->setatimes != nullptr) ? countingSetATimes : nullptr;
+  S->ops->setpreconditioner =
+      (ops->setpreconditioner != nullptr) ? countingSetPreconditioner : nullptr;
+  S->ops->setscalingvectors =
+      (ops->setscalingvectors != nullptr) ? countingSetScalingVectors : nullptr;
+  S->ops->setzeroguess = (ops->setzeroguess != nullptr) ? countingSetZeroGuess : nullptr;
+  S->ops->initialize = (ops->initialize != nullptr) ? countingInitialize : nullptr;
+  S->ops->setup = (ops->setup != nullptr) ? countingSetup : nullptr;
+  S->ops->solve = (ops->solve != nullptr) ? countingSolve : nullptr;
+  S->ops->numiters = (ops->numiters != nullptr) ? countingNumIters : nullptr;
+  S->ops->resnorm = (ops->resnorm != nullptr) ? countingResNorm : nullptr;
+  S->ops->lastflag = (ops->lastflag != nullptr) ? countingLastFlag : nullptr;
+  S->ops->space = (ops->space != nullptr) ? countingSpace : nullptr;
+  S->ops->resid = (ops->resid != nullptr) ? countingResid : nullptr;
+  S->ops->free = countingFree;
+  return S;
+}
+} // namespace
+// NOLINTEND(readability-identifier-length)
+#endif
 #endif
