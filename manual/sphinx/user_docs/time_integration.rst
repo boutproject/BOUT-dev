@@ -952,6 +952,68 @@ Setting ``solver:force_symmetric_coloring = true``, will make sure
 that the jacobian colouring matrix is symmetric.  This will often
 include a few extra non-zeros that the stencil will miss otherwise
 
+Re-using the Jacobian across timesteps
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default a new finite-difference Jacobian is calculated at the start
+of every timestep, and ``lag_jacobian`` only controls how long it is kept
+within that timestep. When the state changes slowly compared to the
+timestep, for example when approaching a steady state, most of these
+Jacobians are nearly identical apart from the timestep term.
+
+With the default ``equation_form = rearranged_backward_euler`` the
+residual is :math:`F = (x_0 - x)/\Delta t + f(x)`, so the Jacobian is
+:math:`J = -I/\Delta t + \partial f/\partial x`. Only the diagonal
+depends on the timestep. Setting ``jacobian_reuse`` keeps the
+finite-difference part and updates the diagonal exactly when the
+timestep changes:
+
+.. code-block:: ini
+
+   [solver]
+   jacobian_reuse = 10               # Keep a Jacobian for up to 10 timesteps
+   lag_jacobian = 50                 # Refresh within a timestep after 50 iterations
+   matrix_free_operator = true       # Recommended: exact Jacobian-vector products
+
+A change of timestep then costs a re-factorisation of the
+preconditioner but no function evaluations. The Jacobian is
+recalculated
+
+- after ``jacobian_reuse`` timesteps;
+- after a failed nonlinear solve;
+- when variables are rescaled (``scale_vars``);
+- when it stops being effective: with ``matrix_free_operator = true``
+  if the linear iterations per nonlinear iteration exceed
+  ``jacobian_reuse_max_lin``, otherwise if the nonlinear iterations
+  exceed ``target_its``.
+
+With ``matrix_free_operator = true`` the stored matrix is only used to
+build the preconditioner, so re-using it changes the number of linear
+iterations but not the Newton iteration. With ``matrix_free_operator =
+false`` the stored matrix is also the operator, and the iteration
+becomes a modified Newton method, which typically needs more nonlinear
+iterations per step.
+
+How much this saves depends on the problem and on the other solver
+settings. The saving is largest when calculating the Jacobian
+dominates the run time and most timesteps succeed. Every failed solve
+discards the stored Jacobian, so there is little or no gain when the
+timestep controller is set to increase the timestep until solves fail
+(for example ``pid_nonlinear_its`` with a ``target_its`` close to or
+above ``max_nonlinear_iterations``). A stale preconditioner also tends
+to increase the number of nonlinear iterations slightly, to which the
+timestep controller responds with smaller timesteps, so compare run
+times with and without the option for a new type of problem.
+
+This differs from ``jacobian_persists = true``, which asks PETSc to keep
+the Jacobian between solves without correcting the timestep term. That
+works when the timestep is constant, but with an adaptive timestep the
+stored :math:`1/\Delta t` diagonal quickly becomes wrong.
+
+``jacobian_reuse`` requires the default ``equation_form``,
+``matrix_free = false``, ``use_coloring = true``, ``scale_rhs = false``
+and no constraint variables; other combinations stop with an error.
+
 Saving Jacobians for diagnostics
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1148,6 +1210,15 @@ Summary of solver options
 |                           |               | calculation of the Jacobian elements.              |
 +---------------------------+---------------+----------------------------------------------------+
 | lag_jacobian              | 50            | Re-use the Jacobian for successive inner solves    |
++---------------------------+---------------+----------------------------------------------------+
+| jacobian_reuse            | 0             | Re-use the finite-difference Jacobian for up to    |
+|                           |               | this number of timesteps, updating the timestep    |
+|                           |               | term exactly. 0 = recalculate every timestep       |
++---------------------------+---------------+----------------------------------------------------+
+| jacobian_reuse_max_lin    | 20            | With ``jacobian_reuse`` and                        |
+|                           |               | ``matrix_free_operator``: recalculate the Jacobian |
+|                           |               | if the linear iterations per nonlinear iteration   |
+|                           |               | exceed this                                        |
 +---------------------------+---------------+----------------------------------------------------+
 | kspsetinitialguessnonzero | false         | If true, Use previous solution as KSP initial      |
 +---------------------------+---------------+----------------------------------------------------+

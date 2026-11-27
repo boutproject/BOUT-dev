@@ -634,6 +634,17 @@ SNESSolver::SNESSolver(Options* opts)
                        .doc("Use matrix coloring to calculate Jacobian?")
                        .withDefault<bool>(true)),
       jacobian_recalculated(false),
+      jacobian_reuse(
+          (*options)["jacobian_reuse"]
+              .doc("Re-use the finite-difference Jacobian for up to this number of "
+                   "solves, updating the 1/dt diagonal exactly. 0 = off. Within a "
+                   "solve the Jacobian is refreshed every lag_jacobian iterations.")
+              .withDefault(0)),
+      jacobian_reuse_max_lin(
+          (*options)["jacobian_reuse_max_lin"]
+              .doc("With jacobian_reuse and matrix_free_operator: recompute Jacobian "
+                   "if linear iterations per Newton iteration exceed this")
+              .withDefault(20.0)),
       prune_jacobian((*options)["prune_jacobian"]
                          .doc("Remove small elements in the Jacobian?")
                          .withDefault<bool>(false)),
@@ -902,6 +913,16 @@ int SNESSolver::init() {
     MatMFFDSetFunction(Jmf, FormFunctionForDifferencing, this);
   }
 
+  if ((jacobian_reuse > 0)
+      and ((equation_form != bout::SnesEquationForm::rearranged_backward_euler)
+           or scale_rhs or has_constraint_variables or !use_coloring or matrix_free)) {
+    // The re-used Jacobian is corrected for a change of timestep by shifting
+    // its diagonal, which is only valid if the transient term is -I/dt.
+    throw BoutException("solver:jacobian_reuse requires "
+                        "equation_form=rearranged_backward_euler, matrix_free=false, "
+                        "use_coloring=true, scale_rhs=false and no constraints");
+  }
+
   if (matrix_free) {
     // Use matrix free for both operator and preconditioner
     // Calculate Jacobian matrix free using FormFunctionForDifferencing
@@ -927,7 +948,13 @@ int SNESSolver::init() {
     // Re-use Jacobian
     // Note: If the 'Amat' Jacobian is matrix free, SNESComputeJacobian
     //       always updates its reference 'u' vector every nonlinear iteration
-    SNESSetLagJacobian(snes, lag_jacobian);
+    if (jacobian_reuse > 0) {
+      // Jacobian callback is called every iteration and decides whether
+      // to recompute by finite differences or re-use
+      SNESSetLagJacobian(snes, 1);
+    } else {
+      SNESSetLagJacobian(snes, lag_jacobian);
+    }
     nl_its_prev = target_its;
     nl_its_prev2 = target_its;
     PetscCall(
@@ -1079,6 +1106,7 @@ PetscErrorCode SNESSolver::rescale() {
 
   // Force recalculation of the Jacobian
   PetscCall(SNESSetLagJacobianPersists(snes, PETSC_FALSE));
+  jac_force = true;
 
   return PETSC_SUCCESS;
 }
@@ -1215,6 +1243,12 @@ int SNESSolver::run() {
         predictor.predict(simtime + dt, snes_x);
       }
 
+      if (jacobian_reuse > 0) {
+        if (++jac_age > jacobian_reuse) {
+          jac_force = true;
+        }
+      }
+
       // Run the solver
       PetscErrorCode ierr = SNESSolve(snes, nullptr, snes_x);
 
@@ -1331,6 +1365,13 @@ int SNESSolver::run() {
         }
         // Restore the accepted state at the start of this step.
         PetscCall(VecCopy(x0, snes_x));
+
+        // The stored Jacobian is not trusted after a failed solve: it was either
+        // evaluated at a later state, or at the predicted state of the attempt
+        // that just failed (which can be far from the restored state, e.g. when the
+        // linear predictor extrapolates a small density to zero). Rebuilding costs
+        // one Jacobian per failure; keeping a bad one can cost many failed solves.
+        jac_force = true;
 
         // Recalculate the Jacobian
         if (jacobian_pruned and (snes_failures > 2) and (4 * lin_its > 3 * maxl)) {
@@ -1459,6 +1500,15 @@ int SNESSolver::run() {
         // Adjust timestep
         timestep =
             updateGlobalTimestep(timestep, nl_its, recent_failure_rate, max_timestep);
+      }
+
+      if (jacobian_reuse > 0) {
+        if (matrix_free_operator
+                ? (static_cast<BoutReal>(lin_its) > jacobian_reuse_max_lin * nl_its)
+                : (nl_its > target_its)) {
+          // Stored Jacobian is losing effectiveness
+          jac_force = true;
+        }
       }
 
       if (static_cast<BoutReal>(lin_its) / nl_its > 0.5 * maxl) {
@@ -2088,6 +2138,46 @@ PetscErrorCode SNESSolver::precon(Vec x, Vec f) {
   return 0;
 }
 
+PetscErrorCode SNESSolver::reuseJacobian(Mat Jac_new, bool& reused) {
+  reused = false;
+  if ((jacobian_reuse <= 0) or !jac_valid) {
+    return PETSC_SUCCESS;
+  }
+
+  PetscInt it = 0;
+  PetscCall(SNESGetIterationNumber(snes, &it));
+  if (it == 0) {
+    // Start of a nonlinear solve
+    if (jac_force) {
+      return PETSC_SUCCESS; // Recompute
+    }
+    jac_last_it = 0;
+  } else if (it - jac_last_it >= lag_jacobian) {
+    // Refresh within a solve
+    return PETSC_SUCCESS;
+  }
+
+  if (dt != jac_dt) {
+    // F = (x0 - x)/dt + f(x)  =>  J = -I/dt + df/dx
+    // Only the diagonal depends on dt, so update it exactly
+    PetscCall(MatShift(Jac_new, 1. / jac_dt - 1. / dt));
+    jac_dt = dt;
+  }
+  reused = true;
+  return PETSC_SUCCESS;
+}
+
+PetscErrorCode SNESSolver::jacobianComputed() {
+  PetscInt it = 0;
+  PetscCall(SNESGetIterationNumber(snes, &it));
+  jac_valid = true;
+  jac_force = false;
+  jac_dt = dt;
+  jac_age = 0;
+  jac_last_it = it;
+  return PETSC_SUCCESS;
+}
+
 PetscErrorCode SNESSolver::scaleJacobian(Mat Jac_new) {
   jacobian_recalculated = true;
 
@@ -2164,21 +2254,37 @@ namespace {
 ///   Jac)
 PetscErrorCode ComputeJacobianScaledColor(SNES snes, Vec x1, Mat Jac, Mat Jac_new,
                                           void* ctx) {
+  // Get the the SNESSolver pointer from the function call context
+  SNESSolver* fctx = nullptr;
+  if (ctx != nullptr) {
+    PetscCall(MatFDColoringGetFunction(static_cast<MatFDColoring>(ctx), nullptr,
+                                       reinterpret_cast<void**>(&fctx)));
+  }
+
+  if (fctx != nullptr) {
+    // Can the stored Jacobian be re-used, only updating the 1/dt term?
+    bool reused = false;
+    PetscCall(fctx->reuseJacobian(Jac_new, reused));
+    if (reused) {
+      if (Jac != Jac_new) {
+        // Matrix-free operator: this updates its base vector
+        PetscCall(MatAssemblyBegin(Jac, MAT_FINAL_ASSEMBLY));
+        PetscCall(MatAssemblyEnd(Jac, MAT_FINAL_ASSEMBLY));
+      }
+      PetscFunctionReturn(PETSC_SUCCESS);
+    }
+  }
+
   PetscErrorCode err = SNESComputeJacobianDefaultColor(snes, x1, Jac, Jac_new, ctx);
   CHKERRQ(err);
 
-  if ((err != 0) or (ctx == nullptr)) {
+  if ((err != 0) or (fctx == nullptr)) {
     return err;
   }
 
-  // Get the the SNESSolver pointer from the function call context
-  SNESSolver* fctx = nullptr;
-  err = MatFDColoringGetFunction(static_cast<MatFDColoring>(ctx), nullptr,
-                                 reinterpret_cast<void**>(&fctx));
-  CHKERRQ(err);
-
   // Call the SNESSolver function
   PetscCall(fctx->scaleJacobian(Jac_new));
+  PetscCall(fctx->jacobianComputed());
   fctx->maybeExportJacobian(Jac_new, x1);
   PetscFunctionReturn(PETSC_SUCCESS);
 }
