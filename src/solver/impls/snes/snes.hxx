@@ -462,9 +462,11 @@ private:
 
   bool matrix_free;          ///< Use matrix free Jacobian
   bool matrix_free_operator; ///< Use matrix free Jacobian in the operator?
-  int lag_jacobian;          ///< Re-use Jacobian
-  bool jacobian_persists; ///< Re-use Jacobian and preconditioner across nonlinear solves
-  bool use_coloring;      ///< Use matrix coloring
+  bool
+      interpolate_outputs; ///< Step past each output time and interpolate the output state
+  int lag_jacobian;        ///< Re-use Jacobian
+  bool jacobian_persists;  ///< Re-use Jacobian and preconditioner across nonlinear solves
+  bool use_coloring;       ///< Use matrix coloring
 
   bool jacobian_recalculated; ///< Flag set when Jacobian is recalculated
   bool prune_jacobian;        ///< Remove small elements in the Jacobian?

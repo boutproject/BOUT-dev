@@ -623,6 +623,13 @@ SNESSolver::SNESSolver(Options* opts)
       matrix_free_operator((*options)["matrix_free_operator"]
                                .doc("Use matrix free Jacobian-vector operator?")
                                .withDefault<bool>(false)),
+      interpolate_outputs(
+          (*options)["interpolate_outputs"]
+              .doc(
+                  "Step past each output time and interpolate the output "
+                  "state, allowing bigger timesteps but introducing interpolation error. "
+                  "Default true.")
+              .withDefault<bool>(true)),
       lag_jacobian((*options)["lag_jacobian"]
                        .doc("Re-use the Jacobian this number of SNES iterations")
                        .withDefault(50)),
@@ -902,6 +909,16 @@ int SNESSolver::init() {
     MatMFFDSetFunction(Jmf, FormFunctionForDifferencing, this);
   }
 
+  if (interpolate_outputs) {
+    // Create a vector to store interpolated output solution.
+    // Used so that the timestep does not have to be adjusted,
+    // because that would require updating the preconditioner.
+    PetscCall(VecDuplicate(snes_x, &output_x));
+    if (diagnose) {
+      PetscCall(VecDuplicate(snes_f, &output_f));
+    }
+  }
+
   if (matrix_free) {
     // Use matrix free for both operator and preconditioner
     // Calculate Jacobian matrix free using FormFunctionForDifferencing
@@ -912,14 +929,6 @@ int SNESSolver::init() {
     // difference Jacobian (Jfd) may be used for both operator and
     // preconditioner or, if matrix_free_operator, in only the
     // preconditioner.
-
-    // Create a vector to store interpolated output solution
-    // Used so that the timestep does not have to be adjusted,
-    // because that would require updating the preconditioner.
-    PetscCall(VecDuplicate(snes_x, &output_x));
-    if (diagnose) {
-      PetscCall(VecDuplicate(snes_f, &output_f));
-    }
 
     // Initialize the Finite Difference Jacobian
     PetscCall(FDJinitialise());
@@ -1198,17 +1207,30 @@ int SNESSolver::run() {
 
         // Set the timestep
         dt = timestep;
-        if (output_trigger == bout::SnesOutput::fixed_time_interval
-            && simtime + dt >= target) {
-          // Note: When the timestep is changed the preconditioner needs to be updated
-          // => Step over the output time and interpolate if not matrix free
+        if (output_trigger == bout::SnesOutput::fixed_time_interval) {
 
-          if (matrix_free) {
-            // Ensure that the timestep goes to the next output time and then stops.
-            // This avoids the need to interpolate
-            dt = target - simtime;
+          if (interpolate_outputs) {
+            // Step past the output time to interpolate to it later
+            // This prevents unnecessary updates of the preconditioner due to
+            // changing timestep, but creates interpolation error.
+            if (simtime + dt >= target) {
+              looping = false;
+            }
+          } else {
+            // Adjust next dt so that it would exactly cover the remaining time
+            // in the fewest equal steps no longer than `timestep`, the solver's
+            // estimate of the fastest allowable timestep.
+            // The 1e-6 accounts for rounding error.
+            const BoutReal remaining = target - simtime;
+            const BoutReal steps_left =
+                std::max(1., std::ceil(remaining / timestep - 1e-6));
+            dt = remaining / steps_left;
+
+            if (steps_left == 1.) {
+              // Last step: dt is exactly the time left
+              looping = false;
+            }
           }
-          looping = false;
         }
 
         // Use the predictor to get starting snes_x
@@ -1471,7 +1493,7 @@ int SNESSolver::run() {
     } while (looping);
 
     BoutReal output_time = simtime;
-    if (output_trigger == bout::SnesOutput::fixed_time_interval && !matrix_free) {
+    if (output_trigger == bout::SnesOutput::fixed_time_interval && interpolate_outputs) {
       ASSERT2(simtime >= target);
       ASSERT2(simtime - dt <= target);
       // Stepped over output timestep => Interpolate
