@@ -8,6 +8,17 @@ The BOUT++ test suite is split into three parts:
 
 <!-- TODO: Pylib, etc. -->
 
+## CMake tests
+
+The `cmake-language-standards` tests check target-local C++, CUDA and HIP
+standard settings and compile a C++23 probe when supported (C++20 otherwise).
+The GPU properties are inspected
+without enabling GPU languages, so these tests do not require CUDA or HIP
+toolchains and do not replace GPU compilation tests.
+
+Run them from a configured build directory with
+`ctest -R cmake-language-standards --output-on-failure`.
+
 ## Unit tests
 
 These aim to be a comprehensive set of tests that run *very* fast and
