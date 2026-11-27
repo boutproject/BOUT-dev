@@ -4,10 +4,15 @@
  */
 
 #include <bout/bout.hxx>
-
-#include "bout/utils.hxx"
+#include <bout/bout_types.hxx>
 #include <bout/cyclic_reduction.hxx>
-#include <bout/dcomplex.hxx>
+#include <bout/options.hxx>
+#include <bout/output.hxx>
+#include <bout/utils.hxx>
+
+#include <cstdlib>
+
+#include <mpi.h>
 
 // Change this to dcomplex to test complex matrix inversion
 using T = BoutReal;
@@ -17,30 +22,23 @@ int main(int argc, char** argv) {
   // Initialise BOUT++, setting up mesh
   BoutInitialise(argc, argv);
 
-  Matrix<T> a, b, c, rhs, x;
-
-  int nsys;
-  int n;
-  Options* options = Options::getRoot();
-  OPTION(options, n, 5);
-  OPTION(options, nsys, 1);
-  BoutReal tol;
-  OPTION(options, tol, 1e-10);
-  bool periodic;
-  OPTION(options, periodic, false);
+  Options& options = Options::root();
+  const int n = options["n"].withDefault(5);
+  const int nsys = options["nsys"].withDefault(1);
+  const BoutReal tol = options["tol"].withDefault(1e-10);
+  const bool periodic = options["periodic"].withDefault(false);
 
   // Create a cyclic reduction object, operating on Ts
-  auto* cr = new CyclicReduce<T>(BoutComm::get(), n);
+  auto cr = CyclicReduce<T>(BoutComm::get(), n);
 
-  int mype, npe;
-  MPI_Comm_rank(BoutComm::get(), &mype);
-  MPI_Comm_size(BoutComm::get(), &npe);
+  const int mype = BoutComm::rank();
+  const int npe = BoutComm::size();
 
-  a.reallocate(nsys, n);
-  b.reallocate(nsys, n);
-  c.reallocate(nsys, n);
-  rhs.reallocate(nsys, n);
-  x.reallocate(nsys, n);
+  Matrix<T> a(nsys, n);
+  Matrix<T> b(nsys, n);
+  Matrix<T> c(nsys, n);
+  Matrix<T> rhs(nsys, n);
+  Matrix<T> x(nsys, n);
 
   // Set coefficients to some random numbers
   for (int s = 0; s < nsys; s++) {
@@ -49,75 +47,68 @@ int main(int argc, char** argv) {
       b(s, i) = 2. + randomu(); // So always diagonally dominant
       c(s, i) = randomu();
 
-      x(s, i) = ((mype * n + i) % 4) - 2.; // deterministic, so don't need to communicate
+      // deterministic, so don't need to communicate
+      x(s, i) = (((mype * n) + i) % 4) - 2.;
     }
 
     // Calculate RHS
 
     int i = 0;
     if ((mype == 0) && (!periodic)) {
-      rhs(s, i) = b(s, i) * x(s, i) + c(s, i) * x(s, i + 1);
+      rhs(s, i) = (b(s, i) * x(s, i)) + (c(s, i) * x(s, i + 1));
     } else {
-      int pe = (mype - 1 + npe) % npe;
-      T xm = ((pe * n + (n - 1)) % 4) - 2.;
-      rhs(s, i) = a(s, i) * xm + b(s, i) * x(s, i) + c(s, i) * x(s, i + 1);
+      const int pe = (mype - 1 + npe) % npe;
+      const T xm = (((pe * n) + (n - 1)) % 4) - 2.;
+      rhs(s, i) = (a(s, i) * xm) + (b(s, i) * x(s, i)) + (c(s, i) * x(s, i + 1));
     }
 
     for (i = 1; i < n - 1; i++) {
-      rhs(s, i) = a(s, i) * x(s, i - 1) + b(s, i) * x(s, i) + c(s, i) * x(s, i + 1);
+      rhs(s, i) = (a(s, i) * x(s, i - 1)) + (b(s, i) * x(s, i)) + (c(s, i) * x(s, i + 1));
     }
 
     if ((mype == (npe - 1)) && !periodic) {
-      rhs(s, i) = a(s, i) * x(s, i - 1) + b(s, i) * x(s, i);
+      rhs(s, i) = (a(s, i) * x(s, i - 1)) + (b(s, i) * x(s, i));
     } else {
-      int pe = (mype + 1) % npe;
-      T xp = ((pe * n) % 4) - 2.;
-      rhs(s, i) = a(s, i) * x(s, i - 1) + b(s, i) * x(s, i) + c(s, i) * xp;
+      const int pe = (mype + 1) % npe;
+      const T xp = ((pe * n) % 4) - 2.;
+      rhs(s, i) = (a(s, i) * x(s, i - 1)) + (b(s, i) * x(s, i)) + (c(s, i) * xp);
     }
 
     // Zero x, so that solve has to do something
-
     for (int i = 0; i < n; i++) {
       x(s, i) = 0.0;
     }
   }
 
   // Solve system
-
-  cr->setPeriodic(periodic);
-  cr->setCoefs(a, b, c);
-  cr->solve(rhs, x);
-
-  // Destroy solver
-  delete cr;
+  cr.setPeriodic(periodic);
+  cr.setCoefs(a, b, c);
+  cr.solve(rhs, x);
 
   // Check result
-
-  int passed = 1;
+  bool failed = false;
   for (int s = 0; s < nsys; s++) {
-    output << "System " << s << endl;
+    output.write("System {}\n", s);
     for (int i = 0; i < n; i++) {
-      T val = ((mype * n + i) % 4) - 2.;
-      output << "\t" << i << " : " << val << " ?= " << x(s, i) << endl;
-      if (std::abs(val - x(s, i)) > tol) {
-        passed = 0;
-      }
+      const T val = (((mype * n) + i) % 4) - 2.;
+      output.write("\t{} : {} ?= {}\n", i, val, x(s, i));
+      failed |= (std::abs(val - x(s, i)) > tol);
     }
   }
 
-  int allpassed;
-  MPI_Allreduce(&passed, &allpassed, 1, MPI_INT, MPI_MIN, BoutComm::get());
+  bool any_failed = false;
+  MPI_Allreduce(&failed, &any_failed, 1, MPI_CXX_BOOL, MPI_LOR, BoutComm::get());
 
-  output << "******* Cyclic test case: ";
-  if (allpassed) {
-    output << "PASSED" << endl;
+  output.write("******* Cyclic test case: ");
+  if (any_failed) {
+    output.write("FAILED\n");
   } else {
-    output << "FAILED" << endl;
+    output.write("PASSED\n");
   }
 
   MPI_Barrier(BoutComm::get());
 
   bout::checkForUnusedOptions();
   BoutFinalise();
-  return allpassed;
+  return static_cast<int>(any_failed);
 }
