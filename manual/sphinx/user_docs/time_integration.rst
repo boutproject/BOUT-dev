@@ -236,6 +236,80 @@ nonlinear solvers:
 The linear solver type can be set using the ``linear_solver`` option.
 Valid choices include ``gmres`` (the default), ``fgmres``, ``tfqmr``, ``bcgs``.
 
+Right preconditioning and a step limit learned from GMRES
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default the preconditioner is applied on the left, and GMRES stops on the
+preconditioned residual. With ``rightprec = true`` (GMRES), or with
+``linear_solver = fgmres`` (always right-preconditioned), GMRES stops on the
+true residual instead, so a poor preconditioner no longer skews CVODE's
+corrections and error estimate. This can allow much larger steps, but two
+problems can then appear, and two options address them:
+
+- ``cvode_jtimes_sigma_factor`` (default ``1``): CVODE's difference-quotient
+  Jacobian-vector product uses the increment
+  :math:`\sigma = 1/\|v\|_{\mathrm{WRMS}}`. Along right-preconditioned Krylov
+  vectors this can move single cells far enough that non-smooth terms in the
+  right-hand side (limiters, floors) make the product inaccurate and the step
+  collapses. This option scales the increment, :math:`\sigma =
+  f/\|v\|_{\mathrm{WRMS}}`; ``0.01`` worked well in tests. A value of ``1``
+  keeps CVODE's own product.
+
+- ``cvode_linear_step_control`` (default ``false``): with larger steps, a
+  preconditioner that weakens as :math:`\gamma` grows can leave GMRES unable to
+  converge within ``maxl`` iterations. CVODE then cuts the step by a fixed
+  factor, grows it back and fails again. This option learns a maximum step
+  size from the linear solves instead. After a failed solve it cuts the limit
+  by the residual reduction GMRES reached, extrapolated to the iterations it
+  would have needed. It holds the limit while solves come close to ``maxl``,
+  and otherwise relaxes it, while staying below a margin of the smallest
+  recently failing step. It needs ``linear_solver = gmres`` or ``fgmres`` and
+  Newton iteration, and works best with right preconditioning, where the
+  initial residual in GMRES's stopping norm is known. ``maxl`` sets the
+  iteration budget it aims for. A solve that stops at ``maxl`` with only a
+  reduced residual counts as a failure here, even on the first Newton
+  iteration where CVODE accepts it: reaching ``maxl`` is the sign that the
+  step is too large for the preconditioner.
+
+  Its tuning options rarely need changing:
+
+  - ``cvode_lsc_hold`` (``0.8``): hold the limit when a step's largest number
+    of linear iterations exceeds this fraction of ``maxl``.
+  - ``cvode_lsc_relax`` (``1.3``): growth of the limit per quiet step.
+  - ``cvode_lsc_safety`` (``0.7``): after a failure, aim for this fraction of
+    ``maxl`` iterations.
+  - ``cvode_lsc_wall_margin`` (``0.85``): keep the limit below this fraction of
+    the smallest recently failing step; ``0`` turns this off.
+  - ``cvode_lsc_wall_relax`` (``1.01``): growth of that smallest failing step
+    per step without a failure.
+  - ``cvode_lsc_enforce`` (``true``): CVODE applies its maximum step only when
+    it keeps or grows the step, and by default it keeps a step that is
+    within a band of ratios even if it is above the maximum. While the next
+    step is above the limit, this band is narrowed so that the limit is
+    applied. When CVODE itself shrinks the step, it does not apply the
+    maximum, so the step reaches the limit over a few steps. This needs
+    SUNDIALS 6.2 or later; with older versions it is turned off with a
+    warning. The step control itself needs SUNDIALS 5 or later.
+
+  The tuning options must satisfy :math:`0 <` ``hold`` :math:`\le 1`,
+  ``relax`` :math:`> 1`, :math:`0 <` ``safety`` :math:`\le 1`,
+  :math:`0 \le` ``wall_margin`` :math:`< 1` and ``wall_relax`` :math:`\ge 1`.
+  The current limit is printed after each output. A user-set
+  ``max_timestep`` still applies on top of it, and the limit never goes below
+  ``min_timestep``. The step control runs CVODE one internal step at a time;
+  timestep monitors still run only if requested.
+
+For example, settings that worked well for a stiff tokamak edge case with a
+physics-based preconditioner::
+
+    [solver]
+    type = cvode
+    cvode_precon_method = user
+    maxl = 50
+    rightprec = true                  # or: linear_solver = fgmres
+    cvode_jtimes_sigma_factor = 0.01
+    cvode_linear_step_control = true
+
 CVODE Jacobian diagnostics
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 

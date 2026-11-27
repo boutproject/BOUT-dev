@@ -331,6 +331,7 @@ set(BOUT_SOURCES
     ./src/solver/impls/arkode/arkode.hxx
     ./src/solver/impls/cvode/cvode.cxx
     ./src/solver/impls/cvode/cvode.hxx
+    ./src/solver/impls/cvode/cvode_step_limit.hxx
     ./src/solver/impls/euler/euler.cxx
     ./src/solver/impls/euler/euler.hxx
     ./src/solver/impls/ida/ida.cxx

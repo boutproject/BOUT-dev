@@ -46,6 +46,8 @@ RegisterUnavailableSolver
 #include "bout/region.hxx"
 #include "bout/sundials_backports.hxx"
 
+#include "cvode_step_limit.hxx"
+
 #if BOUT_HAS_PETSC
 #include "bout/petsclib.hxx"
 
@@ -97,6 +99,10 @@ public:
   void pre(BoutReal t, BoutReal gamma, BoutReal delta, N_Vector u, N_Vector rvec,
            N_Vector zvec);
   void jac(BoutReal t, N_Vector y, N_Vector v, N_Vector Jv);
+  /// Difference-quotient Jacobian-vector product with increment
+  /// sigma = jtimes_sigma_factor / ||v||_WRMS (CVODE's own uses factor 1)
+  int jtimesScaled(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector fy,
+                   N_Vector tmp);
 
 private:
 #if BOUT_HAS_PETSC
@@ -179,7 +185,37 @@ private:
       jacobian_export_kind; ///< Export ``system`` or ``rhs`` Jacobian
   bout::CvodeJacobianExportTrigger
       jacobian_export_trigger; ///< Export on ``output`` or ``linear_setup``
+  /// Factor on CVODE's difference-quotient increment for Jacobian-vector
+  /// products; 1 uses CVODE's own product
+  BoutReal jtimes_sigma_factor;
+  /// Error weights for jtimesScaled
+  N_Vector jtimes_ewt{nullptr};
 
+  /// Learn a maximum step from the Krylov solves (cvode_linear_step_control)
+  bool linear_step_control;
+  /// Its tuning parameters (cvode_lsc_*)
+  bout::cvode::StepLimitParams lsc_params;
+  /// Narrow CVODE's fixed-step band while the step is above the limit
+  bool lsc_enforce;
+  bout::cvode::StepLimiter step_limiter;
+  /// Linear solves since the last internal step, recorded by the solve wrapper
+  std::vector<bout::cvode::LinearSolveRecord> lsc_solves;
+  /// Is CVODE's fixed-step band currently narrowed?
+  bool lsc_band_narrow{false};
+  /// The linear solver's own solve, called by the wrapper
+  int (*lsc_inner_solve)(SUNLinearSolver, SUNMatrix, N_Vector, N_Vector,
+                         sundials_real_type){nullptr};
+  /// Is the stop norm of the linear solver |s1 r| (right or no preconditioning)?
+  bool lsc_right{false};
+  /// Update the step limit after an internal step
+  void linearStepControl();
+
+public:
+  /// Called by the linear-solve wrapper: run the solve and record it
+  int recordLinearSolve(SUNLinearSolver S, SUNMatrix A, N_Vector x, N_Vector b,
+                        sundials_real_type tol);
+
+private:
   // Diagnostics from CVODE
   int nsteps{0};
   int nfevals{0};

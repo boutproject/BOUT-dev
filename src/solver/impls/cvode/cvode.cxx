@@ -65,7 +65,9 @@
 #include <sunlinsol/sunlinsol_sptfqmr.h>
 
 #include <algorithm>
+#include <cmath>
 #include <iterator>
+#include <map>
 #include <memory>
 #include <numeric>
 #include <string>
@@ -88,6 +90,16 @@ int cvode_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec, N_Vector zvec
 
 int cvode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector fy,
               void* user_data, N_Vector tmp);
+int cvode_jtimes_scaled(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector fy,
+                        void* user_data, N_Vector tmp);
+int cvode_linear_solve_wrapper(SUNLinearSolver S, SUNMatrix A, N_Vector x, N_Vector b,
+                               sundials_real_type tol);
+/// SUNDIALS calls the linear solver's solve without user data, so the wrapper
+/// finds its CvodeSolver here
+std::map<SUNLinearSolver, CvodeSolver*>& linearSolveOwners() {
+  static std::map<SUNLinearSolver, CvodeSolver*> owners;
+  return owners;
+}
 } // namespace
 // NOLINTEND(readability-identifier-length)
 
@@ -180,9 +192,71 @@ CvodeSolver::CvodeSolver(Options* opts)
           (*options)["jacobian_export_trigger"]
               .doc("When to save CVODE Jacobians: output or linear_setup")
               .withDefault(bout::CvodeJacobianExportTrigger::linear_setup)),
-      suncontext(createSUNContext(BoutComm::get())) {
+      jtimes_sigma_factor(
+          (*options)["cvode_jtimes_sigma_factor"]
+              .doc("Factor on the increment of CVODE's difference-quotient "
+                   "Jacobian-vector product, sigma = factor / ||v||_WRMS. 1 uses "
+                   "CVODE's own product. With right preconditioning (rightprec or "
+                   "fgmres) a smaller factor such as 0.01 can avoid products made "
+                   "inaccurate by non-smooth terms in the rhs.")
+              .withDefault(1.0)),
+      linear_step_control(
+          (*options)["cvode_linear_step_control"]
+              .doc("Learn a maximum step size from the Krylov linear solves: cut it "
+                   "after a failed solve by the residual reduction reached, hold it "
+                   "when iterations near maxl, relax it otherwise. Intended for right "
+                   "preconditioning (rightprec or fgmres) with a preconditioner that "
+                   "weakens at large steps. Needs gmres or fgmres.")
+              .withDefault(false)),
+      lsc_params{(*options)["cvode_lsc_hold"]
+                     .doc("Step control: hold the limit when a step's largest number of "
+                          "linear iterations exceeds this fraction of maxl")
+                     .withDefault(0.8),
+                 (*options)["cvode_lsc_relax"]
+                     .doc("Step control: growth of the limit per step without a failed "
+                          "or nearly failed solve")
+                     .withDefault(1.3),
+                 (*options)["cvode_lsc_safety"]
+                     .doc("Step control: after a failed solve, aim for this fraction of "
+                          "maxl iterations")
+                     .withDefault(0.7),
+                 (*options)["cvode_lsc_wall_margin"]
+                     .doc("Step control: keep the limit below this fraction of the "
+                          "smallest step that recently failed; 0 turns this off")
+                     .withDefault(0.85),
+                 (*options)["cvode_lsc_wall_relax"]
+                     .doc("Step control: growth per step without a failed solve of the "
+                          "smallest recently failing step")
+                     .withDefault(1.01)},
+      lsc_enforce((*options)["cvode_lsc_enforce"]
+                      .doc("Step control: while the next step is above the limit, "
+                           "narrow CVODE's fixed-step band so the limit is applied "
+                           "when CVODE would keep or grow the step (CVODE applies "
+                           "its maximum step only then; when it shrinks the step "
+                           "itself, the step reaches the limit over a few steps)")
+                      .withDefault(true)),
+      step_limiter(lsc_params), suncontext(createSUNContext(BoutComm::get())) {
   supports_constraints = false; // This solver doesn't have constraints
   canReset = true;
+
+  if (linear_step_control) {
+    if (func_iter) {
+      throw BoutException("solver:cvode_linear_step_control needs Newton iteration "
+                          "(solver:func_iter = false)");
+    }
+    // Checked here because out-of-range values silently disable the limiter
+    if (not(lsc_params.hold > 0.0 and lsc_params.hold <= 1.0)
+        or not(lsc_params.relax > 1.0)
+        or not(lsc_params.safety > 0.0 and lsc_params.safety <= 1.0)
+        or not(lsc_params.wall_margin >= 0.0 and lsc_params.wall_margin < 1.0)
+        or not(lsc_params.wall_relax >= 1.0)) {
+      throw BoutException("solver:cvode_lsc_* out of range: need 0 < hold <= 1, "
+                          "relax > 1, 0 < safety <= 1, 0 <= wall_margin < 1 and "
+                          "wall_relax >= 1 (got {}, {}, {}, {}, {})",
+                          lsc_params.hold, lsc_params.relax, lsc_params.safety,
+                          lsc_params.wall_margin, lsc_params.wall_relax);
+    }
+  }
 
   if ((*options)["use_precon"].isSet()) {
     throw BoutException("solver:use_precon is deprecated for CVODE and is now "
@@ -212,8 +286,13 @@ CvodeSolver::CvodeSolver(Options* opts)
 }
 
 CvodeSolver::~CvodeSolver() {
+  // Registered in init(), possibly before init() threw
+  linearSolveOwners().erase(sun_solver);
   if (cvode_initialised) {
     N_VDestroy(uvec);
+    if (jtimes_ewt != nullptr) {
+      N_VDestroy(jtimes_ewt);
+    }
     CVodeFree(&cvode_mem);
     SUNLinSolFree(sun_solver);
     SUNNonlinSolFree(nonlinear_solver);
@@ -580,6 +659,35 @@ int CvodeSolver::init() {
       throw BoutException("CVodeSetLinearSolver failed\n");
     }
 
+    if (linear_step_control) {
+#if SUNDIALS_VERSION_LESS_THAN(5, 0, 0)
+      throw BoutException("solver:cvode_linear_step_control needs SUNDIALS 5 or later");
+#else
+      const auto solver_id = SUNLinSolGetID(sun_solver);
+      if (solver_id != SUNLINEARSOLVER_SPGMR and solver_id != SUNLINEARSOLVER_SPFGMR) {
+        throw BoutException(
+            "solver:cvode_linear_step_control needs linear_solver = gmres or fgmres");
+      }
+      // SPFGMR is always right-preconditioned
+      lsc_right = (prectype != SUN_PREC_LEFT) or solver_id == SUNLINEARSOLVER_SPFGMR;
+      // Record each solve: wrap the linear solver's solve
+      lsc_inner_solve = sun_solver->ops->solve;
+      sun_solver->ops->solve = cvode_linear_solve_wrapper;
+      linearSolveOwners()[sun_solver] = this;
+#if SUNDIALS_VERSION_LESS_THAN(6, 2, 0)
+      if (lsc_enforce) {
+        output_warn.write("\tsolver:cvode_lsc_enforce needs SUNDIALS 6.2 or later; "
+                          "the step limit applies only when CVODE changes its step\n");
+        lsc_enforce = false;
+      }
+#endif
+      output_info.write("\tLinear step control on (hold {}, relax {}, safety {}, wall "
+                        "margin {}, wall relax {}, enforce {})\n",
+                        lsc_params.hold, lsc_params.relax, lsc_params.safety,
+                        lsc_params.wall_margin, lsc_params.wall_relax, lsc_enforce);
+#endif
+    }
+
 #if SUNDIALS_VERSION_MAJOR >= 6
     if (CVodeSetJacEvalFrequency(cvode_mem, jac_eval_frequency) != CVLS_SUCCESS) {
       throw BoutException("CVodeSetJacEvalFrequency failed\n");
@@ -673,8 +781,23 @@ int CvodeSolver::init() {
     /// Set Jacobian-vector multiplication function
     if (use_jacobian and hasJacobian()) {
       output_info.write("\tUsing user-supplied Jacobian function\n");
+      if (jtimes_sigma_factor != 1.0) {
+        output_warn.write("\tsolver:cvode_jtimes_sigma_factor has no effect with a "
+                          "user-supplied Jacobian (use_jacobian = true)\n");
+      }
 
       if (CVodeSetJacTimes(cvode_mem, nullptr, cvode_jac) != CVLS_SUCCESS) {
+        throw BoutException("CVodeSetJacTimes failed\n");
+      }
+    } else if (jtimes_sigma_factor != 1.0) {
+      if (jtimes_sigma_factor <= 0.0) {
+        throw BoutException("solver:cvode_jtimes_sigma_factor must be positive");
+      }
+      output_info.write("\tUsing difference quotient approximation for Jacobian, "
+                        "increment factor {:e}\n",
+                        jtimes_sigma_factor);
+      jtimes_ewt = N_VClone(uvec);
+      if (CVodeSetJacTimes(cvode_mem, nullptr, cvode_jtimes_scaled) != CVLS_SUCCESS) {
         throw BoutException("CVodeSetJacTimes failed\n");
       }
     } else {
@@ -832,11 +955,12 @@ BoutReal CvodeSolver::run(BoutReal tout) {
   pre_ncalls = 0;
 
   int flag;
-  if (!monitor_timestep) {
+  if (!monitor_timestep and !linear_step_control) {
     // Run in normal mode
     flag = CVode(cvode_mem, tout, uvec, &simtime, CV_NORMAL);
   } else {
-    // Run in single step mode, to call timestep monitors
+    // Run in single step mode, to call timestep monitors or update the
+    // linear step control after each internal step
     BoutReal internal_time;
     CVodeGetCurrentTime(cvode_mem, &internal_time);
     while (internal_time < tout) {
@@ -849,12 +973,22 @@ BoutReal CvodeSolver::run(BoutReal tout) {
                             internal_time, flag);
       }
 
-      // Call timestep monitor
-      call_timestep_monitors(internal_time, internal_time - last_time);
+      if (linear_step_control) {
+        linearStepControl();
+      }
+
+      if (monitor_timestep) {
+        // Call timestep monitor
+        call_timestep_monitors(internal_time, internal_time - last_time);
+      }
     }
     // Get output at the desired time
     flag = CVodeGetDky(cvode_mem, tout, 0, uvec);
     simtime = tout;
+    if (linear_step_control) {
+      output_info.write("\tLinear step control: step limit {:e}\n",
+                        step_limiter.getLimit());
+    }
   }
 
   // Copy variables
@@ -974,6 +1108,104 @@ void CvodeSolver::jac(BoutReal t, N_Vector y, N_Vector v, N_Vector Jv) {
   backend.copy_deriv_to_vector(Jv);
 }
 
+int CvodeSolver::jtimesScaled(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y,
+                              N_Vector fy, N_Vector tmp) {
+  // As CVODE's cvLsDQJtimes, with the increment scaled by jtimes_sigma_factor:
+  // Jv = (f(t, y + sigma v) - f(t, y)) / sigma, sigma = factor / ||v||_WRMS,
+  // shrinking sigma on a recoverable rhs failure
+  CVodeGetErrWeights(cvode_mem, jtimes_ewt);
+  const BoutReal norm = N_VWrmsNorm(v, jtimes_ewt);
+  if (norm <= 0.0) {
+    N_VConst(0.0, Jv);
+    return 0;
+  }
+  BoutReal sig = jtimes_sigma_factor / norm;
+  int retval = 1;
+  for (int attempt = 0; attempt < 3 and retval > 0; attempt++) {
+    N_VLinearSum(sig, v, 1.0, y, tmp);
+    retval = cvode_linear_rhs(t, tmp, Jv, this);
+    if (retval > 0) {
+      sig *= 0.25;
+    }
+  }
+  if (retval != 0) {
+    return retval;
+  }
+  N_VLinearSum(1.0 / sig, Jv, -1.0 / sig, fy, Jv);
+  return 0;
+}
+
+int CvodeSolver::recordLinearSolve(SUNLinearSolver S, SUNMatrix A, N_Vector x, N_Vector b,
+                                   sundials_real_type tol) {
+#if SUNDIALS_VERSION_LESS_THAN(5, 0, 0)
+  return lsc_inner_solve(S, A, x, b, tol);
+#else
+  bout::cvode::LinearSolveRecord record;
+  CVodeGetCurrentStep(cvode_mem, &record.h);
+  CVodeGetCurrentGamma(cvode_mem, &record.gamma);
+  record.tol = tol;
+  if (lsc_right) {
+    // Initial residual in the solver's stop norm |s1 b|_2 (zero initial guess)
+    N_Vector s1 = (SUNLinSolGetID(S) == SUNLINEARSOLVER_SPGMR)
+                      ? static_cast<SUNLinearSolverContent_SPGMR>(S->content)->s1
+                      : static_cast<SUNLinearSolverContent_SPFGMR>(S->content)->s1;
+    record.r0 = (s1 != nullptr) ? N_VWL2Norm(b, s1) : std::sqrt(N_VDotProd(b, b));
+  }
+  const int flag = lsc_inner_solve(S, A, x, b, tol);
+  record.iters = SUNLinSolNumIters(S);
+  record.rend = SUNLinSolResNorm(S);
+  // Not converged, including a solve stopped at maxl with only a reduced
+  // residual, which CVODE accepts on the first Newton iteration: hitting maxl
+  // is what the step control acts on
+  record.failed = flag != 0; // SUN_SUCCESS (SUNLS_SUCCESS before SUNDIALS 7)
+  lsc_solves.push_back(record);
+  return flag;
+#endif
+}
+
+void CvodeSolver::linearStepControl() {
+  // Every input is a collective norm, a count or CVODE's own step data, so
+  // the limit is the same on every processor
+  BoutReal h_last = 0.0;
+  CVodeGetLastStep(cvode_mem, &h_last);
+  // SPGMR and SPFGMR use 5 iterations when maxl <= 0
+  const BoutReal budget = (maxl > 0) ? maxl : 5;
+  const auto action = step_limiter.update(lsc_solves, h_last, budget);
+  lsc_solves.clear();
+
+  if (action != bout::cvode::StepLimitAction::none) {
+    BoutReal hmax = step_limiter.getLimit();
+    if (max_timestep > 0.0) {
+      hmax = (hmax > 0.0) ? std::min(hmax, max_timestep) : max_timestep;
+    }
+    if (hmax > 0.0 and min_timestep > 0.0) {
+      // CVODE rejects a maximum step below its minimum
+      hmax = std::max(hmax, min_timestep);
+    }
+    if (CVodeSetMaxStep(cvode_mem, hmax) != CV_SUCCESS) {
+      throw BoutException("CVodeSetMaxStep failed in linear step control");
+    }
+  }
+
+#if SUNDIALS_VERSION_AT_LEAST(6, 2, 0)
+  // CVODE applies its maximum step only when it changes the step size; inside
+  // its fixed-step band (step ratio 0 to 1.5) it keeps h even above the limit.
+  // While the next step is above the limit, shrink the band so it is applied.
+  if (lsc_enforce) {
+    BoutReal h_next = 0.0;
+    CVodeGetCurrentStep(cvode_mem, &h_next);
+    const BoutReal limit = step_limiter.getLimit();
+    const bool bind = limit > 0.0 and std::abs(h_next) > limit * (1.0 + 1e-10);
+    if (bind != lsc_band_narrow) {
+      // Bounds outside CVODE's allowed ranges restore its defaults (0, 1.5)
+      CVodeSetEtaFixedStepBounds(cvode_mem, bind ? 0.999999 : -1.0,
+                                 bind ? 1.000001 : -1.0);
+      lsc_band_narrow = bind;
+    }
+  }
+#endif
+}
+
 /**************************************************************************
  * CVODE RHS functions
  **************************************************************************/
@@ -1029,6 +1261,17 @@ int cvode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector UNUSED(f
   s->jac(t, y, v, Jv);
 
   return 0;
+}
+
+int cvode_jtimes_scaled(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector fy,
+                        void* user_data, N_Vector tmp) {
+  auto* s = static_cast<CvodeSolver*>(user_data);
+  return s->jtimesScaled(v, Jv, t, y, fy, tmp);
+}
+
+int cvode_linear_solve_wrapper(SUNLinearSolver S, SUNMatrix A, N_Vector x, N_Vector b,
+                               sundials_real_type tol) {
+  return linearSolveOwners().at(S)->recordLinearSolve(S, A, x, b, tol);
 }
 } // namespace
 // NOLINTEND(readability-identifier-length)
@@ -1202,6 +1445,21 @@ void CvodeSolver::resetInternalFields() {
 
   if (CVodeReInit(cvode_mem, simtime, uvec) != CV_SUCCESS) {
     throw BoutException("CVodeReInit failed\n");
+  }
+
+  if (linear_step_control) {
+    // CVodeReInit keeps optional inputs, so undo the learned limit
+    step_limiter = bout::cvode::StepLimiter(lsc_params);
+    lsc_solves.clear();
+    if (CVodeSetMaxStep(cvode_mem, max_timestep) != CV_SUCCESS) {
+      throw BoutException("CVodeSetMaxStep failed\n");
+    }
+#if SUNDIALS_VERSION_AT_LEAST(6, 2, 0)
+    if (lsc_band_narrow) {
+      CVodeSetEtaFixedStepBounds(cvode_mem, -1.0, -1.0);
+      lsc_band_narrow = false;
+    }
+#endif
   }
 }
 #endif
