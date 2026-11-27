@@ -29,13 +29,21 @@
 
 #include <algorithm>
 #include <memory>
+#include <string>
+#include <utility>
 
 #include "shiftedmetricinterp.hxx"
 
+#include "bout/assert.hxx"
+#include "bout/boundary_region.hxx"
 #include "bout/boundary_region_iter.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/constants.hxx"
+#include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
+#include "bout/interpolation_z.hxx"
+#include "bout/paralleltransform.hxx"
 
 ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
                                          Field2D zShift_in, BoutReal zlength_in,
@@ -81,7 +89,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     for (const auto& i : zt_prime_up.getRegion(RGN_NOY)) {
       // Field line moves in z by an angle zShift(i,j+1)-zShift(i,j) when going
       // from j to j+1, but we want the shift in index-space
-      zt_prime_up[i] = static_cast<BoutReal>(mesh.getGlobalZIndexNoBoundaries(i.z()))
+      zt_prime_up[i] = static_cast<BoutReal>(mesh.getGlobalZIndex(i.z()))
                        + ((zShift[i.yp(y_offset + 1)] - zShift[i]) * z_factor);
     }
 
@@ -90,7 +98,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     for (const auto& i : zt_prime_down.getRegion(RGN_NOY)) {
       // Field line moves in z by an angle -(zShift(i,j)-zShift(i,j-1)) when going
       // from j to j-1, but we want the shift in index-space
-      zt_prime_down[i] = static_cast<BoutReal>(mesh.getGlobalZIndexNoBoundaries(i.z()))
+      zt_prime_down[i] = static_cast<BoutReal>(mesh.getGlobalZIndex(i.z()))
                          - ((zShift[i] - zShift[i.ym(y_offset + 1)]) * z_factor);
     }
 
@@ -111,8 +119,8 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
   for (const auto& i : zt_prime_to) {
     // Field line moves in z by an angle zShift(i,j) when going
     // from y0 to y(j), but we want the shift in index-space
-    zt_prime_to[i] = static_cast<BoutReal>(mesh.getGlobalZIndexNoBoundaries(i.z()))
-                     + (zShift[i] * z_factor);
+    zt_prime_to[i] =
+        static_cast<BoutReal>(mesh.getGlobalZIndex(i.z())) + (zShift[i] * z_factor);
   }
 
   interp_to_aligned->calcWeights(zt_prime_to);
@@ -121,8 +129,8 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     // Field line moves in z by an angle zShift(i,j) when going
     // from y0 to y(j), but we want the shift in index-space.
     // Here we reverse the shift, so subtract zShift
-    zt_prime_from[i] = static_cast<BoutReal>(mesh.getGlobalZIndexNoBoundaries(i.z()))
-                       - (zShift[i] * z_factor);
+    zt_prime_from[i] =
+        static_cast<BoutReal>(mesh.getGlobalZIndex(i.z())) - (zShift[i] * z_factor);
   }
 
   interp_from_aligned->calcWeights(zt_prime_from);

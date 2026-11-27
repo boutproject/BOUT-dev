@@ -20,101 +20,135 @@
  *
  **************************************************************************/
 
-#include "../impls/bout/boutmesh.hxx"
 #include "../parallel/fci_comm.hxx"
+#include "interp_utils.hxx"
+#include "bout/assert.hxx"
 #include "bout/bout.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/build_defines.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 #include "bout/globals.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/interpolation_xz.hxx"
 #include "bout/mask.hxx"
+#include "bout/output_bout_types.hxx"
+#include "bout/paralleltransform.hxx"
+#include "bout/region.hxx"
+
+#include "fmt/format.h"
 
 #include <algorithm>
+#include <array>
+#include <cmath>
 #include <memory>
 #include <string>
 #include <vector>
 
+using bout::details::mod;
+
+namespace {
+/// Converts BOUT++ local/mesh indices to PETSc matrix index
+///
+/// Here, local indices means those owned by a given processor. Mesh means the
+/// indices in an FCI mesh, which includes X boundaries but not Z guards. In the
+/// case of a single processor, the local/mesh X indices are identical, whereas
+/// the Z indices will be shifed by MZG: the local index of `zstart` is the mesh
+/// index `0`.
+///
+/// Note that there are *two* kinds of "global" here: the global *mesh* indices
+/// which are (x, y, z), and the global *matrix* index, which is a single
+/// number.
 class IndConverter {
 public:
   IndConverter(Mesh* mesh)
-      : mesh(dynamic_cast<BoutMesh*>(mesh)), nxpe(mesh->getNXPE()), nype(mesh->getNYPE()),
-        xstart(mesh->xstart), ystart(mesh->ystart), zstart(0),
-        lnx(mesh->LocalNx - 2 * xstart), lny(mesh->LocalNy - 2 * ystart),
-        lnz(mesh->LocalNz - 2 * zstart) {}
-  // ix and iz are global indices
-  // iy is local
+      : mesh(mesh), nxpe(mesh->getNXPE()), nype(mesh->getNYPE()), nzpe(mesh->getNZPE()),
+        xstart(mesh->xstart), ystart(mesh->ystart), zstart(mesh->zstart),
+        lnx(mesh->LocalNx - (2 * xstart)), lny(mesh->LocalNy - (2 * ystart)),
+        lnz(mesh->LocalNz - (2 * zstart)),
+        local_grid_size(mesh->LocalNx * mesh->LocalNy * mesh->LocalNz),
+        global_nz(lnz * nzpe) {}
+
+  /// Converts from the mesh index to the PETSc matrix index
+  ///
+  /// Note that because FCI never shifts Y, \p iy is a _local_ index, whereas \p
+  /// ix, \p iz are _global mesh_ indices
   int fromMeshToGlobal(int ix, int iy, int iz) const {
-    const int xstart = mesh->xstart;
-    const int lnx = mesh->LocalNx - xstart * 2;
-    // x-proc-id
-    int pex = divToNeg(ix - xstart, lnx);
-    if (pex < 0) {
-      pex = 0;
-    }
-    if (pex >= nxpe) {
-      pex = nxpe - 1;
-    }
-    const int zstart = 0;
-    const int lnz = mesh->LocalNz - zstart * 2;
-    // z-proc-id
-    // pez only for wrapping around ; later needs similar treatment than pey
-    const int pez = divToNeg(iz - zstart, lnz);
-    // y proc-id - y is already local
-    const int ystart = mesh->ystart;
-    const int lny = mesh->LocalNy - ystart * 2;
-    const int pey_offset = divToNeg(iy - ystart, lny);
-    int pey = pey_offset + mesh->getYProcIndex();
-    while (pey < 0) {
-      pey += nype;
-    }
-    while (pey >= nype) {
-      pey -= nype;
-    }
-    ASSERT2(pex >= 0);
-    ASSERT2(pex < nxpe);
-    ASSERT2(pey >= 0);
-    ASSERT2(pey < nype);
-    return fromLocalToGlobal(ix - pex * lnx, iy - pey_offset * lny, iz - pez * lnz, pex,
-                             pey, 0);
+    // We first need to work out which (x, y, z) processor owns the mesh index (ix, iy, iz).
+    // Then we convert (ix, iy, iz) to a local index and convert that to the global matrix index.
+
+    // x-proc-id: assumes/requires X non-periodic
+    const int pex = std::clamp(divToNeg(ix - xstart, lnx), 0, nxpe - 1);
+    // local x index on processor pex
+    const int ilocalx = ix - (pex * lnx);
+
+    // y proc-id - y is already local, but due to parallel slices might go into
+    // guard cells (indices owned by another processor), so we need to work out
+    // which one that is.
+    // local y index processor pey
+    const int ilocaly = mod(iy - ystart, lny) + ystart;
+    // offset from this processor: should be exactly one of -1, 0, +1
+    const int pey_offset = (iy - ilocaly) / lny;
+    // actual owner of ilocaly
+    const int pey = mod(pey_offset + mesh->getYProcIndex(), nype);
+
+    // z-proc-id: iz may be negative, ensure global periodicity
+    // NOTE: if Z is not periodic, this needs to be fixed!
+    iz = mod(iz, global_nz);
+    const int pez = iz / lnz;
+    // local z index on processor pez
+    const int ilocalz = iz - (pez * lnz) + zstart;
+
+    return fromLocalToGlobal(ilocalx, ilocaly, ilocalz, pex, pey, pez);
   }
+
   int fromLocalToGlobal(const int ilocalx, const int ilocaly, const int ilocalz) const {
     return fromLocalToGlobal(ilocalx, ilocaly, ilocalz, mesh->getXProcIndex(),
-                             mesh->getYProcIndex(), 0);
+                             mesh->getYProcIndex(), mesh->getZProcIndex());
   }
+
   int fromLocalToGlobal(const int ilocalx, const int ilocaly, const int ilocalz,
                         const int pex, const int pey, const int pez) const {
     ASSERT3(ilocalx >= 0);
     ASSERT3(ilocaly >= 0);
     ASSERT3(ilocalz >= 0);
-    const int ilocal = ((ilocalx * mesh->LocalNy) + ilocaly) * mesh->LocalNz + ilocalz;
-    const int ret = ilocal
-                    + mesh->LocalNx * mesh->LocalNy * mesh->LocalNz
-                          * ((pey * nxpe + pex) * nzpe + pez);
+
+    const int ilocal = (((ilocalx * mesh->LocalNy) + ilocaly) * mesh->LocalNz) + ilocalz;
+    const int ret = ilocal + (local_grid_size * ((((pez * nype) + pey) * nxpe) + pex));
+
     ASSERT3(ret >= 0);
-    ASSERT3(ret < nxpe * nype * mesh->LocalNx * mesh->LocalNy * mesh->LocalNz);
+    ASSERT3(ret < nxpe * nype * nzpe * local_grid_size);
     return ret;
   }
 
 private:
-  // number of procs
-  BoutMesh* mesh;
-  const int nxpe;
-  const int nype;
-  const int nzpe{1};
-  const int xstart, ystart, zstart;
-  const int lnx, lny, lnz;
+  Mesh* mesh;
+  int nxpe;
+  int nype;
+  int nzpe;
+  int xstart, ystart, zstart;
+  int lnx, lny, lnz;
+  int local_grid_size;
+  int global_nz;
   static int divToNeg(const int n, const int d) {
     return (n < 0) ? ((n - d + 1) / d) : (n / d);
   }
 };
+
+} // namespace
 
 template <bool monotonic, bout::details::implementation_type imp_type>
 XZHermiteSplineBase<monotonic, imp_type>::XZHermiteSplineBase(int y_offset, Mesh* meshin,
                                                               Options* options)
     : XZInterpolation(y_offset, meshin), h00_x(localmesh), h01_x(localmesh),
       h10_x(localmesh), h11_x(localmesh), h00_z(localmesh), h01_z(localmesh),
-      h10_z(localmesh), h11_z(localmesh) {
+      h10_z(localmesh), h11_z(localmesh),
+      petsclib(
+          PetscLib(options != nullptr
+                       ? options
+                       : &Options::root()
+                             ["mesh:paralleltransform:xzinterpolation:hermitespline"])) {
 
   if constexpr (monotonic) {
     if (options == nullptr) {
@@ -156,7 +190,7 @@ XZHermiteSplineBase<monotonic, imp_type>::XZHermiteSplineBase(int y_offset, Mesh
   }
   if constexpr (imp_type == bout::details::implementation_type::petsc) {
 #if BOUT_HAS_PETSC
-    petsclib = new PetscLib(
+    petsclib = PetscLib(
         &Options::root()["mesh:paralleltransform:xzinterpolation:hermitespline"]);
     const int m = localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz;
     const int M = m * localmesh->getNXPE() * localmesh->getNYPE() * localmesh->getNZPE();
@@ -181,10 +215,14 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
     const Field3D& delta_x, const Field3D& delta_z,
     [[maybe_unused]] const std::string& region) {
 
-  const int ny = localmesh->LocalNy;
-  const int nz = localmesh->LocalNz;
-  const int xend = (localmesh->xend - localmesh->xstart + 1) * localmesh->getNXPE()
-                   + localmesh->xstart - 1;
+  // Global grid size including the boundary guard cells (which are actually
+  // periodic, but we still need to count them), because we need to enforce the
+  // interpolating indices to be in [0, zend]. This means that delta_x/z need to
+  // *include* the boundary guard cells in their numbering!
+  const int global_nz = localmesh->GlobalNz;
+  // The last *interior* X index on the *global* grid, including boundary cells
+  const int global_xend = localmesh->GlobalNx - localmesh->xstart - 1;
+
   [[maybe_unused]] const IndConverter conv{localmesh};
 
   [[maybe_unused]] const int y_global_offset =
@@ -194,19 +232,15 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
 #else
   BOUT_FOR(i, getRegion(region)) {
 #endif
-    const int x = i.x();
-    const int y = i.y();
-    const int z = i.z();
-
     // The integer part of xt_prime, zt_prime are the indices of the cell
     // containing the field line end-point
-    int i_corn = static_cast<int>(floor(delta_x(x, y, z)));
-    k_corner(x, y, z) = static_cast<int>(floor(delta_z(x, y, z)));
+    int i_corn = static_cast<int>(floor(delta_x[i]));
+    k_corner[i] = static_cast<int>(floor(delta_z[i]));
 
     // t_x, t_z are the normalised coordinates \in [0,1) within the cell
     // calculated by taking the remainder of the floating point index
-    BoutReal t_x = delta_x(x, y, z) - static_cast<BoutReal>(i_corn);
-    BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
+    BoutReal t_x = delta_x[i] - static_cast<BoutReal>(i_corn);
+    BoutReal t_z = delta_z[i] - static_cast<BoutReal>(k_corner[i]);
 
     // NOTE: A (small) hack to avoid one-sided differences. We need at
     // least 2 interior points due to an awkwardness with the
@@ -221,8 +255,8 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
     // indexing into the boundary anyway.
     // TODO(peter): Can we remove this if we apply (dirichlet?) BCs to
     // the X derivatives? Note that we need at least _2_
-    if (i_corn >= xend) {
-      i_corn = xend - 1;
+    if (i_corn >= global_xend) {
+      i_corn = global_xend - 1;
       t_x = 1.0;
     }
     if (i_corn < localmesh->xstart) {
@@ -230,23 +264,21 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
       t_x = 0.0;
     }
 
-    k_corner(x, y, z) = ((k_corner(x, y, z) % nz) + nz) % nz;
+    k_corner[i] = mod(k_corner[i], global_nz);
 
     // Check that t_x and t_z are in range
     if ((t_x < 0.0) || (t_x > 1.0)) {
-      throw BoutException(
-          "t_x={:e} out of range at ({:d},{:d},{:d}) (delta_x={:e}, i_corn={:d})", t_x, x,
-          y, z, delta_x(x, y, z), i_corn);
+      throw BoutException("t_x={:e} out of range at ({:c}) (delta_x={:e}, i_corn={:d})",
+                          t_x, i, delta_x[i], i_corn);
     }
 
     if ((t_z < 0.0) || (t_z > 1.0)) {
-      throw BoutException(
-          "t_z={:e} out of range at ({:d},{:d},{:d}) (delta_z={:e}, k_corner={:d})", t_z,
-          x, y, z, delta_z(x, y, z), k_corner(x, y, z));
+      throw BoutException("t_z={:e} out of range at ({:c}) (delta_z={:e}, k_corner={:d})",
+                          t_z, i, delta_z[i], k_corner[i]);
     }
 
-    i_corner[i] = SpecificInd<IND_TYPE::IND_3D>(
-        (((i_corn * ny) + (y + y_offset)) * nz + k_corner(x, y, z)), ny, nz);
+    const int y = i.y();
+    i_corner[i] = delta_x.indexAt(i_corn, y + y_offset, k_corner[i]);
 
     h00_x[i] = (2. * t_x * t_x * t_x) - (3. * t_x * t_x) + 1.;
     h00_z[i] = (2. * t_z * t_z * t_z) - (3. * t_z * t_z) + 1.;
@@ -320,29 +352,26 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
       newWeights[5][i] += h11_x[i] * h11_z[i] / 4;
       if (imp_type == bout::details::implementation_type::petsc) {
 #if BOUT_HAS_PETSC
-        PetscInt idxn[1] = {conv.fromLocalToGlobal(x, y + y_offset, z)};
-        // output.write("debug: {:d} -> {:d}: {:d}:{:d} -> {:d}:{:d}\n",
-        // conv.fromLocalToGlobal(x, y + y_offset, z),
-        //     conv.fromMeshToGlobal(i_corn, y + y_offset, k_corner(x, y, z)),
-        //     x, z, i_corn, k_corner(x, y, z));
-        // ixstep = mesh->LocalNx * mesh->LocalNz;
+        std::array<PetscInt, 1> idxn = {
+            conv.fromLocalToGlobal(i.x(), y + y_offset, i.z())};
+
         for (int j = 0; j < 4; ++j) {
-          PetscInt idxm[4];
-          PetscScalar vals[4];
+          std::array<PetscInt, 4> idxm{};
+          std::array<PetscScalar, 4> vals{};
           for (int k = 0; k < 4; ++k) {
-            idxm[k] = conv.fromMeshToGlobal(i_corn - 1 + j, y + y_offset,
-                                            k_corner(x, y, z) - 1 + k);
+            idxm[k] =
+                conv.fromMeshToGlobal(i_corn - 1 + j, y + y_offset, k_corner[i] - 1 + k);
             vals[k] = newWeights[(j * 4) + k][i];
           }
-          BOUT_DO_PETSC(
-              MatSetValues(petscWeights, 1, idxn, 4, idxm, vals, INSERT_VALUES));
+          BOUT_DO_PETSC(MatSetValues(petscWeights, 1, idxn.data(), 4, idxm.data(),
+                                     vals.data(), INSERT_VALUES));
         }
 #endif
       }
     }
     if constexpr (monotonic) {
-      const auto gind = gf3daccess->xyzglobal(i_corn, y + y_offset + y_global_offset,
-                                              k_corner(x, y, z));
+      const auto gind =
+          gf3daccess->xyzglobal(i_corn, y + y_offset + y_global_offset, k_corner[i]);
       gf3daccess->request(gind);
       gf3daccess->request(gind.xp(1));
       gf3daccess->request(gind.zp(1));
@@ -391,7 +420,7 @@ template <bool monotonic, bout::details::implementation_type imp_type>
 std::vector<ParallelTransform::PositionsAndWeights>
 XZHermiteSplineBase<monotonic, imp_type>::getWeightsForYApproximation(int i, int j, int k,
                                                                       int yoffset) {
-  if (localmesh->getNXPE() > 1) {
+  if (localmesh->getNXPE() > 1 || localmesh->getNZPE() > 1) {
     throw BoutException("It is likely that the function calling this is not handling the "
                         "result correctly.");
   }

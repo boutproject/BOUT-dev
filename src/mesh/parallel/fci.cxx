@@ -171,7 +171,7 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
     interp->calcWeights(xt_prime, zt_prime);
   }
 
-  const int ncz = map_mesh->LocalNz;
+  const int ncz = map_mesh->GlobalNzNoBoundaries;
 
   BoutMask to_remove(map_mesh);
   const int xend = map_mesh->xstart

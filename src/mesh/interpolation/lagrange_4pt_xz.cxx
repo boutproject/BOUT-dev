@@ -21,11 +21,22 @@
  **************************************************************************/
 
 #include "fmt/format.h"
+#include "interp_utils.hxx"
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 #include "bout/globals.hxx"
 #include "bout/interpolation_xz.hxx"
+#include "bout/mask.hxx"
 #include "bout/mesh.hxx"
+#include "bout/region.hxx"
 
-#include <vector>
+#include <cmath>
+#include <string>
+
+using bout::details::mod;
 
 XZLagrange4pt::XZLagrange4pt(int y_offset, Mesh* mesh)
     : XZInterpolation(y_offset, mesh), t_x(localmesh), t_z(localmesh) {
@@ -103,37 +114,35 @@ Field3D XZLagrange4pt::interpolate(const Field3D& f, const std::string& region) 
     const int jxpnew = jx + 1;
     const int jx2pnew = (jx == (localmesh->LocalNx - 2)) ? jxpnew : (jxpnew + 1);
 
-    const int ncz = localmesh->LocalNz;
+    const int ncz = localmesh->GlobalNz;
 
     // Get the 4 Z points
-    const int jz = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
-
-    const int jzpnew = (jz + 1) % ncz;
-    const int jz2pnew = (jz + 2) % ncz;
-    const int jz2mnew = (jz - 1 + ncz) % ncz;
+    const int jz = mod(k_corner(x, y, z), ncz);
+    const int jzpnew = mod(jz + 1, ncz);
+    const int jz2pnew = mod(jz + 2, ncz);
+    const int jz2mnew = mod(jz - 1, ncz);
 
     // Interpolate in Z first
-    BoutReal xvals[4];
-
     const int y_next = y + y_offset;
 
-    xvals[0] = lagrange_4pt(f(jx2mnew, y_next, jz2mnew), f(jx2mnew, y_next, jz),
-                            f(jx2mnew, y_next, jzpnew), f(jx2mnew, y_next, jz2pnew),
-                            t_z(x, y, z));
+    const BoutReal xval0 = lagrange_4pt(
+        f(jx2mnew, y_next, jz2mnew), f(jx2mnew, y_next, jz), f(jx2mnew, y_next, jzpnew),
+        f(jx2mnew, y_next, jz2pnew), t_z(x, y, z));
 
-    xvals[1] = lagrange_4pt(f(jx, y_next, jz2mnew), f(jx, y_next, jz),
-                            f(jx, y_next, jzpnew), f(jx, y_next, jz2pnew), t_z(x, y, z));
+    const BoutReal xval1 =
+        lagrange_4pt(f(jx, y_next, jz2mnew), f(jx, y_next, jz), f(jx, y_next, jzpnew),
+                     f(jx, y_next, jz2pnew), t_z(x, y, z));
 
-    xvals[2] =
+    const BoutReal xval2 =
         lagrange_4pt(f(jxpnew, y_next, jz2mnew), f(jxpnew, y_next, jz),
                      f(jxpnew, y_next, jzpnew), f(jxpnew, y_next, jz2pnew), t_z(x, y, z));
 
-    xvals[3] = lagrange_4pt(f(jx2pnew, y_next, jz2mnew), f(jx2pnew, y_next, jz),
-                            f(jx2pnew, y_next, jzpnew), f(jx2pnew, y_next, jz2pnew),
-                            t_z(x, y, z));
+    const BoutReal xval3 = lagrange_4pt(
+        f(jx2pnew, y_next, jz2mnew), f(jx2pnew, y_next, jz), f(jx2pnew, y_next, jzpnew),
+        f(jx2pnew, y_next, jz2pnew), t_z(x, y, z));
 
     // Then in X
-    f_interp(x, y_next, z) = lagrange_4pt(xvals, t_x(x, y, z));
+    f_interp(x, y_next, z) = lagrange_4pt(xval0, xval1, xval2, xval3, t_x(x, y, z));
     ASSERT2(std::isfinite(f_interp(x, y_next, z)));
   }
   const auto region2 = y_offset != 0 ? fmt::format("RGN_YPAR_{:+d}", y_offset) : region;

@@ -23,14 +23,30 @@
 #ifndef BOUT_INTERP_XZ_H
 #define BOUT_INTERP_XZ_H
 
+#include <bout/assert.hxx>
+#include <bout/boundary_region.hxx>
 #include <bout/bout_types.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/build_defines.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
 #include <bout/generic_factory.hxx>
 #include <bout/mask.hxx>
+#include <bout/paralleltransform.hxx>
+#include <bout/petsclib.hxx>
+#include <bout/region.hxx>
+#include <bout/unused.hxx>
+#include <bout/utils.hxx>
+
+#include <fmt/format.h>
+
 #include <array>
+#include <memory>
+#include <string>
+#include <vector>
 
 #if BOUT_HAS_PETSC
 #include "bout/petsc_operators.hxx"
-#include "bout/petsclib.hxx"
 #endif
 
 namespace bout {
@@ -148,12 +164,12 @@ public:
 /// problems most obviously occur.
 template <bool monotonic, bout::details::implementation_type imp_type>
 class XZHermiteSplineBase : public XZInterpolation {
-protected:
+private:
   /// This is protected rather than private so that it can be
   /// extended and used by HermiteSplineMonotonic
 
-  Tensor<SpecificInd<IND_TYPE::IND_3D>> i_corner; // index of bottom-left grid point
-  Tensor<int> k_corner;                           // z-index of bottom-left grid point
+  Tensor<Ind3D> i_corner; // index of bottom-left grid point
+  Tensor<int> k_corner;   // z-index of bottom-left grid point
 
   std::unique_ptr<GlobalField3DAccess> gf3daccess;
   Tensor<std::array<int, 4>> g3dinds;
@@ -175,8 +191,9 @@ protected:
 
   std::vector<Field3D> newWeights;
 
+  PetscLib petsclib;
+
 #if BOUT_HAS_PETSC
-  PetscLib* petsclib;
   bool isInit{false};
   Mat petscWeights{};
   Vec rhs{}, result{};
@@ -202,7 +219,6 @@ public:
       VecDestroy(&rhs);
       VecDestroy(&result);
       isInit = false;
-      delete petsclib;
     }
 #endif
   }

@@ -20,12 +20,15 @@
  *
  **************************************************************************/
 
+#include "interp_utils.hxx"
 #include "bout/globals.hxx"
 #include "bout/interpolation_xz.hxx"
 #include "bout/mesh.hxx"
 
 #include <string>
 #include <vector>
+
+using bout::details::mod;
 
 XZBilinear::XZBilinear(int y_offset, Mesh* mesh)
     : XZInterpolation(y_offset, mesh), w0(localmesh), w1(localmesh), w2(localmesh),
@@ -106,9 +109,9 @@ Field3D XZBilinear::interpolate(const Field3D& f, const std::string& region) con
     const int y_next = y + y_offset;
     // Due to lack of guard cells in z-direction, we need to ensure z-index
     // wraps around
-    const int ncz = localmesh->LocalNz;
-    const int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
-    const int z_mod_p1 = (z_mod + 1) % ncz;
+    const int ncz = localmesh->GlobalNz;
+    const int z_mod = mod(k_corner(x, y, z), ncz);
+    const int z_mod_p1 = mod(z_mod + 1, ncz);
 
     f_interp(x, y_next, z) = f(i_corner(x, y, z), y_next, z_mod) * w0(x, y, z)
                              + f(i_corner(x, y, z) + 1, y_next, z_mod) * w1(x, y, z)

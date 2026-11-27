@@ -20,12 +20,22 @@
  *
  **************************************************************************/
 
+#include "interp_utils.hxx"
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/field3d.hxx"
 #include "bout/globals.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/interpolation_z.hxx"
 #include "bout/mesh.hxx"
+#include "bout/output.hxx"
+#include "bout/paralleltransform.hxx"
+#include "bout/region.hxx"
 
 #include <algorithm>
+#include <cmath>
+#include <string>
 #include <vector>
 
 ZHermiteSpline::ZHermiteSpline(int y_offset, Mesh* mesh, Region<Ind3D> region_in)
@@ -58,8 +68,8 @@ ZHermiteSpline::ZHermiteSpline(int y_offset, Mesh* mesh, Region<Ind3D> region_in
 
 void ZHermiteSpline::calcWeights(const Field3D& delta_z) {
 
-  const int ncy = localmesh->LocalNy;
-  const int ncz = localmesh->LocalNz;
+  const int ncz = localmesh->GlobalNzNoBoundaries;
+  const int mzg = localmesh->zstart;
 
   // Calculate weights for all points if y_offset==0 in case they are needed, otherwise
   // only calculate weights for RGN_NOY, which should be a superset of 'region'
@@ -79,13 +89,18 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z) {
     // calculated by taking the remainder of the floating point index
     const BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(corner_zind);
 
-    // Make corner_zind be in the range 0<=corner_zind<nz
+    // Make corner_zind be in the range zstart <= corner_zind < zend
+    //
+    // Basically, we want to ignore any guard cells here. Our use case is just
+    // ShiftedMetricInterp, where we might want to wrap around several
+    // times. This also currently limits us to a single processor in Z
+    //
     // This needs to be done after calculating t_z (the coordinate within the
     // cell) because delta_z is allowed to be less than 0 or greater than ncz.
-    corner_zind = ((corner_zind % ncz) + ncz) % ncz;
+    corner_zind = bout::details::mod(corner_zind - mzg, ncz) + mzg;
 
     // Convert z-index to Ind3D
-    k_corner[i.ind] = Ind3D((x * ncy + y) * ncz + corner_zind, ncy, ncz);
+    k_corner[i.ind] = delta_z.indexAt(x, y, corner_zind);
 
     // Check that t_z is in range
     if ((t_z < 0.0) || (t_z > 1.0)) {
